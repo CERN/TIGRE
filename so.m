@@ -1,23 +1,19 @@
 clear;clc;
-numr11=[1 2 3];
-denr11=[1 2.273 14.03 20.15 27.82];
 
-R11=tf(numr11,denr11);
+verts = [0 0 1 1; 0 1 0 1; 0 0 0 0];faces = [1 3; 2 2; 3 4];
 
-numr12=[3 2 1];
 
-R12=tf(numr12,denr11);
 
-numr21=[4 5 6];
+numVerts = size(verts, 2);
+numFaces = size(faces, 2);
 
-R21=tf(numr21,denr11);
+jj= repmat(1:numFaces,[3,1]);  % 3 vtx in each face
+jj=jj(:)';
 
-numr22=[7 8 9];
+mem = sparse( faces(:),jj,1,numVerts,numFaces);
 
-R22=tf(numr22,denr11);
+mem3 = sparse(numVerts, numFaces);
 
-R=[R11,R12;R21,R22]
-
-% sys1= ss(R)
-% 
-% sys_final=minreal(sys1) 
+for i = 1:size(verts, 2)
+    mem3(i,:) = any(faces == i);
+end

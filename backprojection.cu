@@ -77,16 +77,6 @@ ___global___ void kernelPixelBackprojection(Geometry geo, double* image){
      P.y=(indY-(geo.nVoxelY/2-0.5)) *geo.dVoxelY+geo.offOrigY;
      P.z=(indZ-(geo.nVoxelZ/2-0.5)) *geo.dVoxelZ+geo.offOrigZ;
      
-     
-             
-     
-    
-    
-    
-    
-    
-    
-    
     
     
     
