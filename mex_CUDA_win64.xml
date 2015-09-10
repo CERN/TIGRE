@@ -4,7 +4,7 @@
     Name="NVIDIA CUDA Compiler"
     ShortName="nvcc"
     Manufacturer="NVIDIA"
-    Version="6.0"
+    Version="7.5"
     Language="CUDA"
     Priority="A"
     Location="$NVCC" >
@@ -122,7 +122,7 @@
                     <dirExists name="$$" />
                 </and>
                 <and>
-                  <fileExists name="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.0\bin\nvcc.exe" />
+                  <fileExists name="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\bin\nvcc.exe" />
                   <dirExists name="$$" />
                 </and>
             </or>

@@ -36,7 +36,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     mwSize const numDims = mxGetNumberOfDimensions(image); // Get numer of Dimensions of input matrix. 
     // Image should be dim 3
     if (numDims!=3){
-        mexErrMsgIdAndTxt(errId, errMsgImg);
+        mexErrMsgIdAndTxt("CNCT:MEX:Atb:InvalidInput",  "Projection data is not a 3D matrix");
     }
     // Now that input is ok, parse it to C data types.
     // NOTE: while Number of dimensions is the size of the matrix in Matlab, the data is 1D row-wise mayor.
@@ -46,7 +46,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     const mwSize *size_img= mxGetDimensions(image); //get size of image
     float *  img = (float*)malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float));
     for (int i=0;i<size_img[0] *size_img[1] *size_img[2];i++)
-        img[i]=imgaux[i];
+        img[i]=(float)imgaux[i];
     
     
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -212,41 +212,39 @@ void mexFunction(int  nlhs , mxArray *plhs[],
      * allocate memory for the output
      */  
     
-    double*** result = (double***)malloc(geo.nVoxelX * sizeof(double**));
-    for (int i=0; i<geo.nVoxelX ;i++){
-        result[i]=(double**)malloc(geo.nVoxelY *sizeof(double*));
-        for (int j=0; j<geo.nVoxelY ;j++)
-            result[i][j]=(double*)malloc(geo.nVoxelZ *sizeof(double));
-    }
+    double* result = (double*)malloc(geo.nVoxelX *geo.nVoxelY*geo.nVoxelZ*sizeof(double));
+  
     
     /*
      * Call the CUDA kernel
      */
-    
+    backprojection(img,geo,result,alphas,ncols);
     /*
      * Prepare the outputs
      */
     mwSize* imgsize; 
-    imgsize[0]=geo.nVoxelX;
-    imgsize[1]=geo.nVoxelY;
-    imgsize[2]=geo.nVoxelZ;
+    imgsize[0]=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+//     imgsize[1]=geo.nVoxelY;
+//     imgsize[2]=geo.nVoxelZ;
     
-    plhs[0] = mxCreateNumericArray(3,imgsize, mxDOUBLE_CLASS, mxREAL);
+    plhs[0] = mxCreateNumericArray(1,imgsize, mxDOUBLE_CLASS, mxREAL);
     double *outImage = mxGetPr(plhs[0]);
     
-    for (int i=0; i<geo.nVoxelX ;i++){
-        for (int j=0; j<geo.nVoxelY ;j++)
-            memcopy(&outProjections[geo.nVoxelZ*j+geo.nVoxelY*geo.nVoxelZ*i],result[i][j],geo.nVoxelZ*sizeof(double));
-    }
+    
+    memcpy(&outImage,result,geo.nVoxelX *geo.nVoxelY*geo.nVoxelZ*sizeof(double));
+//     for (int i=0; i<geo.nVoxelX ;i++){
+//         for (int j=0; j<geo.nVoxelY ;j++)
+//             memcpy(&outImage[geo.nVoxelZ*j+geo.nVoxelY*geo.nVoxelZ*i],result[i][j],geo.nVoxelZ*sizeof(double));
+//     }
     
     /*
      * Free memory and out
      */
-    for (int i=0; i<geo.nVoxelX ;i++){
-        for (int j=0; j<geo.nVoxelY ;j++)
-             free (result[i][j]);
-        free(result[i]);
-    }
+//     for (int i=0; i<geo.nVoxelX ;i++){
+//         for (int j=0; j<geo.nVoxelY ;j++)
+//              free (result[i][j]);
+//         free(result[i]);
+//     }
     free(result);
 
     free(img);

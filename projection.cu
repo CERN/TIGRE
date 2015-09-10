@@ -20,7 +20,7 @@
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
             mexPrintf("%s \n",msg);\
-            mexErrMsgIdAndTxt("CBCT:CUDA:interpolation",cudaGetErrorString(__err));\
+            mexErrMsgIdAndTxt("CBCT:CUDA:projection",cudaGetErrorString(__err));\
 		        } \
 	    } while (0)
             
@@ -105,8 +105,7 @@ __global__ void kernelPixelDetector( Geometry geo,
 
 
 int projection(float const * const img, Geometry geo, double** result,double const * const alphas,int nalpha){
-//     clock_t begin, end;
-//     begin = clock();
+;
 
    
     // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
@@ -132,12 +131,7 @@ int projection(float const * const img, Geometry geo, double** result,double con
     if (!found)
         mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Tesla K40c found");
     // DONE, Tesla found
-       
-//     end = clock();
-//     double time_tesla = (double)(end - begin) / CLOCKS_PER_SEC;
-//     mexPrintf("Device check time: %lf ms\n" ,time_tesla*1000);
- 
-//     begin=clock();
+
     // copy data to CUDA memory
     cudaArray *d_imagedata = 0;
 
@@ -166,28 +160,16 @@ int projection(float const * const img, Geometry geo, double** result,double con
        
 	cudaCheckErrors("3D texture memory bind fail"); 
     
-//     end = clock();
-//     double time_text = (double)(end - begin) / CLOCKS_PER_SEC;
-//     mexPrintf("Texture memory allocation: %lf ms\n" ,time_text*1000);
+
     //Done! Image put into texture memory.
     
-    // allocate projection memory
-//     begin=clock();
 
     size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(double);
     double* dProjection;
     cudaMalloc((void**)&dProjection, num_bytes);
     cudaCheckErrors("cudaMalloc fail");
     
-//     end = clock();
-//     double time_malloc = (double)(end - begin) / CLOCKS_PER_SEC;
-//     mexPrintf("CUDA memory allocation: %lf ms\n" ,time_malloc*1000);
-    
-//     begin=clock();  
-//     cudaEvent_t start, stop;
-//     float elapsedTime;
-    
-    
+
     Point3D source, deltaU, deltaV, uvOrigin;
   
     for (int i=0;i<nalpha;i++){
@@ -198,18 +180,9 @@ int projection(float const * const img, Geometry geo, double** result,double con
         geo.maxLength=computeMaxLength(geo,geo.alpha);
         
         computeDeltas(geo,geo.alpha, &uvOrigin, &deltaU, &deltaV, &source);
-        
-
-//             cudaEventCreate(&start);
-//             cudaEventRecord(start,0); 
-        
-         kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin);
-//          cudaEventCreate(&stop);
-//          cudaEventRecord(stop,0);
-//          cudaEventSynchronize(stop);
-//          cudaEventElapsedTime(&elapsedTime, start,stop);
-//          mexPrintf("%f " ,elapsedTime);
-         
+           
+        kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin);
+      
 
         cudaCheckErrors("Kernel fail");
          // copy result to host
@@ -218,12 +191,6 @@ int projection(float const * const img, Geometry geo, double** result,double con
         
 
     }
-//     end = clock();
-//     double time_math = (double)(end - begin) / CLOCKS_PER_SEC;
-//     mexPrintf("kernelkall+copyresult: %lf ms\n" ,time_math*1000);
-    
-    
-//     begin=clock();
 
      cudaUnbindTexture(tex);
      cudaCheckErrors("Unbind  fail");
@@ -232,11 +199,7 @@ int projection(float const * const img, Geometry geo, double** result,double con
      cudaFreeArray(d_imagedata);
      cudaCheckErrors("cudaFree d_imagedata fail");
      cudaDeviceReset();
-//      end = clock();
-//      double time_free = (double)(end - begin) / CLOCKS_PER_SEC;
-//      mexPrintf("Free and reset device: %lf ms\n" ,time_free*1000);
-//   
-  
+
 
      
      
@@ -321,96 +284,51 @@ void computeDeltas(Geometry geo, double alpha, Point3D* uvorigin, Point3D* delta
     
     //End point
     Point3D P,Pu0,Pv0;
-    P.x=-(geo.DSD-geo.DSO);
-    P.y= geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);
-    P.z= geo.dDetecV*((double)(geo.nDetecV/2)+0.5-0);
     
-    Pu0.x=-(geo.DSD-geo.DSO);
-    Pu0.y= geo.dDetecU*(1-(double)(geo.nDetecU/2)+0.5);
-    Pu0.z= geo.dDetecV*((double)(geo.nDetecV/2)+0.5-0);
-    
-    Pv0.x=-(geo.DSD-geo.DSO);
-    Pv0.y= geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);
-    Pv0.z= geo.dDetecV*((double)(geo.nDetecV/2)+0.5-1);
+    P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*((double)(geo.nDetecV/2)+0.5-0);
+    Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-(double)(geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*((double)(geo.nDetecV/2)+0.5-0);  
+    Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*((double)(geo.nDetecV/2)+0.5-1);
     // Geomtric trasnformations:
     
     //1: Offset detector
        
     //P.x
-    P.y=P.y+geo.offDetecU;
-    P.z=P.z+geo.offDetecV;
-    Pu0.y=Pu0.y+geo.offDetecU;
-    Pu0.z=Pu0.z+geo.offDetecV;
-    Pv0.y=Pv0.y+geo.offDetecU;
-    Pv0.z=Pv0.z+geo.offDetecV;
+    P.y  =P.y+geo.offDetecU;      P.z  =P.z+geo.offDetecV;
+    Pu0.y=Pu0.y+geo.offDetecU;    Pu0.z=Pu0.z+geo.offDetecV;
+    Pv0.y=Pv0.y+geo.offDetecU;    Pv0.z=Pv0.z+geo.offDetecV;
     //S doesnt need to chagne
     
     //2: Offset image (instead of offseting image, -offset everything else)
     
-    P.x=P.x-geo.offOrigX;
-    P.y=P.y-geo.offOrigY;
-    P.z=P.z-geo.offOrigZ;
-    Pu0.x=Pu0.x-geo.offOrigX;
-    Pu0.y=Pu0.y-geo.offOrigY;
-    Pu0.z=Pu0.z-geo.offOrigZ;
-    Pv0.x=Pv0.x-geo.offOrigX;
-    Pv0.y=Pv0.y-geo.offOrigY;
-    Pv0.z=Pv0.z-geo.offOrigZ;
-    
-    S.x=S.x-geo.offOrigX;
-    S.y=S.y-geo.offOrigY;
-    S.z=S.z-geo.offOrigZ;
+    P.x  =P.x-geo.offOrigX;     P.y  =P.y-geo.offOrigY;     P.z  =P.z-geo.offOrigZ;
+    Pu0.x=Pu0.x-geo.offOrigX;   Pu0.y=Pu0.y-geo.offOrigY;   Pu0.z=Pu0.z-geo.offOrigZ;
+    Pv0.x=Pv0.x-geo.offOrigX;   Pv0.y=Pv0.y-geo.offOrigY;   Pv0.z=Pv0.z-geo.offOrigZ;   
+    S.x=S.x-geo.offOrigX;       S.y=S.y-geo.offOrigY;       S.z=S.z-geo.offOrigZ;
     
     //3: Rotate (around z)!
-    Point3D Pfinal, Pfinalu0, Pfinalv0;   
-    Pfinal.x=P.x*cos(geo.alpha)-P.y*sin(geo.alpha);
-    Pfinal.y=P.y*cos(geo.alpha)+P.x*sin(geo.alpha);
-    Pfinal.z=P.z;
+    Point3D Pfinal, Pfinalu0, Pfinalv0;  
     
-    Pfinalu0.x=Pu0.x*cos(geo.alpha)-Pu0.y*sin(geo.alpha);
-    Pfinalu0.y=Pu0.y*cos(geo.alpha)+Pu0.x*sin(geo.alpha);
-    Pfinalu0.z=Pu0.z;
-    Pfinalv0.x=Pv0.x*cos(geo.alpha)-Pv0.y*sin(geo.alpha);
-    Pfinalv0.y=Pv0.y*cos(geo.alpha)+Pv0.x*sin(geo.alpha);
-    Pfinalv0.z=Pv0.z;
+    Pfinal.x  =P.x*cos(geo.alpha)-P.y*sin(geo.alpha);       Pfinal.y  =P.y*cos(geo.alpha)+P.x*sin(geo.alpha);       Pfinal.z  =P.z;
+    Pfinalu0.x=Pu0.x*cos(geo.alpha)-Pu0.y*sin(geo.alpha);   Pfinalu0.y=Pu0.y*cos(geo.alpha)+Pu0.x*sin(geo.alpha);   Pfinalu0.z=Pu0.z;
+    Pfinalv0.x=Pv0.x*cos(geo.alpha)-Pv0.y*sin(geo.alpha);   Pfinalv0.y=Pv0.y*cos(geo.alpha)+Pv0.x*sin(geo.alpha);   Pfinalv0.z=Pv0.z;
     
     Point3D S2; 
     S2.x=S.x*cos(geo.alpha)-S.y*sin(geo.alpha);
     S2.y=S.y*cos(geo.alpha)+S.x*sin(geo.alpha);
     S2.z=S.z;
+    
+    
     // As we want the (0,0,0) to be in a corner of the image, we need to translate everything (after rotation);
-    Pfinal.x=Pfinal.x+geo.sVoxelX/2;
-    Pfinal.y=Pfinal.y+geo.sVoxelY/2;
-    Pfinal.z=Pfinal.z+geo.sVoxelZ/2;
-    
-    Pfinalu0.x=Pfinalu0.x+geo.sVoxelX/2;
-    Pfinalu0.y=Pfinalu0.y+geo.sVoxelY/2;
-    Pfinalu0.z=Pfinalu0.z+geo.sVoxelZ/2;
-    
-    Pfinalv0.x=Pfinalv0.x+geo.sVoxelX/2;
-    Pfinalv0.y=Pfinalv0.y+geo.sVoxelY/2;
-    Pfinalv0.z=Pfinalv0.z+geo.sVoxelZ/2;
-    
-    
-    S2.x=S2.x+geo.sVoxelX/2;
-    S2.y=S2.y+geo.sVoxelY/2;
-    S2.z=S2.z+geo.sVoxelZ/2;
+    Pfinal.x  =Pfinal.x+geo.sVoxelX/2;      Pfinal.y  =Pfinal.y+geo.sVoxelY/2;          Pfinal.z  =Pfinal.z  +geo.sVoxelZ/2;
+    Pfinalu0.x=Pfinalu0.x+geo.sVoxelX/2;    Pfinalu0.y=Pfinalu0.y+geo.sVoxelY/2;        Pfinalu0.z=Pfinalu0.z+geo.sVoxelZ/2;
+    Pfinalv0.x=Pfinalv0.x+geo.sVoxelX/2;    Pfinalv0.y=Pfinalv0.y+geo.sVoxelY/2;        Pfinalv0.z=Pfinalv0.z+geo.sVoxelZ/2;
+    S2.x      =S2.x+geo.sVoxelX/2;          S2.y      =S2.y+geo.sVoxelY/2;              S2.z      =S2.z      +geo.sVoxelZ/2;
     
     //4. Scale everything so dVoxel==1
-    Pfinal.x=Pfinal.x/geo.dVoxelX;
-    Pfinal.y=Pfinal.y/geo.dVoxelY;
-    Pfinal.z=Pfinal.z/geo.dVoxelZ;
-    Pfinalu0.x=Pfinalu0.x/geo.dVoxelX;
-    Pfinalu0.y=Pfinalu0.y/geo.dVoxelY;
-    Pfinalu0.z=Pfinalu0.z/geo.dVoxelZ;
-    Pfinalv0.x=Pfinalv0.x/geo.dVoxelX;
-    Pfinalv0.y=Pfinalv0.y/geo.dVoxelY;
-    Pfinalv0.z=Pfinalv0.z/geo.dVoxelZ;
-    
-    
-    S2.x=S2.x/geo.dVoxelX;
-    S2.y=S2.y/geo.dVoxelY;
-    S2.z=S2.z/geo.dVoxelZ;   
+    Pfinal.x  =Pfinal.x/geo.dVoxelX;      Pfinal.y  =Pfinal.y/geo.dVoxelY;        Pfinal.z  =Pfinal.z/geo.dVoxelZ;
+    Pfinalu0.x=Pfinalu0.x/geo.dVoxelX;    Pfinalu0.y=Pfinalu0.y/geo.dVoxelY;      Pfinalu0.z=Pfinalu0.z/geo.dVoxelZ;
+    Pfinalv0.x=Pfinalv0.x/geo.dVoxelX;    Pfinalv0.y=Pfinalv0.y/geo.dVoxelY;      Pfinalv0.z=Pfinalv0.z/geo.dVoxelZ;
+    S2.x      =S2.x/geo.dVoxelX;          S2.y      =S2.y/geo.dVoxelY;            S2.z      =S2.z/geo.dVoxelZ;   
     
     // return
     
