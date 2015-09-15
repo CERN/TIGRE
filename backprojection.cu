@@ -90,17 +90,17 @@ __global__ void kernelPixelBackprojection(Geometry geo,
      vectZ=(P.z -S.z); 
      
      
-     double t=(geo.DSD-geo.DSO /*DDO*/ - S.x)/vectX;
+     double t=(geo.DSO-geo.DSD /*-DDO*/ - S.x)/vectX;
      double y,z;
      y=vectY*t+S.y;
      z=vectZ*t+S.z;
      
-     image[idx]+=tex3D(tex,(y+(geo.offDetecU-(geo.sDetecU/2-0.5)))/geo.dDetecU +0.5 ,
-                           (z+(geo.offDetecV-(geo.sDetecV/2-0.5)))/geo.dDetecV +0.5 , 
+     image[idx]+=tex3D(tex,(y-(geo.offDetecU/geo.dDetecU-(geo.nDetecU/2-0.5))) +0.5 ,
+                           (z-(geo.offDetecV/geo.dDetecV-(geo.nDetecV/2-0.5))) +0.5 , 
                             indAlpha                                           +0.5);
      
-    image[idx]=4;
-    
+     
+    image[idx]=(y-(geo.offDetecU/geo.dDetecU-(geo.nDetecU/2-0.5))) ;
     
 }
     
@@ -175,7 +175,6 @@ int backprojection(float const * const projections, Geometry geo, double* result
     
     
     Point3D deltaX,deltaY,deltaZ,xyzOrigin;
-    
     for (int i=0;i<nalpha;i++){
         geo.alpha=alphas[i];
         computeDeltasCube(geo,geo.alpha,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
@@ -193,8 +192,6 @@ int backprojection(float const * const projections, Geometry geo, double* result
      cudaFreeArray(d_projectiondata);
      cudaCheckErrors("cudaFree d_imagedata fail");
      cudaDeviceReset();
-    
-    mexPrintf("%s \n",result[1]);
     return 0;
     
 }
@@ -202,26 +199,26 @@ void computeDeltasCube(Geometry geo, double alpha, Point3D* xyzorigin, Point3D* 
     
      Point3D P0, Px0,Py0,Pz0;
      // Get coords of Img(0,0,0)
-     P0.x=-(geo.sVoxelX/2-0.5)-geo.offOrigX;
-     P0.y=-(geo.sVoxelY/2-0.5)-geo.offOrigY;
-     P0.z=-(geo.sVoxelZ/2-0.5)-geo.offOrigZ;
+     P0.x=-(geo.sVoxelX/2-geo.dVoxelX/2)-geo.offOrigX;
+     P0.y=-(geo.sVoxelY/2-geo.dVoxelY/2)-geo.offOrigY;
+     P0.z=-(geo.sVoxelZ/2-geo.dVoxelZ/2)-geo.offOrigZ;
      
      // Get coors from next voxel in each direction
      Px0.x=P0.x+geo.dVoxelX;       Py0.x=P0.x;                Pz0.x=P0.x;
      Px0.y=P0.y;                   Py0.y=P0.y+geo.dVoxelY;    Pz0.y=P0.y;
-     Px0.z=P0.z;                   Py0.z=P0.z;                Py0.z=P0.z+geo.dVoxelZ;
+     Px0.z=P0.z;                   Py0.z=P0.z;                Pz0.z=P0.z+geo.dVoxelZ;
      
      // Rotate image (this is equivalent of rotating the source and detector)
      
      Point3D P, Px,Py,Pz; // We need other auxiliar variables to be able to perform the rotation, or we would overwrite values!
-     P.x =P0.x*cos(alpha)-P0.y*sin(alpha);         P.y =P0.x*sin(alpha)+P0.y*cos(alpha);
-     Px.x=Px0.x*cos(alpha)-Px0.y*sin(alpha);       Px.y=Px0.x*sin(alpha)+Px0.y*cos(alpha);
-     Py.x=Py0.x*cos(alpha)-Py0.y*sin(alpha);       Py.y=Py0.x*sin(alpha)+Py0.y*cos(alpha);   
-     Pz.x=Pz0.x*cos(alpha)-Pz0.y*sin(alpha);       Pz.y=Pz0.x*sin(alpha)+Pz0.y*cos(alpha);   
+     P.x =P0.x *cos(alpha) -P0.y*sin(alpha);       P.y =P0.x *sin(alpha) +P0.y*cos(alpha);      P.z =P0.z;
+     Px.x=Px0.x*cos(alpha)-Px0.y*sin(alpha);       Px.y=Px0.x*sin(alpha)+Px0.y*cos(alpha);      Px.z=Px0.z;
+     Py.x=Py0.x*cos(alpha)-Py0.y*sin(alpha);       Py.y=Py0.x*sin(alpha)+Py0.y*cos(alpha);      Py.z=Py0.z;
+     Pz.x=Pz0.x*cos(alpha)-Pz0.y*sin(alpha);       Pz.y=Pz0.x*sin(alpha)+Pz0.y*cos(alpha);      Pz.z=Pz0.z;
      
      // Scale coords so detector pixels are 1x1
      
-     P.z=P.z/geo.dDetecV;            P.y=P.y/geo.dDetecU;
+     P.z =P.z /geo.dDetecV;          P.y =P.y /geo.dDetecU;
      Px.z=Px.z/geo.dDetecV;          Px.y=Px.y/geo.dDetecU;
      Py.z=Py.z/geo.dDetecV;          Py.y=Py.y/geo.dDetecU;
      Pz.z=Pz.z/geo.dDetecV;          Pz.y=Pz.y/geo.dDetecU;

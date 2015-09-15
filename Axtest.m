@@ -67,12 +67,13 @@
 %  
 %  
 %% Example of use
+close all
 testtime=0;
 
 
 
 Geometry.nVoxel=[128;128;128];
-Geometry.sVoxel=[460;460;460];
+Geometry.sVoxel=[460;460;460]; % 1.2 for debugging. In this scale, detectU=2 should have a value.
 
 Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
@@ -97,10 +98,6 @@ img1=ones(Geometry.nVoxel')*2;
 img=img1;
 
 
-if testtime
-
-end
-
 alpha=[0:220]*pi/180+pi/2;
 alpha=0;
 % alpha=pi/4;
@@ -109,25 +106,55 @@ tic
 b=Ax(img,Geometry,alpha);
 toc
 
-% for i=1:numel(alpha)
-%     image=reshape(b(:,i),Geometry.nDetector(1),Geometry.nDetector(2));
-%     figure(1); imagesc(image'); axis image; axis equal; colormap gray; colorbar;
-%     title(['Degree : ',num2str(alpha(i)*180/pi)]);
-%     pause(0.01);
-% end
-% break
+for i=1:numel(alpha)
+    image=reshape(b(:,i),Geometry.nDetector(1),Geometry.nDetector(2));
+    figure(1); imagesc(image'); axis image; axis equal; colormap gray; colorbar;
+    title(['Degree : ',num2str(alpha(i)*180/pi)]);
+    pause(0.01);
+end
+break
 %%
 
 btest=zeros(1,Geometry.nDetector(1),Geometry.nDetector(2));
 btest(1,:,:)=reshape(b(:,1),Geometry.nDetector(1),Geometry.nDetector(2));
 alpha=0;
 tic
+btest=ones(1,Geometry.nDetector(1),Geometry.nDetector(2));
+btest(1,10:20,10:20)=3;
 x=Atb(btest,Geometry,alpha);
 toc
+break;
+%%
 image=reshape(x,Geometry.nVoxel(1),Geometry.nVoxel(2),Geometry.nVoxel(3));
 for ii=1:Geometry.nVoxel(1)
-    imagesc(squeeze(image(ii,:,:))); axis image; axis equal; colormap gray; colorbar;
+    imagesc(imrotate(squeeze(image(ii,:,:)),90)); axis image; axis equal; colormap gray; colorbar;
+    xlabel('->Y');
+    ylabel('->Z');
     title(['slice : ',num2str(ii)]);
     drawnow
 end
 break
+%%
+
+x=273.8438;
+y=-68.4609;
+z=-68.4609;
+
+sx=1100;
+sy=0;
+sz=0;
+
+ vectX=(x -sx); 
+ vectY=(y -sy); 
+vectZ=(z -sz); 
+
+t=(-400-sx)/vectX;
+yres=vectY*t+sy;
+zres=vectZ*t+sz;
+
+plot3(x,y,z,'ro')
+hold on
+plot3(sx,sy,sz,'go')
+plot3(-400,yres,zres,'ko')
+axis equal
+plot3([sx -400],[sy yres],[sz zres],'b')

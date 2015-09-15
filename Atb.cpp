@@ -224,6 +224,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
      */
     mwSize* imgsize; 
     imgsize[0]=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+    imgsize[1]=1;
 //     imgsize[1]=geo.nVoxelY;
 //     imgsize[2]=geo.nVoxelZ;
     
@@ -231,7 +232,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     double *outImage = mxGetPr(plhs[0]);
     
     
-    memcpy(&outImage,result,geo.nVoxelX *geo.nVoxelY*geo.nVoxelZ*sizeof(double));
+    memcpy(outImage,result,geo.nVoxelX *geo.nVoxelY*geo.nVoxelZ*sizeof(double));
 //     for (int i=0; i<geo.nVoxelX ;i++){
 //         for (int j=0; j<geo.nVoxelY ;j++)
 //             memcpy(&outImage[geo.nVoxelZ*j+geo.nVoxelY*geo.nVoxelZ*i],result[i][j],geo.nVoxelZ*sizeof(double));
@@ -245,6 +246,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 //              free (result[i][j]);
 //         free(result[i]);
 //     }
+//     mexPrintf("%lf \n",result[0]);
+//     mexCallMATLAB(0,NULL,1,&plhs[0],"disp");
     free(result);
 
     free(img);
