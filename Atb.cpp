@@ -28,10 +28,10 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     }     
 
     /** 
-     * First input: The image
+     * First input: The projections
      */
     
-    // First input should be x from (Ax=b) i.e. the image.
+    // First input should be b from (Ax=b) i.e. the projections.
     mxArray const * const image = prhs[0];                 // Get pointer of the data
     mwSize const numDims = mxGetNumberOfDimensions(image); // Get numer of Dimensions of input matrix. 
     // Image should be dim 3

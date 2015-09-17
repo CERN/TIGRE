@@ -105,7 +105,6 @@ __global__ void kernelPixelDetector( Geometry geo,
 
 
 int projection(float const * const img, Geometry geo, double** result,double const * const alphas,int nalpha){
-;
 
    
     // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
@@ -119,11 +118,11 @@ int projection(float const * const img, Geometry geo, double** result,double con
     bool found=false;
     for (int dev = 0; dev < deviceCount; ++dev)
     {
-        cudaSetDevice(dev);
         cudaDeviceProp deviceProp;
         cudaGetDeviceProperties(&deviceProp, dev);
 
         if (strcmp(deviceProp.name, "Tesla K40c") == 0){
+            cudaSetDevice(dev);
             found=true;
             break;
         }
@@ -198,7 +197,6 @@ int projection(float const * const img, Geometry geo, double** result,double con
      cudaFree(dProjection);
      cudaFreeArray(d_imagedata);
      cudaCheckErrors("cudaFree d_imagedata fail");
-     cudaDeviceReset();
 
 
      

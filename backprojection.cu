@@ -15,6 +15,7 @@
 #include "mex.h"
 #include <math.h>
 
+// https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
 #define cudaCheckErrors(msg) \
     do { \
         cudaError_t __err = cudaGetLastError(); \
@@ -25,6 +26,7 @@
 	    } while (0)
             
 
+            
 #define MAXTREADS 1024
 /*GEOMETRY DEFINITION
  *               
@@ -100,7 +102,7 @@ __global__ void kernelPixelBackprojection(Geometry geo,
                             indAlpha                                           +0.5);
      
      
-    image[idx]=(y-(geo.offDetecU/geo.dDetecU-(geo.nDetecU/2-0.5))) ;
+//     image[idx]=-(geo.offDetecU/geo.dDetecU-(geo.nDetecU/2-0.5)) ;
     
 }
     
@@ -117,11 +119,11 @@ int backprojection(float const * const projections, Geometry geo, double* result
     bool found=false;
     for (int dev = 0; dev < deviceCount; ++dev)
     {
-        cudaSetDevice(dev);
         cudaDeviceProp deviceProp;
         cudaGetDeviceProperties(&deviceProp, dev);
 
         if (strcmp(deviceProp.name, "Tesla K40c") == 0){
+            cudaSetDevice(dev);
             found=true;
             break;
         }
@@ -191,7 +193,6 @@ int backprojection(float const * const projections, Geometry geo, double* result
      cudaFree(dimage);
      cudaFreeArray(d_projectiondata);
      cudaCheckErrors("cudaFree d_imagedata fail");
-     cudaDeviceReset();
     return 0;
     
 }
