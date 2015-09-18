@@ -100,8 +100,10 @@ __global__ void kernelPixelBackprojection(Geometry geo,
      image[idx]+=tex3D(tex,(y-(geo.offDetecU/geo.dDetecU-(geo.nDetecU/2-0.5))) +0.5 ,
                            (z-(geo.offDetecV/geo.dDetecV-(geo.nDetecV/2-0.5))) +0.5 , 
                             indAlpha                                           +0.5);
+//                            /sqrt((geo.DSO-geo.DSD-S.x)*(geo.DSO-geo.DSD-S.x)+(y-S.y)*(y-S.y)+(z-S.z)*(z-S.z))
+//                             *geo.maxLength;
      
-     
+    
 //     image[idx]=-(geo.offDetecU/geo.dDetecU-(geo.nDetecU/2-0.5)) ;
     
 }
@@ -175,7 +177,7 @@ int backprojection(float const * const projections, Geometry geo, double* result
     cudaCheckErrors("cudaMalloc fail");
     
     
-    
+    geo.maxLength=computeMaxLength(geo);
     Point3D deltaX,deltaY,deltaZ,xyzOrigin;
     for (int i=0;i<nalpha;i++){
         geo.alpha=alphas[i];
@@ -231,5 +233,20 @@ void computeDeltasCube(Geometry geo, double alpha, Point3D* xyzorigin, Point3D* 
      
 
 }
+//IMPORTANT NOTE: this maxlength is not the same as the one in projection.cu!!!
+double computeMaxLength(Geometry geo){ 
+     Point3D S;   
+     S.x=geo.DSO;
+     S.y=0;
+     S.z=0;
+     
+     
+     Point3D D;
+     D.x=geo.DSO-geo.DSD;
+     D.y=geo.nDetecU/2-0.5+geo.offDetecU/geo.dDetecU;
+     D.z=geo.nDetecV/2-0.5+geo.offDetecV/geo.dDetecV;
 
-
+     return sqrt((D.x-S.x)*(D.x-S.x)+(D.y-S.y)*(D.y-S.y)+(D.z-S.z)*(D.z-S.z));
+     
+                 
+}

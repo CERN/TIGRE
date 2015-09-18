@@ -4,6 +4,8 @@ so.*
 ## Matlab ignore
 
 *.asv
+*.mex64
+*.pdb
 
 ## C ignore
 # Object files

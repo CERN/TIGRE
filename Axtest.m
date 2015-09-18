@@ -143,7 +143,7 @@ break
 % b2=A*x2;
 % sum(b1-b2)==0; !!!
 % 
-alpha=[45 45]*pi/180;
+alpha=[0 0]*pi/180;
 x1=ones(Geometry.nVoxel')*5;
 x1(50:70,20:30,20:30)=0;
 
@@ -155,14 +155,18 @@ x2=Atb(b1,Geometry,alpha);
 % I need to reshape and transpose x2 now. All this should be avoided, I
 % need to change the data input/output system to match
 x2=reshape(x2,Geometry.nVoxel(1),Geometry.nVoxel(2),Geometry.nVoxel(3));
-x2=flipud(x2);
+% x2=flipud(x2);
 
 b2=Ax(x2,Geometry,alpha);
 b2=reshape(b2,Geometry.nDetector(1),Geometry.nDetector(2),size(b2,2));
 
-sum(b1(:)-b2(:))
+sum(b1(:)-b2(:));
+isequal(b1,b2)
 
-
+subplot(121)
+imagesc(squeeze(b1(:,:,1))');colormap gray;
+subplot(122)
+imagesc(squeeze(b2(:,:,1))');colormap gray;
 break
 %% TEst to check backprojection
 

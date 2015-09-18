@@ -41,5 +41,5 @@ typedef struct{
 }Point3D;
 int backprojection(float const * const projections, Geometry geo, double* result,double const * const alphas,int nalpha);
 void computeDeltasCube(Geometry geo, double alpha, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ);
-
+double computeMaxLength(Geometry geo);
 #endif
