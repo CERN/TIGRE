@@ -59,6 +59,7 @@ texture<float, cudaTextureType3D , cudaReadModeElementType> tex;
 
 __global__ void kernelPixelDetector( Geometry geo,
                                     double* detector,
+                                    double* map,
                                     Point3D source ,
                                     Point3D deltaU, 
                                     Point3D deltaV,
@@ -72,8 +73,8 @@ __global__ void kernelPixelDetector( Geometry geo,
    
 
     /////////////////////////////// Get pixel coords
-    int pixelU = idx % geo.nDetecU;
-    int pixelV = idx / geo.nDetecU;
+    int pixelV = geo.nDetecV-idx % geo.nDetecV-1;
+    int pixelU = idx / geo.nDetecV;
     
 
     double vectX,vectY,vectZ;
@@ -81,15 +82,15 @@ __global__ void kernelPixelDetector( Geometry geo,
     P.x=(uvOrigin.x+pixelU*deltaU.x+pixelV*deltaV.x);
     P.y=(uvOrigin.y+pixelU*deltaU.y+pixelV*deltaV.y);
     P.z=(uvOrigin.z+pixelU*deltaU.z+pixelV*deltaV.z);
-    vectX=(P.x -source.x)/(geo.maxLength); 
-    vectY=(P.y -source.y)/(geo.maxLength); 
-    vectZ=(P.z -source.z)/(geo.maxLength); 
+    double length=sqrt((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z);
+    vectX=(P.x -source.x)/length*geo.accuracy; 
+    vectY=(P.y -source.y)/length*geo.accuracy; 
+    vectZ=(P.z -source.z)/length*geo.accuracy;   // abs(vect)==1*geo.accuracy
 //     //here comes the deal
     double x,y,z;
     double sum=0;
-    double i;
-
-    for (i=0; i<=geo.maxLength; i=i+0.5){
+ 
+    for (int i=0; i<=length; i++){
         x=vectX*(double)i+source.x;
         y=vectY*(double)i+source.y;
         z=vectZ*(double)i+source.z;
@@ -99,11 +100,67 @@ __global__ void kernelPixelDetector( Geometry geo,
         //}
         sum += (double)tex3D(tex, x+0.5, y+0.5, z+0.5);
     }
-    detector[idx]=sum*(sqrt((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z))/geo.maxLength);
+//     detector[idx]=sum*(sqrt((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z))/geo.maxLength);
+    detector[idx]=sum*map[idx];
 }
 
 
 
+// Kernel to compute normalization.
+
+// The sum of attenuation has to be mutiplied by a length factor.
+// The length factor is (realLength/npoints) and 
+// npoints is (normalizedlength/steplentgh+floor(sourcecubelentgh/steplength)==sourcecubelentgh/steplength, (this last part in case
+__global__ void kernelNormalize(    Geometry geo,
+                                    double* map,
+                                    Point3D source ,
+                                    Point3D deltaU, 
+                                    Point3D deltaV,
+                                    Point3D uvOrigin){
+    
+   size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (idx>= geo.nDetecU* geo.nDetecV)
+        return;
+   
+   int pixelV = geo.nDetecV-idx % geo.nDetecV-1;
+   int pixelU = idx / geo.nDetecV;
+   
+   //Compute real length
+   Point3D S,P;
+   S.x=geo.DSO;
+   S.y=0;
+   S.z=0;
+   
+   P.x=geo.DSO-geo.DSD;
+   P.y=(pixelU-geo.nDetecU/2+0.5)*geo.dDetecU+geo.offDetecU;
+   P.y=(pixelV-geo.nDetecV/2+0.5)*geo.dDetecV+geo.offDetecV; 
+   double vectX,vectY,vectZ;
+    vectX=(P.x -S.x); 
+    vectY=(P.y -S.y); 
+    vectZ=(P.z -S.z); 
+  double realLength; //TODO: compute ray/box intersection legth.
+ 
+   // Compute normalized lentgh
+   P.x=(uvOrigin.x+pixelU*deltaU.x+pixelV*deltaV.x);
+   P.y=(uvOrigin.y+pixelU*deltaU.y+pixelV*deltaV.y);
+   P.z=(uvOrigin.z+pixelU*deltaU.z+pixelV*deltaV.z);
+   double length=sqrt((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z));
+   
+    
+
+    vectX=(P.x -source.x)/length*geo.accuracy; 
+    vectY=(P.y -source.y)/length*geo.accuracy; 
+    vectZ=(P.z -source.z)/length*geo.accuracy; 
+   //compute length of vector where points are taken
+    double dvect=sqrt(vectX*vectX+vectY*vectY+vectZ*vectZ);
+    
+    Point3D P1,P2;
+    double normLegth;//TODO:Compute ray box intersection legth in th nnormalized scenario
+   
+    double auxSrcObjlength;// TODO: compute length between the source and first cube collision;
+   
+   map[idx]=realLength/(normLegth/dvect+(float)(floor(auxSrcObjlength/dvect)==auxSrcObjlength/dvect));
+}
 int projection(float const * const img, Geometry geo, double** result,double const * const alphas,int nalpha){
 
    
@@ -168,7 +225,12 @@ int projection(float const * const img, Geometry geo, double** result,double con
     cudaMalloc((void**)&dProjection, num_bytes);
     cudaCheckErrors("cudaMalloc fail");
     
+    //allocate mapmemory
+    double* dmap;
+    cudaMalloc((void**)&dmap, num_bytes);
+    cudaCheckErrors("cudaMalloc fail");
 
+    
     Point3D source, deltaU, deltaV, uvOrigin;
   
     for (int i=0;i<nalpha;i++){
@@ -176,11 +238,11 @@ int projection(float const * const img, Geometry geo, double** result,double con
         geo.alpha=alphas[i];
             // Sx is for the kernel
 
-        geo.maxLength=computeMaxLength(geo,geo.alpha);
-        
+        //geo.maxLength=computeMaxLength(geo,geo.alpha);
+       
         computeDeltas(geo,geo.alpha, &uvOrigin, &deltaU, &deltaV, &source);
-           
-        kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin);
+        kernelNormalize<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dmap, source, deltaU, deltaV, uvOrigin)
+        kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection,dmap, source, deltaU, deltaV, uvOrigin);
       
 
         cudaCheckErrors("Kernel fail");

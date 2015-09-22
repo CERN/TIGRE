@@ -92,7 +92,7 @@ load img128
 % ParamSetting;
 img1=ones(Geometry.nVoxel')*5;
 % img1(10:20,10:20,10:20)=10;
-img1(50:70,20:30,20:30)=0;
+img1(10:20,80:90,10:20)=0;
 % img1(1:128,1,1)=1:128;
 % img1(:,128,:)=img(:,64,:);
 img=img1;
@@ -101,23 +101,23 @@ img=img1;
 alpha=[0:360]*pi/180;
 % alpha=[0,90]*pi/180+pi/2;
 % alpha=pi/4;
-alpha=[0 0]*pi/180;
+% alpha=[0 0]*pi/180;
 % alpha=30 *pi/180;
 tic
 b=Ax(img,Geometry,alpha);
 toc
 
 for i=1:numel(alpha)
-    image=reshape(b(:,i),Geometry.nDetector(1),Geometry.nDetector(2));
-    figure(1); imagesc(image'); axis image; axis equal; colormap gray; colorbar;
+    image=reshape(b(:,i),Geometry.nDetector(2),Geometry.nDetector(1));
+    figure(1); imagesc((image)); axis image; axis equal; colormap gray; colorbar; xlabel('-> U');ylabel('-> V');set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
     title(['Degree : ',num2str(alpha(i)*180/pi)]);
     pause(0.01);
 end
-% break
+break
 %%
 
 btest=zeros(Geometry.nDetector(1),Geometry.nDetector(2),size(b,2));
-btest=reshape(b,Geometry.nDetector(1),Geometry.nDetector(2),size(b,2));
+btest=reshape(b,Geometry.nDetector(2),Geometry.nDetector(1),size(b,2));
 % alpha=0;
 tic
 % btest=ones(1,Geometry.nDetector(1),Geometry.nDetector(2));
@@ -127,15 +127,14 @@ toc
 % break;
 %%
 image=reshape(x,Geometry.nVoxel(1),Geometry.nVoxel(2),Geometry.nVoxel(3));
-for ii=1:Geometry.nVoxel(1)
-    imagesc(imrotate(squeeze(image(ii,:,:)),90)); axis image; axis equal; colormap gray; colorbar; caxis([min(x),max(x)]);
+for ii=Geometry.nVoxel(1):-1:1
+    imagesc((squeeze(image(ii,:,:)))); axis image; axis equal; colormap gray; colorbar; caxis([min(x),max(x)]);set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
     xlabel('->Y');
     ylabel('->Z');
-    title(['slice : ',num2str(ii)]);
+    title(['Source to Detector direction ->X : ',num2str(ii)]);
     drawnow
 end
-break
-
+% break
 
 %% Test to check if
 % b1=A*x1;
@@ -143,30 +142,33 @@ break
 % b2=A*x2;
 % sum(b1-b2)==0; !!!
 % 
+close all
+
 alpha=[0 0]*pi/180;
 x1=ones(Geometry.nVoxel')*5;
-x1(50:70,20:30,20:30)=0;
+x1(1:30,1:10,1:10)=0;
 
 b1=Ax(x1,Geometry,alpha);
 
-b1=reshape(b1,Geometry.nDetector(1),Geometry.nDetector(2),size(b1,2));
+b1=reshape(b1,Geometry.nDetector(2),Geometry.nDetector(1),size(b1,2));
+Geometry.offOrigin=[0;0;20];
 x2=Atb(b1,Geometry,alpha);
 
 % I need to reshape and transpose x2 now. All this should be avoided, I
 % need to change the data input/output system to match
 x2=reshape(x2,Geometry.nVoxel(1),Geometry.nVoxel(2),Geometry.nVoxel(3));
-% x2=flipud(x2);
 
 b2=Ax(x2,Geometry,alpha);
-b2=reshape(b2,Geometry.nDetector(1),Geometry.nDetector(2),size(b2,2));
+b2=reshape(b2,Geometry.nDetector(2),Geometry.nDetector(1),size(b2,2));
 
 sum(b1(:)-b2(:));
 isequal(b1,b2)
 
+figure
 subplot(121)
-imagesc(squeeze(b1(:,:,1))');colormap gray;
+imagesc(squeeze(b1(:,:,1)));colormap gray;
 subplot(122)
-imagesc(squeeze(b2(:,:,1))');colormap gray;
+imagesc(squeeze(b2(:,:,1)));colormap gray;
 break
 %% TEst to check backprojection
 

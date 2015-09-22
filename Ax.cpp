@@ -53,14 +53,14 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 
     float *  img = (float*)malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float));
     for (int i=0;i<size_img[0] *size_img[1] *size_img[2];i++)
-        img[i]=imgaux[i];
+        img[i]=(float)imgaux[i];
     
     
     ///////////////////// Second input argument, 
     // Geometry structure that has all the needed geometric data.
     
     // IMPORTANT-> MAke sure Matlab creates the struct in this order.
-    const char *fieldnames[10];
+    const char *fieldnames[11];
     fieldnames[0] = "nVoxel";
     fieldnames[1] = "sVoxel";
     fieldnames[2] = "dVoxel";
@@ -71,7 +71,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     fieldnames[7] = "DSO";
     fieldnames[8] = "offOrigin";
     fieldnames[9] = "offDetector";
-
+    fieldnames[10]= "accuracy";
 
 
     if(!mxIsStruct(prhs[1]))
@@ -79,7 +79,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 "Second input must be a structure.");
     
     int nfields = mxGetNumberOfFields(prhs[1]);
-    if (nfields != 10)
+    if (nfields < 10 || nfields >11 )
         mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput","there are missing or extra fields in the geometry");
     
     // Check that all names are good
@@ -116,7 +116,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 }
                 break;
            // this ones should be 1x1
-            case 6:case 7:
+            case 6:case 7:case 10:
                 mrows = mxGetM(tmp);
                 ncols = mxGetN(tmp); 
                 if (mrows!=1 || ncols!=1){
@@ -124,6 +124,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                       mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
                         "Above field has wrong size! Should be 1x1!");
                 }
+
                 break;
             default:
                 mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input",
@@ -136,7 +137,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     double * nVoxel, *nDetec; //we need to cast these to int
     double * sVoxel, *dVoxel,*sDetec,*dDetec, *DSO, *DSD,*offOrig,*offDetec;
-    
+    double *  acc;
     Geometry geo;
     geo.unitX=1;geo.unitY=1;geo.unitZ=1;
      for(int ifield=0; ifield<nfields; ifield++) { 
@@ -195,13 +196,17 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                  geo.offDetecV=offDetec[1];
 
                  break;
+             case 10:
+                 acc=(double*)mxGetData(tmp);
+                 geo.accuracy=acc[0];
              default:
                  mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","This shoudl not happen. Weird");
                  break;
                  
          }
      }
-    
+    if (nfields==10)
+        geo.accuracy=0.5;
     // 3rd argument: angle of projection.
    
     mrows = mxGetM(prhs[2]);

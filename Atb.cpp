@@ -24,7 +24,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                  
     //Check amount of inputs
     if (nrhs!=3) {
-        mexErrMsgIdAndTxt("CNCT:MEX:Atb:InvalidInput", "Wrong number of inputs provided");
+        mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput", "Wrong number of inputs provided");
     }     
 
     /** 
@@ -36,18 +36,21 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     mwSize const numDims = mxGetNumberOfDimensions(image); // Get numer of Dimensions of input matrix. 
     // Image should be dim 3
     if (numDims!=3){
-        mexErrMsgIdAndTxt("CNCT:MEX:Atb:InvalidInput",  "Projection data is not a 3D matrix");
+        mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",  "Projection data is not a 3D matrix");
     }
     // Now that input is ok, parse it to C data types.
     // NOTE: while Number of dimensions is the size of the matrix in Matlab, the data is 1D row-wise mayor.
     double const * const imgaux = static_cast<double const *>(mxGetData(image));
     
     // We need a float image, and, unfortunatedly, the only way of casting it is by value
-    const mwSize *size_img= mxGetDimensions(image); //get size of image
-    float *  img = (float*)malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float));
-    for (int i=0;i<size_img[0] *size_img[1] *size_img[2];i++)
-        img[i]=(float)imgaux[i];
-    
+    const mwSize *size_proj= mxGetDimensions(image); //get size of image
+    float *  img = (float*)malloc(size_proj[0] *size_proj[1] *size_proj[2]* sizeof(float));
+//     for (int i=0;i<size_proj[0] *size_proj[1] *size_proj[2];i++)
+//         img[i]=(float)imgaux[i];
+    for (int i=0;i< size_proj[1]; i++ )
+        for (int j=0;j<  size_proj[0];j++ )
+            for (int k=0;k< size_proj[2];k++ )
+                img[j *size_proj[1] * size_proj[2] + i * size_proj[2] + k]   = imgaux[i * size_proj[0] * size_proj[2] + j * size_proj[2] + k];
     
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** 
