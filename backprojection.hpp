@@ -31,7 +31,8 @@ typedef struct {
     
     //Maximum length of cube
     double maxLength;
-    
+     //User option
+    double accuracy;
 }Geometry;
 
 typedef struct{

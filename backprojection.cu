@@ -97,12 +97,29 @@ __global__ void kernelPixelBackprojection(Geometry geo,
      y=vectY*t+S.y;
      z=vectZ*t+S.z;
      
-     image[idx]+=tex3D(tex,(y-(geo.offDetecU/geo.dDetecU-(geo.nDetecU/2-0.5))) +0.5 ,
-                           (z-(geo.offDetecV/geo.dDetecV-(geo.nDetecV/2-0.5))) +0.5 , 
-                            indAlpha                                           +0.5);
+     y=(y-(geo.offDetecU/geo.dDetecU-(geo.nDetecU/2-0.5)));
+     z=(z-(geo.offDetecV/geo.dDetecV-(geo.nDetecV/2-0.5)));
+     
+     
+     double length=sqrt((geo.DSD)*(geo.DSD)+
+                        (y-S.y)*(y-S.y)+
+                        (z-S.z)*(z-S.z));
+     vectX=(-geo.DSD)/length; 
+     vectY=(y -S.y)/length; 
+     vectZ=(z -S.z)/length; 
+     
+     
+     double deltalength=sqrt((vectX*geo.accuracy*geo.dVoxelX)*(vectX*geo.accuracy*geo.dVoxelX)+
+                (vectY*geo.accuracy*geo.dVoxelY)*(vectY*geo.accuracy*geo.dVoxelY)+
+                (vectZ*geo.accuracy*geo.dVoxelZ)*(vectZ*geo.accuracy*geo.dVoxelZ) );
+    
+     
+     image[idx]+=tex3D(tex, y +0.5 ,
+                            z +0.5 , 
+                            indAlpha                                           +0.5)/deltalength;
 //                            /sqrt((geo.DSO-geo.DSD-S.x)*(geo.DSO-geo.DSD-S.x)+(y-S.y)*(y-S.y)+(z-S.z)*(z-S.z))
 //                             *geo.maxLength;
-     
+//      image[idx]=deltalength;
     
 //     image[idx]=-(geo.offDetecU/geo.dDetecU-(geo.nDetecU/2-0.5)) ;
     

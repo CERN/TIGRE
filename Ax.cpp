@@ -208,7 +208,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
          }
      }
     if (nfields==10)
-        geo.accuracy=0.5;
+        geo.accuracy=0.2;
     // 3rd argument: angle of projection.
    
     mrows = mxGetM(prhs[2]);

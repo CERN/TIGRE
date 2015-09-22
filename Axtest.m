@@ -72,7 +72,7 @@ testtime=0;
 
 
 
-Geometry.nVoxel=[128;128;128];
+Geometry.nVoxel=[128;128;128]/2;
 Geometry.sVoxel=[460;460;460]; 
 
 Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
@@ -86,7 +86,7 @@ Geometry.DSO = 1100;
 
 Geometry.offOrigin=[0; 0; 0];
 Geometry.offDetector=[0; 0];
-Geometry.accuracy=0.5;
+Geometry.accuracy=0.03;
 %%
 load img128
 % img=double(img);
@@ -99,10 +99,10 @@ img1(10:20,80:90,10:20)=0;
 img=img1;
 
 
-alpha=[0:360]*pi/180;
+% alpha=[0:360]*pi/180;
 % alpha=[0,90]*pi/180+pi/2;
 % alpha=pi/4;
-% alpha=[0 0]*pi/180;
+alpha=[0 0]*pi/180;
 % alpha=30 *pi/180;
 tic
 b=Ax(img,Geometry,alpha);
@@ -110,7 +110,7 @@ toc
 
 for i=1:numel(alpha)
     image=reshape(b(:,i),Geometry.nDetector(2),Geometry.nDetector(1));
-    figure(1); imagesc((image)); axis image; axis equal; colormap gray; colorbar; xlabel('-> U');ylabel('-> V');set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
+    figure(1); imagesc((image));axis image;  axis equal; colormap gray; colorbar; xlabel('-> U');ylabel('-> V');set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
     title(['Degree : ',num2str(alpha(i)*180/pi)]);
     pause(0.01);
 end
