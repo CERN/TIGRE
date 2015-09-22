@@ -140,6 +140,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     double *  acc;
     Geometry geo;
     geo.unitX=1;geo.unitY=1;geo.unitZ=1;
+    mexPrintf("%d \n",nfields);
      for(int ifield=0; ifield<nfields; ifield++) { 
          tmp=mxGetField(prhs[1],0,fieldnames[ifield]);
          switch(ifield){
@@ -199,6 +200,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
              case 10:
                  acc=(double*)mxGetData(tmp);
                  geo.accuracy=acc[0];
+                 break;
              default:
                  mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","This shoudl not happen. Weird");
                  break;

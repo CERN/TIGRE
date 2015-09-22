@@ -86,6 +86,7 @@ Geometry.DSO = 1100;
 
 Geometry.offOrigin=[0; 0; 0];
 Geometry.offDetector=[0; 0];
+Geometry.accuracy=0.5;
 %%
 load img128
 % img=double(img);
