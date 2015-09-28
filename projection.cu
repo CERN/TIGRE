@@ -85,6 +85,7 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     
     double length=sqrt((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z));
+    length=ceil(length/geo.accuracy);//Divide the directional vector by an integer
     vectX=(P.x -source.x)/(length); 
     vectY=(P.y -source.y)/(length); 
     vectZ=(P.z -source.z)/(length);
@@ -97,10 +98,10 @@ __global__ void kernelPixelDetector( Geometry geo,
     double sum=0;
     double i;
     
-    double deltalength=sqrt((vectX*geo.accuracy*geo.dVoxelX)*(vectX*geo.accuracy*geo.dVoxelX)+
-                (vectY*geo.accuracy*geo.dVoxelY)*(vectY*geo.accuracy*geo.dVoxelY)+
-                (vectZ*geo.accuracy*geo.dVoxelZ)*(vectZ*geo.accuracy*geo.dVoxelZ) );
-    for (i=0; i<=length; i=i+geo.accuracy){
+    double deltalength=sqrt((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
+                            (vectY*geo.dVoxelY)*(vectY*geo.dVoxelY)+
+                            (vectZ*geo.dVoxelZ)*(vectZ*geo.dVoxelZ) );
+    for (i=0; i<=length; i=i+1){
         x=vectX*(double)i+source.x;
         y=vectY*(double)i+source.y;
         z=vectZ*(double)i+source.z;
@@ -190,7 +191,7 @@ int projection(float const * const img, Geometry geo, double** result,double con
 
         //
         
-        geo.maxLength=computeMaxLength(geo,geo.alpha);
+        //geo.maxLength=computeMaxLength(geo,geo.alpha);
         
         computeDeltas(geo,geo.alpha, &uvOrigin, &deltaU, &deltaV, &source);
            
@@ -221,6 +222,94 @@ int projection(float const * const img, Geometry geo, double** result,double con
 
 
 
+
+/* This code precomputes The location of the source and the Delta U and delta V (in the warped space) 
+ * to compute the locations of the x-rays. While it seems verbose and overly-optimized, 
+ * it does saves about 30% of each of the kernel calls. Thats something!
+ **/
+void computeDeltas(Geometry geo, double alpha, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
+    Point3D S;
+    S.x=geo.DSO;
+    S.y=0;
+    S.z=0;
+    
+    //End point
+    Point3D P,Pu0,Pv0;
+    
+    P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*((double)(geo.nDetecV/2)+0.5-0);
+    Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-(double)(geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*((double)(geo.nDetecV/2)+0.5-0);  
+    Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*((double)(geo.nDetecV/2)+0.5-1);
+    // Geomtric trasnformations:
+    
+    //1: Offset detector
+       
+    //P.x
+    P.y  =P.y+geo.offDetecU;      P.z  =P.z+geo.offDetecV;
+    Pu0.y=Pu0.y+geo.offDetecU;    Pu0.z=Pu0.z+geo.offDetecV;
+    Pv0.y=Pv0.y+geo.offDetecU;    Pv0.z=Pv0.z+geo.offDetecV;
+    //S doesnt need to chagne
+    
+    //2: Offset image (instead of offseting image, -offset everything else)
+    
+    P.x  =P.x-geo.offOrigX;     P.y  =P.y-geo.offOrigY;     P.z  =P.z-geo.offOrigZ;
+    Pu0.x=Pu0.x-geo.offOrigX;   Pu0.y=Pu0.y-geo.offOrigY;   Pu0.z=Pu0.z-geo.offOrigZ;
+    Pv0.x=Pv0.x-geo.offOrigX;   Pv0.y=Pv0.y-geo.offOrigY;   Pv0.z=Pv0.z-geo.offOrigZ;   
+    S.x=S.x-geo.offOrigX;       S.y=S.y-geo.offOrigY;       S.z=S.z-geo.offOrigZ;
+    
+    //3: Rotate (around z)!
+    Point3D Pfinal, Pfinalu0, Pfinalv0;  
+    
+    Pfinal.x  =P.x*cos(geo.alpha)-P.y*sin(geo.alpha);       Pfinal.y  =P.y*cos(geo.alpha)+P.x*sin(geo.alpha);       Pfinal.z  =P.z;
+    Pfinalu0.x=Pu0.x*cos(geo.alpha)-Pu0.y*sin(geo.alpha);   Pfinalu0.y=Pu0.y*cos(geo.alpha)+Pu0.x*sin(geo.alpha);   Pfinalu0.z=Pu0.z;
+    Pfinalv0.x=Pv0.x*cos(geo.alpha)-Pv0.y*sin(geo.alpha);   Pfinalv0.y=Pv0.y*cos(geo.alpha)+Pv0.x*sin(geo.alpha);   Pfinalv0.z=Pv0.z;
+    
+    Point3D S2; 
+    S2.x=S.x*cos(geo.alpha)-S.y*sin(geo.alpha);
+    S2.y=S.y*cos(geo.alpha)+S.x*sin(geo.alpha);
+    S2.z=S.z;
+    
+    
+    // As we want the (0,0,0) to be in a corner of the image, we need to translate everything (after rotation);
+    Pfinal.x  =Pfinal.x+geo.sVoxelX/2-geo.dVoxelX/2;      Pfinal.y  =Pfinal.y+geo.sVoxelY/2-geo.dVoxelY/2;          Pfinal.z  =Pfinal.z  +geo.sVoxelZ/2-geo.dVoxelZ/2;
+    Pfinalu0.x=Pfinalu0.x+geo.sVoxelX/2-geo.dVoxelX/2;    Pfinalu0.y=Pfinalu0.y+geo.sVoxelY/2-geo.dVoxelY/2;        Pfinalu0.z=Pfinalu0.z+geo.sVoxelZ/2-geo.dVoxelZ/2;
+    Pfinalv0.x=Pfinalv0.x+geo.sVoxelX/2-geo.dVoxelX/2;    Pfinalv0.y=Pfinalv0.y+geo.sVoxelY/2-geo.dVoxelY/2;        Pfinalv0.z=Pfinalv0.z+geo.sVoxelZ/2-geo.dVoxelZ/2;
+    S2.x      =S2.x+geo.sVoxelX/2-geo.dVoxelX/2;          S2.y      =S2.y+geo.sVoxelY/2-geo.dVoxelY/2;              S2.z      =S2.z      +geo.sVoxelZ/2-geo.dVoxelZ/2;
+    
+    //4. Scale everything so dVoxel==1
+    Pfinal.x  =Pfinal.x/geo.dVoxelX;      Pfinal.y  =Pfinal.y/geo.dVoxelY;        Pfinal.z  =Pfinal.z/geo.dVoxelZ;
+    Pfinalu0.x=Pfinalu0.x/geo.dVoxelX;    Pfinalu0.y=Pfinalu0.y/geo.dVoxelY;      Pfinalu0.z=Pfinalu0.z/geo.dVoxelZ;
+    Pfinalv0.x=Pfinalv0.x/geo.dVoxelX;    Pfinalv0.y=Pfinalv0.y/geo.dVoxelY;      Pfinalv0.z=Pfinalv0.z/geo.dVoxelZ;
+    S2.x      =S2.x/geo.dVoxelX;          S2.y      =S2.y/geo.dVoxelY;            S2.z      =S2.z/geo.dVoxelZ;   
+    
+    // return
+    
+    *uvorigin=Pfinal;
+    
+    deltaU->x=Pfinalu0.x-Pfinal.x;
+    deltaU->y=Pfinalu0.y-Pfinal.y;
+    deltaU->z=Pfinalu0.z-Pfinal.z;
+    
+    deltaV->x=Pfinalv0.x-Pfinal.x;
+    deltaV->y=Pfinalv0.y-Pfinal.y;
+    deltaV->z=Pfinalv0.z-Pfinal.z;
+    
+    *source=S2;
+}
+
+
+
+
+
+/////////////////////
+///////////////////// The code below is not used.
+/////////////////////
+/////////////////////
+/////////////////////
+/////////////////////
+/////////////////////
+/////////////////////
+/////////////////////
+/////////////////////
 double computeMaxLength(Geometry geo, double alpha){ // Ander: I like alpha as an argument tomake sure the programer puts it in. Explicit call. 
     
     //Start point
@@ -283,87 +372,6 @@ double computeMaxLength(Geometry geo, double alpha){ // Ander: I like alpha as a
     
     return sqrt((P2.x-S2.x)*(P2.x-S2.x)   +    (P2.y-S2.y)*(P2.y-S2.y) +(P2.z-S2.z)*(P2.z-S2.z) );
 }
-
-/* This code precomputes The location of the source and the Delta U and delta V (in the warped space) 
- * to compute the locations of the x-rays. While it seems verbose and overly-optimized, 
- * it does saves about 30% of each of the kernel calls. Thats something!
- **/
-void computeDeltas(Geometry geo, double alpha, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
-    Point3D S;
-    S.x=geo.DSO;
-    S.y=0;
-    S.z=0;
-    
-    //End point
-    Point3D P,Pu0,Pv0;
-    
-    P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*((double)(geo.nDetecV/2)+0.5-0);
-    Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-(double)(geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*((double)(geo.nDetecV/2)+0.5-0);  
-    Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*((double)(geo.nDetecV/2)+0.5-1);
-    // Geomtric trasnformations:
-    
-    //1: Offset detector
-       
-    //P.x
-    P.y  =P.y+geo.offDetecU;      P.z  =P.z+geo.offDetecV;
-    Pu0.y=Pu0.y+geo.offDetecU;    Pu0.z=Pu0.z+geo.offDetecV;
-    Pv0.y=Pv0.y+geo.offDetecU;    Pv0.z=Pv0.z+geo.offDetecV;
-    //S doesnt need to chagne
-    
-    //2: Offset image (instead of offseting image, -offset everything else)
-    
-    P.x  =P.x-geo.offOrigX;     P.y  =P.y-geo.offOrigY;     P.z  =P.z-geo.offOrigZ;
-    Pu0.x=Pu0.x-geo.offOrigX;   Pu0.y=Pu0.y-geo.offOrigY;   Pu0.z=Pu0.z-geo.offOrigZ;
-    Pv0.x=Pv0.x-geo.offOrigX;   Pv0.y=Pv0.y-geo.offOrigY;   Pv0.z=Pv0.z-geo.offOrigZ;   
-    S.x=S.x-geo.offOrigX;       S.y=S.y-geo.offOrigY;       S.z=S.z-geo.offOrigZ;
-    
-    //3: Rotate (around z)!
-    Point3D Pfinal, Pfinalu0, Pfinalv0;  
-    
-    Pfinal.x  =P.x*cos(geo.alpha)-P.y*sin(geo.alpha);       Pfinal.y  =P.y*cos(geo.alpha)+P.x*sin(geo.alpha);       Pfinal.z  =P.z;
-    Pfinalu0.x=Pu0.x*cos(geo.alpha)-Pu0.y*sin(geo.alpha);   Pfinalu0.y=Pu0.y*cos(geo.alpha)+Pu0.x*sin(geo.alpha);   Pfinalu0.z=Pu0.z;
-    Pfinalv0.x=Pv0.x*cos(geo.alpha)-Pv0.y*sin(geo.alpha);   Pfinalv0.y=Pv0.y*cos(geo.alpha)+Pv0.x*sin(geo.alpha);   Pfinalv0.z=Pv0.z;
-    
-    Point3D S2; 
-    S2.x=S.x*cos(geo.alpha)-S.y*sin(geo.alpha);
-    S2.y=S.y*cos(geo.alpha)+S.x*sin(geo.alpha);
-    S2.z=S.z;
-    
-    
-    // As we want the (0,0,0) to be in a corner of the image, we need to translate everything (after rotation);
-    Pfinal.x  =Pfinal.x+geo.sVoxelX/2;      Pfinal.y  =Pfinal.y+geo.sVoxelY/2;          Pfinal.z  =Pfinal.z  +geo.sVoxelZ/2;
-    Pfinalu0.x=Pfinalu0.x+geo.sVoxelX/2;    Pfinalu0.y=Pfinalu0.y+geo.sVoxelY/2;        Pfinalu0.z=Pfinalu0.z+geo.sVoxelZ/2;
-    Pfinalv0.x=Pfinalv0.x+geo.sVoxelX/2;    Pfinalv0.y=Pfinalv0.y+geo.sVoxelY/2;        Pfinalv0.z=Pfinalv0.z+geo.sVoxelZ/2;
-    S2.x      =S2.x+geo.sVoxelX/2;          S2.y      =S2.y+geo.sVoxelY/2;              S2.z      =S2.z      +geo.sVoxelZ/2;
-    
-    //4. Scale everything so dVoxel==1
-    Pfinal.x  =Pfinal.x/geo.dVoxelX;      Pfinal.y  =Pfinal.y/geo.dVoxelY;        Pfinal.z  =Pfinal.z/geo.dVoxelZ;
-    Pfinalu0.x=Pfinalu0.x/geo.dVoxelX;    Pfinalu0.y=Pfinalu0.y/geo.dVoxelY;      Pfinalu0.z=Pfinalu0.z/geo.dVoxelZ;
-    Pfinalv0.x=Pfinalv0.x/geo.dVoxelX;    Pfinalv0.y=Pfinalv0.y/geo.dVoxelY;      Pfinalv0.z=Pfinalv0.z/geo.dVoxelZ;
-    S2.x      =S2.x/geo.dVoxelX;          S2.y      =S2.y/geo.dVoxelY;            S2.z      =S2.z/geo.dVoxelZ;   
-    
-    // return
-    
-    *uvorigin=Pfinal;
-    
-    deltaU->x=Pfinalu0.x-Pfinal.x;
-    deltaU->y=Pfinalu0.y-Pfinal.y;
-    deltaU->z=Pfinalu0.z-Pfinal.z;
-    
-    deltaV->x=Pfinalv0.x-Pfinal.x;
-    deltaV->y=Pfinalv0.y-Pfinal.y;
-    deltaV->z=Pfinalv0.z-Pfinal.z;
-    
-    *source=S2;
-}
-
-
-
-
-
-
-///////////////////// The code below is not used.
-
 // This function scales the geometrical data so all the image voxels are 1x1x1
 Geometry nomralizeGeometryImage(Geometry geo){
     

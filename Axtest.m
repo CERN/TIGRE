@@ -72,7 +72,9 @@ testtime=0;
 
 
 
-Geometry.nVoxel=[128;128;128]/2;
+Geometry.nVoxel=[128;128;128];
+
+
 Geometry.sVoxel=[460;460;460]; 
 
 Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
@@ -86,23 +88,23 @@ Geometry.DSO = 1100;
 
 Geometry.offOrigin=[0; 0; 0];
 Geometry.offDetector=[0; 0];
-Geometry.accuracy=0.03;
+Geometry.accuracy=0.1;
 %%
 load img128
 % img=double(img);
 % ParamSetting;
-img1=ones(Geometry.nVoxel')*5;
+img1=ones(Geometry.nVoxel');
 % img1(10:20,10:20,10:20)=10;
-img1(10:20,80:90,10:20)=0;
+% img1(10:20,80:90,10:20)=0;
 % img1(1:128,1,1)=1:128;
 % img1(:,128,:)=img(:,64,:);
 img=img1;
 
 
-% alpha=[0:360]*pi/180;
+alpha=[0:360]*pi/180;
 % alpha=[0,90]*pi/180+pi/2;
 % alpha=pi/4;
-alpha=[0 0]*pi/180;
+% alpha=[0 0]*pi/180;
 % alpha=30 *pi/180;
 tic
 b=Ax(img,Geometry,alpha);
@@ -115,6 +117,14 @@ for i=1:numel(alpha)
     pause(0.01);
 end
 break
+
+
+%% Validation
+validation=0;
+if validation
+plot(abs(image(100,end:-1:1)-image(100,:)))
+
+end
 %%
 
 btest=zeros(Geometry.nDetector(1),Geometry.nDetector(2),size(b,2));
