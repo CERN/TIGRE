@@ -73,10 +73,7 @@ testtime=0;
 
 
 Geometry.nVoxel=[128;128;128];
-
-
 Geometry.sVoxel=[460;460;460]; 
-
 Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
 Geometry.nDetector=[256; 200];
@@ -86,7 +83,7 @@ Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
 Geometry.DSD = 1500;   
 Geometry.DSO = 1100;
 
-Geometry.offOrigin=[0; 0; 0];             %This is wrong. 
+Geometry.offOrigin=[200; 0; 200];           
 Geometry.offDetector=[0; 0];
 Geometry.accuracy=0.1;
 %%
@@ -105,7 +102,7 @@ alpha=[0:2:360]*pi/180;
 % alpha=[0,90]*pi/180+pi/2;
 % alpha=pi/4;
 % alpha=[0 0]*pi/180;
-% alpha=30 *pi/180;
+% alpha=90 *pi/180;
 tic
 b=Ax(img,Geometry,alpha);
 toc

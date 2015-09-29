@@ -249,12 +249,7 @@ void computeDeltas(Geometry geo, double alpha, Point3D* uvorigin, Point3D* delta
     Pv0.y=Pv0.y+geo.offDetecU;    Pv0.z=Pv0.z+geo.offDetecV;
     //S doesnt need to chagne
     
-    //2: Offset image (instead of offseting image, -offset everything else)
     
-    P.x  =P.x-geo.offOrigX;     P.y  =P.y-geo.offOrigY;     P.z  =P.z-geo.offOrigZ;
-    Pu0.x=Pu0.x-geo.offOrigX;   Pu0.y=Pu0.y-geo.offOrigY;   Pu0.z=Pu0.z-geo.offOrigZ;
-    Pv0.x=Pv0.x-geo.offOrigX;   Pv0.y=Pv0.y-geo.offOrigY;   Pv0.z=Pv0.z-geo.offOrigZ;   
-    S.x=S.x-geo.offOrigX;       S.y=S.y-geo.offOrigY;       S.z=S.z-geo.offOrigZ;
     
     //3: Rotate (around z)!
     Point3D Pfinal, Pfinalu0, Pfinalv0;  
@@ -268,6 +263,12 @@ void computeDeltas(Geometry geo, double alpha, Point3D* uvorigin, Point3D* delta
     S2.y=S.y*cos(geo.alpha)+S.x*sin(geo.alpha);
     S2.z=S.z;
     
+    //2: Offset image (instead of offseting image, -offset everything else)
+    
+    Pfinal.x  =Pfinal.x-geo.offOrigX;     Pfinal.y  =Pfinal.y-geo.offOrigY;     Pfinal.z  =Pfinal.z-geo.offOrigZ;
+    Pfinalu0.x=Pfinalu0.x-geo.offOrigX;   Pfinalu0.y=Pfinalu0.y-geo.offOrigY;   Pfinalu0.z=Pfinalu0.z-geo.offOrigZ;
+    Pfinalv0.x=Pfinalv0.x-geo.offOrigX;   Pfinalv0.y=Pfinalv0.y-geo.offOrigY;   Pfinalv0.z=Pfinalv0.z-geo.offOrigZ;   
+    S2.x=S2.x-geo.offOrigX;       S2.y=S2.y-geo.offOrigY;       S2.z=S2.z-geo.offOrigZ;
     
     // As we want the (0,0,0) to be in a corner of the image, we need to translate everything (after rotation);
     Pfinal.x  =Pfinal.x+geo.sVoxelX/2-geo.dVoxelX/2;      Pfinal.y  =Pfinal.y+geo.sVoxelY/2-geo.dVoxelY/2;          Pfinal.z  =Pfinal.z  +geo.sVoxelZ/2-geo.dVoxelZ/2;
