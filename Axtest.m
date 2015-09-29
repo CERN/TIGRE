@@ -86,7 +86,7 @@ Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
 Geometry.DSD = 1500;   
 Geometry.DSO = 1100;
 
-Geometry.offOrigin=[0; 0; 0];
+Geometry.offOrigin=[0; 0; 0];             %This is wrong. 
 Geometry.offDetector=[0; 0];
 Geometry.accuracy=0.1;
 %%
@@ -101,7 +101,7 @@ img1=ones(Geometry.nVoxel');
 img=img1;
 
 
-alpha=[0:360]*pi/180;
+alpha=[0:2:360]*pi/180;
 % alpha=[0,90]*pi/180+pi/2;
 % alpha=pi/4;
 % alpha=[0 0]*pi/180;
