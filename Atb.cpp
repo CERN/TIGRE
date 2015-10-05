@@ -39,11 +39,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
       mexErrMsgIdAndTxt( "CBCT:MEX:Atb:input",
         "Input alpha must be a noncomplex array.");
     }
+    size_t nalpha=ncols;
     mxArray const * const ptralphas=prhs[2];
-    
+
     double const * const alphas = static_cast<double const *>(mxGetData(ptralphas));
-    
-    
+
+  
     /** 
      * First input: The projections
      */
@@ -52,38 +53,38 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     mxArray const * const image = prhs[0];                 // Get pointer of the data
     mwSize const numDims = mxGetNumberOfDimensions(image); // Get numer of Dimensions of input matrix. 
     // Image should be dim 3
-    if (!(numDims==3 && ncols>1) && !(numDims==2 && ncols==1) ){
+    if (!(numDims==3 && nalpha>1) && !(numDims==2 && nalpha==1) ){
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",  "Projection data is not the rigth size");
     }
     // Now that input is ok, parse it to C data types.
     // NOTE: while Number of dimensions is the size of the matrix in Matlab, the data is 1D row-wise mayor.
-    double const * const imgaux = static_cast<double const *>(mxGetData(image));
     
-    // We need a float image, and, unfortunatedly, the only way of casting it is by value
+        // We need a float image, and, unfortunatedly, the only way of casting it is by value
     const mwSize *size_proj= mxGetDimensions(image); //get size of image
     size_t size_proj2;
-    if (ncols==1)
+    if (nalpha==1)
         size_proj2=1;
     else
         size_proj2=size_proj[2];
     
-    float *  img = (float*)malloc(size_proj[0] *size_proj[1] *size_proj2* sizeof(float));
-    for (int i=0;i<size_proj[0] *size_proj[1] *size_proj2;i++)
-        img[i]=(float)imgaux[i];
-
-//     for (int k = 0; k < size_proj2; k++)
-//        for (int i = 0; i <size_proj[1]; i++)
-//            for (int j = 0; j < size_proj[0]; j++){
-//                 img[j+i*size_proj[0]+k*size_proj[0]*size_proj[1]]=(float)imgaux[i+j*size_proj[1]+k*size_proj[0]*size_proj[1]];  
-//            }
-    for (int i=0;i<201;i++)
-        mexPrintf("%f ",(float)imgaux[i]);
-    mexPrintf("\n");
-    for (int i=0;i<201;i++)
-        mexPrintf("%f ",img[i]);
-    mexPrintf("\n");
     
-//     return;
+    double const * const imgaux = static_cast<double const *>(mxGetData(image));
+    
+
+    
+    float *  img = (float*)malloc(size_proj[0] *size_proj[1] *size_proj2* sizeof(float));
+
+
+    // Permute(imgaux,[2 1 3]);
+ for (int k = 0; k < size_proj[0]; k++)
+       for (int i = 0; i <size_proj[1]; i++)
+           for (int j = 0; j < size_proj2; j++)
+                img[i+k*size_proj[1]+j*size_proj[0]*size_proj[1]]=(float)imgaux[k+i*size_proj[0]+j*size_proj[1]*size_proj[0]];    
+    
+
+
+    
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** 
      * Second input: Geometry structure
@@ -247,17 +248,17 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     /*
      * Call the CUDA kernel
      */
-    backprojection(img,geo,result,alphas,ncols);
+    backprojection(img,geo,result,alphas,nalpha);
     /*
      * Prepare the outputs
      */
     mwSize* imgsize; 
-    imgsize[0]=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
-    imgsize[1]=1;
-//     imgsize[1]=geo.nVoxelY;
-//     imgsize[2]=geo.nVoxelZ;
+    imgsize[0]=geo.nVoxelX;//*geo.nVoxelY*geo.nVoxelZ;
+//     imgsize[1]=1;
+    imgsize[1]=geo.nVoxelY;
+    imgsize[2]=geo.nVoxelZ;
     
-    plhs[0] = mxCreateNumericArray(1,imgsize, mxDOUBLE_CLASS, mxREAL);
+    plhs[0] = mxCreateNumericArray(3,imgsize, mxDOUBLE_CLASS, mxREAL);
     double *outImage = mxGetPr(plhs[0]);
     
     

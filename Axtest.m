@@ -90,15 +90,15 @@ Geometry.accuracy=0.1;
 load img128
 % img=double(img);
 % ParamSetting;
-img1=ones(Geometry.nVoxel');
+img1=ones(Geometry.nVoxel')*10;
 % img1(10:20,10:20,10:20)=10;
-% img1(10:20,80:90,10:20)=0;
+img1(10:50,60:90,10:30)=0;
 % img1(1:128,1,1)=1:128;
 % img1(:,128,:)=img(:,64,:);
 img=img1;
 
 
-alpha=[0:2:360]*pi/180;
+alpha=[0:360]*pi/180;
 % alpha=[0,90]*pi/180+pi/2;
 % alpha=pi/4;
 % alpha=[0 0]*pi/180;
@@ -107,12 +107,12 @@ tic
 b=Ax(img,Geometry,alpha);
 toc
 %%
-for i=1:numel(alpha)
-    image=squeeze(b(:,:,i));
-    figure(1); imagesc((image));axis image;  axis equal; colormap gray; colorbar; xlabel('-> U');ylabel('-> V');set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
-    title(['Degree : ',num2str(alpha(i)*180/pi)]);
-    pause(0.01);
-end
+% for i=1:numel(alpha)
+%     image=squeeze(b(:,:,i));
+%     figure(1); imagesc((image));axis image;  axis equal; colormap gray; colorbar; xlabel('-> U');ylabel('-> V');set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
+%     title(['Degree : ',num2str(alpha(i)*180/pi)]);
+%     pause(0.01);
+% end
 
 
 
@@ -124,98 +124,100 @@ end
 % end
 %%
 
-btest=zeros(Geometry.nDetector(1),Geometry.nDetector(2),size(b,2));
-btest=reshape(b,Geometry.nDetector(2),Geometry.nDetector(1),size(b,2));
-alpha=[0, 0];
+% btest=zeros(Geometry.nDetector(2),Geometry.nDetector(1),size(b,3));
+% btest=reshape(b,Geometry.nDetector(2),Geometry.nDetector(1),size(b,2));
+% alpha=[0, 0];
 tic
 % btest=ones(1,Geometry.nDetector(1),Geometry.nDetector(2));
-% btest(1,10:20,10:20)=3;
+% btest(10:20,10:20,1)=3;
 % btest=ones(size(btest));
 % btest(:,:,2)=[];
-btest(:,:,1)=reshape(1:size(btest,1)*size(btest,2),size(btest,1),size(btest,2));
-% btest=permute(btest,[2 1 3]);
+% btest(:,:,1)=reshape(1:size(btest,1)*size(btest,2),size(btest,1),size(btest,2));
+% b=permute(b,[2 1 3]);
 % btest=reshape(btest,size(btest,2),size(btest,1),size(btest,3));
-
-
-x=Atb(btest,Geometry,alpha);
+% b(:,:,2)=0;
+% b1=permute(b,[2 1 3]);
+% b1=b;
+x=Atb(b,Geometry,alpha);
 toc
-break;
+
+% image=reshape(x,Geometry.nVoxel(1),Geometry.nVoxel(2),Geometry.nVoxel(3));
+% break;
 %%
-image=reshape(x,Geometry.nVoxel(1),Geometry.nVoxel(2),Geometry.nVoxel(3));
-for ii=Geometry.nVoxel(1):-10:1
-    imagesc((squeeze(image(ii,:,:)))); axis image; axis equal; colormap gray; colorbar; caxis([min(x),max(x)]);set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
+for ii=Geometry.nVoxel(1):-1:1
+    imagesc((squeeze(x(ii,:,:)))); axis image; axis equal; colormap gray; colorbar; caxis([min(x(:)),max(x(:))]);set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
     xlabel('->Y');
     ylabel('->Z');
     title(['Source to Detector direction ->X : ',num2str(ii)]);
     drawnow
 end
 break
-
-
-%%
- s0=2;s1=3;s2=2;
- A = reshape(0:s0*s1*s2-1, s1, s0, s2);
- A=ones(8,10,2);
- A(:)=1:8*10*2;
-%  B=permute(A,[2 1 3])
-%  A1=[0     1     2     3     4     5     6     7     8     9    10    11];
-%  B1=[0     3     1     4     2     5     6     9     7    10     8    11];
- x=Atb(A,Geometry,alpha); 
-%% Test to check if
-% b1=A*x1;
-% x2=A.'*b1;
-% b2=A*x2;
-% sum(b1-b2)==0; !!!
-% 
-close all
-
-alpha=[0 0]*pi/180;
-x1=ones(Geometry.nVoxel')*5;
-x1(1:30,1:10,1:10)=0;
-
-b1=Ax(x1,Geometry,alpha);
-
-b1=reshape(b1,Geometry.nDetector(2),Geometry.nDetector(1),size(b1,2));
-Geometry.offOrigin=[0;0;20];
-x2=Atb(b1,Geometry,alpha);
-
-% I need to reshape and transpose x2 now. All this should be avoided, I
-% need to change the data input/output system to match
-x2=reshape(x2,Geometry.nVoxel(1),Geometry.nVoxel(2),Geometry.nVoxel(3));
-
-b2=Ax(x2,Geometry,alpha);
-b2=reshape(b2,Geometry.nDetector(2),Geometry.nDetector(1),size(b2,2));
-
-sum(b1(:)-b2(:));
-isequal(b1,b2)
-
-figure
-subplot(121)
-imagesc(squeeze(b1(:,:,1)));colormap gray;
-subplot(122)
-imagesc(squeeze(b2(:,:,1)));colormap gray;
-break
-%% TEst to check backprojection
-
-x=273.8438;
-y=-68.4609;
-z=-68.4609;
-
-sx=1100;
-sy=0;
-sz=0;
-
- vectX=(x -sx); 
- vectY=(y -sy); 
-vectZ=(z -sz); 
-
-t=(-400-sx)/vectX;
-yres=vectY*t+sy;
-zres=vectZ*t+sz;
-
-plot3(x,y,z,'ro')
-hold on
-plot3(sx,sy,sz,'go')
-plot3(-400,yres,zres,'ko')
-axis equal
-plot3([sx -400],[sy yres],[sz zres],'b')
+% % % % 
+% % % % 
+% % % % %%
+% % % %  s0=2;s1=3;s2=2;
+% % % %  A = reshape(0:s0*s1*s2-1, s1, s0, s2);
+% % % %  A=ones(8,10,2);
+% % % %  A(:)=1:8*10*2;
+% % % % %  B=permute(A,[2 1 3])
+% % % % %  A1=[0     1     2     3     4     5     6     7     8     9    10    11];
+% % % % %  B1=[0     3     1     4     2     5     6     9     7    10     8    11];
+% % % %  x=Atb(A,Geometry,alpha); 
+% % % % %% Test to check if
+% % % % % b1=A*x1;
+% % % % % x2=A.'*b1;
+% % % % % b2=A*x2;
+% % % % % sum(b1-b2)==0; !!!
+% % % % % 
+% % % % close all
+% % % % 
+% % % % alpha=[0 0]*pi/180;
+% % % % x1=ones(Geometry.nVoxel')*5;
+% % % % x1(1:30,1:10,1:10)=0;
+% % % % 
+% % % % b1=Ax(x1,Geometry,alpha);
+% % % % 
+% % % % b1=reshape(b1,Geometry.nDetector(2),Geometry.nDetector(1),size(b1,2));
+% % % % Geometry.offOrigin=[0;0;20];
+% % % % x2=Atb(b1,Geometry,alpha);
+% % % % 
+% % % % % I need to reshape and transpose x2 now. All this should be avoided, I
+% % % % % need to change the data input/output system to match
+% % % % x2=reshape(x2,Geometry.nVoxel(1),Geometry.nVoxel(2),Geometry.nVoxel(3));
+% % % % 
+% % % % b2=Ax(x2,Geometry,alpha);
+% % % % b2=reshape(b2,Geometry.nDetector(2),Geometry.nDetector(1),size(b2,2));
+% % % % 
+% % % % sum(b1(:)-b2(:));
+% % % % isequal(b1,b2)
+% % % % 
+% % % % figure
+% % % % subplot(121)
+% % % % imagesc(squeeze(b1(:,:,1)));colormap gray;
+% % % % subplot(122)
+% % % % imagesc(squeeze(b2(:,:,1)));colormap gray;
+% % % % break
+% % % % %% TEst to check backprojection
+% % % % 
+% % % % x=273.8438;
+% % % % y=-68.4609;
+% % % % z=-68.4609;
+% % % % 
+% % % % sx=1100;
+% % % % sy=0;
+% % % % sz=0;
+% % % % 
+% % % %  vectX=(x -sx); 
+% % % %  vectY=(y -sy); 
+% % % % vectZ=(z -sz); 
+% % % % 
+% % % % t=(-400-sx)/vectX;
+% % % % yres=vectY*t+sy;
+% % % % zres=vectZ*t+sz;
+% % % % 
+% % % % plot3(x,y,z,'ro')
+% % % % hold on
+% % % % plot3(sx,sy,sz,'go')
+% % % % plot3(-400,yres,zres,'ko')
+% % % % axis equal
+% % % % plot3([sx -400],[sy yres],[sz zres],'b')

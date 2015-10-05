@@ -118,8 +118,7 @@ __global__ void kernelPixelBackprojection(Geometry geo,
      
      image[idx]+=tex3D(tex, y +0.5 ,
                             z +0.5 , 
-                            indAlpha                                           +0.5);
-//                             *length/geo.DSD;
+                            indAlpha                                           +0.5)*length/geo.DSD;
 //                            /sqrt((geo.DSO-geo.DSD-S.x)*(geo.DSO-geo.DSD-S.x)+(y-S.y)*(y-S.y)+(z-S.z)*(z-S.z))
 //                             *geo.maxLength;
 //      image[idx]=deltalength;
