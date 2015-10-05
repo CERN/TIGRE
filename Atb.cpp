@@ -25,8 +25,25 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     //Check amount of inputs
     if (nrhs!=3) {
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput", "Wrong number of inputs provided");
-    }     
+    }  
+    
+     /*
+     ** Third argument: angle of projection.
+     */
+        size_t mrows,ncols;
 
+    mrows = mxGetM(prhs[2]);
+    ncols = mxGetN(prhs[2]);
+    if( !mxIsDouble(prhs[2]) || mxIsComplex(prhs[2]) ||
+        !(mrows==1) ) {
+      mexErrMsgIdAndTxt( "CBCT:MEX:Atb:input",
+        "Input alpha must be a noncomplex array.");
+    }
+    mxArray const * const ptralphas=prhs[2];
+    
+    double const * const alphas = static_cast<double const *>(mxGetData(ptralphas));
+    
+    
     /** 
      * First input: The projections
      */
@@ -35,8 +52,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     mxArray const * const image = prhs[0];                 // Get pointer of the data
     mwSize const numDims = mxGetNumberOfDimensions(image); // Get numer of Dimensions of input matrix. 
     // Image should be dim 3
-    if (numDims!=3){
-        mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",  "Projection data is not a 3D matrix");
+    if (!(numDims==3 && ncols>1) && !(numDims==2 && ncols==1) ){
+        mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",  "Projection data is not the rigth size");
     }
     // Now that input is ok, parse it to C data types.
     // NOTE: while Number of dimensions is the size of the matrix in Matlab, the data is 1D row-wise mayor.
@@ -44,14 +61,29 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     // We need a float image, and, unfortunatedly, the only way of casting it is by value
     const mwSize *size_proj= mxGetDimensions(image); //get size of image
-    float *  img = (float*)malloc(size_proj[0] *size_proj[1] *size_proj[2]* sizeof(float));
-//     for (int i=0;i<size_proj[0] *size_proj[1] *size_proj[2];i++)
-//         img[i]=(float)imgaux[i];
-    for (int i=0;i< size_proj[1]; i++ )
-        for (int j=0;j<  size_proj[0];j++ )
-            for (int k=0;k< size_proj[2];k++ )
-                img[j *size_proj[1] * size_proj[2] + i * size_proj[2] + k]   = imgaux[i * size_proj[0] * size_proj[2] + j * size_proj[2] + k];
+    size_t size_proj2;
+    if (ncols==1)
+        size_proj2=1;
+    else
+        size_proj2=size_proj[2];
     
+    float *  img = (float*)malloc(size_proj[0] *size_proj[1] *size_proj2* sizeof(float));
+    for (int i=0;i<size_proj[0] *size_proj[1] *size_proj2;i++)
+        img[i]=(float)imgaux[i];
+
+//     for (int k = 0; k < size_proj2; k++)
+//        for (int i = 0; i <size_proj[1]; i++)
+//            for (int j = 0; j < size_proj[0]; j++){
+//                 img[j+i*size_proj[0]+k*size_proj[0]*size_proj[1]]=(float)imgaux[i+j*size_proj[1]+k*size_proj[0]*size_proj[1]];  
+//            }
+    for (int i=0;i<201;i++)
+        mexPrintf("%f ",(float)imgaux[i]);
+    mexPrintf("\n");
+    for (int i=0;i<201;i++)
+        mexPrintf("%f ",img[i]);
+    mexPrintf("\n");
+    
+//     return;
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /** 
      * Second input: Geometry structure
@@ -82,7 +114,6 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput","There are missing or extra fields in the geometry");
     
   mxArray    *tmp;
-    size_t mrows,ncols;
     for(int ifield=0; ifield<nfields; ifield++) { 
         tmp=mxGetField(prhs[1],0,fieldnames[ifield]);
         if(tmp==NULL){
@@ -204,19 +235,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
      }
      if (nfields==10)
         geo.accuracy=0.2;
-    /*
-     ** Third argument: angle of projection.
-     */
-    mrows = mxGetM(prhs[2]);
-    ncols = mxGetN(prhs[2]);
-    if( !mxIsDouble(prhs[2]) || mxIsComplex(prhs[2]) ||
-        !(mrows==1) ) {
-      mexErrMsgIdAndTxt( "CBCT:MEX:Atb:input",
-        "Input alpha must be a noncomplex array.");
-    }
-    mxArray const * const ptralphas=prhs[2];
-    
-    double const * const alphas = static_cast<double const *>(mxGetData(ptralphas));
+  
     
     /*
      * allocate memory for the output

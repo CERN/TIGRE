@@ -90,9 +90,6 @@ __global__ void kernelPixelDetector( Geometry geo,
     vectY=(P.y -source.y)/(length); 
     vectZ=(P.z -source.z)/(length);
     
-//     vectX=(P.x -source.x)/(geo.maxLength); 
-//     vectY=(P.y -source.y)/(geo.maxLength); 
-//     vectZ=(P.z -source.z)/(geo.maxLength); 
 //     //here comes the deal
     double x,y,z;
     double sum=0;
@@ -109,9 +106,9 @@ __global__ void kernelPixelDetector( Geometry geo,
         //if(x<0 | y<0 | z<0 | x> (double)geo.nVoxelX-1.0 | y> (double)geo.nVoxelY-1.0 | z> (double)geo.nVoxelZ-1.0){
         //    continue;   
         //}
-        sum += (double)tex3D(tex, x+0.5, y+0.5, z+0.5)*deltalength;
+        sum += (double)tex3D(tex, x+0.5, y+0.5, z+0.5);
     }
-    detector[idx]=sum;//*(sqrt((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z))/geo.maxLength);
+    detector[idx]=sum*deltalength;//*(sqrt((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z))/geo.maxLength);
 //     detector[idx]=geo.accuracy;
 }
 
@@ -187,14 +184,9 @@ int projection(float const * const img, Geometry geo, double** result,double con
     for (int i=0;i<nalpha;i++){
         
         geo.alpha=alphas[i];
-            // Sx is for the kernel
-
-        //
-        
-        //geo.maxLength=computeMaxLength(geo,geo.alpha);
-        
+        //Precompute per angle constant stuff for speed
         computeDeltas(geo,geo.alpha, &uvOrigin, &deltaU, &deltaV, &source);
-           
+        //Ray tracing!  
         kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin);
       
 

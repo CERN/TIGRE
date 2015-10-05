@@ -72,7 +72,7 @@ testtime=0;
 
 
 
-Geometry.nVoxel=[128;128;128];
+Geometry.nVoxel=[128;128;128]*2;
 Geometry.sVoxel=[460;460;460]; 
 Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
@@ -83,7 +83,7 @@ Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
 Geometry.DSD = 1500;   
 Geometry.DSO = 1100;
 
-Geometry.offOrigin=[200; 0; 200];           
+Geometry.offOrigin=[0; 0; 0];           
 Geometry.offDetector=[0; 0];
 Geometry.accuracy=0.1;
 %%
@@ -106,44 +106,61 @@ alpha=[0:2:360]*pi/180;
 tic
 b=Ax(img,Geometry,alpha);
 toc
-
+%%
 for i=1:numel(alpha)
-    image=reshape(b(:,i),Geometry.nDetector(2),Geometry.nDetector(1));
+    image=squeeze(b(:,:,i));
     figure(1); imagesc((image));axis image;  axis equal; colormap gray; colorbar; xlabel('-> U');ylabel('-> V');set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
     title(['Degree : ',num2str(alpha(i)*180/pi)]);
     pause(0.01);
 end
-break
+
 
 
 %% Validation
-validation=0;
-if validation
-plot(abs(image(100,end:-1:1)-image(100,:)))
-
-end
+% validation=0;
+% if validation
+% plot(abs(image(100,end:-1:1)-image(100,:)))
+% 
+% end
 %%
 
 btest=zeros(Geometry.nDetector(1),Geometry.nDetector(2),size(b,2));
 btest=reshape(b,Geometry.nDetector(2),Geometry.nDetector(1),size(b,2));
-% alpha=0;
+alpha=[0, 0];
 tic
 % btest=ones(1,Geometry.nDetector(1),Geometry.nDetector(2));
 % btest(1,10:20,10:20)=3;
+% btest=ones(size(btest));
+% btest(:,:,2)=[];
+btest(:,:,1)=reshape(1:size(btest,1)*size(btest,2),size(btest,1),size(btest,2));
+% btest=permute(btest,[2 1 3]);
+% btest=reshape(btest,size(btest,2),size(btest,1),size(btest,3));
+
+
 x=Atb(btest,Geometry,alpha);
 toc
-% break;
+break;
 %%
 image=reshape(x,Geometry.nVoxel(1),Geometry.nVoxel(2),Geometry.nVoxel(3));
-for ii=Geometry.nVoxel(1):-1:1
+for ii=Geometry.nVoxel(1):-10:1
     imagesc((squeeze(image(ii,:,:)))); axis image; axis equal; colormap gray; colorbar; caxis([min(x),max(x)]);set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
     xlabel('->Y');
     ylabel('->Z');
     title(['Source to Detector direction ->X : ',num2str(ii)]);
     drawnow
 end
-% break
+break
 
+
+%%
+ s0=2;s1=3;s2=2;
+ A = reshape(0:s0*s1*s2-1, s1, s0, s2);
+ A=ones(8,10,2);
+ A(:)=1:8*10*2;
+%  B=permute(A,[2 1 3])
+%  A1=[0     1     2     3     4     5     6     7     8     9    10    11];
+%  B1=[0     3     1     4     2     5     6     9     7    10     8    11];
+ x=Atb(A,Geometry,alpha); 
 %% Test to check if
 % b1=A*x1;
 % x2=A.'*b1;

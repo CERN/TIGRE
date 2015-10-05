@@ -140,7 +140,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     double *  acc;
     Geometry geo;
     geo.unitX=1;geo.unitY=1;geo.unitZ=1;
-    mexPrintf("%d \n",nfields);
+//     mexPrintf("%d \n",nfields);
      for(int ifield=0; ifield<nfields; ifield++) { 
          tmp=mxGetField(prhs[1],0,fieldnames[ifield]);
          switch(ifield){
@@ -251,13 +251,22 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // Set outputs and exit
     
 //     begin = clock();
+    mwSize* outsize;
+    outsize[0]=geo.nDetecV;
+    outsize[1]=geo.nDetecU;
+    outsize[2]= ncols;
 
-    
-    plhs[0] = mxCreateNumericMatrix(geo.nDetecU*geo.nDetecV, ncols, mxDOUBLE_CLASS, mxREAL);
+    plhs[0] = mxCreateNumericArray(3,outsize,mxDOUBLE_CLASS,mxREAL);
+//     plhs[0] = mxCreateNumericMatrix(geo.nDetecU,geo.nDetecV, ncols, mxDOUBLE_CLASS, mxREAL);
     double *outProjections = mxGetPr(plhs[0]);
     
+ 
+
     for (int i=0; i<ncols ;i++)
         memcpy(&outProjections[geo.nDetecU*geo.nDetecV*i], result[i], geo.nDetecU*geo.nDetecV*sizeof(double));
+    
+
+    
     for (int i=0; i<ncols ;i++)
         free (result[i]);
     free(result);
