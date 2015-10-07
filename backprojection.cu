@@ -68,11 +68,11 @@ __global__ void kernelPixelBackprojection(Geometry geo,
     if (idx>= geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ)
         return;
     
-    int indY = idx / (geo.nVoxelX*geo.nVoxelY);
-    int resY  = idx % (geo.nVoxelX*geo.nVoxelY);
-
-    int indZ= resY / geo.nVoxelX;
-    int indX= resY % geo.nVoxelX;
+ 
+    int indZ = idx / (geo.nVoxelY * geo.nVoxelX);
+    int resZ = idx % (geo.nVoxelY * geo.nVoxelX);
+    int indY = resZ / geo.nVoxelX;
+    int indX = resZ % geo.nVoxelX;
     // Geometric trasnformations:
     
     //Source

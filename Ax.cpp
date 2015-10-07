@@ -222,9 +222,10 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     double const * const alphas = static_cast<double const *>(mxGetData(ptralphas));
 
-    
-    
-    
+    // Additional test
+    if( (size_img[0]!=geo.nVoxelX)|(size_img[1]!=geo.nVoxelY)|(size_img[2]!=geo.nVoxelZ))
+     mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input",
+        "Image size and nVoxel are not same size.");
     
 
     size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(double);

@@ -72,11 +72,11 @@ testtime=0;
 
 
 
-Geometry.nVoxel=[128;128;128]*2;
+Geometry.nVoxel=[128;128;128];
 Geometry.sVoxel=[460;460;460]; 
 Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
-Geometry.nDetector=[256; 200];
+Geometry.nDetector=[256; 200]*2;
 Geometry.sDetector=[1024; 800];
 Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
 
@@ -86,35 +86,103 @@ Geometry.DSO = 1100;
 Geometry.offOrigin=[0; 0; 0];           
 Geometry.offDetector=[0; 0];
 Geometry.accuracy=0.1;
-%%
+
+%% Real image in the coords we like
 load img128
-% img=double(img);
-% ParamSetting;
-img1=ones(Geometry.nVoxel')*10;
-% img1(10:20,10:20,10:20)=10;
-img1(10:50,60:90,10:30)=0;
-% img1(1:128,1,1)=1:128;
-% img1(:,128,:)=img(:,64,:);
-img=img1;
+img=double(img);
+
+% [y, x, z]=...
+%    ndgrid(linspace(1,size(img,1),Geometry.nVoxel(1)),...
+%           linspace(1,size(img,2),Geometry.nVoxel(2)),...
+%           linspace(1,size(img,3),Geometry.nVoxel(3)));
+% imOut=interp3(img,x,y,z);
+% img=imOut;
+%% plot image
+%  plotImg(img,1)
+
+ %%
+ alpha=[0:0.5:359]*pi/180;
+%% Project
+tic
+b=Ax(img,Geometry,alpha);
+toc
 
 
-alpha=[0:360]*pi/180;
+%% plot projections
+% plotProj(b,alpha);
+
+%% Backproject
+
+% tic
+% x=Atb(b,Geometry,alpha);
+% toc
+
+%% plot img backprojected
+
+%  plotImg(x,1)
+
+
+
+
+%%
+
+notreally=CGLS_CBCT(b,Geometry,alpha,5);
+
+
+%%
+err=sum(abs(img(:)-notreally(:)));
+plotImg(abs(img/max(img(:))-notreally/max(notreally(:))),1)
+
+%%
+break
+
+%%
+%%
+%%
+%%
+%% Everything down here is just testing stuff
+
+%%
+% img(10:20,10:90,10:20)=max(img(:))*1.1;
+img=ones(Geometry.nVoxel')*10;
+% img(1:Geometry.nVoxel(1)/2,1:Geometry.nVoxel(2)/2,1:Geometry.nVoxel(3)/2)=5;
+img(1:50,1:60,1:end)=0;
+
+% alpha=[0:360]*pi/180;
 % alpha=[0,90]*pi/180+pi/2;
 % alpha=pi/4;
-% alpha=[0 0]*pi/180;
-% alpha=90 *pi/180;
+alpha=[1:90]*pi/180;
+% alpha=0 *pi/180;
+img=permute(img,[1 3 2]);
+% img(10:20,10:80,10:20)=max(img(:))*0;
+%%
+img=reshape(ones(Geometry.nVoxel(1)*Geometry.nVoxel(2),1),Geometry.nVoxel(1),Geometry.nVoxel(2));
+img=repmat(img,[1 1 Geometry.nVoxel(3)]);
+img(:,190:191,110:111)=10;
+%% This is the image
+
+for ii=Geometry.nVoxel(1):-10:1
+imagesc((squeeze(img(ii,:,:)))'); axis image; axis equal; colormap gray; colorbar; caxis([min(img(:)),max(img(:))]);set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
+xlabel('->Y');
+ylabel('->Z');
+title(['Source to Detector direction ->X : ',num2str(ii)]);
+drawnow
+end
+%% this si what I need to do to put it inside
+
+%%
 tic
 b=Ax(img,Geometry,alpha);
 toc
 %%
-% for i=1:numel(alpha)
-%     image=squeeze(b(:,:,i));
-%     figure(1); imagesc((image));axis image;  axis equal; colormap gray; colorbar; xlabel('-> U');ylabel('-> V');set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
-%     title(['Degree : ',num2str(alpha(i)*180/pi)]);
-%     pause(0.01);
-% end
+for i=1:numel(alpha)
+    image=squeeze(b(:,:,i));
+    figure(1); imagesc((image));axis image;  axis equal; colormap gray; colorbar; xlabel('-> U');ylabel('-> V');set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
+    title(['Degree : ',num2str(alpha(i)*180/pi)]);
+    pause(0.01);
+end
 
-
+break
 
 %% Validation
 % validation=0;
@@ -145,7 +213,7 @@ toc
 % break;
 %%
 for ii=Geometry.nVoxel(1):-1:1
-    imagesc((squeeze(x(ii,:,:)))); axis image; axis equal; colormap gray; colorbar; caxis([min(x(:)),max(x(:))]);set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
+    imagesc((squeeze(x(ii,:,:)))'); axis image; axis equal; colormap gray; colorbar; caxis([min(x(:)),max(x(:))]);set(gca,'XTick',[]);set(gca,'YTick',[]);set(gca,'YDir','normal');
     xlabel('->Y');
     ylabel('->Z');
     title(['Source to Detector direction ->X : ',num2str(ii)]);

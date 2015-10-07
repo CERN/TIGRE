@@ -82,7 +82,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 img[i+k*size_proj[1]+j*size_proj[0]*size_proj[1]]=(float)imgaux[k+i*size_proj[0]+j*size_proj[1]*size_proj[0]];    
     
 
-
+//   for (int i=0; i<size_proj[0]*size_proj[1]*size_proj2;i++)
+//       img[i]=(float)imgaux[i];
     
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
