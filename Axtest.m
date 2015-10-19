@@ -68,6 +68,9 @@
 %  
 %% Example of use
 close all
+clear
+addpath C:\Users\aabhca20\Documents\perceptually_uniform_colormaps
+%%
 testtime=0;
 
 
@@ -76,7 +79,7 @@ Geometry.nVoxel=[128;128;128];
 Geometry.sVoxel=[460;460;460]; 
 Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
-Geometry.nDetector=[256; 200]*2;
+Geometry.nDetector=[256; 200];
 Geometry.sDetector=[1024; 800];
 Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
 
@@ -87,21 +90,45 @@ Geometry.offOrigin=[0; 0; 0];
 Geometry.offDetector=[0; 0];
 Geometry.accuracy=0.1;
 
+%% P from matrix code?
+% clear Geometry
+% 
+% 
+Geometry.DSD = 1536;   
+Geometry.DSO = 1000;
+
+Geometry.nDetector=[512; 512];
+Geometry.dDetector=[0.8; 0.8];
+Geometry.sDetector=Geometry.nDetector.*Geometry.dDetector;
+
+Geometry.nVoxel=[256;256;256];
+Geometry.sVoxel=Geometry.nVoxel; 
+Geometry.dVoxel=[1; 1; 1];
+
+Geometry.offOrigin=[0;0;0];           
+Geometry.offDetector=[0.0001; 0];
+Geometry.accuracy=0.1;
+
+
+
 %% Real image in the coords we like
 load img128
 img=double(img);
 
-% [y, x, z]=...
-%    ndgrid(linspace(1,size(img,1),Geometry.nVoxel(1)),...
-%           linspace(1,size(img,2),Geometry.nVoxel(2)),...
-%           linspace(1,size(img,3),Geometry.nVoxel(3)));
-% imOut=interp3(img,x,y,z);
-% img=imOut;
+[y, x, z]=...
+   ndgrid(linspace(1,size(img,1),Geometry.nVoxel(1)),...
+          linspace(1,size(img,2),Geometry.nVoxel(2)),...
+          linspace(1,size(img,3),Geometry.nVoxel(3)));
+imOut=interp3(img,x,y,z);
+img=imOut;
 %% plot image
-%  plotImg(img,1)
+ plotImg(img,5)
 
  %%
- alpha=[0:0.5:359]*pi/180;
+ alpha=[0:1:359]*pi/180;
+ 
+ img=ones(Geometry.nVoxel');
+%  alpha=0;
 %% Project
 tic
 b=Ax(img,Geometry,alpha);
@@ -109,29 +136,41 @@ toc
 
 
 %% plot projections
-% plotProj(b,alpha);
+
+plotProj(b,alpha);
 
 %% Backproject
 
-% tic
-% x=Atb(b,Geometry,alpha);
-% toc
+tic
+x=Atb(b,Geometry,alpha);
+toc
 
 %% plot img backprojected
 
-%  plotImg(x,1)
+ plotImg(x,2)
 
 
 
 
 %%
+% 
+tic
+[res,err]=CGLS_CBCT(b,Geometry,alpha,6);
+toc
 
-notreally=CGLS_CBCT(b,Geometry,alpha,5);
+plot(err);
+break
+plotImg(res,1,3);
+
+%% Validate code comparing it to matrix
+
+load('projmatrix.mat')
+imshow((proj-b),[]);axis xy;colorbar
 
 
 %%
-err=sum(abs(img(:)-notreally(:)));
-plotImg(abs(img/max(img(:))-notreally/max(notreally(:))),1)
+% err=sum(abs(img(:)-notreally(:)));
+% plotImg(abs(img/max(img(:))-notreally/max(notreally(:))),1)
 
 %%
 break
