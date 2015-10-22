@@ -79,35 +79,35 @@ Geometry.nVoxel=[128;128;128];
 Geometry.sVoxel=[460;460;460]; 
 Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
-Geometry.nDetector=[256; 200];
-Geometry.sDetector=[1024; 800];
+Geometry.nDetector=[256;200];
+Geometry.sDetector=[ 1024;800];
 Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
 
 Geometry.DSD = 1500;   
 Geometry.DSO = 1100;
 
 Geometry.offOrigin=[0; 0; 0];           
-Geometry.offDetector=[0; 0];
+Geometry.offDetector=[0;0];
 Geometry.accuracy=0.1;
 
 %% P from matrix code?
 % clear Geometry
 % 
+% % 
+% Geometry.DSD = 1536;   
+% Geometry.DSO = 1000;
 % 
-Geometry.DSD = 1536;   
-Geometry.DSO = 1000;
-
-Geometry.nDetector=[512; 512];
-Geometry.dDetector=[0.8; 0.8];
-Geometry.sDetector=Geometry.nDetector.*Geometry.dDetector;
-
-Geometry.nVoxel=[256;256;256];
-Geometry.sVoxel=Geometry.nVoxel; 
-Geometry.dVoxel=[1; 1; 1];
-
-Geometry.offOrigin=[0;0;0];           
-Geometry.offDetector=[0.0001; 0];
-Geometry.accuracy=0.1;
+% Geometry.nDetector=[512; 512];
+% Geometry.dDetector=[0.8; 0.8];
+% Geometry.sDetector=Geometry.nDetector.*Geometry.dDetector;
+% 
+% Geometry.nVoxel=[256;256;256];
+% Geometry.sVoxel=Geometry.nVoxel; 
+% Geometry.dVoxel=[1; 1; 1];
+% 
+% Geometry.offOrigin=[0;0;0];           
+% Geometry.offDetector=[0.0001; 0];
+% Geometry.accuracy=0.1;
 
 
 
@@ -122,13 +122,13 @@ img=double(img);
 imOut=interp3(img,x,y,z);
 img=imOut;
 %% plot image
- plotImg(img,5)
+%  plotImg(img,5)
 
  %%
- alpha=[0:1:359]*pi/180;
+ alpha=[0:1:359]*pi/180+pi/2;
  
- img=ones(Geometry.nVoxel');
-%  alpha=0;
+%  img=ones(Geometry.nVoxel');
+%  alpha=-pi/2;
 %% Project
 tic
 b=Ax(img,Geometry,alpha);
@@ -138,16 +138,13 @@ toc
 %% plot projections
 
 plotProj(b,alpha);
-
+% 
 %% Backproject
-
-tic
-x=Atb(b,Geometry,alpha);
-toc
+% 
 
 %% plot img backprojected
 
- plotImg(x,2)
+%  plotImg(x,2,3)
 
 
 
@@ -155,13 +152,13 @@ toc
 %%
 % 
 tic
-[res,err]=CGLS_CBCT(b,Geometry,alpha,6);
+[res,err]=CGLS_CBCT(b,Geometry,alpha,100);
 toc
 
 plot(err);
 break
 plotImg(res,1,3);
-
+plotImg(img,1,3);
 %% Validate code comparing it to matrix
 
 load('projmatrix.mat')

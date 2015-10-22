@@ -228,15 +228,15 @@ void computeDeltas(Geometry geo, double alpha, Point3D* uvorigin, Point3D* delta
     //End point
     Point3D P,Pu0,Pv0;
     
-    P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*((double)(geo.nDetecV/2)+0.5-0);
-    Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-(double)(geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*((double)(geo.nDetecV/2)+0.5-0);  
-    Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*((double)(geo.nDetecV/2)+0.5-1);
+    P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*((double)(geo.nDetecV/2)-0.5-0);
+    Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-(double)(geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*((double)(geo.nDetecV/2)-0.5-0);  
+    Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*((double)(geo.nDetecV/2)-0.5-1);
     // Geomtric trasnformations:
     
     //1: Offset detector
        
     //P.x
-    P.y  =P.y+geo.offDetecU;      P.z  =P.z+geo.offDetecV;
+    P.y  =P.y  +geo.offDetecU;    P.z  =P.z  +geo.offDetecV;
     Pu0.y=Pu0.y+geo.offDetecU;    Pu0.z=Pu0.z+geo.offDetecV;
     Pv0.y=Pv0.y+geo.offDetecU;    Pv0.z=Pv0.z+geo.offDetecV;
     //S doesnt need to chagne

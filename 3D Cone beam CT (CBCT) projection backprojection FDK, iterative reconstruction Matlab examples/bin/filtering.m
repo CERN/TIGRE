@@ -39,7 +39,7 @@ for i=1:param.nProj
     if param.parker == 1
         proj(:,:,i) = fproj(end/2-param.nu/2+1:end/2+param.nu/2,:)/2/param.du*(2*pi/(180/param.dang))/2*(param.DSD/param.DSO);
     else
-        proj(:,:,i) = fproj(end/2-param.nu/2+1:end/2+param.nu/2,:)/2/param.du*(2*pi/param.nProj)/2*(param.DSD/param.DSO);
+        proj(:,:,i) = fproj(end/2-param.nu/2+1:end/2+param.nu/2,:)/2/param.du*(2*pi/  param.nProj   )/2*(param.DSD/param.DSO);
     end
 end
 

@@ -6,6 +6,9 @@ ParamSetting;
 % filter='ram-lak','shepp-logan','cosine', 'hamming', 'hann' : (ramp + additional filter)
 param.filter='hann'; 
 load proj.mat
+proj=permute(b,[2 1 3]);
+
+param.nProj = length(param.deg);
 
 proj_filtered = filtering(proj,param);
 Reconimg = CTbackprojection(proj_filtered, param);

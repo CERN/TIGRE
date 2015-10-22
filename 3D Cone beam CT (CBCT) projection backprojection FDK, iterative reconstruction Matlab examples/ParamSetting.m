@@ -25,11 +25,11 @@ param.DSO = 1100;	%  X-ray source to object axis distance
 % angle setting
 param.dir = -1;   % gantry rotating direction (clock wise/ counter clockwise)
 param.dang = 1; % angular step size (deg)
-param.deg = 0:param.dang:210; % you can change
+param.deg = 0:param.dang:359; % you can change
 param.deg = param.deg*param.dir;
 param.nProj = length(param.deg);
 
-param.parker = 1; % data with 360 deg -> param.parker = 0 , data less than 360 deg -> param.parker=1 
+param.parker = 0; % data with 360 deg -> param.parker = 0 , data less than 360 deg -> param.parker=1 
 
 % % % % % % Confirm your parameters % % % % % % %
  
@@ -59,7 +59,7 @@ param.interptype = 'linear'; % 'linear', 'nearest'
 % You don't need to install CUDA, but install latest graphics driver.
 % only Nvidia GPU cards can use this. otherwise please "param.gpu=0"
 % This option is semi-GPU code using built-in Matlab GPU functions: several times faster than CPU
-param.gpu = 1;
+param.gpu = 0;
 
 
 

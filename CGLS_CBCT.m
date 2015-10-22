@@ -5,6 +5,7 @@ d=proj;
 r0=Atb(proj,geo,angles);
 t=Ax(r0,geo,angles);
 
+
 p=r0;
 
 errorL2=zeros(niter,1);
@@ -27,6 +28,7 @@ for ii=1:niter
     if mod(ii,50)==0
         disp(['Iteration: ',num2str(ii)]);
     end
+    
 end
 
 

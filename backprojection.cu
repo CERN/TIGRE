@@ -80,11 +80,22 @@ __global__ void kernelPixelBackprojection(Geometry geo,
      S.x=geo.DSO;
      S.y=geo.offDetecU/geo.dDetecU;
      S.z=geo.offDetecV/geo.dDetecV;
-     
+     // "XYZ" in the warped coordinate system of the current point
      Point3D P;
      P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
      P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y);
      P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
+     
+     
+     // compute the wigth for the backprojection. This needs the X and Y coords on the real workd of the image
+     double weigth;
+     double realx,realy;
+     realx=((-geo.sVoxelX/2+geo.dVoxelX/2)+indX*geo.dVoxelX);
+     realy=((-geo.sVoxelY/2+geo.dVoxelY/2)+indY*geo.dVoxelY);
+     
+     weigth=geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha);
+     weigth=weigth/geo.DSO;
+     weigth=1/(weigth*weigth);
      
      double vectX,vectY,vectZ;
      vectX=(P.x -S.x); 
@@ -92,39 +103,21 @@ __global__ void kernelPixelBackprojection(Geometry geo,
      vectZ=(P.z -S.z); 
      
      
+     // Get the coordinates in the projection where the mid point of the voxel is projected.
      double t=(geo.DSO-geo.DSD /*-DDO*/ - S.x)/vectX;
      double y,z;
      y=vectY*t+S.y;
      z=vectZ*t+S.z;
-     
-      double length=sqrt((geo.DSD)*(geo.DSD)+
-                        (y-S.y)*(y-S.y)*geo.dDetecU*geo.dDetecU+
-                        (z-S.z)*(z-S.z)*geo.dDetecV*geo.dDetecV);
-      
-     y=(y-(geo.offDetecU/geo.dDetecU-(geo.nDetecU/2-0.5)));
-     z=(z-(geo.offDetecV/geo.dDetecV-(geo.nDetecV/2-0.5)));
+     double u,v;
+     u=(y-(geo.offDetecU/geo.dDetecU-(geo.nDetecU/2-0.5)));
+     v=(z-(geo.offDetecV/geo.dDetecV-(geo.nDetecV/2-0.5)));
      
      
-    
-//      vectX=(-geo.DSD)/length; 
-//      vectY=(y -S.y)/length; 
-//      vectZ=(z -S.z)/length; 
-//      
-//      
-//      double deltalength=sqrt((vectX*geo.accuracy*geo.dVoxelX)*(vectX*geo.accuracy*geo.dVoxelX)+
-//                 (vectY*geo.accuracy*geo.dVoxelY)*(vectY*geo.accuracy*geo.dVoxelY)+
-//                 (vectZ*geo.accuracy*geo.dVoxelZ)*(vectZ*geo.accuracy*geo.dVoxelZ) );
-//     
-     
-     image[idx]+=tex3D(tex, y +0.5 ,
-                            z +0.5 , 
-                            indAlpha                                           +0.5)*length/geo.DSD;
-//                            /sqrt((geo.DSO-geo.DSD-S.x)*(geo.DSO-geo.DSD-S.x)+(y-S.y)*(y-S.y)+(z-S.z)*(z-S.z))
-//                             *geo.maxLength;
-//      image[idx]=deltalength;
-    
-//     image[idx]=y ;
-    
+     // Get interpolated value in the current projection   
+
+     image[idx]+=tex3D(tex, u +0.5 ,
+                            v +0.5 , 
+                            indAlpha                                           +0.5)*weigth;
 }
     
     
@@ -196,10 +189,9 @@ int backprojection(float const * const projections, Geometry geo, double* result
     cudaCheckErrors("cudaMalloc fail");
     
     
-    //geo.maxLength=computeMaxLength(geo);
     Point3D deltaX,deltaY,deltaZ,xyzOrigin;
     for (int i=0;i<nalpha;i++){
-        geo.alpha=alphas[i];
+        geo.alpha=-alphas[i];
         computeDeltasCube(geo,geo.alpha,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
         kernelPixelBackprojection<<<(geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>
                 (geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin);
