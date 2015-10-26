@@ -133,7 +133,7 @@ img=imOut;
 tic
 b=Ax(img,Geometry,alpha);
 toc
-
+break
 
 %% plot projections
 
@@ -141,18 +141,38 @@ plotProj(b,alpha);
 % 
 %% Backproject
 
-b=Atb(b,Geometry,alpha);
+img2=Atb(b,Geometry,alpha);
 
 % 
 
 %% plot img backprojected
 
-%  plotImg(x,2,3)
+ plotImg(x,2,3)
+
+
+ 
+ 
+ %% Lets test offsets
+ 
+  alpha=[0:10:359]*pi/180;
+  alpha=0;
+Geometry.offOrigin=[0;0; 0];           
+Geometry.offDetector=[0;50];
+img=ones(Geometry.nVoxel');
+
+
+ b=Ax(img,Geometry,alpha);
+ 
+
+ img2=Atb(b,Geometry,alpha);
+%  img2(img2>0)=1;
+
+ break
+ plotProj(b,alpha);
 
 
 
-
-%%
+%% ALGORITMS!
 % 
 % tic
 % [res,err]=CGLS_CBCT(b,Geometry,alpha,100);

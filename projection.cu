@@ -98,6 +98,8 @@ __global__ void kernelPixelDetector( Geometry geo,
     double deltalength=sqrt((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
                             (vectY*geo.dVoxelY)*(vectY*geo.dVoxelY)+
                             (vectZ*geo.dVoxelZ)*(vectZ*geo.dVoxelZ) );
+    
+    
     for (i=0; i<=length; i=i+1){
         x=vectX*(double)i+source.x;
         y=vectY*(double)i+source.y;
@@ -114,6 +116,9 @@ int projection(float const * const img, Geometry geo, double** result,double con
 
    
     // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
+    
+    // If you have another GPU and want to use this code, please change it, but make sure you know that is compatible.
+    // also change MAXTREADS
     
     int deviceCount = 0;
     cudaGetDeviceCount(&deviceCount);

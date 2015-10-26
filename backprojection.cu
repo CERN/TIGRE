@@ -78,8 +78,8 @@ __global__ void kernelPixelBackprojection(Geometry geo,
     //Source
      Point3D S;   
      S.x=geo.DSO;
-     S.y=geo.offDetecU/geo.dDetecU;
-     S.z=geo.offDetecV/geo.dDetecV;
+     S.y=-geo.offDetecU/geo.dDetecU;
+     S.z=-geo.offDetecV/geo.dDetecV;
      // "XYZ" in the warped coordinate system of the current point
      Point3D P;
      P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
@@ -87,11 +87,11 @@ __global__ void kernelPixelBackprojection(Geometry geo,
      P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
      
      
-     // compute the wigth for the backprojection. This needs the X and Y coords on the real workd of the image
+     // compute the weigth for the backprojection. This needs the X and Y coords on the real workd of the image
      double weigth;
      double realx,realy;
-     realx=((-geo.sVoxelX/2+geo.dVoxelX/2)+indX*geo.dVoxelX);
-     realy=((-geo.sVoxelY/2+geo.dVoxelY/2)+indY*geo.dVoxelY);
+     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +geo.offOrigX;
+     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +geo.offOrigY;
      
      weigth=geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha);
      weigth=weigth/geo.DSO;
@@ -109,8 +109,8 @@ __global__ void kernelPixelBackprojection(Geometry geo,
      y=vectY*t+S.y;
      z=vectZ*t+S.z;
      double u,v;
-     u=(y-(geo.offDetecU/geo.dDetecU-(geo.nDetecU/2-0.5)));
-     v=(z-(geo.offDetecV/geo.dDetecV-(geo.nDetecV/2-0.5)));
+     u=y+geo.nDetecU/2-0.5;
+     v=z+geo.nDetecV/2-0.5;
      
      
      // Get interpolated value in the current projection   
@@ -118,6 +118,7 @@ __global__ void kernelPixelBackprojection(Geometry geo,
      image[idx]+=tex3D(tex, u +0.5 ,
                             v +0.5 , 
                             indAlpha                                           +0.5)*weigth;
+    
 }
     
     
@@ -225,39 +226,25 @@ void computeDeltasCube(Geometry geo, double alpha, Point3D* xyzorigin, Point3D* 
      // Rotate image (this is equivalent of rotating the source and detector)
      
      Point3D P, Px,Py,Pz; // We need other auxiliar variables to be able to perform the rotation, or we would overwrite values!
-     P.x =P0.x *cos(alpha) -P0.y*sin(alpha);       P.y =P0.x *sin(alpha) +P0.y*cos(alpha);      P.z =P0.z;
+     P.x =P0.x *cos(alpha)-P0.y *sin(alpha);       P.y =P0.x *sin(alpha)+P0.y *cos(alpha);      P.z =P0.z;
      Px.x=Px0.x*cos(alpha)-Px0.y*sin(alpha);       Px.y=Px0.x*sin(alpha)+Px0.y*cos(alpha);      Px.z=Px0.z;
      Py.x=Py0.x*cos(alpha)-Py0.y*sin(alpha);       Py.y=Py0.x*sin(alpha)+Py0.y*cos(alpha);      Py.z=Py0.z;
      Pz.x=Pz0.x*cos(alpha)-Pz0.y*sin(alpha);       Pz.y=Pz0.x*sin(alpha)+Pz0.y*cos(alpha);      Pz.z=Pz0.z;
      
      // Scale coords so detector pixels are 1x1
      
-     P.z =P.z /geo.dDetecV;          P.y =P.y /geo.dDetecU;
-     Px.z=Px.z/geo.dDetecV;          Px.y=Px.y/geo.dDetecU;
-     Py.z=Py.z/geo.dDetecV;          Py.y=Py.y/geo.dDetecU;
-     Pz.z=Pz.z/geo.dDetecV;          Pz.y=Pz.y/geo.dDetecU;
+     P.z =P.z /geo.dDetecV;                          P.y =P.y/geo.dDetecU;
+     Px.z=Px.z/geo.dDetecV;                          Px.y=Px.y/geo.dDetecU;
+     Py.z=Py.z/geo.dDetecV;                          Py.y=Py.y/geo.dDetecU;
+     Pz.z=Pz.z/geo.dDetecV;                          Pz.y=Pz.y/geo.dDetecU;
      
-     *xyzorigin=P;
+    
      deltaX->x=Px.x-P.x;   deltaX->y=Px.y-P.y;    deltaX->z=Px.z-P.z;
      deltaY->x=Py.x-P.x;   deltaY->y=Py.y-P.y;    deltaY->z=Py.z-P.z;
      deltaZ->x=Pz.x-P.x;   deltaZ->y=Pz.y-P.y;    deltaZ->z=Pz.z-P.z;
      
+     
+     P.z =P.z-geo.offDetecV/geo.dDetecV;          P.y =P.y-geo.offDetecU/geo.dDetecU;
+     *xyzorigin=P;
 
-}
-//IMPORTANT NOTE: this maxlength is not the same as the one in projection.cu!!!
-double computeMaxLength(Geometry geo){ 
-     Point3D S;   
-     S.x=geo.DSO;
-     S.y=0;
-     S.z=0;
-     
-     
-     Point3D D;
-     D.x=geo.DSO-geo.DSD;
-     D.y=geo.nDetecU/2-0.5+geo.offDetecU/geo.dDetecU;
-     D.z=geo.nDetecV/2-0.5+geo.offDetecV/geo.dDetecV;
-
-     return sqrt((D.x-S.x)*(D.x-S.x)+(D.y-S.y)*(D.y-S.y)+(D.z-S.z)*(D.z-S.z));
-     
-                 
 }
