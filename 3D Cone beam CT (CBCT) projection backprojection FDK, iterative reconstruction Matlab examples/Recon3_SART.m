@@ -5,7 +5,7 @@ ParamSetting;
 %% Recon case 3 -  Iterative reconstruction: SART
 load proj.mat
 param.filter = 'none';
-
+param.gpu=1;
 img = zeros(param.nx, param.ny, param.nz,'single');
 
 Norimg = CTbackprojection(CTprojection(ones(param.nx,param.ny,param.nz,'single'),param), param);

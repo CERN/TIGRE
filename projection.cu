@@ -102,14 +102,10 @@ __global__ void kernelPixelDetector( Geometry geo,
         x=vectX*(double)i+source.x;
         y=vectY*(double)i+source.y;
         z=vectZ*(double)i+source.z;
-        // Make sure we have an image for the index we are looking for. Check if out of image.
-        //if(x<0 | y<0 | z<0 | x> (double)geo.nVoxelX-1.0 | y> (double)geo.nVoxelY-1.0 | z> (double)geo.nVoxelZ-1.0){
-        //    continue;   
-        //}
+        
         sum += (double)tex3D(tex, x+0.5, y+0.5, z+0.5);
     }
-    detector[idx]=sum*deltalength;//*(sqrt((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z))/geo.maxLength);
-//     detector[idx]=geo.accuracy;
+    detector[idx]=sum*deltalength;
 }
 
 
