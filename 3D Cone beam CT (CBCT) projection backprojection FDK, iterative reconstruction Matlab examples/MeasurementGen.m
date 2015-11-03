@@ -4,7 +4,7 @@ ParamSetting;
 param.gpu=0;
 %% Make measurement - projection
 load img128.mat % Ground-truth image
-
+img=ones(512,512,512);
 NoiseOn = 0;    % 0- without noise, 1- with noise
 
 proj = CTprojection(img,param);

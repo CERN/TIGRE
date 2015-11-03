@@ -12,13 +12,13 @@ typedef struct {
     int   nVoxelX, nVoxelY, nVoxelZ;
     double sVoxelX, sVoxelY, sVoxelZ;
     double dVoxelX, dVoxelY, dVoxelZ;
-    double offOrigX,offOrigY,offOrigZ;
+    double *offOrigX,*offOrigY,*offOrigZ;
     double DSO;
     // Parameters  of the Detector.
     int   nDetecU, nDetecV;
     double sDetecU, sDetecV;
     double dDetecU, dDetecV;
-    double offDetecU, offDetecV;
+    double *offDetecU, *offDetecV;
     double DSD;
     
     // The base unit we are working with in mm. 
@@ -41,6 +41,5 @@ typedef struct{
     double z;
 }Point3D;
 int backprojection(float const * const projections, Geometry geo, double* result,double const * const alphas,int nalpha);
-void computeDeltasCube(Geometry geo, double alpha, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ);
-double computeMaxLength(Geometry geo);
+void computeDeltasCube(Geometry geo, double alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ);
 #endif

@@ -56,13 +56,15 @@
  **/
 texture<float, cudaTextureType3D , cudaReadModeElementType> tex; 
     
-__global__ void kernelPixelBackprojection(Geometry geo, 
+__global__ void kernelPixelBackprojection(const Geometry geo, 
                                             double* image,
                                             int indAlpha,
                                             Point3D deltaX ,
                                             Point3D deltaY, 
                                             Point3D deltaZ,
-                                            Point3D xyzOrigin){
+                                            Point3D xyzOrigin,
+                                            Point3D xyzOffset,
+                                            Point3D uv0Offset){
     //Make sure we dont go out of bounds
     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (idx>= geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ)
@@ -78,8 +80,8 @@ __global__ void kernelPixelBackprojection(Geometry geo,
     //Source
      Point3D S;   
      S.x=geo.DSO;
-     S.y=-geo.offDetecU/geo.dDetecU;
-     S.z=-geo.offDetecV/geo.dDetecV;
+     S.y=-uv0Offset.x/geo.dDetecU;
+     S.z=-uv0Offset.y/geo.dDetecV;
      // "XYZ" in the warped coordinate system of the current point
      Point3D P;
      P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
@@ -90,8 +92,8 @@ __global__ void kernelPixelBackprojection(Geometry geo,
      // compute the weigth for the backprojection. This needs the X and Y coords on the real workd of the image
      double weigth;
      double realx,realy;
-     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +geo.offOrigX;
-     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +geo.offOrigY;
+     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   -xyzOffset.x;
+     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   -xyzOffset.y;
      
      weigth=geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha);
      weigth=weigth/geo.DSO;
@@ -155,7 +157,6 @@ int backprojection(float const * const projections, Geometry geo, double* result
     
     // copy data to CUDA memory
     cudaArray *d_projectiondata = 0;
-
     const cudaExtent extent = make_cudaExtent(geo.nDetecU,geo.nDetecV,nalpha);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
 	cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent);
@@ -190,12 +191,18 @@ int backprojection(float const * const projections, Geometry geo, double* result
     cudaCheckErrors("cudaMalloc fail");
     
     
-    Point3D deltaX,deltaY,deltaZ,xyzOrigin;
+    Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec;
     for (int i=0;i<nalpha;i++){
         geo.alpha=-alphas[i];
-        computeDeltasCube(geo,geo.alpha,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
+        computeDeltasCube(geo,geo.alpha,i,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
+        
+        offOrig.x=geo.offOrigX[i];
+        offOrig.y=geo.offOrigY[i];
+        offDetec.x=geo.offDetecU[i];
+        offDetec.y=geo.offDetecV[i];
+        
         kernelPixelBackprojection<<<(geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>
-                (geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin);
+                (geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec);
         cudaCheckErrors("Kernel fail");
     }
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
@@ -210,13 +217,13 @@ int backprojection(float const * const projections, Geometry geo, double* result
     return 0;
     
 }
-void computeDeltasCube(Geometry geo, double alpha, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ){
+void computeDeltasCube(Geometry geo, double alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ){
     
      Point3D P0, Px0,Py0,Pz0;
      // Get coords of Img(0,0,0)
-     P0.x=-(geo.sVoxelX/2-geo.dVoxelX/2)-geo.offOrigX;
-     P0.y=-(geo.sVoxelY/2-geo.dVoxelY/2)-geo.offOrigY;
-     P0.z=-(geo.sVoxelZ/2-geo.dVoxelZ/2)-geo.offOrigZ;
+     P0.x=-(geo.sVoxelX/2-geo.dVoxelX/2)+geo.offOrigX[i];
+     P0.y=-(geo.sVoxelY/2-geo.dVoxelY/2)+geo.offOrigY[i];
+     P0.z=-(geo.sVoxelZ/2-geo.dVoxelZ/2)+geo.offOrigZ[i];
      
      // Get coors from next voxel in each direction
      Px0.x=P0.x+geo.dVoxelX;       Py0.x=P0.x;                Pz0.x=P0.x;
@@ -244,7 +251,7 @@ void computeDeltasCube(Geometry geo, double alpha, Point3D* xyzorigin, Point3D* 
      deltaZ->x=Pz.x-P.x;   deltaZ->y=Pz.y-P.y;    deltaZ->z=Pz.z-P.z;
      
      
-     P.z =P.z-geo.offDetecV/geo.dDetecV;          P.y =P.y-geo.offDetecU/geo.dDetecU;
+     P.z =P.z-geo.offDetecV[i]/geo.dDetecV;          P.y =P.y-geo.offDetecU[i]/geo.dDetecU;
      *xyzorigin=P;
 
 }

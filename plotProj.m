@@ -1,8 +1,8 @@
 function plotProj(proj,alpha)
-
+figure();
 for ii=1:size(proj,3)
     image=squeeze(proj(:,:,ii));
-    figure(1); imagesc((image));
+     imagesc((image));
     
     axis image;  
     axis equal; 

@@ -66,9 +66,9 @@
 %  
 %  
 %  
-%% Example of use
-close all
-clear
+% %% Example of use
+% close all
+% clear
 addpath C:\Users\aabhca20\Documents\perceptually_uniform_colormaps
 %%
 testtime=0;
@@ -88,12 +88,12 @@ Geometry.DSO = 1100;
 
 Geometry.offOrigin=[0; 0; 0];           
 Geometry.offDetector=[0;0];
-Geometry.accuracy=0.1;
+Geometry.accuracy=1;
 
 %% P from matrix code?
 % clear Geometry
+
 % 
-% % 
 % Geometry.DSD = 1536;   
 % Geometry.DSO = 1000;
 % 
@@ -101,16 +101,16 @@ Geometry.accuracy=0.1;
 % Geometry.dDetector=[0.8; 0.8];
 % Geometry.sDetector=Geometry.nDetector.*Geometry.dDetector;
 % 
-% Geometry.nVoxel=[256;256;256];
+% Geometry.nVoxel=[256;256;256]*2;
 % Geometry.sVoxel=Geometry.nVoxel; 
 % Geometry.dVoxel=[1; 1; 1];
 % 
 % Geometry.offOrigin=[0;0;0];           
-% Geometry.offDetector=[0.0001; 0];
-% Geometry.accuracy=0.1;
-
-
-
+% Geometry.offDetector=[0; 0];
+% Geometry.accuracy=1;
+% % 
+% [P,~] = xread('C:\VOL_CT_modified\rando_head\');
+% alpha=
 %% Real image in the coords we like
 load img128
 img=double(img);
@@ -124,48 +124,40 @@ img=imOut;
 %% plot image
 %  plotImg(img,5)
 
- %%
- alpha=[0:1:359]*pi/180+pi/2;
+
  
 %  img=ones(Geometry.nVoxel');
 %  alpha=-pi/2;
 %% Project
-tic
-b=Ax(img,Geometry,alpha);
-toc
-break
-
-%% plot projections
-
-plotProj(b,alpha);
-% 
-%% Backproject
-
-img2=Atb(b,Geometry,alpha);
-
-% 
-
-%% plot img backprojected
-
- plotImg(x,2,3)
-
-
  
- 
- %% Lets test offsets
- 
-  alpha=[0:10:359]*pi/180;
-  alpha=0;
-Geometry.offOrigin=[0;0; 0];           
-Geometry.offDetector=[0;50];
-img=ones(Geometry.nVoxel');
-
-
+  alpha=[0:1:359]*pi/180;
+%  tic;
  b=Ax(img,Geometry,alpha);
- 
+%  toc;
+%  tic
+%  imgFDK=Atb(b,Geometry,alpha);
+% toc
+%  break
+ maxb=max(b(:));
+bnoise=imnoise(b/maxb,'poisson');
+bnoise=bnoise.*maxb;
+b=bnoise;
+% 
+% 
+%  %FDK
+%  tic
+% Geometry.filter='ram-lak'; 
+% b_filt = filtering(b,Geometry,alpha); % Not sure if offsets are good in here
+% Geometry=rmfield(Geometry,'filter');
+% imgFDK=Atb(b_filt,Geometry,alpha);
+% toc
 
- img2=Atb(b,Geometry,alpha);
-%  img2(img2>0)=1;
+tic
+[imgCGLS,errCGLS]=CGLS_CBCT(b,Geometry,alpha,60);
+toc
+% tic
+% [imgSART,errSART]=SART_CBCT(b,Geometry,alpha,30);
+% toc
 
  break
  plotProj(b,alpha);
@@ -174,11 +166,11 @@ img=ones(Geometry.nVoxel');
 
 %% ALGORITMS!
 % 
-% tic
-% [res,err]=CGLS_CBCT(b,Geometry,alpha,100);
-% toc
 tic
-[res,err]=SART_CBCT(b,Geometry,alpha,100);
+[res,err]=CGLS_CBCT(b,Geometry,alpha,60);
+toc
+tic
+[res,err]=SART_CBCT(b,Geometry,alpha,10);
 toc
 
 plot(err);

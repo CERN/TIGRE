@@ -2,17 +2,17 @@
 
 % % % % % % Confirm your parameters % % % % % % %
 
-param.nx = 128; % number of voxels
-param.ny = 128;
-param.nz = 128;
+param.nx = 128*4; % number of voxels
+param.ny = 128*4;
+param.nz = 128*4;
 
 param.sx = 460; % mm (real size)
 param.sy = 460; % mm
 param.sz = 460; % mm
 
 %The real detector panel pixel density (number of pixels)
-param.nu = 256;		% number of pixels
-param.nv = 200;
+param.nu = 256*2;		% number of pixels
+param.nv = 512;
 
 % Detector setting (real size)
 param.su = 1024;	% mm (real size)
@@ -25,7 +25,7 @@ param.DSO = 1100;	%  X-ray source to object axis distance
 % angle setting
 param.dir = -1;   % gantry rotating direction (clock wise/ counter clockwise)
 param.dang = 1; % angular step size (deg)
-param.deg = 0:param.dang:359; % you can change
+param.deg = 0:param.dang:5; % you can change
 param.deg = param.deg*param.dir;
 param.nProj = length(param.deg);
 

@@ -6,7 +6,7 @@ ParamSetting;
 % filter='ram-lak','shepp-logan','cosine', 'hamming', 'hann' : (ramp + additional filter)
 param.filter='hann'; 
 load proj.mat
-proj=permute(b,[2 1 3]);
+% proj=permute(proj,[2 1 3]);
 
 param.nProj = length(param.deg);
 

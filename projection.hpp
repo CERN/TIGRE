@@ -12,13 +12,13 @@ typedef struct {
     int   nVoxelX, nVoxelY, nVoxelZ;
     double sVoxelX, sVoxelY, sVoxelZ;
     double dVoxelX, dVoxelY, dVoxelZ;
-    double offOrigX,offOrigY,offOrigZ;
+    double *offOrigX,*offOrigY,*offOrigZ;
     double DSO;
     // Parameters  of the Detector.
     int   nDetecU, nDetecV;
     double sDetecU, sDetecV;
     double dDetecU, dDetecV;
-    double offDetecU, offDetecV;
+    double *offDetecU, *offDetecV;
     double DSD;
     
     // The base unit we are working with in mm. 
@@ -42,7 +42,7 @@ typedef struct{
 }Point3D;
 int projection(float const * const img, Geometry geo, double** result,double const * const alphas,int nalpha);
 double computeMaxLength(Geometry geo, double alpha);
-void computeDeltas(Geometry geo, double alpha, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
+void computeDeltas(Geometry geo, double alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 // below, not used
 Geometry nomralizeGeometryImage(Geometry geo);
 #endif
