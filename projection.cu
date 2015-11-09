@@ -62,7 +62,8 @@ __global__ void kernelPixelDetector( Geometry geo,
                                     Point3D source ,
                                     Point3D deltaU, 
                                     Point3D deltaV,
-                                    Point3D uvOrigin){
+                                    Point3D uvOrigin,
+                                    double maxdist){
    
     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (idx>= geo.nDetecU* geo.nDetecV)
@@ -89,17 +90,17 @@ __global__ void kernelPixelDetector( Geometry geo,
     vectX=(P.x -source.x)/(length); 
     vectY=(P.y -source.y)/(length); 
     vectZ=(P.z -source.z)/(length);
+ 
     
-//     //here comes the deal
+//     //Integrate over the line
     double x,y,z;
     double sum=0;
     double i;
     
-    double deltalength=sqrt((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
-                            (vectY*geo.dVoxelY)*(vectY*geo.dVoxelY)+
-                            (vectZ*geo.dVoxelZ)*(vectZ*geo.dVoxelZ) );
+    
+    
 
-    for (i=0; i<=length; i=i+1){
+    for (i=floor(maxdist); i<=length; i=i+1){
         x=vectX*(double)i+source.x;
         y=vectY*(double)i+source.y;
         z=vectZ*(double)i+source.z;
@@ -107,6 +108,9 @@ __global__ void kernelPixelDetector( Geometry geo,
         sum += (double)tex3D(tex, x+0.5, y+0.5, z+0.5);
 
     }
+    double deltalength=sqrt((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
+                            (vectY*geo.dVoxelY)*(vectY*geo.dVoxelY)+
+                            (vectZ*geo.dVoxelZ)*(vectZ*geo.dVoxelZ) );
     detector[idx]=sum*deltalength;
 }
 
@@ -181,14 +185,16 @@ int projection(float const * const img, Geometry geo, double** result,double con
     
 
     Point3D source, deltaU, deltaV, uvOrigin;
-  
+    double maxdist;
     for (int i=0;i<nalpha;i++){
         
         geo.alpha=alphas[i];
+        //precomute distances for faster execution
+        maxdist=maxDistanceCubeXY(geo,geo.alpha,i);
         //Precompute per angle constant stuff for speed
         computeDeltas(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Ray tracing!  
-        kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin);
+        kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,maxdist);
       
 
         cudaCheckErrors("Kernel fail");
@@ -289,9 +295,20 @@ void computeDeltas(Geometry geo, double alpha,int i, Point3D* uvorigin, Point3D*
     *source=S2;
 }
 
+double maxDistanceCubeXY(Geometry geo, double alpha,int i){
+    ///////////
+    // Compute initial "t" so we access safely as less as out of bounds as possible.
+    //////////
+    
+    
+    double maxCubX,maxCubY;
+    // Forgetting Z, compute mas distance: diagonal+offset
+    maxCubX=(geo.sVoxelX/2+ abs(geo.offOrigX[i]))/geo.dVoxelX;
+    maxCubY=(geo.sVoxelY/2+ abs(geo.offOrigY[i]))/geo.dVoxelY;
 
+    return geo.DSO/geo.dVoxelX-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
 
-
+}
 
 /////////////////////
 ///////////////////// The code below is not used.

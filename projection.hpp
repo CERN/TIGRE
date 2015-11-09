@@ -43,6 +43,9 @@ typedef struct{
 int projection(float const * const img, Geometry geo, double** result,double const * const alphas,int nalpha);
 double computeMaxLength(Geometry geo, double alpha);
 void computeDeltas(Geometry geo, double alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
+
+double maxDistanceCubeXY(Geometry geo, double alpha,int i);
+
 // below, not used
 Geometry nomralizeGeometryImage(Geometry geo);
 #endif

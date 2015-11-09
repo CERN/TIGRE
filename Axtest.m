@@ -93,22 +93,22 @@ Geometry.accuracy=1;
 %% P from matrix code?
 % clear Geometry
 
+
+Geometry.DSD = 1536;   
+Geometry.DSO = 1000;
+
+Geometry.nDetector=[512; 512];
+Geometry.dDetector=[0.8; 0.8];
+Geometry.sDetector=Geometry.nDetector.*Geometry.dDetector;
+
+Geometry.nVoxel=[256;256;256];
+Geometry.sVoxel=Geometry.nVoxel; 
+Geometry.dVoxel=[1; 1; 1];
+
+Geometry.offOrigin=[0;0;0];           
+Geometry.offDetector=[0; 0];
+Geometry.accuracy=1;
 % 
-% Geometry.DSD = 1536;   
-% Geometry.DSO = 1000;
-% 
-% Geometry.nDetector=[512; 512];
-% Geometry.dDetector=[0.8; 0.8];
-% Geometry.sDetector=Geometry.nDetector.*Geometry.dDetector;
-% 
-% Geometry.nVoxel=[256;256;256]*2;
-% Geometry.sVoxel=Geometry.nVoxel; 
-% Geometry.dVoxel=[1; 1; 1];
-% 
-% Geometry.offOrigin=[0;0;0];           
-% Geometry.offDetector=[0; 0];
-% Geometry.accuracy=1;
-% % 
 % [P,~] = xread('C:\VOL_CT_modified\rando_head\');
 % alpha=
 %% Real image in the coords we like
@@ -131,18 +131,21 @@ img=imOut;
 %% Project
  
   alpha=[0:1:359]*pi/180;
-%  tic;
+%  alpha=0;
+ tic;
+ for ii=1:10
  b=Ax(img,Geometry,alpha);
-%  toc;
+ end
+ toc;
 %  tic
 %  imgFDK=Atb(b,Geometry,alpha);
 % toc
-%  break
- maxb=max(b(:));
-bnoise=imnoise(b/maxb,'poisson');
-bnoise=bnoise.*maxb;
-b=bnoise;
-% 
+ break
+maxb=max(b(:));
+% bnoise=imnoise(b/maxb,'poisson');
+% bnoise=bnoise.*maxb;
+% b=bnoise;
+% % 
 % 
 %  %FDK
 %  tic
