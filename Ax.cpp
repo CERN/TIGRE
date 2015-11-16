@@ -1,5 +1,4 @@
-
-/**
+*
  * @file trilinear.cpp
  * @brief MEX gateway for trilinear texture memory interpolation.
  * author: Ander Biguri ander.biguri@gmail.com

@@ -48,7 +48,7 @@
 %              |                             | 
 %              |                             | 
 %  Centered    |                             | 
-%    at O      |      +--------+             |
+%    at O      A V    +--------+             |
 %              |     /        /|             |
 %     A Z      |    /        / |*D           |
 %     |        |   +--------+  |             |
@@ -56,8 +56,8 @@
 %     |        |   |     *O |  +             |
 %     *--->y   |   |        | /              |
 %    /         |   |        |/               |
-%   V X        |   +--------+                |
-%              |-----------------------------|
+%   V X        |   +--------+        U       |
+%              .--------------------->-------|
 %     
 %            *S
 %  
@@ -75,20 +75,20 @@ testtime=0;
 
 
 
-Geometry.nVoxel=[128;128;128];
-Geometry.sVoxel=[460;460;460]; 
-Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
-
-Geometry.nDetector=[256;200];
-Geometry.sDetector=[ 1024;800];
-Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
-
-Geometry.DSD = 1500;   
-Geometry.DSO = 1100;
-
-Geometry.offOrigin=[0; 0; 0];           
-Geometry.offDetector=[0;0];
-Geometry.accuracy=1;
+% Geometry.nVoxel=[128;128;128];
+% Geometry.sVoxel=[460;460;460]; 
+% Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
+% 
+% Geometry.nDetector=[128;128];
+% Geometry.sDetector=[ 1024;800];
+% Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
+% 
+% Geometry.DSD = 1500;   
+% Geometry.DSO = 1100;
+% 
+% Geometry.offOrigin=[0; 0; 0];           
+% Geometry.offDetector=[0;0];
+% Geometry.accuracy=1;
 
 %% P from matrix code?
 % clear Geometry
@@ -101,13 +101,13 @@ Geometry.nDetector=[512; 512];
 Geometry.dDetector=[0.8; 0.8];
 Geometry.sDetector=Geometry.nDetector.*Geometry.dDetector;
 
-Geometry.nVoxel=[256;256;256];
+Geometry.nVoxel=[256;256;256]*2;
 Geometry.sVoxel=Geometry.nVoxel; 
 Geometry.dVoxel=[1; 1; 1];
 
 Geometry.offOrigin=[0;0;0];           
 Geometry.offDetector=[0; 0];
-Geometry.accuracy=1;
+Geometry.accuracy=0.1;
 % 
 % [P,~] = xread('C:\VOL_CT_modified\rando_head\');
 % alpha=
@@ -133,13 +133,11 @@ img=imOut;
   alpha=[0:1:359]*pi/180;
 %  alpha=0;
  tic;
- for ii=1:10
- b=Ax(img,Geometry,alpha);
- end
+ b=Ax(img,Geometry,alpha); 
  toc;
-%  tic
-%  imgFDK=Atb(b,Geometry,alpha);
-% toc
+ tic
+ imgFDK=Atb(b,Geometry,alpha);
+toc
  break
 maxb=max(b(:));
 % bnoise=imnoise(b/maxb,'poisson');

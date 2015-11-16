@@ -92,8 +92,8 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
      // compute the weigth for the backprojection. This needs the X and Y coords on the real workd of the image
      double weigth;
      double realx,realy;
-     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   -xyzOffset.x;
-     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   -xyzOffset.y;
+     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   -xyzOffset.x/geo.dDetecU;
+     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   -xyzOffset.y/geo.dDetecV;
      
      weigth=geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha);
      weigth=weigth/geo.DSO;

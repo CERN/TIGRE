@@ -1,6 +1,9 @@
 
 so.*
-
+*.png
+*.jpg
+*.bmp
+*.tiff
 ## Matlab ignore
 
 *.asv

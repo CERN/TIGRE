@@ -84,8 +84,9 @@ __global__ void kernelPixelDetector( Geometry geo,
     P.y=(uvOrigin.y+pixelU*deltaU.y+pixelV*deltaV.y);
     P.z=(uvOrigin.z+pixelU*deltaU.z+pixelV*deltaV.z);
     
-    
+    // Length is the ray length in normalized space
     double length=sqrt((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z));
+    //now legth is an integer of Nsamples that are required on this line
     length=ceil(length/geo.accuracy);//Divide the directional vector by an integer
     vectX=(P.x -source.x)/(length); 
     vectY=(P.y -source.y)/(length); 
@@ -98,9 +99,11 @@ __global__ void kernelPixelDetector( Geometry geo,
     double i;
     
     
-    
+    // limit the amount of mem access after the cube, but before the detector.
+    if ((geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy  <   length)
+        length=ceil((geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy);
 
-    for (i=floor(maxdist); i<=length; i=i+1){
+    for (i=floor(maxdist/geo.accuracy); i<=length; i=i+1){
         x=vectX*(double)i+source.x;
         y=vectY*(double)i+source.y;
         z=vectZ*(double)i+source.z;
@@ -194,7 +197,7 @@ int projection(float const * const img, Geometry geo, double** result,double con
         //Precompute per angle constant stuff for speed
         computeDeltas(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Ray tracing!  
-        kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,maxdist);
+        kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(maxdist));
       
 
         cudaCheckErrors("Kernel fail");
@@ -310,112 +313,3 @@ double maxDistanceCubeXY(Geometry geo, double alpha,int i){
 
 }
 
-/////////////////////
-///////////////////// The code below is not used.
-/////////////////////
-/////////////////////
-/////////////////////
-/////////////////////
-/////////////////////
-/////////////////////
-/////////////////////
-/////////////////////
-// double computeMaxLength(Geometry geo, double alpha){ // Ander: I like alpha as an argument tomake sure the programer puts it in. Explicit call. 
-//     
-//     //Start point
-//     Point3D S;
-//     S.x=geo.DSO;
-//     S.y=0;
-//     S.z=0;
-//     
-//     //End point
-//     Point3D P;
-//     P.x=-(geo.DSD-geo.DSO);
-//     P.y= geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);
-//     P.z= geo.dDetecV*((double)(geo.nDetecV/2)+0.5-0);
-//     
-//     // Geomtric trasnformations:
-//     
-//     //1: Offset detector
-//        
-//     //P.x
-//     P.y=P.y+geo.offDetecU;
-//     P.z=P.z+geo.offDetecV;
-//     //S doesnt need to chagne
-//     
-//     //2: Offset image (instead of offseting image, -offset everything else)
-//     
-//     P.x=P.x-geo.offOrigX;
-//     P.y=P.y-geo.offOrigY;
-//     P.z=P.z-geo.offOrigZ;
-//     
-//     S.x=S.x-geo.offOrigX;
-//     S.y=S.y-geo.offOrigY;
-//     S.z=S.z-geo.offOrigZ;
-//     
-//     //3: Rotate (around z)!
-//     Point3D P2;   
-//     P2.x=P.x*cos(alpha)-P.y*sin(alpha);
-//     P2.y=P.y*cos(alpha)+P.x*sin(alpha);
-//     P2.z=P.z;
-//     Point3D S2; 
-//     S2.x=S.x*cos(alpha)-S.y*sin(alpha);
-//     S2.y=S.y*cos(alpha)+S.x*sin(alpha);
-//     S2.z=S.z;
-//     // As we want the (0,0,0) to be in a corner of the image, we need to translate everything (after rotation);
-//     P2.x=P2.x+geo.sVoxelX/2;
-//     P2.y=P2.y+geo.sVoxelY/2;
-//     P2.z=P2.z+geo.sVoxelZ/2;
-//     
-//     S2.x=S2.x+geo.sVoxelX/2;
-//     S2.y=S2.y+geo.sVoxelY/2;
-//     S2.z=S2.z+geo.sVoxelZ/2;
-//     
-//     //4. Scale everything so dVoxel==1
-//     P2.x=P2.x/geo.dVoxelX;
-//     P2.y=P2.y/geo.dVoxelY;
-//     P2.z=P2.z/geo.dVoxelZ;
-//     S2.x=S2.x/geo.dVoxelX;
-//     S2.y=S2.y/geo.dVoxelY;
-//     S2.z=S2.z/geo.dVoxelZ;
-//     
-//     
-//     return sqrt((P2.x-S2.x)*(P2.x-S2.x)   +    (P2.y-S2.y)*(P2.y-S2.y) +(P2.z-S2.z)*(P2.z-S2.z) );
-// }
-// // This function scales the geometrical data so all the image voxels are 1x1x1
-// Geometry nomralizeGeometryImage(Geometry geo){
-//     
-//     Geometry nGeo; //Normalized geometry
-//     //Copy input values
-//     nGeo=geo;
-//     
-//     // This is why we are doing this stuff
-//     nGeo.dVoxelX=1;
-//     nGeo.dVoxelY=1;
-//     nGeo.dVoxelZ=1;
-//     // Change total size
-//     nGeo.sVoxelX=geo.sVoxelX/geo.dVoxelX; //This shoudl be == geo.nVoxelX;
-//     nGeo.sVoxelY=geo.sVoxelY/geo.dVoxelY; //This shoudl be == geo.nVoxelY;
-//     nGeo.sVoxelZ=geo.sVoxelZ/geo.dVoxelZ; //This shoudl be == geo.nVoxelZ;
-//     
-//     // As in the beggining U is alinged with Y and V with Z, they also need to be modified.
-//     
-//     nGeo.dDetecU=geo.dDetecU/geo.dVoxelY;
-//     nGeo.dDetecV=geo.dDetecV/geo.dVoxelZ;
-// 
-//     //Modify DSO and DSD w.r.t. X
-//     
-//     nGeo.DSO=geo.DSO/geo.dVoxelX;
-//     nGeo.DSD=geo.DSD/geo.dVoxelX;
-//     
-//     // The new "units" have this real size
-//     nGeo.unitX=geo.dVoxelX;
-//     nGeo.unitY=geo.dVoxelY;
-//     nGeo.unitZ=geo.dVoxelZ;
-// 
-//     //Compute maxlength
-//     nGeo.maxLength=sqrt(nGeo.DSD*nGeo.DSD+sqrt(nGeo.sDetecU/2*nGeo.sDetecU/2+nGeo.sDetecV/2*nGeo.sDetecV/2));
-// 
-//     return nGeo;
-//     
-// }
