@@ -41,45 +41,94 @@ for ii=1:2:nVarargs
     end
 end
 
+ninput=1;
 for ii=1:length(opts)
-    opt=otps{ii};
+    opt=opts{ii};
     default=defaults(ii);
+    % if one option isnot default, then extranc value from input
+    if default==0
+        val=varargin{ninput*2};
+        ninput=ninput+1;
+    end
+    
     switch opt
         case 'Step'
             if default
+                steps=1;
             else
+                if ~isnumeric(val)
+                    error('CBCT:plotImgs:InvalidInput','Invalid step')
+                end
+                steps=varargin{ii+1};
             end
+        % iterate trhoug what dim?
         case 'Dim'
             if default
+                cross=1;
             else
+                if length(val)>1  
+                    error('CBCT:plotImgs:InvalidInput','Invalid Dim')
+                end
+                
+                if val==3 || lower(val)=='z'
+                    img=permute(img,[3 2 1]);
+                    cross=3;
+                end
+                if val==2 || lower(val)=='y'
+                    img=permute(img,[2 1 3]);
+                    cross=2;
+                end
+                if val==1 || lower(val)=='x'
+                    cross=1;
+                end
             end
+            
+        % do you want to save result as gif?
         case 'Savegif'
             if default
+                savegif=0;
             else
+               savegif=1;
+               if ~ischar(val)
+                   error('CBCT:plotImgs:InvalidInput','filename is not character')
+               end
+               filename=val;
             end
-            % Colormap
+        % Colormap choice
         case 'Colormap'
             if default
                 cmap='gray';
             else
-                if ismember(varargin{ii+1},{'magma','viridis','plasma','inferno'})
-                    cmap=eval('')
+                
+                if ~isnumeric(val)  
+                    % check if it is from perceptually uniform colormaps.
+                    if ismember(val,{'magma','viridis','plasma','inferno'})
+                        cmap=eval([val,'()']);
+                    else
+                        cmap=val;
+                    end                   
+                else
+                    % if it is a custom colormap
+                    if size(val,2)~=3
+                        error('CBCT:plotImgs:InvalidInput','Invalid size of colormap')
+                    end
+                    cmap=val;
                 end
             end
-            % Limits of the colors
+        % Limits of the colors
         case 'Clims'
             if default
                 climits=prctile(img(:),[1 99]);
             else
-                if min(size(varargin{ii+1}))==1 && max(size(varargin{ii+1}))==2
-                    climits=varargin{ii+1};
+                if min(size(val))==1 && max(size(val))==2
+                    climits=val;
                 else
                     error('CBCT:plotImgs:InvalidInput','Invalid size of Clims')
                 end
             end
             
         otherwise
-           
+          error('CBCT:plotImgs:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in plotImg()']);
     end
 end
 
@@ -108,6 +157,11 @@ for ii=size(img,1):-1*steps:1
         ylabel('X<-');
         title(['Top to bottom ->Z : ',num2str(ii)]);
     end
+     if cross==2 
+        xlabel('->X');
+        ylabel('->Z');
+        title(['Rigth to Left direction ->Y : ',num2str(ii)]);
+    end
     if cross==1 
         xlabel('->Y');
         ylabel('->Z');
@@ -120,7 +174,7 @@ for ii=size(img,1):-1*steps:1
       frame = getframe(fh);
       im = frame2im(frame);
       [imind,cm] = rgb2ind(im,256);
-      if ii == 256;
+      if ii == size(img,1);
           imwrite(imind,cm,filename,'gif', 'Loopcount',inf);
       else
           imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',0.1);
