@@ -11,14 +11,18 @@ clear;
 clc;
 close all;
 
-% Perceptually uniform colormaps
-addpath('.\Colormaps');
-% Add third party tools from FEX
-addpath('.\Third_party_tools\3DSheppLogan'); % 3D shepp-Logan
-addpath('.\Third_party_tools\arro3d'); % 3D shepp-Logan
+
 % Add tolbox folders
 addpath('.\Algorithms');
 addpath('.\Utilities');
+addpath('.\Test_data');
+addpath('.\Mex_files');
+
+% Perceptually uniform colormaps
+addpath('.\Colormaps');
+% Add third party tools from FEX
+addpath('.\Third_party_tools\arrow3d'); % 3D shepp-Logan
+
 %% Create geometry
 
 % Load a default geometry (look inside if curious)
@@ -36,13 +40,22 @@ alpha=[init:step:finish]*pi/180;
 
 %% Plot the geometry
 
-% plotgeometry(Geometry,30)
+plotgeometry(Geometry,30)
 
 %% Define the test image.
+ 
+% 3D Shepp-Logan
+% img=phantom3dAniso('Modified Shepp-Logan',Geometry.nVoxel);
 
+% thorax digital phantom
+img=thoraxPhantom(Geometry.nVoxel);
 
+%% Plot the image
 
+plotImg(img,'Step',1,'Dim',3);
 
 %% Generate some data
+
+data=Ax(img,Geometry,alpha);
 
 

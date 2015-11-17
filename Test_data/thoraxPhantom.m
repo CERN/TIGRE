@@ -16,7 +16,7 @@ if nargin==1
         error('CBCT:thoraxphantom:invalid input','input is not numerical');     
     end
     nsz=max(size(varargin{1}));
-    if nsz==2 || nsx>3
+    if nsz==2 || nsz>3
         error('CBCT:thoraxphantom:invalid input','input is not 1x1 or 1x3');
     end
     if nsz==1
@@ -35,7 +35,7 @@ img=double(data.img);
           linspace(1,size(img,2),sz(2)),...
           linspace(1,size(img,3),sz(3)));
       
-imOut=interp3(img,x,y,z);
+imOut=interp3(img,x,y,z,'nearest');
 % out!
 img=imOut;
 

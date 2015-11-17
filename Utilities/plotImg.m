@@ -52,6 +52,7 @@ for ii=1:length(opts)
     end
     
     switch opt
+% % % % % %         %Step 
         case 'Step'
             if default
                 steps=1;
@@ -61,7 +62,7 @@ for ii=1:length(opts)
                 end
                 steps=varargin{ii+1};
             end
-        % iterate trhoug what dim?
+% % % % % %         % iterate trhoug what dim?
         case 'Dim'
             if default
                 cross=1;
@@ -83,7 +84,7 @@ for ii=1:length(opts)
                 end
             end
             
-        % do you want to save result as gif?
+% % % % % % %         % do you want to save result as gif?
         case 'Savegif'
             if default
                 savegif=0;
@@ -94,7 +95,7 @@ for ii=1:length(opts)
                end
                filename=val;
             end
-        % Colormap choice
+% % % % % %         % Colormap choice
         case 'Colormap'
             if default
                 cmap='gray';
@@ -115,7 +116,7 @@ for ii=1:length(opts)
                     cmap=val;
                 end
             end
-        % Limits of the colors
+% % % % % %         % Limits of the colors
         case 'Clims'
             if default
                 climits=prctile(img(:),[1 99]);
