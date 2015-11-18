@@ -9,10 +9,8 @@ errorL2=[];
 %% Create weigthing matrices
 
 % Projection weigth, W
-[dy,dz]=meshgrid(-geo.sDetector(1)/2+geo.dDetector(1)/2-geo.offDetector(1):geo.dDetector(1):geo.sDetector(1)/2-geo.dDetector(1)/2-geo.offDetector(1),...
-                 -geo.sDetector(2)/2+geo.dDetector(2)/2-geo.offDetector(2):geo.dDetector(2):geo.sDetector(2)/2-geo.dDetector(2)/2-geo.offDetector(2) );
-
-W=1./sqrt(geo.DSD^2+sqrt(dy.^2+dz.^2).^2);
+% Projection weigth, W
+W=1./Ax(ones(geo.nVoxel'),geo,alpha);  % 
 
 % Back-Projection weigth, V
 [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
@@ -27,20 +25,20 @@ clear A x y dx dz;
 
 % TODO : this should be optional
 % TODO : Actually call FDK here
-geo.filter='ram-lak'; 
-proj_filt = filtering(proj,geo,alpha); 
-geo=rmfield(geo,'filter');
-res=Atb(proj_filt,geo,alpha);
-% res=zeros(geo.nVoxel');
+% geo.filter='ram-lak'; 
+% proj_filt = filtering(proj,geo,alpha); 
+% geo=rmfield(geo,'filter');
+% res=Atb(proj_filt,geo,alpha);
+res=zeros(geo.nVoxel');
 
 
 %% Iterate
 
 % TODO : Add options for Stopping criteria
 for ii=1:niter
-    
+    if ii==1;tic;end
     proj_err=proj-Ax(res,geo,alpha);                  %                                 (b-Ax)
-    weighted_err=bsxfun(@times,W,proj_err);           %                          W^-1 * (b-Ax)
+    weighted_err=W.*proj_err;                          %                          W^-1 * (b-Ax)
     backprj=Atb(weighted_err,geo,alpha);              %                     At * W^-1 * (b-Ax)
     weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
     res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)   
@@ -52,7 +50,7 @@ for ii=1:niter
        return; 
     end
     errorL2=[errorL2 errornow];
-    
+    if ii==1;disp(['Expected time: ', num2str(toc*niter), ' seconds' ]);end
 end
 
 
