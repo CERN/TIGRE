@@ -33,12 +33,21 @@ res=zeros(geo.nVoxel');
 
 
 %% Iterate
+offOrigin=geo.offOrigin;
+offDetector=geo.offDetector;
 
+errorL2=norm(proj(:));
 % TODO : Add options for Stopping criteria
 for ii=1:niter
     if ii==1;tic;end
     
     for jj=1:length(alpha);
+        if size(offOrigin,2)==length(alpha)
+            geo.OffOrigin=offOrigin(:,jj);
+        end
+         if size(offDetector,2)==length(alpha)
+            geo.offDetector=offDetector(:,jj);
+        end
         
         proj_err=proj(:,:,jj)-Ax(res,geo,alpha(jj));      %                                 (b-Ax)
         weighted_err=W(:,:,jj).*proj_err;                 %                          W^-1 * (b-Ax)
@@ -51,11 +60,19 @@ for ii=1:niter
     end
     errornow=norm(proj_err(:));                       % Compute error norm2 of b-Ax
     % If the error is not minimized.
-    if ii>1 && (errornow>errorL2(end))
+    if  errornow>errorL2(end)
         return;
     end
     errorL2=[errorL2 errornow];
-    if ii==1;disp(['Expected time: ', num2str(toc*niter), ' seconds' ]);end
+
+    
+    if ii==1;
+        expected_time=toc*niter;   
+        disp('SART');
+        disp(['Expected duration  :    ',secs2hms(expected_time)]);
+        disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
+        disp('');
+    end
 end
 
 

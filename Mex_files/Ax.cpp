@@ -144,7 +144,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 if (mrows!=2 || ( ncols!=1&& ncols!=nalpha)){
                     mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
                     mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
-                            "Above field has wrong size! Should be 2x1 or 3xlength(angles)!");
+                            "Above field has wrong size! Should be 2x1 or 2xlength(angles)!");
                    
                 }
                 

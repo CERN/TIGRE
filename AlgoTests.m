@@ -11,17 +11,8 @@ clear;
 clc;
 close all;
 
-
-% Add tolbox folders
-addpath('.\Algorithms');
-addpath('.\Utilities');
-addpath('.\Test_data');
-addpath('.\Mex_files');
-
-% Perceptually uniform colormaps
-addpath('.\Colormaps');
-% Add third party tools from FEX
-addpath('.\Third_party_tools\arrow3d'); % 3D shepp-Logan
+% Initialize toolbox
+initTOOLBOX;
 %% Create geometry
 
 % Load a default geometry (look inside if curious)
@@ -43,11 +34,11 @@ plotgeometry(Geometry,30)
 
 %% Define the test image.
  
-% 3D Shepp-Logan
-% img=phantom3dAniso('Modified Shepp-Logan',Geometry.nVoxel);
+% %%% 3D Shepp-Logan
+img=phantom3dAniso('Modified Shepp-Logan',Geometry.nVoxel);
 
-% thorax digital phantom
-img=thoraxPhantom(Geometry.nVoxel);
+% %%% thorax digital phantom
+% img=thoraxPhantom(Geometry.nVoxel);
 
 %% Plot the image
 
@@ -71,6 +62,7 @@ plotProj(data,alpha);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%% ALGORITHMS %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+niter=15;
 %% SIRT 
 [resSIRT, errSIRT]=SIRT_CBCT(data,Geometry,alpha,15);
 %% SART
@@ -81,5 +73,16 @@ plotProj(data,alpha);
 %% OS-SART
 block_size=10;
 [resOSSART, errOSSART]=SART_CBCT(data,Geometry,alpha,10,15);
+
+%% comparison
+
+hold on
+plot(errSIRT);
+plot(errSART);
+plot(errOSSART);
+legend({'SIRT','SART','OS-SART'})
+ylabel('L2 norm');
+xlabel('iterations')
+xlim([1 niter])
 
 

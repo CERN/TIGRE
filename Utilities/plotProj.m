@@ -14,12 +14,15 @@ function plotProj(proj,alpha,varargin)
 %               one a 3xN matrix. Default is GRAY
 %   'Clims':    a 2x1 matrix setting the upper and lower limits of the
 %               colors. The default is the limits of the data.
-%
+%   'Step':     Sets the step size between slice and slice. Step is 1 by
+%               default.
+%   'Savegif':  With an string in VAL, saves the image as .gif with
+%               VAL as filename
 %
 %
 %% Parse inputs
-opts=     {'Step','Colormap','Clims'};
-defaults= [    1,    1     ,   1 ];
+opts=     {'Step','Colormap','Clims','Savegif'};
+defaults= [    1,    1     ,   1 ,      1];
 
 % Check inputs
 nVarargs = length(varargin);
@@ -86,14 +89,24 @@ for ii=1:length(opts)
                     error('CBCT:plotImgs:InvalidInput','Invalid size of Clims')
                 end
             end
-            
+% % % % % % %         % do you want to save result as gif?
+        case 'Savegif'
+            if default
+                savegif=0;
+            else
+               savegif=1;
+               if ~ischar(val)
+                   error('CBCT:plotImgs:InvalidInput','filename is not character')
+               end
+               filename=val;
+            end            
         otherwise
           error('CBCT:plotImgs:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in plotImg()']);
     end
 end
 
 %% Do ploting
-figure();
+fh=figure();
 
 for ii=1:steps:size(proj,3)
     image=squeeze(proj(:,:,ii));
@@ -114,4 +127,15 @@ for ii=1:steps:size(proj,3)
     
     title(['Degree : ',num2str(alpha(ii)*180/pi)]);
     pause(0.01);
+    if savegif
+        
+      frame = getframe(fh);
+      im = frame2im(frame);
+      [imind,cm] = rgb2ind(im,256);
+      if ii == 1;
+          imwrite(imind,cm,filename,'gif', 'Loopcount',inf);
+      else
+          imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',0.1);
+      end
+    end
 end

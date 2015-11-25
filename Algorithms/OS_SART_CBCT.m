@@ -4,14 +4,14 @@ function [res,errorL2]=OS_SART_CBCT(proj,geo,alpha,niter,block_size,lambda)
 if nargin<6
     lambda=1;
 end
-errorL2=[];
 
 %% Create weigthing matrices
 
 % Projection weigth, W
 % Projection weigth, W
-W=1./Ax(ones(geo.nVoxel'),geo,alpha);  %
-
+W=Ax(ones(geo.nVoxel'),geo,alpha);  %
+W(W<min(geo.dVoxel))=Inf;
+W=1./W;
 % Back-Projection weigth, V
 [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
     -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
@@ -33,6 +33,9 @@ res=zeros(geo.nVoxel');
 
 
 %% Iterate
+errorL2=norm(proj(:));
+offOrigin=geo.offOrigin;
+offDetector=geo.offDetector;
 
 % TODO : Add options for Stopping criteria
 for ii=1:niter
@@ -40,8 +43,15 @@ for ii=1:niter
     
     for jj=1:block_size:length(alpha);
         % idex of the Oriented subsets
-        range=(jj-1)*block_size+1:block_size*jj;
+        range=jj:block_size+jj-1;
         range(range>length(alpha))=[]; % for the last subset
+        
+        if size(offOrigin,2)==length(alpha)
+            geo.OffOrigin=offOrigin(:,range);
+        end
+         if size(offDetector,2)==length(alpha)
+            geo.offDetector=offDetector(:,range);
+        end
         
         proj_err=proj(:,:,range)-Ax(res,geo,alpha(range));      %                                 (b-Ax)
         weighted_err=W(:,:,range).*proj_err;                    %                          W^-1 * (b-Ax)
@@ -54,11 +64,18 @@ for ii=1:niter
     end
     errornow=norm(proj_err(:));                           % Compute error norm2 of b-Ax
     % If the error is not minimized (Armijo rules)
-    if ii>1 && (errornow>errorL2(end))
+    if errornow>errorL2(end)
         return;
     end
     errorL2=[errorL2 errornow];
-    if ii==1;disp(['Expected time: ', num2str(toc*niter), ' seconds' ]);end
+    
+    if ii==1;
+        expected_time=toc*(niter-1);   
+        disp('OS-SART');
+        disp(['Expected duration  :    ',secs2hms(expected_time)]);
+        disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
+        disp('');
+    end
 end
 
 
