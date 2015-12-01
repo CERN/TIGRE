@@ -69,7 +69,6 @@
 % %% Example of use
 % close all
 % clear
-addpath C:\Users\aabhca20\Documents\perceptually_uniform_colormaps
 %%
 testtime=0;
 

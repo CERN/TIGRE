@@ -13,7 +13,8 @@ end
 % Projection weigth, W
 % Projection weigth, W
 W=1./Ax(ones(geo.nVoxel'),geo,alpha);  % 
-
+W(W<min(geo.dVoxel))=Inf;
+W=1./W;
 % Back-Projection weigth, V
 [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
               -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));       
@@ -62,6 +63,7 @@ for ii=1:niter
         disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);   
         disp('');
     end
+    
 end
 
 

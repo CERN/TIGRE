@@ -2,22 +2,7 @@ function [ proj ] = filtering(proj,geo,alpha)
 %FILTERING Summary of this function goes here
 %   Detailed explanation goes here
 
-proj=permute(proj,[2 1 3]);
 
-if size(geo.offDetector,2)==1;
-    geo.offDetector=repmat(geo.offDetector,[1, length(alpha)]);
-end
-
-
-for ii=1:length(alpha)
-    
-    us = ((-geo.nDetector(1)/2+0.5):1:(geo.nDetector(1)/2-0.5))*geo.dDetector(1) + geo.offDetector(1,ii);
-    vs = ((-geo.nDetector(2)/2+0.5):1:(geo.nDetector(2)/2-0.5))*geo.dDetector(2) + geo.offDetector(2,ii);
-    [uu,vv] = meshgrid(us,vs);
-    w = (geo.DSD)./sqrt((geo.DSD)^2+uu.^2 + vv.^2);
-    
-    proj(:,:,ii) = proj(:,:,ii).*w';
-end
 
 
 

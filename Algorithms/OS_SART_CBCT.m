@@ -1,17 +1,136 @@
-function [res,errorL2]=OS_SART_CBCT(proj,geo,alpha,niter,block_size,lambda)
+function [res,errorL2]=OS_SART_CBCT(proj,geo,alpha,niter,varargin)
+% OS_SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
+%              Simultaneous Algebraic Reconxtruction Techique algorithm
+%
+%   OS_SART_CBCT(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
+%   using the projection data PROJ taken over ALPHA angles, corresponding
+%   to the geometry descrived in GEO, using NITER iterations.
+%
+%   OS_SART_CBCT(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
+%   possible options in OPT are:
+%
+%   'BlockSize':   Sets the projection block size used simultaneously. If
+%                  BlockSize = 1 OS-SART becomes SART and if  BlockSize = length(alpha)
+%                  then OS-SART becomes SIRT. Default is alpha/20.
+%
+%   'lambda':      Sets the value of the hyperparameter. Default is 1
+%
+%   'Init':        Describes diferent initialization techniques.
+%                  'none'     : Initializes the image to zeros (default)
+%                  'FDK'      : intializes image to FDK reconstrucition
+%                  'multigrid': Initializes image by solving the problem in
+%                               small scale and increasing it when relative
+%                               convergence is reached.
+%                  'image'    : Initialization using a user specified
+%                               image. Not recomended unless you really
+%                               know what you are doing.
+%   'InitImg'      an image for the 'image' initialization. Aviod.
+
 
 %% Deal with input parameters
-if nargin<6
-    lambda=1;
+
+opts=     {'BlockSize','lambda','Init','InitImg'};
+defaults= [   1  ,  1  ,    1   ,1 ];
+
+% Check inputs
+nVarargs = length(varargin);
+if mod(nVarargs,2)
+    error('CBCT:plotImgs:InvalidInput','Invalid number of inputs')
 end
+
+% check if option has been passed as input
+for ii=1:2:nVarargs
+    ind=find(ismember(opts,varargin{ii}));
+    if ~isempty(ind)
+        defaults(ind)=0;
+    end
+end
+
+ninput=1;
+for ii=1:length(opts)
+    opt=opts{ii};
+    default=defaults(ii);
+    % if one option isnot default, then extranc value from input
+    if default==0
+        val=varargin{ninput*2};
+        ninput=ninput+1;
+    end
+    
+    switch opt
+        % % % % % % % hyperparameter, LAMBDA
+        case 'lambda'
+            if default
+                lambda=1;
+            else
+                if length(val)>1 || ~isnumeric( val)
+                    error('CBCT:OS_SART_CBCT:InvalidInput','Invalid lambda')
+                end
+                lambda=val;
+            end
+        case 'BlockSize'
+            if default
+                block_size=20;
+            else
+                if length(val)>1 || ~isnumeric( val)
+                    error('CBCT:OS_SART_CBCT:InvalidInput','Invalid BlockSize')
+                end
+                block_size=val;
+            end
+            
+        case 'Init'
+            res=[];
+            if default || strcmp(val,'none')
+                res=zeros(geo.nVoxel');
+                continue;
+            end
+            if strcmp(val,'FDK')
+                res=FDK_CBCT(proj,geo,alpha);
+                continue;
+            end
+            if strcmp(val,'multigrid')
+                res=init_multigrid(proj,geo,alpha);
+                continue;
+            end
+            if strcmp(val,'image')
+                initwithimage=1;
+                continue;
+            end
+            if isempty(res)
+               error('CBCT:OS_SART_CBCT:InvalidInput','Invalid Init option') 
+            end
+            % % % % % % % ERROR
+        case 'InitImg'
+            if default
+                continue;
+            end
+            if exist('initwithimage','var');
+                if isequal(size(val),geo.nVoxel');
+                    res=val;
+                else
+                    error('CBCT:OS_SART_CBCT:InvalidInput','Invalid image for initialization');
+                end
+            end
+        otherwise
+            error('CBCT:OS_SART_CBCT:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_SART_CBCT()']);
+    end
+end
+
+
+
+
+
+
+
+
 
 %% Create weigthing matrices
 
 % Projection weigth, W
 % Projection weigth, W
 W=Ax(ones(geo.nVoxel'),geo,alpha);  %
-W(W<min(geo.dVoxel))=Inf;
+W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
+
 % Back-Projection weigth, V
 [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
     -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
@@ -22,14 +141,6 @@ clear A x y dx dz;
 
 
 %% initialize image With FDK
-
-% TODO : this should be optional
-% TODO : Actually call FDK here
-% geo.filter='ram-lak';
-% proj_filt = filtering(proj,geo,alpha);
-% geo=rmfield(geo,'filter');
-% res=Atb(proj_filt,geo,alpha);
-res=zeros(geo.nVoxel');
 
 
 %% Iterate
@@ -49,7 +160,7 @@ for ii=1:niter
         if size(offOrigin,2)==length(alpha)
             geo.OffOrigin=offOrigin(:,range);
         end
-         if size(offDetector,2)==length(alpha)
+        if size(offDetector,2)==length(alpha)
             geo.offDetector=offDetector(:,range);
         end
         
@@ -63,14 +174,15 @@ for ii=1:niter
         
     end
     errornow=norm(proj_err(:));                           % Compute error norm2 of b-Ax
-    % If the error is not minimized (Armijo rules)
-    if errornow>errorL2(end)
-        return;
-    end
+%     If the error is not minimized 
+%     if errornow>errorL2(end)
+%         return;
+%     end
     errorL2=[errorL2 errornow];
     
     if ii==1;
-        expected_time=toc*(niter-1);   
+        
+        expected_time=toc*(niter-1);
         disp('OS-SART');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
         disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
@@ -80,6 +192,41 @@ end
 
 
 
+
+
+end
+function initres=init_multigrid(proj,geo,alpha)
+
+finalsize=geo.nVoxel;
+% start with 64
+geo.nVoxel=[64;64;64];
+geo.dVoxel=geo.sVoxel./geo.nVoxel;
+if any(finalsize<geo.nVoxel)
+    initres=zeros(finalsize');
+    return;
+end
+
+niter=20;
+nblock=20;
+initres=zeros(geo.nVoxel');
+while ~isequal(geo.nVoxel,finalsize)
+    
+    
+    % solve subsampled grid
+    initres=OS_SART_CBCT(proj,geo,alpha,niter,'BlockSize',nblock,'Init','image','InitImg',initres);
+    
+    % Get new dims.
+    geo.nVoxel=geo.nVoxel*2;
+    geo.nVoxel(geo.nVoxel>finalsize)=finalsize(geo.nVoxel>finalsize);
+    geo.dVoxel=geo.sVoxel./geo.nVoxel;
+    % Upsample!
+    % (hopefully computer has enough memory............)
+    [y, x, z]=ndgrid(linspace(1,size(initres,1),geo.nVoxel(1)),...
+                     linspace(1,size(initres,2),geo.nVoxel(2)),...
+                     linspace(1,size(initres,3),geo.nVoxel(3)));
+    initres=interp3(initres,x,y,z);
+    clear x y z 
+end
 
 
 end

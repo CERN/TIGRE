@@ -40,14 +40,14 @@ Geometry.nDetector=[512; 512];
 Geometry.dDetector=[0.8; 0.8];
 Geometry.sDetector=Geometry.nDetector.*Geometry.dDetector;
 
-Geometry.nVoxel=[128;128;128];
+Geometry.nVoxel=[512;512;512];
 Geometry.sVoxel=[256;256;256]; 
 Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
 Geometry.offOrigin=[0;0;0];           
 Geometry.offDetector=[0; 0];
 
-
+Geometry.accuracy=1;
 
 
 
