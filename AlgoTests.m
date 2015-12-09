@@ -16,14 +16,17 @@ initTOOLBOX;
 %% Create geometry
 
 % Load a default geometry (look inside if curious)
-GeometrySetting;
+GeometrySettingRandoHead;
+Geometry.nVoxel=[512;512;512]/4;
+Geometry.sVoxel=[256;256;256];
+Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
 % Set accuracy (1/amount of samples per voxel)
-Geometry.accuracy=0.5;
+Geometry.accuracy=1;
 
 % Set projection angles
 init=0;          % start angle
-step=1;        % step
+step=10;        % step
 finish=360-step; % end angle
 
 alpha=[init:step:finish]*pi/180;
@@ -62,7 +65,7 @@ plotProj(data,alpha);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%% ALGORITHMS %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-niter=15;
+niter=75;
 %% SIRT 
 [resSIRT, errSIRT]=SIRT_CBCT(data,Geometry,alpha,15);
 %% SART
@@ -72,7 +75,10 @@ niter=15;
 
 %% OS-SART
 block_size=10;
-[resOSSART, errOSSART]=SART_CBCT(data,Geometry,alpha,10,15);
+[resOSSART, errOSSART]=OS_SART_CBCT(data,Geometry,alpha,10,'BlockSize',15);
+
+%% FDK
+[resFDK, errFDK]=FDK_CBCT(data,Geometry,alpha);
 
 %% comparison
 
@@ -85,4 +91,34 @@ ylabel('L2 norm');
 xlabel('iterations')
 xlim([1 niter])
 
+%%
+figure('Name','Diferent reconstruction algorithms RANDO-HEAD, full data, 200 iterations')
+slices=70;slices2=64;
+ax1=subplot(141);
 
+
+imgplot=squeeze(resSIRT(slices,:,:));
+color=prctile(imgplot(:),[1 99]);
+imshow([imgplot';resSIRT(:,:,slices2)],[],'Border','tight');axis xy; caxis(color);caxis([0, 0.35]);
+title(['OS-SART '])
+
+
+ax2=subplot(142);
+imgplot=squeeze(resSART(slices,:,:));
+color=prctile(imgplot(:),[1 99]);
+imshow([imgplot';resSART(:,:,slices2)],[],'Border','tight');axis xy; caxis(color);caxis([0, 0.35]);
+title(['OS-SART->init multigrid '])
+
+ax3=subplot(143);
+imgplot=squeeze(resOSSART(slices,:,:));
+color=prctile(imgplot(:),[1 98]);
+imshow([imgplot';resOSSART(:,:,slices2) ],[],'Border','tight');axis xy; caxis(color);caxis([0, 0.35]);
+title(['OS-SART->init FDK '])
+
+ax4=subplot(144);
+imgplot=squeeze(resFDK(slices,:,:));
+color=prctile(imgplot(:),[1 99]);
+imshow([imgplot';resFDK(:,:,slices2) ],[],'Border','tight');axis xy; caxis(color);caxis([0, 0.35]);
+title(['FDK '])
+linkaxes([ax1,ax2,ax3,ax4], 'xy');
+break;

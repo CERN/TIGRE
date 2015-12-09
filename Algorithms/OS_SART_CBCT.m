@@ -25,12 +25,14 @@ function [res,errorL2]=OS_SART_CBCT(proj,geo,alpha,niter,varargin)
 %                               image. Not recomended unless you really
 %                               know what you are doing.
 %   'InitImg'      an image for the 'image' initialization. Aviod.
-
+%
+%   'Verbose'      1 or 0. Default is 1. Gives information about the
+%                  progress of the algorithm.
 
 %% Deal with input parameters
 
-opts=     {'BlockSize','lambda','Init','InitImg'};
-defaults= [   1  ,  1  ,    1   ,1 ];
+opts=     {'BlockSize','lambda','Init','InitImg','Verbose'};
+defaults= [   1  ,  1  ,    1   ,1 ,1];
 
 % Check inputs
 nVarargs = length(varargin);
@@ -57,6 +59,13 @@ for ii=1:length(opts)
     end
     
     switch opt
+        % % % % % % % Verbose
+        case 'Verbose'
+            if default
+                verbose=1;
+            else
+                verbose=val;
+            end
         % % % % % % % hyperparameter, LAMBDA
         case 'lambda'
             if default
@@ -140,7 +149,6 @@ V=sum(V,3);
 clear A x y dx dz;
 
 
-%% initialize image With FDK
 
 
 %% Iterate
@@ -150,7 +158,7 @@ offDetector=geo.offDetector;
 
 % TODO : Add options for Stopping criteria
 for ii=1:niter
-    if ii==1;tic;end
+    if (ii==1 && verbose==1);tic;end
     
     for jj=1:block_size:length(alpha);
         % idex of the Oriented subsets
@@ -158,7 +166,7 @@ for ii=1:niter
         range(range>length(alpha))=[]; % for the last subset
         
         if size(offOrigin,2)==length(alpha)
-            geo.OffOrigin=offOrigin(:,range);
+            geo.offOrigin=offOrigin(:,range);
         end
         if size(offDetector,2)==length(alpha)
             geo.offDetector=offDetector(:,range);
@@ -170,17 +178,18 @@ for ii=1:niter
         weigth_backprj=bsxfun(@times,1./V,backprj);             %                 V * At * W^-1 * (b-Ax)
         res=res+lambda*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
         
-        
+        % Non-negativity constrain
+        res(res<0)=0;
         
     end
     errornow=norm(proj_err(:));                           % Compute error norm2 of b-Ax
 %     If the error is not minimized 
-%     if errornow>errorL2(end)
-%         return;
-%     end
+    if errornow>errorL2(end)*1.1
+        return;
+    end
     errorL2=[errorL2 errornow];
     
-    if ii==1;
+    if ii==1 && verbose==1
         
         expected_time=toc*(niter-1);
         disp('OS-SART');
@@ -205,15 +214,14 @@ if any(finalsize<geo.nVoxel)
     initres=zeros(finalsize');
     return;
 end
-
-niter=20;
+niter=100;
 nblock=20;
 initres=zeros(geo.nVoxel');
 while ~isequal(geo.nVoxel,finalsize)
     
     
     % solve subsampled grid
-    initres=OS_SART_CBCT(proj,geo,alpha,niter,'BlockSize',nblock,'Init','image','InitImg',initres);
+    initres=OS_SART_CBCT(proj,geo,alpha,niter,'BlockSize',nblock,'Init','image','InitImg',initres,'Verbose',0);
     
     % Get new dims.
     geo.nVoxel=geo.nVoxel*2;

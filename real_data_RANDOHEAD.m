@@ -47,6 +47,13 @@ end
 % alpha=alpha(1:10:end);
 % clear D I0 RealProj Proj
 
+%% Downsample
+
+% nalpha=40;
+% range=1:length(alpha)/nalpha:length(alpha);
+% alpha=alpha(range);
+% data=data(:,:,range);
+% Geometry.offDetector=Geometry.offDetector(:,range);
 
 %% visualize projections.
 vis=0;
@@ -54,11 +61,17 @@ if vis
     plotProj(data,alpha);
 end
 close all
-
-
+%% above loads data
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% reconstruct OS-SART
 
-niter=20;
+niter=200;
 Geometry.nVoxel=[512;512;512]/2;
 Geometry.sVoxel=[256;256;256];
 Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
@@ -66,23 +79,23 @@ Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 % [resSART,errSART]=SART_CBCT(data,Geometry,alpha,niter);
 % [resOSSART,errOSSART]=OS_SART_CBCT(data,Geometry,alpha,niter,20);
 % [resSIRT,errSIRT]=SIRT_CBCT(data,Geometry,alpha,niter);
-[resFDK,errFDK]=FDK_CBCT(data,Geometry,alpha);
+% [resFDK,errFDK]=FDK_CBCT(data,Geometry,alpha);
 
-[resmulti,multiL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20,'Init','multigrid');
 [resnoinit,noinitL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20);
+[resmulti,multiL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20,'Init','multigrid');
 [resinitFDK,FDKL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20,'Init','FDK');
 [resFDK,errFDK]=FDK_CBCT(data,Geometry,alpha);
 
-save rando_head20_256_different_init.mat resmulti multiL2 resnoinit noinitL2 resinitFDK FDKL2 resFDK errFDK
+save rando_head200_256_different_init.mat resmulti multiL2 resnoinit noinitL2 resinitFDK FDKL2 resFDK errFDK
 break;
 %% Plot errors
 figure('Name','L2 errors')
-% plot([errSART]);
 hold on;
-plot([errOSSART]);
-% plot([errSIRT]);
+plot([multiL2]);
+plot([noinitL2]);
+plot([FDKL2]);
 plot([1,niter],[errFDK,errFDK])
-legend({'SART','OS-SART','SIRT','FDK'})
+legend({'OS-SART-Multigrid init','OS-SART-no init','OS-SART-FDK init','FDK'})
 %% Plot images
 
 plotthis=0; % this is so you dont accidentally spend hours looking at the plots
@@ -157,7 +170,38 @@ imshow(imgplot',[]);axis xy; caxis(color);
 title(['SIRT ', num2str(niter), ' iterations'])
 
 
+%% Compare images
 
+figure('Name','Diferent reconstruction algorithms RANDO-HEAD, full data, 200 iterations')
+slices=140;slices2=160/2;
+ax1=subplot(141);
+
+
+imgplot=squeeze(resnoinit(slices,:,:));
+color=prctile(imgplot(:),[1 99]);
+imshow([imgplot';resnoinit(:,:,slices2)],[],'Border','tight');axis xy; caxis(color);caxis([0,0.07]);
+title(['OS-SART '])
+
+
+ax2=subplot(142);
+imgplot=squeeze(resmulti(slices,:,:));
+color=prctile(imgplot(:),[1 99]);
+imshow([imgplot';resmulti(:,:,slices2)],[],'Border','tight');axis xy; caxis(color);caxis([0,0.07]);
+title(['OS-SART->init multigrid '])
+
+ax3=subplot(143);
+imgplot=squeeze(resinitFDK(slices,:,:));
+color=prctile(imgplot(:),[1 98]);
+imshow([imgplot';resinitFDK(:,:,slices2) ],[],'Border','tight');axis xy; caxis(color);caxis([0,0.07]);
+title(['OS-SART->init FDK '])
+
+ax4=subplot(144);
+imgplot=squeeze(resFDK(slices,:,:));
+color=prctile(imgplot(:),[1 99]);
+imshow([imgplot';resFDK(:,:,slices2) ],[],'Border','tight');axis xy; caxis(color);caxis([0,0.07]);
+title(['FDK '])
+linkaxes([ax1,ax2,ax3,ax4], 'xy');
+break;
 %% Random crap that I migth want to keep
 %%
 %%

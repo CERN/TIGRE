@@ -10,8 +10,8 @@ errorL2=[];
 
 % Projection weigth, W
 % Projection weigth, W
-W=1./Ax(ones(geo.nVoxel'),geo,alpha);  %
-W(W<min(geo.dVoxel))=Inf;
+W=Ax(ones(geo.nVoxel'),geo,alpha);  %
+W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
 [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...

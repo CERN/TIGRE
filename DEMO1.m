@@ -65,117 +65,59 @@
 %  
 %  
 %  
-%  
-% %% Example of use
-% close all
-% clear
-%%
-testtime=0;
+%% Initialize toolbox
+clear;
+clc;
+InitToolbox;
+
+%% Geometry
+
+% Image
+Geometry.nVoxel=[128;128;128];                              % Voxel size
+Geometry.sVoxel=[460;460;460];                              % Image size in mm
+Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;           % Voxel size in mm
+
+% Detecotr
+Geometry.nDetector=[128;128];                               % Detector size   
+Geometry.sDetector=[ 1024;800];                             % Detector size in mm
+Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;  % Size of each detector pixel
+
+% distances
+Geometry.DSD = 1500;    % Distance Source to Detector
+Geometry.DSO = 1100;    % Distance Source to Origin (of XYZ, or mid image)
+
+Geometry.offOrigin=[0; 0; 0];     % Rigid motion of image in mm. Can be 3x1 or 3xN        
+Geometry.offDetector=[0;0];       % Offset of detector in mm. Can be 2x1 or 2XN
+Geometry.accuracy=1;              % Smaller number->more accurate. Not recommended to be bigger than 1
+
+alpha=[0:1:359]*pi/180;           % Anlges of projection
+%% Use a digital phantom
+
+phantom=thoraxPhantom(Geometry.nVoxel);
+
+%% Generate data
 
 
+data=Ax(phantom,Geometry,alpha); % this uses GPU
+% plot the projections jumping 1 and save the result as a gif
+plotProj(data,alpha,'Step',2,'Savegif','DEMO1.gif');
+%% Reconstruct image
 
-% Geometry.nVoxel=[128;128;128];
-% Geometry.sVoxel=[460;460;460]; 
-% Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
-% 
-% Geometry.nDetector=[128;128];
-% Geometry.sDetector=[ 1024;800];
-% Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
-% 
-% Geometry.DSD = 1500;   
-% Geometry.DSO = 1100;
-% 
-% Geometry.offOrigin=[0; 0; 0];           
-% Geometry.offDetector=[0;0];
-% Geometry.accuracy=1;
+% FDK
+[resFDK,errFDK]=FDK_CBCT(data,Geometry,alpha);
 
-%% P from matrix code?
-% clear Geometry
+% OS-SART with multigrid initialization, 200 iterations and 20 simultaneous
+% block size updates
 
+niter=200;
+nblock=20;
+[resOSSART,errOSSART]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',nblock,'Init','multigrid');
 
-Geometry.DSD = 1536;   
-Geometry.DSO = 1000;
+%% Plot the result image
 
-Geometry.nDetector=[512; 512];
-Geometry.dDetector=[0.8; 0.8];
-Geometry.sDetector=Geometry.nDetector.*Geometry.dDetector;
+% plot XY slices
+plotImg(resFDK,'Dim','Z')
 
-Geometry.nVoxel=[256;256;256]/4;
-Geometry.sVoxel=Geometry.nVoxel; 
-Geometry.dVoxel=[1; 1; 1];
+% plot XZ slices
+plotImg(resOSSART,'Dim','X')
 
-Geometry.offOrigin=[0;0;0];           
-Geometry.offDetector=[0; 0];
-Geometry.accuracy=0.1;
-% 
-% [P,~] = xread('C:\VOL_CT_modified\rando_head\');
-% alpha=
-%% Real image in the coords we like
-load img128
-img=double(img);
-
-[y, x, z]=...
-   ndgrid(linspace(1,size(img,1),Geometry.nVoxel(1)),...
-          linspace(1,size(img,2),Geometry.nVoxel(2)),...
-          linspace(1,size(img,3),Geometry.nVoxel(3)));
-imOut=interp3(img,x,y,z);
-img=imOut;
-%% plot image
-%  plotImg(img,5)
-
-
- 
-%  img=ones(Geometry.nVoxel');
-%  alpha=-pi/2;
-%% Project
- 
-  alpha=[0:1:359]*pi/180;
-%  alpha=0;
- tic;
- b=Ax(img,Geometry,alpha); 
- toc;
-tic
-[imgCGLS,errCGLS]=CGLS_CBCT(b,Geometry,alpha,30);
-[imgSART,errSART]=OS_SART_CBCT(b,Geometry,alpha,30,'BlockSize',20);
-toc
- break
-maxb=max(b(:));
-% bnoise=imnoise(b/maxb,'poisson');
-% bnoise=bnoise.*maxb;
-% b=bnoise;
-% % 
-% 
-%  %FDK
-%  tic
-% Geometry.filter='ram-lak'; 
-% b_filt = filtering(b,Geometry,alpha); % Not sure if offsets are good in here
-% Geometry=rmfield(Geometry,'filter');
-% imgFDK=Atb(b_filt,Geometry,alpha);
-% toc
-
-tic
-[imgCGLS,errCGLS]=CGLS_CBCT(b,Geometry,alpha,60);
-toc
-% tic
-% [imgSART,errSART]=SART_CBCT(b,Geometry,alpha,30);
-% toc
-
- break
- plotProj(b,alpha);
-
-
-
-%% ALGORITMS!
-% 
-tic
-[res,err]=CGLS_CBCT(b,Geometry,alpha,60);
-toc
-tic
-[res,err]=SART_CBCT(b,Geometry,alpha,10);
-toc
-
-plot(err);
-break
-plotImg(res,1,3);
-plotImg(img,1,3);
- 

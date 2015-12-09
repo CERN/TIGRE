@@ -44,7 +44,7 @@ for ii=1:niter
     if ii==1;tic;end
     
     proj_err=proj-Ax(res,geo,alpha);                  %                                 (b-Ax)
-    weighted_err=W.*proj_err;                          %                          W^-1 * (b-Ax)
+    weighted_err=W.*proj_err;                         %                          W^-1 * (b-Ax)
     backprj=Atb(weighted_err,geo,alpha);              %                     At * W^-1 * (b-Ax)
     weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
     res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)   
