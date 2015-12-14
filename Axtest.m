@@ -130,8 +130,8 @@ Geometry.accuracy=0.1;
 %  alpha=-pi/2;
 %% Project
  
-%   alpha=[0:1:359]*pi/180;
- alpha=[0];
+  alpha=[0:1:359]*pi/180;
+%  alpha=[0];
  tic
   b1=Ax(img,Geometry,alpha,'Krylov'); 
 toc
