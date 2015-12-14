@@ -9,7 +9,6 @@ errorL2=[];
 %% Create weigthing matrices
 
 % Projection weigth, W
-% Projection weigth, W
 W=Ax(ones(geo.nVoxel'),geo,alpha);  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;

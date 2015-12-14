@@ -67,8 +67,9 @@
 %  
 %  
 % %% Example of use
-% close all
-% clear
+close all
+clear
+InitToolbox;
 %%
 testtime=0;
 
@@ -100,9 +101,9 @@ Geometry.nDetector=[512; 512];
 Geometry.dDetector=[0.8; 0.8];
 Geometry.sDetector=Geometry.nDetector.*Geometry.dDetector;
 
-Geometry.nVoxel=[256;256;256]/4;
-Geometry.sVoxel=Geometry.nVoxel; 
-Geometry.dVoxel=[1; 1; 1];
+Geometry.nVoxel=[256;256;256]*2;
+Geometry.sVoxel=[256;256;256]; 
+Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
 Geometry.offOrigin=[0;0;0];           
 Geometry.offDetector=[0; 0];
@@ -111,29 +112,33 @@ Geometry.accuracy=0.1;
 % [P,~] = xread('C:\VOL_CT_modified\rando_head\');
 % alpha=
 %% Real image in the coords we like
-load img128
-img=double(img);
-
-[y, x, z]=...
-   ndgrid(linspace(1,size(img,1),Geometry.nVoxel(1)),...
-          linspace(1,size(img,2),Geometry.nVoxel(2)),...
-          linspace(1,size(img,3),Geometry.nVoxel(3)));
-imOut=interp3(img,x,y,z);
-img=imOut;
+% load img128
+% img=double(img);
+% 
+% [y, x, z]=...
+%    ndgrid(linspace(1,size(img,1),Geometry.nVoxel(1)),...
+%           linspace(1,size(img,2),Geometry.nVoxel(2)),...
+%           linspace(1,size(img,3),Geometry.nVoxel(3)));
+% imOut=interp3(img,x,y,z);
+% img=imOut;
 %% plot image
 %  plotImg(img,5)
 
 
  
-%  img=ones(Geometry.nVoxel');
+ img=ones(Geometry.nVoxel');
 %  alpha=-pi/2;
 %% Project
  
-  alpha=[0:1:359]*pi/180;
-%  alpha=0;
+%   alpha=[0:1:359]*pi/180;
+ alpha=[0];
+ tic
+  b1=Ax(img,Geometry,alpha,'Krylov'); 
+toc
  tic;
- b=Ax(img,Geometry,alpha); 
+ b2=Ax(img,Geometry,alpha); 
  toc;
+ break
 tic
 [imgCGLS,errCGLS]=CGLS_CBCT(b,Geometry,alpha,30);
 [imgSART,errSART]=OS_SART_CBCT(b,Geometry,alpha,30,'BlockSize',20);

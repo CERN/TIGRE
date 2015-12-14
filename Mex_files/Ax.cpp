@@ -8,7 +8,8 @@
 #include "tmwtypes.h"
 #include "mex.h"
 #include "matrix.h"
-#include "projection.hpp"
+#include "ray_interpolated_projection.hpp"
+#include "Siddon_projection.hpp"
 #include <string.h>
 #include <time.h>
 /**
@@ -32,8 +33,21 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     
     //Check amount of inputs
-    if (nrhs!=3) {
+    if (nrhs<3 ||nrhs>4) {
         mexErrMsgIdAndTxt(errId, errMsgInputs);
+    }
+    //////////////////////////// 4rd argument is matched or un matched
+    bool krylov_proj=false;
+    if (nrhs==4){
+        if ( mxIsChar(prhs[3]) != 1)
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input","4rd input shoudl be a string");
+        
+        /* copy the string data from prhs[0] into a C string input_ buf.    */
+        char *krylov = mxArrayToString(prhs[3]);
+        if (strcmp(krylov,"Krylov"))
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input","4rd input shoudl be Krylov");
+        else
+            krylov_proj=true;
     }
     ///////////////////////// 3rd argument: angle of projection.
     
@@ -70,7 +84,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     ///////////////////// Second input argument,
     // Geometry structure that has all the needed geometric data.
     
-    // IMPORTANT-> MAke sure Matlab creates the struct in this order.
+    // IMPORTANT-> Make sure Matlab creates the struct in this order.
     const char *fieldnames[11];
     fieldnames[0] = "nVoxel";
     fieldnames[1] = "sVoxel";
@@ -300,8 +314,15 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 //     mexPrintf("Input time : %lf ms\n" ,time_input*1000);
     
 //     begin = clock();
-    
-    projection(img,geo,result,alphas,nalpha);
+    if (krylov_proj){
+        mexPrintf("Computing projection using accurate voxel-ray intersection\n");
+        siddon_ray_projection(img,geo,result,alphas,nalpha);
+    }
+    else
+    {
+        mexPrintf("Computing projection using ray-sampling\n");
+        projection(img,geo,result,alphas,nalpha);
+    }
     
 //     end = clock();
 //     double time_code = (double)(end - begin) / CLOCKS_PER_SEC;

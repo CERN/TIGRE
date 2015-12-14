@@ -1,7 +1,8 @@
+#include "ray_interpolated_projection.hpp"
 
-#ifndef PROJECTION_HPP
-#define PROJECTION_HPP
-typedef struct {
+#ifndef TYPES_CBCT
+#define TYPES_CBCT
+struct  Geometry {
     // Geometry assumptions:
     //  -> Origin is at (0,0,0). Image center is there +offOrig
     //  -> at angle 0, source + image centre (without the offset) + detector centre (without offset) 
@@ -33,19 +34,24 @@ typedef struct {
     double maxLength;
     //User option
     double accuracy;
-}Geometry;
+};
 
-typedef struct{
+ struct Point3D{
     double x;
     double y;
     double z;
-}Point3D;
-int projection(float const * const img, Geometry geo, double** result,double const * const alphas,int nalpha);
-double computeMaxLength(Geometry geo, double alpha);
-void computeDeltas(Geometry geo, double alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
+};
+#endif
 
-double maxDistanceCubeXY(Geometry geo, double alpha,int i);
+#ifndef PROJECTION_HPP_SIDDON
+#define PROJECTION_HPP_SIDDON
+int siddon_ray_projection(float const * const img, Geometry geo, double** result,double const * const alphas,int nalpha);
+
+//double computeMaxLength(Geometry geo, double alpha);
+void computeDeltas_Siddon(Geometry geo, double alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
+
+//double maxDistanceCubeXY(Geometry geo, double alpha,int i);
 
 // below, not used
-Geometry nomralizeGeometryImage(Geometry geo);
+//Geometry nomralizeGeometryImage(Geometry geo);
 #endif
