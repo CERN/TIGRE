@@ -88,7 +88,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
     //Source
      Point3D S;   
      S.x=geo.DSO;
-     S.y=-uv0Offset.x/geo.dDetecU;
+     S.y=-uv0Offset.x;
      S.z=-uv0Offset.y/geo.dDetecV;
      // "XYZ" in the warped coordinate system of the current point
      Point3D P;

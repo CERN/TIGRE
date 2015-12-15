@@ -120,7 +120,6 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
      image[idx]+=tex3D(tex, u +0.5 ,
                             v +0.5 , 
                             indAlpha                                           +0.5)*weigth;
-    
 }
     
     

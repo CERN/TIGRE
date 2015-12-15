@@ -5,7 +5,7 @@ clc;
 close all;
 
 % Initialize toolbox
-initTOOLBOX;
+InitToolbox;
 
 %% Set up geometry
 Geometry.DSD = 1536;   
@@ -72,7 +72,7 @@ close all
 %% reconstruct OS-SART
 
 niter=200;
-Geometry.nVoxel=[512;512;512]/2;
+Geometry.nVoxel=[512;512;512];
 Geometry.sVoxel=[256;256;256];
 Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
@@ -80,7 +80,8 @@ Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 % [resOSSART,errOSSART]=OS_SART_CBCT(data,Geometry,alpha,niter,20);
 % [resSIRT,errSIRT]=SIRT_CBCT(data,Geometry,alpha,niter);
 % [resFDK,errFDK]=FDK_CBCT(data,Geometry,alpha);
-
+[resCGLS,CGLSL2]=CGLS_CBCT(data,Geometry,alpha,8);
+break;
 [resnoinit,noinitL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20);
 [resmulti,multiL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20,'Init','multigrid');
 [resinitFDK,FDKL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20,'Init','FDK');

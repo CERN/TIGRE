@@ -12,7 +12,7 @@ gamma=norm(p(:),2)^2;
 
 errorL2=zeros(niter,1);
 for ii=1:niter
-    
+     if ii==1;tic;end
     
     q=Ax(p,geo,angles,'Krylov');
     alpha=gamma/norm(q(:),2)^2;
@@ -22,16 +22,27 @@ for ii=1:niter
     s=Atb(r,geo,angles,'Krylov');
     gamma1=norm(s(:),2)^2;
     beta=gamma1/gamma;
+    gamma=gamma1;
     p=s+beta*p;
    
+    % Diverges and that is not cool. I dont know why. Paper says tehre is
+    % less than 1% of error between the A and At, but could that bee too
+    % much anyway?
     if nargout>1
         aux=proj-Ax(x,geo,angles,'Krylov');
         errorL2(ii)=norm(aux(:),2);
     end
-    if mod(ii,50)==0
-        disp(['Iteration: ',num2str(ii)]);
+    if ii>1 && errorL2(ii)>errorL2(ii-1)
+       x=x-alpha*p;
+       return; 
     end
-    
+     if ii==1;
+        expected_time=toc*niter;   
+        disp('CGLS');
+        disp(['Expected duration  :    ',secs2hms(expected_time)]);
+        disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);   
+        disp('');
+    end
 end
 
 

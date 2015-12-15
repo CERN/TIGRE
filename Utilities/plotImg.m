@@ -65,7 +65,7 @@ for ii=1:length(opts)
 % % % % % %         % iterate trhoug what dim?
         case 'Dim'
             if default
-                cross=1;
+                crossect=1;
             else
                 if length(val)>1  
                     error('CBCT:plotImgs:InvalidInput','Invalid Dim')
@@ -73,14 +73,14 @@ for ii=1:length(opts)
                 
                 if val==3 || lower(val)=='z'
                     img=permute(img,[3 2 1]);
-                    cross=3;
+                    crossect=3;
                 end
                 if val==2 || lower(val)=='y'
                     img=permute(img,[2 1 3]);
-                    cross=2;
+                    crossect=2;
                 end
                 if val==1 || lower(val)=='x'
-                    cross=1;
+                    crossect=1;
                 end
             end
             
@@ -153,17 +153,17 @@ for ii=size(img,1):-1*steps:1
     set(gca,'YDir','normal');
     
     
-    if cross==3 
+    if crossect==3 
         xlabel('->Y');
         ylabel('X<-');
         title(['Top to bottom ->Z : ',num2str(ii)]);
     end
-     if cross==2 
+     if crossect==2 
         xlabel('->X');
         ylabel('->Z');
         title(['Rigth to Left direction ->Y : ',num2str(ii)]);
     end
-    if cross==1 
+    if crossect==1 
         xlabel('->Y');
         ylabel('->Z');
         title(['Source to Detector direction ->X : ',num2str(ii)]);
