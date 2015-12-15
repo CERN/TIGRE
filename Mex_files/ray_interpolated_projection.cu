@@ -196,18 +196,18 @@ int projection(float const * const img, Geometry geo, double** result,double con
         //Precompute per angle constant stuff for speed
         computeDeltas(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Ray tracing!
-        cudaEvent_t start, stop;
-        float elapsedTime;
-        
-        cudaEventCreate(&start);
-        cudaEventRecord(start,0);
+//         cudaEvent_t start, stop;
+//         float elapsedTime;
+//         
+//         cudaEventCreate(&start);
+//         cudaEventRecord(start,0);
         kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(maxdist));
-        cudaEventCreate(&stop);
-        cudaEventRecord(stop,0);
-        cudaEventSynchronize(stop);
-        
-        cudaEventElapsedTime(&elapsedTime, start,stop);
-        mexPrintf("Elapsed time : %f ms\n" ,elapsedTime);
+//         cudaEventCreate(&stop);
+//         cudaEventRecord(stop,0);
+//         cudaEventSynchronize(stop);
+//         
+//         cudaEventElapsedTime(&elapsedTime, start,stop);
+//         mexPrintf("Elapsed time : %f ms\n" ,elapsedTime);
         
         cudaCheckErrors("Kernel fail");
         // copy result to host

@@ -2,7 +2,8 @@
 #include "tmwtypes.h"
 #include "mex.h"
 #include "matrix.h"
-#include "backprojection.hpp"
+#include "voxel_backprojection.hpp"
+#include "voxel_backprojection2.hpp"
 #include <string.h>
 #include <time.h>
 
@@ -21,12 +22,27 @@
 
 void mexFunction(int  nlhs , mxArray *plhs[],
         int nrhs, mxArray const *prhs[]){
-    
-    //Check amount of inputs
-    if (nrhs!=3) {
+
+        //Check amount of inputs
+    if (nrhs<3 ||nrhs>4) {
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput", "Wrong number of inputs provided");
     }
-    
+     /*
+     ** 4rd argument is matched or un matched.
+     */
+    bool krylov_proj=false;
+    if (nrhs==4){
+        if ( mxIsChar(prhs[3]) != 1)
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input","4rd input shoudl be a string");
+        
+        /* copy the string data from prhs[0] into a C string input_ buf.    */
+        char *krylov = mxArrayToString(prhs[3]);
+        if (strcmp(krylov,"Krylov"))
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input","4rd input shoudl be Krylov");
+        else
+            krylov_proj=true;
+    }
+
     /*
      ** Third argument: angle of projection.
      */
@@ -304,7 +320,10 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     /*
      * Call the CUDA kernel
      */
-    backprojection(img,geo,result,alphas,nalpha);
+    if (krylov_proj)
+        voxel_backprojection2(img,geo,result,alphas,nalpha);    
+    else
+        voxel_backprojection(img,geo,result,alphas,nalpha);
     /*
      * Prepare the outputs
      */

@@ -315,12 +315,10 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
 //     begin = clock();
     if (krylov_proj){
-        mexPrintf("Computing projection using accurate voxel-ray intersection\n");
         siddon_ray_projection(img,geo,result,alphas,nalpha);
     }
     else
     {
-        mexPrintf("Computing projection using ray-sampling\n");
         projection(img,geo,result,alphas,nalpha);
     }
     

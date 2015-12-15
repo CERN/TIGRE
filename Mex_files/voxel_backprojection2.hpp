@@ -1,4 +1,4 @@
-
+#include "voxel_backprojection.hpp"
 #ifndef TYPES_CBCT
 typedef struct {
     // Geometry assumptions:
@@ -42,9 +42,9 @@ typedef struct{
 #define TYPES_CBCT
 #endif
 
-#ifndef BACKPROJECTION_HPP
-#define BACKPROJECTION_HPP
+#ifndef BACKPROJECTION2_HPP
+#define BACKPROJECTION2_HPP
 
-int voxel_backprojection(float const * const projections, Geometry geo, double* result,double const * const alphas,int nalpha);
+int voxel_backprojection2(float const * const projections, Geometry geo, double* result,double const * const alphas,int nalpha);
 void computeDeltasCube(Geometry geo, double alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ);
 #endif

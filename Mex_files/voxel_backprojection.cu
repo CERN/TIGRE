@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <cuda_runtime_api.h>
 #include <cuda.h>
-#include "backprojection.hpp"
+#include "voxel_backprojection.hpp"
 #include "mex.h"
 #include <math.h>
 
@@ -56,7 +56,7 @@
  **/
 texture<float, cudaTextureType3D , cudaReadModeElementType> tex; 
     
-__global__ void kernelPixelBackprojection(const Geometry geo, 
+__global__ void kernelPixelBackprojectionFDK(const Geometry geo, 
                                             double* image,
                                             int indAlpha,
                                             Point3D deltaX ,
@@ -80,7 +80,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
     //Source
      Point3D S;   
      S.x=geo.DSO;
-     S.y=-uv0Offset.x/geo.dDetecU;
+     S.y=-uv0Offset.x;
      S.z=-uv0Offset.y/geo.dDetecV;
      // "XYZ" in the warped coordinate system of the current point
      Point3D P;
@@ -92,8 +92,8 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
      // compute the weigth for the backprojection. This needs the X and Y coords on the real workd of the image
      double weigth;
      double realx,realy;
-     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   -xyzOffset.x/geo.dDetecU;
-     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   -xyzOffset.y/geo.dDetecV;
+     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   -xyzOffset.x; // /geo.dDetecU;  X never gets scaled.
+     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   -xyzOffset.y/geo.dDetecU; // and Y gets scalled by U
      
      weigth=geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha);
      weigth=weigth/geo.DSO;
@@ -124,7 +124,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
 }
     
     
-int backprojection(float const * const projections, Geometry geo, double* result,double const * const alphas,int nalpha){
+int voxel_backprojection(float const * const projections, Geometry geo, double* result,double const * const alphas,int nalpha){
  
     // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
     int deviceCount = 0;
@@ -201,7 +201,7 @@ int backprojection(float const * const projections, Geometry geo, double* result
         offDetec.x=geo.offDetecU[i];
         offDetec.y=geo.offDetecV[i];
         
-        kernelPixelBackprojection<<<(geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>
+        kernelPixelBackprojectionFDK<<<(geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>
                 (geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec);
         cudaCheckErrors("Kernel fail");
     }
