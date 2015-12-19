@@ -12,12 +12,12 @@ clc;
 close all;
 
 % Initialize toolbox
-initTOOLBOX;
+InitToolbox;
 %% Create geometry
 
 % Load a default geometry (look inside if curious)
 GeometrySettingRandoHead;
-Geometry.nVoxel=[512;512;512]/4;
+Geometry.nVoxel=[512;512;512]/8;
 Geometry.sVoxel=[256;256;256];
 Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
@@ -26,7 +26,7 @@ Geometry.accuracy=1;
 
 % Set projection angles
 init=0;          % start angle
-step=10;        % step
+step=1;        % step
 finish=360-step; % end angle
 
 alpha=[init:step:finish]*pi/180;
@@ -38,10 +38,10 @@ plotgeometry(Geometry,30)
 %% Define the test image.
  
 % %%% 3D Shepp-Logan
-img=phantom3dAniso('Modified Shepp-Logan',Geometry.nVoxel);
+% img=phantom3dAniso('Modified Shepp-Logan',Geometry.nVoxel);
 
 % %%% thorax digital phantom
-% img=thoraxPhantom(Geometry.nVoxel);
+img=thoraxPhantom(Geometry.nVoxel);
 
 %% Plot the image
 
@@ -66,6 +66,9 @@ plotProj(data,alpha);
 %%%%%%%%%%%%%%%%%% ALGORITHMS %%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 niter=75;
+%% CGLS
+[resCGLS, errCGLS]=CGLS_CBCT(data,Geometry,alpha,20);
+break
 %% SIRT 
 [resSIRT, errSIRT]=SIRT_CBCT(data,Geometry,alpha,15);
 %% SART

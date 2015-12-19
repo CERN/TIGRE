@@ -138,14 +138,14 @@ int voxel_backprojection(float const * const projections, Geometry geo, double* 
         cudaDeviceProp deviceProp;
         cudaGetDeviceProperties(&deviceProp, dev);
 
-        if (strcmp(deviceProp.name, "Tesla K40c") == 0){
+        if (strcmp(deviceProp.name, "Tesla K40c") == 0|| strcmp(deviceProp.name, "GeForce GT 740M") == 0){
             cudaSetDevice(dev);
             found=true;
             break;
         }
     }
     if (!found)
-        mexErrMsgIdAndTxt("CBCT:CUDA:Atb:cudaDevice","No Tesla K40c found");
+        mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Supported GPU found");
 
     
     // Done, Tesla found.

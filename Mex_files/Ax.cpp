@@ -1,6 +1,6 @@
 /*
- * @file trilinear.cpp
- * @brief MEX gateway for trilinear texture memory interpolation.
+ * @file Ax.cpp
+ * @brief MEX gateway for Cone Beam  projection.
  * author: Ander Biguri ander.biguri@gmail.com
  *
  */

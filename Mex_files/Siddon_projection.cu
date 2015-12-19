@@ -211,14 +211,14 @@ int siddon_ray_projection(float const * const img, Geometry geo, double** result
             cudaDeviceProp deviceProp;
             cudaGetDeviceProperties(&deviceProp, dev);
             
-            if (strcmp(deviceProp.name, "Tesla K40c") == 0){
+            if (strcmp(deviceProp.name, "Tesla K40c") == 0|| strcmp(deviceProp.name, "GeForce GT 740M") == 0){
                 cudaSetDevice(dev);
                 found=true;
                 break;
             }
         }
         if (!found)
-            mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Tesla K40c found");
+           mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Supported GPU found");
         // DONE, Tesla found
         
         // copy data to CUDA memory
