@@ -182,6 +182,7 @@ void tvdenoising(float* src, float* dst, float lambda,
     int i = 0;
 
     float tau2, tau1;
+    
     for ( i = 0; i < maxIter; i++ )
     {
         tau2 = 0.3f + 0.02f * i;
@@ -194,6 +195,7 @@ void tvdenoising(float* src, float* dst, float lambda,
         update_p<<<grid, block>>>(d_u, d_pz, d_py, d_px, tau2,
                                   image_size[2], image_size[1], image_size[0],
                                   spacing[2], spacing[1], spacing[0]);
+        
     }
 
     cudaCheckErrors("TV minimization"); 
@@ -206,5 +208,5 @@ void tvdenoising(float* src, float* dst, float lambda,
     cudaFree(d_pz);
     cudaFree(d_py);
     cudaFree(d_px);
-    cudaDeviceReset();
+    //cudaDeviceReset();
 }

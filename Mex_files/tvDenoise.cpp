@@ -14,7 +14,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     int maxIter;
     float lambda;
     if (nrhs==1){
-        maxIter=200;
+        maxIter=100;
         lambda=15.0f;
     }
     if (nrhs==2){
@@ -66,14 +66,14 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // call C function with the CUDA denoising
     const float spacing[3]={1,1,1};
     const long imageSize[3]={size_img[0] ,size_img[1],size_img[2] };
-    
+   
     tvdenoising(img,imgout, lambda, spacing, imageSize, maxIter); 
     
     //prepareotputs
-    plhs[0] = mxCreateNumericArray(3,size_img, mxDOUBLE_CLASS, mxREAL);
-    double *mxImgout = mxGetPr(plhs[0]);
+    plhs[0] = mxCreateNumericArray(3,size_img, mxSINGLE_CLASS, mxREAL);
+    float *mxImgout =(float*) mxGetPr(plhs[0]);
     
-    memcpy(mxImgout,imgout,size_img[0] *size_img[1] *size_img[2]*sizeof(double));
+    memcpy(mxImgout,imgout,size_img[0] *size_img[1] *size_img[2]*sizeof(float));
     //free memory
     free(img);
     free(imgout);

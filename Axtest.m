@@ -112,21 +112,21 @@ Geometry.accuracy=0.1;
 % [P,~] = xread('C:\VOL_CT_modified\rando_head\');
 % alpha=
 %% Real image in the coords we like
-% load img128
-% img=double(img);
-% 
-% [y, x, z]=...
-%    ndgrid(linspace(1,size(img,1),Geometry.nVoxel(1)),...
-%           linspace(1,size(img,2),Geometry.nVoxel(2)),...
-%           linspace(1,size(img,3),Geometry.nVoxel(3)));
-% imOut=interp3(img,x,y,z);
-% img=imOut;
+load img128
+img=double(img);
+
+[y, x, z]=...
+   ndgrid(linspace(1,size(img,1),Geometry.nVoxel(1)),...
+          linspace(1,size(img,2),Geometry.nVoxel(2)),...
+          linspace(1,size(img,3),Geometry.nVoxel(3)));
+imOut=interp3(img,x,y,z);
+img=imOut;
 %% plot image
 %  plotImg(img,5)
 
 
  
- img=ones(Geometry.nVoxel');
+%  img=ones(Geometry.nVoxel');
 %  alpha=-pi/2;
 %% Project
  
@@ -137,6 +137,9 @@ Geometry.accuracy=0.1;
 tic
 b=Ax(img,Geometry,alpha,'Krylov'); 
 toc
+b=b+(randn(size(b))-0.5)*max(b(:))/40;
+[imgFDK]=FDK_CBCT(b,Geometry,alpha);
+
 break
 tic
 [imgCGLS,errCGLS]=CGLS_CBCT(b,Geometry,alpha,8);
