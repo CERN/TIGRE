@@ -17,6 +17,7 @@ do { \
         } \
 } while (0)
 
+    
 __device__ __inline__
 float divergence(const float* pz, const float* py, const float* px,
                  long z, long y, long x, long depth, long rows, long cols,
@@ -121,7 +122,7 @@ void update_p(const float* u, float* pz, float* py, float* px,
 
 
 // Main function
-void tvdenoising(float* src, float* dst, float lambda,
+void tvdenoising(const float* src, float* dst, float lambda,
                  const float* spacing, const long* image_size, int maxIter)
 {
     // Init params
