@@ -48,14 +48,17 @@ for ii=1:2:nVarargs
     end
 end
 
-ninput=1;
 for ii=1:length(opts)
     opt=opts{ii};
     default=defaults(ii);
     % if one option isnot default, then extranc value from input
-    if default==0
-        val=varargin{ninput*2};
-        ninput=ninput+1;
+   if default==0
+        ind=double.empty(0,1);jj=1;
+        while isempty(ind)
+            ind=find(isequal(opt,varargin{jj}));
+            jj=jj+1;
+        end
+        val=varargin{jj};
     end
     
     switch opt
@@ -136,7 +139,7 @@ end
 
 % Projection weigth, W
 % Projection weigth, W
-W=Ax(ones(geo.nVoxel'),geo,alpha);  %
+W=Ax(ones(geo.nVoxel'),geo,alpha,'Krylov');  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 
@@ -172,7 +175,7 @@ for ii=1:niter
             geo.offDetector=offDetector(:,range);
         end
         
-        proj_err=proj(:,:,range)-Ax(res,geo,alpha(range));      %                                 (b-Ax)
+        proj_err=proj(:,:,range)-Ax(res,geo,alpha(range),'Krylov');      %                                 (b-Ax)
         weighted_err=W(:,:,range).*proj_err;                    %                          W^-1 * (b-Ax)
         backprj=Atb(weighted_err,geo,alpha(range));             %                     At * W^-1 * (b-Ax)
         weigth_backprj=bsxfun(@times,1./V,backprj);             %                 V * At * W^-1 * (b-Ax)

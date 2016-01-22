@@ -23,7 +23,7 @@ Geometry.offOrigin=[0;0;0];
 Geometry.accuracy=1;
 
 addpath('C:\VOL_CT_modified\')
-[P,D] = xread('C:\VOL_CT_modified\rando_head\');
+[P,D] = xread('C:\VOL_CT_modified\CatPhan\');
 
 alpha=P.Angle';
 
@@ -56,7 +56,7 @@ end
 % Geometry.offDetector=Geometry.offDetector(:,range);
 
 %% visualize projections.
-vis=0;
+vis=1;
 if vis
     plotProj(data,alpha);
 end
@@ -71,16 +71,16 @@ close all
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% reconstruct OS-SART
 
-niter=200;
-Geometry.nVoxel=[512;512;512]/8;
-Geometry.sVoxel=[256;256;256];
-Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
+niter=50;
+% Geometry.nVoxel=[512;512;512]/8;
+% Geometry.sVoxel=[256;256;256];
+% Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
 % [resSART,errSART]=SART_CBCT(data,Geometry,alpha,niter);
 % [resOSSART,errOSSART]=OS_SART_CBCT(data,Geometry,alpha,niter,20);
 % [resSIRT,errSIRT]=SIRT_CBCT(data,Geometry,alpha,niter);
 % [resFDK,errFDK]=FDK_CBCT(data,Geometry,alpha);
-[resCGLS,CGLSL2]=CGLS_CBCT(data,Geometry,alpha,20);
+% [resCGLS,CGLSL2]=CGLS_CBCT(data,Geometry,alpha,20);
 break;
 [resnoinit,noinitL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20);
 [resmulti,multiL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20,'Init','multigrid');

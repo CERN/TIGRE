@@ -47,8 +47,12 @@ for ii=1:length(opts)
     default=defaults(ii);
     % if one option isnot default, then extranc value from input
     if default==0
-        val=varargin{ninput*2};
-        ninput=ninput+1;
+        ind=double.empty(0,1);jj=1;
+        while isempty(ind)
+            ind=find(isequal(opt,varargin{jj}));
+            jj=jj+1;
+        end
+        val=varargin{jj};
     end
     
     switch opt
@@ -119,7 +123,7 @@ for ii=1:length(opts)
 % % % % % %         % Limits of the colors
         case 'Clims'
             if default
-                climits=prctile(img(:),[1 99]);
+                climits=prctile(double(img(:)),[1 99]);
             else
                 if min(size(val))==1 && max(size(val))==2
                     climits=val;

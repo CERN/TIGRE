@@ -7,7 +7,7 @@
 
 // http://gpu4vision.icg.tugraz.at/papers/2010/knoll.pdf#pub47
 #define MAXTREADS 1024
-#define WARPSIZE 32
+
 #include "tvdenoising.hpp"
 #define cudaCheckErrors(msg) \
 do { \
@@ -18,8 +18,7 @@ do { \
         } \
 } while (0)
 
-__device__ float d_max;
-__device__ float d_min;
+
 
 __device__ __inline__
 float divergence(const float* pz, const float* py, const float* px,
@@ -122,64 +121,7 @@ void update_p(const float* u, float* pz, float* py, float* px,
     py[idx] = q[1] / norm;
     px[idx] = q[2] / norm;
 }
-// https://stackoverflow.com/questions/7548370/cuda-maximum-reduction-algorithm-not-working
-__global__ void reduceMax(int n, float *g_idata)
-{
-    extern __shared__ volatile float sdata[];
-    unsigned int tid = threadIdx.x;
-    unsigned int i = blockIdx.x*(blockDim.x) + tid;
-    unsigned int gridSize = blockDim.x*gridDim.x;
 
-    float val = g_idata[i];
-    i += gridSize;
-    while (i < n) {
-        val = fmax(g_idata[i],val);
-        i += gridSize;
-    }
-    sdata[tid] = val;
-    __syncthreads();
-
-    // This versions uses a single warp for the shared memory 
-    // reduction
-# pragma unroll
-    for(int i=(tid+WARPSIZE); ((tid<WARPSIZE)&&(i<blockDim.x)); i+=32)
-        sdata[tid] = fmax(sdata[tid], sdata[i]);
-
-    if (tid < 16) sdata[tid] = fmax(sdata[tid], sdata[tid + 16]);
-    if (tid < 8)  sdata[tid] = fmax(sdata[tid], sdata[tid + 8]);
-    if (tid < 4)  sdata[tid] = fmax(sdata[tid], sdata[tid + 4]);
-    if (tid < 2)  sdata[tid] = fmax(sdata[tid], sdata[tid + 2]);
-    if (tid == 0) d_max = fmax(sdata[tid], sdata[tid + 1]);
-}
-// https://stackoverflow.com/questions/7548370/cuda-maximum-reduction-algorithm-not-working
-__global__ void reduceMin(int n, float *g_idata)
-{
-    extern __shared__ volatile float sdata[];
-    unsigned int tid = threadIdx.x;
-    unsigned int i = blockIdx.x*(blockDim.x) + tid;
-    unsigned int gridSize = blockDim.x*gridDim.x;
-
-    float val = g_idata[i];
-    i += gridSize;
-    while (i < n) {
-        val = fmin(g_idata[i],val);
-        i += gridSize;
-    }
-    sdata[tid] = val;
-    __syncthreads();
-
-    // This versions uses a single warp for the shared memory 
-    // reduction
-# pragma unroll
-    for(int i=(tid+WARPSIZE); ((tid<WARPSIZE)&&(i<blockDim.x)); i+=WARPSIZE)
-        sdata[tid] = fmin(sdata[tid], sdata[i]);
-
-    if (tid < 16) sdata[tid] = fmin(sdata[tid], sdata[tid + 16]);
-    if (tid < 8)  sdata[tid] = fmin(sdata[tid], sdata[tid + 8]);
-    if (tid < 4)  sdata[tid] = fmin(sdata[tid], sdata[tid + 4]);
-    if (tid < 2)  sdata[tid] = fmin(sdata[tid], sdata[tid + 2]);
-    if (tid == 0) d_min = fmin(sdata[tid], sdata[tid + 1]);
-}
 
 // Main function
 void tvdenoising(const float* src, float* dst, float lambda,
@@ -219,15 +161,9 @@ void tvdenoising(const float* src, float* dst, float lambda,
     cudaMalloc(&d_src, mem_size);
     cudaMemcpy(d_src, src, mem_size, cudaMemcpyHostToDevice);
     cudaCheckErrors("Memory Malloc and Memset: SRC");
-    // before anything, normalize image
-    reduceMax<<<(total_pixels+ MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(total_pixels,d_src);
-    reduceMin<<<(total_pixels+ MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(total_pixels,d_src);
 
-    float maxImg,minImg;
-    cudaMemcpyFromSymbol(&maxImg, d_max, sizeof(d_max), 0, cudaMemcpyDeviceToHost);
-    cudaMemcpyFromSymbol(&minImg, d_min, sizeof(d_min), 0, cudaMemcpyDeviceToHost);
-    mexPrintf("%f %f\n",maxImg,minImg);
-    return;
+    
+
     // U
     cudaMalloc(&d_u, mem_size);
     cudaMemcpy(d_u, d_src, mem_size, cudaMemcpyDeviceToDevice);
