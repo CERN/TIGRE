@@ -64,7 +64,7 @@ for ii=1:length(opts)
                 if ~isnumeric(val)
                     error('CBCT:plotImgs:InvalidInput','Invalid step')
                 end
-                steps=varargin{ii+1};
+                steps=val;
             end
 % % % % % %         % iterate trhoug what dim?
         case 'Dim'

@@ -5,7 +5,7 @@ if strcmp(type,'central')
     tvgrad= gradientTVnormCentral(f);
     return;
 end
-if strcmp(type,'back')
+if strcmp(type,'backward')
     tvgrad= gradientTVnormBackward(f);
     return;
 end
@@ -24,9 +24,9 @@ tvg=zeros(size(f));
 clear f
 % these are not defined, but we will define them just for indexing
 % readability. They shoudl never be used.
-Gx=cat(1,Gx(1,:,:),Gx);
-Gy=cat(2,Gy(:,1,:),Gy);
-Gz=cat(3,Gz(:,:,1),Gz);
+Gx=cat(1,zeros(size(Gx(1,:,:))),Gx);
+Gy=cat(2,zeros(size(Gy(:,1,:))),Gy);
+Gz=cat(3,zeros(size(Gz(:,:,1))),Gz);
 
 nrm=safenorm(Gx,Gy,Gz); 
 
@@ -45,9 +45,9 @@ tvg=zeros(size(f));
 clear f
 % these are not defined, but we will define them just for indexing
 % readability. They shoudl never be used.
-Gx=cat(1,Gx,Gx(end,:,:));
-Gy=cat(2,Gy,Gy(:,end,:));
-Gz=cat(3,Gz,Gz(:,:,end));
+Gx=cat(1,Gx,zeros(size(Gx(end,:,:))));
+Gy=cat(2,Gy,zeros(size(Gy(:,end,:))));
+Gz=cat(3,Gz,zeros(size(Gz(:,:,end))));
 nrm=safenorm(Gx,Gy,Gz); 
 tvg(1:end-1,1:end-1,1:end-1)=tvg(1:end-1,1:end-1,1:end-1)-(Gx(1:end-1,1:end-1,1:end-1)+Gy(1:end-1,1:end-1,1:end-1)+Gz(1:end-1,1:end-1,1:end-1))./nrm(1:end-1,1:end-1,1:end-1);
 tvg(2:end-1,:,:)=tvg(2:end-1,:,:)+Gx([2:end-1]-1,:,:)./nrm([2:end-1]-1,:,:);
@@ -73,7 +73,7 @@ end
 %% Utils
 function nrm=safenorm(Gx,Gy,Gz)
 
-nrm=sqrt(Gx.^2+Gy.^2+Gz.^2);
+nrm=sqrt(Gx.^2+Gy.^2+Gz.^2)+0.00000001;
 nrm(nrm==0)=1;
 
 end

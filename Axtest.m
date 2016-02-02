@@ -112,16 +112,16 @@ Geometry.accuracy=0.1;
 % [P,~] = xread('C:\VOL_CT_modified\rando_head\');
 % alpha=
 %% Real image in the coords we like
-% load img128
-% img=double(img);
-%
-% [y, x, z]=...
-%    ndgrid(linspace(1,size(img,1),Geometry.nVoxel(1)),...
-%           linspace(1,size(img,2),Geometry.nVoxel(2)),...
-%           linspace(1,size(img,3),Geometry.nVoxel(3)));
-% imOut=interp3(img,x,y,z);
-% img=imOut;
-% clear imgOut x y z
+load img128
+img=double(img);
+
+[y, x, z]=...
+   ndgrid(linspace(1,size(img,1),Geometry.nVoxel(1)),...
+          linspace(1,size(img,2),Geometry.nVoxel(2)),...
+          linspace(1,size(img,3),Geometry.nVoxel(3)));
+imOut=interp3(img,x,y,z);
+img=imOut;
+clear imgOut x y z
 %% plot image
 %  plotImg(img,5)
 
@@ -132,30 +132,55 @@ Geometry.accuracy=0.1;
 
 %% Project
 
-alpha=[0:2:359]*pi/180;
-img=phantom3dAniso(Geometry.nVoxel);
+alpha=[0:1:359]*pi/180;
+% img=phantom3dAniso(Geometry.nVoxel);
 % img=img./max(img(:));
 tic
 b=Ax(img,Geometry,alpha,'Krylov');
 toc
-% b=b+(randn(size(b))-0.5)*max(b(:))/80;
+b=b+(randn(size(b))-0.5)*max(b(:))/80;
 
 
 % tic
-[fdk]=FDK_CBCT(b,Geometry,alpha);
+% [imgfdk]=FDK_CBCT(b,Geometry,alpha);
+% [imgCGLS,errCGLS]=CGLS_CBCT(b,Geometry,alpha,20);
+
+[imgOSSART]=OS_SART_CBCT(b,Geometry,alpha,50);
+
+% [imgADSPOCS,tv]=ADS_POCS_CBCT(b,Geometry,alpha,50,im3Dnorm(imgOSSART,'L2'));
+% [imgBADSPOCS,tv]=B_ADS_POCS_beta_CBCT(b,Geometry,alpha,50,im3Dnorm(imgOSSART,'L2'),0.75);
+
+% imshow([imgADSPOCS(:,:,60) imgOSSART(:,:,60)],[])
 %%
-f=fdk;
-dtvg=1;
-ng=800;
-for ii=1:ng
-    % Steepest descend of TV norm
-    tv(ii)=im3Dnorm(f,'TV','forward');
-    df=gradientTVnorm(f,'forward');
-    df=df./im3Dnorm(df,'L2');
-    f=f-dtvg.*df;
-end
+% %
+% s=512;
+% 
+% f0=ones(s,s,s)*1;%*rand(1);%/s^3;
+% f0(5:100,5:100,5:100)=0;
+% % f0=imgOSSART;
+% dtvg=6;
+% ng=100;
+% f=f0;
+% % tic
+% % for ii=1:ng
+% %     % Steepest descend of TV norm
+% %     df=gradientTVnorm(f,'backward');
+% % %     n(ii)=im3Dnorm(df,'L2')
+% %     df=df./im3Dnorm(df,'L2');
+% %     f=f-dtvg.*df;
+% % end
+% % toc
+% tic
+% pocsed=minimizeTV(f0,dtvg,ng);
+% toc
+% 
+% % close all
+% % imagesc(f(:,:,10)); colormap gray; axis xy
+% % figure
+% imagesc(pocsed(:,:,10)); colormap gray;axis xy
 
 break
+%%
 tic
 [imgCGLS,errCGLS]=CGLS_CBCT(b,Geometry,alpha,8);
 toc

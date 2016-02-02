@@ -21,7 +21,7 @@ function plotProj(proj,alpha,varargin)
 %
 %
 %% Parse inputs
-opts=     {'Step','Colormap','Clims','Savegif'};
+opts=     {'Step','Colormap','CLims','Savegif'};
 defaults= [    1,    1     ,   1 ,      1];
 
 % Check inputs
@@ -43,8 +43,12 @@ for ii=1:length(opts)
     default=defaults(ii);
     % if one option isnot default, then extranc value from input
     if default==0
-        val=varargin{ninput*2};
-        ninput=ninput+1;
+        ind=double.empty(0,1);jj=1;
+        while isempty(ind)
+            ind=find(isequal(opt,varargin{jj}));
+            jj=jj+1;
+        end
+        val=varargin{jj};
     end
     switch opt
 % % % % % %         %Step 
@@ -55,7 +59,7 @@ for ii=1:length(opts)
                 if ~isnumeric(val)
                     error('CBCT:plotImgs:InvalidInput','Invalid step')
                 end
-                steps=varargin{ii+1};
+                steps=val;
             end
 % % % % % %         % Colormap choice            
         case 'Colormap'
@@ -79,7 +83,7 @@ for ii=1:length(opts)
                 end
             end
 % % % % % %         % Limits of the colors
-        case 'Clims'
+        case 'CLims'
             if default
                 climits=[min(proj(:)) max(proj(:))];
             else

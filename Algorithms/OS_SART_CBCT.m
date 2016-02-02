@@ -15,6 +15,9 @@ function [res,errorL2]=OS_SART_CBCT(proj,geo,alpha,niter,varargin)
 %
 %   'lambda':      Sets the value of the hyperparameter. Default is 1
 %
+%   'lambdared':   Reduction of lambda.Every iteration
+%                  lambda=lambdared*lambda. Default is 0.95
+%
 %   'Init':        Describes diferent initialization techniques.
 %                  'none'     : Initializes the image to zeros (default)
 %                  'FDK'      : intializes image to FDK reconstrucition
@@ -31,8 +34,8 @@ function [res,errorL2]=OS_SART_CBCT(proj,geo,alpha,niter,varargin)
 
 %% Deal with input parameters
 
-opts=     {'BlockSize','lambda','Init','InitImg','Verbose'};
-defaults= [   1  ,  1  ,    1   ,1 ,1];
+opts=     {'BlockSize','lambda','Init','InitImg','Verbose','lambdaRed'};
+defaults= [   1  ,  1  ,    1   ,1 ,1,1];
 
 % Check inputs
 nVarargs = length(varargin);
@@ -72,12 +75,21 @@ for ii=1:length(opts)
         % % % % % % % hyperparameter, LAMBDA
         case 'lambda'
             if default
-                lambda=1;
+                lambda=0.95;
             else
                 if length(val)>1 || ~isnumeric( val)
                     error('CBCT:OS_SART_CBCT:InvalidInput','Invalid lambda')
                 end
                 lambda=val;
+            end
+         case 'lambdaRed'
+            if default
+                lamdbared=1;
+            else
+                if length(val)>1 || ~isnumeric( val)
+                    error('CBCT:OS_SART_CBCT:InvalidInput','Invalid lambda')
+                end
+                lamdbared=val;
             end
         case 'BlockSize'
             if default
@@ -185,6 +197,7 @@ for ii=1:niter
         res(res<0)=0;
         
     end
+    lambda=lambda*lamdbared;
     errornow=norm(proj_err(:));                           % Compute error norm2 of b-Ax
 %     If the error is not minimized 
     if errornow>errorL2(end)*1.1

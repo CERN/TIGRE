@@ -56,7 +56,7 @@ end
 % Geometry.offDetector=Geometry.offDetector(:,range);
 
 %% visualize projections.
-vis=1;
+vis=0;
 if vis
     plotProj(data,alpha);
 end
@@ -72,17 +72,20 @@ close all
 %% reconstruct OS-SART
 
 niter=50;
-% Geometry.nVoxel=[512;512;512]/8;
-% Geometry.sVoxel=[256;256;256];
-% Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
+Geometry.nVoxel=[512;512;512];
+Geometry.sVoxel=[256;256;256];
+Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
 % [resSART,errSART]=SART_CBCT(data,Geometry,alpha,niter);
 % [resOSSART,errOSSART]=OS_SART_CBCT(data,Geometry,alpha,niter,20);
 % [resSIRT,errSIRT]=SIRT_CBCT(data,Geometry,alpha,niter);
 % [resFDK,errFDK]=FDK_CBCT(data,Geometry,alpha);
 % [resCGLS,CGLSL2]=CGLS_CBCT(data,Geometry,alpha,20);
-break;
+
+% break;
 [resnoinit,noinitL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20);
+[imgBADSPOCS,tv]=B_ADS_POCS_beta_CBCT(data,Geometry,alpha,10,5,im3Dnorm(resnoinit,'L2'),0.75);
+break
 [resmulti,multiL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20,'Init','multigrid');
 [resinitFDK,FDKL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20,'Init','FDK');
 [resFDK,errFDK]=FDK_CBCT(data,Geometry,alpha);
