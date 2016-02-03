@@ -138,14 +138,13 @@ alpha=[0:1:359]*pi/180;
 tic
 b=Ax(img,Geometry,alpha,'Krylov');
 toc
-b=b+(randn(size(b))-0.5)*max(b(:))/80;
-
+% b=b+(randn(size(b))-0.5)*max(b(:))/80;
+bn=addCTnoise(b);
 
 % tic
 % [imgfdk]=FDK_CBCT(b,Geometry,alpha);
-% [imgCGLS,errCGLS]=CGLS_CBCT(b,Geometry,alpha,20);
-
-[imgOSSART]=OS_SART_CBCT(b,Geometry,alpha,50);
+% [imgCGLS,errCGLS]=CGLS_CBCT(b,Geometry,alpha,9);
+% [imgOSSART,errOSSART]=OS_SART_CBCT(b,Geometry,alpha,50);
 
 % [imgADSPOCS,tv]=ADS_POCS_CBCT(b,Geometry,alpha,50,im3Dnorm(imgOSSART,'L2'));
 % [imgBADSPOCS,tv]=B_ADS_POCS_beta_CBCT(b,Geometry,alpha,50,im3Dnorm(imgOSSART,'L2'),0.75);

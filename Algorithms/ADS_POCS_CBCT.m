@@ -76,8 +76,9 @@ while ~stop_criteria %POCS
 %         df=df./im3Dnorm(df,'L2');
 %         f=f-dtvg.*df;    
 %     end
-%%
+%% This is the equivalent CUDA CODE to minimize the TV
     f=minimizeTV(f0,dtvg,ng);
+    %%
     dg_vec=(f-f0);
     dg=im3Dnorm(dg_vec,'L2');
     if dg>rmax*dp &&dd>epsilon
@@ -89,10 +90,10 @@ while ~stop_criteria %POCS
    if (c<-0.99 && dd<=epsilon) || beta<0.005|| iter>maxiter
        stop_criteria=true;
    end
-   if (ii==1 && verbose==1);
-        expected_time=toc*niter;   
+   if (iter==1 && verbose==1);
+        expected_time=toc*maxiter;   
         disp('ADS-POCS');
-        disp(['Expected duration  :    ',secs2hms(expected_time)]);
+        disp(['Expected duration (if max itereration reached)  :    ',secs2hms(expected_time)]);
         disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
     end

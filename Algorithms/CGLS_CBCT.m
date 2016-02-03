@@ -1,18 +1,26 @@
 function [x,errorL2]= CGLS_CBCT(proj,geo,angles,niter,varargin)
-%   'Init':        Describes diferent initialization techniques.
-%                  'none'     : Initializes the image to zeros (default)
-%                  'FDK'      : intializes image to FDK reconstrucition
-%                  'multigrid': Initializes image by solving the problem in
-%                               small scale and increasing it when relative
-%                               convergence is reached.
-%                  'image'    : Initialization using a user specified
-%                               image. Not recomended unless you really
-%                               know what you are doing.
-%   'InitImg'      an image for the 'image' initialization. Aviod.
-%   'Regularization'   'TV'   : tv reg CAUTION, THIS SEEMS TO BE A HORRIBLE
-%   IDEA
-%   'RegOpt'           Options for regularization. for 'TV', a 2x1 matrix,
-%                      [DATAFIDELITY, ITERATIONS], default, [15,25]
+% CGLS_CBCT solves the CBCT problem using the conjugate gradient in normal
+% equations method
+% 
+%  CGLS_CBCT(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
+%   using the projection data PROJ taken over ALPHA angles, corresponding
+%   to the geometry descrived in GEO, using NITER iterations.
+% 
+%  CGLS_CBCT(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
+%   possible options in OPT are:
+% 
+% 
+%  'Init':    : Describes diferent initialization techniques.
+%             •  'none'     : Initializes the image to zeros (default)
+%             •  'FDK'      : intializes image to FDK reconstrucition
+%             •  'multigrid': Initializes image by solving the problem in
+%                            small scale and increasing it when relative
+%                            convergence is reached.
+%             •  'image'    : Initialization using a user specified
+%                            image. Not recomended unless you really
+%                            know what you are doing.
+%  'InitImg'  : an image for the 'image' initialization. Avoid.
+
 %% parse inputs'
 opts=     {'Init','InitImg','Regularization','RegOpt'};
 defaults= [   1  ,    1   ,1 ,1];
@@ -115,13 +123,7 @@ for ii=1:niter
     alpha=gamma/norm(q(:),2)^2;
     x=x+alpha*p;
     
-    r=r-alpha*q;
-    
-    s=Atb(r,geo,angles,'Krylov');
-    gamma1=norm(s(:),2)^2;
-    beta=gamma1/gamma;
-    gamma=gamma1;
-    p=s+beta*p;
+   
    
     % Diverges and that is not cool. I dont know why. Paper says there is
     % less than 1% of error between the A and At, but could that be too
@@ -136,6 +138,16 @@ for ii=1:niter
 %        end
        return; 
     end
+    % If step is adecuatem, then continue withg CGLS
+    r=r-alpha*q;
+    
+    s=Atb(r,geo,angles,'Krylov');
+    gamma1=norm(s(:),2)^2;
+    beta=gamma1/gamma;
+    gamma=gamma1;
+    p=s+beta*p;
+    
+    
      % Regularization (done down here in case we need to exit before
 %      if regTV
 %         % denoise

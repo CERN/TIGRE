@@ -1,4 +1,4 @@
-function res=minimizeTV(img,varargin)
+function img=minimizeTV(img,varargin)
 %MINIMIZETV MATLAB wrapper for the CUDA stepest descend minimization of TV
 % norm. Note that this does not minimize the TV noise, using the ROF mdoel,
 % this minimizes the TV alone. Infinite iterations of this code will lead
@@ -14,5 +14,5 @@ else
         error('Wrogn amount of inputs');
     end
 end
-    res=double(permute(minTV(img,dtvg,ng),[3 2 1]));
+    img=double(permute(minTV(img,dtvg,ng),[3 2 1]));
 end

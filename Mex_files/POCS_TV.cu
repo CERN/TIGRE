@@ -280,7 +280,7 @@ do { \
                 cudaMemcpy(&sumnorm2, d_norm2aux, sizeof(float), cudaMemcpyDeviceToHost);
                 cudaCheckErrors("cudaMemcpy");
             }
-            mexPrintf("%f ",sqrt(sumnorm2));
+            //mexPrintf("%f ",sqrt(sumnorm2));
             //NOMRALIZE
             //in a Tesla, maximum blocks =15 SM * 4 blocks/SM
             divideArrayScalar  <<<60,MAXTHREADS>>>(d_dimgTV,sqrt(sumnorm2),total_pixels);

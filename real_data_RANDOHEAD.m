@@ -23,7 +23,7 @@ Geometry.offOrigin=[0;0;0];
 Geometry.accuracy=1;
 
 addpath('C:\VOL_CT_modified\')
-[P,D] = xread('C:\VOL_CT_modified\CatPhan\');
+[P,D] = xread('C:\VOL_CT_modified\rando_head\');
 
 alpha=P.Angle';
 
