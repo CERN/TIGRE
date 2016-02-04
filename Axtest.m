@@ -143,6 +143,7 @@ bn=addCTnoise(b);
 
 % tic
 [imgfdk]=FDK_CBCT(b,Geometry,alpha);
+break;
 [imgCGLS,errCGLS]=CGLS_CBCT(b,Geometry,alpha,9);
 % [imgOSSART,errOSSART]=OS_SART_CBCT(b,Geometry,alpha,50);
 

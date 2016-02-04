@@ -141,27 +141,27 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
     
 int voxel_backprojection2(float const * const projections, Geometry geo, double* result,double const * const alphas,int nalpha){
  
-    // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
-    int deviceCount = 0;
-    cudaGetDeviceCount(&deviceCount);
-     if (deviceCount == 0)
-    {
-        mexErrMsgIdAndTxt("CBCT:CUDA:Atb:cudaGetDeviceCount","No CUDA enabled NVIDIA GPUs found");
-    }
-    bool found=false;
-    for (int dev = 0; dev < deviceCount; ++dev)
-    {
-        cudaDeviceProp deviceProp;
-        cudaGetDeviceProperties(&deviceProp, dev);
-
-        if (strcmp(deviceProp.name, "Tesla K40c") == 0 || strcmp(deviceProp.name, "GeForce GT 740M") == 0){
-            cudaSetDevice(dev);
-            found=true;
-            break;
-        }
-    }
-    if (!found)
-       mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Supported GPU found");
+//     // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
+//     int deviceCount = 0;
+//     cudaGetDeviceCount(&deviceCount);
+//      if (deviceCount == 0)
+//     {
+//         mexErrMsgIdAndTxt("CBCT:CUDA:Atb:cudaGetDeviceCount","No CUDA enabled NVIDIA GPUs found");
+//     }
+//     bool found=false;
+//     for (int dev = 0; dev < deviceCount; ++dev)
+//     {
+//         cudaDeviceProp deviceProp;
+//         cudaGetDeviceProperties(&deviceProp, dev);
+// 
+//         if (strcmp(deviceProp.name, "Tesla K40c") == 0 || strcmp(deviceProp.name, "GeForce GT 740M") == 0){
+//             cudaSetDevice(dev);
+//             found=true;
+//             break;
+//         }
+//     }
+//     if (!found)
+//        mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Supported GPU found");
 
     
     // Done, Tesla found.

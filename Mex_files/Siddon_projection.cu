@@ -199,26 +199,26 @@ int siddon_ray_projection(float const * const img, Geometry geo, double** result
         // If you have another GPU and want to use this code, please change it, but make sure you know that is compatible.
         // also change MAXTREADS
         
-        int deviceCount = 0;
-        cudaGetDeviceCount(&deviceCount);
-        if (deviceCount == 0)
-        {
-            mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaGetDeviceCount","No CUDA enabled NVIDIA GPUs found");
-        }
-        bool found=false;
-        for (int dev = 0; dev < deviceCount; ++dev)
-        {
-            cudaDeviceProp deviceProp;
-            cudaGetDeviceProperties(&deviceProp, dev);
-            
-            if (strcmp(deviceProp.name, "Tesla K40c") == 0|| strcmp(deviceProp.name, "GeForce GT 740M") == 0){
-                cudaSetDevice(dev);
-                found=true;
-                break;
-            }
-        }
-        if (!found)
-           mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Supported GPU found");
+//         int deviceCount = 0;
+//         cudaGetDeviceCount(&deviceCount);
+//         if (deviceCount == 0)
+//         {
+//             mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaGetDeviceCount","No CUDA enabled NVIDIA GPUs found");
+//         }
+//         bool found=false;
+//         for (int dev = 0; dev < deviceCount; ++dev)
+//         {
+//             cudaDeviceProp deviceProp;
+//             cudaGetDeviceProperties(&deviceProp, dev);
+//             
+//             if (strcmp(deviceProp.name, "Tesla K40c") == 0|| strcmp(deviceProp.name, "GeForce GT 740M") == 0){
+//                 cudaSetDevice(dev);
+//                 found=true;
+//                 break;
+//             }
+//         }
+//         if (!found)
+//            mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Supported GPU found");
         // DONE, Tesla found
         
         // copy data to CUDA memory
