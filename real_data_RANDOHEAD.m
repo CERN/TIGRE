@@ -84,7 +84,7 @@ Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
 
 % break;
 [resnoinit,noinitL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20);
-[imgBADSPOCS,tv]=B_ADS_POCS_beta_CBCT(data,Geometry,alpha,10,5,im3Dnorm(resnoinit,'L2'),0.75);
+[imgBADSPOCS]=B_ADS_POCS_beta_CBCT(data,Geometry,alpha,10,5,im3Dnorm(resnoinit,'L2'),0.75);
 break
 [resmulti,multiL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20,'Init','multigrid');
 [resinitFDK,FDKL2]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',20,'Init','FDK');

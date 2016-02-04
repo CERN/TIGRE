@@ -142,8 +142,8 @@ toc
 bn=addCTnoise(b);
 
 % tic
-% [imgfdk]=FDK_CBCT(b,Geometry,alpha);
-% [imgCGLS,errCGLS]=CGLS_CBCT(b,Geometry,alpha,9);
+[imgfdk]=FDK_CBCT(b,Geometry,alpha);
+[imgCGLS,errCGLS]=CGLS_CBCT(b,Geometry,alpha,9);
 % [imgOSSART,errOSSART]=OS_SART_CBCT(b,Geometry,alpha,50);
 
 % [imgADSPOCS,tv]=ADS_POCS_CBCT(b,Geometry,alpha,50,im3Dnorm(imgOSSART,'L2'));

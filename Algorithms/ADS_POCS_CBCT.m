@@ -78,7 +78,7 @@ while ~stop_criteria %POCS
 %     end
 %% This is the equivalent CUDA CODE to minimize the TV
     f=minimizeTV(f0,dtvg,ng);
-    %%
+    %% go on
     dg_vec=(f-f0);
     dg=im3Dnorm(dg_vec,'L2');
     if dg>rmax*dp &&dd>epsilon
@@ -88,6 +88,10 @@ while ~stop_criteria %POCS
    %check stop criteria
    c=dot(dg_vec(:),dp_vec(:))/(norm(dg_vec(:),2)*norm(dp_vec(:),2));
    if (c<-0.99 && dd<=epsilon) || beta<0.005|| iter>maxiter
+       disp(['Stopping criteria met']);
+       disp(['c = ' num2str(c)]);
+       disp(['beta = ' num2str(beta)]);
+       disp(['iter = ' num2str(iter)]);
        stop_criteria=true;
    end
    if (iter==1 && verbose==1);
