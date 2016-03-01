@@ -111,7 +111,7 @@ plotProj(data,alpha,'Step',2,'Savegif','DEMO1.gif');
 
 niter=200;
 nblock=20;
-[resOSSART,errOSSART]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',nblock,'Init','multigrid');
+% [resOSSART,errOSSART]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',nblock,'Init','multigrid');
 
 %% Plot the result image
 

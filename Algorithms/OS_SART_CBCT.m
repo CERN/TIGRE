@@ -1,4 +1,4 @@
-function [res,errorL2]=OS_SART_CBCT(proj,geo,alpha,niter,varargin)
+function [res,errorL2,rmtotal,corrtotal,msstotal]=OS_SART_CBCT(proj,geo,alpha,niter,varargin)
 % OS_SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -31,11 +31,18 @@ function [res,errorL2]=OS_SART_CBCT(proj,geo,alpha,niter,varargin)
 %
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
-
+%
+%outputs
+%
+%   rmtotal =  value of RMSE every iteration
+%   corrtotal    =  the Pearson correlation coefficient 
+%   msstotal    =  the mean structural similarity index
 %% Deal with input parameters
 
 opts=     {'BlockSize','lambda','Init','InitImg','Verbose','lambdaRed'};
 defaults= [   1  ,  1  ,    1   ,1 ,1,1];
+
+
 
 % Check inputs
 nVarargs = length(varargin);
@@ -147,19 +154,22 @@ end
 
 
 
-%% Create weigthing matrices
+%% Create weighting matrices
 
-% Projection weigth, W
-% Projection weigth, W
-W=Ax(ones(geo.nVoxel'),geo,alpha,'Krylov');  %
+
+% Projection weight, W
+W=Ax(ones(geo.nVoxel'),geo,alpha,'Krylov');  
+% What is Krylov?
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 
-% Back-Projection weigth, V
+% Back-Projection weight, V
 [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
     -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
 A = permute(alpha, [1 3 2]);
 V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
+%C = bsxfun(fun,A,B) applies the element-by-element binary operation specified by the function handle fun to arrays A and B, with singleton expansion enabled. 
+%@times is Array multiply
 V=sum(V,3);
 clear A x y dx dz;
 
@@ -167,17 +177,21 @@ clear A x y dx dz;
 
 
 %% Iterate
-errorL2=norm(proj(:));
+errorL2=norm(proj(:)); %Calculate for 2-norm
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
+
+
 
 % TODO : Add options for Stopping criteria
 for ii=1:niter
     if (ii==1 && verbose==1);tic;end
     
     for jj=1:block_size:length(alpha);
-        % idex of the Oriented subsets
+        % index of the Oriented subsets
+
         range=jj:block_size+jj-1;
+        
         range(range>length(alpha))=[]; % for the last subset
         
         if size(offOrigin,2)==length(alpha)
@@ -187,14 +201,28 @@ for ii=1:niter
             geo.offDetector=offDetector(:,range);
         end
         
+        %proj is data: b=Ax
+        %res= initial image is zero (default)
         proj_err=proj(:,:,range)-Ax(res,geo,alpha(range),'Krylov');      %                                 (b-Ax)
         weighted_err=W(:,:,range).*proj_err;                    %                          W^-1 * (b-Ax)
         backprj=Atb(weighted_err,geo,alpha(range));             %                     At * W^-1 * (b-Ax)
+%         backprj=Atb(weighted_err,geo,alpha(range),'Krylov');  
         weigth_backprj=bsxfun(@times,1./V,backprj);             %                 V * At * W^-1 * (b-Ax)
+        
+        
+        rm=RMSE(res,res+lambda*weigth_backprj);   
+        corr=CC(res,res+lambda*weigth_backprj);
+        mss=MSSIM(res,res+lambda*weigth_backprj);
         res=res+lambda*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
         
         % Non-negativity constrain
         res(res<0)=0;
+
+        %Store the values every iteration
+        rmtotal(ii)=[rm];
+        corrtotal(ii)=[corr];
+        msstotal(ii)=[mss];
+        
         
     end
     lambda=lambda*lamdbared;
@@ -210,12 +238,17 @@ for ii=1:niter
         expected_time=toc*(niter-1);
         disp('OS-SART');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
-        disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
+        disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
     end
+    
+ 
+    
+ 
 end
 
-
+ 
+ 
 
 
 

@@ -1,4 +1,4 @@
-function [res,errorL2]=SART_CBCT(proj,geo,alpha,niter,lambda)
+function [res,errorL2,rmtotal]=SART_CBCT(proj,geo,alpha,niter,lambda,varargin)
 % SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -131,7 +131,7 @@ errorL2=[];
 %% Create weigthing matrices
 
 % Projection weigth, W
-W=Ax(ones(geo.nVoxel'),geo,alpha);  %
+W=Ax(ones(geo.nVoxel'),geo,alpha);  % %To get the length of the x-ray inside the object domain
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
@@ -145,7 +145,7 @@ clear A x y dx dz;
 %% Iterate
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
-
+rmtotal=[];
 errorL2=norm(proj(:));
 % TODO : Add options for Stopping criteria
 for ii=1:niter
@@ -163,9 +163,13 @@ for ii=1:niter
         weighted_err=W(:,:,jj).*proj_err;                 %                          W^-1 * (b-Ax)
         backprj=Atb(weighted_err,geo,alpha(jj));          %                     At * W^-1 * (b-Ax)
         weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
+        
+        rmSART=RMSE(res,res+lambda*weigth_backprj); 
+        
         res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)
         
-        
+        %Store the value of RMSE every iteration
+        rmtotal(ii)=[rmSART];
         
     end
     lambda=lambda*lamdbared;
