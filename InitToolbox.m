@@ -3,6 +3,7 @@ addpath('.\Algorithms');
 addpath('.\Utilities');
 addpath('.\Test_data');
 addpath('.\Mex_files');
+addpath('.\Utilities\Quality_measures');
 
 % Perceptually uniform colormaps
 addpath('.\Colormaps');

@@ -1,4 +1,4 @@
-function [res,errorL2]=SIRT_CBCT(proj,geo,alpha,niter,lambda)
+function [res,errorL2,rmtotal,corrtotal,msstotal]=SIRT_CBCT(proj,geo,alpha,niter,lambda,varargin)
 % SIRT_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -36,6 +36,7 @@ defaults= [  1  ,    1   ,1 ,1,1];
 
 % Check inputs
 nVarargs = length(varargin);
+
 if mod(nVarargs,2)
     error('CBCT:plotImgs:InvalidInput','Invalid number of inputs')
 end
@@ -157,8 +158,19 @@ for ii=1:niter
     weighted_err=W.*proj_err;                         %                          W^-1 * (b-Ax)
     backprj=Atb(weighted_err,geo,alpha);              %                     At * W^-1 * (b-Ax)
     weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
-    res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)   
+    
+     rm=RMSE(res,res+lambda*weigth_backprj);   
+     corr=CC(res,res+lambda*weigth_backprj);
+     mss=MSSIM(res,res+lambda*weigth_backprj);
+    
+     res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)   
 
+      %Store the values every iteration
+        rmtotal(ii)=[rm];
+        corrtotal(ii)=[corr];
+        msstotal(ii)=[mss];
+     
+     
     errornow=norm(proj_err(:));                       % Compute error norm2 of b-Ax
     % If the error is not minimized.
     if ii>1 && errornow>errorL2(end)
@@ -169,7 +181,7 @@ for ii=1:niter
     errorL2=[errorL2 errornow];
 if (ii==1 && verbose==1);
         expected_time=toc*niter;   
-        disp('SART');
+        disp('SIRT');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
         disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
