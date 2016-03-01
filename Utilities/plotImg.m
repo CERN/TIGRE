@@ -151,7 +151,7 @@ for ii=size(img,1):-1*steps:1
     
     colormap(cmap); 
     colorbar; 
-%     caxis([climits(1),climits(2)]);
+    caxis([climits(1),climits(2)]);
     set(gca,'XTick',[]);
     set(gca,'YTick',[]);
     set(gca,'YDir','normal');
