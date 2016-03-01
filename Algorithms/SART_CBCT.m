@@ -1,4 +1,4 @@
-function [res,errorL2]=SART_CBCT(proj,geo,alpha,niter,lambda)
+function [res,errorL2]=SART_CBCT(proj,geo,alpha,niter,lambda,varargin)
 % SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -150,7 +150,6 @@ errorL2=norm(proj(:));
 % TODO : Add options for Stopping criteria
 for ii=1:niter
     if (ii==1 && verbose==1);tic;end
-    
     for jj=1:length(alpha);
         if size(offOrigin,2)==length(alpha)
             geo.OffOrigin=offOrigin(:,jj);
@@ -158,12 +157,13 @@ for ii=1:niter
          if size(offDetector,2)==length(alpha)
             geo.offDetector=offDetector(:,jj);
         end
-        
         proj_err=proj(:,:,jj)-Ax(res,geo,alpha(jj));      %                                 (b-Ax)
         weighted_err=W(:,:,jj).*proj_err;                 %                          W^-1 * (b-Ax)
         backprj=Atb(weighted_err,geo,alpha(jj));          %                     At * W^-1 * (b-Ax)
         weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
         res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)
+
+        
         
         
         

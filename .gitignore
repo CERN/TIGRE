@@ -9,6 +9,7 @@ so.*
 *.asv
 *.mex64
 *.pdb
+*.mexw64
 
 ## C ignore
 # Object files
