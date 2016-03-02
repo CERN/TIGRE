@@ -1,4 +1,4 @@
-function [res,errorL2,rmtotal,corrtotal,msstotal]=OS_SART_CBCT(proj,geo,alpha,niter,varargin)
+function [res,errorL2,qualMeas]=OS_SART_CBCT(proj,geo,alpha,niter,varargin)
 % OS_SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -31,12 +31,20 @@ function [res,errorL2,rmtotal,corrtotal,msstotal]=OS_SART_CBCT(proj,geo,alpha,ni
 %
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
+%   'QualMeas'     Asks the algorithm for a set of quality measurement
+%                  parameters. Input should contain a cell array of desired
+%                  quality measurement names. Example: {'CC','RMSE','MSSIM'}
+%                  These will be computed in each iteration. 
 %
-%outputs
+%   
+% OUTPUTS:
+%    [img]                       will output the reconstructed image
+%    [img,errorL2]               will output the L2 norm of the residual 
+%                                (the function being minimized)
+%    [img,errorL2,qualMease]     will output the quality measurements asked
+%                                by the input 'QualMeas'
 %
-%   rmtotal =  value of RMSE every iteration
-%   corrtotal    =  the Pearson correlation coefficient 
-%   msstotal    =  the mean structural similarity index
+%
 %% Deal with input parameters
 
 opts=     {'BlockSize','lambda','Init','InitImg','Verbose','lambdaRed'};
@@ -204,16 +212,15 @@ for ii=1:niter
         %proj is data: b=Ax
         %res= initial image is zero (default)
         proj_err=proj(:,:,range)-Ax(res,geo,alpha(range),'Krylov');      %                                 (b-Ax)
-        weighted_err=W(:,:,range).*proj_err;                    %                          W^-1 * (b-Ax)
-        backprj=Atb(weighted_err,geo,alpha(range));             %                     At * W^-1 * (b-Ax)
-%         backprj=Atb(weighted_err,geo,alpha(range),'Krylov');  
-        weigth_backprj=bsxfun(@times,1./V,backprj);             %                 V * At * W^-1 * (b-Ax)
+        weighted_err=W(:,:,range).*proj_err;                             %                          W^-1 * (b-Ax)
+        backprj=Atb(weighted_err,geo,alpha(range));                      %                     At * W^-1 * (b-Ax)
+        weigth_backprj=bsxfun(@times,1./V,backprj);                      %                 V * At * W^-1 * (b-Ax)
         
         
         rm=RMSE(res,res+lambda*weigth_backprj);   
         corr=CC(res,res+lambda*weigth_backprj);
         mss=MSSIM(res,res+lambda*weigth_backprj);
-        res=res+lambda*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
+        res=res+lambda*weigth_backprj;                                   % x= x + lambda * V * At * W^-1 * (b-Ax)
         
         % Non-negativity constrain
         res(res<0)=0;

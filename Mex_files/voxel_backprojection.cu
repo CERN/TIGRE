@@ -77,6 +77,9 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
     int indX = resZ % geo.nVoxelX;
     // Geometric trasnformations:
     
+    
+    // this chunk takes about 80/90 ms to compute. Its a lot. Try to reduce it.
+    
     //Source
      Point3D S;   
      S.x=geo.DSO;
@@ -90,8 +93,8 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
      
      
      // compute the weigth for the backprojection. This needs the X and Y coords on the real workd of the image
-     double weigth;
-     double realx,realy;
+     float weigth;
+     float realx,realy;
      realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   -xyzOffset.x; // /geo.dDetecU;  X never gets scaled.
      realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   -xyzOffset.y/geo.dDetecU; // and Y gets scalled by U
      
@@ -99,24 +102,25 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
      weigth=weigth/geo.DSO;
      weigth=1/(weigth*weigth);
      
-     double vectX,vectY,vectZ;
+     float vectX,vectY,vectZ;
      vectX=(P.x -S.x); 
      vectY=(P.y -S.y); 
      vectZ=(P.z -S.z); 
      
      
      // Get the coordinates in the projection where the mid point of the voxel is projected.
-     double t=(geo.DSO-geo.DSD /*-DDO*/ - S.x)/vectX;
-     double y,z;
+     float t=(geo.DSO-geo.DSD /*-DDO*/ - S.x)/vectX;
+     float y,z;
      y=vectY*t+S.y;
      z=vectZ*t+S.z;
-     double u,v;
+     float u,v;
      u=y+geo.nDetecU/2-0.5;
      v=z+geo.nDetecV/2-0.5;
      
      
      // Get interpolated value in the current projection   
 
+     // teh use of texture memory seems to take about 11ms in 512^3 512^2 360 scenario. Thats about 3seconds, more than the top speed in literature. this has to improve.
      image[idx]+=tex3D(tex, u +0.5 ,
                             v +0.5 , 
                             indAlpha                                           +0.5)*weigth;
@@ -125,7 +129,8 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
     
 int voxel_backprojection(float const * const projections, Geometry geo, double* result,double const * const alphas,int nalpha){
  
-    // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
+// If you want to use an specific GPU on your computer, uncomment and change this code to name it    
+    
 //     int deviceCount = 0;
 //     cudaGetDeviceCount(&deviceCount);
 //      if (deviceCount == 0)
@@ -189,7 +194,10 @@ int voxel_backprojection(float const * const projections, Geometry geo, double* 
     cudaMemset(dimage,0,num_bytes);
     cudaCheckErrors("cudaMalloc fail");
     
-    
+   cudaEvent_t start, stop;
+  float elapsedTime;
+
+  
     Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec;
     for (int i=0;i<nalpha;i++){
         geo.alpha=-alphas[i];
@@ -199,9 +207,16 @@ int voxel_backprojection(float const * const projections, Geometry geo, double* 
         offOrig.y=geo.offOrigY[i];
         offDetec.x=geo.offDetecU[i];
         offDetec.y=geo.offDetecV[i];
-        
+        cudaEventCreate(&start);
+        cudaEventRecord(start,0);
         kernelPixelBackprojectionFDK<<<(geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>
                 (geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec);
+        cudaEventCreate(&stop);
+        cudaEventRecord(stop,0);
+        cudaEventSynchronize(stop);
+
+        cudaEventElapsedTime(&elapsedTime, start,stop);
+        mexPrintf("Elapsed time : %f ms\n" ,elapsedTime);
         cudaCheckErrors("Kernel fail");
     }
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
