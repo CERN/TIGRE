@@ -37,7 +37,7 @@ defaults= [  1  ,    1   ,1 ,1,1];
 % Check inputs
 nVarargs = length(varargin);
 if mod(nVarargs,2)
-    error('CBCT:plotImgs:InvalidInput','Invalid number of inputs')
+    error('CBCT:SART_CBCT:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input

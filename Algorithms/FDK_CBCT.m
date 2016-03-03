@@ -1,7 +1,7 @@
-function [res,errorL2,rmFDK,corrFDK,mssFDK]=FDK_CBCT(proj,geo,alpha,p,filter,varargin)
+function [res,errorL2]=FDK_CBCT(proj,geo,alpha,filter)
 %Input is data,geosize,angles
 
-if nargin<5
+if nargin<4
     geo.filter='ram-lak'; 
 else
     geo.filter=filter;
@@ -37,10 +37,6 @@ geo=rmfield(geo,'filter');
 %% backproject
 res=Atb(proj_filt,geo,alpha); % Weighting is inside
 
-
-rmFDK=RMSE(p,res);
-corrFDK=CC(p,res);
-mssFDK=MSSIM(p,res);
 
 if nargout>1
      error=proj-Ax(res,geo,alpha);
