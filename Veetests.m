@@ -20,7 +20,7 @@ Geometry.offDetector=[0;0];
 Geometry.accuracy=1;  
 
 
-alpha=[0:64:359]*pi/180;
+alpha=[0:1:359]*pi/180;
 
 
 
@@ -43,9 +43,9 @@ data=Ax(phantom,Geometry,alpha); % this uses GPU
 % FDK
 %Input is data,geosize,angles
 % [resFDK,errFDK,rmseFDK,ccFDK,mssimFDK]=FDK_CBCT(data,Geometry,alpha,phantom);
-
-
-
+% 
+%  u=UQI(phantom,resFDK);
+% 
 
 
 % niter=200;
@@ -53,7 +53,7 @@ niter=20;
 nblock=20;
 
 % [resSIRT,errorSIRT,rmseSIRT,ccSIRT,mssimSIRT]=SIRT_CBCT(data,Geometry,alpha,niter);
-[resOSSART,errorOSSART,rmseOSSART,ccOSSART,mssimOSSART]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',nblock);
+[resOSSART,errorOSSART,rmseOSSART,ccOSSART,mssimOSSART,uqiOSSART]=OS_SART_CBCT(data,Geometry,alpha,niter,'BlockSize',nblock);
 % [resSART,errorSART,rmseSART]=SART_CBCT(data,Geometry,alpha,niter);
 
 toc

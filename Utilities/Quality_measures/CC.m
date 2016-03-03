@@ -11,8 +11,8 @@ res=res(:);
 N=length(real);
 
 %compute the mean pixel values of the two images
-meanreal=sum(real)/N;
-meanres=sum(res)/N;
+meanreal=mean(real);
+meanres=mean(res);
 
 diffreal=real-meanreal;
 diffres=res-meanres;

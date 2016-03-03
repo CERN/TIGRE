@@ -1,4 +1,4 @@
-function [res,errorL2,rmtotal,corrtotal,msstotal]=OS_SART_CBCT(proj,geo,alpha,niter,varargin)
+function [res,errorL2,rmtotal,corrtotal,msstotal,uqitotal]=OS_SART_CBCT(proj,geo,alpha,niter,varargin)
 % OS_SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -32,11 +32,12 @@ function [res,errorL2,rmtotal,corrtotal,msstotal]=OS_SART_CBCT(proj,geo,alpha,ni
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
 %
-%outputs
+% Image quality measures outputs
 %
-%   rmtotal =  value of RMSE every iteration
-%   corrtotal    =  the Pearson correlation coefficient 
-%   msstotal    =  the mean structural similarity index
+%   rmtotal         =  value of RMSE every iteration
+%   corrtotal       =  the Pearson correlation coefficient 
+%   msstotal        =  the mean structural similarity index
+%   uqitotal        =  universal quality index
 %% Deal with input parameters
 
 opts=     {'BlockSize','lambda','Init','InitImg','Verbose','lambdaRed'};
@@ -213,6 +214,7 @@ for ii=1:niter
         rm=RMSE(res,res+lambda*weigth_backprj);   
         corr=CC(res,res+lambda*weigth_backprj);
         mss=MSSIM(res,res+lambda*weigth_backprj);
+        uq=UQI(res,res+lambda*weigth_backprj);
         res=res+lambda*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
         
         % Non-negativity constrain
@@ -222,7 +224,7 @@ for ii=1:niter
         rmtotal(ii)=[rm];
         corrtotal(ii)=[corr];
         msstotal(ii)=[mss];
-        
+        uqitotal(ii)=[uq];
         
     end
     lambda=lambda*lamdbared;
