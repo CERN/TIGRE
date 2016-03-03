@@ -25,27 +25,20 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 //     begin = clock();
     
     
-    
-    char const * const errId = "CBCT:MEX:Ax:InvalidInput";
-    char const * const errMsgInputs = "Invalid number of inputs to MEX file.";
-    char const * const errMsgImg = "Invalid dimension size of image (x) to MEX file.";
-    
-    
-    
     //Check amount of inputs
     if (nrhs<3 ||nrhs>4) {
-        mexErrMsgIdAndTxt(errId, errMsgInputs);
+        mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput", "Invalid number of inputs to MEX file.");
     }
     //////////////////////////// 4rd argument is matched or un matched
     bool krylov_proj=false;
     if (nrhs==4){
         if ( mxIsChar(prhs[3]) != 1)
-            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input","4rd input shoudl be a string");
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be a string");
         
         /* copy the string data from prhs[0] into a C string input_ buf.    */
         char *krylov = mxArrayToString(prhs[3]);
         if (strcmp(krylov,"Krylov"))
-            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input","4rd input shoudl be Krylov");
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be Krylov");
         else
             krylov_proj=true;
     }
@@ -55,7 +48,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     size_t nalpha = mxGetN(prhs[2]);
     if( !mxIsDouble(prhs[2]) || mxIsComplex(prhs[2]) ||
             !(mrows==1) ) {
-        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input",
+        mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput",
                 "Input alpha must be a noncomplex array.");
     }
     mxArray const * const ptralphas=prhs[2];
@@ -69,7 +62,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     // Image should be dim 3
     if (numDims!=3){
-        mexErrMsgIdAndTxt(errId, errMsgImg);
+        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput", "Invalid dimension size of image (x) to MEX file.");
     }
     // Now that input is ok, parse it to C data types.
     double const * const imgaux = static_cast<double const *>(mxGetData(image));
@@ -283,6 +276,9 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 break;
             case 10:
                 acc=(double*)mxGetData(tmp);
+                if (acc[0]<0.001)
+                   mexErrMsgIdAndTxt( "CBCT:MEX:Ax:Accuracy","Accuracy should be bigger than 0");
+                   
                 geo.accuracy=acc[0];
                 break;
             default:
@@ -319,7 +315,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     }
     else
     {
-        projection(img,geo,result,alphas,nalpha);
+        interpolation_projection(img,geo,result,alphas,nalpha);
     }
     
 //     end = clock();

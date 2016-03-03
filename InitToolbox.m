@@ -1,9 +1,10 @@
 % Add tolbox folders
 addpath('.\Algorithms');
 addpath('.\Utilities');
+addpath('.\Utilities\Quality_measures');
 addpath('.\Test_data');
 addpath('.\Mex_files');
-addpath('.\Utilities\Quality_measures');
+addpath('.\Demos');
 
 % Perceptually uniform colormaps
 addpath('.\Colormaps');

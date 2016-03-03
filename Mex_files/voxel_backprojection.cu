@@ -194,9 +194,14 @@ int voxel_backprojection(float const * const projections, Geometry geo, double* 
     cudaMemset(dimage,0,num_bytes);
     cudaCheckErrors("cudaMalloc fail");
     
-   cudaEvent_t start, stop;
-  float elapsedTime;
-
+    // If we are going to time
+    bool timekernel=false;
+    cudaEvent_t start, stop;
+    float elapsedTime;
+    if (timekernel){
+        cudaEventCreate(&start);
+        cudaEventRecord(start,0);
+    }
   
     Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec;
     for (int i=0;i<nalpha;i++){
@@ -207,17 +212,17 @@ int voxel_backprojection(float const * const projections, Geometry geo, double* 
         offOrig.y=geo.offOrigY[i];
         offDetec.x=geo.offDetecU[i];
         offDetec.y=geo.offDetecV[i];
-        cudaEventCreate(&start);
-        cudaEventRecord(start,0);
+
         kernelPixelBackprojectionFDK<<<(geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>
                 (geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec);
+        cudaCheckErrors("Kernel fail");
+    }
+    if (timekernel){
         cudaEventCreate(&stop);
         cudaEventRecord(stop,0);
         cudaEventSynchronize(stop);
-
         cudaEventElapsedTime(&elapsedTime, start,stop);
-        mexPrintf("Elapsed time : %f ms\n" ,elapsedTime);
-        cudaCheckErrors("Kernel fail");
+        mexPrintf("%f\n" ,elapsedTime);
     }
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
     cudaCheckErrors("cudaMemcpy fail");

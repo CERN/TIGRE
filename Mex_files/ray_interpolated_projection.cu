@@ -38,13 +38,13 @@ do { \
  *            |                             |
  *            |                             |
  *            |      +--------+             |
- * |     /        /|             |
- * A Z      |    /        / |*D           |
- * |        |   +--------+  |             |
- * |        |   |        |  |             |
- * |        |   |     *O |  +             |
- *--->y   |   |        | /              |
- * /         |   |        |/               |
+ *            |     /        /|             |
+ *   A Z      |    /        / |*D           |
+ *   |        |   +--------+  |             |
+ *   |        |   |        |  |             |
+ *   |        |   |     *O |  +             |
+ *    --->y   |   |        | /              |
+ *  /         |   |        |/               |
  * V X        |   +--------+                |
  *            |-----------------------------|
  *
@@ -102,7 +102,6 @@ __global__ void kernelPixelDetector( Geometry geo,
     // limit the amount of mem access after the cube, but before the detector.
     if ((geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy  <   length)
         length=ceil((geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy);
-    
     for (i=floor(maxdist/geo.accuracy); i<=length; i=i+1){
         x=vectX*(double)i+source.x;
         y=vectY*(double)i+source.y;
@@ -118,7 +117,7 @@ __global__ void kernelPixelDetector( Geometry geo,
 
 
 
-int projection(float const * const img, Geometry geo, double** result,double const * const alphas,int nalpha){
+int interpolation_projection(float const * const img, Geometry geo, double** result,double const * const alphas,int nalpha){
     
     
     // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
@@ -146,9 +145,10 @@ int projection(float const * const img, Geometry geo, double** result,double con
 //     }
 //     if (!found)
 //         mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Supported GPU found");
-    // DONE, Tesla found
+//     // DONE,  found
     
     // copy data to CUDA memory
+
     cudaArray *d_imagedata = 0;
     
     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
@@ -184,8 +184,17 @@ int projection(float const * const img, Geometry geo, double** result,double con
     double* dProjection;
     cudaMalloc((void**)&dProjection, num_bytes);
     cudaCheckErrors("cudaMalloc fail");
+
     
-    
+//     If we are going to time
+    bool timekernel=false;
+    cudaEvent_t start, stop;
+    float elapsedTime;
+    if (timekernel){
+        cudaEventCreate(&start);
+        cudaEventRecord(start,0);
+    }    
+ 
     Point3D source, deltaU, deltaV, uvOrigin;
     double maxdist;
     for (int i=0;i<nalpha;i++){
@@ -195,28 +204,25 @@ int projection(float const * const img, Geometry geo, double** result,double con
         maxdist=maxDistanceCubeXY(geo,geo.alpha,i);
         //Precompute per angle constant stuff for speed
         computeDeltas(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
-        //Ray tracing!
-//         cudaEvent_t start, stop;
-//         float elapsedTime;
-//         
-//         cudaEventCreate(&start);
-//         cudaEventRecord(start,0);
-        kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(maxdist));
-//         cudaEventCreate(&stop);
-//         cudaEventRecord(stop,0);
-//         cudaEventSynchronize(stop);
-//         
-//         cudaEventElapsedTime(&elapsedTime, start,stop);
-//         mexPrintf("Elapsed time : %f ms\n" ,elapsedTime);
+        //Interpolation!!
         
+        kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(maxdist));
         cudaCheckErrors("Kernel fail");
         // copy result to host
         cudaMemcpy(result[i], dProjection, num_bytes, cudaMemcpyDeviceToHost);
         cudaCheckErrors("cudaMemcpy fail");
         
-        
+           
+
     }
-    
+    if (timekernel){
+        cudaEventCreate(&stop);
+        cudaEventRecord(stop,0);
+        cudaEventSynchronize(stop);
+        cudaEventElapsedTime(&elapsedTime, start,stop);
+        mexPrintf("%f\n" ,elapsedTime);
+    }
+
     cudaUnbindTexture(tex);
     cudaCheckErrors("Unbind  fail");
     
