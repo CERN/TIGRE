@@ -12,18 +12,15 @@ res=res(:);
 N=length(real);
 
 %compute the mean pixel values of the two images
-meanreal=sum(real)/N;
-meanres=sum(res)/N;
+meanreal=mean(real);
+meanres=mean(res);
 
 
 %Luminance comparison
 
 K1=0.01; %K1 is a small constant <<1
 d=max(real)-min(real); % d is the dynamic range of the pixel values. Check!
-% max(real)
-% min(real)
-% max(res)
-% min(res)
+
 l=((2*meanreal*meanres)+(K1*d)^2)/((meanreal)^2+(meanres)^2+(K1*d)^2);
 
 %Contrast comparison

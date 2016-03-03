@@ -1,4 +1,5 @@
 function [res,errorL2,qualMeas]=OS_SART_CBCT(proj,geo,alpha,niter,varargin)
+
 % OS_SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -45,7 +46,14 @@ function [res,errorL2,qualMeas]=OS_SART_CBCT(proj,geo,alpha,niter,varargin)
 %    [img,errorL2,qualMeas]     will output the quality measurements asked
 %                                by the input 'QualMeas'
 %
+% Image quality measures outputs
 %
+%   rmtotal         =  value of RMSE every iteration
+%   corrtotal       =  the Pearson correlation coefficient 
+%   msstotal        =  the mean structural similarity index
+%   uqitotal        =  universal quality index
+%
+
 %% Deal with input parameters
 
 opts=     {'BlockSize','lambda','Init','InitImg','Verbose','lambdaRed','QualMeas'};
@@ -110,6 +118,7 @@ for ii=1:niter
         %proj is data: b=Ax
         %res= initial image is zero (default)
         proj_err=proj(:,:,range)-Ax(res,geo,alpha(range),'Krylov');      %                                 (b-Ax)
+
         weighted_err=W(:,:,range).*proj_err;                             %                          W^-1 * (b-Ax)
         backprj=Atb(weighted_err,geo,alpha(range));                      %                     At * W^-1 * (b-Ax)
         weigth_backprj=bsxfun(@times,1./V,backprj);                      %                 V * At * W^-1 * (b-Ax)
@@ -117,6 +126,7 @@ for ii=1:niter
         
         % Non-negativity constrain
         res(res<0)=0;
+
         
     end
     
