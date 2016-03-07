@@ -29,10 +29,7 @@ Geometry.accuracy=0.5;
 
 
 
- alpha=1;
- 
- % warm up
- 
+ alpha=1; 
  for ii=0:4
      Geometry.nDetector=[64; 64]*2^ii;
      Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
@@ -45,7 +42,6 @@ Geometry.accuracy=0.5;
          clear  b;
      end
  end
- disp('phase 1 ended');
  
  Geometry.accuracy=0.1;
  for ii=0:4
@@ -56,11 +52,12 @@ Geometry.accuracy=0.5;
          Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
          img=rand(Geometry.nVoxel');       
          t_siddon(ii+1,jj+1)=str2double(evalc('b=Ax(img,Geometry,alpha,''Krylov'');'));
+         % Backprojection takes same time, as its just a different weigth
          clear  b;
      end
  end
  
- %% Plot
+ %% Plot projection and bakcprojection performance.
  tplot1=t_interpolation'*10; % base unit 0.1ms
  tplot2=t_siddon*10;
  tplot3=t_backprojection'*10;
@@ -79,6 +76,7 @@ cmap=[cmap; repmat(cmap(end,:),[100,1])];
  
  b=bar3(log10(tplot1));
  zlim([0 log10(150000)])
+
  set(gca,'Ztick',log10([ 1,10,100,1000,10000, 100000])); % because now our units are 0.1ms, this doesnt fit with next line, but its rigth
  set(gca,'ZtickLabel',{'0.1ms','1ms','10ms','100ms','1s','10s'});
  title('Projection with Interpolation','fontsize',20)
@@ -97,6 +95,9 @@ cmap=[cmap; repmat(cmap(end,:),[100,1])];
     b(k).FaceColor = 'interp';
  end
  view(-133,26)
+ set(gca,'DataAspectRatio',[1 1 0.9]);
+ xlim([0,6])
+ ylim([0,6])
 
  subplot(122)
  
@@ -120,7 +121,9 @@ cmap=[cmap; repmat(cmap(end,:),[100,1])];
     b(k).FaceColor = 'interp';
  end
  view(-133,26)
-  
+ set(gca,'DataAspectRatio',[1 1 0.9]);
+ xlim([0,6])
+ ylim([0,6])
 
  
  % Backprojection plot.
@@ -148,4 +151,7 @@ set(gcf,'units','normalized','outerposition',[0 0 1 1])
     b(k).CData = zdata;
     b(k).FaceColor = 'interp';
  end
+ set(gca,'DataAspectRatio',[1 1 0.9]);
+ xlim([0,6])
+ ylim([0,6])
  view(-133,26)
