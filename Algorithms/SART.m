@@ -41,11 +41,8 @@ errorL2=[];
 %% Create weigthing matrices
 
 % Projection weigth, W
-for ii=1:length(alpha)
-    % currently we just sotre it, in the future a memory aware code can be
-    % added where its recomputed each time
-    W(:,:,ii)=Ax(ones(geo.nVoxel'),geo,alpha(ii));  % %To get the length of the x-ray inside the object domain
-end
+
+W=Ax(ones(geo.nVoxel'),geo,alpha);  % %To get the length of the x-ray inside the object domain
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V

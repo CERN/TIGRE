@@ -51,8 +51,13 @@ function [res,errorL2,qualMeas]=OS_SART(proj,geo,alpha,niter,varargin)
 [block_size,lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
 measurequality=~isempty(QualMeasOpts);
 
+%% weigth matrices
+% first order the projection angles
+alpha=order_subsets(alpha,blocksize);
+
+
 % Projection weigth, W
-W=1./Ax(ones(geo.nVoxel'),geo,alpha);  % 
+W=1./Ax(ones(geo.nVoxel'),geo,alpha);  %
 W(W<min(geo.dVoxel))=Inf;
 W=1./W;
 % Back-Projection weigth, V
@@ -60,7 +65,6 @@ W=1./W;
               -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));       
 A = permute(alpha, [1 3 2]);          
 V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
-V=sum(V,3);
 clear A x y dx dz;
 
 
@@ -86,11 +90,10 @@ for ii=1:niter
     
     for jj=1:block_size:length(alpha);
         % index of the Oriented subsets
-
         range=jj:block_size+jj-1;
-        
         range(range>length(alpha))=[]; % for the last subset
-        
+         
+        % Get offsets
         if size(offOrigin,2)==length(alpha)
             geo.offOrigin=offOrigin(:,range);
         end
@@ -104,7 +107,7 @@ for ii=1:niter
 
         weighted_err=W(:,:,range).*proj_err;                             %                          W^-1 * (b-Ax)
         backprj=Atb(weighted_err,geo,alpha(range));                      %                     At * W^-1 * (b-Ax)
-        weigth_backprj=bsxfun(@times,1./V,backprj);                      %                 V * At * W^-1 * (b-Ax)
+        weigth_backprj=bsxfun(@times,1./sum(V(:,:,range),3),backprj);                      %                 V * At * W^-1 * (b-Ax)
         res=res+lambda*weigth_backprj;                                   % x= x + lambda * V * At * W^-1 * (b-Ax)
         
         % Non-negativity constrain
