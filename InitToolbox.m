@@ -2,7 +2,7 @@
 addpath('.\Algorithms');
 addpath('.\Utilities');
 addpath('.\Utilities\Quality_measures');
-addpath('.\Test_data');
+addpath(genpath('.\Test_data'));
 addpath('.\Mex_files');
 addpath('.\Demos');
 
