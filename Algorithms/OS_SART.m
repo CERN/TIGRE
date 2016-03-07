@@ -48,27 +48,20 @@ function [res,errorL2,qualMeas]=OS_SART(proj,geo,alpha,niter,varargin)
 %
 %% Deal with input parameters
  
-opts=     {'BlockSize','lambda','Init','InitImg','Verbose','lambdaRed','QualMeas'};
-[block_size,lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(varargin);
+[block_size,lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
 measurequality=~isempty(QualMeasOpts);
-%% Create weighting matrices
 
-
-% Projection weight, W
-W=Ax(ones(geo.nVoxel'),geo,alpha,'Krylov');  
-W(W<min(geo.dVoxel)/4)=Inf;
+% Projection weigth, W
+W=1./Ax(ones(geo.nVoxel'),geo,alpha);  % 
+W(W<min(geo.dVoxel))=Inf;
 W=1./W;
-
-% Back-Projection weight, V
+% Back-Projection weigth, V
 [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
-    -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-A = permute(alpha, [1 3 2]);
+              -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));       
+A = permute(alpha, [1 3 2]);          
 V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
-%C = bsxfun(fun,A,B) applies the element-by-element binary operation specified by the function handle fun to arrays A and B, with singleton expansion enabled. 
-%@times is Array multiply
 V=sum(V,3);
 clear A x y dx dz;
-
 
 
 
@@ -84,8 +77,7 @@ for ii=1:niter
     
     % If verbose, time the algorithm
     if (ii==1 && verbose==1);tic;end
-    % If quality is going to be measured, then we need to save previosu
-    % image
+    % If quality is going to be measured, then we need to save previous image
     % THIS TAKES MEMORY!
     if measurequality
         res_prev=res;
@@ -150,8 +142,7 @@ for ii=1:niter
 
  
 end
-return;
-
+end
 
 
 
@@ -188,8 +179,9 @@ while ~isequal(geo.nVoxel,finalsize)
 end
 
 end
+
 %% Parse inputs
-function [block_size,lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(argin)
+function [block_size,lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,argin)
 opts=     {'BlockSize','lambda','Init','InitImg','Verbose','lambdaRed','QualMeas'};
 defaults=ones(length(opts),1);
     % Check inputs
@@ -306,4 +298,18 @@ end
 
 end
 
+% This function returns the angles reordered, so the next subset has
+% allways the maximum angular distance from previous ones.
+
+function ordered_alpha=order_subsets(alpha,blocksize)
+alpha=sort(alpha);
+alpha=[alpha; ones( mod(length(alpha),blocksize),1)*alpha(end)];
+block_alpha=reshape(alpha,[blocksize,length(alpha)/blocksize]);
+avrg=mean(block_alpha);
+% start from the beggining
+ordered_alpha=alpha(1:blocksize);
+alpha(1:blocksize)=[];
+
 end
+
+

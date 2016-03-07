@@ -1,4 +1,4 @@
-function [res,errorL2,rmtotal]=SART(proj,geo,alpha,niter,lambda,varargin)
+function [res,errorL2,qualMeas]=SART(proj,geo,alpha,niter,varargin)
 % SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -28,110 +28,24 @@ function [res,errorL2,rmtotal]=SART(proj,geo,alpha,niter,lambda,varargin)
 %
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
-
+%   'QualMeas'     Asks the algorithm for a set of quality measurement
+%                  parameters. Input should contain a cell array of desired
+%                  quality measurement names. Example: {'CC','RMSE','MSSIM'}
+%                  These will be computed in each iteration. 
 %% Deal with input parameters
-
-opts=     {'lambda','Init','InitImg','Verbose','lambdaRed'};
-defaults= [  1  ,    1   ,1 ,1,1];
-
-% Check inputs
-nVarargs = length(varargin);
-if mod(nVarargs,2)
-    error('CBCT:SART_CBCT:InvalidInput','Invalid number of inputs')
-end
-
-% check if option has been passed as input
-for ii=1:2:nVarargs
-    ind=find(ismember(opts,varargin{ii}));
-    if ~isempty(ind)
-        defaults(ind)=0;
-    end
-end
-
-for ii=1:length(opts)
-    opt=opts{ii};
-    default=defaults(ii);
-    % if one option isnot default, then extranc value from input
-   if default==0
-        ind=double.empty(0,1);jj=1;
-        while isempty(ind)
-            ind=find(isequal(opt,varargin{jj}));
-            jj=jj+1;
-        end
-        val=varargin{jj};
-    end
-    
-    switch opt
-        % % % % % % % Verbose
-        case 'Verbose'
-            if default
-                verbose=1;
-            else
-                verbose=val;
-            end
-        % % % % % % % hyperparameter, LAMBDA
-        case 'lambda'
-            if default
-                lambda=0.95;
-            else
-                if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:SART_CBCT:InvalidInput','Invalid lambda')
-                end
-                lambda=val;
-            end
-         case 'lambdaRed'
-            if default
-                lamdbared=1;
-            else
-                if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:SART_CBCT:InvalidInput','Invalid lambda')
-                end
-                lamdbared=val;
-            end
-        case 'Init'
-            res=[];
-            if default || strcmp(val,'none')
-                res=zeros(geo.nVoxel');
-                continue;
-            end
-            if strcmp(val,'FDK')
-                res=FDK_CBCT(proj,geo,alpha);
-                continue;
-            end
-            if strcmp(val,'multigrid')
-                res=init_multigrid(proj,geo,alpha);
-                continue;
-            end
-            if strcmp(val,'image')
-                initwithimage=1;
-                continue;
-            end
-            if isempty(res)
-               error('CBCT:SART_CBCT:InvalidInput','Invalid Init option') 
-            end
-            % % % % % % % ERROR
-        case 'InitImg'
-            if default
-                continue;
-            end
-            if exist('initwithimage','var');
-                if isequal(size(val),geo.nVoxel');
-                    res=val;
-                else
-                    error('CBCT:SART_CBCT:InvalidInput','Invalid image for initialization');
-                end
-            end
-        otherwise
-            error('CBCT:SART_CBCT:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART_CBCT()']);
-    end
-end
+[lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
+measurequality=~isempty(QualMeasOpts);
 
 errorL2=[];
 
 %% Create weigthing matrices
 
 % Projection weigth, W
-W=Ax(ones(geo.nVoxel'),geo,alpha);  % %To get the length of the x-ray inside the object domain
+for ii=1:length(alpha)
+    % currently we just sotre it, in the future a memory aware code can be
+    % added where its recomputed each time
+    W(:,:,ii)=Ax(ones(geo.nVoxel'),geo,alpha(ii));  % %To get the length of the x-ray inside the object domain
+end
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
@@ -139,7 +53,6 @@ W=1./W;
     -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
 A = permute(alpha, [1 3 2]);
 V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
-V=sum(V,3);
 clear A x y dx dz;
 
 %% Iterate
@@ -150,6 +63,13 @@ errorL2=norm(proj(:));
 % TODO : Add options for Stopping criteria
 for ii=1:niter
     if (ii==1 && verbose==1);tic;end
+    % If quality is going to be measured, then we need to save previous image
+    % THIS TAKES MEMORY!
+    if measurequality
+        res_prev=res;
+    end
+    
+    
     for jj=1:length(alpha);
         if size(offOrigin,2)==length(alpha)
             geo.OffOrigin=offOrigin(:,jj);
@@ -157,21 +77,21 @@ for ii=1:niter
          if size(offDetector,2)==length(alpha)
             geo.offDetector=offDetector(:,jj);
         end
-        proj_err=proj(:,:,jj)-Ax(res,geo,alpha(jj));      %                                 (b-Ax)
-        weighted_err=W(:,:,jj).*proj_err;                 %                          W^-1 * (b-Ax)
-        backprj=Atb(weighted_err,geo,alpha(jj));          %                     At * W^-1 * (b-Ax)
-        weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
-
-        res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)
+        proj_err=proj(:,:,jj)-Ax(res,geo,alpha(jj));        %                                 (b-Ax)
+        weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
+        backprj=Atb(weighted_err,geo,alpha(jj));            %                     At * W^-1 * (b-Ax)
+        weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
+        res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
         
-        rmSART=RMSE(res,res+lambda*weigth_backprj); 
-        
-        res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)
-        
-        %Store the value of RMSE every iteration
-        rmtotal(ii)=[rmSART];
-        
+        res(res<0)=0;               
     end
+    
+    % If quality is being measured
+    if measurequality
+       % HERE GOES  
+       %qualMeas=Measure_Quality(res,res_prev,QualMeasOpts);
+    end
+    
     lambda=lambda*lamdbared;
 
     errornow=norm(proj_err(:));                       % Compute error norm2 of b-Ax
@@ -227,6 +147,122 @@ while ~isequal(geo.nVoxel,finalsize)
     initres=interp3(initres,x,y,z);
     clear x y z 
 end
+end
 
+
+function [lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'lambda','Init','InitImg','Verbose','lambdaRed','QualMeas'};
+defaults=ones(length(opts),1);
+    % Check inputs
+nVarargs = length(argin);
+if mod(nVarargs,2)
+    error('CBCT:SART:InvalidInput','Invalid number of inputs')
+end
+
+% check if option has been passed as input
+for ii=1:2:nVarargs
+    ind=find(ismember(opts,argin{ii}));
+    if ~isempty(ind)
+        defaults(ind)=0;
+    end
+end
+
+for ii=1:length(opts)
+    opt=opts{ii};
+    default=defaults(ii);
+    % if one option isnot default, then extranc value from input
+   if default==0
+        ind=double.empty(0,1);jj=1;
+        while isempty(ind)
+            ind=find(isequal(opt,argin{jj}));
+            jj=jj+1;
+        end
+        val=argin{jj};
+    end
+    
+    switch opt
+        % % % % % % % Verbose
+        case 'Verbose'
+            if default
+                verbose=1;
+            else
+                verbose=val;
+            end
+        % % % % % % % hyperparameter, LAMBDA
+        case 'lambda'
+            if default
+                lambda=0.95;
+            else
+                if length(val)>1 || ~isnumeric( val)
+                    error('CBCT:SART:InvalidInput','Invalid lambda')
+                end
+                lambda=val;
+            end
+         case 'lambdaRed'
+            if default
+                lamdbared=1;
+            else
+                if length(val)>1 || ~isnumeric( val)
+                    error('CBCT:SART:InvalidInput','Invalid lambda')
+                end
+                lamdbared=val;
+            end
+        case 'BlockSize'
+            if default
+                block_size=20;
+            else
+                if length(val)>1 || ~isnumeric( val)
+                    error('CBCT:SART:InvalidInput','Invalid BlockSize')
+                end
+                block_size=val;
+            end
+            
+        case 'Init'
+            res=[];
+            if default || strcmp(val,'none')
+                res=zeros(geo.nVoxel');
+                continue;
+            end
+            if strcmp(val,'FDK')
+                res=FDK_CBCT(proj,geo,alpha);
+                continue;
+            end
+            if strcmp(val,'multigrid')
+                res=init_multigrid(proj,geo,alpha);
+                continue;
+            end
+            if strcmp(val,'image')
+                initwithimage=1;
+                continue;
+            end
+            if isempty(res)
+               error('CBCT:SART:InvalidInput','Invalid Init option') 
+            end
+            % % % % % % % ERROR
+        case 'InitImg'
+            if default
+                continue;
+            end
+            if exist('initwithimage','var');
+                if isequal(size(val),geo.nVoxel');
+                    res=val;
+                else
+                    error('CBCT:SART:InvalidInput','Invalid image for initialization');
+                end
+            end
+        case 'QualMeas'
+            if default
+                QualMeasOpts={};
+            else
+            if iscellstr(val)
+                QualMeasOpts=val;
+            else
+                error('CBCT:SART:InvalidInput','Invalid quality measurement parameters');
+            end
+            end
+        otherwise
+            error('CBCT:SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART()']);
+    end
+end
 
 end
