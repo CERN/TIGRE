@@ -43,7 +43,7 @@ function [res,errorL2,qualMeas]=OS_SART(proj,geo,alpha,niter,varargin)
 %    [img]                       will output the reconstructed image
 %    [img,errorL2]               will output the L2 norm of the residual 
 %                                (the function being minimized)
-%    [img,errorL2,qualMeas]     will output the quality measurements asked
+%    [img,errorL2,qualMeas]      will output the quality measurements asked
 %                                by the input 'QualMeas'
 %
 %% Deal with input parameters

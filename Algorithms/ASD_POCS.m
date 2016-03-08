@@ -21,7 +21,7 @@ block_size=20;
 %% vervatim implemetation of the paper
 beta=1;
 beta_red=0.995;
-ng=50;
+ng=20;
 alpha=0.005;
 rmax=0.95;
 alpha_red=0.95;

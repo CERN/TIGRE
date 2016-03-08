@@ -204,16 +204,6 @@ for ii=1:length(opts)
                 end
                 lamdbared=val;
             end
-        case 'BlockSize'
-            if default
-                block_size=20;
-            else
-                if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:SART:InvalidInput','Invalid BlockSize')
-                end
-                block_size=val;
-            end
-            
         case 'Init'
             res=[];
             if default || strcmp(val,'none')
