@@ -48,16 +48,20 @@ function [res,errorL2,qualMeas]=OS_SART(proj,geo,alpha,niter,varargin)
 %
 %% Deal with input parameters
  
+% [block_size,lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
+% measurequality=~isempty(QualMeasOpts);
+
 [block_size,lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
 measurequality=~isempty(QualMeasOpts);
 
+
 %% weigth matrices
 % first order the projection angles
-alpha=order_subsets(alpha,blocksize);
+%alpha=order_subsets(alpha,blocksize);
 
 
 % Projection weigth, W
-W=1./Ax(ones(geo.nVoxel'),geo,alpha);  %
+W=Ax(ones(geo.nVoxel'),geo,alpha);  %
 W(W<min(geo.dVoxel))=Inf;
 W=1./W;
 % Back-Projection weigth, V
@@ -118,7 +122,11 @@ for ii=1:niter
     
     % If quality is being measured
     if measurequality
-       % HERE GOES  Measure_Quality(res,res_prev,QualMeasOpts);
+       %Can save quality measure for every iteration here
+       %See if some image quality measure should be used for every
+       %iteration?
+       qualMeas{ii}=Measure_Quality(res_prev,res,QualMeasOpts);
+
     end
     
     % reduce hyperparameter
