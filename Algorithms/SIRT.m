@@ -32,6 +32,7 @@ function [res,errorL2,QualMeasOpts]=SIRT(proj,geo,alpha,niter,varargin)
 %% Deal with input parameters
 
 [lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
+measurequality=~isempty(QualMeasOpts);
 
 errorL2=[];
 
@@ -41,7 +42,7 @@ errorL2=[];
 
 % Projection weigth, W
 % Projection weigth, W
-W=1./Ax(ones(geo.nVoxel'),geo,alpha);  %
+W=Ax(ones(geo.nVoxel'),geo,alpha,'ray-voxel');  %
 W(W<min(geo.dVoxel))=Inf;
 W=1./W;
 % Back-Projection weigth, V
@@ -65,7 +66,7 @@ for ii=1:niter
         res_prev=res;
     end
        
-    proj_err=proj-Ax(res,geo,alpha);                  %                                 (b-Ax)
+    proj_err=proj-Ax(res,geo,alpha,'ray-voxel');                  %                                 (b-Ax)
     weighted_err=W.*proj_err;                         %                          W^-1 * (b-Ax)
     backprj=Atb(weighted_err,geo,alpha);              %                     At * W^-1 * (b-Ax)
     weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
@@ -118,7 +119,7 @@ while ~isequal(geo.nVoxel,finalsize)
     
     
     % solve subsampled grid
-    initres=SIRT_CBCT(proj,geo,alpha,niter,'Init','image','InitImg',initres,'Verbose',0);
+    initres=SIRT(proj,geo,alpha,niter,'Init','image','InitImg',initres,'Verbose',0);
     
     % Get new dims.
     geo.nVoxel=geo.nVoxel*2;

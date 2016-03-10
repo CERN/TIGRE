@@ -9,35 +9,35 @@ typedef struct {
     
     //Parameters part of the image geometry
     int   nVoxelX, nVoxelY, nVoxelZ;
-    double sVoxelX, sVoxelY, sVoxelZ;
-    double dVoxelX, dVoxelY, dVoxelZ;
-    double *offOrigX,*offOrigY,*offOrigZ;
-    double DSO;
+    float sVoxelX, sVoxelY, sVoxelZ;
+    float dVoxelX, dVoxelY, dVoxelZ;
+    float *offOrigX,*offOrigY,*offOrigZ;
+    float DSO;
     // Parameters  of the Detector.
     int   nDetecU, nDetecV;
-    double sDetecU, sDetecV;
-    double dDetecU, dDetecV;
-    double *offDetecU, *offDetecV;
-    double DSD;
+    float sDetecU, sDetecV;
+    float dDetecU, dDetecV;
+    float *offDetecU, *offDetecV;
+    float DSD;
     
     // The base unit we are working with in mm. 
-    double unitX;
-    double unitY;
-    double unitZ;
+    float unitX;
+    float unitY;
+    float unitZ;
     
     //projection angle
-    double alpha;
+    float alpha;
     
     //Maximum length of cube
-    double maxLength;
+    float maxLength;
      //User option
-    double accuracy;
+    float accuracy;
 }Geometry;
 
 typedef struct{
-    double x;
-    double y;
-    double z;
+    float x;
+    float y;
+    float z;
 }Point3D;
 #define TYPES_CBCT
 #endif
@@ -45,6 +45,6 @@ typedef struct{
 #ifndef BACKPROJECTION_HPP
 #define BACKPROJECTION_HPP
 
-int voxel_backprojection(float const * const projections, Geometry geo, double* result,double const * const alphas,int nalpha);
-void computeDeltasCube(Geometry geo, double alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ);
+int voxel_backprojection(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha);
+void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ);
 #endif

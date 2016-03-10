@@ -57,7 +57,7 @@
 texture<float, cudaTextureType3D , cudaReadModeElementType> tex; 
     
 __global__ void kernelPixelBackprojectionFDK(const Geometry geo, 
-                                            double* image,
+                                            float* image,
                                             int indAlpha,
                                             Point3D deltaX ,
                                             Point3D deltaY, 
@@ -127,7 +127,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
 }
     
     
-int voxel_backprojection(float const * const projections, Geometry geo, double* result,double const * const alphas,int nalpha){
+int voxel_backprojection(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha){
  
 // If you want to use an specific GPU on your computer, uncomment and change this code to name it    
     
@@ -188,8 +188,8 @@ int voxel_backprojection(float const * const projections, Geometry geo, double* 
     
     
     // Allocate result image memory
-    size_t num_bytes = geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ * sizeof(double);
-    double* dimage;
+    size_t num_bytes = geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ * sizeof(float);
+    float* dimage;
     cudaMalloc((void**)&dimage, num_bytes);
     cudaMemset(dimage,0,num_bytes);
     cudaCheckErrors("cudaMalloc fail");
@@ -233,10 +233,11 @@ int voxel_backprojection(float const * const projections, Geometry geo, double* 
      cudaFree(dimage);
      cudaFreeArray(d_projectiondata);
      cudaCheckErrors("cudaFree d_imagedata fail");
+     cudaDeviceReset();
     return 0;
     
 }
-void computeDeltasCube(Geometry geo, double alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ){
+void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ){
     
      Point3D P0, Px0,Py0,Pz0;
      // Get coords of Img(0,0,0)

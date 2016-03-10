@@ -56,7 +56,6 @@ clear A x y dx dz;
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
 rmtotal=[];
-errorL2=norm(proj(:));
 % TODO : Add options for Stopping criteria
 for ii=1:niter
     if (ii==1 && verbose==1);tic;end
@@ -93,7 +92,7 @@ for ii=1:niter
 
     errornow=norm(proj_err(:));                       % Compute error norm2 of b-Ax
     % If the error is not minimized.
-    if  errornow>errorL2(end)
+    if  ii~=1 && errornow>errorL2(end)
         return;
     end
     errorL2=[errorL2 errornow];
@@ -130,7 +129,7 @@ while ~isequal(geo.nVoxel,finalsize)
     
     
     % solve subsampled grid
-    initres=SART_CBCT(proj,geo,alpha,niter,'Init','image','InitImg',initres,'Verbose',0);
+    initres=SART(proj,geo,alpha,niter,'Init','image','InitImg',initres,'Verbose',0);
     
     % Get new dims.
     geo.nVoxel=geo.nVoxel*2;

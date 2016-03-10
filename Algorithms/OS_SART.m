@@ -35,42 +35,42 @@ function [res,errorL2,qualMeas]=OS_SART(proj,geo,alpha,niter,varargin)
 %   'QualMeas'     Asks the algorithm for a set of quality measurement
 %                  parameters. Input should contain a cell array of desired
 %                  quality measurement names. Example: {'CC','RMSE','MSSIM'}
-%                  These will be computed in each iteration. 
+%                  These will be computed in each iteration.
 %
-%   
+%
 % OUTPUTS:
 %
 %    [img]                       will output the reconstructed image
-%    [img,errorL2]               will output the L2 norm of the residual 
+%    [img,errorL2]               will output the L2 norm of the residual
 %                                (the function being minimized)
 %    [img,errorL2,qualMeas]      will output the quality measurements asked
 %                                by the input 'QualMeas'
 %
 %% Deal with input parameters
- 
-[block_size,lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
+
+[blocksize,lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
 measurequality=~isempty(QualMeasOpts);
 
 %% weigth matrices
 % first order the projection angles
-alpha=order_subsets(alpha,blocksize);
+[alphablocks,orig_index]=order_subsets(alpha,blocksize,'ordered');
 
 
 % Projection weigth, W
-W=1./Ax(ones(geo.nVoxel'),geo,alpha);  %
+W=Ax(ones(geo.nVoxel'),geo,cell2mat(alphablocks));  %
 W(W<min(geo.dVoxel))=Inf;
 W=1./W;
 % Back-Projection weigth, V
 [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
-              -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));       
-A = permute(alpha, [1 3 2]);          
+    -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
+A = permute(cell2mat(alphablocks), [1 3 2]);
 V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
 clear A x y dx dz;
 
 
 
 %% Iterate
-errorL2=norm(proj(:)); %Calculate for 2-norm
+errorL2=[];
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
 
@@ -88,45 +88,40 @@ for ii=1:niter
     end
     
     
-    for jj=1:block_size:length(alpha);
-        % index of the Oriented subsets
-        range=jj:block_size+jj-1;
-        range(range>length(alpha))=[]; % for the last subset
-         
+    for jj=1:length(alphablocks);
         % Get offsets
         if size(offOrigin,2)==length(alpha)
-            geo.offOrigin=offOrigin(:,range);
+            geo.offOrigin=offOrigin(:,orig_index{jj});
         end
         if size(offDetector,2)==length(alpha)
-            geo.offDetector=offDetector(:,range);
+            geo.offDetector=offDetector(:,orig_index{jj});
         end
         
         %proj is data: b=Ax
         %res= initial image is zero (default)
-        proj_err=proj(:,:,range)-Ax(res,geo,alpha(range),'Krylov');      %                                 (b-Ax)
-
-        weighted_err=W(:,:,range).*proj_err;                             %                          W^-1 * (b-Ax)
-        backprj=Atb(weighted_err,geo,alpha(range));                      %                     At * W^-1 * (b-Ax)
-        weigth_backprj=bsxfun(@times,1./sum(V(:,:,range),3),backprj);                      %                 V * At * W^-1 * (b-Ax)
-        res=res+lambda*weigth_backprj;                                   % x= x + lambda * V * At * W^-1 * (b-Ax)
+        proj_err=proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'Krylov'); %                                 (b-Ax)
+        weighted_err=W(:,:,orig_index{jj}).*proj_err;                           %                          W^-1 * (b-Ax)
+        backprj=Atb(weighted_err,geo,alphablocks{jj});                          %                     At * W^-1 * (b-Ax)
+        weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);  %                 V * At * W^-1 * (b-Ax)
+        res=res+lambda*weigth_backprj;                                          % x= x + lambda * V * At * W^-1 * (b-Ax)
         
         % Non-negativity constrain
         res(res<0)=0;
-
+        
         
     end
     
     % If quality is being measured
     if measurequality
-       % HERE GOES  Measure_Quality(res,res_prev,QualMeasOpts);
+        % HERE GOES  Measure_Quality(res,res_prev,QualMeasOpts);
     end
     
     % reduce hyperparameter
     lambda=lambda*lamdbared;
     % Compute error norm2 of b-Ax
-    errornow=norm(proj_err(:));                           
-    % If the error is not minimized 
-    if errornow>errorL2(end)*1.1 % This 1.1 is for multigrid, we need to focus to only that case
+    errornow=im3Dnorm(proj_err,'L2');
+    % If the error is not minimized
+    if ii~=1 && errornow>errorL2(end)*1.1 % This 1.1 is for multigrid, we need to focus to only that case
         return;
     end
     %Store Error
@@ -141,9 +136,9 @@ for ii=1:niter
         disp('');
     end
     
- 
-
- 
+    
+    
+    
 end
 end
 
@@ -166,7 +161,7 @@ while ~isequal(geo.nVoxel,finalsize)
     
     
     % solve subsampled grid
-    initres=OS_SART_CBCT(proj,geo,alpha,niter,'BlockSize',nblock,'Init','image','InitImg',initres,'Verbose',0);
+    initres=OS_SART(proj,geo,alpha,niter,'BlockSize',nblock,'Init','image','InitImg',initres,'Verbose',0);
     
     % Get new dims.
     geo.nVoxel=geo.nVoxel*2;
@@ -175,10 +170,10 @@ while ~isequal(geo.nVoxel,finalsize)
     % Upsample!
     % (hopefully computer has enough memory............)
     [y, x, z]=ndgrid(linspace(1,size(initres,1),geo.nVoxel(1)),...
-                     linspace(1,size(initres,2),geo.nVoxel(2)),...
-                     linspace(1,size(initres,3),geo.nVoxel(3)));
+        linspace(1,size(initres,2),geo.nVoxel(2)),...
+        linspace(1,size(initres,3),geo.nVoxel(3)));
     initres=interp3(initres,x,y,z);
-    clear x y z 
+    clear x y z
 end
 
 end
@@ -187,7 +182,7 @@ end
 function [block_size,lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,argin)
 opts=     {'BlockSize','lambda','Init','InitImg','Verbose','lambdaRed','QualMeas'};
 defaults=ones(length(opts),1);
-    % Check inputs
+% Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
     error('CBCT:OS-SART:InvalidInput','Invalid number of inputs')
@@ -205,7 +200,7 @@ for ii=1:length(opts)
     opt=opts{ii};
     default=defaults(ii);
     % if one option isnot default, then extranc value from input
-   if default==0
+    if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
             ind=find(isequal(opt,argin{jj}));
@@ -222,7 +217,7 @@ for ii=1:length(opts)
             else
                 verbose=val;
             end
-        % % % % % % % hyperparameter, LAMBDA
+            % % % % % % % hyperparameter, LAMBDA
         case 'lambda'
             if default
                 lambda=0.95;
@@ -232,7 +227,7 @@ for ii=1:length(opts)
                 end
                 lambda=val;
             end
-         case 'lambdaRed'
+        case 'lambdaRed'
             if default
                 lamdbared=1;
             else
@@ -270,7 +265,7 @@ for ii=1:length(opts)
                 continue;
             end
             if isempty(res)
-               error('CBCT:OS_SART_CBCT:InvalidInput','Invalid Init option') 
+                error('CBCT:OS_SART_CBCT:InvalidInput','Invalid Init option')
             end
             % % % % % % % ERROR
         case 'InitImg'
@@ -288,11 +283,11 @@ for ii=1:length(opts)
             if default
                 QualMeasOpts={};
             else
-            if iscellstr(val)
-                QualMeasOpts=val;
-            else
-                error('CBCT:OS_SART_CBCT:InvalidInput','Invalid quality measurement parameters');
-            end
+                if iscellstr(val)
+                    QualMeasOpts=val;
+                else
+                    error('CBCT:OS_SART_CBCT:InvalidInput','Invalid quality measurement parameters');
+                end
             end
         otherwise
             error('CBCT:OS_SART_CBCT:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_SART_CBCT()']);
@@ -304,15 +299,38 @@ end
 % This function returns the angles reordered, so the next subset has
 % allways the maximum angular distance from previous ones.
 
-function ordered_alpha=order_subsets(alpha,blocksize)
+function [ordered_alpha,index_alpha]=order_subsets(alpha,blocksize, mode)
 alpha=sort(alpha);
-alpha=[alpha; ones( mod(length(alpha),blocksize),1)*alpha(end)];
-block_alpha=reshape(alpha,[blocksize,length(alpha)/blocksize]);
-avrg=mean(block_alpha);
-% start from the beggining
-ordered_alpha=alpha(1:blocksize);
-alpha(1:blocksize)=[];
+index_alpha=1:length(alpha);
+
+block_alpha=mat2cell(alpha      ,1,[repmat(blocksize,1,floor(length(alpha)/blocksize)) mod(length(alpha),blocksize)]);
+index_alpha=mat2cell(index_alpha,1,[repmat(blocksize,1,floor(length(alpha)/blocksize)) mod(length(alpha),blocksize)]);
+
+block_alpha=block_alpha(~cellfun('isempty',block_alpha));
+index_alpha=index_alpha(~cellfun('isempty',index_alpha)); 
+
+if strcmp(mode,'ordered')
+    ordered_alpha=block_alpha;
+    return;
+end
+if strcmp(mode,'random')
+    neworder=randperm(length(block_alpha));
+    ordered_alpha=block_alpha(neworder);
+    index_alpha=index_alpha(neworder);
+    return;
+end
+%% not finished
+if strcmp(mode,'angularDistance')
+    
+    avrg=cellfun(@mean,block_alpha);
+    % start from the beggining
+    for ii=1:length(block_alpha)
+        
+    end
+end
 
 end
+
+
 
 

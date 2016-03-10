@@ -27,7 +27,7 @@ do { \
     
 // Declare the texture reference.
     texture<float, cudaTextureType3D , cudaReadModeElementType> tex;
-#define MAXTREADS 1024
+#define MAXTREADS 512
 /*GEOMETRY DEFINITION
  *
  *                Detector plane, behind
@@ -58,7 +58,7 @@ do { \
 
 
 __global__ void kernelPixelDetector( Geometry geo,
-        double* detector,
+        float* detector,
         Point3D source ,
         Point3D deltaU,
         Point3D deltaV,
@@ -161,24 +161,24 @@ __global__ void kernelPixelDetector( Geometry geo,
     ku=(source.z< pixel1D.z)? 1 : -1;
     
     float maxlength=sqrt(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
-    double sum=0;
+    float sum=0;
     int Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
 //         while (ac<=aM){
     for (int ii=0;ii<Np;ii++){
         if (ax==aminc){
-            sum+=(ax-ac)*(double)tex3D(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(ax-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
             i=i+iu;
             ac=ax;
             ax+=axu;
         }else if(ay==aminc){
-            sum+=(ay-ac)*(double)tex3D(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(ay-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
 //                 sum++;
             j=j+ju;
             ac=ay;
             ay+=ayu;
         }else if(az==aminc){
-            sum+=(az-ac)*(double)tex3D(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(az-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
 //                 sum++;
             k=k+ku;
             ac=az;
@@ -191,7 +191,7 @@ __global__ void kernelPixelDetector( Geometry geo,
 }
 
 
-int siddon_ray_projection(float const * const img, Geometry geo, double** result,double const * const alphas,int nalpha){
+int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha){
     
     
     // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
@@ -255,8 +255,8 @@ int siddon_ray_projection(float const * const img, Geometry geo, double** result
     //Done! Image put into texture memory.
     
     
-    size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(double);
-    double* dProjection;
+    size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(float);
+    float* dProjection;
     cudaMalloc((void**)&dProjection, num_bytes);
     cudaCheckErrors("cudaMalloc fail");
     
@@ -299,8 +299,8 @@ int siddon_ray_projection(float const * const img, Geometry geo, double** result
     
     
     
-    
-    
+    // tehre is no need to reset the device, but if one whants to use the NVIDIA Visual profiler, one should.
+    //cudaDeviceReset();
     return 0;
 }
 
@@ -310,7 +310,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, double** result
  * to compute the locations of the x-rays. While it seems verbose and overly-optimized,
  * it does saves about 30% of each of the kernel calls. Thats something!
  **/
-void computeDeltas_Siddon(Geometry geo, double alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
+void computeDeltas_Siddon(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
     Point3D S;
     S.x=geo.DSO;
     S.y=0;
@@ -319,9 +319,9 @@ void computeDeltas_Siddon(Geometry geo, double alpha,int i, Point3D* uvorigin, P
     //End point
     Point3D P,Pu0,Pv0;
     
-    P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*((double)(geo.nDetecV/2)-0.5-0);
-    Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-(double)(geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*((double)(geo.nDetecV/2)-0.5-0);
-    Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*((double)(geo.nDetecV/2)-0.5-1);
+    P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
+    Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
+    Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
     // Geomtric trasnformations:
     
     //1: Offset detector
@@ -380,14 +380,14 @@ void computeDeltas_Siddon(Geometry geo, double alpha,int i, Point3D* uvorigin, P
 }
 #ifndef PROJECTION_HPP
 
-double maxDistanceCubeXY(Geometry geo, double alpha,int i){
+float maxDistanceCubeXY(Geometry geo, float alpha,int i){
     ///////////
     // Compute initial "t" so we access safely as less as out of bounds as possible.
     //////////
     
     
-    double maxCubX,maxCubY;
-    // Forgetting Z, compute mas distance: diagonal+offset
+    float maxCubX,maxCubY;
+    // Forgetting Z, compute max distance: diagonal+offset
     maxCubX=(geo.sVoxelX/2+ abs(geo.offOrigX[i]))/geo.dVoxelX;
     maxCubY=(geo.sVoxelY/2+ abs(geo.offOrigY[i]))/geo.dVoxelY;
     

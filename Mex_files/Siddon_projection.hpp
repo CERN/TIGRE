@@ -11,44 +11,44 @@ struct  Geometry {
     
     //Parameters part of the image geometry
     int   nVoxelX, nVoxelY, nVoxelZ;
-    double sVoxelX, sVoxelY, sVoxelZ;
-    double dVoxelX, dVoxelY, dVoxelZ;
-    double *offOrigX,*offOrigY,*offOrigZ;
-    double DSO;
+    float sVoxelX, sVoxelY, sVoxelZ;
+    float dVoxelX, dVoxelY, dVoxelZ;
+    float *offOrigX,*offOrigY,*offOrigZ;
+    float DSO;
     // Parameters  of the Detector.
     int   nDetecU, nDetecV;
-    double sDetecU, sDetecV;
-    double dDetecU, dDetecV;
-    double *offDetecU, *offDetecV;
-    double DSD;
+    float sDetecU, sDetecV;
+    float dDetecU, dDetecV;
+    float *offDetecU, *offDetecV;
+    float DSD;
     
     // The base unit we are working with in mm. 
-    double unitX;
-    double unitY;
-    double unitZ;
+    float unitX;
+    float unitY;
+    float unitZ;
     
     //projection angle
-    double alpha;
+    float alpha;
     
     //Maximum length of cube
-    double maxLength;
+    float maxLength;
     //User option
-    double accuracy;
+    float accuracy;
 };
 
  struct Point3D{
-    double x;
-    double y;
-    double z;
+    float x;
+    float y;
+    float z;
 };
 #endif
 
 #ifndef PROJECTION_HPP_SIDDON
 #define PROJECTION_HPP_SIDDON
-int siddon_ray_projection(float const * const img, Geometry geo, double** result,double const * const alphas,int nalpha);
+int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
 
 //double computeMaxLength(Geometry geo, double alpha);
-void computeDeltas_Siddon(Geometry geo, double alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
+void computeDeltas_Siddon(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 
 //double maxDistanceCubeXY(Geometry geo, double alpha,int i);
 

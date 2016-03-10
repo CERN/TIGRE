@@ -30,19 +30,20 @@ void mexFunction(int  nlhs , mxArray *plhs[],
      /*
      ** 4rd argument is matched or un matched.
      */
-    bool krylov_proj=false;
+     bool krylov_proj=false; // Caled krylov, because I designed it for krylov case.... 
     if (nrhs==4){
         if ( mxIsChar(prhs[3]) != 1)
-            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input","4rd input shoudl be a string");
+            mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput","4rd input shoudl be a string");
         
         /* copy the string data from prhs[0] into a C string input_ buf.    */
         char *krylov = mxArrayToString(prhs[3]);
-        if (strcmp(krylov,"Krylov"))
-            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input","4rd input shoudl be Krylov");
+        if (strcmp(krylov,"FDK") && strcmp(krylov,"matched"))
+            mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput","4rd input shoudl be either 'FDK' or 'matched'");
         else
-            krylov_proj=true;
+            // If its not ray voxel, its "interpolated"
+            if (strcmp(krylov,"matched"))
+                krylov_proj=true;
     }
-
     /*
      ** Third argument: angle of projection.
      */
@@ -59,9 +60,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     size_t nalpha=ncols;
     mxArray const * const ptralphas=prhs[2];
     
-    double const * const alphas = static_cast<double const *>(mxGetData(ptralphas));
-    
-    
+    double const * const alphasM= static_cast<double const *>(mxGetData(ptralphas));
+    // just copy paste the data to a float array
+    float  *  alphas= (float*)malloc(nalpha*sizeof(float));
+    for (int i=0;i<nalpha;i++)
+        alphas[i]=(float)alphasM[i];
+  
     /**
      * First input: The projections
      */
@@ -232,15 +236,15 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 break;
             case 1:
                 sVoxel=(double *)mxGetData(tmp);
-                geo.sVoxelX=sVoxel[0];
-                geo.sVoxelY=sVoxel[1];
-                geo.sVoxelZ=sVoxel[2];
+                geo.sVoxelX=(float)sVoxel[0];
+                geo.sVoxelY=(float)sVoxel[1];
+                geo.sVoxelZ=(float)sVoxel[2];
                 break;
             case 2:
                 dVoxel=(double *)mxGetData(tmp);
-                geo.dVoxelX=dVoxel[0];
-                geo.dVoxelY=dVoxel[1];
-                geo.dVoxelZ=dVoxel[2];
+                geo.dVoxelX=(float)dVoxel[0];
+                geo.dVoxelY=(float)dVoxel[1];
+                geo.dVoxelZ=(float)dVoxel[2];
                 break;
             case 3:
                 nDetec=(double *)mxGetData(tmp);
@@ -249,26 +253,26 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 break;
             case 4:
                 sDetec=(double *)mxGetData(tmp);
-                geo.sDetecU=sDetec[0];
-                geo.sDetecV=sDetec[1];
+                geo.sDetecU=(float)sDetec[0];
+                geo.sDetecV=(float)sDetec[1];
                 break;
             case 5:
                 dDetec=(double *)mxGetData(tmp);
-                geo.dDetecU=dDetec[0];
-                geo.dDetecV=dDetec[1];
+                geo.dDetecU=(float)dDetec[0];
+                geo.dDetecV=(float)dDetec[1];
                 break;
             case 6:
                 DSD=(double *)mxGetData(tmp);
-                geo.DSD=DSD[0];
+                geo.DSD=(float)DSD[0];
                 break;
             case 7:
                 DSO=(double *)mxGetData(tmp);
-                geo.DSO=DSO[0];
+                geo.DSO=(float)DSO[0];
              case 8:
                
-                geo.offOrigX=(double*)malloc(nalpha * sizeof(double));
-                geo.offOrigY=(double*)malloc(nalpha * sizeof(double));
-                geo.offOrigZ=(double*)malloc(nalpha * sizeof(double));
+                geo.offOrigX=(float*)malloc(nalpha * sizeof(float));
+                geo.offOrigY=(float*)malloc(nalpha * sizeof(float));
+                geo.offOrigZ=(float*)malloc(nalpha * sizeof(float));
                 
                 offOrig=(double *)mxGetData(tmp);
                 
@@ -277,14 +281,14 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                         c=i;
                     else
                         c=0;
-                    geo.offOrigX[i]=offOrig[0+3*c];
-                    geo.offOrigY[i]=offOrig[1+3*c];
-                    geo.offOrigZ[i]=offOrig[2+3*c];
+                    geo.offOrigX[i]=(float)offOrig[0+3*c];
+                    geo.offOrigY[i]=(float)offOrig[1+3*c];
+                    geo.offOrigZ[i]=(float)offOrig[2+3*c];
                 }
                 break;
             case 9:
-                geo.offDetecU=(double*)malloc(nalpha * sizeof(double));
-                geo.offDetecV=(double*)malloc(nalpha * sizeof(double));
+                geo.offDetecU=(float*)malloc(nalpha * sizeof(float));
+                geo.offDetecV=(float*)malloc(nalpha * sizeof(float));
                 
                 offDetec=(double *)mxGetData(tmp);
                 for (int i=0;i<nalpha;i++){
@@ -292,13 +296,13 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                         c=i;
                     else
                         c=0;
-                    geo.offDetecU[i]=offDetec[0+2*c];
-                    geo.offDetecV[i]=offDetec[1+2*c];
+                    geo.offDetecU[i]=(float)offDetec[0+2*c];
+                    geo.offDetecV[i]=(float)offDetec[1+2*c];
                 }
                 break;
             case 10:
                 acc=(double*)mxGetData(tmp);
-                geo.accuracy=acc[0];
+                geo.accuracy=(float)acc[0];
                 break;
             default:
                 mexErrMsgIdAndTxt( "CBCT:MEX:Atb:unknown","This shoudl not happen. Weird");
@@ -307,14 +311,14 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         }
     }
     if (nfields==10)
-        geo.accuracy=0.2;
+        geo.accuracy=0.5;
     
     
     /*
      * allocate memory for the output
      */
     
-    double* result = (double*)malloc(geo.nVoxelX *geo.nVoxelY*geo.nVoxelZ*sizeof(double));
+    float* result = (float*)malloc(geo.nVoxelX *geo.nVoxelY*geo.nVoxelZ*sizeof(float));
     
     
     /*
@@ -328,8 +332,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
      * Prepare the outputs
      */
     mwSize* imgsize;
-    imgsize[0]=geo.nVoxelX;//*geo.nVoxelY*geo.nVoxelZ;
-//     imgsize[1]=1;
+    imgsize[0]=geo.nVoxelX;
     imgsize[1]=geo.nVoxelY;
     imgsize[2]=geo.nVoxelZ;
     
@@ -337,11 +340,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     double *outImage = mxGetPr(plhs[0]);
     
     
-    memcpy(outImage,result,geo.nVoxelX *geo.nVoxelY*geo.nVoxelZ*sizeof(double));
-//     for (int i=0; i<geo.nVoxelX ;i++){
-//         for (int j=0; j<geo.nVoxelY ;j++)
-//             memcpy(&outImage[geo.nVoxelZ*j+geo.nVoxelY*geo.nVoxelZ*i],result[i][j],geo.nVoxelZ*sizeof(double));
-//     }
+    for (int i=0; i<geo.nVoxelX ;i++)
+        for (int j=0; j<geo.nVoxelY ;j++)
+            for (int k=0; k<geo.nVoxelY ;k++)
+                outImage[i+j*geo.nVoxelX+k*geo.nVoxelX*geo.nVoxelY]= (double)result[i+j*geo.nVoxelX+k*geo.nVoxelX*geo.nVoxelY];
+    
     
     /*
      * Free memory and out

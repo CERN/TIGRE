@@ -57,7 +57,7 @@ do { \
      **/
     texture<float, cudaTextureType3D , cudaReadModeElementType> tex;
 
-__global__ void matrixConstantMultiply(const Geometry geo,double* image,double constant){
+__global__ void matrixConstantMultiply(const Geometry geo,float* image,float constant){
     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (idx>= geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ)
         return;
@@ -65,7 +65,7 @@ __global__ void matrixConstantMultiply(const Geometry geo,double* image,double c
     
 }
 __global__ void kernelPixelBackprojection(const Geometry geo,
-        double* image,
+        float* image,
         int indAlpha,
         Point3D deltaX ,
         Point3D deltaY,
@@ -100,33 +100,33 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
     // compute the weigth for the backprojection. This needs the X and Y coords on the real workd of the image
     
     
-    double vectX,vectY,vectZ;
+    float vectX,vectY,vectZ;
     vectX=(P.x -S.x);
     vectY=(P.y -S.y);
     vectZ=(P.z -S.z);
     
     
     // Get the coordinates in the projection where the mid point of the voxel is projected.
-    double t=(geo.DSO-geo.DSD /*-DDO*/ - S.x)/vectX;
-    double y,z;
+    float t=(geo.DSO-geo.DSD /*-DDO*/ - S.x)/vectX;
+    float y,z;
     y=vectY*t+S.y;
     z=vectZ*t+S.z;
-    double u,v;
+    float u,v;
     u=y+geo.nDetecU/2-0.5;
     v=z+geo.nDetecV/2-0.5;
     
     
     // Get interpolated value in the current projection
-    double weigth;
-    double realx,realy,realz; //of voxel
+    float weigth;
+    float realx,realy,realz; //of voxel
     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   -xyzOffset.x; // /geo.dDetecU;  X never gets scaled.
     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   -xyzOffset.y/geo.dDetecU; // and Y gets scalled by U
     realz=-geo.sVoxelZ/2+geo.dVoxelZ/2    +indZ*geo.dVoxelZ   -xyzOffset.z/geo.dDetecV;
-    double realDx,realDy,realDz; //of detector
+    float realDx,realDy,realDz; //of detector
     realDx=-(geo.DSD-geo.DSO);
     realDy=y*geo.dDetecU;
     realDz=z*geo.dDetecV;
-    double L,l;
+    float L,l;
     L =sqrt( (S.x-realDx)*(S.x-realDx)+ (S.y-realDy)*(S.y-realDy)+ (S.z-realDz)*(S.z-realDz));
     l=sqrt( (S.x-realx)*(S.x-realx)+ (S.y-realy)*(S.y-realy)+ (S.z-realz)*(S.z-realz));
     weigth=L*L*L/(geo.DSD*l*l);
@@ -139,7 +139,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
 }
 
 
-int voxel_backprojection2(float const * const projections, Geometry geo, double* result,double const * const alphas,int nalpha){
+int voxel_backprojection2(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha){
     
 //     // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
 //     int deviceCount = 0;
@@ -199,8 +199,8 @@ int voxel_backprojection2(float const * const projections, Geometry geo, double*
     
     
     // Allocate result image memory
-    size_t num_bytes = geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ * sizeof(double);
-    double* dimage;
+    size_t num_bytes = geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ * sizeof(float);
+    float* dimage;
     cudaMalloc((void**)&dimage, num_bytes);
     cudaMemset(dimage,0,num_bytes);
     cudaCheckErrors("cudaMalloc fail");
@@ -250,11 +250,12 @@ int voxel_backprojection2(float const * const projections, Geometry geo, double*
     cudaFree(dimage);
     cudaFreeArray(d_projectiondata);
     cudaCheckErrors("cudaFree d_imagedata fail");
+    cudaDeviceReset();
     return 0;
     
 }
 #ifndef BACKPROJECTION_HPP
-void computeDeltasCube(Geometry geo, double alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ){
+void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ){
     
     Point3D P0, Px0,Py0,Pz0;
     // Get coords of Img(0,0,0)

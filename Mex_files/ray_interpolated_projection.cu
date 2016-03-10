@@ -58,12 +58,12 @@ do { \
 
 
 __global__ void kernelPixelDetector( Geometry geo,
-        double* detector,
+        float* detector,
         Point3D source ,
         Point3D deltaU,
         Point3D deltaV,
         Point3D uvOrigin,
-        double maxdist){
+        float maxdist){
     
     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (idx>= geo.nDetecU* geo.nDetecV)
@@ -72,20 +72,20 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     
     
-    /////////////////////////////// Get pixel coords
+    /////Get pixel coords
     int pixelV = geo.nDetecV-idx % geo.nDetecV-1;
     int pixelU = idx / geo.nDetecV;
     
     
     
-    double vectX,vectY,vectZ;
+    float vectX,vectY,vectZ;
     Point3D P;
     P.x=(uvOrigin.x+pixelU*deltaU.x+pixelV*deltaV.x);
     P.y=(uvOrigin.y+pixelU*deltaU.y+pixelV*deltaV.y);
     P.z=(uvOrigin.z+pixelU*deltaU.z+pixelV*deltaV.z);
     
     // Length is the ray length in normalized space
-    double length=sqrt((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z));
+    float length=sqrt((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z));
     //now legth is an integer of Nsamples that are required on this line
     length=ceil(length/geo.accuracy);//Divide the directional vector by an integer
     vectX=(P.x -source.x)/(length);
@@ -94,22 +94,25 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     
 //     //Integrate over the line
-    double x,y,z;
-    double sum=0;
-    double i;
+    float x,y,z;
+    float sum=0;
+    float i;
     
     
     // limit the amount of mem access after the cube, but before the detector.
     if ((geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy  <   length)
-        length=ceil((geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy);
+        length=ceil((geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy);  
+    //Length is not actually a length, but the amount of memreads with given accuracy ("samples per voxel")
+    
+    
     for (i=floor(maxdist/geo.accuracy); i<=length; i=i+1){
-        x=vectX*(double)i+source.x;
-        y=vectY*(double)i+source.y;
-        z=vectZ*(double)i+source.z;
+        x=vectX*i+source.x;
+        y=vectY*i+source.y;
+        z=vectZ*i+source.z;
         
-        sum += (double)tex3D(tex, x+0.5, y+0.5, z+0.5);
+        sum += tex3D(tex, x+0.5, y+0.5, z+0.5); // this line is 94% of time.
     }
-    double deltalength=sqrt((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
+    float deltalength=sqrt((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
             (vectY*geo.dVoxelY)*(vectY*geo.dVoxelY)+
             (vectZ*geo.dVoxelZ)*(vectZ*geo.dVoxelZ) );
     detector[idx]=sum*deltalength;
@@ -117,7 +120,7 @@ __global__ void kernelPixelDetector( Geometry geo,
 
 
 
-int interpolation_projection(float const * const img, Geometry geo, double** result,double const * const alphas,int nalpha){
+int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha){
     
     
     // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
@@ -180,14 +183,14 @@ int interpolation_projection(float const * const img, Geometry geo, double** res
     //Done! Image put into texture memory.
     
     
-    size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(double);
-    double* dProjection;
+    size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(float);
+    float* dProjection;
     cudaMalloc((void**)&dProjection, num_bytes);
     cudaCheckErrors("cudaMalloc fail");
 
     
 //     If we are going to time
-    bool timekernel=false;
+    bool timekernel=true;
     cudaEvent_t start, stop;
     float elapsedTime;
     if (timekernel){
@@ -196,7 +199,7 @@ int interpolation_projection(float const * const img, Geometry geo, double** res
     }    
  
     Point3D source, deltaU, deltaV, uvOrigin;
-    double maxdist;
+    float maxdist;
     for (int i=0;i<nalpha;i++){
         
         geo.alpha=alphas[i];
@@ -232,7 +235,7 @@ int interpolation_projection(float const * const img, Geometry geo, double** res
     
     
     
-    
+    cudaDeviceReset();
     
     return 0;
 }
@@ -244,7 +247,7 @@ int interpolation_projection(float const * const img, Geometry geo, double** res
  * to compute the locations of the x-rays. While it seems verbose and overly-optimized,
  * it does saves about 30% of each of the kernel calls. Thats something!
  **/
-void computeDeltas(Geometry geo, double alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
+void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
     Point3D S;
     S.x=geo.DSO;
     S.y=0;
@@ -253,9 +256,9 @@ void computeDeltas(Geometry geo, double alpha,int i, Point3D* uvorigin, Point3D*
     //End point
     Point3D P,Pu0,Pv0;
     
-    P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*((double)(geo.nDetecV/2)-0.5-0);
-    Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-(double)(geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*((double)(geo.nDetecV/2)-0.5-0);
-    Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-(double)(geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*((double)(geo.nDetecV/2)-0.5-1);
+    P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
+    Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
+    Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
     // Geomtric trasnformations:
     
     //1: Offset detector
@@ -313,13 +316,13 @@ void computeDeltas(Geometry geo, double alpha,int i, Point3D* uvorigin, Point3D*
     *source=S2;
 }
 
-double maxDistanceCubeXY(Geometry geo, double alpha,int i){
+float maxDistanceCubeXY(Geometry geo, float alpha,int i){
     ///////////
     // Compute initial "t" so we access safely as less as out of bounds as possible.
     //////////
     
     
-    double maxCubX,maxCubY;
+    float maxCubX,maxCubY;
     // Forgetting Z, compute mas distance: diagonal+offset
     maxCubX=(geo.sVoxelX/2+ abs(geo.offOrigX[i]))/geo.dVoxelX;
     maxCubY=(geo.sVoxelY/2+ abs(geo.offOrigY[i]))/geo.dVoxelY;

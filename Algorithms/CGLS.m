@@ -110,8 +110,8 @@ end
 
 % //doi: 10.1088/0031-9155/56/13/004
 
-r=proj-Ax(x,geo,angles,'Krylov');
-p=Atb(r,geo,angles,'Krylov');
+r=proj-Ax(x,geo,angles,'ray-voxel');
+p=Atb(r,geo,angles,'matched');
 gamma=norm(p(:),2)^2;
 
 
@@ -119,7 +119,7 @@ errorL2=zeros(niter,1);
 for ii=1:niter
      if ii==1;tic;end
     
-    q=Ax(p,geo,angles,'Krylov');
+    q=Ax(p,geo,angles,'ray-voxel');
     alpha=gamma/norm(q(:),2)^2;
     x=x+alpha*p;
     
@@ -128,7 +128,7 @@ for ii=1:niter
     % Diverges and that is not cool. I dont know why. Paper says there is
     % less than 1% of error between the A and At, but could that be too
     % much anyway? Maybe other intrinsic numerical errors?
-    aux=proj-Ax(x,geo,angles,'Krylov');
+    aux=proj-Ax(x,geo,angles,'ray-voxel');
     errorL2(ii)=im3Dnorm(aux,'L2');
     if ii>1 && errorL2(ii)>errorL2(ii-1)
         % OUT!
@@ -141,7 +141,7 @@ for ii=1:niter
     % If step is adecuatem, then continue withg CGLS
     r=r-alpha*q;
     
-    s=Atb(r,geo,angles,'Krylov');
+    s=Atb(r,geo,angles,'matched');
     gamma1=norm(s(:),2)^2;
     beta=gamma1/gamma;
     gamma=gamma1;
