@@ -42,6 +42,7 @@ errorL2=[];
 
 % Projection weigth, W
 % Projection weigth, W
+
 W=Ax(ones(geo.nVoxel'),geo,alpha,'ray-voxel');  %
 W(W<min(geo.dVoxel))=Inf;
 W=1./W;
@@ -76,7 +77,7 @@ for ii=1:niter
    % If quality is being measured
     if measurequality
        % HERE GOES  
-       %qualMeas=Measure_Quality(res,res_prev,QualMeasOpts);
+       qualMeas=Measure_Quality(res_prev,res,QualMeasOpts);
     end   
     
     errornow=norm(proj_err(:));                       % Compute error norm2 of b-Ax
