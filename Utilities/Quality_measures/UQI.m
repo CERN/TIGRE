@@ -32,7 +32,7 @@ varres=var(res);
 cova=sum((res-meanres).*(real-meanreal))/(N-1);
 % cova=cov(real,res);
 
-front= (2*cova)/(varres^2+varreal^2);
+front= (2*cova)/(varres+varreal);
 back= (2*meanres*meanreal)/(meanres^2+meanreal^2);
 
 % uni= ((2*cova)/((varres^2)+(varreal^2)))*((2*meanres*meanreal)/(((meanres^2)+(meanreal^2))));
