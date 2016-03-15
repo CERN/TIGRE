@@ -65,16 +65,19 @@ __global__ void kernelPixelDetector( Geometry geo,
         Point3D uvOrigin,
         float maxdist){
     
-    size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx>= geo.nDetecU* geo.nDetecV)
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    size_t idx =  x  * geo.nDetecV + y;
+
+    if ((x>= geo.nDetecU) | (y>= geo.nDetecV))
         return;
     
     
+
     
-    
-    /////Get pixel coords
-    int pixelV = geo.nDetecV-idx % geo.nDetecV-1;
-    int pixelU = idx / geo.nDetecV;
+    /////// Get coordinates XYZ of pixel UV
+    int pixelV = geo.nDetecV-y-1;
+    int pixelU = x;
     
     
     
@@ -94,7 +97,7 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     
 //     //Integrate over the line
-    float x,y,z;
+    float tx,ty,tz;
     float sum=0;
     float i;
     
@@ -106,11 +109,11 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     
     for (i=floor(maxdist/geo.accuracy); i<=length; i=i+1){
-        x=vectX*i+source.x;
-        y=vectY*i+source.y;
-        z=vectZ*i+source.z;
+        tx=vectX*i+source.x;
+        ty=vectY*i+source.y;
+        tz=vectZ*i+source.z;
         
-        sum += tex3D(tex, x+0.5, y+0.5, z+0.5); // this line is 94% of time.
+        sum += tex3D(tex, tx+0.5, ty+0.5, tz+0.5); // this line is 94% of time.
     }
     float deltalength=sqrt((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
             (vectY*geo.dVoxelY)*(vectY*geo.dVoxelY)+
@@ -196,8 +199,12 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     if (timekernel){
         cudaEventCreate(&start);
         cudaEventRecord(start,0);
-    }    
- 
+    } 
+    
+    // 16x16 gave the best performance empirically
+    // Funnily that makes it compatible with most GPUs.....
+    dim3 grid(ceil(geo.nDetecU/32),ceil(geo.nDetecV/32),1);
+    dim3 block(32,32,1); 
     Point3D source, deltaU, deltaV, uvOrigin;
     float maxdist;
     for (int i=0;i<nalpha;i++){
@@ -209,7 +216,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         computeDeltas(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Interpolation!!
         
-        kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(maxdist));
+        kernelPixelDetector<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(maxdist));
         cudaCheckErrors("Kernel fail");
         // copy result to host
         cudaMemcpy(result[i], dProjection, num_bytes, cudaMemcpyDeviceToHost);

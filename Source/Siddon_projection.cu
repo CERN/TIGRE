@@ -64,16 +64,21 @@ __global__ void kernelPixelDetector( Geometry geo,
         Point3D deltaV,
         Point3D uvOrigin){
     
-    size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx>= geo.nDetecU* geo.nDetecV)
+//     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    size_t idx =  x  * geo.nDetecV + y;
+
+    if ((x>= geo.nDetecU) | (y>= geo.nDetecV))
         return;
     
     
-    
+
     
     /////// Get coordinates XYZ of pixel UV
-    int pixelV = geo.nDetecV-idx % geo.nDetecV-1;
-    int pixelU = idx / geo.nDetecV;
+    int pixelV = geo.nDetecV-y-1;
+    int pixelU = x;
     Point3D pixel1D;
     pixel1D.x=(uvOrigin.x+pixelU*deltaU.x+pixelV*deltaV.x);
     pixel1D.y=(uvOrigin.y+pixelU*deltaU.y+pixelV*deltaV.y);
@@ -164,7 +169,7 @@ __global__ void kernelPixelDetector( Geometry geo,
     float sum=0;
     int Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
-//         while (ac<=aM){
+
     for (int ii=0;ii<Np;ii++){
         if (ax==aminc){
             sum+=(ax-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
@@ -173,13 +178,11 @@ __global__ void kernelPixelDetector( Geometry geo,
             ax+=axu;
         }else if(ay==aminc){
             sum+=(ay-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
-//                 sum++;
             j=j+ju;
             ac=ay;
             ay+=ayu;
         }else if(az==aminc){
             sum+=(az-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
-//                 sum++;
             k=k+ku;
             ac=az;
             az+=azu;
@@ -187,17 +190,16 @@ __global__ void kernelPixelDetector( Geometry geo,
         aminc=min(min(ax,ay),az);
     }
     detector[idx]=sum*maxlength;
-//         detector[idx]=source.y;
 }
 
 
 int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha){
     
     
-    // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
+    // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU
     
     // If you have another GPU and want to use this code, please change it, but make sure you know that is compatible.
-    // also change MAXTREADS
+    
     
 //         int deviceCount = 0;
 //         cudaGetDeviceCount(&deviceCount);
@@ -210,7 +212,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
 //         {
 //             cudaDeviceProp deviceProp;
 //             cudaGetDeviceProperties(&deviceProp, dev);
-//
+// 
 //             if (strcmp(deviceProp.name, "Tesla K40c") == 0|| strcmp(deviceProp.name, "GeForce GT 740M") == 0){
 //                 cudaSetDevice(dev);
 //                 found=true;
@@ -219,7 +221,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
 //         }
 //         if (!found)
 //            mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Supported GPU found");
-    // DONE, Tesla found
+    //DONE, Tesla found
     
     // copy data to CUDA memory
     cudaArray *d_imagedata = 0;
@@ -268,6 +270,14 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         cudaEventRecord(start,0);
     }
     Point3D source, deltaU, deltaV, uvOrigin;
+    
+    // 16x16 gave the best performance empirically
+    // Funnily that makes it compatible with most GPUs.....
+    int divU,divV;
+    divU=16;
+    divV=16;
+    dim3 grid((geo.nDetecU+divU-1)/divU,(geo.nDetecV+divV-1)/divV,1);
+    dim3 block(divU,divV,1); 
     for (int i=0;i<nalpha;i++){
         
         geo.alpha=alphas[i];
@@ -275,7 +285,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         //Precompute per angle constant stuff for speed
         computeDeltas_Siddon(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Ray tracing!
-        kernelPixelDetector<<<(geo.nDetecU*geo.nDetecV + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin);
+        kernelPixelDetector<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin);
         cudaCheckErrors("Kernel fail");
         // copy result to host
         cudaMemcpy(result[i], dProjection, num_bytes, cudaMemcpyDeviceToHost);

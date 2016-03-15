@@ -43,19 +43,19 @@ Geometry.accuracy=0.5;
      end
  end
  
- Geometry.accuracy=0.1;
- for ii=0:4
-     Geometry.nDetector=[64; 64]*2^ii;
-     Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
-     for jj=0:4
-         Geometry.nVoxel=[64;64;64]*2^jj;
-         Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
-         img=rand(Geometry.nVoxel');       
-         t_siddon(ii+1,jj+1)=str2double(evalc('b=Ax(img,Geometry,alpha,''Krylov'');'));
-         % Backprojection takes same time, as its just a different weigth
-         clear  b;
-     end
- end
+%  Geometry.accuracy=0.1;
+%  for ii=0:4
+%      Geometry.nDetector=[64; 64]*2^ii;
+%      Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
+%      for jj=0:4
+%          Geometry.nVoxel=[64;64;64]*2^jj;
+%          Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
+%          img=rand(Geometry.nVoxel');       
+%          t_siddon(ii+1,jj+1)=str2double(evalc('b=Ax(img,Geometry,alpha,''ray-voxel'');'));
+%          % Backprojection takes same time, as its just a different weigth
+%          clear  b;
+%      end
+%  end
  
  %% Plot projection and bakcprojection performance.
  tplot1=t_interpolation'*10; % base unit 0.1ms
@@ -75,10 +75,10 @@ subplot(121)
 cmap=[cmap; repmat(cmap(end,:),[100,1])];
  
  b=bar3(log10(tplot1));
- zlim([0 log10(150000)])
+ zlim([0 log10(15000)])
 
- set(gca,'Ztick',log10([ 1,10,100,1000,10000, 100000])); % because now our units are 0.1ms, this doesnt fit with next line, but its rigth
- set(gca,'ZtickLabel',{'0.1ms','1ms','10ms','100ms','1s','10s'});
+ set(gca,'Ztick',log10([ 1,10,100,1000,10000])); % because now our units are 0.1ms, this doesnt fit with next line, but its rigth
+ set(gca,'ZtickLabel',{'0.1ms','1ms','10ms','100ms','1s'});
  title('Projection with Interpolation','fontsize',20)
  xlabel('Detector size','fontsize',20)
  grid on
@@ -102,9 +102,9 @@ cmap=[cmap; repmat(cmap(end,:),[100,1])];
  subplot(122)
  
  b=bar3(log10(tplot2));
- zlim([0 log10(150000)])
- set(gca,'Ztick',log10([ 1,10,100,1000,10000, 100000])); % because now our units are 0.1ms, this doesnt fit with next line, but its rigth
- set(gca,'ZtickLabel',{'0.1ms','1ms','10ms','100ms','1s','10s'});
+ zlim([0 log10(15000)])
+ set(gca,'Ztick',log10([ 1,10,100,1000,10000])); % because now our units are 0.1ms, this doesnt fit with next line, but its rigth
+ set(gca,'ZtickLabel',{'0.1ms','1ms','10ms','100ms','1s'});
  title('Projection with ray-voxel intersection','fontsize',20)
  xlabel('Detector size','fontsize',20)
  grid on
@@ -132,10 +132,11 @@ set(gcf,'units','normalized','outerposition',[0 0 1 1])
 
 
  cmap=plasma();
+ cmap=[cmap; repmat(cmap(end,:),[100,1])];
  b=bar3(log10(tplot3));
- zlim([0 log10(12000)])
- set(gca,'Ztick',log10([1,10,100,1000,10000,12000]));
- set(gca,'ZtickLabel',{'1ms','10ms','100ms','1s','10s',''});
+ zlim([0 log10(10000)])
+ set(gca,'Ztick',log10([1,10,100,1000,10000]));
+ set(gca,'ZtickLabel',{'1ms','10ms','100ms','1s','10s'});
  title('Backprojection','fontsize',20)
  xlabel('Detector size','fontsize',20)
  grid on

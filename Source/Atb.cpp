@@ -41,7 +41,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
             mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput","4rd input shoudl be either 'FDK' or 'matched'");
         else
             // If its not ray voxel, its "interpolated"
-            if (strcmp(krylov,"matched"))
+            if (!strcmp(krylov,"matched"))
                 krylov_proj=true;
     }
     /*
@@ -103,7 +103,6 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         for (int i = 0; i <size_proj[1]; i++)
             for (int j = 0; j < size_proj2; j++)
                 img[i+k*size_proj[1]+j*size_proj[0]*size_proj[1]]=(float)imgaux[k+i*size_proj[0]+j*size_proj[1]*size_proj[0]];
-    
     
 //   for (int i=0; i<size_proj[0]*size_proj[1]*size_proj2;i++)
 //       img[i]=(float)imgaux[i];
@@ -324,8 +323,9 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     /*
      * Call the CUDA kernel
      */
-    if (krylov_proj)
-        voxel_backprojection2(img,geo,result,alphas,nalpha);    
+    if (krylov_proj){
+        voxel_backprojection2(img,geo,result,alphas,nalpha); 
+    }
     else
         voxel_backprojection(img,geo,result,alphas,nalpha);
     /*

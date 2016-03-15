@@ -143,7 +143,8 @@ end
 
 fh=figure();
 for ii=size(img,1):-1*steps:1
-    imagesc((squeeze(img(ii,:,:)))'); 
+    
+    imagesc(flipud((squeeze(img(ii,:,:)))')); 
     
     
     axis image; 

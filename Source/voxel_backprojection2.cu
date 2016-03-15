@@ -38,14 +38,14 @@ do { \
      *            |                             |
      *            |                             |
      *            |      +--------+             |
-              |     /        /|             |
-     A Z      |    /        / |*D           |
-     |        |   +--------+  |             |
-     |        |   |        |  |             |
-     |        |   |     *O |  +             |
-     *--->y   |   |        | /              |
-    /         |   |        |/               |
-   V X        |   +--------+                |
+     *            |     /        /|             |
+     *   A Z      |    /        / |*D           |
+     *   |        |   +--------+  |             |
+     *   |        |   |        |  |             |
+     *   |        |   |     *O |  +             |
+     *   *--->y   |   |        | /              |
+     *  /         |   |        |/               |
+     * V X        |   +--------+                |
      *            |-----------------------------|
      *
      *           *S
@@ -59,54 +59,52 @@ do { \
 
 __global__ void matrixConstantMultiply(const Geometry geo,float* image,float constant){
     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx>= geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ)
-        return;
-    image[idx]*=constant;
+     for(; idx<geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ; idx+=gridDim.x*blockDim.x) {
+            image[idx]*=constant;
+     }
     
 }
+
+// Using Matched weigths
 __global__ void kernelPixelBackprojection(const Geometry geo,
         float* image,
         int indAlpha,
         Point3D deltaX ,
         Point3D deltaY,
         Point3D deltaZ,
-        Point3D xyzOrigin,
-        Point3D xyzOffset,
-        Point3D uv0Offset){
+        Point3D xyzOrigin,           
+        Point3D xyzOffset,            // this is a direct copy, it has not been scaled
+        Point3D uv0Offset){           // This is a direct copy, it has not been scaled
+    
+    
+    int indY = blockIdx.y * blockDim.y + threadIdx.y;
+    int indX = blockIdx.x * blockDim.x + threadIdx.x;
+    int indZ = blockIdx.z * blockDim.z + threadIdx.z;
     //Make sure we dont go out of bounds
-    size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
-    if (idx>= geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ)
+    size_t idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
+    if (indX>=geo.nVoxelX | indY>=geo.nVoxelY |indZ>=geo.nVoxelZ)
         return;
-    
-    
-    int indZ = idx / (geo.nVoxelY * geo.nVoxelX);
-    int resZ = idx % (geo.nVoxelY * geo.nVoxelX);
-    int indY = resZ / geo.nVoxelX;
-    int indX = resZ % geo.nVoxelX;
     // Geometric trasnformations:
     
-    //Source
+    //Source, scaled XYZ coordinates
     Point3D S;
-    S.x=geo.DSO;
-    S.y=-uv0Offset.x;
+    S.x=geo.DSO;                  // we dont scale the x direction, because the detecros is only in YZ (and the image is rotated)
+    S.y=-uv0Offset.x/geo.dDetecU;            
     S.z=-uv0Offset.y/geo.dDetecV;
-    // "XYZ" in the warped coordinate system of the current point
+    // "XYZ" in the scaled coordinate system of the current point. The iamge is rotated with the projection angles.
     Point3D P;
     P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
     P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y);
     P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
-    
-    
-    // compute the weigth for the backprojection. This needs the X and Y coords on the real workd of the image
-    
-    
+        
+    // This is the vector defining the line from the source to the Voxel
     float vectX,vectY,vectZ;
     vectX=(P.x -S.x);
     vectY=(P.y -S.y);
     vectZ=(P.z -S.z);
     
     
-    // Get the coordinates in the projection where the mid point of the voxel is projected.
+    // Get the coordinates in the detector UV where the mid point of the voxel is projected.
     float t=(geo.DSO-geo.DSD /*-DDO*/ - S.x)/vectX;
     float y,z;
     y=vectY*t+S.y;
@@ -115,25 +113,38 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
     u=y+geo.nDetecU/2-0.5;
     v=z+geo.nDetecV/2-0.5;
     
-    
-    // Get interpolated value in the current projection
+    // TODO: put this in a separate kernel?
+    // Compute the weigth of the matched backprojection , as in doi: 10.1088/0031-9155/56/13/004, eq (3)
     float weigth;
-    float realx,realy,realz; //of voxel
-    realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   -xyzOffset.x; // /geo.dDetecU;  X never gets scaled.
-    realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   -xyzOffset.y/geo.dDetecU; // and Y gets scalled by U
-    realz=-geo.sVoxelZ/2+geo.dVoxelZ/2    +indZ*geo.dVoxelZ   -xyzOffset.z/geo.dDetecV;
-    float realDx,realDy,realDz; //of detector
-    realDx=-(geo.DSD-geo.DSO);
-    realDy=y*geo.dDetecU;
-    realDz=z*geo.dDetecV;
+    //Real coordinates of Voxel. Instead of reverting the tranformation, its less math (faster) to compute it from the indexes.
+    Point3D realvoxel; 
+    realvoxel.x=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x;      
+    realvoxel.y=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y; 
+    realvoxel.z=-geo.sVoxelZ/2+geo.dVoxelZ/2    +indZ*geo.dVoxelZ   +xyzOffset.z;
+    //Real coords of Source
+    // We already have S.x, and S.y and S.z are always zero. we just need to rotate
+    S.x= geo.DSO*cos(geo.alpha);
+    S.y=-geo.DSO*sin(geo.alpha); 
+   
+    // Real XYZ coorfinates of Derector.
+    Point3D realD, realDaux; 
+    // We know the index of the detector (u,v). Star from there.
+    realDaux.x=-(geo.DSD-geo.DSO); 
+    realDaux.y=-geo.sDetecU/2+geo.dDetecU/2 + u*geo.dDetecU +uv0Offset.x;
+    realD.z   =-geo.sDetecV/2+geo.dDetecV/2 + v*geo.dDetecV +uv0Offset.y;
+    //rotate the detector
+    realD.x= realDaux.x*cos(geo.alpha)  + realDaux.y*sin(geo.alpha); //sin(-x)=-sin(x) , cos(-x)=cos(x)
+    realD.y=-realDaux.x*sin(geo.alpha)  + realDaux.y*cos(geo.alpha); //sin(-x)=-sin(x) , cos(-x)=cos(x)
     float L,l;
-    L =sqrt( (S.x-realDx)*(S.x-realDx)+ (S.y-realDy)*(S.y-realDy)+ (S.z-realDz)*(S.z-realDz));
-    l=sqrt( (S.x-realx)*(S.x-realx)+ (S.y-realy)*(S.y-realy)+ (S.z-realz)*(S.z-realz));
+    L = sqrt( (S.x-realD.x)*(S.x-realD.x)+ (S.y-realD.y)*(S.y-realD.y)+ (realD.z)*(realD.z)); // Sz=0 always.
+    l = sqrt( (S.x-realvoxel.x)*(S.x-realvoxel.x)+ (S.y-realvoxel.y)*(S.y-realvoxel.y)+ (S.z-realvoxel.z)*(S.z-realvoxel.z));
     weigth=L*L*L/(geo.DSD*l*l);
+    
+   // Get Value in the computed (U,V) and multiply by the corresponding weigth.
     image[idx]+=tex3D(tex, u +0.5 ,
-            v +0.5 ,
-            indAlpha                                           +0.5)*weigth;
-    //test this and implement the deltas
+                           v +0.5 ,
+                           indAlpha+0.5)
+                           *weigth;
     
     
 }
@@ -141,35 +152,9 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
 
 int voxel_backprojection2(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha){
     
-//     // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
-//     int deviceCount = 0;
-//     cudaGetDeviceCount(&deviceCount);
-//      if (deviceCount == 0)
-//     {
-//         mexErrMsgIdAndTxt("CBCT:CUDA:Atb:cudaGetDeviceCount","No CUDA enabled NVIDIA GPUs found");
-//     }
-//     bool found=false;
-//     for (int dev = 0; dev < deviceCount; ++dev)
-//     {
-//         cudaDeviceProp deviceProp;
-//         cudaGetDeviceProperties(&deviceProp, dev);
-//
-//         if (strcmp(deviceProp.name, "Tesla K40c") == 0 || strcmp(deviceProp.name, "GeForce GT 740M") == 0){
-//             cudaSetDevice(dev);
-//             found=true;
-//             break;
-//         }
-//     }
-//     if (!found)
-//        mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Supported GPU found");
-    
-    
-    // Done, Tesla found.
-    
     /*
      * Allocate texture memory on the device
      */
-    
     // copy data to CUDA memory
     cudaArray *d_projectiondata = 0;
     const cudaExtent extent = make_cudaExtent(geo.nDetecU,geo.nDetecV,nalpha);
@@ -197,7 +182,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
     
     cudaCheckErrors("3D texture memory bind fail");
     
-    
+
     // Allocate result image memory
     size_t num_bytes = geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ * sizeof(float);
     float* dimage;
@@ -217,17 +202,27 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
         cudaEventCreate(&start);
         cudaEventRecord(start,0);
     }
+      int divx,divy,divz;
     
+    divx=10;
+    divy=10;
+    divz=10;
+    dim3 grid((geo.nVoxelX+divx-1)/divx,
+              (geo.nVoxelY+divy-1)/divy,
+              (geo.nVoxelZ+divz-1)/divz); 
+    dim3 block(divx,divy,divz);
+    // Main loop
     for (int i=0;i<nalpha;i++){
         geo.alpha=-alphas[i];
         computeDeltasCube(geo,geo.alpha,i,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
         
         offOrig.x=geo.offOrigX[i];
         offOrig.y=geo.offOrigY[i];
+        offOrig.z=geo.offOrigZ[i];
         offDetec.x=geo.offDetecU[i];
         offDetec.y=geo.offDetecV[i];
         
-        kernelPixelBackprojection<<<(geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>
+        kernelPixelBackprojection<<<grid,block>>>
                 (geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec);
         cudaCheckErrors("Kernel fail");
     }
@@ -239,7 +234,8 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
         cudaEventElapsedTime(&elapsedTime, start,stop);
         mexPrintf("%f\n" ,elapsedTime);
     }
-    matrixConstantMultiply<<<(geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ + MAXTREADS-1) / MAXTREADS,MAXTREADS>>>( geo,dimage,geo.dVoxelX*geo.dVoxelY*geo.dVoxelZ/(geo.dDetecU*geo.dDetecV));
+     //in a Tesla, maximum blocks =15 SM * 4 blocks/SM=60
+     matrixConstantMultiply<<<60,MAXTREADS>>>( geo,dimage,geo.dVoxelX*geo.dVoxelY*geo.dVoxelZ/(geo.dDetecU*geo.dDetecV));
     
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
     cudaCheckErrors("cudaMemcpy fail");
@@ -268,7 +264,8 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     Px0.y=P0.y;                   Py0.y=P0.y+geo.dVoxelY;    Pz0.y=P0.y;
     Px0.z=P0.z;                   Py0.z=P0.z;                Pz0.z=P0.z+geo.dVoxelZ;
     
-    // Rotate image (this is equivalent of rotating the source and detector)
+    // Rotate image in the opposite direction of what the detector would rotate. We will keep detector still while the image
+    // changes to accomodate any needed geometric transformation.
     
     Point3D P, Px,Py,Pz; // We need other auxiliar variables to be able to perform the rotation, or we would overwrite values!
     P.x =P0.x *cos(alpha)-P0.y *sin(alpha);       P.y =P0.x *sin(alpha)+P0.y *cos(alpha);      P.z =P0.z;
@@ -283,13 +280,15 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     Py.z=Py.z/geo.dDetecV;                          Py.y=Py.y/geo.dDetecU;
     Pz.z=Pz.z/geo.dDetecV;                          Pz.y=Pz.y/geo.dDetecU;
     
-    
+    // Compute unit vector of change between voxels
     deltaX->x=Px.x-P.x;   deltaX->y=Px.y-P.y;    deltaX->z=Px.z-P.z;
     deltaY->x=Py.x-P.x;   deltaY->y=Py.y-P.y;    deltaY->z=Py.z-P.z;
     deltaZ->x=Pz.x-P.x;   deltaZ->y=Pz.y-P.y;    deltaZ->z=Pz.z-P.z;
     
+    // Detector offset is encoded in the image.
+    P.z =P.z-geo.offDetecV[i]/geo.dDetecV;          
+    P.y =P.y-geo.offDetecU[i]/geo.dDetecU;
     
-    P.z =P.z-geo.offDetecV[i]/geo.dDetecV;          P.y =P.y-geo.offDetecU[i]/geo.dDetecU;
     *xyzorigin=P;
     
 }

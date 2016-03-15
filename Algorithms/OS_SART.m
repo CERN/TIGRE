@@ -102,7 +102,7 @@ for ii=1:niter
         %res= initial image is zero (default)
         proj_err=proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'ray-voxel'); %                                 (b-Ax)
         weighted_err=W(:,:,orig_index{jj}).*proj_err;                           %                          W^-1 * (b-Ax)
-        backprj=Atb(weighted_err,geo,alphablocks{jj});                          %                     At * W^-1 * (b-Ax)
+        backprj=Atb(weighted_err,geo,alphablocks{jj},'FDK');                          %                     At * W^-1 * (b-Ax)
         weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);  %                 V * At * W^-1 * (b-Ax)
         res=res+lambda*weigth_backprj;                                          % x= x + lambda * V * At * W^-1 * (b-Ax)
         

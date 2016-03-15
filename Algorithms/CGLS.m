@@ -1,6 +1,6 @@
 function [x,errorL2]= CGLS(proj,geo,angles,niter,varargin)
-% CGLS_CBCT solves the CBCT problem using the conjugate gradient in normal
-% equations method
+% CGLS_CBCT solves the CBCT problem using the conjugate gradient least
+% squares
 % 
 %  CGLS_CBCT(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
@@ -22,8 +22,8 @@ function [x,errorL2]= CGLS(proj,geo,angles,niter,varargin)
 %  'InitImg'  : an image for the 'image' initialization. Avoid.
 
 %% parse inputs'
-opts=     {'Init','InitImg','Regularization','RegOpt'};
-defaults= [   1  ,    1   ,1 ,1];
+opts=     {'Init','InitImg'};
+defaults= [   1  ,    1 ];
 
 % Check inputs
 nVarargs = length(varargin);
@@ -86,23 +86,6 @@ for ii=1:length(opts)
                     error('CBCT:CGLS_CBCT:InvalidInput','Invalid image for initialization');
                 end
             end
-%         case 'Regularization'
-%             if default
-%                 regTV=false;
-%                 continue;
-%             end
-%             if strcmp(val,'TV');
-%                 regTV=true;
-%                 TVvar=[15,25]; %default
-%             end
-%         case 'RegOpt'
-%             if ~default
-%                 if size(val,1)==2 && size(val,2)==1
-%                     TVvar=val;
-%                 else
-%                     error('CBCT:CGLS_CBCT:InvalidInput','Invalid parameters for TV regularization');
-%                 end
-%             end
         otherwise 
     end
 end
@@ -124,10 +107,6 @@ for ii=1:niter
     x=x+alpha*p;
     
    
-   
-    % Diverges and that is not cool. I dont know why. Paper says there is
-    % less than 1% of error between the A and At, but could that be too
-    % much anyway? Maybe other intrinsic numerical errors?
     aux=proj-Ax(x,geo,angles,'ray-voxel');
     errorL2(ii)=im3Dnorm(aux,'L2');
     if ii>1 && errorL2(ii)>errorL2(ii-1)

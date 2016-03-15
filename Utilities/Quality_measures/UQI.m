@@ -1,4 +1,4 @@
-function [uni]=UQI(real,res)
+function [uqi]=UQI(real,res)
 
 %Calculate universal quality index (UQI)to evaluate the degree of
 %similarity between the reconstructed and phantom images for chosen ROIs.
@@ -6,10 +6,16 @@ function [uni]=UQI(real,res)
 %Its value ranges from zero to one. A UQI value closer to one suggests
 %better similarity to true image.
 
-
+%% Refferences
+% UQI in X-rays:
 %Ref: Few-view cone-beam CT reconstruction with deformed prior image
 %doi: 10.1118/1.4901265
 
+% Original UQI:
+%Ref: A universal image quality index
+%doi: 10.1109/97.995823
+
+%% Code
 %real = exact phantom
 %res = reconstructed image
 real=real(:);
@@ -36,7 +42,7 @@ front= (2*cova)/(varres+varreal);
 back= (2*meanres*meanreal)/(meanres^2+meanreal^2);
 
 % uni= ((2*cova)/((varres^2)+(varreal^2)))*((2*meanres*meanreal)/(((meanres^2)+(meanreal^2))));
-uni=front*back;
+uqi=front*back;
 
 
 
