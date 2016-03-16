@@ -22,15 +22,15 @@
 
 void mexFunction(int  nlhs , mxArray *plhs[],
         int nrhs, mxArray const *prhs[]){
-
-        //Check amount of inputs
+    
+    //Check amount of inputs
     if (nrhs<3 ||nrhs>4) {
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput", "Wrong number of inputs provided");
     }
-     /*
+    /*
      ** 4rd argument is matched or un matched.
      */
-     bool krylov_proj=false; // Caled krylov, because I designed it for krylov case.... 
+    bool krylov_proj=false; // Caled krylov, because I designed it for krylov case....
     if (nrhs==4){
         if ( mxIsChar(prhs[3]) != 1)
             mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput","4rd input shoudl be a string");
@@ -65,7 +65,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     float  *  alphas= (float*)malloc(nalpha*sizeof(float));
     for (int i=0;i<nalpha;i++)
         alphas[i]=(float)alphasM[i];
-  
+    
     /**
      * First input: The projections
      */
@@ -97,17 +97,25 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     float *  img = (float*)malloc(size_proj[0] *size_proj[1] *size_proj2* sizeof(float));
     
-    
+    const int size0 = size_proj[0];
+	const int size1 = size_proj[1];
+	const int size2 = size_proj2;
     // Permute(imgaux,[2 1 3]);
-    for (int k = 0; k < size_proj[0]; k++)
-        for (int i = 0; i <size_proj[1]; i++)
-            for (int j = 0; j < size_proj2; j++)
-                img[i+k*size_proj[1]+j*size_proj[0]*size_proj[1]]=(float)imgaux[k+i*size_proj[0]+j*size_proj[1]*size_proj[0]];
-    
-//   for (int i=0; i<size_proj[0]*size_proj[1]*size_proj2;i++)
-//       img[i]=(float)imgaux[i];
-    
-    
+
+    begin = clock();
+    for (int j = 0; j < size2; j++)
+    {
+        int jOffset = j*size0*size1;
+        for (int k = 0; k < size0; k++)
+        {
+            int kOffset1 = k*size1;
+            for (int i = 0; i < size1; i++)
+            {
+                int iOffset2 = i*size0;
+                img[i + jOffset + kOffset1] = (float)imgaux[iOffset2 + jOffset + k];
+            }
+        }
+    }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /**
      * Second input: Geometry structure
@@ -183,7 +191,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 mrows = mxGetM(tmp);
                 ncols = mxGetN(tmp);
                 if (mrows!=3 || ( ncols!=1&& ncols!=nalpha) ){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);   
+                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
                     mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
                             "Above field has wrong size! Should be 3x1 or 3xlength(angles)!");
                     
@@ -198,7 +206,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 mrows = mxGetM(tmp);
                 ncols = mxGetN(tmp);
                 if (mrows!=2 || ( ncols!=1&& ncols!=nalpha)){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);   
+                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
                     mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
                             "Above field has wrong size! Should be 2x1 or 3xlength(angles)!");
                     
@@ -267,8 +275,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
             case 7:
                 DSO=(double *)mxGetData(tmp);
                 geo.DSO=(float)DSO[0];
-             case 8:
-               
+            case 8:
+                
                 geo.offOrigX=(float*)malloc(nalpha * sizeof(float));
                 geo.offOrigY=(float*)malloc(nalpha * sizeof(float));
                 geo.offOrigZ=(float*)malloc(nalpha * sizeof(float));
@@ -324,7 +332,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
      * Call the CUDA kernel
      */
     if (krylov_proj){
-        voxel_backprojection2(img,geo,result,alphas,nalpha); 
+        voxel_backprojection2(img,geo,result,alphas,nalpha);
     }
     else
         voxel_backprojection(img,geo,result,alphas,nalpha);
@@ -340,11 +348,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     double *outImage = mxGetPr(plhs[0]);
     
     
-    for (int i=0; i<geo.nVoxelX ;i++)
-        for (int j=0; j<geo.nVoxelY ;j++)
-            for (int k=0; k<geo.nVoxelY ;k++)
-                outImage[i+j*geo.nVoxelX+k*geo.nVoxelX*geo.nVoxelY]= (double)result[i+j*geo.nVoxelX+k*geo.nVoxelX*geo.nVoxelY];
-    
+    for (int i=0; i<geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ ;i++)
+        outImage[i]= (double)result[i];
     
     /*
      * Free memory and out

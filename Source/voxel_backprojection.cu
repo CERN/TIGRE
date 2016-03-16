@@ -55,20 +55,29 @@
  *
  **/
 texture<float, cudaTextureType3D , cudaReadModeElementType> tex; 
+
+    
+__global__ void FDKweigths(const Geometry geo,float* image,float constant){
+    size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
+     for(; idx<geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ; idx+=gridDim.x*blockDim.x) {
+            image[idx]*=constant;
+     }
+    
+}    
     
 __global__ void kernelPixelBackprojectionFDK(const Geometry geo, 
                                             float* image,
-                                            int indAlpha,
-                                            Point3D deltaX ,
-                                            Point3D deltaY, 
-                                            Point3D deltaZ,
-                                            Point3D xyzOrigin,
-                                            Point3D xyzOffset,
-                                            Point3D uv0Offset){
+                                            const int indAlpha,
+                                            const Point3D deltaX ,
+                                            const Point3D deltaY, 
+                                            const Point3D deltaZ,
+                                            const Point3D xyzOrigin,
+                                            const Point3D xyzOffset,
+                                            const Point3D uv0Offset){
     //Make sure we dont go out of bounds
-    int indY = blockIdx.y * blockDim.y + threadIdx.y;
-    int indX = blockIdx.x * blockDim.x + threadIdx.x;
-    int indZ = blockIdx.z * blockDim.z + threadIdx.z;
+    const int indY = blockIdx.y * blockDim.y + threadIdx.y;
+    const int indX = blockIdx.x * blockDim.x + threadIdx.x;
+    const int indZ = blockIdx.z * blockDim.z + threadIdx.z;
     
     size_t idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
     if (indX>=geo.nVoxelX | indY>=geo.nVoxelY |indZ>=geo.nVoxelZ)
@@ -177,7 +186,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     cudaCheckErrors("cudaMalloc fail");
     
     // If we are going to time
-    bool timekernel=false;
+    bool timekernel=true;
     cudaEvent_t start, stop;
     float elapsedTime;
     if (timekernel){
@@ -189,7 +198,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     
     divx=10;
     divy=10;
-    divz=10;
+    divz=2;
     dim3 grid((geo.nVoxelX+divx-1)/divx,
               (geo.nVoxelY+divy-1)/divy,
               (geo.nVoxelZ+divz-1)/divz); 
@@ -225,7 +234,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
      cudaFree(dimage);
      cudaFreeArray(d_projectiondata);
      cudaCheckErrors("cudaFree d_imagedata fail");
-     cudaDeviceReset();
+     //cudaDeviceReset();
     return 0;
     
 }

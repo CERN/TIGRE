@@ -135,8 +135,9 @@ for ii=1:niter
     % If timing was asked
     if ii==1 && verbose==1
         expected_time=toc*(niter-1);
+        expected_duration=toc*(niter);
         disp('OS-SART');
-        disp(['Expected duration  :    ',secs2hms(expected_time)]);
+        disp(['Expected duration  :    ',secs2hms(expected_duration)]);
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
     end

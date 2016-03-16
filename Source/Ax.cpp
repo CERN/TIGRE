@@ -334,18 +334,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     outsize[2]= nalpha;
     
     plhs[0] = mxCreateNumericArray(3,outsize,mxDOUBLE_CLASS,mxREAL);
-//     plhs[0] = mxCreateNumericMatrix(geo.nDetecU,geo.nDetecV, ncols, mxDOUBLE_CLASS, mxREAL);
     double *outProjections = (double*)mxGetPr(plhs[0]);
-    
-    
-    
     for (int i=0; i<nalpha ;i++)
         for (int j=0; j<geo.nDetecU*geo.nDetecV;j++)
             outProjections[geo.nDetecU*geo.nDetecV*i+j]=(double)result[i][j];
-        
-        //memcpy(&outProjections[geo.nDetecU*geo.nDetecV*i], result[i], geo.nDetecU*geo.nDetecV*sizeof(float));
-    
-    
+            
     
     for (int i=0; i<nalpha ;i++)
         free (result[i]);

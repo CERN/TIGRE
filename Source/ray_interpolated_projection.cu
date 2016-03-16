@@ -242,7 +242,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     
     
     
-    cudaDeviceReset();
+    //cudaDeviceReset();
     
     return 0;
 }
