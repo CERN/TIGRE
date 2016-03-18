@@ -80,7 +80,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
     int indX = blockIdx.x * blockDim.x + threadIdx.x;
     int indZ = blockIdx.z * blockDim.z + threadIdx.z;
     
-    size_t idx =indZ*geo.nVoxelX*geo.nVoxelY+indX*geo.nVoxelY + (indY);
+    size_t idx =indZ*geo.nVoxelX*geo.nVoxelY+indX*geo.nVoxelY + indY;
     if (indX>=geo.nVoxelX | indY>=geo.nVoxelY |indZ>=geo.nVoxelZ)
         return;
     

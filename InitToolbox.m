@@ -4,6 +4,7 @@ addpath('.\Utilities');
 addpath('.\Utilities\Quality_measures');
 addpath(genpath('.\Test_data'));
 
+% different arch versions
 if ~isempty(strfind(computer('arch'),'64'))
     addpath('.\Mex_files\win64');
 else
