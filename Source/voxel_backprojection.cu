@@ -7,7 +7,8 @@
  *
  * Ander Biguri
  */
-
+ 
+#define  PI_2 1.57079632679489661923
 #include <algorithm>
 #include <cuda_runtime_api.h>
 #include <cuda.h>
@@ -75,11 +76,11 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
                                             const Point3D xyzOffset,
                                             const Point3D uv0Offset){
     //Make sure we dont go out of bounds
-    const int indY = blockIdx.y * blockDim.y + threadIdx.y;
-    const int indX = blockIdx.x * blockDim.x + threadIdx.x;
-    const int indZ = blockIdx.z * blockDim.z + threadIdx.z;
+    int indY = blockIdx.y * blockDim.y + threadIdx.y;
+    int indX = blockIdx.x * blockDim.x + threadIdx.x;
+    int indZ = blockIdx.z * blockDim.z + threadIdx.z;
     
-    size_t idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
+    size_t idx =indZ*geo.nVoxelX*geo.nVoxelY+indX*geo.nVoxelY + (indY);
     if (indX>=geo.nVoxelX | indY>=geo.nVoxelY |indZ>=geo.nVoxelZ)
         return;
     
@@ -112,8 +113,9 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
      // compute the weigth for the backprojection. This needs the X and Y coords on the real workd of the image
      float weigth;
      float realx,realy;
-     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   -xyzOffset.x; // /geo.dDetecU;  X never gets scaled.
-     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   -xyzOffset.y; // and Y gets scalled by U
+     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x; // /geo.dDetecU;  X never gets scaled.
+     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y; // and Y gets scalled by U
+    
      
      weigth=(geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha))/geo.DSO;
      weigth=1/(weigth*weigth);
@@ -139,7 +141,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
      // thd use of texture memory seems to take about 11ms in 512^3 512^2 360 scenario. Thats about 3seconds, more than the top speed in literature. this has to improve.
      image[idx]+=tex3D(tex, u +0.5 ,
                             v +0.5 , 
-                            indAlpha                                           +0.5)*weigth;
+                            indAlpha                                           +0.5);//*weigth;
 }
     
     
@@ -186,7 +188,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     cudaCheckErrors("cudaMalloc fail");
     
     // If we are going to time
-    bool timekernel=true;
+    bool timekernel=false;
     cudaEvent_t start, stop;
     float elapsedTime;
     if (timekernel){
@@ -196,16 +198,17 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     
     int divx,divy,divz;
     
-    divx=10;
-    divy=10;
-    divz=2;
+    //enpirical
+    divx=32;
+    divy=32;
+    divz=1;
     dim3 grid((geo.nVoxelX+divx-1)/divx,
               (geo.nVoxelY+divy-1)/divy,
               (geo.nVoxelZ+divz-1)/divz); 
     dim3 block(divx,divy,divz);
     Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec;
     for (int i=0;i<nalpha;i++){
-        geo.alpha=-alphas[i];
+        geo.alpha=-alphas[i]+PI_2;
         computeDeltasCube(geo,geo.alpha,i,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
         
         offOrig.x=geo.offOrigX[i];

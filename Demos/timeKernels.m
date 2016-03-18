@@ -3,9 +3,9 @@
 %
 %
 % IMPORTANT NOTE: In order to be able to run this code and get results, you
-% need to go to the 4 .cu files that do the projection adn backprojection
-% work ,"ray_interpolated_projection.cu" , "Siddon_projection.cu"
-% ,"voxel_backprojection.cu" and "voxel_backprojection2.cu" and in each of
+% need to go to the 3 .cu files that do the projection adn backprojection
+% work ,"ray_interpolated_projection.cu" , "Siddon_projection.cu", and
+% ,"voxel_backprojection.cu" and in each of
 % them, set the variable "timethis" to true. Then, recompile, and run this
 % code.
 

@@ -50,7 +50,11 @@ function [res,errorL2,qualMeas]=OS_SART(proj,geo,alpha,niter,varargin)
 
 [blocksize,lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
 measurequality=~isempty(QualMeasOpts);
-
+if nargout>1
+    computeL2=true;
+else
+    computeL2=false;
+end
 
 %% weigth matrices
 % first order the projection angles
@@ -100,7 +104,7 @@ for ii=1:niter
         
         %proj is data: b=Ax
         %res= initial image is zero (default)
-        proj_err=proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'ray-voxel'); %                                 (b-Ax)
+        proj_err=proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'interpolated'); %                                 (b-Ax)
         weighted_err=W(:,:,orig_index{jj}).*proj_err;                           %                          W^-1 * (b-Ax)
         backprj=Atb(weighted_err,geo,alphablocks{jj},'FDK');                          %                     At * W^-1 * (b-Ax)
         weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);  %                 V * At * W^-1 * (b-Ax)
@@ -123,15 +127,19 @@ for ii=1:niter
     
     % reduce hyperparameter
     lambda=lambda*lamdbared;
-    % Compute error norm2 of b-Ax
-    errornow=im3Dnorm(proj_err,'L2');
-    % If the error is not minimized
-    if ii~=1 && errornow>errorL2(end)*1.1 % This 1.1 is for multigrid, we need to focus to only that case
-        return;
+    if computeL2
+        % Compute error norm2 of b-Ax
+        geo.offOrigin=offOrigin;
+        geo.offDetector=offDetector;
+        errornow=im3Dnorm(proj-Ax(res,geo,alpha,'ray-voxel'),'L2');
+        %     If the error is not minimized
+        if ii~=1 && errornow>errorL2(end) % This 1.1 is for multigrid, we need to focus to only that case
+            disp(['Convergence criteria met, exiting on iteration', num2str(ii)]);
+            return;
+        end
+        %     Store Error
+        errorL2=[errorL2 errornow];
     end
-    %Store Error
-    errorL2=[errorL2 errornow];
-    
     % If timing was asked
     if ii==1 && verbose==1
         expected_time=toc*(niter-1);

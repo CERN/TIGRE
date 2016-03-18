@@ -1,12 +1,17 @@
-function h=plotgeometry(geo,a)
+function h=plotgeometry(geo,angle)
+%PLOTGEOMETRY(GEO,ANGLE) plots a simplified version of the CBCT geometry with the
+% given geomerty GEO and angle ANGLE. If angle is nnot Give, 0 will be chosen.
+% 
+% h=PLOTGEOMETRY(...) will return the figure handle 
 
-% You need the following files to run it:
-% Arrow3D
-% https://www.mathworks.com/matlabcentral/fileexchange/28324-3d-arrow-plot
-
+if nargin<2
+    angle=0;
+end
+angle=angle*180/pi;
 %% Figure stuff
 h=figure('Name','Cone Beam Compute Tomography geometry');
 hold on
+title('CBCT geometry')
 xlabel('X');
 ylabel('Y');
 zlabel('Z');
@@ -17,11 +22,11 @@ set(gcf, 'color', [1 1 1])
 drawCube(geo.offOrigin,geo.sVoxel,'k',0.05,0);
 
 %% Detector
-drawCube([-geo.DSD+geo.DSO; geo.offDetector],[1; geo.sDetector],'r',1,a)
+drawCube([-geo.DSD+geo.DSO; geo.offDetector],[1; geo.sDetector],'r',1,angle)
 plotCircle3D([0 0 0],-geo.DSD+geo.DSO);
 %% source
 p=plot3(geo.DSO,0,0,'.','MarkerSize',30);
-rotate(p,[0  0  1],a,[0 0 0]);
+rotate(p,[0  0  1],angle,[0 0 0]);
 plotCircle3D([0 0 0],geo.DSO);
 
 %% Arrows.
@@ -40,6 +45,7 @@ end
 
 %%
 axis equal;
+view(128,26)
 % grid on
 % axis off;
 

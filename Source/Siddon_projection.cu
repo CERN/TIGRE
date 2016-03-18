@@ -97,12 +97,13 @@ __global__ void kernelPixelDetector( Geometry geo,
     // compute parameter values for x-ray parametric equation. eq(3-10)
     float axm,aym,azm;
     float axM,ayM,azM;
-    axm=min(-source.x/ray.x,(geo.nVoxelX-1-source.x)/ray.x);
-    aym=min(-source.y/ray.y,(geo.nVoxelY-1-source.y)/ray.y);
-    azm=min(-source.z/ray.z,(geo.nVoxelZ-1-source.z)/ray.z);
-    axM=max(-source.x/ray.x,(geo.nVoxelX-1-source.x)/ray.x);
-    ayM=max(-source.y/ray.y,(geo.nVoxelY-1-source.y)/ray.y);
-    azM=max(-source.z/ray.z,(geo.nVoxelZ-1-source.z)/ray.z);
+    // In the paper Nx= number of X planes-> Nvoxel+1
+    axm=min(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
+    aym=min(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
+    azm=min(-source.z/ray.z,(geo.nVoxelZ-source.z)/ray.z);
+    axM=max(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
+    ayM=max(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
+    azM=max(-source.z/ray.z,(geo.nVoxelZ-source.z)/ray.z);
     float am=max(max(axm,aym),azm);
     float aM=min(min(axM,ayM),azM);
     
@@ -116,25 +117,25 @@ __global__ void kernelPixelDetector( Geometry geo,
     // for X
     if( source.x<pixel1D.x){
         imin=(am==axm)? 1             : ceil (source.x+am*ray.x);
-        imax=(aM==axM)? geo.nVoxelX-1 : floor(source.x+aM*ray.x);
+        imax=(aM==axM)? geo.nVoxelX : floor(source.x+aM*ray.x);
     }else{
-        imax=(am==axm)? geo.nVoxelX-2 : floor(source.x+am*ray.x);
+        imax=(am==axm)? geo.nVoxelX-1 : floor(source.x+am*ray.x);
         imin=(aM==axM)? 0             : ceil (source.x+aM*ray.x);
     }
     // for Y
     if( source.y<pixel1D.y){
         jmin=(am==aym)? 1             : ceil (source.y+am*ray.y);
-        jmax=(aM==ayM)? geo.nVoxelY-1 : floor(source.y+aM*ray.y);
+        jmax=(aM==ayM)? geo.nVoxelY : floor(source.y+aM*ray.y);
     }else{
-        jmax=(am==aym)? geo.nVoxelY-2 : floor(source.y+am*ray.y);
+        jmax=(am==aym)? geo.nVoxelY-1 : floor(source.y+am*ray.y);
         jmin=(aM==ayM)? 0             : ceil (source.y+aM*ray.y);
     }
     // for Z
     if( source.z<pixel1D.z){
         kmin=(am==azm)? 1             : ceil (source.z+am*ray.z);
-        kmax=(aM==azM)? geo.nVoxelZ-1 : floor(source.z+aM*ray.z);
+        kmax=(aM==azM)? geo.nVoxelZ : floor(source.z+aM*ray.z);
     }else{
-        kmax=(am==azm)? geo.nVoxelZ-2 : floor(source.z+am*ray.z);
+        kmax=(am==azm)? geo.nVoxelZ-1 : floor(source.z+am*ray.z);
         kmin=(aM==azM)? 0             : ceil (source.z+aM*ray.z);
     }
     

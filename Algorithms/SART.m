@@ -35,6 +35,10 @@ function [res,errorL2,qualMeas]=SART(proj,geo,alpha,niter,varargin)
 %% Deal with input parameters
 [lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
 measurequality=~isempty(QualMeasOpts);
+if nargout>1
+    computeL2=true;
+else
+    computeL2=false;
 
 errorL2=[];
 
@@ -90,13 +94,16 @@ for ii=1:niter
     
     lambda=lambda*lamdbared;
 
-    errornow=norm(proj_err(:));                       % Compute error norm2 of b-Ax
-    % If the error is not minimized.
-    if  ii~=1 && errornow>errorL2(end)
-        return;
+    if computeL2
+        geo.OffOrigin=offOrigin;
+        geo.offDetector=offDetector;
+        errornow=norm(proj-Ax(res,geo,alpha));                       % Compute error norm2 of b-Ax
+        % If the error is not minimized.
+        if  ii~=1 && errornow>errorL2(end)
+            return;
+        end
+        errorL2=[errorL2 errornow];
     end
-    errorL2=[errorL2 errornow];
-
     
     if (ii==1 && verbose==1);
         expected_time=toc*niter;   

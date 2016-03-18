@@ -106,15 +106,13 @@ for ii=1:niter
     alpha=gamma/norm(q(:),2)^2;
     x=x+alpha*p;
     
-   
-    aux=proj-Ax(x,geo,angles,'ray-voxel');
+    
+    aux=proj-Ax(x,geo,angles,'ray-voxel'); %expensive, is tehre any way to check this better?
     errorL2(ii)=im3Dnorm(aux,'L2');
     if ii>1 && errorL2(ii)>errorL2(ii-1)
         % OUT!
        x=x-alpha*p;
-%        if regTV
-%            x=imDenoise3D(x,'TV',TVvar(1),TVvar(2));
-%        end
+
        return; 
     end
     % If step is adecuatem, then continue withg CGLS
@@ -126,17 +124,7 @@ for ii=1:niter
     gamma=gamma1;
     p=s+beta*p;
     
-    
-     % Regularization (done down here in case we need to exit before
-%      if regTV
-%         % denoise
-%         x=imDenoise3D(x,'TV',TVvar(1),TVvar(2));
-%         %reitinialize
-%         r=proj-Ax(x,geo,angles,'Krylov');
-%         p=Atb(r,geo,angles,'Krylov');
-%         gamma=norm(p(:),2)^2;
-%  
-%      end
+   
      if ii==1;
         expected_time=toc*niter;   
         disp('CGLS');

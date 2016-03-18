@@ -102,7 +102,6 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 	const int size2 = size_proj2;
     // Permute(imgaux,[2 1 3]);
 
-    begin = clock();
     for (int j = 0; j < size2; j++)
     {
         int jOffset = j*size0*size1;
