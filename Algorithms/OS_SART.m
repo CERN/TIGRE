@@ -68,8 +68,9 @@ W=1./W;
 % Back-Projection weigth, V
 [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
     -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-A = permute(cell2mat(alphablocks), [1 3 2]);
+A = permute(cell2mat(alphablocks)+pi/2, [1 3 2]);
 V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
+
 clear A x y dx dz;
 
 
@@ -134,7 +135,7 @@ for ii=1:niter
         errornow=im3Dnorm(proj-Ax(res,geo,alpha,'ray-voxel'),'L2');
         %     If the error is not minimized
         if ii~=1 && errornow>errorL2(end) % This 1.1 is for multigrid, we need to focus to only that case
-            disp(['Convergence criteria met, exiting on iteration', num2str(ii)]);
+            disp(['Convergence criteria met, exiting on iteration ', num2str(ii)]);
             return;
         end
         %     Store Error

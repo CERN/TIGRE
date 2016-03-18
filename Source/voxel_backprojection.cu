@@ -103,6 +103,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
      S.x=geo.DSO;
      S.y=-uv0Offset.x/geo.dDetecU;
      S.z=-uv0Offset.y/geo.dDetecV;
+     indY=geo.nVoxelY-1-indY;
      // "XYZ" in the warped coordinate system of the current point
      Point3D P;
      P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
@@ -113,8 +114,8 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
      // compute the weigth for the backprojection. This needs the X and Y coords on the real workd of the image
      float weigth;
      float realx,realy;
-     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x; // /geo.dDetecU;  X never gets scaled.
-     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y; // and Y gets scalled by U
+     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x; 
+     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y; 
     
      
      weigth=(geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha))/geo.DSO;
@@ -141,7 +142,8 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
      // thd use of texture memory seems to take about 11ms in 512^3 512^2 360 scenario. Thats about 3seconds, more than the top speed in literature. this has to improve.
      image[idx]+=tex3D(tex, u +0.5 ,
                             v +0.5 , 
-                            indAlpha                                           +0.5);//*weigth;
+                            indAlpha                                           +0.5)*weigth;
+//      image[idx]=weigth;
 }
     
     

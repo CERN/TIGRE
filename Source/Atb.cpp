@@ -40,7 +40,6 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         if (strcmp(krylov,"FDK") && strcmp(krylov,"matched"))
             mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput","4rd input shoudl be either 'FDK' or 'matched'");
         else
-            // If its not ray voxel, its "interpolated"
             if (!strcmp(krylov,"matched"))
                 krylov_proj=true;
     }
