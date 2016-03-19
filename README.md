@@ -22,7 +22,7 @@ big datasets.
       - CGLS
       - ADS-POCS               
       - OSC-POCS              
-      - B-ADS-POCS-<p>&beta<p>         
+      - B-ADS-POCS-&#946;       
       - SART-TV
 
   - TV denosing for 3D images
