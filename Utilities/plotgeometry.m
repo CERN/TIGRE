@@ -11,7 +11,7 @@ angle=angle*180/pi;
 %% Figure stuff
 h=figure('Name','Cone Beam Compute Tomography geometry');
 hold on
-title('CBCT geometry')
+title('Current CBCT geometry, in scale')
 xlabel('X');
 ylabel('Y');
 zlabel('Z');

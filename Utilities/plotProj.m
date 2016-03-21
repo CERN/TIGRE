@@ -18,11 +18,12 @@ function plotProj(proj,alpha,varargin)
 %               default.
 %   'Savegif':  With an string in VAL, saves the image as .gif with
 %               VAL as filename
-%
+%   'Slice'  :  Plot a single projection, given by index VAL. Should not be
+%               used with 'Step',overwrites it.
 %
 %% Parse inputs
-opts=     {'Step','Colormap','CLims','Savegif'};
-defaults= [    1,    1     ,   1 ,      1];
+opts=     {'Step','Colormap','CLims','Savegif','Slice'};
+defaults= [    1,    1     ,   1 ,      1,1];
 
 % Check inputs
 nVarargs = length(varargin);
@@ -37,7 +38,7 @@ for ii=1:2:nVarargs
     end
 end
 
-ninput=1;
+
 for ii=1:length(opts)
     opt=opts{ii};
     default=defaults(ii);
@@ -77,7 +78,7 @@ for ii=1:length(opts)
                 else
                     % if it is a custom colormap
                     if size(val,2)~=3
-                        error('CBCT:plotImgs:InvalidInput','Invalid size of colormap')
+                        error('CBCT:plotProj:InvalidInput','Invalid size of colormap')
                     end
                     cmap=val;
                 end
@@ -90,7 +91,7 @@ for ii=1:length(opts)
                 if min(size(val))==1 && max(size(val))==2
                     climits=val;
                 else
-                    error('CBCT:plotImgs:InvalidInput','Invalid size of Clims')
+                    error('CBCT:plotProj:InvalidInput','Invalid size of Clims')
                 end
             end
 % % % % % % %         % do you want to save result as gif?
@@ -100,19 +101,31 @@ for ii=1:length(opts)
             else
                savegif=1;
                if ~ischar(val)
-                   error('CBCT:plotImgs:InvalidInput','filename is not character')
+                   error('CBCT:plotProj:InvalidInput','filename is not character')
                end
                filename=val;
-            end            
+            end 
+        case 'Slice'
+            if default
+                slice=0;
+            else
+                slice=val;
+            end
         otherwise
-          error('CBCT:plotImgs:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in plotImg()']);
+          error('CBCT:plotProj:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in plotImg()']);
     end
 end
 
 %% Do ploting
 fh=figure();
 
-for ii=1:steps:size(proj,3)
+if slice
+    list=slice;
+else 
+    list=1:steps:size(proj,3);
+end
+
+for ii=list
     image=squeeze(proj(:,:,ii));
     imagesc((image));
     

@@ -1,6 +1,6 @@
 function proj=addCTnoise(proj,varargin)
 %ADDCTNOISE adds realistic noise to CT projections
-%   addCTnoise(PROJ):  adds Possin and Gaussian noise to the input data.
+%   addCTnoise(PROJ):  adds Poisson and Gaussian noise to the input data.
 %
 %   addCTnoise(PROJ,OPTS,VAL,..): adds noise with OPT options.
 %                                 Possible options are :
@@ -76,5 +76,6 @@ Im=I0*exp(-proj);
 
 % Photon noise + electronic noise
 Im=poissrnd(Im)+normrnd(m,sigma);
+Im(Im<0)=1e-6;
 proj=log(I0./Im);
 end

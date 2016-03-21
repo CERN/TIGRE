@@ -153,7 +153,7 @@ defaults = {'shepp-logan', 'modified shepp-logan', 'yu-ye-wang'};
 for i=1:nargin
    if ischar(varargin{i})         % Look for a default phantom
       def = lower(varargin{i});
-      idx = strmatch(def, defaults);
+      idx = strcmp(def, defaults);
       if isempty(idx)
          eid = sprintf('Images:%s:unknownPhantom',mfilename);
          msg = 'Unknown default phantom selected.';

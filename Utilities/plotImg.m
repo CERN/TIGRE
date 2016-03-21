@@ -21,11 +21,11 @@ function plotImg(img,varargin)
 %   'Clims':    a 2x1 matrix setting the upper and lower limits of the
 %               colors. The default computes the lower and upper percentile
 %               of data, in 1% and 99% and sets the limits to that.
-
+%   'Slice'     Plots a single slice of the data. Overwrittes Step.
 %% Parse inputs
 
-opts=     {'Step','Dim','Savegif','Colormap','Clims'};
-defaults= [   1  ,  1  ,    1    ,    1     ,   1 ];
+opts=     {'Step','Dim','Savegif','Colormap','Clims','Slice'};
+defaults= [   1  ,  1  ,    1    ,    1     ,   1 ,1];
 
 % Check inputs
 nVarargs = length(varargin);
@@ -66,6 +66,14 @@ for ii=1:length(opts)
                 end
                 steps=val;
             end
+% % % % % %         % Plot single slice
+         case 'Slice'
+            if default
+                slice=0;
+            else
+                slice=val;
+            end
+
 % % % % % %         % iterate trhoug what dim?
         case 'Dim'
             if default
@@ -76,11 +84,9 @@ for ii=1:length(opts)
                 end
                 
                 if val==3 || lower(val)=='z'
-                    img=permute(img,[3 2 1]);
                     crossect=3;
                 end
                 if val==2 || lower(val)=='y'
-                    img=permute(img,[2 1 3]);
                     crossect=2;
                 end
                 if val==1 || lower(val)=='x'
@@ -142,11 +148,22 @@ end
 %% Do the plotting!
 
 fh=figure();
-for ii=size(img,1):-1*steps:1
+
+if slice
+    list=slice;
+else 
+    list=1:steps:size(img,crossect);
+end
+for ii=list
     
-    imagesc(flipud((squeeze(img(ii,:,:)))')); 
-    
-    
+    if crossect==1
+      imagesc(squeeze(img(ii,:,:)).'); 
+    else if crossect==2
+             imagesc(squeeze(img(:,ii,:)).');
+        else
+             imagesc(squeeze(img(:,:,ii)));
+        end
+    end
     axis image; 
     axis equal; 
     
@@ -180,7 +197,7 @@ for ii=size(img,1):-1*steps:1
       frame = getframe(fh);
       im = frame2im(frame);
       [imind,cm] = rgb2ind(im,256);
-      if ii == size(img,1);
+      if ii == 1;
           imwrite(imind,cm,filename,'gif', 'Loopcount',inf);
       else
           imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',0.1);

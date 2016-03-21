@@ -34,7 +34,7 @@ while ~stop_criteria %POCS
     if ~iter;tic; end
     iter=iter+1;
     f0=f;
-    % 1 OS-SART update (in the paper is an ART update)
+    % OS-SART update
     for jj=1:block_size:length(angles);
         % idex of the Oriented subsets
         range=jj:block_size+jj-1;

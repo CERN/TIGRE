@@ -61,20 +61,20 @@ If it doesnt work, or you are not in win64 CUDA 7.5
 The first thing you need to do is run `InitTIGRE`, to initialize all the 
 folders and subfolders if the toolbox.
 
-We are currently working in creating some good documentation for TIGRE, but
-meanwhile, you can go to the demos folder. There are several examples on everything
-you need to run TIGRE.
+Currently the documentation is included in each of the functions. You can access it 
+by typing `help fucntio_name` or by selecting the fucntion in the editor and pressing F1.
+Additionally, the demos should include all the necessary documentation and examples of use.
 
 ## Issues
 
 If you have any issues with compiling/running TIGRE, or you found a bug in
-the code, please report it on [the issues page][2]<sup>*</sup>.
+the code, please report it on [the issues page][2]<sup>&#8727;</sup>.
 
 Please, be as clear as  possible with the description of the problem.
 If it is a specific problem in an specific scenario, provide a *Minimum 
 Complete Verifiable Example* of the problem (see [Stackoverlfowcom's definition][3]);
 
-<sup>*</sup> **Protip** you can [label the Issues by topic][4]
+<sup>&#8727;</sup> **Protip** you can [label the Issues by topic][4]
 
 ## I want to contribute! 
 

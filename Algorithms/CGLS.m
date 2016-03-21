@@ -10,7 +10,7 @@ function [x,errorL2]= CGLS(proj,geo,angles,niter,varargin)
 %   possible options in OPT are:
 % 
 % 
-%  'Init':    : Describes diferent initialization techniques.
+%  'Init         Describes diferent initialization techniques.
 %             •  'none'     : Initializes the image to zeros (default)
 %             •  'FDK'      : intializes image to FDK reconstrucition
 %             •  'multigrid': Initializes image by solving the problem in
@@ -19,7 +19,7 @@ function [x,errorL2]= CGLS(proj,geo,angles,niter,varargin)
 %             •  'image'    : Initialization using a user specified
 %                            image. Not recomended unless you really
 %                            know what you are doing.
-%  'InitImg'  : an image for the 'image' initialization. Avoid.
+%  'InitImg'    an image for the 'image' initialization. Avoid.
 
 %% parse inputs'
 opts=     {'Init','InitImg'};

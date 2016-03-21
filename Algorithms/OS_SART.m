@@ -36,7 +36,11 @@ function [res,errorL2,qualMeas]=OS_SART(proj,geo,alpha,niter,varargin)
 %                  parameters. Input should contain a cell array of desired
 %                  quality measurement names. Example: {'CC','RMSE','MSSIM'}
 %                  These will be computed in each iteration.
-%
+% 'OrderStrategy'  Chooses the subset ordering strategy. Options are
+%                  'ordered' :uses them in the input order, but divided
+%                  'random'  : orders them randomply
+%                  'angularDistance': chooses the next subset with the
+%                                     biggest angular distance with the ones used.
 %
 % OUTPUTS:
 %
@@ -46,9 +50,10 @@ function [res,errorL2,qualMeas]=OS_SART(proj,geo,alpha,niter,varargin)
 %    [img,errorL2,qualMeas]      will output the quality measurements asked
 %                                by the input 'QualMeas'
 %
+
 %% Deal with input parameters
 
-[blocksize,lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
+[blocksize,lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy]=parse_inputs(proj,geo,alpha,varargin);
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
     computeL2=true;
@@ -58,7 +63,7 @@ end
 
 %% weigth matrices
 % first order the projection angles
-[alphablocks,orig_index]=order_subsets(alpha,blocksize,'ordered');
+[alphablocks,orig_index]=order_subsets(alpha,blocksize,OrderStrategy);
 
 
 % Projection weigth, W
@@ -194,8 +199,8 @@ end
 end
 
 %% Parse inputs
-function [block_size,lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'BlockSize','lambda','Init','InitImg','Verbose','lambdaRed','QualMeas'};
+function [block_size,lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'BlockSize','lambda','Init','InitImg','Verbose','lambdaRed','QualMeas','OrderStrategy'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -304,6 +309,12 @@ for ii=1:length(opts)
                     error('CBCT:OS_SART_CBCT:InvalidInput','Invalid quality measurement parameters');
                 end
             end
+        case 'OrderStrategy'
+            if default
+                OrderStrategy='angularDistance';
+            else
+                OrderStrategy=val;
+            end
         otherwise
             error('CBCT:OS_SART_CBCT:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_SART_CBCT()']);
     end
@@ -338,9 +349,23 @@ end
 if strcmp(mode,'angularDistance')
     
     avrg=cellfun(@mean,block_alpha);
+    used_avrg=[];
     % start from the beggining
-    for ii=1:length(block_alpha)
-        
+    ordered_alpha{1}=block_alpha{1};
+    auxindex_alpha=index_alpha;
+    index_alpha{1}=auxindex_alpha{1};
+    used_avrg(end+1)=avrg(1);
+    for ii=2:length(block_alpha)
+        dist=[];
+        for jj=1:length(used_avrg)
+           dist(jj,:)=abs(mod((avrg- used_avrg(jj))+pi,2*pi)-pi);
+        end
+        dist=bsxfun(@times,dist,all(dist,1))
+        [~,midx]=max(dist(:));
+        [~,avrgindx]=ind2sub(size(dist),midx);
+        index_alpha{ii}=auxindex_alpha{avrgindx};
+        ordered_alpha{ii}=block_alpha{avrgindx};
+        used_avrg(end+1)=avrg(avrgindx);
     end
 end
 
