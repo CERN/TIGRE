@@ -1,4 +1,4 @@
-function [res,errorL2,qualMeas]=OS_SART(proj,geo,alpha,niter,varargin)
+function [res,errorL2,qualMeasOut]=OS_SART(proj,geo,alpha,niter,varargin)
 
 % OS_SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
@@ -12,7 +12,7 @@ function [res,errorL2,qualMeas]=OS_SART(proj,geo,alpha,niter,varargin)
 %
 %   'BlockSize':   Sets the projection block size used simultaneously. If
 %                  BlockSize = 1 OS-SART becomes SART and if  BlockSize = length(alpha)
-%                  then OS-SART becomes SIRT. Default is alpha/20.
+%                  then OS-SART becomes SIRT. Default is 20.
 %
 %   'lambda':      Sets the value of the hyperparameter. Default is 1
 %
@@ -111,10 +111,10 @@ for ii=1:niter
         %proj is data: b=Ax
         %res= initial image is zero (default)
         proj_err=proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'interpolated'); %                                 (b-Ax)
-        weighted_err=W(:,:,orig_index{jj}).*proj_err;                           %                          W^-1 * (b-Ax)
+        weighted_err=W(:,:,orig_index{jj}).*proj_err;                                 %                          W^-1 * (b-Ax)
         backprj=Atb(weighted_err,geo,alphablocks{jj},'FDK');                          %                     At * W^-1 * (b-Ax)
-        weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);  %                 V * At * W^-1 * (b-Ax)
-        res=res+lambda*weigth_backprj;                                          % x= x + lambda * V * At * W^-1 * (b-Ax)
+        weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
+        res=res+lambda*weigth_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
         
         % Non-negativity constrain
         res(res<0)=0;
@@ -128,7 +128,7 @@ for ii=1:niter
        %Can save quality measure for every iteration here
        %See if some image quality measure should be used for every
        %iteration?
-       qualMeas{ii}=Measure_Quality(res_prev,res,QualMeasOpts);
+       qualMeasOut(:,ii)=Measure_Quality(res_prev,res,QualMeasOpts);
     end
     
     % reduce hyperparameter
@@ -140,7 +140,9 @@ for ii=1:niter
         errornow=im3Dnorm(proj-Ax(res,geo,alpha,'ray-voxel'),'L2');
         %     If the error is not minimized
         if ii~=1 && errornow>errorL2(end) % This 1.1 is for multigrid, we need to focus to only that case
-            disp(['Convergence criteria met, exiting on iteration ', num2str(ii)]);
+            if verbose
+            disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
+            end
             return;
         end
         %     Store Error
@@ -240,7 +242,7 @@ for ii=1:length(opts)
             % % % % % % % hyperparameter, LAMBDA
         case 'lambda'
             if default
-                lambda=0.95;
+                lambda=0.99;
             else
                 if length(val)>1 || ~isnumeric( val)
                     error('CBCT:OS_SART_CBCT:InvalidInput','Invalid lambda')
@@ -360,7 +362,7 @@ if strcmp(mode,'angularDistance')
         for jj=1:length(used_avrg)
            dist(jj,:)=abs(mod((avrg- used_avrg(jj))+pi,2*pi)-pi);
         end
-        dist=bsxfun(@times,dist,all(dist,1))
+        dist=bsxfun(@times,dist,all(dist,1));
         [~,midx]=max(dist(:));
         [~,avrgindx]=ind2sub(size(dist),midx);
         index_alpha{ii}=auxindex_alpha{avrgindx};

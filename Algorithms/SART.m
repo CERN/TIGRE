@@ -1,4 +1,4 @@
-function [res,errorL2,qualMeas]=SART(proj,geo,alpha,niter,varargin)
+function [res,errorL2,qualMeasOut]=SART(proj,geo,alpha,niter,varargin)
 % SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -89,17 +89,20 @@ for ii=1:niter
     % If quality is being measured
     if measurequality
        % HERE GOES  
-       %qualMeas=Measure_Quality(res,res_prev,QualMeasOpts);
+       qualMeasOut(:,ii)=Measure_Quality(res,res_prev,QualMeasOpts);
     end
     
     lambda=lambda*lamdbared;
 
     if computeL2
-        geo.OffOrigin=offOrigin;
+        geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
-        errornow=norm(proj-Ax(res,geo,alpha));                       % Compute error norm2 of b-Ax
+        errornow=im3Dnorm(proj-Ax(res,geo,alpha),'L2');                       % Compute error norm2 of b-Ax
         % If the error is not minimized.
         if  ii~=1 && errornow>errorL2(end)
+            if verbose
+            disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
+            end
             return;
         end
         errorL2=[errorL2 errornow];
@@ -194,7 +197,7 @@ for ii=1:length(opts)
         % % % % % % % hyperparameter, LAMBDA
         case 'lambda'
             if default
-                lambda=0.95;
+                lambda=0.99;
             else
                 if length(val)>1 || ~isnumeric( val)
                     error('CBCT:SART:InvalidInput','Invalid lambda')

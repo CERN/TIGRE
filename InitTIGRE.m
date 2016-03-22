@@ -1,24 +1,24 @@
 % Add tolbox folders
-addpath('.\Algorithms');
-addpath('.\Utilities');
-addpath('.\Utilities\Quality_measures');
-addpath(genpath('.\Test_data'));
+addpath('./Algorithms');
+addpath('./Utilities');
+addpath('./Utilities/Quality_measures');
+addpath(genpath('./Test_data'));
 
 % different arch versions
 if ~isempty(strfind(computer('arch'),'64'))
-    addpath('.\Mex_files\win64');
+    addpath('./Mex_files/win64');
 else
-    addpath('.\Mex_files\win32');
+    addpath('./Mex_files/win32');
 end
 
-addpath('.\Demos');
+addpath('./Demos');
 
 % Perceptually uniform colormaps
-addpath('.\Colormaps');
+addpath('./Colormaps');
 % Add third party tools from FEX
-addpath('.\Third_party_tools\arrow3d'); % 3D shepp-Logan
-addpath('.\Third_party_tools\sec2hours'); 
-addpath('.\Third_party_tools\readMHD'); 
+addpath('./Third_party_tools/arrow3d'); % 3D shepp-Logan
+addpath('./Third_party_tools/sec2hours'); 
+addpath('./Third_party_tools/readMHD'); 
 
 
 [user, sys]=memory;

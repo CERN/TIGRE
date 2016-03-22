@@ -5,7 +5,7 @@
 % exaustive explanation and usage of them is given.
 %
 %
-%% Lets generate the data
+%% Initialize
 
 clear;
 close all;

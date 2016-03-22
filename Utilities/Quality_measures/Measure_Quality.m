@@ -25,7 +25,7 @@ for ii=1:length(QualMeasOpts)
     end
     
     
-    qualMeas{ii}=[q]; 
+    qualMeas(ii)=q; 
 end
 
 

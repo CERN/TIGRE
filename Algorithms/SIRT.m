@@ -1,4 +1,4 @@
-function [res,errorL2,QualMeasOpts]=SIRT(proj,geo,alpha,niter,varargin)
+function [res,errorL2,qualMeasOut]=SIRT(proj,geo,alpha,niter,varargin)
 % SIRT_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -28,7 +28,10 @@ function [res,errorL2,QualMeasOpts]=SIRT(proj,geo,alpha,niter,varargin)
 %
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
-
+%   'QualMeas'     Asks the algorithm for a set of quality measurement
+%                  parameters. Input should contain a cell array of desired
+%                  quality measurement names. Example: {'CC','RMSE','MSSIM'}
+%                  These will be computed in each iteration. 
 %% Deal with input parameters
 
 [lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
@@ -77,12 +80,15 @@ for ii=1:niter
    % If quality is being measured
     if measurequality
        % HERE GOES  
-       qualMeas=Measure_Quality(res_prev,res,QualMeasOpts);
+       qualMeasOut(:,ii)=Measure_Quality(res_prev,res,QualMeasOpts);
     end   
     
     errornow=norm(proj_err(:));                       % Compute error norm2 of b-Ax
     % If the error is not minimized.
     if ii>1 && errornow>errorL2(end)
+            if verbose
+            disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
+            end
         return;
     end
     lambda=lambda*lamdbared;
@@ -180,7 +186,7 @@ for ii=1:length(opts)
             % % % % % % % hyperparameter, LAMBDA
         case 'lambda'
             if default
-                lambda=0.95;
+                lambda=0.99;
             else
                 if length(val)>1 || ~isnumeric( val)
                     error('CBCT:SIRT:InvalidInput','Invalid lambda')

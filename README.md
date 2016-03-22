@@ -97,6 +97,19 @@ If your contribution can be linked to a published, peer-reviewed article or
 an arXiv entry, please let us know so we can make sure the `citeme` function
 includes your contributions.
 
+## FAQ
+
+**Q: I get "the launch timed out and was terminated" error when I run big images
+in my computer**
+*A: This happens because your GPU takes too long (according to the OS) to finish
+running the code. Don't worry, too long means about 100ms or so. However, you need
+to make sure to change the OS's GPU watchdog time. 
+If you are working on a TESLA, setting the TESLA to TCC mode will fix the problem.*
+
+**Q: After running something I got an error in AX or Atb and now nothing works**
+*A: Unofrutately when CUDA has an error, it hungs. You need to restart MATLAB to fix
+this. Hopefully we can find a solution for this without the need of restarting MATLAB*
+
 ## Licensing
 
 

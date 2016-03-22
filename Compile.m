@@ -13,10 +13,7 @@
 clear all
 %% Compile
 
-% make sure CUDA has been set up
-if isempty(getenv('CUDA_PATH'))
-    error('CUDA_PATH enviroment variable not found. Make sure its properly set up in the mex xml file.')
-end
+
 
 % Compile for x64 or x32
 disp('Compiling TIGRE source...')

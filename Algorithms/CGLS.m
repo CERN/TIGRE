@@ -10,7 +10,7 @@ function [x,errorL2]= CGLS(proj,geo,angles,niter,varargin)
 %   possible options in OPT are:
 % 
 % 
-%  'Init         Describes diferent initialization techniques.
+%  'Init'    Describes diferent initialization techniques.
 %             •  'none'     : Initializes the image to zeros (default)
 %             •  'FDK'      : intializes image to FDK reconstrucition
 %             •  'multigrid': Initializes image by solving the problem in
@@ -98,7 +98,7 @@ p=Atb(r,geo,angles,'matched');
 gamma=norm(p(:),2)^2;
 
 
-errorL2=zeros(niter,1);
+errorL2=zeros(1,niter);
 for ii=1:niter
      if ii==1;tic;end
     
@@ -107,7 +107,7 @@ for ii=1:niter
     x=x+alpha*p;
     
     
-    aux=proj-Ax(x,geo,angles,'ray-voxel'); %expensive, is tehre any way to check this better?
+    aux=proj-Ax(x,geo,angles,'ray-voxel'); %expensive, is there any way to check this better?
     errorL2(ii)=im3Dnorm(aux,'L2');
     if ii>1 && errorL2(ii)>errorL2(ii-1)
         % OUT!
