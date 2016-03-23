@@ -43,15 +43,7 @@ else if isunix
     end
 end
 
-
-
-
-
-
-
-
-
-
+if ispc
 [user, sys]=memory;
 
 if sys.PhysicalMemory.Total<9000000000 % 8Gb
@@ -60,4 +52,7 @@ end
 
 if sys.PhysicalMemory.Total<2500000000 % 2Gb
     warning('Your Computer has 2Gb or less of RAM memory. Using image sizes of higher than 256^3 is not recomended (most likely not possible)')
+end
+else
+   disp('TIGRE needs a big amount of memory, please be aware of this when choosing image sizes.') 
 end
