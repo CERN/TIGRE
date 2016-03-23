@@ -60,6 +60,7 @@ colormap=hsv(10);
 colormap='gray';
 colormap='viridis';
 colormap='plasma';
+colormap='gray';
 
 % 'Clims': Defines the data limits for the color, usefull when one wants to
 % see some specific range. The default uses the minimum and maximum of the

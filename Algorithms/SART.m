@@ -13,7 +13,7 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,alpha,niter,varargin)
 %   'lambda':      Sets the value of the hyperparameter. Default is 1
 %
 %   'lambdared':   Reduction of lambda.Every iteration
-%                  lambda=lambdared*lambda. Default is 0.95
+%                  lambda=lambdared*lambda. Default is 0.99
 %
 %   'Init':        Describes diferent initialization techniques.
 %                  'none'     : Initializes the image to zeros (default)
@@ -59,7 +59,6 @@ clear A x y dx dz;
 %% Iterate
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
-rmtotal=[];
 % TODO : Add options for Stopping criteria
 for ii=1:niter
     if (ii==1 && verbose==1);tic;end
@@ -197,7 +196,7 @@ for ii=1:length(opts)
         % % % % % % % hyperparameter, LAMBDA
         case 'lambda'
             if default
-                lambda=0.99;
+                lambda=1;
             else
                 if length(val)>1 || ~isnumeric( val)
                     error('CBCT:SART:InvalidInput','Invalid lambda')
@@ -206,7 +205,7 @@ for ii=1:length(opts)
             end
          case 'lambdaRed'
             if default
-                lamdbared=1;
+                lamdbared=0.99;
             else
                 if length(val)>1 || ~isnumeric( val)
                     error('CBCT:SART:InvalidInput','Invalid lambda')

@@ -79,4 +79,4 @@ legend('SIRT','CGLS')
 % plot images
 plotImg([imgCGLS imgSIRT],'Dim','Z','Step',2)
 %plot errors
-plotImg(abs([thorax-imgCGLS thorax-imgSIRT]),'Dim','Z','Step',2)
+plotImg(abs([thorax-imgCGLS thorax-imgSIRT]),'Dim','Z','Slice',64)

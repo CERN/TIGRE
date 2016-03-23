@@ -39,7 +39,7 @@ issue][2] if it doesnt work in other arch/SO)
  
    - Download TIGRE from the downloads page
    
-   - Install  CUDA Toolit (the later, the better)
+   - Install  CUDA Toolkit (the later, the better)
      Download [here][1]
    
    - If you are working in a win64 machine, with CUDA 7.5, stop here. The
@@ -50,6 +50,9 @@ If it doesnt work, or you are not in win64 CUDA 7.5
    - Make sure a compiler is set up in your MATLAB. run `mex -setup`. If a 
      compiler is not set up, make sure you download one (some are free)
      and run mex -setup again.
+   
+   - Make sure the xml file for compiling is proerly set up. E.g. in Linux 64 bit machines
+     mex_CUDA_glnxa64.xml should be present, and inside it the proper links to CUDA have to be set up.
 
    - Run Compile.m
 
@@ -62,7 +65,7 @@ The first thing you need to do is run `InitTIGRE`, to initialize all the
 folders and subfolders if the toolbox.
 
 Currently the documentation is included in each of the functions. You can access it 
-by typing `help fucntio_name` or by selecting the fucntion in the editor and pressing F1.
+by typing `help function_name` or by selecting the function in the editor and pressing F1.
 Additionally, the demos should include all the necessary documentation and examples of use.
 
 ## Issues

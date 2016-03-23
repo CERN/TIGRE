@@ -299,7 +299,8 @@ do { \
         cudaFree(d_image);
         cudaFree(d_norm2aux);
         cudaFree(d_dimgTV);
-        
+        cudaFree(d_norm2);
+
         cudaCheckErrors("Memory free");
         
     }
