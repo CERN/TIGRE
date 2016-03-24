@@ -52,5 +52,5 @@ if ispc
         warning('Your Computer has 2Gb or less of RAM memory. Using image sizes of higher than 256^3 is not recomended (most likely not possible)')
     end
 else
-    disp('TIGRE needs a big amount of memory, please be aware of this when choosing image sizes.')
+    warning('TIGRE needs a big amount of memory, be careful when running big images.')
 end

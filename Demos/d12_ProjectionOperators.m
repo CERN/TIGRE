@@ -56,13 +56,13 @@ raytime=toc;
 plotProj([projInterp projray abs(projInterp-projray)],0);
 % But also the ray voxel approach is faster (more ovbious at bigger seizes)
 disp(['Time interpolated: ' num2str(interptime)]);
-disp(['Time raytime: ' num2str(raytime)]);
+disp(['Time ray-voxel   : ' num2str(raytime)]);
 disp('Press enter to continue')
 pause
 %% We can play with the accuracy value
 
 % With small voxel the errors are more ovbioous
-geo.nVoxel=[16;16;16];                 % number of voxels              (vx)
+geo.nVoxel=[32;32;32];                      % number of voxels              (vx)
 geo.sVoxel=[256;256;256];                   % total size of the image       (mm)
 geo.dVoxel=geo.sVoxel./geo.nVoxel;          % size of each voxel            (mm)
 shepp=sheppLogan3D(geo.nVoxel); 
