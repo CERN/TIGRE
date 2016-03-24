@@ -99,7 +99,7 @@ for ii=1:niter
     
     lambda=lambda*lamdbared;
     % TV denoising
-    res=imDenoise3D(res,'TV',TViter,TVlambda);
+    res=im3DDenoise(res,'TV',TViter,TVlambda);
 
     
     if computeL2

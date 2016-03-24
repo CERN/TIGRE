@@ -1,4 +1,4 @@
-function [ imgO ] = imDenoise3D( img,type,varargin )
+function [ imgO ] = im3DDenoise( img,type,varargin )
 %IMDENOISE3D removes noise of image with different methods
 %   Currentyl only TV is supported. INput arguments are the iamge, the type
 %   of denoising ('TV' only now) and the parameters for the denoising,

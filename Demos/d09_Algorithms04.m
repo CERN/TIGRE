@@ -169,7 +169,12 @@ imgBASDPOCSbeta=B_ASD_POCS_beta(noise_projections,geo,angles,50,...
 %
 %
 %  
-
+%   'TViter'       amoutn of iteration in theTV step. Default 50
+% 
+%   'TVlambda'     hyperparameter in TV iteration. IT gives the ratio of
+%                  importance of the image vs the minimum total variation.
+%                  default is 15. Lower means more TV denoising.
+% 
                   
 imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',60,'TVlambda',14);           
 
@@ -184,5 +189,13 @@ plotImg([imgOSCTV imgBASDPOCSbeta imgSARTTV; thorax imgOSSART imgASDPOCS ] ,'Dim
  % error
 plotImg(abs([ thorax-imgOSCTV thorax-imgBASDPOCSbeta thorax-imgSARTTV; thorax-thorax thorax-imgOSSART thorax-imgASDPOCS]) ,'Dim','Z','Slice',64)
  
+
+
+
+
+%%
+
+% Obligatory XKCD reference: https://xkcd.com/833/
+% plotImg needs fising for when one 
 
 

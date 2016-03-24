@@ -293,7 +293,6 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     if (nfields==10)
         geo.accuracy=0.5;
     
-    
     // Additional test
     if( (size_img[0]!=geo.nVoxelX)|(size_img[1]!=geo.nVoxelY)|(size_img[2]!=geo.nVoxelZ))
         mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input",
