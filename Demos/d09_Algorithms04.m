@@ -26,7 +26,7 @@ geo.nDetector=[512; 512];					% number of pixels              (px)
 geo.dDetector=[0.8; 0.8]; 					% size of each pixel            (mm)
 geo.sDetector=geo.nDetector.*geo.dDetector; % total size of the detector    (mm)
 % Image parameters
-geo.nVoxel=[256;256;256];                   % number of voxels              (vx)
+geo.nVoxel=[128;128;128];                   % number of voxels              (vx)
 geo.sVoxel=[256;256;256];                   % total size of the image       (mm)
 geo.dVoxel=geo.sVoxel./geo.nVoxel;          % size of each voxel            (mm)
 % Offsets
@@ -149,9 +149,40 @@ imgBASDPOCSbeta=B_ASD_POCS_beta(noise_projections,geo,angles,50,...
                     'TViter',40,'maxL2err',epsilon,'alpha',alpha,... % these are very important
                      'lambda',lambda,'lambdared',lambdared,'Ratio',ratio,'Verbose',verb,... % less important.
                       'beta',1,'beta_red',0.7,'bregman_iter',10); % bregman options
+                  
+%   SART-TV 
+%==========================================================================
+%==========================================================================      
+%
+%   This implementation differs more from the others, as it minimizes the
+%   ROF model, i.e. when minimizing the total variation of the image, it
+%   also takes into account the information of the image. If only the total
+%   variation minimization step was run in the rest of the algorithms, the
+%   result would be a flat image (as that is the minimum total variation
+%   image), altertatively, the ROF model enforces the image not to change too
+%   much.
+%   
+%   This algirths performs better with more projections, but noisy data, by
+%   enforncing the TV very little
+%  
+%   The optional parameters are for the total variatiot part of the image:
+%
+%
+%  
+
+                  
+imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',60,'TVlambda',14);           
 
  %% Lets visualize the results
 % Notice the smoother images due to TV regularization.
-  plotImg([imgOSSART imgASDPOCS imgOSCTV imgBASDPOCSbeta] ,'Dim','Z','Step',2)
+%
+%     PHANTOM            OS-SART           ASD-POCS
+%    
+%     OSC-TV             B-ASD-POCS-beta   SART-TV
+
+plotImg([imgOSCTV imgBASDPOCSbeta imgSARTTV; thorax imgOSSART imgASDPOCS ] ,'Dim','Z','Step',2)
  % error
- plotImg(abs([thorax-imgOSSART thorax-imgASDPOCS thorax-imgOSCTV thorax-imgBASDPOCSbeta]) ,'Dim','Z','Slice',128)
+plotImg(abs([ thorax-imgOSCTV thorax-imgBASDPOCSbeta thorax-imgSARTTV; thorax-thorax thorax-imgOSSART thorax-imgASDPOCS]) ,'Dim','Z','Slice',64)
+ 
+
+

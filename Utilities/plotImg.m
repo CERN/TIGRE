@@ -178,17 +178,17 @@ for ii=list
     if crossect==3 
         xlabel('->Y');
         ylabel('X<-');
-        title(['Top to bottom ->Z : ',num2str(ii)]);
+        title(['Bottom to top->Z : ',num2str(ii)]);
     end
      if crossect==2 
         xlabel('->X');
         ylabel('->Z');
-        title(['Rigth to Left direction ->Y : ',num2str(ii)]);
+        title(['LEft to Rigth direction ->Y : ',num2str(ii)]);
     end
     if crossect==1 
         xlabel('->Y');
         ylabel('->Z');
-        title(['Source to Detector direction ->X : ',num2str(ii)]);
+        title(['Detector to Source direction ->X : ',num2str(ii)]);
     end
     drawnow
     
