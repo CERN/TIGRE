@@ -14,7 +14,7 @@ function [ fres ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargin)
 %   'lambda':      Sets the value of the hyperparameter for the SART iterations. 
 %                  Default is 1
 %
-%   'lambdared':   Reduction of lambda.Every iteration
+%   'lambdared':   Reduction of lambda.Every  iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
 %   'TViter':      Defines the amount of TV iterations performed per SART
@@ -117,14 +117,14 @@ while ~stop_criteria %POCS
     %  TV MINIMIZATION
     % =========================================================================
     %  Call GPU to minimize TV
-    f=minimizeTV(f0,dtvg,ng);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
-    %                                         for ii=1:ng
-    %                                             Steepest descend of TV norm
-    %                                             tv(ng*(iter-1)+ii)=im3Dnorm(f,'TV','forward');
-    %                                             df=gradientTVnorm(f,'forward');
-    %                                             df=df./im3Dnorm(df,'L2');
-    %                                             f=f-dtvg.*df;
-    %                                         end
+%     f=minimizeTV(f0,dtvg,ng);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
+                                            for ii=1:ng
+%                                                 Steepest descend of TV norm
+                                                tv(ng*(iter-1)+ii)=im3Dnorm(f,'TV','forward');
+                                                df=gradientTVnorm(f,'forward');
+                                                df=df./im3Dnorm(df,'L2');
+                                                f=f-dtvg.*df;
+                                            end
     
     % update parameters
     % ==========================================================================
