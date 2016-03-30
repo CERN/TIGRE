@@ -13,7 +13,7 @@ close all;
 % VARIABLE                                   DESCRIPTION                    UNITS
 %-------------------------------------------------------------------------------------
 geo.DSD = 1536;                             % Distance Source Detector      (mm)
-geo.DSO = 1000;                             % Distance Source Origin        (mm)
+geo.DSO = 1000;                             % Distance  Source Origin        (mm)
 % Detector parameters
 geo.nDetector=[512; 512];					% number of pixels              (px)
 geo.dDetector=[0.8; 0.8]; 					% size of each pixel            (mm)
