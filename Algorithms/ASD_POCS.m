@@ -96,6 +96,8 @@ while ~stop_criteria %POCS
     
     if iter==1
         dtvg=alpha*dp;
+        %Convert the steepest-descent step-size from a fraction of a
+        %step-size to an absolute image distance on the first iteration.
     end
     f0=f;
     
@@ -126,7 +128,10 @@ while ~stop_criteria %POCS
     % Check convergence criteria
     % ==========================================================================
     
+    %Define c_alpha as in equation 21 in the journal
     c=dot(dg_vec(:),dp_vec(:))/(norm(dg_vec(:),2)*norm(dp_vec(:),2));
+    %This c is examined to see if it is close to -1.0
+    
     if (c<-0.99 && dd<=epsilon) || beta<0.005|| iter>maxiter
         if verbose
             disp(['Stopping criteria met']);

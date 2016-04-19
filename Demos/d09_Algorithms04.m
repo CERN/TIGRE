@@ -3,11 +3,11 @@
 %
 %  This demo presents the Total variation algorithms in TIGRE. Total
 %  variation algorithms try to minimize the variation (gradient) of the
-%  image, asuming its piecewise smooth, as most things in nature are (i.e.
+%  image, assuming its piecewise smooth, as most things in nature are (i.e.
 %  human body). 
 %
 % This set of algorithms is specially good performing when the noise is
-% very big or the number of projections small, however, they require more
+% very big or the number of projections is small, however, they require more
 % computational time and memory than the other algorithms to run.
 % 
 % 
@@ -47,17 +47,17 @@ noise_projections=addCTnoise(projections);
 
 %% Total Variation algorithms
 %
-%  ASD-POCS: Adaptative Steppest Descend-Projection On Convex Subsets
+%  ASD-POCS: Adaptative Steeppest Descent-Projection On Convex Subsets
 % Often called POCS-TV
 %==========================================================================
 %==========================================================================
-%  ASD-POCS minimizes At-B and the TV norm separatedly in each iteration,
+%  ASD-POCS minimizes At-B and the TV norm separately in each iteration,
 %  i.e. reconstructs the image first and then reduces the TV norm, every
 %  iteration. As the other algorithms the mandatory inputs are projections,
 %  geometry, angles and maximum iterations.
 %
-% ASD-POCS has a veriety of optional argumetns, and some of them ar crucial
-% to determine the behabiour of the algorithm. The advantage of ASD-POCS is
+% ASD-POCS has a veriety of optional arguments, and some of them are crucial
+% to determine the behaviour of the algorithm. The advantage of ASD-POCS is
 % the power to create good images from bad data, but it needs a lot of
 % tunning. 
 %
@@ -108,6 +108,8 @@ imgASDPOCS=ASD_POCS(noise_projections,geo,angles,50,...
                     'TViter',ng,'maxL2err',epsilon,'alpha',alpha,... % these are very important
                      'lambda',lambda,'lambdared',lambdared,'Ratio',ratio,'Verbose',verb); % less important.
 
+break 
+%Here
                  
 %  OSC-TV: Odered Subset Convex-TV algorithm
 %==========================================================================

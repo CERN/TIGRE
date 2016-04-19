@@ -1,4 +1,4 @@
-function [ fres ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
+function [ fres ] = OSC_TV(proj,geo,angles,maxiter,varargin)
 %ASD_POCS Solves the ASD_POCS total variation constrained image in 3D
 % tomography.
 %
