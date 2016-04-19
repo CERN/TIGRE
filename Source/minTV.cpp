@@ -16,20 +16,20 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         alpha=15.0f;
     }
     if (nrhs==2){
-       mexErrMsgIdAndTxt("CBCT:CUDA:POCS_TV", "Only 1 POCS hyperparemter inputed");
+       mexErrMsgIdAndTxt("err", "Only 1 POCS hyperparemter inputed");
     }
     if (nrhs>3){
-       mexErrMsgIdAndTxt("CBCT:CUDA:POCS_TV", "Too many imput argumets");
+       mexErrMsgIdAndTxt("err", "Too many imput argumets");
     }
     if (nrhs==3){
      size_t mrows = mxGetM(prhs[1]);
      size_t ncols = mxGetN(prhs[1]);
      if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("CBCT:CUDA:POCS_TV", "POCS parameters shoudl be 1x1");
+        mexErrMsgIdAndTxt("err", "POCS parameters shoudl be 1x1");
      mrows = mxGetM(prhs[2]);
      ncols = mxGetN(prhs[2]);
      if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("CBCT:CUDA:POCS_TV", "POCS parameters shoudl be 1x1");
+        mexErrMsgIdAndTxt("err", "POCS parameters shoudl be 1x1");
      alpha= (float)(mxGetScalar(prhs[1]));
      maxIter=(int)round(mxGetScalar(prhs[2]));
     }
@@ -41,7 +41,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     // Image should be dim 3
     if (numDims!=3){
-        mexErrMsgIdAndTxt("CBCT:CUDA:POCS_TV", "Image is not 3D");
+        mexErrMsgIdAndTxt("err", "Image is not 3D");
     }
     // Now that input is ok, parse it to C data types.
     double const * const imgaux = static_cast<double const *>(mxGetData(image));

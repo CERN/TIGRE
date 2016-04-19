@@ -108,8 +108,8 @@ imgASDPOCS=ASD_POCS(noise_projections,geo,angles,50,...
                     'TViter',ng,'maxL2err',epsilon,'alpha',alpha,... % these are very important
                      'lambda',lambda,'lambdared',lambdared,'Ratio',ratio,'Verbose',verb); % less important.
 
-break 
-%Here
+
+
                  
 %  OSC-TV: Odered Subset Convex-TV algorithm
 %==========================================================================
@@ -125,7 +125,8 @@ imgOSCTV=OSC_TV(noise_projections,geo,angles,50,...
                     'TViter',ng,'maxL2err',epsilon,'alpha',alpha,... % these are very important
                      'lambda',lambda,'lambdared',lambdared,'Ratio',ratio,'Verbose',verb,...% less important.
                       'BlockSize',length(angles)/10,'OrderStrategy','angularDistance'); %OSC options
-                  
+           
+                
            
 %  B-ASD-POCS-beta 
 %==========================================================================

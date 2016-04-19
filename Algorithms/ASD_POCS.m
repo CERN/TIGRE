@@ -104,14 +104,14 @@ while ~stop_criteria %POCS
     %  TV MINIMIZATION
     % =========================================================================
     %  Call GPU to minimize TV
-%     f=minimizeTV(f0,dtvg,ng);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
-                                            for ii=1:ng
-%                                                 Steepest descend of TV norm
-                                                tv(ng*(iter-1)+ii)=im3Dnorm(f,'TV','forward');
-                                                df=gradientTVnorm(f,'forward');
-                                                df=df./im3Dnorm(df,'L2');
-                                                f=f-dtvg.*df;
-                                            end
+    f=minimizeTV(f0,dtvg,ng);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
+%                                             for ii=1:ng
+% %                                                 Steepest descend of TV norm
+%                                                 tv(ng*(iter-1)+ii)=im3Dnorm(f,'TV','forward');
+%                                                 df=gradientTVnorm(f,'forward');
+%                                                 df=df./im3Dnorm(df,'L2');
+%                                                 f=f-dtvg.*df;
+%                                             end
     
     % update parameters
     % ==========================================================================

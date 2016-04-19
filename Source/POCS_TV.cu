@@ -10,7 +10,7 @@ do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
                 mexPrintf("ERROR in: %s \n",msg);\
-                mexErrMsgIdAndTxt("CBCT:CUDA:POCS_TV",cudaGetErrorString(__err));\
+                mexErrMsgIdAndTxt("err",cudaGetErrorString(__err));\
         } \
 } while (0)
     
@@ -199,27 +199,27 @@ do { \
         
         // Init cuda memory
         // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c or Gforce GT 740M
-        int deviceCount = 0;
-        cudaGetDeviceCount(&deviceCount);
-        if (deviceCount == 0)
-        {
-            mexErrMsgIdAndTxt("cudaGetDeviceCount","No CUDA enabled NVIDIA GPUs found");
-        }
-        bool found=false;
-        for (int dev = 0; dev < deviceCount; ++dev)
-        {
-            cudaDeviceProp deviceProp;
-            cudaGetDeviceProperties(&deviceProp, dev);
-            
-            if (strcmp(deviceProp.name, "Tesla K40c") == 0 || strcmp(deviceProp.name, "GeForce GT 740M") == 0){
-                cudaSetDevice(dev);
-                found=true;
-                break;
-            }
-        }
-        if (!found)
-            mexErrMsgIdAndTxt("cudaDevice","No Supported GPU found");
-        
+//         int deviceCount = 0;
+//         cudaGetDeviceCount(&deviceCount);
+//         if (deviceCount == 0)
+//         {
+//             mexErrMsgIdAndTxt("cudaGetDeviceCount","No CUDA enabled NVIDIA GPUs found");
+//         }
+//         bool found=false;
+//         for (int dev = 0; dev < deviceCount; ++dev)
+//         {
+//             cudaDeviceProp deviceProp;
+//             cudaGetDeviceProperties(&deviceProp, dev);
+//             
+//             if (strcmp(deviceProp.name, "Tesla K40c") == 0 || strcmp(deviceProp.name, "GeForce GT 740M") == 0){
+//                 cudaSetDevice(dev);
+//                 found=true;
+//                 break;
+//             }
+//         }
+//         if (!found)
+//             mexErrMsgIdAndTxt("cudaDevice","No Supported GPU found");
+//         
         
         
         size_t total_pixels = image_size[0] * image_size[1]  * image_size[2] ;
