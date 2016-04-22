@@ -75,7 +75,7 @@ the code, please report it on [the issues page][2]<sup>&#8727;</sup>.
 
 Please, be as clear as  possible with the description of the problem.
 If it is a specific problem in an specific scenario, provide a *Minimum 
-Complete Verifiable Example* of the problem (see [Stackoverlfowcom's definition][3]);
+Complete Verifiable Example* of the problem (see [Stackoverflow.com's definition][3]);
 
 <sup>&#8727;</sup> **Protip** you can [label the Issues by topic][4]
 
@@ -117,6 +117,9 @@ this. Hopefully we can find a solution for this without the need of restarting M
 
 ## Licensing
 
+TIGRE toolbox is released under the BSD License, meaning you can use and modify 
+the software freely in any case, but you **must** give attribution to the original authors.
+For more information, read the license file or the [BSD License Definition][5].
 
 ## Contact
 
@@ -147,3 +150,4 @@ and the rigth reference will appear.
 [2]: https://github.com/AnderBiguri/TIGRE/issues
 [3]: https://stackoverflow.com/help/mcve
 [4]: https://help.github.com/articles/applying-labels-to-issues-and-pull-requests/
+[5]: http://www.linfo.org/bsdlicense.html
