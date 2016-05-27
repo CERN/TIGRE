@@ -9,7 +9,9 @@
 #include "mex.h"
 #include "matrix.h"
 #include "ray_interpolated_projection.hpp"
+#include "ray_interpolated_projection_parallel.hpp"
 #include "Siddon_projection.hpp"
+#include "Siddon_projection_parallel.hpp"
 #include <string.h>
 // #include <time.h>
 /**
@@ -26,11 +28,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     
     //Check amount of inputs
-    if (nrhs<3 ||nrhs>4) {
+    if (nrhs<3 || nrhs>4) {
         mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput", "Invalid number of inputs to MEX file.");
     }
     ////////////////////////////
-    //4rd argument is matched or unmatched
+    //4rd argument is interpolated or ray-voxel
     bool krylov_proj=false; // Caled krylov, because I designed it for krylov case.... 
     if (nrhs==4){
         if ( mxIsChar(prhs[3]) != 1)
@@ -83,7 +85,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // Geometry structure that has all the needed geometric data.
     
     // IMPORTANT-> Make sure Matlab creates the struct in this order.
-    const char *fieldnames[11];
+    const char *fieldnames[12];
     fieldnames[0] = "nVoxel";
     fieldnames[1] = "sVoxel";
     fieldnames[2] = "dVoxel";
@@ -95,13 +97,14 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     fieldnames[8] = "offOrigin";
     fieldnames[9] = "offDetector";
     fieldnames[10]= "accuracy";
+    fieldnames[11]= "mode";
     
     
     if(!mxIsStruct(prhs[1]))
         mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput",
                 "Second input must be a structure.");
     int nfields = mxGetNumberOfFields(prhs[1]);
-    if (nfields < 10 || nfields >11 )
+    if (nfields < 12 || nfields >12 )
         mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput","there are missing or extra fields in the geometry");
     
     // Check that all names are good
@@ -183,6 +186,13 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 }
                 
                 break;
+            case 11:
+                if (!mxIsChar(tmp)){
+                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
+                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
+                            "Above field is not string!");
+                }
+                break;
             default:
                 mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input",
                         "something wrong happened. Ensure Geometric struct has correct amount of inputs.");
@@ -195,9 +205,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     double * sVoxel, *dVoxel,*sDetec,*dDetec, *DSO, *DSD;
     double *offOrig,*offDetec;
     double *  acc;
+    const char* mode;
     int c;
     Geometry geo;
     geo.unitX=1;geo.unitY=1;geo.unitZ=1;
+    bool coneBeam=true;
 //     mexPrintf("%d \n",nfields);
     for(int ifield=0; ifield<nfields; ifield++) {
         tmp=mxGetField(prhs[1],0,fieldnames[ifield]);
@@ -284,6 +296,14 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                    
                 geo.accuracy=(float)acc[0];
                 break;
+            case 11:
+                mode="";
+                mode=mxArrayToString(tmp);
+                if (!strcmp(mode,"parallel"))
+                    coneBeam=false;
+                else if (strcmp(mode,"cone"))
+                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:Mode","Unkown mode. Should be parallel or cone");
+                break;  
             default:
                 mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","This shoudl not happen. Weird");
                 break;
@@ -306,25 +326,17 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     // call the real function
     
-//     end = clock();
-//     double time_input = (double)(end - begin) / CLOCKS_PER_SEC;
-//     mexPrintf("Input time : %lf ms\n" ,time_input*1000);
-    
-//     begin = clock();
-    
-    if (krylov_proj){
-        siddon_ray_projection(img,geo,result,alphas,nalpha);
+    if (coneBeam){
+        if (krylov_proj)
+            siddon_ray_projection(img,geo,result,alphas,nalpha);
+        else
+            interpolation_projection(img,geo,result,alphas,nalpha);
+    }else{
+        if (krylov_proj)
+            siddon_ray_projection_parallel(img,geo,result,alphas,nalpha);
+        else
+            interpolation_projection_parallel(img,geo,result,alphas,nalpha);
     }
-    else
-    {
-        interpolation_projection(img,geo,result,alphas,nalpha);
-    }
-    
-//     end = clock();
-//     double time_code = (double)(end - begin) / CLOCKS_PER_SEC;
-//     mexPrintf("Maths time total : %lf ms\n" ,time_code*1000);
-    
-    
     // Set outputs and exit
     
     mwSize* outsize;
@@ -345,12 +357,6 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     // Free image data
     free(img);
-    
-//     end = clock();
-//     double time_out = (double)(end - begin) / CLOCKS_PER_SEC;
-//     mexPrintf("Out time : %lf ms\n" ,time_out*1000);
-    return;
-    
-    
+    return; 
     
 }

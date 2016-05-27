@@ -127,22 +127,26 @@ order='angularDistance';
                             'lambda',lambda,'lambdared',lambdared,'verbose',verbose,'QualMeas',qualmeas,...
                              'BlockSize',blcks,'OrderStrategy',order);
 %% Lets have a brief show of the results
+set(0,'DefaultTextInterpreter', 'latex')
 
 subplot(211)
-plot([errL2SIRT;errL2SART;[errL2OSSART nan(1,length(errL2SART)-length(errL2OSSART))]]');
-title('L2 error')
+plot(log10([errL2SIRT;errL2SART;[errL2OSSART nan(1,length(errL2SART)-length(errL2OSSART))]]'));
+title('Convergence')
+xlabel('Iteration')
+ylabel('$ log_{10}(|Ax-b|) $')
 legend('SIRT','SART','OS-SART')
 subplot(212)
-plot([qualitySIRT;qualitySART;[qualityOSSART nan(1,length(qualitySART)-length(qualityOSSART))]]');
-title('Evolution of RMSE per iteration')
+plot(log10([qualitySIRT;qualitySART;[qualityOSSART nan(1,length(qualitySART)-length(qualityOSSART))]]'));
+title('Evolution of RMSE')
 legend('SIRT','SART','OS-SART')
+xlabel('Iteration')
+ylabel('$ log_{10}(RMSE) $')
 
-
-% plot the results
+%% plot the results
 
 % It is clear that SART will get to better results for the same amoutn of
 % iterations, however, it takes x7 more time to run.
-plotImg([imgSIRT imgSART imgOSSART],'Dim','Z');
+plotImg([imgSIRT;  imgOSSART; imgSART;],'Dim','Z','Savegif','sarts.gif');
 
 % plot error
 plotImg(abs([thorax-imgSIRT thorax-imgSART thorax-imgOSSART]),'Dim','Z');

@@ -106,7 +106,6 @@ for ii=1:niter
     alpha=gamma/norm(q(:),2)^2;
     x=x+alpha*p;
     
-    
     aux=proj-Ax(x,geo,angles,'ray-voxel'); %expensive, is there any way to check this better?
     errorL2(ii)=im3Dnorm(aux,'L2');
     if ii>1 && errorL2(ii)>errorL2(ii-1)
