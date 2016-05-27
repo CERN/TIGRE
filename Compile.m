@@ -21,7 +21,7 @@ disp('This may take a couple of minutes....')
 
 if ispc
     if ~isempty(strfind(computer('arch'),'64'))
-        mex -largeArrayDims ./Source/Ax.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu -outdir ./Mex_files/win64
+        mex -largeArrayDims ./Source/Ax.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/win64
         mex -largeArrayDims ./Source/Atb.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu -outdir ./Mex_files/win64
         mex -largeArrayDims ./Source/minTV.cpp ./Source/POCS_TV.cu  -outdir ./Mex_files/win64
         mex -largeArrayDims ./Source/tvDenoise.cpp ./Source/tvdenoising.cu  -outdir ./Mex_files/win64

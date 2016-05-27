@@ -4,6 +4,8 @@
 #include "matrix.h"
 #include "voxel_backprojection.hpp"
 #include "voxel_backprojection2.hpp"
+#include "voxel_backprojection_parallel.hpp"
+
 #include <string.h>
 // #include <time.h>
 
@@ -121,7 +123,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     
     // IMPORTANT-> Make sure Matlab creates the struct in this order.
-    const char *fieldnames[11];
+    const char *fieldnames[12];
     fieldnames[0] = "nVoxel";
     fieldnames[1] = "sVoxel";
     fieldnames[2] = "dVoxel";
@@ -133,6 +135,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     fieldnames[8] = "offOrigin";
     fieldnames[9] = "offDetector";
     fieldnames[10]= "accuracy";
+    fieldnames[11]= "mode";
+
     
     // Make sure input is structure
     if(!mxIsStruct(prhs[1]))
@@ -140,7 +144,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 "Second input must be a structure.");
     // Check number of fields
     int nfields = mxGetNumberOfFields(prhs[1]);
-    if (nfields < 10 || nfields >11 )
+    if (nfields < 10 || nfields >12 )
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput","There are missing or extra fields in the geometry");
     
     mxArray    *tmp;
@@ -214,6 +218,13 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                     offsetAllDetec=true;
                 
                 break;
+             case 11:
+                if (!mxIsChar(tmp)){
+                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
+                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
+                            "Above field is not string!");
+                }
+                break;
             default:
                 mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
                         "Something wrong happened. Ensure Geometric struct has correct amount of inputs.");
@@ -226,6 +237,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     double * nVoxel, *nDetec; //we need to cast these to int
     double * sVoxel, *dVoxel,*sDetec,*dDetec, *DSO, *DSD,*offOrig,*offDetec;
     double *acc;
+    const char* mode;
+    bool coneBeam=true;
     Geometry geo;
     int c;
     geo.unitX=1;geo.unitY=1;geo.unitZ=1;
@@ -309,6 +322,14 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 acc=(double*)mxGetData(tmp);
                 geo.accuracy=(float)acc[0];
                 break;
+                        case 11:
+                mode="";
+                mode=mxArrayToString(tmp);
+                if (!strcmp(mode,"parallel"))
+                    coneBeam=false;
+                else if (strcmp(mode,"cone"))
+                    mexErrMsgIdAndTxt( "CBCT:MEX:Atb:Mode","Unkown mode. Should be parallel or cone");
+                break;  
             default:
                 mexErrMsgIdAndTxt( "CBCT:MEX:Atb:unknown","This shoudl not happen. Weird");
                 break;
@@ -329,11 +350,15 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     /*
      * Call the CUDA kernel
      */
-    if (krylov_proj){
-        voxel_backprojection2(img,geo,result,alphas,nalpha);
-    }
-    else
-        voxel_backprojection(img,geo,result,alphas,nalpha);
+    if (coneBeam){
+        if (krylov_proj){
+            voxel_backprojection2(img,geo,result,alphas,nalpha);
+        }
+        else
+            voxel_backprojection(img,geo,result,alphas,nalpha);
+    }else
+        voxel_backprojection_parallel(img,geo,result,alphas,nalpha);
+
     /*
      * Prepare the outputs
      */
