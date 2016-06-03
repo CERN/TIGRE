@@ -100,6 +100,17 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     // compute parameter values for x-ray parametric equation. eq(3-10)
     float axm,aym,azm;
     float axM,ayM,azM;
+    
+    /**************************************
+     *
+     *
+     * Problem. In paralel beam, often ray.y or ray.x=0;
+     * This leads to infinities progpagating and breaking everything.
+     * 
+     * We need to fix it.
+     *
+     ***************************************/
+    
     // In the paper Nx= number of X planes-> Nvoxel+1
     axm=min(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
     aym=min(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
@@ -119,7 +130,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     float imin,imax,jmin,jmax,kmin,kmax;
     // for X
     if( source.x<pixel1D.x){
-        imin=(am==axm)? 1             : ceil (source.x+am*ray.x);
+        imin=(am==axm)? 1           : ceil (source.x+am*ray.x);
         imax=(aM==axM)? geo.nVoxelX : floor(source.x+aM*ray.x);
     }else{
         imax=(am==axm)? geo.nVoxelX-1 : floor(source.x+am*ray.x);
@@ -127,7 +138,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     }
     // for Y
     if( source.y<pixel1D.y){
-        jmin=(am==aym)? 1             : ceil (source.y+am*ray.y);
+        jmin=(am==aym)? 1           : ceil (source.y+am*ray.y);
         jmax=(aM==ayM)? geo.nVoxelY : floor(source.y+aM*ray.y);
     }else{
         jmax=(am==aym)? geo.nVoxelY-1 : floor(source.y+am*ray.y);
@@ -194,8 +205,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
         }
         aminc=min(ay,ax);
     }
-    detector[idx]=sum*maxlength;
-//     detector[idx]=Np;
+    detector[idx]=maxlength*sum;
 }
 
 

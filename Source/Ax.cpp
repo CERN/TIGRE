@@ -33,7 +33,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     }
     ////////////////////////////
     //4rd argument is interpolated or ray-voxel
-    bool krylov_proj=false; // Caled krylov, because I designed it for krylov case.... 
+    bool interpolated=false;
     if (nrhs==4){
         if ( mxIsChar(prhs[3]) != 1)
             mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be a string");
@@ -43,9 +43,9 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         if (strcmp(krylov,"interpolated") && strcmp(krylov,"ray-voxel"))
             mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be either 'interpolated' or 'ray-voxel'");
         else
-            // If its not ray voxel, its "interpolated"
+            // If its not ray-voxel, its "interpolated"
             if (~strcmp(krylov,"ray-voxel"))
-                krylov_proj=true;
+                interpolated=true;
     }
     ///////////////////////// 3rd argument: angle of projection.
     
@@ -327,15 +327,18 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // call the real function
     
     if (coneBeam){
-        if (krylov_proj)
+        if (interpolated)
             siddon_ray_projection(img,geo,result,alphas,nalpha);
         else
             interpolation_projection(img,geo,result,alphas,nalpha);
     }else{
-        if (krylov_proj)
+        if (interpolated){
+             mexErrMsgIdAndTxt( "CBCT:MEX:Ax:debug",
+                            "ray-voxel intersection is still unavailable for parallel beam, as there are some bugs on it.");
             siddon_ray_projection_parallel(img,geo,result,alphas,nalpha);
-        else
+        }else{
             interpolation_projection_parallel(img,geo,result,alphas,nalpha);
+        }
     }
     // Set outputs and exit
     

@@ -1,4 +1,4 @@
-function [res,errorL2,qualMeasOut]=SART(proj,geo,alpha,niter,varargin)
+function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 % SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -31,9 +31,9 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,alpha,niter,varargin)
 %   'QualMeas'     Asks the algorithm for a set of quality measurement
 %                  parameters. Input should contain a cell array of desired
 %                  quality measurement names. Example: {'CC','RMSE','MSSIM'}
-%                  These will be computed in each iteration. 
+%                  These will be computed in each iteration.
 %% Deal with input parameters
-[lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
+[lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
     computeL2=true;
@@ -46,14 +46,18 @@ errorL2=[];
 
 % Projection weigth, W
 
-W=Ax(ones(geo.nVoxel'),geo,alpha);  % %To get the length of the x-ray inside the object domain
+W=Ax(ones(geo.nVoxel'),geo,angles);  % %To get the length of the x-ray inside the object domain
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
-[x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
-    -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-A = permute(alpha+pi/2, [1 3 2]);
-V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
+if ~strcmp(geo.mode,'parallel')
+    [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
+        -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
+    A = permute(angles+pi/2, [1 3 2]);
+    V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
+else
+    V=ones([geo.nVoxel(1:2).',length(angles)]);
+end
 clear A x y dx dz;
 
 %% Iterate
@@ -69,38 +73,38 @@ for ii=1:niter
     end
     
     
-    for jj=1:length(alpha);
-        if size(offOrigin,2)==length(alpha)
+    for jj=1:length(angles);
+        if size(offOrigin,2)==length(angles)
             geo.OffOrigin=offOrigin(:,jj);
         end
-         if size(offDetector,2)==length(alpha)
+        if size(offDetector,2)==length(angles)
             geo.offDetector=offDetector(:,jj);
         end
-        proj_err=proj(:,:,jj)-Ax(res,geo,alpha(jj));        %                                 (b-Ax)
+        proj_err=proj(:,:,jj)-Ax(res,geo,angles(jj));        %                                 (b-Ax)
         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
-        backprj=Atb(weighted_err,geo,alpha(jj));            %                     At * W^-1 * (b-Ax)
+        backprj=Atb(weighted_err,geo,angles(jj));            %                     At * W^-1 * (b-Ax)
         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
         res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
         
-        res(res<0)=0;               
+        res(res<0)=0;
     end
     
     % If quality is being measured
     if measurequality
-       % HERE GOES  
-       qualMeasOut(:,ii)=Measure_Quality(res,res_prev,QualMeasOpts);
+        % HERE GOES
+        qualMeasOut(:,ii)=Measure_Quality(res,res_prev,QualMeasOpts);
     end
     
     lambda=lambda*lamdbared;
-
+    
     if computeL2
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
-        errornow=im3Dnorm(proj-Ax(res,geo,alpha),'L2');                       % Compute error norm2 of b-Ax
+        errornow=im3Dnorm(proj-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
         % If the error is not minimized.
         if  ii~=1 && errornow>errorL2(end)
             if verbose
-            disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
+                disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
             end
             return;
         end
@@ -108,7 +112,7 @@ for ii=1:niter
     end
     
     if (ii==1 && verbose==1);
-        expected_time=toc*niter;   
+        expected_time=toc*niter;
         disp('SART');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
         disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
@@ -147,10 +151,10 @@ while ~isequal(geo.nVoxel,finalsize)
     % Upsample!
     % (hopefully computer has enough memory............)
     [y, x, z]=ndgrid(linspace(1,size(initres,1),geo.nVoxel(1)),...
-                     linspace(1,size(initres,2),geo.nVoxel(2)),...
-                     linspace(1,size(initres,3),geo.nVoxel(3)));
+        linspace(1,size(initres,2),geo.nVoxel(2)),...
+        linspace(1,size(initres,3),geo.nVoxel(3)));
     initres=interp3(initres,x,y,z);
-    clear x y z 
+    clear x y z
 end
 end
 
@@ -158,7 +162,7 @@ end
 function [lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,argin)
 opts=     {'lambda','Init','InitImg','Verbose','lambdaRed','QualMeas'};
 defaults=ones(length(opts),1);
-    % Check inputs
+% Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
     error('CBCT:SART:InvalidInput','Invalid number of inputs')
@@ -176,7 +180,7 @@ for ii=1:length(opts)
     opt=opts{ii};
     default=defaults(ii);
     % if one option isnot default, then extranc value from input
-   if default==0
+    if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
             ind=find(isequal(opt,argin{jj}));
@@ -193,7 +197,7 @@ for ii=1:length(opts)
             else
                 verbose=val;
             end
-        % % % % % % % hyperparameter, LAMBDA
+            % % % % % % % hyperparameter, LAMBDA
         case 'lambda'
             if default
                 lambda=1;
@@ -203,7 +207,7 @@ for ii=1:length(opts)
                 end
                 lambda=val;
             end
-         case 'lambdaRed'
+        case 'lambdaRed'
             if default
                 lamdbared=0.99;
             else
@@ -231,7 +235,7 @@ for ii=1:length(opts)
                 continue;
             end
             if isempty(res)
-               error('CBCT:SART:InvalidInput','Invalid Init option') 
+                error('CBCT:SART:InvalidInput','Invalid Init option')
             end
             % % % % % % % ERROR
         case 'InitImg'
@@ -249,11 +253,11 @@ for ii=1:length(opts)
             if default
                 QualMeasOpts={};
             else
-            if iscellstr(val)
-                QualMeasOpts=val;
-            else
-                error('CBCT:SART:InvalidInput','Invalid quality measurement parameters');
-            end
+                if iscellstr(val)
+                    QualMeasOpts=val;
+                else
+                    error('CBCT:SART:InvalidInput','Invalid quality measurement parameters');
+                end
             end
         otherwise
             error('CBCT:SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART()']);

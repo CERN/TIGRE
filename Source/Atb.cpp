@@ -354,10 +354,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         if (krylov_proj){
             voxel_backprojection2(img,geo,result,alphas,nalpha);
         }
-        else
+        else{
             voxel_backprojection(img,geo,result,alphas,nalpha);
-    }else
+        }
+    }else{
         voxel_backprojection_parallel(img,geo,result,alphas,nalpha);
+    }
 
     /*
      * Prepare the outputs
