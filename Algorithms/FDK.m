@@ -35,7 +35,7 @@ proj_filt = filtering(proj,geo,alpha); % Not sure if offsets are good in here
 %RMFIELD Remove fields from a structure array.
 geo=rmfield(geo,'filter');
 %% backproject
-res=Atb(proj_filt,geo,alpha); % Weighting is inside
+res=Atb(double(proj_filt),geo,alpha); % Weighting is inside
 
 
 if nargout>1

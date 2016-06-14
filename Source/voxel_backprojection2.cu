@@ -126,9 +126,9 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
     S.x= geo.DSO*cos(geo.alpha);
     S.y=-geo.DSO*sin(geo.alpha); 
    
-    // Real XYZ coorfinates of Derector.
+    // Real XYZ coordinates of Detector.
     Point3D realD, realDaux; 
-    // We know the index of the detector (u,v). Star from there.
+    // We know the index of the detector (u,v). Start from there.
     realDaux.x=-(geo.DSD-geo.DSO); 
     realDaux.y=-geo.sDetecU/2+geo.dDetecU/2 + u*geo.dDetecU +uv0Offset.x;
     realD.z   =-geo.sDetecV/2+geo.dDetecV/2 + v*geo.dDetecV +uv0Offset.y;

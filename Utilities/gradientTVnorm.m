@@ -30,7 +30,7 @@ Gz=cat(3,zeros(size(Gz(:,:,1))),Gz);
 
 nrm=safenorm(Gx,Gy,Gz); 
 
-tvg(2:end,2:end,2:end)= tvg(2:end,2:end,2:end)+(Gx(2:end,2:end,2:end)+Gy(2:end,2:end,2:end)+Gz(2:end,2:end,2:end))./nrm(2:end,2:end,2:end);
+tvg(1:end,1:end,1:end)= tvg(1:end,1:end,1:end)+(Gx(1:end,1:end,1:end)+Gy(1:end,1:end,1:end)+Gz(1:end,1:end,1:end))./nrm(1:end,1:end,1:end);
 tvg(2:end-1,:,:)=tvg(2:end-1,:,:)-Gx([2:end-1]+1,:,:)./nrm([2:end-1]+1,:,:);
 tvg(:,2:end-1,:)=tvg(:,2:end-1,:)-Gy(:,[2:end-1]+1,:)./nrm(:,[2:end-1]+1,:);
 tvg(:,:,2:end-1)=tvg(:,:,2:end-1)-Gz(:,:,[2:end-1]+1)./nrm(:,:,[2:end-1]+1);

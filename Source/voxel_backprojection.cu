@@ -85,18 +85,6 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
         return;
     
     
-//     size_t idx = threadIdx.x + nVoxelY.x * blockDim.x;
-//     if (idx>= geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ)
-//         return;
-    
-//  
-//     int indZ = idx / (geo.nVoxelY * geo.nVoxelX);
-//     int resZ = idx % (geo.nVoxelY * geo.nVoxelX);
-//     int indY = resZ / geo.nVoxelX;
-//     int indX = resZ % geo.nVoxelX;
-    // Geometric trasnformations:
-    
-    
     
     //Source
      Point3D S;   
@@ -107,7 +95,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
      // "XYZ" in the warped coordinate system of the current point
      Point3D P;
      P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-     P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y);
+     P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-geo.COR/geo.dDetecU;
      P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
      
      

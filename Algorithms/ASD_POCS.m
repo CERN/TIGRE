@@ -108,7 +108,7 @@ while ~stop_criteria %POCS
 %                                             for ii=1:ng
 % %                                                 Steepest descend of TV norm
 %                                                 tv(ng*(iter-1)+ii)=im3Dnorm(f,'TV','forward');
-%                                                 df=gradientTVnorm(f,'forward');
+%                                                 df=weighted_gradientTVnorm2(f,0.002);
 %                                                 df=df./im3Dnorm(df,'L2');
 %                                                 f=f-dtvg.*df;
 %                                             end

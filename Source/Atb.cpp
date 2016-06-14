@@ -56,7 +56,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     if( !mxIsDouble(prhs[2]) || mxIsComplex(prhs[2]) ||
             !(mrows==1) ) {
         mexErrMsgIdAndTxt( "CBCT:MEX:Atb:input",
-                "Input alpha must be a noncomplex array.");
+                "Input alpha must be a double, noncomplex array.");
     }
     size_t nalpha=ncols;
     mxArray const * const ptralphas=prhs[2];
@@ -99,10 +99,10 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     float *  img = (float*)malloc(size_proj[0] *size_proj[1] *size_proj2* sizeof(float));
     
     const int size0 = size_proj[0];
-	const int size1 = size_proj[1];
-	const int size2 = size_proj2;
+    const int size1 = size_proj[1];
+    const int size2 = size_proj2;
     // Permute(imgaux,[2 1 3]);
-
+    
     for (int j = 0; j < size2; j++)
     {
         int jOffset = j*size0*size1;
@@ -120,10 +120,10 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     /**
      * Second input: Geometry structure
      */
-    
+    mxArray * geometryMex=(mxArray*)prhs[1];
     
     // IMPORTANT-> Make sure Matlab creates the struct in this order.
-    const char *fieldnames[12];
+    const char *fieldnames[13];
     fieldnames[0] = "nVoxel";
     fieldnames[1] = "sVoxel";
     fieldnames[2] = "dVoxel";
@@ -136,26 +136,37 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     fieldnames[9] = "offDetector";
     fieldnames[10]= "accuracy";
     fieldnames[11]= "mode";
-
+    fieldnames[12]= "COR";
     
     // Make sure input is structure
-    if(!mxIsStruct(prhs[1]))
+    if(!mxIsStruct(geometryMex))
         mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
                 "Second input must be a structure.");
     // Check number of fields
-    int nfields = mxGetNumberOfFields(prhs[1]);
-    if (nfields < 10 || nfields >12 )
+    int nfields = mxGetNumberOfFields(geometryMex);
+    if (nfields < 10 || nfields >13 )
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput","There are missing or extra fields in the geometry");
     
     mxArray    *tmp;
     bool offsetAllOrig=false;
     bool offsetAllDetec=false;
     for(int ifield=0; ifield<nfields; ifield++) {
-        tmp=mxGetField(prhs[1],0,fieldnames[ifield]);
+        tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
         if(tmp==NULL){
-            mexPrintf("%s number: %d %s \n", "FIELD",ifield+1, fieldnames[ifield]);
-            mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
-                    "Above field is missing. Check spelling. ");
+            // Special cases first:
+            if (ifield==11){
+                mxAddField(geometryMex,fieldnames[ifield]);
+                mxSetField(geometryMex,ifield,fieldnames[ifield],mxCreateString("cone"));
+            }else
+            if(ifield==12){
+                mxAddField(geometryMex,fieldnames[ifield]);
+                mxSetField(geometryMex,ifield,fieldnames[ifield],mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL ));
+            }else{
+                
+                mexPrintf("%s number: %d %s \n", "FIELD",ifield+1, fieldnames[ifield]);
+                mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
+                        "Above field is missing. Check spelling. ");
+            }
         }
         switch(ifield){
             
@@ -180,7 +191,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 }
                 break;
                 // this ones should be 1x1
-            case 6:case 7:case 10:
+            case 6:case 7:case 10: case 12:
                 mrows = mxGetM(tmp);
                 ncols = mxGetN(tmp);
                 if (mrows!=1 || ncols!=1){
@@ -218,12 +229,13 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                     offsetAllDetec=true;
                 
                 break;
-             case 11:
+            case 11:
                 if (!mxIsChar(tmp)){
                     mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
                     mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
                             "Above field is not string!");
                 }
+                
                 break;
             default:
                 mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
@@ -236,14 +248,14 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     double * nVoxel, *nDetec; //we need to cast these to int
     double * sVoxel, *dVoxel,*sDetec,*dDetec, *DSO, *DSD,*offOrig,*offDetec;
-    double *acc;
+    double *acc, *COR;
     const char* mode;
     bool coneBeam=true;
     Geometry geo;
     int c;
     geo.unitX=1;geo.unitY=1;geo.unitZ=1;
     for(int ifield=0; ifield<nfields; ifield++) {
-        tmp=mxGetField(prhs[1],0,fieldnames[ifield]);
+        tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
         switch(ifield){
             case 0:
                 nVoxel=(double *)mxGetData(tmp);
@@ -322,14 +334,18 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 acc=(double*)mxGetData(tmp);
                 geo.accuracy=(float)acc[0];
                 break;
-                        case 11:
+            case 11:
                 mode="";
                 mode=mxArrayToString(tmp);
                 if (!strcmp(mode,"parallel"))
                     coneBeam=false;
                 else if (strcmp(mode,"cone"))
                     mexErrMsgIdAndTxt( "CBCT:MEX:Atb:Mode","Unkown mode. Should be parallel or cone");
-                break;  
+                break;
+            case 12:
+                COR=(double*)mxGetData(tmp);
+                geo.COR=(float)COR[0];
+                break;
             default:
                 mexErrMsgIdAndTxt( "CBCT:MEX:Atb:unknown","This shoudl not happen. Weird");
                 break;
@@ -360,7 +376,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     }else{
         voxel_backprojection_parallel(img,geo,result,alphas,nalpha);
     }
-
+    
     /*
      * Prepare the outputs
      */
