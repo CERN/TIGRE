@@ -44,7 +44,7 @@ function [ fres ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 % recompute the weigths every ASD-POCS iteration, thus effectively doubling
 % the computational time
 % Projection weigth, W
-W=Ax(ones(geo.nVoxel'),geo,angles); %To get the length of the x-ray inside the object domain
+W=Ax(ones(geo.nVoxel','single'),geo,angles); %To get the length of the x-ray inside the object domain
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
@@ -56,7 +56,7 @@ clear A x y dx dz;
 
 
 % initialize image.
-f=zeros(geo.nVoxel');
+f=zeros(geo.nVoxel','single');
 
 
 stop_criteria=0;

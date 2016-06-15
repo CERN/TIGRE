@@ -52,7 +52,7 @@ errorL2=[];
 
 % Projection weigth, W
 
-W=Ax(ones(geo.nVoxel'),geo,alpha);  % %To get the length of the x-ray inside the object domain
+W=Ax(ones(geo.nVoxel','single'),geo,alpha);  % %To get the length of the x-ray inside the object domain
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
@@ -142,7 +142,7 @@ if any(finalsize<geo.nVoxel)
     return;
 end
 niter=100;
-initres=zeros(geo.nVoxel');
+initres=zeros(geo.nVoxel','single');
 while ~isequal(geo.nVoxel,finalsize)
     
     
@@ -224,7 +224,7 @@ for ii=1:length(opts)
         case 'Init'
             res=[];
             if default || strcmp(val,'none')
-                res=zeros(geo.nVoxel');
+                res=zeros(geo.nVoxel','single');
                 continue;
             end
             if strcmp(val,'multigrid')
@@ -245,7 +245,7 @@ for ii=1:length(opts)
             end
             if exist('initwithimage','var');
                 if isequal(size(val),geo.nVoxel');
-                    res=val;
+                    res=single(val);
                 else
                     error('CBCT:SART:InvalidInput','Invalid image for initialization');
                 end

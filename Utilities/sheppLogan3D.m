@@ -22,6 +22,6 @@ end
     
 [p,ellipse]=phantom3dAniso(size,type);
 
-
+p=single(p);
 end
 

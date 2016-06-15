@@ -179,7 +179,7 @@ imgBASDPOCSbeta=B_ASD_POCS_beta(noise_projections,geo,angles,50,...
 %                  default is 15. Lower means more TV denoising.
 % 
                   
-imgSARTTV2=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',8);           
+imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',50);           
 
  %% Lets visualize the results
 % Notice the smoother images due to TV regularization.

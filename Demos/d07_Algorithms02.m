@@ -35,7 +35,6 @@ angles=linspace(0,2*pi,100);
 thorax=thoraxPhantom(geo.nVoxel);
 projections=Ax(thorax,geo,angles,'interpolated');
 noise_projections=addCTnoise(projections);
-
 %% SART family of algorithms
 %
 % There are 3 algorithms in this damily included in TIGRE: SART,SIRT and

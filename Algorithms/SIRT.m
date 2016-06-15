@@ -1,4 +1,4 @@
-function [res,errorL2,qualMeasOut]=SIRT(proj,geo,alpha,niter,varargin)
+function [res,errorL2,qualMeasOut]=SIRT(proj,geo,angles,niter,varargin)
 % SIRT_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -24,7 +24,7 @@ function [res,errorL2,qualMeasOut]=SIRT(proj,geo,alpha,niter,varargin)
 %                  'image'    : Initialization using a user specified
 %                               image. Not recomended unless you really
 %                               know what you are doing.
-%   'InitImg'      an image for the 'image' initialization. Aviod.
+%   'InitImg'      an image for the 'image' initialization. Avoid.
 %
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
@@ -34,7 +34,7 @@ function [res,errorL2,qualMeasOut]=SIRT(proj,geo,alpha,niter,varargin)
 %                  These will be computed in each iteration. 
 %% Deal with input parameters
 
-[lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,varargin);
+[lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 
 errorL2=[];
@@ -46,15 +46,19 @@ errorL2=[];
 % Projection weigth, W
 % Projection weigth, W
 
-W=Ax(ones(geo.nVoxel'),geo,alpha,'ray-voxel');  %
-W(W<min(geo.dVoxel))=Inf;
+W=Ax(ones(geo.nVoxel','single'),geo,angles);  %
+W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
-[x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
-    -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-A = permute(alpha+pi/2, [1 3 2]);
-V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
-V=sum(V,3);
+if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
+    [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
+        -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
+    A = permute(angles+pi/2, [1 3 2]);
+    V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
+    V=single(sum(V,3));
+else
+    V=ones([geo.nVoxel(1:2).'],'single')*length(angles);
+end
 clear A x y dx dz;
 
 %% Iterate
@@ -70,9 +74,9 @@ for ii=1:niter
         res_prev=res;
     end
        
-    proj_err=proj-Ax(res,geo,alpha,'ray-voxel');                  %                                 (b-Ax)
+    proj_err=proj-Ax(res,geo,angles);                  %                                 (b-Ax)
     weighted_err=W.*proj_err;                         %                          W^-1 * (b-Ax)
-    backprj=Atb(weighted_err,geo,alpha);              %                     At * W^-1 * (b-Ax)
+    backprj=Atb(weighted_err,geo,angles);              %                     At * W^-1 * (b-Ax)
     weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
     res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)
     res(res<0)=0;
@@ -205,7 +209,7 @@ for ii=1:length(opts)
         case 'Init'
             res=[];
             if default || strcmp(val,'none')
-                res=zeros(geo.nVoxel');
+                res=zeros(geo.nVoxel','single');
                 continue;
             end
             if strcmp(val,'FDK')
@@ -230,7 +234,7 @@ for ii=1:length(opts)
             end
             if exist('initwithimage','var');
                 if isequal(size(val),geo.nVoxel');
-                    res=val;
+                    res=single(val);
                 else
                     error('CBCT:SIRT:InvalidInput','Invalid image for initialization');
                 end

@@ -58,7 +58,7 @@ function [ fres ] = OSC_TV(proj,geo,angles,maxiter,varargin)
 
 
 % Projection weigth, W
-W=Ax(ones(geo.nVoxel'),geo,cell2mat(alphablocks));  %
+W=Ax(ones(geo.nVoxel','single'),geo,cell2mat(alphablocks));  %
 W(W<min(geo.dVoxel))=Inf;
 W=1./W;
 % Back-Projection weigth, V
@@ -71,7 +71,7 @@ clear A x y dx dz;
 
 
 % initialize image.
-f=zeros(geo.nVoxel');
+f=zeros(geo.nVoxel','single');
 
 
 stop_criteria=0;

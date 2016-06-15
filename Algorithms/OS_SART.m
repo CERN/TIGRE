@@ -67,14 +67,19 @@ end
 
 
 % Projection weigth, W
-W=Ax(ones(geo.nVoxel'),geo,cell2mat(alphablocks));  %
-W(W<min(geo.dVoxel))=Inf;
+W=Ax(ones(geo.nVoxel','single'),geo,cell2mat(alphablocks));  % %To get the length of the x-ray inside the object domain
+W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
-[x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
-    -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-A = permute(cell2mat(alphablocks)+pi/2, [1 3 2]);
-V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
+if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
+    [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
+        -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
+    A = permute(cell2mat(alphablocks)+pi/2, [1 3 2]);
+    V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
+    V=single(V);
+else
+    V=ones([geo.nVoxel(1:2).',length(angles)],'single');
+end
 
 clear A x y dx dz;
 
@@ -271,7 +276,7 @@ for ii=1:length(opts)
         case 'Init'
             res=[];
             if default || strcmp(val,'none')
-                res=zeros(geo.nVoxel');
+                res=zeros(geo.nVoxel','single');
                 continue;
             end
             if strcmp(val,'FDK')
@@ -296,7 +301,7 @@ for ii=1:length(opts)
             end
             if exist('initwithimage','var');
                 if isequal(size(val),geo.nVoxel');
-                    res=val;
+                    res=single(val);
                 else
                     error('CBCT:OS_SART_CBCT:InvalidInput','Invalid image for initialization');
                 end

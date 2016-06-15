@@ -27,7 +27,7 @@ if nargin==1
 end
 % load data
 data=load('img128.mat');
-img=double(data.img);
+img=data.img;
 
 % interpolate data to get desired size
 [y, x, z]=...

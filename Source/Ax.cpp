@@ -64,6 +64,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     float  *  alphas= (float*)malloc(nalpha*sizeof(float));
     for (int i=0;i<nalpha;i++)
         alphas[i]=(float)alphasM[i];
+    
+    
     ////////////////////////// First input.
     // First input should be x from (Ax=b), or the image.
     mxArray const * const image = prhs[0];
@@ -73,8 +75,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     if (numDims!=3){
         mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput", "Invalid dimension size of image (x) to MEX file.");
     }
+     if( !mxIsSingle(prhs[0])) {
+       mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput",
+                "Input image must be a single noncomplex array.");
+     }
     // Now that input is ok, parse it to C data types.
-    double const * const imgaux = static_cast<double const *>(mxGetData(image));
+    float const * const imgaux = static_cast<float const *>(mxGetData(image));
     // We need a float image, and, unfortunatedly, the only way of casting it is by value
     const mwSize *size_img= mxGetDimensions(image); //get size of image
     
@@ -84,6 +90,9 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     ///////////////////// Second input argument,
     // Geometry structure that has all the needed geometric data.
     
+    
+    mxArray * geometryMex=(mxArray*)prhs[1];
+
     // IMPORTANT-> Make sure Matlab creates the struct in this order.
     const char *fieldnames[12];
     fieldnames[0] = "nVoxel";
@@ -98,23 +107,39 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     fieldnames[9] = "offDetector";
     fieldnames[10]= "accuracy";
     fieldnames[11]= "mode";
+    fieldnames[12]= "COR";
+
     
-    
-    if(!mxIsStruct(prhs[1]))
+    if(!mxIsStruct(geometryMex))
         mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput",
                 "Second input must be a structure.");
-    int nfields = mxGetNumberOfFields(prhs[1]);
-    if (nfields < 12 || nfields >12 )
+    int nfields = mxGetNumberOfFields(geometryMex);
+    if (nfields < 10 || nfields >13 ){
+         
         mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput","there are missing or extra fields in the geometry");
-    
+    }
     // Check that all names are good
     mxArray    *tmp;
     size_t ncols;
     bool offsetAllOrig=false;
     bool offsetAllDetec=false;
     for(int ifield=0; ifield<nfields; ifield++) {
-        tmp=mxGetField(prhs[1],0,fieldnames[ifield]);
+        tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
         if(tmp==NULL){
+            // Special cases first:
+            if (ifield==11){
+                mxAddField(geometryMex,fieldnames[ifield]);
+                mxSetField(geometryMex,ifield,fieldnames[ifield],mxCreateString("cone"));
+            }else
+            if(ifield==12){
+                mxAddField(geometryMex,fieldnames[ifield]);
+                mxSetField(geometryMex,ifield,fieldnames[ifield],mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL ));
+            }else{
+                
+                mexPrintf("%s number: %d %s \n", "FIELD",ifield+1, fieldnames[ifield]);
+                mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput",
+                        "Above field is missing. Check spelling. ");
+            }        
             mexPrintf("%s number: %d %s \n", "FIELD",ifield+1, fieldnames[ifield]);
             mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputname",
                     "Above field is missing. Check spelling. ");
@@ -212,7 +237,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     bool coneBeam=true;
 //     mexPrintf("%d \n",nfields);
     for(int ifield=0; ifield<nfields; ifield++) {
-        tmp=mxGetField(prhs[1],0,fieldnames[ifield]);
+        tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
         switch(ifield){
             case 0:
                 nVoxel=(double *)mxGetData(tmp);
@@ -333,7 +358,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
             interpolation_projection(img,geo,result,alphas,nalpha);
     }else{
         if (interpolated){
-             mexErrMsgIdAndTxt( "CBCT:MEX:Ax:debug",
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:debug",
                             "ray-voxel intersection is still unavailable for parallel beam, as there are some bugs on it.");
             siddon_ray_projection_parallel(img,geo,result,alphas,nalpha);
         }else{
@@ -347,11 +372,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     outsize[1]=geo.nDetecU;
     outsize[2]= nalpha;
     
-    plhs[0] = mxCreateNumericArray(3,outsize,mxDOUBLE_CLASS,mxREAL);
-    double *outProjections = (double*)mxGetPr(plhs[0]);
+    plhs[0] = mxCreateNumericArray(3,outsize,mxSINGLE_CLASS,mxREAL);
+    float *outProjections = (float*)mxGetPr(plhs[0]);
     for (int i=0; i<nalpha ;i++)
         for (int j=0; j<geo.nDetecU*geo.nDetecV;j++)
-            outProjections[geo.nDetecU*geo.nDetecV*i+j]=(double)result[i][j];
+            outProjections[geo.nDetecU*geo.nDetecV*i+j]=(float)result[i][j];
             
     
     for (int i=0; i<nalpha ;i++)

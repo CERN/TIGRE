@@ -71,7 +71,11 @@ geo.accuracy=0.5;                           % Variable to define accuracy of
                                             % It defines the amoutn of
                                             % samples per voxel.
                                             % Recommended <=0.5             (vx/sample)
-                                        
+
+geo.COR=0;                                  % y direction displacement for 
+                                            % centre of rotation
+                                            % correction                   (mm)
+                                            % 
 %% Plot the geometry
                                             
 plotgeometry(geo,-pi/6);                   

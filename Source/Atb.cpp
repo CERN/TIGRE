@@ -58,6 +58,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         mexErrMsgIdAndTxt( "CBCT:MEX:Atb:input",
                 "Input alpha must be a double, noncomplex array.");
     }
+    
     size_t nalpha=ncols;
     mxArray const * const ptralphas=prhs[2];
     
@@ -78,6 +79,10 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     if (!(numDims==3 && nalpha>1) && !(numDims==2 && nalpha==1) ){
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",  "Projection data is not the rigth size");
     }
+     if( !mxIsSingle(prhs[0])) {
+       mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput",
+                "Input image must be a single noncomplex array.");
+     }
     // Now that input is ok, parse it to C data types.
     // NOTE: while Number of dimensions is the size of the matrix in Matlab, the data is 1D row-wise mayor.
     
@@ -92,7 +97,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         size_proj2=size_proj[2];
     
     
-    double const * const imgaux = static_cast<double const *>(mxGetData(image));
+    float const * const imgaux = static_cast<float const *>(mxGetData(image));
     
     
     
@@ -112,7 +117,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
             for (int i = 0; i < size1; i++)
             {
                 int iOffset2 = i*size0;
-                img[i + jOffset + kOffset1] = (float)imgaux[iOffset2 + jOffset + k];
+                img[i + jOffset + kOffset1] = imgaux[iOffset2 + jOffset + k];
             }
         }
     }
@@ -385,12 +390,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     imgsize[1]=geo.nVoxelY;
     imgsize[2]=geo.nVoxelZ;
     
-    plhs[0] = mxCreateNumericArray(3,imgsize, mxDOUBLE_CLASS, mxREAL);
-    double *outImage = mxGetPr(plhs[0]);
+    plhs[0] = mxCreateNumericArray(3,imgsize, mxSINGLE_CLASS, mxREAL);
+    float *outImage = (float *)mxGetPr(plhs[0]);
     
     
     for (int i=0; i<geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ ;i++)
-        outImage[i]= (double)result[i];
+        outImage[i]= (float)result[i];
     
     /*
      * Free memory and out

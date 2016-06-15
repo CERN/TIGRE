@@ -18,7 +18,7 @@ if strcmp(type,'TV');
     immax=prctile(img(:),99);
     img=img./immax;
 
-    imgO=double(permute(tvDenoise(permute(img,[3 2 1]),hyper,iter),[1 2 3]));
+    imgO=(permute(tvDenoise(permute(img,[3 2 1]),hyper,iter),[1 2 3]));
     clear img;
     
     imgO=imgO*immax;

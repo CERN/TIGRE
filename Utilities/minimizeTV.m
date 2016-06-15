@@ -15,5 +15,5 @@ else
     end
 end
 img=minTV(img,dtvg,ng);
-    img=double(permute(img,[3 2 1]));
+    img=(permute(img,[3 2 1]));
 end

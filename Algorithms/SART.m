@@ -46,17 +46,18 @@ errorL2=[];
 
 % Projection weigth, W
 
-W=Ax(ones(geo.nVoxel'),geo,angles);  % %To get the length of the x-ray inside the object domain
+W=Ax(ones(geo.nVoxel','single'),geo,angles);  % %To get the length of the x-ray inside the object domain
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
-if ~strcmp(geo.mode,'parallel')
+if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
     [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
         -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
     A = permute(angles+pi/2, [1 3 2]);
     V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
+    V=single(V);
 else
-    V=ones([geo.nVoxel(1:2).',length(angles)]);
+    V=ones([geo.nVoxel(1:2).',length(angles)],'single');
 end
 clear A x y dx dz;
 
@@ -85,7 +86,7 @@ for ii=1:niter
         backprj=Atb(weighted_err,geo,angles(jj));           %                     At * W^-1 * (b-Ax)
         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
         res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
-%           res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(jj))),geo,angles(jj)));
+%       one liner    res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(jj))),geo,angles(jj)));
         res(res<0)=0;
     end
     
@@ -219,7 +220,7 @@ for ii=1:length(opts)
         case 'Init'
             res=[];
             if default || strcmp(val,'none')
-                res=zeros(geo.nVoxel');
+                res=zeros(geo.nVoxel','single');
                 continue;
             end
             if strcmp(val,'FDK')
@@ -244,7 +245,7 @@ for ii=1:length(opts)
             end
             if exist('initwithimage','var');
                 if isequal(size(val),geo.nVoxel');
-                    res=val;
+                    res=single(val);
                 else
                     error('CBCT:SART:InvalidInput','Invalid image for initialization');
                 end

@@ -56,7 +56,7 @@ for ii=1:length(opts)
         case 'Init'
             x=[];
             if default || strcmp(val,'none')
-                x=zeros(geo.nVoxel');
+                x=zeros(geo.nVoxel','single');
                 continue;
             end
             if strcmp(val,'FDK')
@@ -81,7 +81,7 @@ for ii=1:length(opts)
             end
             if exist('initwithimage','var');
                 if isequal(size(val),geo.nVoxel');
-                    x=val;
+                    x=single(val);
                 else
                     error('CBCT:CGLS_CBCT:InvalidInput','Invalid image for initialization');
                 end
