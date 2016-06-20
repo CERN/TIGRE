@@ -81,12 +81,17 @@ for ii=1:niter
         if size(offDetector,2)==length(angles)
             geo.offDetector=offDetector(:,jj);
         end
-        proj_err=proj(:,:,jj)-Ax(res,geo,angles(jj));       %                                 (b-Ax)
-        weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
-        backprj=Atb(weighted_err,geo,angles(jj));           %                     At * W^-1 * (b-Ax)
-        weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
-        res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
-%       one liner    res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(jj))),geo,angles(jj)));
+        % --------- Memory expensive-----------
+        
+        %         proj_err=proj(:,:,jj)-Ax(res,geo,angles(jj));       %                                 (b-Ax)
+        %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
+        %         backprj=Atb(weighted_err,geo,angles(jj));           %                     At * W^-1 * (b-Ax)
+        %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
+        %         res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
+        %------------------------------------
+        %--------- Memory cheap(er)-----------
+        
+        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(jj))),geo,angles(jj)));
         res(res<0)=0;
     end
     

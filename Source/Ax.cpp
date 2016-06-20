@@ -94,7 +94,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     mxArray * geometryMex=(mxArray*)prhs[1];
 
     // IMPORTANT-> Make sure Matlab creates the struct in this order.
-    const char *fieldnames[12];
+    const char *fieldnames[13];
     fieldnames[0] = "nVoxel";
     fieldnames[1] = "sVoxel";
     fieldnames[2] = "dVoxel";
@@ -127,7 +127,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
         if(tmp==NULL){
             // Special cases first:
-            if (ifield==11){
+            if(ifield==11){
                 mxAddField(geometryMex,fieldnames[ifield]);
                 mxSetField(geometryMex,ifield,fieldnames[ifield],mxCreateString("cone"));
             }else
@@ -140,9 +140,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput",
                         "Above field is missing. Check spelling. ");
             }        
-            mexPrintf("%s number: %d %s \n", "FIELD",ifield+1, fieldnames[ifield]);
-            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputname",
-                    "Above field is missing. Check spelling. ");
+           
         }
         switch(ifield){
             
@@ -201,7 +199,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 }
                 break;
                 // this ones should be 1x1
-            case 6:case 7:case 10:
+            case 6:case 7:case 10:case 12:
                 mrows = mxGetM(tmp);
                 ncols = mxGetN(tmp);
                 if (mrows!=1 || ncols!=1){
@@ -229,7 +227,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     double * nVoxel, *nDetec; //we need to cast these to int
     double * sVoxel, *dVoxel,*sDetec,*dDetec, *DSO, *DSD;
     double *offOrig,*offDetec;
-    double *  acc;
+    double *  acc, *COR;
     const char* mode;
     int c;
     Geometry geo;
@@ -328,7 +326,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                     coneBeam=false;
                 else if (strcmp(mode,"cone"))
                     mexErrMsgIdAndTxt( "CBCT:MEX:Ax:Mode","Unkown mode. Should be parallel or cone");
-                break;  
+                break; 
+             case 12:
+                COR=(double*)mxGetData(tmp);
+                geo.COR=(float)COR[0];
+                break;
             default:
                 mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","This shoudl not happen. Weird");
                 break;
@@ -350,7 +352,6 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         result[i]=(float*)malloc(geo.nDetecU*geo.nDetecV *sizeof(float));
     
     // call the real function
-    
     if (coneBeam){
         if (interpolated)
             siddon_ray_projection(img,geo,result,alphas,nalpha);

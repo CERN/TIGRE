@@ -94,7 +94,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
     // "XYZ" in the scaled coordinate system of the current point. The iamge is rotated with the projection angles.
     Point3D P;
     P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-    P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y);
+    P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-geo.COR/geo.dDetecU;
     P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
         
     // This is the vector defining the line from the source to the Voxel

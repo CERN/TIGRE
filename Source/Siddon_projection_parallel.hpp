@@ -27,6 +27,10 @@ struct  Geometry {
     float unitY;
     float unitZ;
     
+    
+    // Centre of Rotation correction.
+    float COR;
+    
     //projection angle
     float alpha;
     
