@@ -172,11 +172,15 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         cudaEventCreate(&start);
         cudaEventRecord(start,0);
     } 
+   
     
-    // 16x16 gave the best performance empirically
-    // Funnily that makes it compatible with most GPUs.....
-    dim3 grid(ceil(geo.nDetecU/32),ceil(geo.nDetecV/32),1);
-    dim3 block(32,32,1); 
+    int divU,divV;
+    divU=32;
+    divV=32;
+    dim3 grid((geo.nDetecU+divU-1)/divU,(geo.nDetecV+divV-1)/divV,1);
+    dim3 block(divU,divV,1); 
+    
+    
     Point3D source, deltaU, deltaV, uvOrigin;
     float maxdist;
     for (int i=0;i<nalpha;i++){
@@ -291,7 +295,7 @@ void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* 
     Pfinalv0.x+=CORx;   Pfinalv0.y+=CORy;
     S2.x+=CORx; S2.y+=CORy;
     
-    
+    mexPrintf("%f/n",geo.COR);
     // return
     
     *uvorigin=Pfinal;
