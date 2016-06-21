@@ -86,6 +86,7 @@ __global__ void kernelPixelDetector( Geometry geo,
     ///////
     // Siddon's ray-voxel intersection, optimized as in doi=10.1.1.55.7516
     //////
+    // Also called Jacobs algorithms
     Point3D ray;
     // vector of Xray
     ray.x=pixel1D.x-source.x;
@@ -339,13 +340,13 @@ void computeDeltas_Siddon(Geometry geo, float alpha,int i, Point3D* uvorigin, Po
     Pfinal.x  =Pfinal.x-geo.offOrigX[i];     Pfinal.y  =Pfinal.y-geo.offOrigY[i];     Pfinal.z  =Pfinal.z-geo.offOrigZ[i];
     Pfinalu0.x=Pfinalu0.x-geo.offOrigX[i];   Pfinalu0.y=Pfinalu0.y-geo.offOrigY[i];   Pfinalu0.z=Pfinalu0.z-geo.offOrigZ[i];
     Pfinalv0.x=Pfinalv0.x-geo.offOrigX[i];   Pfinalv0.y=Pfinalv0.y-geo.offOrigY[i];   Pfinalv0.z=Pfinalv0.z-geo.offOrigZ[i];
-    S2.x=S2.x-geo.offOrigX[i];       S2.y=S2.y-geo.offOrigY[i];       S2.z=S2.z-geo.offOrigZ[i];
+    S2.x=S2.x-geo.offOrigX[i];               S2.y=S2.y-geo.offOrigY[i];               S2.z=S2.z-geo.offOrigZ[i];
     
     // As we want the (0,0,0) to be in a corner of the image, we need to translate everything (after rotation);
-    Pfinal.x  =Pfinal.x+geo.sVoxelX/2-geo.dVoxelX/2;      Pfinal.y  =Pfinal.y+geo.sVoxelY/2-geo.dVoxelY/2;          Pfinal.z  =Pfinal.z  +geo.sVoxelZ/2-geo.dVoxelZ/2;
-    Pfinalu0.x=Pfinalu0.x+geo.sVoxelX/2-geo.dVoxelX/2;    Pfinalu0.y=Pfinalu0.y+geo.sVoxelY/2-geo.dVoxelY/2;        Pfinalu0.z=Pfinalu0.z+geo.sVoxelZ/2-geo.dVoxelZ/2;
-    Pfinalv0.x=Pfinalv0.x+geo.sVoxelX/2-geo.dVoxelX/2;    Pfinalv0.y=Pfinalv0.y+geo.sVoxelY/2-geo.dVoxelY/2;        Pfinalv0.z=Pfinalv0.z+geo.sVoxelZ/2-geo.dVoxelZ/2;
-    S2.x      =S2.x+geo.sVoxelX/2-geo.dVoxelX/2;          S2.y      =S2.y+geo.sVoxelY/2-geo.dVoxelY/2;              S2.z      =S2.z      +geo.sVoxelZ/2-geo.dVoxelZ/2;
+    Pfinal.x  =Pfinal.x+geo.sVoxelX/2;      Pfinal.y  =Pfinal.y+geo.sVoxelY/2;          Pfinal.z  =Pfinal.z  +geo.sVoxelZ/2;
+    Pfinalu0.x=Pfinalu0.x+geo.sVoxelX/2;    Pfinalu0.y=Pfinalu0.y+geo.sVoxelY/2;        Pfinalu0.z=Pfinalu0.z+geo.sVoxelZ/2;
+    Pfinalv0.x=Pfinalv0.x+geo.sVoxelX/2;    Pfinalv0.y=Pfinalv0.y+geo.sVoxelY/2;        Pfinalv0.z=Pfinalv0.z+geo.sVoxelZ/2;
+    S2.x      =S2.x+geo.sVoxelX/2;          S2.y      =S2.y+geo.sVoxelY/2;              S2.z      =S2.z      +geo.sVoxelZ/2;
     
     //4. Scale everything so dVoxel==1
     Pfinal.x  =Pfinal.x/geo.dVoxelX;      Pfinal.y  =Pfinal.y/geo.dVoxelY;        Pfinal.z  =Pfinal.z/geo.dVoxelZ;
@@ -354,7 +355,8 @@ void computeDeltas_Siddon(Geometry geo, float alpha,int i, Point3D* uvorigin, Po
     S2.x      =S2.x/geo.dVoxelX;          S2.y      =S2.y/geo.dVoxelY;            S2.z      =S2.z/geo.dVoxelZ;
     
     
-      //5. apply COR. Wherever everything was, now its offesetd by a bit
+      
+    //5. apply COR. Wherever everything was, now its offesetd by a bit
     float CORx, CORy;
     CORx=-geo.COR*sin(geo.alpha)/geo.dVoxelX;
     CORy= geo.COR*cos(geo.alpha)/geo.dVoxelY;
@@ -362,8 +364,6 @@ void computeDeltas_Siddon(Geometry geo, float alpha,int i, Point3D* uvorigin, Po
     Pfinalu0.x+=CORx;   Pfinalu0.y+=CORy;
     Pfinalv0.x+=CORx;   Pfinalv0.y+=CORy;
     S2.x+=CORx; S2.y+=CORy;
-    
-    
     
     // return
     

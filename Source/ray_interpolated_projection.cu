@@ -295,7 +295,6 @@ void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* 
     Pfinalv0.x+=CORx;   Pfinalv0.y+=CORy;
     S2.x+=CORx; S2.y+=CORy;
     
-    mexPrintf("%f/n",geo.COR);
     // return
     
     *uvorigin=Pfinal;
