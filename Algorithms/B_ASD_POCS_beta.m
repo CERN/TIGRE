@@ -59,9 +59,15 @@ function [ fres ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargin)
 % recompute the weigths every ASD-POCS iteration, thus effectively doubling
 % the computational time
 % Projection weigth, W
-W=Ax(ones(geo.nVoxel','single'),geo,angles); %To get the length of the x-ray inside the object domain
+
+geoaux=geo;
+geoaux.sVoxel(3)=geo.sDetector(2);
+geoaux.nVoxel=[2,2,2]'; % accurate enough?
+geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
+
 % Back-Projection weigth, V
 [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
     -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));

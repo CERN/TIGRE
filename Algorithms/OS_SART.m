@@ -67,7 +67,11 @@ end
 
 
 % Projection weigth, W
-W=Ax(ones(geo.nVoxel','single'),geo,cell2mat(alphablocks));  % %To get the length of the x-ray inside the object domain
+geoaux=geo;
+geoaux.sVoxel(3)=geo.sDetector(2);
+geoaux.nVoxel=[2,2,2]'; % accurate enough?
+geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,cell2mat(alphablocks),'ray-voxel');  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
