@@ -124,33 +124,6 @@ __global__ void kernelPixelDetector( Geometry geo,
 int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha){
     
     
-    // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
-    
-    // If you have another GPU and want to use this code, please change it, but make sure you know that is compatible.
-    // also change MAXTREADS
-    
-//     int deviceCount = 0;
-//     cudaGetDeviceCount(&deviceCount);
-//     if (deviceCount == 0)
-//     {
-//         mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaGetDeviceCount","No CUDA enabled NVIDIA GPUs found");
-//     }
-//     bool found=false;
-//     for (int dev = 0; dev < deviceCount; ++dev)
-//     {
-//         cudaDeviceProp deviceProp;
-//         cudaGetDeviceProperties(&deviceProp, dev);
-//         
-//         if (strcmp(deviceProp.name, "Tesla K40c") == 0|| strcmp(deviceProp.name, "GeForce GT 740M") == 0){
-//             cudaSetDevice(dev);
-//             found=true;
-//             break;
-//         }
-//     }
-//     if (!found)
-//         mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Supported GPU found");
-//     // DONE,  found
-    
     // copy data to CUDA memory
 
     cudaArray *d_imagedata = 0;
@@ -187,6 +160,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(float);
     float* dProjection;
     cudaMalloc((void**)&dProjection, num_bytes);
+    cudaMemset(dProjection,0,num_bytes);
     cudaCheckErrors("cudaMalloc fail");
 
     
@@ -305,6 +279,18 @@ void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* 
     Pfinalu0.x=Pfinalu0.x/geo.dVoxelX;    Pfinalu0.y=Pfinalu0.y/geo.dVoxelY;      Pfinalu0.z=Pfinalu0.z/geo.dVoxelZ;
     Pfinalv0.x=Pfinalv0.x/geo.dVoxelX;    Pfinalv0.y=Pfinalv0.y/geo.dVoxelY;      Pfinalv0.z=Pfinalv0.z/geo.dVoxelZ;
     S2.x      =S2.x/geo.dVoxelX;          S2.y      =S2.y/geo.dVoxelY;            S2.z      =S2.z/geo.dVoxelZ;
+    
+    
+      
+    //5. apply COR. Wherever everything was, now its offesetd by a bit
+    float CORx, CORy;
+    CORx=-geo.COR*sin(geo.alpha)/geo.dVoxelX;
+    CORy= geo.COR*cos(geo.alpha)/geo.dVoxelY;
+    Pfinal.x+=CORx;   Pfinal.y+=CORy;
+    Pfinalu0.x+=CORx;   Pfinalu0.y+=CORy;
+    Pfinalv0.x+=CORx;   Pfinalv0.y+=CORy;
+    S2.x+=CORx; S2.y+=CORy;
+    
     
     // return
     

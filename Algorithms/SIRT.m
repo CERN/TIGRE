@@ -31,12 +31,16 @@ function [res,errorL2,qualMeasOut]=SIRT(proj,geo,angles,niter,varargin)
 %   'QualMeas'     Asks the algorithm for a set of quality measurement
 %                  parameters. Input should contain a cell array of desired
 %                  quality measurement names. Example: {'CC','RMSE','MSSIM'}
-%                  These will be computed in each iteration. 
+%                  These will be computed in each iteration.
 %% Deal with input parameters
 
 [lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
-
+if nargout>1
+    computeL2=true;
+else
+    computeL2=false;
+end
 errorL2=[];
 
 %% initialize stuff
@@ -44,11 +48,16 @@ errorL2=[];
 %% Create weigthing matrices
 
 % Projection weigth, W
-% Projection weigth, W
 
-W=Ax(ones(geo.nVoxel','single'),geo,angles);  %
+geoaux=geo;
+geoaux.sVoxel(3)=geo.sDetector(2);
+geoaux.nVoxel=[128,128,128]'; % accurate enough?
+geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'interpolated');  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
+clear geoaux;
+
 % Back-Projection weigth, V
 if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
     [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
@@ -73,31 +82,41 @@ for ii=1:niter
     if measurequality
         res_prev=res;
     end
-       
-    proj_err=proj-Ax(res,geo,angles);                  %                                 (b-Ax)
-    weighted_err=W.*proj_err;                         %                          W^-1 * (b-Ax)
-    backprj=Atb(weighted_err,geo,angles);              %                     At * W^-1 * (b-Ax)
-    weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
-    res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)
+    % --------- Memory expensive-----------
+    %     proj_err=proj-Ax(res,geo,angles);                 %                                 (b-Ax)
+    %     weighted_err=W.*proj_err;                         %                          W^-1 * (b-Ax)
+    %     backprj=Atb(weighted_err,geo,angles);             %                     At * W^-1 * (b-Ax)
+    %     weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
+    %     res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)
+    % ------------------------------------
+    % --------- Memory cheap(er)-----------
+    
+    res=res+lambda*bsxfun(@times,1./V,Atb(W.*(proj-Ax(res,geo,angles,'interpolated')),geo,angles)); % x= x + lambda * V * At * W^-1 * (b-Ax)
+    % ------------------------------------
     res(res<0)=0;
     
-   % If quality is being measured
+    % If quality is being measured
     if measurequality
-       % HERE GOES  
-       qualMeasOut(:,ii)=Measure_Quality(res_prev,res,QualMeasOpts);
-    end   
+        % HERE GOES
+        qualMeasOut(:,ii)=Measure_Quality(res_prev,res,QualMeasOpts);
+    end
     
-    errornow=norm(proj_err(:));                       % Compute error norm2 of b-Ax
-    % If the error is not minimized.
-    if ii>1 && errornow>errorL2(end)
+   if computeL2
+        geo.offOrigin=offOrigin;
+        geo.offDetector=offDetector;
+        errornow=im3Dnorm(proj-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
+        % If the error is not minimized.
+        if  ii~=1 && errornow>errorL2(end)
             if verbose
-            disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
+                disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
             end
-        return;
+            return;
+        end
+        errorL2=[errorL2 errornow];
     end
     lambda=lambda*lamdbared;
     
-    errorL2=[errorL2 errornow];
+   
     if (ii==1 && verbose==1);
         expected_time=toc*niter;
         disp('SIRT');
