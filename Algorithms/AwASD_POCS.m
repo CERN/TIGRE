@@ -40,12 +40,19 @@ function [ fres ] = AwASD_POCS(proj,geo,angles,maxiter,varargin)
 
 %% Create weigthing matrices for the SART step
 % the reason we do this, instead of calling the SART fucntion is not to
-% recompute the weigths every ASD-POCS iteration, thus effectively doubling
+% recompute the weigths every AwASD-POCS iteration, thus effectively doubling
 % the computational time
 % Projection weigth, W
-W=Ax(ones(geo.nVoxel','single'),geo,angles); %To get the length of the x-ray inside the object domain
+
+geoaux=geo;
+geoaux.sVoxel(3)=geo.sDetector(2);
+geoaux.nVoxel=[2,2,2]'; % accurate enough?
+geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
+
+
 % Back-Projection weigth, V
 [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
     -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
@@ -204,7 +211,7 @@ while ~stop_criteria %POCS
     end
     if (iter==1 && verbose==1);
         expected_time=toc*maxiter;
-        disp('ADS-POCS');
+        disp('AwADS-POCS');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
@@ -223,7 +230,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('CBCT:ASD_POCS:InvalidInput','Invalid number of inputs')
+    error('CBCT:AwASD_POCS:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -264,7 +271,7 @@ for ii=1:length(opts)
                 beta=1;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:ASD_POCS:InvalidInput','Invalid lambda')
+                    error('CBCT:AwASD_POCS:InvalidInput','Invalid lambda')
                 end
                 beta=val;
             end
@@ -275,7 +282,7 @@ for ii=1:length(opts)
                 beta_red=0.99;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:ASD_POCS:InvalidInput','Invalid lambda')
+                    error('CBCT:AwASD_POCS:InvalidInput','Invalid lambda')
                 end
                 beta_red=val;
             end
@@ -320,7 +327,7 @@ for ii=1:length(opts)
                 epsilon=val;
             end
         otherwise
-            error('CBCT:ASD_POCS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in ASD_POCS()']);
+            error('CBCT:AwASD_POCS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in ASD_POCS()']);
             
     end
 end
