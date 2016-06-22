@@ -58,8 +58,12 @@ function [ fres ] = OSC_TV(proj,geo,angles,maxiter,varargin)
 
 
 % Projection weigth, W
-W=Ax(ones(geo.nVoxel','single'),geo,cell2mat(alphablocks));  %
-W(W<min(geo.dVoxel))=Inf;
+geoaux=geo;
+geoaux.sVoxel(3)=geo.sDetector(2);
+geoaux.nVoxel=[2,2,2]'; % accurate enough?
+geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,cell2mat(alphablocks),'ray-voxel');  %
+W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
 [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...

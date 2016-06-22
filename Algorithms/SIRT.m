@@ -51,9 +51,9 @@ errorL2=[];
 
 geoaux=geo;
 geoaux.sVoxel(3)=geo.sDetector(2);
-geoaux.nVoxel=[128,128,128]'; % accurate enough?
+geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'interpolated');  %
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 clear geoaux;
@@ -91,7 +91,7 @@ for ii=1:niter
     % ------------------------------------
     % --------- Memory cheap(er)-----------
     
-    res=res+lambda*bsxfun(@times,1./V,Atb(W.*(proj-Ax(res,geo,angles,'interpolated')),geo,angles)); % x= x + lambda * V * At * W^-1 * (b-Ax)
+    res=res+lambda*bsxfun(@times,1./V,Atb(W.*(proj-Ax(res,geo,angles)),geo,angles)); % x= x + lambda * V * At * W^-1 * (b-Ax)
     % ------------------------------------
     res(res<0)=0;
     
