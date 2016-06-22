@@ -1,12 +1,53 @@
-/*
- * Code that uses texture memory to compute a 3D projection of CBCT
+/*-------------------------------------------------------------------------
  *
- * IMPORTANT!!! CAUTION!! This code is designed for a Tesla 40k GPU.
- * It is a safe assumption to say that this code wont work in other GPUs as expected
- * or at all. Some of the involved reasons: float/double arithmetic.
+ * CUDA functions for texture-memory interpolation based projection
  *
- * Ander Biguri
+ * This file has the necesary fucntiosn to perform X-ray parallel projection 
+ * operation given a geaometry, angles and image. It uses the 3D texture 
+ * memory linear interpolation to uniformily sample a path to integrate the 
+ * X-rays.
+ *
+ * CODE by       Ander Biguri
+ *
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+Copyright (c) 2015, University of Bath and CERN- European Organization for 
+Nuclear Research
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, 
+this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, 
+this list of conditions and the following disclaimer in the documentation 
+and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors
+may be used to endorse or promote products derived from this software without
+specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+ ---------------------------------------------------------------------------
+
+Contact: tigre.toolbox@gmail.com
+Codes  : https://github.com/CERN/TIGRE
+--------------------------------------------------------------------------- 
  */
+
+
 
 #include <algorithm>
 #include <cuda_runtime_api.h>
@@ -128,34 +169,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
 
 int interpolation_projection_parallel(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha){
     
-    
-    // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c
-    
-    // If you have another GPU and want to use this code, please change it, but make sure you know that is compatible.
-    // also change MAXTREADS
-    
-//     int deviceCount = 0;
-//     cudaGetDeviceCount(&deviceCount);
-//     if (deviceCount == 0)
-//     {
-//         mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaGetDeviceCount","No CUDA enabled NVIDIA GPUs found");
-//     }
-//     bool found=false;
-//     for (int dev = 0; dev < deviceCount; ++dev)
-//     {
-//         cudaDeviceProp deviceProp;
-//         cudaGetDeviceProperties(&deviceProp, dev);
-//         
-//         if (strcmp(deviceProp.name, "Tesla K40c") == 0|| strcmp(deviceProp.name, "GeForce GT 740M") == 0){
-//             cudaSetDevice(dev);
-//             found=true;
-//             break;
-//         }
-//     }
-//     if (!found)
-//         mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Supported GPU found");
-//     // DONE,  found
-    
+ 
     // copy data to CUDA memory
 
     cudaArray *d_imagedata = 0;
@@ -260,29 +274,25 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
 void computeDeltas_parallel(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
     Point3D S;
     S.x=geo.DSO;
-    S.y=geo.dDetecU*(0 - (double)(geo.nDetecU / 2) + 0.5);
-    S.z=geo.dDetecV*((double)(geo.nDetecV / 2) - 0.5 - 0);
-
+    S.y=0;
+    S.z=0;
+    
     //End point
     Point3D P,Pu0,Pv0;
     
     P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
     Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
     Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
-    // Geometric trasnformations:
+    // Geomtric trasnformations:
     
     //1: Offset detector
     
-    // There is no offset in x direction.
+    //P.x
     P.y  =P.y  +geo.offDetecU[i];    P.z  =P.z  +geo.offDetecV[i];
     Pu0.y=Pu0.y+geo.offDetecU[i];    Pu0.z=Pu0.z+geo.offDetecV[i];
     Pv0.y=Pv0.y+geo.offDetecU[i];    Pv0.z=Pv0.z+geo.offDetecV[i];
-    //S does need to change, as its parallel beam, if the detector moves, the source does.
-    // this fact convers the offset of the detector and offset of the image in the same thing, so
-    // parallel beam shoudl not have both options. However, we will keep them for the shake of
-    // consistency between the two codes.
-    S.y  =S.y  +geo.offDetecU[i];    S.z  =S.z  +geo.offDetecV[i];
-
+    //S doesnt need to chagne
+    
     
     //3: Rotate (around z)!
     Point3D Pfinal, Pfinalu0, Pfinalv0;
@@ -314,6 +324,17 @@ void computeDeltas_parallel(Geometry geo, float alpha,int i, Point3D* uvorigin, 
     Pfinalu0.x=Pfinalu0.x/geo.dVoxelX;    Pfinalu0.y=Pfinalu0.y/geo.dVoxelY;      Pfinalu0.z=Pfinalu0.z/geo.dVoxelZ;
     Pfinalv0.x=Pfinalv0.x/geo.dVoxelX;    Pfinalv0.y=Pfinalv0.y/geo.dVoxelY;      Pfinalv0.z=Pfinalv0.z/geo.dVoxelZ;
     S2.x      =S2.x/geo.dVoxelX;          S2.y      =S2.y/geo.dVoxelY;            S2.z      =S2.z/geo.dVoxelZ;
+    
+    
+      
+    //5. apply COR. Wherever everything was, now its offesetd by a bit
+    float CORx, CORy;
+    CORx=-geo.COR*sin(geo.alpha)/geo.dVoxelX;
+    CORy= geo.COR*cos(geo.alpha)/geo.dVoxelY;
+    Pfinal.x+=CORx;   Pfinal.y+=CORy;
+    Pfinalu0.x+=CORx;   Pfinalu0.y+=CORy;
+    Pfinalv0.x+=CORx;   Pfinalv0.y+=CORy;
+    S2.x+=CORx; S2.y+=CORy;
     
     // return
     

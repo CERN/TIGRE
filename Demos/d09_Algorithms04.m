@@ -151,7 +151,7 @@ imgOSCTV=OSC_TV(noise_projections,geo,angles,50,...
 imgBASDPOCSbeta=B_ASD_POCS_beta(noise_projections,geo,angles,50,...
                     'TViter',40,'maxL2err',epsilon,'alpha',alpha,... % these are very important
                      'lambda',lambda,'lambdared',lambdared,'Ratio',ratio,'Verbose',verb,... % less important.
-                      'beta',1,'beta_red',0.7,'bregman_iter',10); % bregman options
+                      'beta',0.5,'beta_red',0.7,'bregman_iter',10); % bregman options
                   
 %   SART-TV 
 %==========================================================================
