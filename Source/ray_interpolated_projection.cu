@@ -147,10 +147,9 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     
     // limit the amount of mem access after the cube, but before the detector.
-    if ((geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy  <   length)
-        length=ceil((geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy);  
+    if ((geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+maxdist)/geo.accuracy  <   length)
+        length=ceil((geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+maxdist)/geo.accuracy);  
     //Length is not actually a length, but the amount of memreads with given accuracy ("samples per voxel")
-    
     for (i=floor(maxdist/geo.accuracy); i<=length; i=i+1){
         tx=vectX*i+source.x;
         ty=vectY*i+source.y;
@@ -232,6 +231,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         geo.alpha=alphas[i];
         //precomute distances for faster execution
         maxdist=maxDistanceCubeXY(geo,geo.alpha,i);
+        mexPrintf("%f\n",maxdist);
         //Precompute per angle constant stuff for speed
         computeDeltas(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Interpolation!!
@@ -365,7 +365,7 @@ float maxDistanceCubeXY(Geometry geo, float alpha,int i){
     maxCubX=(geo.sVoxelX/2+ abs(geo.offOrigX[i]))/geo.dVoxelX;
     maxCubY=(geo.sVoxelY/2+ abs(geo.offOrigY[i]))/geo.dVoxelY;
     
-    return geo.DSO/geo.dVoxelX-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
+    return geo.DSO/max(geo.dVoxelX,geo.dVoxelY)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
     
 }
 

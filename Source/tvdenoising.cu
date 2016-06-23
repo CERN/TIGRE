@@ -180,29 +180,7 @@ void tvdenoising(const float* src, float* dst, float lambda,
     size_t total_pixels = image_size[0] * image_size[1]  * image_size[2] ;
     size_t mem_size = sizeof(float) * total_pixels;
 
-    // Init cuda memory
-//     // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU: Tesla K40c or Gforce GT 740M
-//     int deviceCount = 0;
-//     cudaGetDeviceCount(&deviceCount);
-//      if (deviceCount == 0)
-//     {
-//         mexErrMsgIdAndTxt("cudaGetDeviceCount","No CUDA enabled NVIDIA GPUs found");
-//     }
-//     bool found=false;
-//     for (int dev = 0; dev < deviceCount; ++dev)
-//     {
-//         cudaDeviceProp deviceProp;
-//         cudaGetDeviceProperties(&deviceProp, dev);
-// 
-//         if (strcmp(deviceProp.name, "Tesla K40c") == 0 || strcmp(deviceProp.name, "GeForce GT 740M") == 0){
-//             cudaSetDevice(dev);
-//             found=true;
-//             break;
-//         }
-//     }
-//     if (!found)
-//        mexErrMsgIdAndTxt("cudaDevice","No Supported GPU found");
-    /////////////////////////////
+
 
     float *d_src, *d_u, *d_px, *d_py, *d_pz;
 
