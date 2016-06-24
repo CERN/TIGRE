@@ -80,7 +80,7 @@ while ~stop_criteria %POCS
         if size(offDetector,2)==length(angles)
             geo.offDetector=offDetector(:,jj);
         end
-        proj_err=proj(:,:,jj)-Ax(f,geo,angles(jj));          %                                 (b-Ax)
+        proj_err=proj(:,:,jj)-Ax(f,geo,angles(jj),'interpolated');          %                                 (b-Ax)
         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
         backprj=Atb(weighted_err,geo,angles(jj));            %                     At * W^-1 * (b-Ax)
         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
@@ -94,7 +94,7 @@ while ~stop_criteria %POCS
     % Save copy of image.
     fres=f;
     % compute L2 error of actual image. Ax-b
-    g=Ax(f,geo,angles);
+    g=Ax(f,geo,angles,'interpolated');
     dd=im3Dnorm(g-proj,'L2');
     % compute change in the image after last SART iteration
     dp_vec=(f-f0);
@@ -134,17 +134,17 @@ while ~stop_criteria %POCS
     %inefficient in removing noise or streaking artifacts.
     %ref: doi:10.1088/0031-9155/56/17/011
     
-    
-    weightx=exp(-(Gx./delta).^2);
-    weighty=exp(-(Gy./delta).^2);
-    weightz=exp(-(Gz./delta).^2);
+%     
+%     weightx=exp(-(Gx./delta).^2);
+%     weighty=exp(-(Gy./delta).^2);
+%     weightz=exp(-(Gz./delta).^2);
     %--------------------------------------------------------------------------
     %Weighting equation#2 (One of the two different edge stopping g(.)functions in Perona and Malik anisotropic diffusion equation )
     
     
-    %                weightx=1/(1+((Gx.^2)/(delta^2)));
-    %                weighty=1/(1+((Gy.^2)/(delta^2)));
-    %                weightz=1/(1+((Gz.^2)/(delta^2)));
+                   weightx=1/(1+((Gx.^2)/(delta^2)));
+                   weighty=1/(1+((Gy.^2)/(delta^2)));
+                   weightz=1/(1+((Gz.^2)/(delta^2)));
     
     
     %--------------------------------------------------------------------------

@@ -353,10 +353,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     // call the real function
     if (coneBeam){
-        if (interpolated)
+        if (interpolated){
             siddon_ray_projection(img,geo,result,alphas,nalpha);
-        else
+        }else{
             interpolation_projection(img,geo,result,alphas,nalpha);
+        }
     }else{
         if (interpolated){
             mexErrMsgIdAndTxt( "CBCT:MEX:Ax:debug",
