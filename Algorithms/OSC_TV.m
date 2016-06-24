@@ -38,9 +38,25 @@ function [ fres ] = OSC_TV(proj,geo,angles,maxiter,varargin)
 %                  'random'  : orders them randomply
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
-
+%
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
+%
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
+%
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Ander Biguri 
+%--------------------------------------------------------------------------
 
 %% parse inputs
 [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,blocksize,OrderStrategy]=parse_inputs(proj,geo,angles,varargin);

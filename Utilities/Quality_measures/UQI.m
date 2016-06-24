@@ -1,10 +1,24 @@
 function [uqi]=UQI(real,res)
-
 %Calculate universal quality index (UQI)to evaluate the degree of
-%similarity between the reconstructed and phantom images for chosen ROIs.
-
-%Its value ranges from zero to one. A UQI value closer to one suggests
-%better similarity to true image.
+% similarity between the reconstructed and phantom images for chosen ROIs.
+% Its value ranges from zero to one. A UQI value closer to one suggests
+% better similarity to true image.
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
+%
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
+%
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Manasavee Lohvithee
+%--------------------------------------------------------------------------
 
 %% Refferences
 % UQI in X-rays:

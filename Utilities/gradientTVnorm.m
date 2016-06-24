@@ -1,5 +1,21 @@
 function [ tvgrad ] = gradientTVnorm(f,type)
 %GRADIENTTVNORM Computes the gradient of the TV-norm fucntional
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
+%
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
+%
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Ander Biguri
+%--------------------------------------------------------------------------
 if strcmp(type,'central')
     warning('It seems that central does not give correct results. Please consider using back or forward')
     tvgrad= gradientTVnormCentral(f);

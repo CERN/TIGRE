@@ -12,7 +12,22 @@ function [p,ellipse]= sheppLogan3D( size,type )
 %                               Variable Radius Spiral Cone-BeamCT"
 % 
 % Default values are 128^3 and 'Modified Shepp-Logan'
-
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
+%
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
+%
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Ander Biguri
+%--------------------------------------------------------------------------
 if nargin==0
     sz=[128,128,128];
     type='modified shepp-logan';
@@ -20,8 +35,9 @@ else if nargin<2
     type='modified shepp-logan';
 end
     
-[p,ellipse]=phantom3dAniso(size,type);
+% [p,ellipse]=phantom3dAniso(size,type);
 
-p=single(p);
+% p=single(p);
+p=[];
 end
 

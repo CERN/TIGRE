@@ -32,6 +32,25 @@ function [ fres ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 %                  Default is 20% of the FDK L2 norm.
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
+%
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
+%
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
+%
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Ander Biguri and Manasavee Lohvithee
+%--------------------------------------------------------------------------
+
+
 
 %% parse inputs
 [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon]=parse_inputs(proj,geo,angles,varargin);

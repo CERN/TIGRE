@@ -1,6 +1,22 @@
 function  citeme( func_name ,bib)
 %CITEME(FUCTIONAME) gives the bilbiografic reference of the fucntion being
 % used.
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
+%
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
+%
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Ander Biguri
+%--------------------------------------------------------------------------
 if nargin<2
     bib=false;
 end

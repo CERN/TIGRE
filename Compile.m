@@ -1,14 +1,27 @@
-
+% This file will compile all the necesary mex files for TIGRE to work. You
+% need CUDA nvcc installed in your PC and setup with MATLAB mex.
+% 
+% 
 % IMPORTANT:
 % This has only been tested in win systems, due to hardware limitations we
 % have been unable to test elsewhere. Please, report any issue with
-% compilation in other systems in:
-%  Github repo (preffered):
-%    https://github.com/AnderBiguri/TIGRE/issues
-%  email:
-%      ander.biguri@gmail.com
+% compilation in other systems
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
 %
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
 %
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Ander Biguri
+%--------------------------------------------------------------------------
 %% Clear all clears also mex
 clear all;
 %% Compile

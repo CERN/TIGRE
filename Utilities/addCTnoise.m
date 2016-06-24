@@ -13,7 +13,23 @@ function proj=addCTnoise(proj,varargin)
 % Adaptive-weighted total variation minimization for sparse data toward low-dose x-ray computed tomography image reconstruction
 % doi: 10.1088/0031-9155/57/23/7923
 % and references in that work.
-
+%
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
+%
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
+%
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Ander Biguri
+%--------------------------------------------------------------------------
 %% parse inputs
 
 
