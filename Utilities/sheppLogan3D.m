@@ -1,4 +1,4 @@
-function [p,ellipse]= sheppLogan3D( size,type )
+function [p,ellipse]= sheppLogan3D( sz,type )
 %SHEPPLOGAN3D(SIZE,TYPE) returns the shepp logan phantom, defined by size 
 % SIZEand type :
 % 
@@ -31,13 +31,16 @@ function [p,ellipse]= sheppLogan3D( size,type )
 if nargin==0
     sz=[128,128,128];
     type='modified shepp-logan';
-else if nargin<2
+else
+    if nargin<2
     type='modified shepp-logan';
+    end
 end
-    
-% [p,ellipse]=phantom3dAniso(size,type);
 
-% p=single(p);
+warning('This file is NOT under BSD license!')
+[p,ellipse]=phantom3dAniso(sz,type);
+
+p=single(p);
 p=[];
 end
 
