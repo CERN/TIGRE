@@ -1,4 +1,4 @@
-function [ fres ] = AwASD_POCS(proj,geo,angles,maxiter,varargin)
+function [ fres ] = AwASD_POCS(img,proj,geo,angles,maxiter,varargin)
 %AwASD_POCS Solves the 3D tomography problem using the adaptive-weighted
 %ASD_POCS algorithm which extends from the method ASD_POCS available in the
 %TIGRE toolbox by adding weight equation to better preserve the edge of the
@@ -36,7 +36,7 @@ function [ fres ] = AwASD_POCS(proj,geo,angles,maxiter,varargin)
 %                  progress of the algorithm.
 
 %% parse inputs
-[beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,delta]=parse_inputs(proj,geo,angles,varargin);
 
 %% Create weigthing matrices for the SART step
 % the reason we do this, instead of calling the SART fucntion is not to
@@ -108,67 +108,24 @@ while ~stop_criteria %POCS
     f0=f;
     
     %Compute the local image-intensity
-    Gx=diff(f,1,1);
-    Gy=diff(f,1,2);
-    Gz=diff(f,1,3);
+    Gx=diff(img,1,1);
+    Gy=diff(img,1,2);
+    Gz=diff(img,1,3);
     
     
     Gx=cat(1,zeros(size(Gx(1,:,:))),Gx);
     Gy=cat(2,zeros(size(Gy(:,1,:))),Gy);
     Gz=cat(3,zeros(size(Gz(:,:,1))),Gz);
-    
-    %Define a parameter delta which controls the amount of smoothing that
-    %we would like to apply to those pixels at edges.
-    
-    %Need to explain how to define parameter: delta
-    
-    delta=-0.00055;
-    % delta=0.0002;
+
     %--------------------------------------------------------------------------
-    % Weighting equation#1 (An exponential function of the component of the local image-intensity gradient vector)
+    %Weighting equation#1 (An exponential function of the component of the local image-intensity gradient vector)
+
     
-    %Large delta is not able to differentiate image gradients at different
-    %pixels
-    
-    %Small delta gives low weights to almost every pixel, making the norm
-    %inefficient in removing noise or streaking artifacts.
-    %ref: doi:10.1088/0031-9155/56/17/011
-    
-%     
-%     weightx=exp(-(Gx./delta).^2);
-%     weighty=exp(-(Gy./delta).^2);
-%     weightz=exp(-(Gz./delta).^2);
+    weightx=exp(-(Gx./delta).^2);
+    weighty=exp(-(Gy./delta).^2);
+    weightz=exp(-(Gz./delta).^2);
     %--------------------------------------------------------------------------
-    %Weighting equation#2 (One of the two different edge stopping g(.)functions in Perona and Malik anisotropic diffusion equation )
-    
-    
-                   weightx=1/(1+((Gx.^2)/(delta^2)));
-                   weighty=1/(1+((Gy.^2)/(delta^2)));
-                   weightz=1/(1+((Gz.^2)/(delta^2)));
-    
-    
-    %--------------------------------------------------------------------------
-     %Weighting equation#3 (Robust Anisotropic Diffusion)
-    
-    % %             if abs(Gx)<=delta
-    %             weightx=(1/2)*(1-(Gx./delta).^2).^2;
-    % %             else
-    % %             weightx=0;
-    % %             end
-    %
-    % %              if abs(Gy)<=delta
-    %             weighty=(1/2)*(1-(Gy./delta).^2).^2;
-    % %             else
-    % %             weighty=0;
-    % %              end
-    %
-    % %             if abs(Gz)<=delta
-    %             weightz=(1/2)*(1-(Gz./delta).^2).^2;
-    % %             else
-    % %             weightz=0;
-    % %             end
-    %--------------------------------------------------------------------------
-    
+   
     %  TV MINIMIZATION
     % =========================================================================
     %  Call GPU to minimize TV
@@ -223,9 +180,9 @@ end
 
 end
 
-function [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon]=parse_inputs(proj,geo,angles,argin)
+function [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,delta]=parse_inputs(proj,geo,angles,argin)
 
-opts=     {'lambda','lambda_red','TViter','Verbose','alpha','alpha_red','Ratio','maxL2err'};
+opts=     {'lambda','lambda_red','TViter','Verbose','alpha','alpha_red','Ratio','maxL2err','delta'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -325,6 +282,17 @@ for ii=1:length(opts)
                 epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
             else
                 epsilon=val;
+            end
+            %Parameter to control the amount of smoothing for pixels at the
+            %edges
+            %  =========================================================================
+        case 'delta'
+            if default
+                %A delta is a value that 90% of the pixels have the
+                %gradient values larger than this value
+                delta=-0.00055;
+            else
+                delta=val;
             end
         otherwise
             error('CBCT:AwASD_POCS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in ASD_POCS()']);
