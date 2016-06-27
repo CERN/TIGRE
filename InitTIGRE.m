@@ -74,3 +74,5 @@ if ispc
 else
     warning('TIGRE needs a big amount of memory, be careful when running big images.')
 end
+
+clear all;

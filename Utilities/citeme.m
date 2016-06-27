@@ -26,11 +26,12 @@ file=fopen('TIGRE.bib');
 tline = fgets(file);
 found=false;
 while ischar(tline)&&~found
-    if strcmpi(tline(1:end-1),func_name)
+    tline=strtrim(tline);
+    if strcmpi(tline,func_name)
         found=true;
         break;
     end
-    tline = fgets(file);
+    tline = fgetl(file);
 end
 % found the bib entry
 
@@ -53,7 +54,7 @@ if found
     
 else
    disp('The function needs no bibliographic reference (other than TIGRE)')
-   disp('Warning: Make sure there is no spelling mistake.')
+   disp([' [' 8 ' Warning: Make sure there is no spelling mistake.]' 8 ''])
 end
 fclose(file);
 disp('')
