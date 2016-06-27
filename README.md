@@ -2,19 +2,23 @@ TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
 ======
 
 TIGRE is a MATLAB/CUDA toolbox for fast and accurate 3D tomographic 
-reconstruction. Currently it contains Cone Beam CT geometries. The
-objective of TIGRE is to provide tomograpy users a wide variety of image 
-reconstruction algorithims in an easy to use and fast form, and image 
-reconstruction reearchers basic blocks for algorithm design and testing for
-big datasets.
+reconstruction. The aim of TIGRE is providing a wide range of easy-to-use 
+iterative algorithms to the tomographic research community. 
+We would like to build an stronger bridge between the algorithm researchers and
+imaging researchers, by encouraging and supporting contributions frmo both sides into
+TIGRE. TIGRE is free to use and distribute, use it, modify it, break it, share it; 
+the only requirements is proper referencing to the authors.
+
+Currently it contains Cone Beam CT geometries, and a beta of parallel geometires. 
+
 
 **TIGRE features**:
 
-  - Fast (state of the art) projection using interpolation or Siddon ray-tracing
+  - Fast (state of the art) projection using interpolation or Siddon (Jacob) ray-tracing
 
   - Fast (state of the art) backprojection, with FDK weigth or matched weigths
 
-  - A wide range of algorithms with multiple parameters in each
+  - A wide range of algorithms with multiple configurations for each in each
       - FDK                    
       - SART                    
       - OS-SART                
@@ -119,7 +123,7 @@ this. Hopefully we can find a solution for this without the need of restarting M
 
 TIGRE toolbox is released under the BSD License, meaning you can use and modify 
 the software freely in any case, but you **must** give attribution to the original authors.
-For more information, read the license file or the [BSD License Definition][5].
+For more information, read the license file or the [BSD License Definition][5] or [the license file][6]
 
 ## Contact
 
@@ -134,7 +138,9 @@ We will make an effort to answer as soon as we can.
 
 If you use TIGRE in any publications, please reference the following paper:
 
-
+**TIGRE: A MATLAB-GPU toolbox for CBCT image reconstruction**
+*Ander Biguri, Manjit Dosanjh, Steven Hancock, and Manuchehr Soleimani*
+*To be published*, 2016
 
 Also, if you use any algorithm, you should reference the corresponding creator
 of the algorithms. If you dont know the article, use `citeme('NameOfFunction')`
@@ -147,7 +153,8 @@ and the rigth reference will appear.
 
 
 [1]: https://developer.nvidia.com/cuda-downloads
-[2]: https://github.com/AnderBiguri/TIGRE/issues
+[2]: https://github.com/CERN/TIGRE/issues
 [3]: https://stackoverflow.com/help/mcve
 [4]: https://help.github.com/articles/applying-labels-to-issues-and-pull-requests/
 [5]: http://www.linfo.org/bsdlicense.html
+[6]: https://github.com/CERN/TIGRE/license.txt
