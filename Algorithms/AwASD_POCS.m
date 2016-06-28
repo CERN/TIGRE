@@ -139,7 +139,7 @@ while ~stop_criteria %POCS
     %     f=minimizeTV(f0,dtvg,ng);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
     for ii=1:ng
         % Steepest descend of TV norm
-        tv(ng*(iter-1)+ii)=im3Dnorm(f,'TV','forward');
+%         tv(ng*(iter-1)+ii)=im3Dnorm(f,'TV','forward');
         df=weighted_gradientTVnorm(f,weightx,weighty,weightz);
         df=df./im3Dnorm(df,'L2');
         f=f-dtvg.*df;

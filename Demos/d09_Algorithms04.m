@@ -212,7 +212,7 @@ imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',50);
 %                  differentiate image gradients at different pixels. A
 %                  small 'delta' give low weights to almost every pixels,
 %                  making the algorithm inefficient in removing noise or
-%                  straking artifacts. Default is -0.00055
+%                  streaking artifacts. Default is -0.00055
 
 imgAwASD_POCS=AwASD_POCS(noise_projections,geo,angles,50,...
                     'TViter',ng,'maxL2err',epsilon,'alpha',alpha,... % these are very important
@@ -222,14 +222,14 @@ imgAwASD_POCS=AwASD_POCS(noise_projections,geo,angles,50,...
  %% Lets visualize the results
 % Notice the smoother images due to TV regularization.
 %
-%     PHANTOM            OS-SART           ASD-POCS        AwASD_POCS   
+%     OS-SART           ASD-POCS        AwASD_POCS   
 %    
 %     OSC-TV             B-ASD-POCS-beta   SART-TV
 
-plotImg([thorax imgOSCTV imgBASDPOCSbeta;thorax imgSARTTV imgOSSART; thorax imgASDPOCS imgAwASD_POCS] ,'Dim','Z','Step',2)
+plotImg([ imgOSCTV imgBASDPOCSbeta imgSARTTV; imgOSSART  imgASDPOCS imgAwASD_POCS] ,'Dim','Z','Step',2)
  % error
 
-plotImg(abs([thorax-thorax thorax-imgOSCTV thorax-imgBASDPOCSbeta;thorax-thorax thorax-imgSARTTV thorax-imgOSSART; thorax-thorax thorax-imgASDPOCS thorax-imgAwASD_POCS]) ,'Dim','Z','Slice',64)
+plotImg(abs([ thorax-imgOSCTV thorax-imgBASDPOCSbeta thorax-imgSARTTV; thorax-imgOSSART  thorax-imgASDPOCS thorax-imgAwASD_POCS]) ,'Dim','Z','Slice',64)
 
 
 
