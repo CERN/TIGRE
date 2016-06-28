@@ -34,6 +34,13 @@ function [ fres ] = AwASD_POCS(proj,geo,angles,maxiter,varargin)
 %                  Default is 20% of the FDK L2 norm.
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
+%   'delta'        Defines Parameter to control the amount of smoothing 
+%                  for pixels at the edges. A large 'delta' is not able to
+%                  differentiate image gradients at different pixels. A
+%                  small 'delta' give low weights to almost every pixels,
+%                  making the algorithm inefficient in removing noise or
+%                  straking artifacts. Default is -0.00055
+%
 
 %% parse inputs
 [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,delta]=parse_inputs(proj,geo,angles,varargin);
@@ -295,7 +302,7 @@ for ii=1:length(opts)
                 delta=val;
             end
         otherwise
-            error('CBCT:AwASD_POCS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in ASD_POCS()']);
+            error('CBCT:AwASD_POCS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in AwASD_POCS()']);
             
     end
 end
