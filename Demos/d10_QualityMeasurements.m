@@ -1,9 +1,25 @@
 %% Demo 10: How to use Image quality measures
 %
-%This demo demonstrate how to compute all the image quality measures
-%by calling the "Measure_Quality.m" function with detailed description.
+% This demo demonstrate how to compute all the image quality measures
+% by calling the "Measure_Quality.m" function with detailed description.
 %
 %
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
+%
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
+%
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Manasavee Lohvithee
+%--------------------------------------------------------------------------
 %% Initialize
 
 clear;

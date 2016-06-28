@@ -5,7 +5,24 @@ function img=thoraxPhantom(varargin)
 %
 %  IMG=THORAXPHANTOM(SZ) returns a SZ^3 image IMG if SZ is scalar, or a [SZ(1)
 %   SZ(2) SZ(3] image, of SZ is a vector. 
-
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
+%
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
+%                     and
+%                     https://www.mathworks.com/matlabcentral/fileexchange/view_license?file_info_id=35548
+%
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Kyungsang Kim, modified by Ander Biguri 
+%--------------------------------------------------------------------------
 
 % Deal with inputs
 if nargin==0

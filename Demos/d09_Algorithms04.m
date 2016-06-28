@@ -11,6 +11,22 @@
 % computational time and memory than the other algorithms to run.
 % 
 % 
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
+%
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
+%
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Ander Biguri 
+%--------------------------------------------------------------------------
 %% Initialize
 clear;
 close all;
@@ -151,7 +167,7 @@ imgOSCTV=OSC_TV(noise_projections,geo,angles,50,...
 imgBASDPOCSbeta=B_ASD_POCS_beta(noise_projections,geo,angles,50,...
                     'TViter',40,'maxL2err',epsilon,'alpha',alpha,... % these are very important
                      'lambda',lambda,'lambdared',lambdared,'Ratio',ratio,'Verbose',verb,... % less important.
-                      'beta',1,'beta_red',0.7,'bregman_iter',10); % bregman options
+                      'beta',0.5,'beta_red',0.7,'bregman_iter',10); % bregman options
                   
 %   SART-TV 
 %==========================================================================

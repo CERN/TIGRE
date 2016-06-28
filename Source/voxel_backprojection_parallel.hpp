@@ -1,10 +1,9 @@
 /*-------------------------------------------------------------------------
  *
- * Header CUDA functions for texture-memory interpolation based projection
+ * Header CUDA function for backrpojection  for parallel beam
  *
  *
- * CODE by       Ander Biguri
- *
+ * CODE by  Ander Biguri
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 Copyright (c) 2015, University of Bath and CERN- European Organization for 
@@ -42,12 +41,8 @@ Contact: tigre.toolbox@gmail.com
 Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
-
-
-
 #ifndef TYPES_CBCT
-#define TYPES_CBCT
-struct  Geometry {
+typedef struct {
     // Geometry assumptions:
     //  -> Origin is at (0,0,0). Image center is there +offOrig
     //  -> at angle 0, source + image centre (without the offset) + detector centre (without offset) 
@@ -75,31 +70,23 @@ struct  Geometry {
     //projection angle
     float alpha;
     
-    // Centre of Rotation correction.
-    float COR;
     //Maximum length of cube
     float maxLength;
-    //User option
+     //User option
     float accuracy;
-};
+}Geometry;
 
- struct Point3D{
+typedef struct{
     float x;
     float y;
     float z;
-};
+}Point3D;
+#define TYPES_CBCT
 #endif
 
+#ifndef BACKPROJECTION_PARALLEL_HPP
+#define BACKPROJECTION_PARALLEL_HPP
 
-#ifndef PROJECTION_HPP
-#define PROJECTION_HPP
-
-int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
-float computeMaxLength(Geometry geo, float alpha);
-void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
-
-float maxDistanceCubeXY(Geometry geo, float alpha,int i);
-
-// below, not used
-Geometry nomralizeGeometryImage(Geometry geo);
+int voxel_backprojection_parallel(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha);
+//  void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ);
 #endif

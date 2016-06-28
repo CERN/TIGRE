@@ -22,6 +22,22 @@ function plotImg(img,varargin)
 %               colors. The default computes the lower and upper percentile
 %               of data, in 1% and 99% and sets the limits to that.
 %   'Slice'     Plots a single slice of the data. Overwrittes Step.
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
+%
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
+%
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Ander Biguri
+%--------------------------------------------------------------------------
 %% Parse inputs
 
 opts=     {'Step','Dim','Savegif','Colormap','Clims','Slice'};

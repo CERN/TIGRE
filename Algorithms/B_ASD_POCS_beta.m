@@ -44,9 +44,24 @@ function [ fres ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargin)
 %                  progress of the algorithm.
 %
 %
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
+%
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
+%
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Ander Biguri 
+%--------------------------------------------------------------------------
 
 % http://ieeexplore.ieee.org/xpl/abstractAuthors.jsp?arnumber=5874264
-
 
 %% parse inputs
 [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,bregman,bregman_red,bregman_iter]=parse_inputs(proj,geo,angles,varargin);

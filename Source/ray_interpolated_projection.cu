@@ -1,12 +1,56 @@
-/*
- * Code that uses texture memory to compute a 3D projection of CBCT
+/*-------------------------------------------------------------------------
  *
- * IMPORTANT!!! CAUTION!! This code is designed for a Tesla 40k GPU.
- * It is a safe assumption to say that this code wont work in other GPUs as expected
- * or at all. Some of the involved reasons: float/double arithmetic.
+ * CUDA functions for texture-memory interpolation based projection
  *
- * Ander Biguri
+ * This file has the necesary fucntiosn to perform X-ray CBCT projection 
+ * operation given a geaometry, angles and image. It uses the 3D texture 
+ * memory linear interpolation to uniformily sample a path to integrate the 
+ * X-rays.
+ *
+ * CODE by       Ander Biguri
+ *
+---------------------------------------------------------------------------
+---------------------------------------------------------------------------
+Copyright (c) 2015, University of Bath and CERN- European Organization for 
+Nuclear Research
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, 
+this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice, 
+this list of conditions and the following disclaimer in the documentation 
+and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its contributors
+may be used to endorse or promote products derived from this software without
+specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+ ---------------------------------------------------------------------------
+
+Contact: tigre.toolbox@gmail.com
+Codes  : https://github.com/CERN/TIGRE
+--------------------------------------------------------------------------- 
  */
+
+
+
+
+
 
 #include <algorithm>
 #include <cuda_runtime_api.h>
@@ -103,10 +147,9 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     
     // limit the amount of mem access after the cube, but before the detector.
-    if ((geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy  <   length)
-        length=ceil((geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy);  
+    if ((geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+maxdist)/geo.accuracy  <   length)
+        length=ceil((geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+maxdist)/geo.accuracy);  
     //Length is not actually a length, but the amount of memreads with given accuracy ("samples per voxel")
-    
     for (i=floor(maxdist/geo.accuracy); i<=length; i=i+1){
         tx=vectX*i+source.x;
         ty=vectY*i+source.y;
@@ -321,7 +364,7 @@ float maxDistanceCubeXY(Geometry geo, float alpha,int i){
     maxCubX=(geo.sVoxelX/2+ abs(geo.offOrigX[i]))/geo.dVoxelX;
     maxCubY=(geo.sVoxelY/2+ abs(geo.offOrigY[i]))/geo.dVoxelY;
     
-    return geo.DSO/geo.dVoxelX-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
+    return geo.DSO/max(geo.dVoxelX,geo.dVoxelY)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
     
 }
 

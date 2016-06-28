@@ -9,6 +9,22 @@
 % In cases where the data is good quality, SART type families tend to reach
 % to a better image, but when the data gets very big, or has bad quality,
 % CGLS is a good and fast algorithm
+%--------------------------------------------------------------------------
+%--------------------------------------------------------------------------
+% This file is part of the TIGRE Toolbox
+% 
+% Copyright (c) 2015, University of Bath and 
+%                     CERN-European Organization for Nuclear Research
+%                     All rights reserved.
+%
+% License:            Open Source under BSD. 
+%                     See the full license at
+%                     https://github.com/CERN/TIGRE/license.txt
+%
+% Contact:            tigre.toolbox@gmail.com
+% Codes:              https://github.com/CERN/TIGRE/
+% Coded by:           Ander Biguri 
+%--------------------------------------------------------------------------
 %% Initialize
 clear;
 close all;
@@ -35,7 +51,7 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 
 %% Load data and generate projections 
 % see previous demo for explanation
-angles=linspace(0,2*pi,40);
+angles=linspace(0,2*pi,100);
 thorax=thoraxPhantom(geo.nVoxel);
 projections=Ax(thorax,geo,angles,'interpolated');
 noise_projections=addCTnoise(projections,'Poisson',1e4,'Gaussian',[0 50]);
