@@ -1,4 +1,4 @@
-function [ fres ] = AwASD_POCS(img,proj,geo,angles,maxiter,varargin)
+function [ fres ] = AwASD_POCS(proj,geo,angles,maxiter,varargin)
 %AwASD_POCS Solves the 3D tomography problem using the adaptive-weighted
 %ASD_POCS algorithm which extends from the method ASD_POCS available in the
 %TIGRE toolbox by adding weight equation to better preserve the edge of the
@@ -108,9 +108,9 @@ while ~stop_criteria %POCS
     f0=f;
     
     %Compute the local image-intensity
-    Gx=diff(img,1,1);
-    Gy=diff(img,1,2);
-    Gz=diff(img,1,3);
+    Gx=diff(f,1,1);
+    Gy=diff(f,1,2);
+    Gz=diff(f,1,3);
     
     
     Gx=cat(1,zeros(size(Gx(1,:,:))),Gx);
