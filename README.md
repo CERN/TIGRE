@@ -66,16 +66,18 @@ If it doesn't work, or you are not in win64 CUDA 7.5
 ## Some fancy images
 
 TIGRE gets this:
+
 ![this image](http://i.imgur.com/ahnFc05.gif?1)
 
 And transforms it to this:
+
 ![this image](http://i.imgur.com/NcVEac2.gif?1)
  
 And much more! See the result of demo 9, by using just 20 projections (!) The result that the standard medical algorithm (FDK) gets vs a variety of interative Total Variation algorithms. 
 
 FDK is top row, and then OS-SART, ASD-POCS, AwASD-POCS, OSC-TV, B-ASD-POCS-beta and SART-TV are shown. Get TIGRE, and try them in your data!
 
-![Imgur](http://i.imgur.com/HaqGRGK.gif?1)
+![this must work](http://i.imgur.com/HaqGRGK.gif?1)
 
 
 
