@@ -2,23 +2,23 @@ TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
 ======
 
 TIGRE is a MATLAB/CUDA toolbox for fast and accurate 3D tomographic 
-reconstruction. The aim of TIGRE is providing a wide range of easy-to-use 
+reconstruction. The aim of TIGRE is to provide a wide range of easy-to-use 
 iterative algorithms to the tomographic research community. 
-We would like to build an stronger bridge between the algorithm researchers and
-imaging researchers, by encouraging and supporting contributions frmo both sides into
+We would like to build an stronger bridge between algorithm researchers and
+imaging researchers, by encouraging and supporting contributions from both sides into
 TIGRE. TIGRE is free to use and distribute, use it, modify it, break it, share it; 
-the only requirements is proper referencing to the authors.
+the only requirement is proper referencing to the authors.
 
-Currently it contains Cone Beam CT geometries, and a beta of parallel geometires. 
+Currently it contains Cone Beam CT geometries, and a beta of parallel geometries (not fully working yet). 
 
 
 **TIGRE features**:
 
-  - Fast (state of the art) projection using interpolation or Siddon (Jacob) ray-tracing
+  - Fast, state of the art projection using interpolation or Siddon (Jacob) ray-tracing
 
-  - Fast (state of the art) backprojection, with FDK weigth or matched weigths
+  - Fast, state of the art backprojection, with FDK weight or matched weight 
 
-  - A wide range of algorithms with multiple configurations for each in each
+  - A wide range of algorithms with multiple configurations for each 
       - FDK                    
       - SART                    
       - OS-SART                
@@ -29,16 +29,16 @@ Currently it contains Cone Beam CT geometries, and a beta of parallel geometires
       - B-ADS-POCS-&#946;       
       - SART-TV
 
-  - TV denosing for 3D images
+  - TV denoising for 3D images
 
-  - A variety of plotting function
+  - A variety of plotting functions
 
   - Quality measures
 
 
 ## How to install TIGRE
 
-(Cauntion, this has only been tested in win64 machines, please [report any 
+(Caution, this has only been tested on win 64 machines, please [report any 
 issue][2] if it doesnt work in other arch/SO)
  
    - Download TIGRE from the downloads page
@@ -46,17 +46,17 @@ issue][2] if it doesnt work in other arch/SO)
    - Install  CUDA Toolkit (the later, the better)
      Download [here][1]
    
-   - If you are working in a win64 machine, with CUDA 7.5, stop here. The
+   - If you are working on a win64 machine, with CUDA 7.5, stop here. The
      toolbox should be ready to use.
 
-If it doesnt work, or you are not in win64 CUDA 7.5
+If it doesn't work, or you are not in win64 CUDA 7.5
    
    - Make sure a compiler is set up in your MATLAB. run `mex -setup`. If a 
      compiler is not set up, make sure you download one (some are free)
      and run mex -setup again.
    
-   - Make sure the xml file for compiling is proerly set up. E.g. in Linux 64 bit machines
-     mex_CUDA_glnxa64.xml should be present, and inside it the proper links to CUDA have to be set up.
+   - Make sure the xml file for compiling is properly set up. E.g. in Linux 64 bit machines
+     mex_CUDA_glnxa64.xml should be present, and inside it the proper links to CUDA will have to be set up.
 
    - Run Compile.m
 
@@ -116,7 +116,7 @@ If you are working on a TESLA, setting the TESLA to TCC mode will fix the proble
 
 **Q: After running something I got an error in Ax or Atb and now nothing works**
 
-*A: Unfortunatedly when CUDA has an error, it hungs. You need to restart MATLAB to fix
+*A: Unfortunately when CUDA has an error, it hungs. You need to restart MATLAB to fix
 this. Hopefully we can find a solution for this without the need of restarting MATLAB*
 
 ## Licensing
@@ -127,7 +127,7 @@ For more information, read the license file or the [BSD License Definition][5] o
 
 ## Contact
 
-*Before contacting* consider that you migth be able to let us know your concerns by
+*Before contacting* consider that you might be able to let us know your concerns by
 [raising an issue][2] and [labeling accordingly][4]. If you still need to contact us:
 
 tigre.toolbox@gmail.com
@@ -143,13 +143,13 @@ If you use TIGRE in any publications, please reference the following paper:
 *To be published*, 2016
 
 Also, if you use any algorithm, you should reference the corresponding creator
-of the algorithms. If you dont know the article, use `citeme('NameOfFunction')`
-and the rigth reference will appear.
+of the algorithms. If you don't know the article, use `citeme('NameOfFunction')`
+and the right reference will appear.
 
 
 ---
 
-<sup>1</sup> You can learn, it is very usefull!
+<sup>1</sup> You can learn, it is very useful!
 
 
 [1]: https://developer.nvidia.com/cuda-downloads
