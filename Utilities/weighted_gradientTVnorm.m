@@ -1,6 +1,8 @@
-function [tvg] =weighted_gradientTVnorm(img,wx,wy,wz)
+function [tvg] =weighted_gradientTVnorm(img,delta)
 
 tvg=zeros(size(img));
+
+%Compute the local image-intensity
 
 Gx=diff(img,1,1);
 Gy=diff(img,1,2);
@@ -11,6 +13,16 @@ Gx=cat(1,zeros(size(Gx(1,:,:))),Gx);
 Gy=cat(2,zeros(size(Gy(:,1,:))),Gy);
 Gz=cat(3,zeros(size(Gz(:,:,1))),Gz);
 
+
+
+%--------------------------------------------------------------------------
+%Weighting equation#1 (An exponential function of the component of the local image-intensity gradient vector)
+
+
+wx=exp(-(Gx./delta).^2);
+wy=exp(-(Gy./delta).^2);
+wz=exp(-(Gz./delta).^2);
+%--------------------------------------------------------------------------
 
 nrm=weighted_safenorm(Gx,Gy,Gz,wx,wy,wz);
 
