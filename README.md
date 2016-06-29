@@ -67,7 +67,6 @@ If it doesn't work, or you are not in win64 CUDA 7.5
 
 TIGRE gets this:
 
-![this image](http://i.imgur.com/ahnFc05.gif?1)
 
 And transforms it to this:
 
