@@ -67,6 +67,7 @@ If it doesn't work, or you are not in win64 CUDA 7.5
 
 TIGRE gets this:
 
+![Imgur](http://i.imgur.com/ahnFc05.gif?1)
 
 And transforms it to this:
 
@@ -76,9 +77,9 @@ And much more! See the result of demo 9, by using just 20 projections (!) The re
 
 FDK is top row, and then OS-SART, ASD-POCS, AwASD-POCS, OSC-TV, B-ASD-POCS-beta and SART-TV are shown. Get TIGRE, and try them in your data!
 
-![This doesnt seem to work](http://i.imgur.com/dnLqo1q.gifv)
+![This doesnt seem to work](http://i.imgur.com/dnLqo1q.gif)
 
-[Link to the image](http://i.imgur.com/dnLqo1q.gifv)
+[Link to the image](http://i.imgur.com/dnLqo1q.gif)
 
 
 
