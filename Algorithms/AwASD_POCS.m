@@ -114,24 +114,7 @@ while ~stop_criteria %POCS
     end
     f0=f;
     
-    %Compute the local image-intensity
-    Gx=diff(f,1,1);
-    Gy=diff(f,1,2);
-    Gz=diff(f,1,3);
-    
-    
-    Gx=cat(1,zeros(size(Gx(1,:,:))),Gx);
-    Gy=cat(2,zeros(size(Gy(:,1,:))),Gy);
-    Gz=cat(3,zeros(size(Gz(:,:,1))),Gz);
 
-    %--------------------------------------------------------------------------
-    %Weighting equation#1 (An exponential function of the component of the local image-intensity gradient vector)
-
-    
-    weightx=exp(-(Gx./delta).^2);
-    weighty=exp(-(Gy./delta).^2);
-    weightz=exp(-(Gz./delta).^2);
-    %--------------------------------------------------------------------------
    
     %  TV MINIMIZATION
     % =========================================================================
@@ -140,7 +123,7 @@ while ~stop_criteria %POCS
     for ii=1:ng
         % Steepest descend of TV norm
 %         tv(ng*(iter-1)+ii)=im3Dnorm(f,'TV','forward');
-        df=weighted_gradientTVnorm(f,weightx,weighty,weightz);
+        df=weighted_gradientTVnorm(f,delta);
         df=df./im3Dnorm(df,'L2');
         f=f-dtvg.*df;
     end
