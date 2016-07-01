@@ -209,8 +209,8 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     float aminc=min(ax,ay);
     i=(int)floor(source.x+ (aminc+am)/2*ray.x);
     j=(int)floor(source.y+ (aminc+am)/2*ray.y);
-//     k=(int)floor(source.z+ (aminc+am)/2*ray.z);
-    k=(int)source.z;
+    k=(int)floor(source.z+ (aminc+am)/2*ray.z);
+//     k=(int)source.z;
     // Initialize
     float ac=am;
     //eq (28), unit alphas
