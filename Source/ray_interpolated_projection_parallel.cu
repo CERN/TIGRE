@@ -274,8 +274,8 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
 void computeDeltas_parallel(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
     Point3D S;
     S.x=geo.DSO;
-    S.y=0;
-    S.z=0;
+    S.y=geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);
+    S.z=geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
     
     //End point
     Point3D P,Pu0,Pv0;

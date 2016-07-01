@@ -39,7 +39,7 @@ Currently it contains Cone Beam CT geometries, and a beta of parallel geometries
 ## How to install TIGRE
 
 (Caution, this has only been tested on win 64 machines, please [report any 
-issue][2] if it doesnt work in other arch/SO)
+issue][2] if it doesnt work in other arch/OS)
  
    - Download TIGRE from the downloads page
    

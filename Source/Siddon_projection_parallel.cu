@@ -124,6 +124,8 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     pixel1D.x=(uvOrigin.x+pixelU*deltaU.x+pixelV*deltaV.x);
     pixel1D.y=(uvOrigin.y+pixelU*deltaU.y+pixelV*deltaV.y);
     pixel1D.z=(uvOrigin.z+pixelU*deltaU.z+pixelV*deltaV.z);
+    
+    
     source.x=(source.x+pixelU*deltaU.x+pixelV*deltaV.x);
     source.y=(source.y+pixelU*deltaU.y+pixelV*deltaV.y);
     source.z=(source.z+pixelU*deltaU.z+pixelV*deltaV.z);
@@ -253,33 +255,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
 int siddon_ray_projection_parallel(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha){
     
     
-    // BEFORE DOING ANYTHING: Use the proper CUDA enabled GPU
-    
-    // If you have another GPU and want to use this code, please change it, but make sure you know that is compatible.
-    
-    
-//         int deviceCount = 0;
-//         cudaGetDeviceCount(&deviceCount);
-//         if (deviceCount == 0)
-//         {
-//             mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaGetDeviceCount","No CUDA enabled NVIDIA GPUs found");
-//         }
-//         bool found=false;
-//         for (int dev = 0; dev < deviceCount; ++dev)
-//         {
-//             cudaDeviceProp deviceProp;
-//             cudaGetDeviceProperties(&deviceProp, dev);
-// 
-//             if (strcmp(deviceProp.name, "Tesla K40c") == 0|| strcmp(deviceProp.name, "GeForce GT 740M") == 0){
-//                 cudaSetDevice(dev);
-//                 found=true;
-//                 break;
-//             }
-//         }
-//         if (!found)
-//            mexErrMsgIdAndTxt("CBCT:CUDA:Ax:cudaDevice","No Supported GPU found");
-    //DONE, Tesla found
-    
+  
     // copy data to CUDA memory
     cudaArray *d_imagedata = 0;
     
@@ -379,10 +355,9 @@ int siddon_ray_projection_parallel(float const * const img, Geometry geo, float*
  **/
 void computeDeltas_Siddon_parallel(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
     Point3D S;
-    S.x=geo.DSO;
-    S.y=geo.dDetecU*(0 - (double)(geo.nDetecU / 2) + 0.5);
-    S.z=geo.dDetecV*((double)(geo.nDetecV / 2) - 0.5 - 0);
-    
+
+    S.x  =geo.DSO;   S.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       S.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
+
     //End point
     Point3D P,Pu0,Pv0;
     
@@ -397,12 +372,8 @@ void computeDeltas_Siddon_parallel(Geometry geo, float alpha,int i, Point3D* uvo
     P.y  =P.y  +geo.offDetecU[i];    P.z  =P.z  +geo.offDetecV[i];
     Pu0.y=Pu0.y+geo.offDetecU[i];    Pu0.z=Pu0.z+geo.offDetecV[i];
     Pv0.y=Pv0.y+geo.offDetecU[i];    Pv0.z=Pv0.z+geo.offDetecV[i];
-    //S does need to change, as its parallel beam, if the detector moves, the source does.
-    // this fact convers the offset of the detector and offset of the image in the same thing, so
-    // parallel beam shoudl not have both options. However, we will keep them for the shake of
-    // consistency between the two codes.
-    S.y  =S.y  +geo.offDetecU[i];    S.z  =S.z  +geo.offDetecV[i];
-
+    //S doesnt need to chagne
+    
     
     //3: Rotate (around z)!
     Point3D Pfinal, Pfinalu0, Pfinalv0;
@@ -421,19 +392,30 @@ void computeDeltas_Siddon_parallel(Geometry geo, float alpha,int i, Point3D* uvo
     Pfinal.x  =Pfinal.x-geo.offOrigX[i];     Pfinal.y  =Pfinal.y-geo.offOrigY[i];     Pfinal.z  =Pfinal.z-geo.offOrigZ[i];
     Pfinalu0.x=Pfinalu0.x-geo.offOrigX[i];   Pfinalu0.y=Pfinalu0.y-geo.offOrigY[i];   Pfinalu0.z=Pfinalu0.z-geo.offOrigZ[i];
     Pfinalv0.x=Pfinalv0.x-geo.offOrigX[i];   Pfinalv0.y=Pfinalv0.y-geo.offOrigY[i];   Pfinalv0.z=Pfinalv0.z-geo.offOrigZ[i];
-    S2.x=S2.x-geo.offOrigX[i];       S2.y=S2.y-geo.offOrigY[i];       S2.z=S2.z-geo.offOrigZ[i];
+    S2.x=S2.x-geo.offOrigX[i];               S2.y=S2.y-geo.offOrigY[i];               S2.z=S2.z-geo.offOrigZ[i];
     
     // As we want the (0,0,0) to be in a corner of the image, we need to translate everything (after rotation);
-    Pfinal.x  =Pfinal.x+geo.sVoxelX/2-geo.dVoxelX/2;      Pfinal.y  =Pfinal.y+geo.sVoxelY/2-geo.dVoxelY/2;          Pfinal.z  =Pfinal.z  +geo.sVoxelZ/2-geo.dVoxelZ/2;
-    Pfinalu0.x=Pfinalu0.x+geo.sVoxelX/2-geo.dVoxelX/2;    Pfinalu0.y=Pfinalu0.y+geo.sVoxelY/2-geo.dVoxelY/2;        Pfinalu0.z=Pfinalu0.z+geo.sVoxelZ/2-geo.dVoxelZ/2;
-    Pfinalv0.x=Pfinalv0.x+geo.sVoxelX/2-geo.dVoxelX/2;    Pfinalv0.y=Pfinalv0.y+geo.sVoxelY/2-geo.dVoxelY/2;        Pfinalv0.z=Pfinalv0.z+geo.sVoxelZ/2-geo.dVoxelZ/2;
-    S2.x      =S2.x+geo.sVoxelX/2-geo.dVoxelX/2;          S2.y      =S2.y+geo.sVoxelY/2-geo.dVoxelY/2;              S2.z      =S2.z      +geo.sVoxelZ/2-geo.dVoxelZ/2;
+    Pfinal.x  =Pfinal.x+geo.sVoxelX/2;      Pfinal.y  =Pfinal.y+geo.sVoxelY/2;          Pfinal.z  =Pfinal.z  +geo.sVoxelZ/2;
+    Pfinalu0.x=Pfinalu0.x+geo.sVoxelX/2;    Pfinalu0.y=Pfinalu0.y+geo.sVoxelY/2;        Pfinalu0.z=Pfinalu0.z+geo.sVoxelZ/2;
+    Pfinalv0.x=Pfinalv0.x+geo.sVoxelX/2;    Pfinalv0.y=Pfinalv0.y+geo.sVoxelY/2;        Pfinalv0.z=Pfinalv0.z+geo.sVoxelZ/2;
+    S2.x      =S2.x+geo.sVoxelX/2;          S2.y      =S2.y+geo.sVoxelY/2;              S2.z      =S2.z      +geo.sVoxelZ/2;
     
     //4. Scale everything so dVoxel==1
     Pfinal.x  =Pfinal.x/geo.dVoxelX;      Pfinal.y  =Pfinal.y/geo.dVoxelY;        Pfinal.z  =Pfinal.z/geo.dVoxelZ;
     Pfinalu0.x=Pfinalu0.x/geo.dVoxelX;    Pfinalu0.y=Pfinalu0.y/geo.dVoxelY;      Pfinalu0.z=Pfinalu0.z/geo.dVoxelZ;
     Pfinalv0.x=Pfinalv0.x/geo.dVoxelX;    Pfinalv0.y=Pfinalv0.y/geo.dVoxelY;      Pfinalv0.z=Pfinalv0.z/geo.dVoxelZ;
     S2.x      =S2.x/geo.dVoxelX;          S2.y      =S2.y/geo.dVoxelY;            S2.z      =S2.z/geo.dVoxelZ;
+    
+    
+      
+    //5. apply COR. Wherever everything was, now its offesetd by a bit
+    float CORx, CORy;
+    CORx=-geo.COR*sin(geo.alpha)/geo.dVoxelX;
+    CORy= geo.COR*cos(geo.alpha)/geo.dVoxelY;
+    Pfinal.x+=CORx;   Pfinal.y+=CORy;
+    Pfinalu0.x+=CORx;   Pfinalu0.y+=CORy;
+    Pfinalv0.x+=CORx;   Pfinalv0.y+=CORy;
+    S2.x+=CORx; S2.y+=CORy;
     
     // return
     

@@ -402,8 +402,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         }
     }else{
         if (interpolated){
-            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:debug",
-                            "ray-voxel intersection is still unavailable for parallel beam, as there are some bugs on it.");
+//             mexErrMsgIdAndTxt( "CBCT:MEX:Ax:debug",
+//                             "ray-voxel intersection is still unavailable for parallel beam, as there are some bugs on it.");
             siddon_ray_projection_parallel(img,geo,result,alphas,nalpha);
         }else{
             interpolation_projection_parallel(img,geo,result,alphas,nalpha);

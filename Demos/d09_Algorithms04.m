@@ -197,39 +197,18 @@ imgBASDPOCSbeta=B_ASD_POCS_beta(noise_projections,geo,angles,50,...
                   
 imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',50);           
 
-%   AwASD_POCS
-%==========================================================================
-%==========================================================================      
-%
-%  This is the adaptive-weighted ASD_POCS algorithm which extends from ASD_POCS
-%  by adding weight equation to better preserve the edge of the
-%  reconstructed image.
-%
-%  It uses all the inputs from ASD_POCS with one extra
-%
-%   'delta'        Defines Parameter to control the amount of smoothing 
-%                  for pixels at the edges. A large 'delta' is not able to
-%                  differentiate image gradients at different pixels. A
-%                  small 'delta' give low weights to almost every pixels,
-%                  making the algorithm inefficient in removing noise or
-%                  streaking artifacts. Default is -0.00055
-
-imgAwASD_POCS=AwASD_POCS(noise_projections,geo,angles,50,...
-                    'TViter',ng,'maxL2err',epsilon,'alpha',alpha,... % these are very important
-                     'lambda',lambda,'lambdared',lambdared,'Ratio',ratio,'Verbose',verb,... % less important.
-                     'delta',-0.00055); %AwASD_POCS option
 
  %% Lets visualize the results
 % Notice the smoother images due to TV regularization.
 %
-%     OS-SART           ASD-POCS        AwASD_POCS   
+%     thorax              OS-SART           ASD-POCS         
 %    
 %     OSC-TV             B-ASD-POCS-beta   SART-TV
 
-plotImg([ imgOSCTV imgBASDPOCSbeta imgSARTTV; imgOSSART  imgASDPOCS imgAwASD_POCS] ,'Dim','Z','Step',2)
+plotImg([ imgOSCTV imgBASDPOCSbeta imgSARTTV; thorax imgOSSART  imgASDPOCS ] ,'Dim','Z','Step',2)
  % error
 
-plotImg(abs([ thorax-imgOSCTV thorax-imgBASDPOCSbeta thorax-imgSARTTV; thorax-imgOSSART  thorax-imgASDPOCS thorax-imgAwASD_POCS]) ,'Dim','Z','Slice',64)
+plotImg(abs([ thorax-imgOSCTV thorax-imgBASDPOCSbeta thorax-imgSARTTV;thorax-thorax thorax-imgOSSART  thorax-imgASDPOCS ]) ,'Dim','Z','Slice',64)
 
 
 
