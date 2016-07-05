@@ -78,7 +78,7 @@ Just get it, and try your data!
 
 
 
-## Getting started
+## Getting started & Documentation
 
 
 The first thing you need to do is run `InitTIGRE`, to initialize all the 
@@ -87,6 +87,8 @@ folders and subfolders if the toolbox.
 Currently the documentation is included in each of the functions. You can access it 
 by typing `help function_name` or by selecting the function in the editor and pressing F1.
 Additionally, the demos should include all the necessary documentation and examples of use.
+
+
 
 ## Issues
 
