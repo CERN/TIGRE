@@ -147,12 +147,11 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
     u=y+geo.nDetecU/2-0.5;
     v=z+geo.nDetecV/2-0.5;
     
-    // TODO: put this in a separate kernel?
-    // Compute the weigth of the matched backprojection , as in doi: 10.1088/0031-9155/56/13/004, eq (3)
-   float weigth;
+   
+     float weigth;
      float realx,realy;
      realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x; 
-     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y; 
+     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y+geo.COR; 
     
      
      weigth=(geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha))/geo.DSO;

@@ -2,7 +2,7 @@ TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
 ======
 
 TIGRE is a MATLAB/CUDA toolbox for fast and accurate 3D tomographic 
-reconstruction. The aim of TIGRE is to provide a wide range of easy-to-use 
+reconstruction, created jointly by University of Bath's Engineering Tomography Lab and CERN. The aim of TIGRE is to provide a wide range of easy-to-use 
 iterative algorithms to the tomographic research community. 
 We would like to build an stronger bridge between algorithm researchers and
 imaging researchers, by encouraging and supporting contributions from both sides into
@@ -73,13 +73,8 @@ And transforms it to this:
 
 ![this image](http://i.imgur.com/NcVEac2.gif?1)
  
-And much more! See the result of demo 9, by using just 20 projections (!) The result that the standard medical algorithm (FDK) gets vs a variety of interative Total Variation algorithms. 
-
-FDK is top row, and then OS-SART, ASD-POCS, AwASD-POCS, OSC-TV, B-ASD-POCS-beta and SART-TV are shown. Get TIGRE, and try them in your data!
-
-![This doesnt seem to work](http://i.imgur.com/dnLqo1q.gif)
-
-[Link to the image](http://i.imgur.com/dnLqo1q.gif)
+And much more! There are 9 algorithms that will behave differently for different data!
+Just get it, and try your data! 
 
 
 

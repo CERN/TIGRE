@@ -69,7 +69,7 @@ typedef struct {
     
     //projection angle
     float alpha;
-    
+    float COR;
     //Maximum length of cube
     float maxLength;
      //User option

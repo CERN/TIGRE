@@ -147,11 +147,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     
     float const * const imgaux = static_cast<float const *>(mxGetData(image));
-    
+
     
     
     float *  img = (float*)malloc(size_proj[0] *size_proj[1] *size_proj2* sizeof(float));
-    
+
+
     const int size0 = size_proj[0];
     const int size1 = size_proj[1];
     const int size2 = size_proj2;
@@ -170,6 +171,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
             }
         }
     }
+      
+    
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /**
      * Second input: Geometry structure
@@ -446,16 +449,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     for (int i=0; i<geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ ;i++)
         outImage[i]= (float)result[i];
     
-    /*
-     * Free memory and out
-     */
-//     for (int i=0; i<geo.nVoxelX ;i++){
-//         for (int j=0; j<geo.nVoxelY ;j++)
-//              free (result[i][j]);
-//         free(result[i]);
-//     }
-//     mexPrintf("%lf \n",result[0]);
-//     mexCallMATLAB(0,NULL,1,&plhs[0],"disp");
+
     free(result);
     
     free(img);

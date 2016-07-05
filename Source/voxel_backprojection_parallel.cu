@@ -110,8 +110,8 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo,
     int indY = blockIdx.y * blockDim.y + threadIdx.y;
     int indX = blockIdx.x * blockDim.x + threadIdx.x;
     int indZ = blockIdx.z * blockDim.z + threadIdx.z;
-    
-    size_t idx =indZ*geo.nVoxelX*geo.nVoxelY+indX*geo.nVoxelY + indY;
+    //Make sure we dont go out of bounds
+    size_t idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
     if (indX>=geo.nVoxelX | indY>=geo.nVoxelY |indZ>=geo.nVoxelZ)
         return;
     
@@ -119,24 +119,23 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo,
     //Source
      Point3D S;   
      S.x=geo.DSO;
-     indY=geo.nVoxelY-1-indY;
      // "XYZ" in the warped coordinate system of the current point
      Point3D P;
      P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-     P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y);
+     P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-geo.COR/geo.dDetecU;
      P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
      S.z=P.z;S.y=P.y; 
      
-     // compute the weigth for the backprojection. This needs the X and Y coords on the real workd of the image
+     // compute the weigth for the backprojection. This needs the X and Y coords on the real world of the image
      float weigth;
      float realx,realy;
      realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x; 
-     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y; 
+     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y+geo.COR; 
     
      
      weigth=(geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha))/geo.DSO;
      weigth=1/(weigth*weigth);
-     weigth=sqrt(geo.dVoxelX*geo.dVoxelX+geo.dVoxelY*geo.dVoxelY*sin(geo.alpha)*sin(geo.alpha))/2;
+//      weigth=sqrt(geo.dVoxelX*geo.dVoxelX+geo.dVoxelY*geo.dVoxelY*sin(geo.alpha)*sin(geo.alpha))/2;
      float vectX,vectY,vectZ;
      vectX=(P.x -S.x); 
      vectY=(P.y -S.y); 
@@ -156,10 +155,11 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo,
      // Get interpolated value in the current projection   
 
      // the use of texture memory seems to take about 11ms in 512^3 512^2 360 scenario. Thats about 3seconds, more than the top speed in literature. this has to improve.
-     image[idx]+=tex3D(tex, u +0.5 ,
+     image[idx]=tex3D(tex, u +0.5 ,
                             v +0.5 , 
-                            indAlpha                                           +0.5)*weigth;
-//      image[idx]=weigth;                         indAlpha                                           +0.5);
+                            indAlpha                                           +0.5);
+//      image[idx]=tex3D(tex, 100,100,indAlpha+0.5);
+//      image[idx]=u;
 }
     
     
@@ -171,6 +171,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
      */
     
     // copy data to CUDA memory
+
     cudaArray *d_projectiondata = 0;
     const cudaExtent extent = make_cudaExtent(geo.nDetecU,geo.nDetecV,nalpha);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
@@ -226,7 +227,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
     dim3 block(divx,divy,divz);
     Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec;
     for (int i=0;i<nalpha;i++){
-        geo.alpha=-alphas[i]+PI_2;
+        geo.alpha=-alphas[i];
         computeDeltasCube(geo,geo.alpha,i,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
         
         offOrig.x=geo.offOrigX[i];
