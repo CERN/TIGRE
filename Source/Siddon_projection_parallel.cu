@@ -231,12 +231,12 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
 
     for (int ii=0;ii<Np;ii++){
         if (ax==aminc){
-            sum+=(ax-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(ax-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);//(ax-ac)*
             i=i+iu;
             ac=ax;
             ax+=axu;
         }else if(ay==aminc){
-            sum+=(ay-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(ay-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);//(ay-ac)*
             j=j+ju;
             ac=ay;
             ay+=ayu;
@@ -249,6 +249,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
         aminc=min(ay,ax);
     }
     detector[idx]=maxlength*sum;
+//     detector[idx]=(iu);
 }
 
 
@@ -314,6 +315,8 @@ int siddon_ray_projection_parallel(float const * const img, Geometry geo, float*
     for (int i=0;i<nalpha;i++){
         
         geo.alpha=alphas[i];
+        if(geo.alpha==0.0)
+            geo.alpha=1.1920929e-07;
         //precomute distances for faster execution
         //Precompute per angle constant stuff for speed
         computeDeltas_Siddon_parallel(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
