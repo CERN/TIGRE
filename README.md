@@ -9,7 +9,7 @@ imaging researchers, by encouraging and supporting contributions from both sides
 TIGRE. TIGRE is free to use and distribute, use it, modify it, break it, share it; 
 the only requirement is proper referencing to the authors.
 
-Currently it contains Cone Beam CT geometries, and a beta of parallel geometries (not fully working yet). 
+Currently it contains Cone Beam CT geometries, and a beta of parallel geometries. 
 
 
 **TIGRE features**:
@@ -28,6 +28,7 @@ Currently it contains Cone Beam CT geometries, and a beta of parallel geometries
       - OSC-POCS              
       - B-ADS-POCS-&#946;       
       - SART-TV
+      - MLEM
 
   - TV denoising for 3D images
 
