@@ -59,6 +59,8 @@ If it doesn't work, or you are not in win64 CUDA 7.5
    - Make sure the xml file for compiling is properly set up. E.g. in Linux 64 bit machines
      mex_CUDA_glnxa64.xml should be present, and inside it the proper links to CUDA will have to be set up.
 
+   - On linux machines, make sure you modify `mex_CUDA_glnxa64.xml` line 44 to the correct path to libcudart on your system.
+   
    - Run Compile.m
 
    - TIGRE should be ready to use!
