@@ -41,7 +41,7 @@
           LDFLAGS="-pthread -Wl,--no-undefined "
           LDTYPE="-shared"
           LINKEXPORT="-Wl,--version-script,&quot;$MATLABROOT/extern/lib/$ARCH/mexFunction.map&quot;"
-          LINKLIBS="-Wl,-rpath-link,$MATLABROOT/bin/$ARCH -L&quot;$MATLABROOT/bin/$ARCH&quot; -lmx -lmex -lmat -lm -lmwgpu $MATLABROOT/bin/$ARCH/libcudart.so.7.5"
+          LINKLIBS="-Wl,-rpath-link,$MATLABROOT/bin/$ARCH -L&quot;$MATLABROOT/bin/$ARCH&quot; -lmx -lmex -lmat -lm /usr/local/cuda-7.5/targets/x86_64-linux/lib"
           LDOPTIMFLAGS="-O"
           LDDEBUGFLAGS="-g"
           
