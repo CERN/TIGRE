@@ -411,7 +411,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     }
     // Set outputs and exit
     
-    mwSize* outsize;
+    mwSize outsize[3];
     outsize[0]=geo.nDetecV;
     outsize[1]=geo.nDetecU;
     outsize[2]= nalpha;

@@ -437,7 +437,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     /*
      * Prepare the outputs
      */
-    mwSize* imgsize;
+    mwSize imgsize[3];
     imgsize[0]=geo.nVoxelX;
     imgsize[1]=geo.nVoxelY;
     imgsize[2]=geo.nVoxelZ;
