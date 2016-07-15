@@ -199,7 +199,7 @@ for ii=list
      if crossect==2 
         xlabel('->X');
         ylabel('->Z');
-        title(['LEft to Rigth direction ->Y : ',num2str(ii)]);
+        title(['Left to Rigth direction ->Y : ',num2str(ii)]);
     end
     if crossect==1 
         xlabel('->Y');
