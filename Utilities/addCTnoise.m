@@ -91,7 +91,11 @@ end
 Im=I0*exp(-proj);
 
 % Photon noise + electronic noise
-Im=poissrnd(Im)+normrnd(m,sigma);
+if areTheseToolboxesInstalled({'MATLAB','Statistics Toolbox'})
+    Im=poissrnd(Im)+randn(size(Im)).*sigma + m;
+else
+    Im=poissonrandom(Im)+randn(size(Im)).*sigma + m; % this one is slower
+end
 Im(Im<0)=1e-6;
 proj=log(I0./Im);
 end

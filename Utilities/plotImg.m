@@ -145,7 +145,11 @@ for ii=1:length(opts)
 % % % % % %         % Limits of the colors
         case 'Clims'
             if default
-                climits=prctile(double(img(:)),[1 99]);
+                if any(size(img)>512) || ~areTheseToolboxesInstalled({'MATLAB','Statistics Toolbox'})
+                   climits=[0, 0.95*max(img(:))];
+                else
+                   climits=prctile(double(img(:)),[1 99]);
+                end
             else
                 if min(size(val))==1 && max(size(val))==2
                     climits=val;
