@@ -379,9 +379,17 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 
         }
     }
-    if (nfields==10)
+    tmp=mxGetField(geometryMex,0,fieldnames[10]);
+    if (tmp==NULL)
         geo.accuracy=0.5;
-    
+    // Geometry
+    tmp=mxGetField(geometryMex,0,fieldnames[11]);
+    if (tmp==NULL)
+        coneBeam=true;
+    // COR
+    tmp=mxGetField(geometryMex,0,fieldnames[12]);
+    if (tmp==NULL)
+        geo.COR=0.0;
     // Additional test
     if( (size_img[0]!=geo.nVoxelX)|(size_img[1]!=geo.nVoxelY)|(size_img[2]!=geo.nVoxelZ))
         mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input",

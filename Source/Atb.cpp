@@ -409,9 +409,20 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 
         }
     }
-    if (nfields==10)
-        geo.accuracy=0.5;
     
+    //Spetiall cases
+    // Accuracy
+    tmp=mxGetField(geometryMex,0,fieldnames[10]);
+    if (tmp==NULL)
+        geo.accuracy=0.5;
+    // Geometry
+    tmp=mxGetField(geometryMex,0,fieldnames[11]);
+    if (tmp==NULL)
+        coneBeam=true;
+    // COR
+    tmp=mxGetField(geometryMex,0,fieldnames[12]);
+    if (tmp==NULL)
+        geo.COR=0.0;
     
     /*
      * allocate memory for the output
