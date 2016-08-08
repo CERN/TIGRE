@@ -315,8 +315,10 @@ int siddon_ray_projection_parallel(float const * const img, Geometry geo, float*
     for (int i=0;i<nalpha;i++){
         
         geo.alpha=alphas[i];
-        if(geo.alpha==0.0)
-            geo.alpha=1.1920929e-07;
+        if(geo.alpha==0.0 || abs(geo.alpha-1.5707963267949)<0.0000001){
+            geo.alpha=geo.alpha+1.1920929e-07;
+            mexPrintf("%f /n", geo.alpha);
+        }
         //precomute distances for faster execution
         //Precompute per angle constant stuff for speed
         computeDeltas_Siddon_parallel(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);

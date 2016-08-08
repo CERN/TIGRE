@@ -300,6 +300,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     for (int i=0;i<nalpha;i++){
         
         geo.alpha=alphas[i];
+
         //precomute distances for faster execution
         //Precompute per angle constant stuff for speed
         computeDeltas_Siddon(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);

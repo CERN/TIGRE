@@ -132,9 +132,9 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo,
      realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x; 
      realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y+geo.COR; 
     
-     
-     weigth=(geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha))/geo.DSO;
-     weigth=1/(weigth*weigth);
+//      
+//      weigth=(geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha))/geo.DSO;
+//      weigth=1/(weigth*weigth);
 //      weigth=sqrt(geo.dVoxelX*geo.dVoxelX+geo.dVoxelY*geo.dVoxelY*sin(geo.alpha)*sin(geo.alpha))/2;
      float vectX,vectY,vectZ;
      vectX=(P.x -S.x); 
@@ -155,7 +155,7 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo,
      // Get interpolated value in the current projection   
 
      // the use of texture memory seems to take about 11ms in 512^3 512^2 360 scenario. Thats about 3seconds, more than the top speed in literature. this has to improve.
-     image[idx]=tex3D(tex, u +0.5 ,
+     image[idx]+=tex3D(tex, u +0.5 ,
                             v +0.5 , 
                             indAlpha                                           +0.5);
 //      image[idx]=tex3D(tex, 100,100,indAlpha+0.5);
