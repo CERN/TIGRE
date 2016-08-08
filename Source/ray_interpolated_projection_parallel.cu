@@ -220,7 +220,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     
     // 16x16 gave the best performance empirically
     // Funnily that makes it compatible with most GPUs.....
-    dim3 grid(ceil(geo.nDetecU/32),ceil(geo.nDetecV/32),1);
+    dim3 grid(ceil((float)geo.nDetecU/32),ceil((float)geo.nDetecV/32),1);
     dim3 block(32,32,1); 
     Point3D source, deltaU, deltaV, uvOrigin;
     float maxdist;

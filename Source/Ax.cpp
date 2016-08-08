@@ -165,24 +165,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     size_t ncols;
     bool offsetAllOrig=false;
     bool offsetAllDetec=false;
-    for(int ifield=0; ifield<nfields; ifield++) {
+    for(int ifield=0; ifield<13; ifield++) {
         tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
         if(tmp==NULL){
-            // Special cases first:
-            if(ifield==11){
-                mxAddField(geometryMex,fieldnames[ifield]);
-                mxSetField(geometryMex,ifield,fieldnames[ifield],mxCreateString("cone"));
-            }else
-            if(ifield==12){
-                mxAddField(geometryMex,fieldnames[ifield]);
-                mxSetField(geometryMex,ifield,fieldnames[ifield],mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL ));
-            }else{
-                
-                mexPrintf("%s number: %d %s \n", "FIELD",ifield+1, fieldnames[ifield]);
-                mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput",
-                        "Above field is missing. Check spelling. ");
-            }        
-           
+           //tofix
+            continue;
         }
         switch(ifield){
             
@@ -276,8 +263,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     geo.unitX=1;geo.unitY=1;geo.unitZ=1;
     bool coneBeam=true;
 //     mexPrintf("%d \n",nfields);
-    for(int ifield=0; ifield<nfields; ifield++) {
+    for(int ifield=0; ifield<13; ifield++) {
         tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
+         if(tmp==NULL){
+           //tofix
+            continue;
+        }
         switch(ifield){
             case 0:
                 nVoxel=(double *)mxGetData(tmp);
@@ -402,6 +393,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         result[i]=(float*)malloc(geo.nDetecU*geo.nDetecV *sizeof(float));
     
     // call the real function
+    
     if (coneBeam){
         if (interpolated){
             siddon_ray_projection(img,geo,result,alphas,nalpha);

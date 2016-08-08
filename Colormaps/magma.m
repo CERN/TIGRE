@@ -261,7 +261,6 @@ cm = [[  1.46159096e-03,   4.66127766e-04,   1.38655200e-02],
 if nargin < 1
     cm_data = cm;
 else
-    cm_data = zeros(m,3);
     hsv=rgb2hsv(cm);
     cm_data=interp1(linspace(0,1,size(cm,1)),hsv,linspace(0,1,m));
     cm_data=hsv2rgb(cm_data);

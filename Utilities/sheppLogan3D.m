@@ -41,6 +41,6 @@ warning('This file is NOT under BSD license!')
 [p,ellipse]=phantom3dAniso(sz,type);
 
 p=single(p);
-p=[];
+% p=[];
 end
 
