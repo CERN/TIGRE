@@ -207,23 +207,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     mxArray    *tmp;
     bool offsetAllOrig=false;
     bool offsetAllDetec=false;
-    for(int ifield=0; ifield<nfields; ifield++) {
+    for(int ifield=0; ifield<13; ifield++) {
         tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
         if(tmp==NULL){
-            // Special cases first:
-            if (ifield==11){
-                mxAddField(geometryMex,fieldnames[ifield]);
-                mxSetField(geometryMex,ifield,fieldnames[ifield],mxCreateString("cone"));
-            }else
-            if(ifield==12){
-                mxAddField(geometryMex,fieldnames[ifield]);
-                mxSetField(geometryMex,ifield,fieldnames[ifield],mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL ));
-            }else{
-                
-                mexPrintf("%s number: %d %s \n", "FIELD",ifield+1, fieldnames[ifield]);
-                mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
-                        "Above field is missing. Check spelling. ");
-            }
+           //tofix
+            continue;
         }
         switch(ifield){
             
@@ -311,8 +299,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     Geometry geo;
     int c;
     geo.unitX=1;geo.unitY=1;geo.unitZ=1;
-    for(int ifield=0; ifield<nfields; ifield++) {
+    for(int ifield=0; ifield<13; ifield++) {
         tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
+          if(tmp==NULL){
+           //tofix
+            continue;
+        }
         switch(ifield){
             case 0:
                 nVoxel=(double *)mxGetData(tmp);
