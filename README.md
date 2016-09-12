@@ -11,6 +11,7 @@ the only requirement is proper referencing to the authors.
 
 Currently it contains Cone Beam CT geometries, and a beta of parallel geometries. 
 
+Donwload: [https://github.com/CERN/TIGRE/releases][7]
 
 **TIGRE features**:
 
@@ -19,16 +20,21 @@ Currently it contains Cone Beam CT geometries, and a beta of parallel geometries
   - Fast, state of the art backprojection, with FDK weight or matched weight 
 
   - A wide range of algorithms with multiple configurations for each 
-      - FDK                    
-      - SART                    
-      - OS-SART                
-      - SIRT                   
-      - CGLS
-      - ADS-POCS               
-      - OSC-POCS              
-      - B-ADS-POCS-&#946;       
-      - SART-TV
-      - MLEM
+      - FDK
+      - Gradien descend family
+        - SART                    
+        - OS-SART                
+        - SIRT
+      - Krylov Subspace
+        - CGLS
+      - Statistical methods
+        - MLEM
+      - Total Variation
+        - ADS-POCS               
+        - OSC-POCS              
+        - B-ADS-POCS-&#946;       
+        - SART-TV
+      
 
   - TV denoising for 3D images
 
@@ -39,7 +45,7 @@ Currently it contains Cone Beam CT geometries, and a beta of parallel geometries
 
 ## How to install TIGRE
 
-(Caution, this has only been tested on win 64 machines, please [report any 
+(Tested on win 64 and Linux 64 machines, please [report any 
 issue][2] if it doesnt work in other arch/OS)
  
    - Download TIGRE from the downloads page
@@ -47,10 +53,9 @@ issue][2] if it doesnt work in other arch/OS)
    - Install  CUDA Toolkit (the later, the better)
      Download [here][1]
    
-   - If you are working on a win64 machine, with CUDA 7.5, stop here. The
-     toolbox should be ready to use.
+   - Run Compile.m
 
-If it doesn't work, or you are not in win64 CUDA 7.5
+If it doesn't work
    
    - Make sure a compiler is set up in your MATLAB. run `mex -setup`. If a 
      compiler is not set up, make sure you download one (some are free)
@@ -76,7 +81,7 @@ And transforms it to this:
 
 ![this image](http://i.imgur.com/NcVEac2.gif?1)
  
-And much more! There are 9 algorithms that will behave differently for different data!
+And much more! There are 11 algorithms that will behave differently for different data!
 Just get it, and try your data! 
 
 
@@ -161,7 +166,8 @@ If you use TIGRE in any publications, please reference the following paper:
 
 **TIGRE: A MATLAB-GPU toolbox for CBCT image reconstruction**
 *Ander Biguri, Manjit Dosanjh, Steven Hancock, and Manuchehr Soleimani*
-*To be published*, 2016
+**Biomedical Physics & Engineering Express, Volume 2, Number 5**
+[Read the article (Open Access)][8]
 
 Also, if you use any algorithm, you should reference the corresponding creator
 of the algorithms. If you don't know the article, use `citeme('NameOfFunction')`
@@ -179,3 +185,5 @@ and the right reference will appear.
 [4]: https://help.github.com/articles/applying-labels-to-issues-and-pull-requests/
 [5]: http://www.linfo.org/bsdlicense.html
 [6]: https://github.com/CERN/TIGRE/license.txt
+[7]: https://github.com/CERN/TIGRE/releases
+[8]: http://iopscience.iop.org/article/10.1088/2057-1976/2/5/055010
