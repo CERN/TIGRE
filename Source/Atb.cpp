@@ -153,20 +153,20 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     float *  img = (float*)malloc(size_proj[0] *size_proj[1] *size_proj2* sizeof(float));
 
 
-    const int size0 = size_proj[0];
-    const int size1 = size_proj[1];
-    const int size2 = size_proj2;
+    const long size0 = size_proj[0];
+    const long size1 = size_proj[1];
+    const long size2 = size_proj2;
     // Permute(imgaux,[2 1 3]);
     
-    for (int j = 0; j < size2; j++)
+    for (unsigned int j = 0; j < size2; j++)
     {
-        int jOffset = j*size0*size1;
-        for (int k = 0; k < size0; k++)
+        unsigned long jOffset = j*size0*size1;
+        for (unsigned int k = 0; k < size0; k++)
         {
             int kOffset1 = k*size1;
-            for (int i = 0; i < size1; i++)
+            for (unsigned int i = 0; i < size1; i++)
             {
-                int iOffset2 = i*size0;
+                unsigned long iOffset2 = i*size0;
                 img[i + jOffset + kOffset1] = imgaux[iOffset2 + jOffset + k];
             }
         }
@@ -449,7 +449,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     float *outImage = (float *)mxGetPr(plhs[0]);
     
     
-    for (int i=0; i<geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ ;i++)
+    for (unsigned long i=0; i<geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ ;i++)
         outImage[i]= (float)result[i];
     
 

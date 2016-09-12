@@ -107,9 +107,9 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     
 //     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
 
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    size_t idx =  x  * geo.nDetecV + y;
+    unsigned long y = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned long x = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned long idx =  x  * geo.nDetecV + y;
 
     if ((x>= geo.nDetecU) | (y>= geo.nDetecV))
         return;
@@ -229,7 +229,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     int Np=(imax-imin+1)+(jmax-jmin+1);//+(kmax-kmin+1); // Number of intersections
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
 
-    for (int ii=0;ii<Np;ii++){
+    for (unsigned int ii=0;ii<Np;ii++){
         if (ax==aminc){
             sum+=(ax-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);//(ax-ac)*
             i=i+iu;

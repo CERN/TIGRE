@@ -107,11 +107,11 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo,
                                             const Point3D xyzOffset,
                                             const Point3D uv0Offset){
   //Make sure we dont go out of bounds
-    int indY = blockIdx.y * blockDim.y + threadIdx.y;
-    int indX = blockIdx.x * blockDim.x + threadIdx.x;
-    int indZ = blockIdx.z * blockDim.z + threadIdx.z;
+    unsigned long indY = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned long indX = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned long indZ = blockIdx.z * blockDim.z + threadIdx.z;
     //Make sure we dont go out of bounds
-    size_t idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
+    unsigned long long idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
     if (indX>=geo.nVoxelX | indY>=geo.nVoxelY |indZ>=geo.nVoxelZ)
         return;
     
@@ -226,7 +226,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
               (geo.nVoxelZ+divz-1)/divz); 
     dim3 block(divx,divy,divz);
     Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec;
-    for (int i=0;i<nalpha;i++){
+    for (unsigned int i=0;i<nalpha;i++){
         geo.alpha=-alphas[i];
         computeDeltasCube(geo,geo.alpha,i,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
         

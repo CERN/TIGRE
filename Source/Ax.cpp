@@ -127,8 +127,9 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     const mwSize *size_img= mxGetDimensions(image); //get size of image
     
     float *  img = (float*)malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float));
-    for (int i=0;i<size_img[0] *size_img[1] *size_img[2];i++)
+    for (unsigned long long i=0;i<size_img[0] *size_img[1] *size_img[2];i++)
         img[i]=(float)imgaux[i];
+    
     ///////////////////// Second input argument,
     // Geometry structure that has all the needed geometric data.
     
@@ -419,11 +420,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     plhs[0] = mxCreateNumericArray(3,outsize,mxSINGLE_CLASS,mxREAL);
     float *outProjections = (float*)mxGetPr(plhs[0]);
     for (int i=0; i<nalpha ;i++)
-        for (int j=0; j<geo.nDetecU*geo.nDetecV;j++)
+        for (unsigned long j=0; j<geo.nDetecU*geo.nDetecV;j++)
             outProjections[geo.nDetecU*geo.nDetecV*i+j]=(float)result[i][j];
             
     
-    for (int i=0; i<nalpha ;i++)
+    for (unsigned int i=0; i<nalpha ;i++)
         free (result[i]);
     free(result);
     

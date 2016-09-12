@@ -71,21 +71,21 @@ do { \
 //https://stackoverflow.com/questions/21332040/simple-cuda-kernel-optimization/21340927#21340927
     __global__ void divideArrayScalar(float* vec,float scalar,const size_t n)
     {
-        unsigned int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+        unsigned long long i = (blockIdx.x * blockDim.x) + threadIdx.x;
         for(; i<n; i+=gridDim.x*blockDim.x) {
             vec[i]/=scalar;
         }
     }
     __global__ void multiplyArrayScalar(float* vec,float scalar,const size_t n)
     {
-        unsigned int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+        unsigned long long i = (blockIdx.x * blockDim.x) + threadIdx.x;
         for(; i<n; i+=gridDim.x*blockDim.x) {
             vec[i]*=scalar;
         }
     }
     __global__ void substractArrays(float* vec,float* vec2,const size_t n)
     {
-        unsigned int i = (blockIdx.x * blockDim.x) + threadIdx.x;
+        unsigned long long i = (blockIdx.x * blockDim.x) + threadIdx.x;
         for(; i<n; i+=gridDim.x*blockDim.x) {
             vec[i]-=vec2[i];
         }
@@ -96,8 +96,8 @@ do { \
             long z, long y, long x,
             long depth, long rows, long cols)
     {
-        long size2d = rows*cols;
-        long idx = z * size2d + y * cols + x;
+        unsigned long size2d = rows*cols;
+        unsigned long long idx = z * size2d + y * cols + x;
         
         float uidx = u[idx];
         
@@ -116,10 +116,10 @@ do { \
     
     __global__ void gradientTV(const float* f, float* dftv,
             long depth, long rows, long cols){
-        long x = threadIdx.x + blockIdx.x * blockDim.x;
-        long y = threadIdx.y + blockIdx.y * blockDim.y;
-        long z = threadIdx.z + blockIdx.z * blockDim.z;
-        long idx = z * rows * cols + y * cols + x;
+        unsigned long x = threadIdx.x + blockIdx.x * blockDim.x;
+        unsigned long y = threadIdx.y + blockIdx.y * blockDim.y;
+        unsigned long z = threadIdx.z + blockIdx.z * blockDim.z;
+        unsigned long long idx = z * rows * cols + y * cols + x;
         if ( x >= cols || y >= rows || z >= depth )
             return;
         
@@ -281,7 +281,7 @@ do { \
         cudaMalloc(&d_norm2aux, sizeof(float)*(total_pixels + MAXTHREADS - 1) / MAXTHREADS);
         cudaCheckErrors("Memory Malloc and Memset: NORMAux");
         
-        for(int i=0;i<maxIter;i++){
+        for(unsigned int i=0;i<maxIter;i++){
             
             
             // Compute the gradient of the TV norm

@@ -2,7 +2,7 @@
  *
  * CUDA functions for texture-memory interpolation based projection
  *
- * This file has the necesary fucntiosn to perform X-ray parallel projection 
+ * This file has the necesary functions to perform X-ray parallel projection 
  * operation given a geaometry, angles and image. It uses the 3D texture 
  * memory linear interpolation to uniformily sample a path to integrate the 
  * X-rays.
@@ -106,9 +106,9 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
         Point3D uvOrigin,
         float maxdist){
     
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    size_t idx =  x  * geo.nDetecV + y;
+    unsigned long y = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned long x = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned long idx =  x  * geo.nDetecV + y;
 
     if ((x>= geo.nDetecU) | (y>= geo.nDetecV))
         return;
@@ -224,7 +224,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     dim3 block(32,32,1); 
     Point3D source, deltaU, deltaV, uvOrigin;
     float maxdist;
-    for (int i=0;i<nalpha;i++){
+    for (unsigned int i=0;i<nalpha;i++){
         
         geo.alpha=alphas[i];
         //precomute distances for faster execution
