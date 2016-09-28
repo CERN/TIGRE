@@ -11,7 +11,12 @@ the only requirement is proper referencing to the authors.
 
 Currently it contains Cone Beam CT geometries, and a beta of parallel geometries. 
 
+**IMPORTANT NOTE** Some of the previous releases had a bug that made the software return NaN images. Please make sure you are running TIGRE v1.1.2 or newer.
+
+
 Donwload: [https://github.com/CERN/TIGRE/releases][7]
+
+
 
 **TIGRE features**:
 
@@ -145,6 +150,13 @@ If you are working on a TESLA, setting the TESLA to TCC mode will fix the proble
 *A: Unfortunately when CUDA has an error, it hungs. You need to restart MATLAB to fix
 this. Hopefully we can find a solution for this without the need of restarting MATLAB*
 
+**Q: Does it work in MATLAB XXXX with Compiler XXXX in OS XXXX**
+
+*A: Yes it should. Currently the only known compiler to possibly not be compatible is MinGW,
+due to problems in the MATHWORKS side. The rest should be OK. Unfortunatedly we have been unable
+to test all posible combinations, but please, give it a try and if there is any problem,
+raise an issue or contact us to get it fixed*
+
 ## Licensing
 
 TIGRE toolbox is released under the BSD License, meaning you can use and modify 
@@ -153,10 +165,16 @@ For more information, read the license file or the [BSD License Definition][5] o
 
 ## Contact
 
-*Before contacting* consider that you might be able to let us know your concerns by
-[raising an issue][2] and [labeling accordingly][4]. If you still need to contact us:
+*Before contacting* consider that you might be able to let us know any problem TIGRE may have by
+[raising an issue][2] and [labeling accordingly][4]. 
+
+If you want to contact us for other reasons than an issue with the tool, please send us an email to
 
 tigre.toolbox@gmail.com
+
+or contact the author directly in
+
+a.biguri@bath.ac.uk
 
 We will make an effort to answer as soon as we can.
 
