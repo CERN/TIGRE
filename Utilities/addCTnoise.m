@@ -91,7 +91,7 @@ end
 Im=I0*exp(-proj);
 
 % Photon noise + electronic noise
-if areTheseToolboxesInstalled({'MATLAB','Statistics Toolbox'})
+if areTheseToolboxesInstalled({'MATLAB','Statistics Toolbox'}) || areTheseToolboxesInstalled({'MATLAB','Statistics and Machine Learning Toolbox'})
     Im=poissrnd(Im)+randn(size(Im)).*sigma + m;
 else
     Im=poissonrandom(Im)+randn(size(Im)).*sigma + m; % this one is slower
