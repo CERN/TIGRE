@@ -94,8 +94,15 @@ Im=I0*exp(-proj);
 if areTheseToolboxesInstalled({'MATLAB','Statistics Toolbox'}) || areTheseToolboxesInstalled({'MATLAB','Statistics and Machine Learning Toolbox'})
     Im=poissrnd(Im)+randn(size(Im)).*sigma + m;
 else
-    Im=poissonrandom(Im)+randn(size(Im)).*sigma + m; % this one is slower
+     warning(['You dont have Statistic toolbox, so poisson random noise is not available in MATLAB.',...
+         java.lang.System.getProperty('line.separator').char,...
+         'If you want to add that noise, use the following command:',...
+         java.lang.System.getProperty('line.separator').char,...
+         'Im=poissonrandom(I0*exp(-proj)); Im(Im<0)=1e-6; proj=single(log(I0./Im));',...
+         java.lang.System.getProperty('line.separator').char,...,
+         'With I0 ~ 10000'])
+     Im=randn(size(Im)).*sigma + m; % this one is slower
 end
 Im(Im<0)=1e-6;
-proj=log(I0./Im);
+proj=single(log(I0./Im));
 end
