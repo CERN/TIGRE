@@ -11,8 +11,14 @@ the only requirement is proper referencing to the authors.
 
 Currently it contains Cone Beam CT geometries, and a beta of parallel geometries. 
 
-**IMPORTANT NOTE** Some of the previous releases had a bug that made the software return NaN images. Please make sure you are running TIGRE v1.1.2 or newer.
+TIGRE in media:
 
+Article of Medical Physics Web on TIGRE: 
+
+http://medicalphysicsweb.org/cws/article/research/66343
+
+
+**IMPORTANT NOTE** Some of the previous releases had a bug that made the software return NaN images. Please make sure you are running TIGRE v1.1.2 or newer.
 
 Donwload: [https://github.com/CERN/TIGRE/releases][7]
 
@@ -158,8 +164,10 @@ to test all posible combinations, but please, give it a try and if there is any 
 raise an issue or contact us to get it fixed*
 
 **Q: I get a fair amount of warnings when I compile the code, what is happening?**
+
 *A: Do not worry about the warnings. We are perfectly aware of them and know that they will have no 
 effect whatsoever in the correct execution (both in computational time and accuracy) of the code.*
+
 ## Licensing
 
 TIGRE toolbox is released under the BSD License, meaning you can use and modify 
