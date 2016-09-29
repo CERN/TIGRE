@@ -157,6 +157,9 @@ due to problems in the MATHWORKS side. The rest should be OK. Unfortunatedly we 
 to test all posible combinations, but please, give it a try and if there is any problem,
 raise an issue or contact us to get it fixed*
 
+**Q: I get a fair amount of warnings when I compile the code, what is happening? **
+*A: Do not worry about the warnings. We are perfectly aware of them and know that they will have no 
+effect whatsoever in the correct execution (both in computational time and accuracy) of the code.*
 ## Licensing
 
 TIGRE toolbox is released under the BSD License, meaning you can use and modify 
