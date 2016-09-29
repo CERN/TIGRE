@@ -142,7 +142,7 @@ order='angularDistance';
                             'lambda',lambda,'lambdared',lambdared,'verbose',verbose,'QualMeas',qualmeas,...
                              'BlockSize',blcks,'OrderStrategy',order);
 %% Lets have a brief show of the results
-set(0,'DefaultTextInterpreter', 'latex')
+% set(0,'DefaultTextInterpreter', 'latex')
 
 subplot(211)
 plot(log10([errL2SIRT;errL2SART;[errL2OSSART nan(1,length(errL2SART)-length(errL2OSSART))]]'));
