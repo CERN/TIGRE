@@ -268,6 +268,10 @@ for ii=1:length(opts)
             else
                 verbose=val;
             end
+            if ~is2014bOrNewer
+                warning('Verbose mode not available for older versions than MATLAB R2014b');
+                verbose=false;
+            end
             % % % % % % % hyperparameter, LAMBDA
         case 'lambda'
             if default

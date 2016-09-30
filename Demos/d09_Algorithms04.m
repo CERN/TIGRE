@@ -42,7 +42,7 @@ geo.nDetector=[512; 512];					% number of pixels              (px)
 geo.dDetector=[0.8; 0.8]; 					% size of each pixel            (mm)
 geo.sDetector=geo.nDetector.*geo.dDetector; % total size of the detector    (mm)
 % Image parameters
-geo.nVoxel=[128;128;128]*2;                   % number of voxels              (vx)
+geo.nVoxel=[128;128;128];                   % number of voxels              (vx)
 geo.sVoxel=[256;256;256];                   % total size of the image       (mm)
 geo.dVoxel=geo.sVoxel./geo.nVoxel;          % size of each voxel            (mm)
 % Offsets

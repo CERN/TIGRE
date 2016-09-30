@@ -39,8 +39,8 @@ function [x,errorL2]= CGLS(proj,geo,angles,niter,varargin)
 
 
 %% parse inputs'
-opts=     {'Init','InitImg'};
-defaults= [   1  ,    1 ];
+opts=     {'Init','InitImg','Verbose'};
+defaults= [   1  ,    1 , 1];
 
 % Check inputs
 nVarargs = length(varargin);
@@ -103,6 +103,16 @@ for ii=1:length(opts)
                     error('CBCT:CGLS_CBCT:InvalidInput','Invalid image for initialization');
                 end
             end
+         case 'Verbose'
+            if default
+                verbose=1;
+            else
+                verbose=val;
+            end
+            if ~is2014bOrNewer
+                warning('Verbose mode not available for older versions than MATLAB R2014b');
+                verbose=false;
+            end
         otherwise 
     end
 end
@@ -117,7 +127,7 @@ gamma=norm(p(:),2)^2;
 
 errorL2=zeros(1,niter);
 for ii=1:niter
-     if ii==1;tic;end
+     if (ii==1 && verbose);tic;end
     
     q=Ax(p,geo,angles,'ray-voxel');
     alpha=gamma/norm(q(:),2)^2;
@@ -141,7 +151,7 @@ for ii=1:niter
     p=s+beta*p;
     
    
-     if ii==1;
+     if (ii==1 && verbose);
         expected_time=toc*niter;   
         disp('CGLS');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
