@@ -203,7 +203,7 @@ do { \
         size_t i = blockIdx.x*blockDim.x + tid;
         size_t gridSize = blockDim.x*gridDim.x;
         float mySum = 0;
-        float value=0;
+       // float value=0;
         while (i < n) {
             mySum += g_idata[i];
             i += gridSize;

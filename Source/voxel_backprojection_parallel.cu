@@ -127,10 +127,10 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo,
      S.z=P.z;S.y=P.y; 
      
      // compute the weigth for the backprojection. This needs the X and Y coords on the real world of the image
-     float weigth;
-     float realx,realy;
-     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x; 
-     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y+geo.COR; 
+     //float weigth;
+     //float realx,realy;
+     //realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x; 
+     //realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y+geo.COR; 
     
 //      
 //      weigth=(geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha))/geo.DSO;

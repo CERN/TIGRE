@@ -108,7 +108,9 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
                                             const Point3D deltaZ,
                                             const Point3D xyzOrigin,
                                             const Point3D xyzOffset,
-                                            const Point3D uv0Offset){
+                                            const Point3D uv0Offset,
+                                            const float sinalpha,
+                                            const float cosalpha){
     
     
     unsigned long indY = blockIdx.y * blockDim.y + threadIdx.y;
@@ -122,10 +124,10 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
     
     //Source, scaled XYZ coordinates
     Point3D S;
-    S.x=geo.DSO;                  // we dont scale the x direction, because the detecros is only in YZ (and the image is rotated)
+    S.x=geo.DSO;                  // we dont scale the x direction, because the detector is only in YZ (and the image is rotated)
     S.y=-uv0Offset.x/geo.dDetecU;            
     S.z=-uv0Offset.y/geo.dDetecV;
-    // "XYZ" in the scaled coordinate system of the current point. The iamge is rotated with the projection angles.
+    // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
     Point3D P;
     P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
     P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-geo.COR/geo.dDetecU;
@@ -154,7 +156,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
      realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y+geo.COR; 
     
      
-     weigth=(geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha))/geo.DSO;
+     weigth=(geo.DSO+realy*sinalpha-realx*cosalpha)/geo.DSO;
      weigth=1/(weigth*weigth);
     
    // Get Value in the computed (U,V) and multiply by the corresponding weigth.
@@ -229,8 +231,12 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
               (geo.nVoxelZ+divz-1)/divz); 
     dim3 block(divx,divy,divz);
     Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec;
+    float sinalpha,cosalpha;
     for (unsigned int i=0;i<nalpha;i++){
         geo.alpha=-alphas[i];
+        sinalpha=sin(geo.alpha);
+        cosalpha=cos(geo.alpha);
+        
         computeDeltasCube(geo,geo.alpha,i,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
         
         offOrig.x=geo.offOrigX[i];
@@ -238,7 +244,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         offDetec.x=geo.offDetecU[i];
         offDetec.y=geo.offDetecV[i];
 
-        kernelPixelBackprojectionFDK<<<grid,block>>>(geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec);
+        kernelPixelBackprojectionFDK<<<grid,block>>>(geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,sinalpha,cosalpha);
         cudaCheckErrors("Kernel fail");
     }
     if (timekernel){

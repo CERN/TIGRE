@@ -103,14 +103,15 @@ __global__ void matrixConstantMultiply(const Geometry geo,float* image,float con
 // Using Matched weigths
 __global__ void kernelPixelBackprojection(const Geometry geo,
         float* image,
-        int indAlpha,
-        Point3D deltaX ,
-        Point3D deltaY,
-        Point3D deltaZ,
-        Point3D xyzOrigin,           
-        Point3D xyzOffset,            // this is a direct copy, it has not been scaled
-        Point3D uv0Offset){           // This is a direct copy, it has not been scaled
-    
+        const int indAlpha,
+        const Point3D deltaX ,
+        const Point3D deltaY,
+        const Point3D deltaZ,
+        const Point3D xyzOrigin,           
+        const Point3D xyzOffset,            // this is a direct copy, it has not been scaled
+        const Point3D uv0Offset,           // This is a direct copy, it has not been scaled
+        const float sinalpha,
+        const float cosalpha){
     
     unsigned long indY = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long indX = blockIdx.x * blockDim.x + threadIdx.x;
@@ -158,8 +159,8 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
     realvoxel.z=-geo.sVoxelZ/2+geo.dVoxelZ/2    +indZ*geo.dVoxelZ   +xyzOffset.z;
     //Real coords of Source
     // We already have S.x, and S.y and S.z are always zero. we just need to rotate
-    S.x= geo.DSO*cos(geo.alpha);
-    S.y=-geo.DSO*sin(geo.alpha); 
+    S.x= geo.DSO*cosalpha;
+    S.y=-geo.DSO*sinalpha; 
    
     // Real XYZ coordinates of Detector.
     Point3D realD, realDaux; 
@@ -168,8 +169,8 @@ __global__ void kernelPixelBackprojection(const Geometry geo,
     realDaux.y=-geo.sDetecU/2+geo.dDetecU/2 + u*geo.dDetecU +uv0Offset.x;
     realD.z   =-geo.sDetecV/2+geo.dDetecV/2 + v*geo.dDetecV +uv0Offset.y;
     //rotate the detector
-    realD.x= realDaux.x*cos(geo.alpha)  + realDaux.y*sin(geo.alpha); //sin(-x)=-sin(x) , cos(-x)=cos(x)
-    realD.y=-realDaux.x*sin(geo.alpha)  + realDaux.y*cos(geo.alpha); //sin(-x)=-sin(x) , cos(-x)=cos(x)
+    realD.x= realDaux.x*cosalpha  + realDaux.y*sinalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
+    realD.y=-realDaux.x*sinalpha  + realDaux.y*cosalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
     float L,l;
     L = sqrt( (S.x-realD.x)*(S.x-realD.x)+ (S.y-realD.y)*(S.y-realD.y)+ (realD.z)*(realD.z)); // Sz=0 always.
     l = sqrt( (S.x-realvoxel.x)*(S.x-realvoxel.x)+ (S.y-realvoxel.y)*(S.y-realvoxel.y)+ (S.z-realvoxel.z)*(S.z-realvoxel.z));
@@ -247,8 +248,12 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
               (geo.nVoxelZ+divz-1)/divz); 
     dim3 block(divx,divy,divz);
     // Main loop
+    
+    float sinalpha, cosalpha;
     for (unsigned int i=0;i<nalpha;i++){
         geo.alpha=-alphas[i];
+        sinalpha=sin(geo.alpha);
+        cosalpha=cos(geo.alpha);
         computeDeltasCube(geo,geo.alpha,i,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
         
         offOrig.x=geo.offOrigX[i];
@@ -258,7 +263,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
         offDetec.y=geo.offDetecV[i];
         
         kernelPixelBackprojection<<<grid,block>>>
-                (geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec);
+                (geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,sinalpha,cosalpha);
         cudaCheckErrors("Kernel fail");
     }
     // If we are timing this
