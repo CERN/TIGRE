@@ -25,12 +25,26 @@ addpath('./Utilities/Quality_measures');
 addpath(genpath('./Test_data'));
 
 % different arch versions
-if ~isempty(strfind(computer('arch'),'64'))
-    addpath('./Mex_files/win64');
+if ispc
+    if ~isempty(strfind(computer('arch'),'64'))
+        addpath('./Mex_files/win64');
+    else
+        addpath('./Mex_files/win32');
+    end
+elseif ismac
+    if ~isempty(strfind(computer('arch'),'64'))
+        addpath('./Mex_files/mac64');
+    else
+        addpath('./Mex_files/mac32');
+    end
 else
-    addpath('./Mex_files/win32');
+    if ~isempty(strfind(computer('arch'),'64'))
+        addpath('./Mex_files/linux64');
+    else
+        addpath('./Mex_files/linux32');
+    end
 end
-
+    
 addpath('./Demos');
 
 % Perceptually uniform colormaps
@@ -40,24 +54,23 @@ addpath('./Third_party_tools/arrow3d'); % 3D shepp-Logan
 addpath('./Third_party_tools/sec2hours');
 addpath('./Third_party_tools/readMHD');
 
-
 if ispc
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/win64');
     else
         addpath('./Mex_files/win32');
     end
-elseif isunix
-    if ~isempty(strfind(computer('arch'),'64'))
-        addpath('./Mex_files/linux64');
-    else
-        addpath('./Mex_files/linux32');
-    end
 elseif ismac
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/mac64');
     else
         addpath('./Mex_files/mac32');
+    end
+else
+    if ~isempty(strfind(computer('arch'),'64'))
+        addpath('./Mex_files/linux64');
+    else
+        addpath('./Mex_files/linux32');
     end
 end
 

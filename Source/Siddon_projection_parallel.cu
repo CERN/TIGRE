@@ -170,7 +170,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     
     // Compute max/min image INDEX for intersection eq(11-19)
     // Discussion about ternary operator in CUDA: https://stackoverflow.com/questions/7104384/in-cuda-why-is-a-b010-more-efficient-than-an-if-else-version
-    float imin,imax,jmin,jmax,kmin,kmax;
+    float imin,imax,jmin,jmax;
     // for X
     if( source.x<pixel1D.x){
         imin=(am==axm)? 1           : ceil (source.x+am*ray.x);
@@ -197,7 +197,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
 //     }
     
     // get intersection point N1. eq(20-21) [(also eq 9-10)]
-    float ax,ay,az;
+    float ax,ay;
     ax=(source.x<pixel1D.x)?  (imin-source.x)/ray.x  :  (imax-source.x)/ray.x;
     ay=(source.y<pixel1D.y)?  (jmin-source.y)/ray.y  :  (jmax-source.y)/ray.y;
 //     az=(source.z<pixel1D.z)?  (kmin-source.z)/ray.z  :  (kmax-source.z)/ray.z;
@@ -214,12 +214,12 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     // Initialize
     float ac=am;
     //eq (28), unit alphas
-    float axu,ayu,azu;
+    float axu,ayu;
     axu=1/abs(ray.x);
     ayu=1/abs(ray.y);
 //     azu=1/abs(ray.z);
     // eq(29), direction of update
-    float iu,ju,ku;
+    float iu,ju;
     iu=(source.x< pixel1D.x)? 1 : -1;
     ju=(source.y< pixel1D.y)? 1 : -1;
 //     ku=(source.z< pixel1D.z)? 1 : -1;

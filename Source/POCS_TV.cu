@@ -325,7 +325,7 @@ do { \
         cudaMemcpy(dst, d_image, mem_size, cudaMemcpyDeviceToHost);
         cudaCheckErrors("Copy result back");
         
-        cudaFree(b);
+        cudaFree(d_image);
         cudaFree(d_norm2aux);
         cudaFree(d_dimgTV);
         cudaFree(d_norm2);
