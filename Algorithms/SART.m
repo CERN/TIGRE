@@ -32,6 +32,11 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %                  parameters. Input should contain a cell array of desired
 %                  quality measurement names. Example: {'CC','RMSE','MSSIM'}
 %                  These will be computed in each iteration.
+% 'OrderStrategy'  Chooses the subset ordering strategy. Options are
+%                  'ordered' :uses them in the input order, but divided
+%                  'random'  : orders them randomply
+%                  'angularDistance': chooses the next subset with the
+%                                     biggest angular distance with the ones used.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -50,7 +55,8 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %--------------------------------------------------------------------------
 
 %% Deal with input parameters
-[lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
+blocksize=1;
+[lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
     computeL2=true;
@@ -59,12 +65,17 @@ else
 end
 errorL2=[];
 
+% reorder angles
+[alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
+
+angles=cell2mat(alphablocks);
+index_angles=cell2mat(orig_index);
 %% Create weigthing matrices
 
 % Projection weigth, W
 
 geoaux=geo;
-geoaux.sVoxel(3)=geo.sDetector(2);
+geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
 W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
@@ -98,12 +109,12 @@ for ii=1:niter
     
     for jj=1:length(angles);
         if size(offOrigin,2)==length(angles)
-            geo.OffOrigin=offOrigin(:,jj);
+            geo.offOrigin=offOrigin(:,index_angles(jj));
         end
         if size(offDetector,2)==length(angles)
-            geo.offDetector=offDetector(:,jj);
+            geo.offDetector=offDetector(:,index_angles(jj));
         end
-        % --------- Memory expensive-----------
+        % --------- Memory expensive----------- % and does not include angle reordering!!!
         
         %         proj_err=proj(:,:,jj)-Ax(res,geo,angles(jj));       %                                 (b-Ax)
         %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
@@ -113,7 +124,7 @@ for ii=1:niter
         %------------------------------------
         %--------- Memory cheap(er)-----------
         
-        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(jj))),geo,angles(jj)));
+        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(res,geo,angles(jj))),geo,angles(jj)));
         res(res<0)=0;
     end
     
@@ -128,7 +139,7 @@ for ii=1:niter
     if computeL2
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
-        errornow=im3Dnorm(proj-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
+        errornow=im3Dnorm(proj(:,:,index_angles)-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
         % If the error is not minimized.
         if  ii~=1 && errornow>errorL2(end)
             if verbose
@@ -187,8 +198,8 @@ end
 end
 
 
-function [lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','Init','InitImg','Verbose','lambdaRed','QualMeas'};
+function [lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'lambda','Init','InitImg','Verbose','lambdaRed','QualMeas','OrderStrategy'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -290,6 +301,12 @@ for ii=1:length(opts)
                 else
                     error('CBCT:SART:InvalidInput','Invalid quality measurement parameters');
                 end
+            end
+         case 'OrderStrategy'
+            if default
+                OrderStrategy='random';
+            else
+                OrderStrategy=val;
             end
         otherwise
             error('CBCT:SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART()']);

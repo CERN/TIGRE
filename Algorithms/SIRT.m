@@ -67,7 +67,7 @@ errorL2=[];
 % Projection weigth, W
 
 geoaux=geo;
-geoaux.sVoxel(3)=geo.sDetector(2);
+geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
 W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
@@ -100,11 +100,11 @@ for ii=1:niter
         res_prev=res;
     end
     % --------- Memory expensive-----------
-    %     proj_err=proj-Ax(res,geo,angles);                 %                                 (b-Ax)
-    %     weighted_err=W.*proj_err;                         %                          W^-1 * (b-Ax)
-    %     backprj=Atb(weighted_err,geo,angles);             %                     At * W^-1 * (b-Ax)
-    %     weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
-    %     res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)
+%         proj_err=proj-Ax(res,geo,angles);                 %                                 (b-Ax)
+%         weighted_err=W.*proj_err;                         %                          W^-1 * (b-Ax)
+%         backprj=Atb(weighted_err,geo,angles);             %                     At * W^-1 * (b-Ax)
+%         weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
+%         res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)
     % ------------------------------------
     % --------- Memory cheap(er)-----------
     

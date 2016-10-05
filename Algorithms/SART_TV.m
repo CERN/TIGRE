@@ -25,39 +25,44 @@ function [res,errorL2,qualMeasOut]=SART_TV(proj,geo,angles,niter,varargin)
 %                               image. Not recomended unless you really
 %                               know what you are doing.
 %   'InitImg'      an image for the 'image' initialization. Aviod.
-%   
+%
 %   'TViter'       amoutn of iteration in theTV step. Default 50
-% 
+%
 %   'TVlambda'     hyperparameter in TV iteration. IT gives the ratio of
 %                  importance of the image vs the minimum total variation.
 %                  default is 15. Lower means more TV denoising.
-% 
+%
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
-% 
+%
 %   'QualMeas'     Asks the algorithm for a set of quality measurement
 %                  parameters. Input should contain a cell array of desired
 %                  quality measurement names. Example: {'CC','RMSE','MSSIM'}
 %                  These will be computed in each iteration.
+% 'OrderStrategy'  Chooses the subset ordering strategy. Options are
+%                  'ordered' :uses them in the input order, but divided
+%                  'random'  : orders them randomply
+%                  'angularDistance': chooses the next subset with the
+%                                     biggest angular distance with the ones used.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
-% 
-% Copyright (c) 2015, University of Bath and 
+%
+% Copyright (c) 2015, University of Bath and
 %                     CERN-European Organization for Nuclear Research
 %                     All rights reserved.
 %
-% License:            Open Source under BSD. 
+% License:            Open Source under BSD.
 %                     See the full license at
 %                     https://github.com/CERN/TIGRE/license.txt
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
-% Coded by:           Ander Biguri 
+% Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
 
 %% Deal with input parameters
-[lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
     computeL2=true;
@@ -65,11 +70,17 @@ else
     computeL2=false;
 end
 errorL2=[];
+
+blocksize=1;
+[alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
+
+angles=cell2mat(alphablocks);
+index_angles=cell2mat(orig_index);
 %% Create weigthing matrices
 
 % Projection weigth, W
 geoaux=geo;
-geoaux.sVoxel(3)=geo.sDetector(2);
+geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
 W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
@@ -106,12 +117,13 @@ for ii=1:niter
         if size(offDetector,2)==length(angles)
             geo.offDetector=offDetector(:,jj);
         end
-        proj_err=proj(:,:,jj)-Ax(res,geo,angles(jj));        %                                 (b-Ax)
-        weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
-        backprj=Atb(weighted_err,geo,angles(jj));            %                     At * W^-1 * (b-Ax)
-        weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
-        res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
-        
+%         proj_err=proj(:,:,jj)-Ax(res,geo,angles(jj));        %                                 (b-Ax)
+%         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
+%         backprj=Atb(weighted_err,geo,angles(jj));            %                     At * W^-1 * (b-Ax)
+%         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
+%         res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
+        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(res,geo,angles(jj))),geo,angles(jj)));
+
         res(res<0)=0;
     end
     
@@ -124,12 +136,12 @@ for ii=1:niter
     lambda=lambda*lamdbared;
     % TV denoising
     res=im3DDenoise(res,'TV',TViter,TVlambda);
-
+    
     
     if computeL2
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
-        errornow=im3Dnorm(proj-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
+        errornow=im3Dnorm(proj(:,:,index_angles)-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
         % If the error is not minimized.
         if  ii~=1 && errornow>errorL2(end)
             if verbose
@@ -188,8 +200,8 @@ end
 end
 
 
-function [lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','Init','InitImg','Verbose','lambdaRed','QualMeas','TViter','TVlambda'};
+function [lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'lambda','Init','InitImg','Verbose','lambdaRed','QualMeas','TViter','TVlambda','OrderStrategy'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -289,16 +301,22 @@ for ii=1:length(opts)
                 end
             end
         case 'TViter'
-            if default 
+            if default
                 TViter=50;
             else
                 TViter=val;
             end
         case 'TVlambda'
-            if default 
+            if default
                 TVlambda=50;
             else
                 TVlambda=val;
+            end
+        case 'OrderStrategy'
+            if default
+                OrderStrategy='random';
+            else
+                OrderStrategy=val;
             end
         otherwise
             error('CBCT:SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART()']);

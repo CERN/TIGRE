@@ -33,6 +33,11 @@ function [ fres ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
 %
+% 'OrderStrategy'  Chooses the subset ordering strategy. Options are
+%                  'ordered' :uses them in the input order, but divided
+%                  'random'  : orders them randomply
+%                  'angularDistance': chooses the next subset with the
+%                                     biggest angular distance with the ones used.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -53,9 +58,13 @@ function [ fres ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 
 
 %% parse inputs
-[beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon]=parse_inputs(proj,geo,angles,varargin);
+blocksize=1;
+[beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,OrderStrategy]=parse_inputs(proj,geo,angles,varargin);
 
+[alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 
+angles=cell2mat(alphablocks);
+index_angles=cell2mat(orig_index);
 
 
 %% Create weigthing matrices for the SART step
@@ -66,7 +75,7 @@ function [ fres ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 
 
 geoaux=geo;
-geoaux.sVoxel(3)=geo.sDetector(2);
+geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
 W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
@@ -88,7 +97,7 @@ clear A x y dx dz;
 % initialize image.
 f=zeros(geo.nVoxel','single');
 
-
+%% 
 stop_criteria=0;
 iter=0;
 offOrigin=geo.offOrigin;
@@ -104,12 +113,14 @@ while ~stop_criteria %POCS
         if size(offDetector,2)==length(angles)
             geo.offDetector=offDetector(:,jj);
         end
-        proj_err=proj(:,:,jj)-Ax(f,geo,angles(jj));          %                                 (b-Ax)
-        weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
-        backprj=Atb(weighted_err,geo,angles(jj));            %                     At * W^-1 * (b-Ax)
-        weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
-        f=f+beta*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
+%         proj_err=proj(:,:,jj)-Ax(f,geo,angles(jj));          %                                 (b-Ax)
+%         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
+%         backprj=Atb(weighted_err,geo,angles(jj));            %                     At * W^-1 * (b-Ax)
+%         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
+%         f=f+beta*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
         % Enforce positivity
+         f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(f,geo,angles(jj))),geo,angles(jj)));
+
         f(f<0)=0;
     end
     
@@ -119,7 +130,7 @@ while ~stop_criteria %POCS
     fres=f;
     % compute L2 error of actual image. Ax-b
     g=Ax(f,geo,angles);
-    dd=im3Dnorm(g-proj,'L2');
+    dd=im3Dnorm(g-proj(:,:,index_angles),'L2');
     % compute change in the image after last SART iteration
     dp_vec=(f-f0);
     dp=im3Dnorm(dp_vec,'L2');
@@ -185,9 +196,9 @@ end
 
 end
 
-function [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon]=parse_inputs(proj,geo,angles,argin)
+function [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,OrderStrategy]=parse_inputs(proj,geo,angles,argin)
 
-opts=     {'lambda','lambda_red','TViter','Verbose','alpha','alpha_red','Ratio','maxL2err'};
+opts=     {'lambda','lambda_red','TViter','Verbose','alpha','alpha_red','Ratio','maxL2err','OrderStrategy'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -291,6 +302,12 @@ for ii=1:length(opts)
                epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
             else
                epsilon=val;
+            end
+           case 'OrderStrategy'
+            if default
+                OrderStrategy='random';
+            else
+                OrderStrategy=val;
             end
         otherwise
              error('CBCT:ASD_POCS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in ASD_POCS()']);

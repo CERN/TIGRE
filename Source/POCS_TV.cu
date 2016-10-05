@@ -248,7 +248,7 @@ do { \
     
     
 // main function
-    void pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter){
+ void pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter){
         
     
         size_t total_pixels = image_size[0] * image_size[1]  * image_size[2] ;
@@ -266,7 +266,9 @@ do { \
         cudaMalloc(&d_norm2, mem_size);
         cudaCheckErrors("Memory Malloc and Memset: TV");
         
-        
+        // memory for L2norm auxiliar
+        cudaMalloc(&d_norm2aux, sizeof(float)*(total_pixels + MAXTHREADS - 1) / MAXTHREADS);
+        cudaCheckErrors("Memory Malloc and Memset: NORMAux");
         
         
         
@@ -277,9 +279,7 @@ do { \
         // For the reduction
         float sumnorm2;
         
-        // memory for L2norm auxiliar
-        cudaMalloc(&d_norm2aux, sizeof(float)*(total_pixels + MAXTHREADS - 1) / MAXTHREADS);
-        cudaCheckErrors("Memory Malloc and Memset: NORMAux");
+        
         
         for(unsigned int i=0;i<maxIter;i++){
             
@@ -325,7 +325,7 @@ do { \
         cudaMemcpy(dst, d_image, mem_size, cudaMemcpyDeviceToHost);
         cudaCheckErrors("Copy result back");
         
-        cudaFree(d_image);
+        cudaFree(b);
         cudaFree(d_norm2aux);
         cudaFree(d_dimgTV);
         cudaFree(d_norm2);

@@ -75,10 +75,10 @@ function [ fres ] = OSC_TV(proj,geo,angles,maxiter,varargin)
 
 % Projection weigth, W
 geoaux=geo;
-geoaux.sVoxel(3)=geo.sDetector(2);
+geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,cell2mat(alphablocks),'ray-voxel');  %
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
@@ -86,7 +86,7 @@ if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
 
     [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
         -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-    A = permute(cell2mat(alphablocks)+pi/2, [1 3 2]);
+    A = permute(angles+pi/2, [1 3 2]);
     V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
 else
     V=ones([geo.nVoxel(1:2).',length(angles)],'single');
@@ -117,12 +117,13 @@ while ~stop_criteria %POCS
         
         %proj is data: b=Ax
         %res= initial image is zero (default)
-        proj_err=proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{jj},'interpolated'); %                                 (b-Ax)
-        weighted_err=W(:,:,orig_index{jj}).*proj_err;                                 %                          W^-1 * (b-Ax)
-        backprj=Atb(weighted_err,geo,alphablocks{jj},'FDK');                          %                     At * W^-1 * (b-Ax)
-        weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
-        f=f+beta*weigth_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
-        
+%         proj_err=proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{jj},'interpolated'); %                                 (b-Ax)
+%         weighted_err=W(:,:,orig_index{jj}).*proj_err;                                 %                          W^-1 * (b-Ax)
+%         backprj=Atb(weighted_err,geo,alphablocks{jj},'FDK');                          %                     At * W^-1 * (b-Ax)
+%         weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
+%         f=f+beta*weigth_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
+        f=f+beta* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{jj})),geo,alphablocks{jj}));
+
         % Non-negativity constrain
         f(f<0)=0;
     end
@@ -323,55 +324,6 @@ for ii=1:length(opts)
         otherwise
             error('CBCT:OSC_TV:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OSC_TV()']);
             
-    end
-end
-
-end
-
-
-
-
-function [ordered_alpha,index_alpha]=order_subsets(alpha,blocksize, mode)
-alpha=sort(alpha);
-index_alpha=1:length(alpha);
-
-block_alpha=mat2cell(alpha      ,1,[repmat(blocksize,1,floor(length(alpha)/blocksize)) mod(length(alpha),blocksize)]);
-index_alpha=mat2cell(index_alpha,1,[repmat(blocksize,1,floor(length(alpha)/blocksize)) mod(length(alpha),blocksize)]);
-
-block_alpha=block_alpha(~cellfun('isempty',block_alpha));
-index_alpha=index_alpha(~cellfun('isempty',index_alpha)); 
-
-if strcmp(mode,'ordered')
-    ordered_alpha=block_alpha;
-    return;
-end
-if strcmp(mode,'random')
-    neworder=randperm(length(block_alpha));
-    ordered_alpha=block_alpha(neworder);
-    index_alpha=index_alpha(neworder);
-    return;
-end
-%% not finished
-if strcmp(mode,'angularDistance')
-    
-    avrg=cellfun(@mean,block_alpha);
-    used_avrg=[];
-    % start from the beggining
-    ordered_alpha{1}=block_alpha{1};
-    auxindex_alpha=index_alpha;
-    index_alpha{1}=auxindex_alpha{1};
-    used_avrg(end+1)=avrg(1);
-    for ii=2:length(block_alpha)
-        dist=[];
-        for jj=1:length(used_avrg)
-           dist(jj,:)=abs(mod((avrg- used_avrg(jj))+pi,2*pi)-pi);
-        end
-        dist=bsxfun(@times,dist,all(dist,1));
-        [~,midx]=max(dist(:));
-        [~,avrgindx]=ind2sub(size(dist),midx);
-        index_alpha{ii}=auxindex_alpha{avrgindx};
-        ordered_alpha{ii}=block_alpha{avrgindx};
-        used_avrg(end+1)=avrg(avrgindx);
     end
 end
 

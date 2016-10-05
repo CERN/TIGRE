@@ -61,11 +61,12 @@ data=Ax(thorax,geo,angles);
 % plotProj(data,angles);
 %% Reconstruct Helical
 
-CGLSimg=CGLS(data,geo,angles,30);
-SIRTimg=SIRT(data,geo,angles,90);
+OSSARTimg=OS_SART(data,geo,angles,30);
+% SARTimg=SART(data,geo,angles,30); % takes time
+CGLSimg=CGLS(data,geo,angles,20);
 %% Plot results
 
 % CGLS and SIRT
-plotImg([thorax, CGLSimg , SIRTimg],'Dim',3,'Step',3);
+plotImg([thorax, OSSARTimg ,CGLSimg],'Dim',3,'Step',3);
 
 

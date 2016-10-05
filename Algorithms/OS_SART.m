@@ -1,4 +1,4 @@
-function [res,errorL2,qualMeasOut]=OS_SART(proj,geo,alpha,niter,varargin)
+function [res,errorL2,qualMeasOut]=OS_SART(proj,geo,angles,niter,varargin)
 
 % OS_SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
@@ -53,23 +53,23 @@ function [res,errorL2,qualMeasOut]=OS_SART(proj,geo,alpha,niter,varargin)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
-% 
-% Copyright (c) 2015, University of Bath and 
+%
+% Copyright (c) 2015, University of Bath and
 %                     CERN-European Organization for Nuclear Research
 %                     All rights reserved.
 %
-% License:            Open Source under BSD. 
+% License:            Open Source under BSD.
 %                     See the full license at
 %                     https://github.com/CERN/TIGRE/license.txt
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
-% Coded by:           Ander Biguri 
+% Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
 
 %% Deal with input parameters
 
-[blocksize,lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy]=parse_inputs(proj,geo,alpha,varargin);
+[blocksize,lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 
 if nargout>1
@@ -80,22 +80,22 @@ end
 
 %% weigth matrices
 % first order the projection angles
-[alphablocks,orig_index]=order_subsets(alpha,blocksize,OrderStrategy);
+[alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 
 
 % Projection weigth, W
 geoaux=geo;
-geoaux.sVoxel(3)=geo.sDetector(2);
+geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,cell2mat(alphablocks),'ray-voxel');  %
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
 if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
     [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
         -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-    A = permute(cell2mat(alphablocks)+pi/2, [1 3 2]);
+    A = permute(angles+pi/2, [1 3 2]);
     V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
     V=single(V);
 else
@@ -127,10 +127,10 @@ for ii=1:niter
     
     for jj=1:length(alphablocks);
         % Get offsets
-        if size(offOrigin,2)==length(alpha)
+        if size(offOrigin,2)==length(angles)
             geo.offOrigin=offOrigin(:,orig_index{jj});
         end
-        if size(offDetector,2)==length(alpha)
+        if size(offDetector,2)==length(angles)
             geo.offDetector=offDetector(:,orig_index{jj});
         end
         
@@ -142,8 +142,8 @@ for ii=1:niter
 %         weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
 %         res=res+lambda*weigth_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
         
-        res=res+lambda* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj})),geo,alphablocks{jj}));
-
+                res=res+lambda* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj})),geo,alphablocks{jj}));
+        
         
         % Non-negativity constrain
         res(res<0)=0;
@@ -153,11 +153,11 @@ for ii=1:niter
     
     % If quality is being measured
     if measurequality
-
-       %Can save quality measure for every iteration here
-       %See if some image quality measure should be used for every
-       %iteration?
-       qualMeasOut(:,ii)=Measure_Quality(res_prev,res,QualMeasOpts);
+        
+        %Can save quality measure for every iteration here
+        %See if some image quality measure should be used for every
+        %iteration?
+        qualMeasOut(:,ii)=Measure_Quality(res_prev,res,QualMeasOpts);
     end
     
     % reduce hyperparameter
@@ -166,11 +166,11 @@ for ii=1:niter
         % Compute error norm2 of b-Ax
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
-        errornow=im3Dnorm(proj-Ax(res,geo,alpha,'ray-voxel'),'L2');
+        errornow=im3Dnorm(proj-Ax(res,geo,angles,'ray-voxel'),'L2');
         %     If the error is not minimized
         if ii~=1 && errornow>errorL2(end) % This 1.1 is for multigrid, we need to focus to only that case
             if verbose
-            disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
+                disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
             end
             return;
         end
@@ -352,55 +352,6 @@ for ii=1:length(opts)
             end
         otherwise
             error('CBCT:OS_SART_CBCT:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_SART_CBCT()']);
-    end
-end
-
-end
-
-% This function returns the angles reordered, so the next subset has
-% allways the maximum angular distance from previous ones.
-
-function [ordered_alpha,index_alpha]=order_subsets(alpha,blocksize, mode)
-alpha=sort(alpha);
-index_alpha=1:length(alpha);
-
-block_alpha=mat2cell(alpha      ,1,[repmat(blocksize,1,floor(length(alpha)/blocksize)) mod(length(alpha),blocksize)]);
-index_alpha=mat2cell(index_alpha,1,[repmat(blocksize,1,floor(length(alpha)/blocksize)) mod(length(alpha),blocksize)]);
-
-block_alpha=block_alpha(~cellfun('isempty',block_alpha));
-index_alpha=index_alpha(~cellfun('isempty',index_alpha)); 
-
-if strcmp(mode,'ordered')
-    ordered_alpha=block_alpha;
-    return;
-end
-if strcmp(mode,'random')
-    neworder=randperm(length(block_alpha));
-    ordered_alpha=block_alpha(neworder);
-    index_alpha=index_alpha(neworder);
-    return;
-end
-%% not finished
-if strcmp(mode,'angularDistance')
-    
-    avrg=cellfun(@mean,block_alpha);
-    used_avrg=[];
-    % start from the beggining
-    ordered_alpha{1}=block_alpha{1};
-    auxindex_alpha=index_alpha;
-    index_alpha{1}=auxindex_alpha{1};
-    used_avrg(end+1)=avrg(1);
-    for ii=2:length(block_alpha)
-        dist=[];
-        for jj=1:length(used_avrg)
-           dist(jj,:)=abs(mod((avrg- used_avrg(jj))+pi,2*pi)-pi);
-        end
-        dist=bsxfun(@times,dist,all(dist,1));
-        [~,midx]=max(dist(:));
-        [~,avrgindx]=ind2sub(size(dist),midx);
-        index_alpha{ii}=auxindex_alpha{avrgindx};
-        ordered_alpha{ii}=block_alpha{avrgindx};
-        used_avrg(end+1)=avrg(avrgindx);
     end
 end
 
