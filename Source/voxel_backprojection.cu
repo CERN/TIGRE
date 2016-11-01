@@ -4,6 +4,7 @@
  *
  *
  * CODE by  Ander Biguri
+ * Optimized and modified by Robert Bryll
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 Copyright (c) 2015, University of Bath and CERN- European Organization for 
