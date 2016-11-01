@@ -103,10 +103,13 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     float *  img = (float*)malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float));
 //     for (int i=0;i<size_img[0] *size_img[1] *size_img[2];i++)
 //         img[i]=(float)imgaux[i];
-    for(int i=0;i<size_img[0];i++)
-        for(int j=0;j<size_img[1];j++)
-            for(int k=0;k<size_img[2];k++)
-               img[i*size_img[0]*size_img[1]+j*size_img[1]+k]=(float)imgaux[k*size_img[1]*size_img[2]+j*size_img[2]+i];
+//     for(int i=0;i<size_img[0];i++)
+//         for(int j=0;j<size_img[1];j++)
+//             for(int k=0;k<size_img[2];k++)
+//                img[i*size_img[0]*size_img[1]+j*size_img[1]+k]=(float)imgaux[k*size_img[1]*size_img[2]+j*size_img[2]+i];
+//     
+    for(int i=0;i<size_img[0]*size_img[1]*size_img[2];i++)
+        img[i]=(float)imgaux[i];
     //////////////
     
     // Allocte output image

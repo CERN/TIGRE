@@ -30,6 +30,7 @@ else
         error('Wrogn amount of inputs');
     end
 end
+img=(permute(img,[3 2 1]));
 img=minTV(img,dtvg,ng);
     img=(permute(img,[3 2 1]));
 end
