@@ -61,7 +61,6 @@ Codes  : https://github.com/CERN/TIGRE
 	    } while (0)
             
 
-            
 #define MAXTREADS 1024
 /*GEOMETRY DEFINITION
  *               
@@ -91,16 +90,65 @@ Codes  : https://github.com/CERN/TIGRE
  **/
 texture<float, cudaTextureType3D , cudaReadModeElementType> tex; 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// The optimal values of two constants obtained by Robert Bryll on NVIDIA Quadro K2200 (4 GB RAM, 640 CUDA cores) for 512^3 volume and 512^3 projections (512 proj, each 512 x 512) were:
+// PROJ_PER_KERNEL = 32 or 16 (very similar times)
+// VOXELS_PER_THREAD = 8 
+// Speedup of the entire FDK backprojection (not only kernel run, also memcpy etc.) was nearly 4x relative to the original (single projection, single voxel per thread) code.
+// (e.g. 16.2 s vs. ~62 s).
+
+const int PROJ_PER_KERNEL = 32;  // Number of 2D projections to be analyzed by a single thread. This can be tweaked to see what works best. 32 was the optimal value in the paper by Zinsser and Keck.
+const int VOXELS_PER_THREAD = 8;  // Number of voxels to be computed by s single thread. Can be tweaked to see what works best. 4 was the optimal value in the paper by Zinsser and Keck.
+
+// We have PROJ_PER_KERNEL projections and we need 6 parameters for each projection:
+//   deltaX, deltaY, deltaZ, xyzOrigin, offOrig, offDetec
+// So we need to keep PROJ_PER_KERNEL*6 values in our deltas array FOR EACH CALL to our main kernel
+// (they will be updated in the main loop before each kernel call).
+
+__constant__ Point3D projParamsArrayDev[6*PROJ_PER_KERNEL];  // Dev means it is on device
+
+// We also need a corresponding array on the host side to be filled before each kernel call, then copied to the device (array in constant memory above)
+Point3D projParamsArrayHost[6*PROJ_PER_KERNEL];   // Host means it is host memory
+
+// Now we also need to store sinAlpha and cosAlpha for each projection (two floats per projection)
+__constant__ float projSinCosArrayDev[2*PROJ_PER_KERNEL];
+
+float projSinCosArrayHost[2*PROJ_PER_KERNEL];
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// END RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//     
+// __global__ void FDKweigths(const Geometry geo,float* image,float constant){
+//     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
+//      for(; idx<geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ; idx+=gridDim.x*blockDim.x) {
+//             image[idx]*=constant;
+//      }
+//     
+// }    
+
+
+
+//______________________________________________________________________________
+//
+//      Function:       kernelPixelBackprojectionFDK
+//
+//      Description:    Main FDK backprojection kernel
+//______________________________________________________________________________
     
-__global__ void FDKweigths(const Geometry geo,float* image,float constant){
-    size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
-     for(; idx<geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ; idx+=gridDim.x*blockDim.x) {
-            image[idx]*=constant;
-     }
-    
-}    
-    
-__global__ void kernelPixelBackprojectionFDK(const Geometry geo, 
+__global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,const int currProjSetNumber, const int totalNoOfProjections)
+{        
+ 
+	// Old kernel call signature:
+    // kernelPixelBackprojectionFDK<<<grid,block>>>(geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,sinalpha,cosalpha);
+	// We just read in most of the params from the constant memory instead of getting them from the param list.
+	// This is because we now have MANY params, since single kernel processes more than one projection!
+	/* __global__ void kernelPixelBackprojectionFDK(const Geometry geo, 
                                             float* image,
                                             const int indAlpha,
                                             const Point3D deltaX ,
@@ -111,71 +159,146 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
                                             const Point3D uv0Offset,
                                             const float sinalpha,
                                             const float cosalpha){
-    
-    
+    */ 
     unsigned long indY = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long indX = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned long indZ = blockIdx.z * blockDim.z + threadIdx.z;
+    // unsigned long startIndZ = blockIdx.z * blockDim.z + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
+    unsigned long startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     //Make sure we dont go out of bounds
-    unsigned long long idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
-    if (indX>=geo.nVoxelX | indY>=geo.nVoxelY |indZ>=geo.nVoxelZ)
+    if (indX>=geo.nVoxelX | indY>=geo.nVoxelY |startIndZ>=geo.nVoxelZ)
         return;
-    // Geometric trasnformations:
-    
-    //Source, scaled XYZ coordinates
-    Point3D S;
-    S.x=geo.DSO;                  // we dont scale the x direction, because the detector is only in YZ (and the image is rotated)
-    S.y=-uv0Offset.x/geo.dDetecU;            
-    S.z=-uv0Offset.y/geo.dDetecV;
-    // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
-    Point3D P;
-    P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-    P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-geo.COR/geo.dDetecU;
-    P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
+
+	// We'll keep a local auxiliary array of values of a column of voxels that this thread will update
+	float voxelColumn[VOXELS_PER_THREAD];
+
+	// First we need to copy the curent 3D volume values from the column to our auxiliary array so that we can then
+	// work on them (update them by computing values from multiple projections) locally - avoiding main memory reads/writes
+	
+	int colIdx;
+
+	for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++) 
+    {
+		unsigned long indZ = startIndZ + colIdx;		
+		// If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't 
+		// be trying to copy the out of bounds values back to the 3D volume anyway (bounds checks will be done in the final loop where the updated values go back to the main volume)
+		if(indZ>=geo.nVoxelZ)
+			break;   // break the loop.
+       
+       unsigned long long idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
+	   voxelColumn[colIdx] = image[idx];   // Read the current volume value that we'll update by computing values from MULTIPLE projections (not just one)		
+									      // We'll be updating the local (register) variable, avoiding reads/writes from the slow main memory.
+    }  // END copy 3D volume voxels to local array
+
+	// Now iterate through projections
+	for(int projNumber=0; projNumber<PROJ_PER_KERNEL; projNumber++)
+	{
+		// Get the current parameters from parameter arrays in constant memory. 
+		int indAlpha = currProjSetNumber*PROJ_PER_KERNEL+projNumber;  // This is the ABSOLUTE projection number in the projection array
+
+		// TO DO!! We need to check bounds here: break the loop if indAlpha is larger than totalNoOfProjections
+		// Our currImageVal will be updated by hovewer many projections we had left in the "remainder" - that's OK.
+	    if(indAlpha>=totalNoOfProjections)
+			break;  
+
+		Point3D deltaX = projParamsArrayDev[6*projNumber];  // 6*projNumber because we have 6 Point3D values per projection
+		Point3D deltaY = projParamsArrayDev[6*projNumber+1];  
+		Point3D deltaZ = projParamsArrayDev[6*projNumber+2];  
+		Point3D xyzOrigin = projParamsArrayDev[6*projNumber+3];  
+		Point3D xyzOffset = projParamsArrayDev[6*projNumber+4];  
+		Point3D uv0Offset = projParamsArrayDev[6*projNumber+5];  
+		float sinalpha = projSinCosArrayDev[2*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
+		float cosalpha = projSinCosArrayDev[2*projNumber+1];
+ 	
+		// Geometric trasnformations:
+		//Source, scaled XYZ coordinates
+		Point3D S;
+		S.x=geo.DSO;                  // we dont scale the x direction, because the detector is only in YZ (and the image is rotated)
+		S.y=-uv0Offset.x/geo.dDetecU;            
+		S.z=-uv0Offset.y/geo.dDetecV;
+
+		// Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
+		for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
+		{
+			unsigned long indZ = startIndZ + colIdx;
+		
+			// If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't 
+			// be trying to copy the out of bounds values anyway (bounds checks will be done in the final loop where the values go to the main volume)
+			if(indZ>=geo.nVoxelZ)
+				break;   // break the loop.
+				
+			// "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
+			Point3D P;
+			P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
+			P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-geo.COR/geo.dDetecU;
+			P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
         
-    // This is the vector defining the line from the source to the Voxel
-    float vectX,vectY,vectZ;
-    vectX=(P.x -S.x);
-    vectY=(P.y -S.y);
-    vectZ=(P.z -S.z);
+			// This is the vector defining the line from the source to the Voxel
+			float vectX,vectY,vectZ;
+			vectX=(P.x -S.x);
+			vectY=(P.y -S.y);
+			vectZ=(P.z -S.z);
+    
+			// Get the coordinates in the detector UV where the mid point of the voxel is projected.
+			float t=(geo.DSO-geo.DSD /*-DDO*/ - S.x)/vectX;
+			float y,z;
+			y=vectY*t+S.y;
+			z=vectZ*t+S.z;
+			float u,v;
+			u=y+geo.nDetecU/2-0.5;
+			v=z+geo.nDetecV/2-0.5;
+    
+			float weigth;
+			float realx,realy;
+			realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x; 
+			realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y+geo.COR; 
+    
+			weigth=(geo.DSO+realy*sinalpha-realx*cosalpha)/geo.DSO;
+			weigth=1/(weigth*weigth);
+    
+			// Get Value in the computed (U,V) and multiply by the corresponding weigth.
+			// indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
+			voxelColumn[colIdx]+=tex3D(tex, u +0.5 ,
+										 v +0.5 ,
+										 indAlpha+0.5)       
+										 *weigth;
+		}  // END iterating through column of voxels
+
+    }  // END iterating through multiple projections
+
+	// And finally copy the updated local voxelColumn array back to our 3D volume (main memory)
+	for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++) 
+    {
+		unsigned long indZ = startIndZ + colIdx;		
+		// If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't 
+		// be trying to copy the out of bounds values back to the 3D volume anyway (bounds checks will be done in the final loop where the values go to the main volume)
+		if(indZ>=geo.nVoxelZ)
+			break;   // break the loop.
+       
+       unsigned long long idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
+	   image[idx] = voxelColumn[colIdx];   // Read the current volume value that we'll update by computing values from MULTIPLE projections (not just one)		
+									      // We'll be updating the local (register) variable, avoiding reads/writes from the slow main memory.
+										  // According to references (Papenhausen), doing = is better than +=, since += requires main memory read followed by a write.
+										  // We did all the reads into the local array at the BEGINNING of this kernel. According to Papenhausen, this type of read-write split is
+										  // better for avoiding memory congestion.
+    }  // END copy updated voxels from local array to our 3D volume
+    
+}  // END kernelPixelBackprojectionFDK
     
     
-    // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-    float t=(geo.DSO-geo.DSD /*-DDO*/ - S.x)/vectX;
-    float y,z;
-    y=vectY*t+S.y;
-    z=vectZ*t+S.z;
-    float u,v;
-    u=y+geo.nDetecU/2-0.5;
-    v=z+geo.nDetecV/2-0.5;
-    
-   
-     float weigth;
-     float realx,realy;
-     realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x; 
-     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y+geo.COR; 
-    
-     
-     weigth=(geo.DSO+realy*sinalpha-realx*cosalpha)/geo.DSO;
-     weigth=1/(weigth*weigth);
-    
-   // Get Value in the computed (U,V) and multiply by the corresponding weigth.
-    image[idx]+=tex3D(tex, u +0.5 ,
-                           v +0.5 ,
-                           indAlpha+0.5)
-                           *weigth;
-    
-    
-}
-    
-    
-int voxel_backprojection(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha){
-    
-    
+
+
+//______________________________________________________________________________
+//
+//      Function:       voxel_backprojection
+//
+//      Description:    Main host function for FDK backprojection (invokes the kernel)
+//______________________________________________________________________________
+
+int voxel_backprojection(float const * const projections, Geometry geo, float* result,float const * const alphas, int nalpha)
+{        
     /*
      * Allocate texture memory on the device
-     */
-    
+     */   
     // copy data to CUDA memory
     cudaArray *d_projectiondata = 0;
     const cudaExtent extent = make_cudaExtent(geo.nDetecU,geo.nDetecV,nalpha);
@@ -222,32 +345,78 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     
     int divx,divy,divz;
     
-    //enpirical
-    divx=32;
+    // RB: Use the optimal (in their tests) block size from paper by Zinsser and Keck (16 in x and 32 in y).
+	// I tried different sizes and shapes of blocks (tiles), but it does not appear to significantly affect trhoughput, so
+	// let's stick with the values from Zinsser and Keck.
+    divx=16;
     divy=32;
-    divz=1;
+    divz=VOXELS_PER_THREAD;      // We now only have 32 x 16 threads per block (flat tile, see below), BUT each thread works on a Z column of VOXELS_PER_THREAD voxels, so we effectively need fewer blocks!
     dim3 grid((geo.nVoxelX+divx-1)/divx,
               (geo.nVoxelY+divy-1)/divy,
               (geo.nVoxelZ+divz-1)/divz); 
-    dim3 block(divx,divy,divz);
-    Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec;
-    float sinalpha,cosalpha;
-    for (unsigned int i=0;i<nalpha;i++){
-        geo.alpha=-alphas[i];
-        sinalpha=sin(geo.alpha);
-        cosalpha=cos(geo.alpha);
-        
-        computeDeltasCube(geo,geo.alpha,i,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
-        
-        offOrig.x=geo.offOrigX[i];
-        offOrig.y=geo.offOrigY[i];
-        offDetec.x=geo.offDetecU[i];
-        offDetec.y=geo.offDetecV[i];
 
-        kernelPixelBackprojectionFDK<<<grid,block>>>(geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,sinalpha,cosalpha);
+    dim3 block(divx,divy,1);    // Note that we have 1 in the Z size, not divz, since each thread works on a vertical set of VOXELS_PER_THREAD voxels (so we only need a "flat" tile of threads, with depth of 1)
+
+	//////////////////////////////////////////////////////////////////////////////////////
+    // Main reconstruction loop: go through projections (rotation angles) and backproject
+    //////////////////////////////////////////////////////////////////////////////////////
+	
+	// Since we'll have multiple projections processed by a SINGLE kernel call, compute how many
+	// kernel calls we'll need altogether.
+	int noOfKernelCalls = (nalpha+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_KERNEL
+
+    for (unsigned int i=0; i<noOfKernelCalls; i++)
+	{
+		// Now we need to generate and copy all data for PROJ_PER_KERNEL projections to constant memory so that our kernel can use it
+		int j;
+		for(j=0; j<PROJ_PER_KERNEL; j++)
+		{
+			int currProjNumber=i*PROJ_PER_KERNEL+j;
+
+			if(currProjNumber>=nalpha)
+				break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
+			
+			Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec;
+			float sinalpha,cosalpha;
+
+			geo.alpha=-alphas[currProjNumber];
+			sinalpha=sin(geo.alpha);
+			cosalpha=cos(geo.alpha);
+			
+			projSinCosArrayHost[2*j]=sinalpha;  // 2*j because we have 2 float (sin or cos angle) values per projection
+			projSinCosArrayHost[2*j+1]=cosalpha;
+
+			computeDeltasCube(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
+        
+			offOrig.x=geo.offOrigX[currProjNumber];
+			offOrig.y=geo.offOrigY[currProjNumber];
+			offDetec.x=geo.offDetecU[currProjNumber];
+			offDetec.y=geo.offDetecV[currProjNumber];
+   
+			projParamsArrayHost[6*j]=deltaX;		// 6*j because we have 6 Point3D values per projection
+			projParamsArrayHost[6*j+1]=deltaY;		
+			projParamsArrayHost[6*j+2]=deltaZ;		
+			projParamsArrayHost[6*j+3]=xyzOrigin;		
+			projParamsArrayHost[6*j+4]=offOrig;		
+			projParamsArrayHost[6*j+5]=offDetec;				
+			
+		}   // END for (preparing params for kernel call)
+
+		// Copy the prepared parameter arrays to constant memory to make it available for the kernel
+		cudaMemcpyToSymbol(projSinCosArrayDev, projSinCosArrayHost, sizeof(float)*2*PROJ_PER_KERNEL);
+		cudaMemcpyToSymbol(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*6*PROJ_PER_KERNEL);
+
+        kernelPixelBackprojectionFDK<<<grid,block>>>(geo,dimage,i,nalpha);
         cudaCheckErrors("Kernel fail");
-    }
-    if (timekernel){
+    }  // END for
+
+	//////////////////////////////////////////////////////////////////////////////////////
+    // END Main reconstruction loop: go through projections (rotation angles) and backproject
+    //////////////////////////////////////////////////////////////////////////////////////
+
+
+    if (timekernel)
+	{
         cudaEventCreate(&stop);
         cudaEventRecord(stop,0);
         cudaEventSynchronize(stop);
@@ -268,9 +437,20 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
      //cudaDeviceReset();
     return 0;
     
-}
-void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ){
-    
+}  // END voxel_backprojection
+
+
+
+//______________________________________________________________________________
+//
+//      Function:       computeDeltasCube
+//
+//      Description:    Computes relative increments for each projection (volume rotation). 
+//						Increments get passed to the backprojection kernel.
+//______________________________________________________________________________
+
+void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ)
+{    
      Point3D P0, Px0,Py0,Pz0;
      // Get coords of Img(0,0,0)
      P0.x=-(geo.sVoxelX/2-geo.dVoxelX/2)+geo.offOrigX[i];
@@ -306,4 +486,4 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
      P.z =P.z-geo.offDetecV[i]/geo.dDetecV;          P.y =P.y-geo.offDetecU[i]/geo.dDetecU;
      *xyzorigin=P;
 
-}
+}  // END computeDeltasCube

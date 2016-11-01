@@ -292,7 +292,7 @@ do { \
             
             cudaMemcpy(d_norm2, d_dimgTV, mem_size, cudaMemcpyDeviceToDevice);
             
-            // Compute the L2 norm of the gradietn. For that, reduction is used.
+            // Compute the L2 norm of the gradint. For that, reduction is used.
             //REDUCE
             size_t dimblockRed = MAXTHREADS;
             size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;

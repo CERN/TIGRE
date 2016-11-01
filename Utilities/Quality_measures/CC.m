@@ -19,24 +19,7 @@ function [cor]=CC(real,res)
 % Coded by:           Manasavee Lohvithee
 %--------------------------------------------------------------------------
 
-%real = exact phantom
-%res = reconstructed image
-real=real(:);
-res=res(:);
-
-N=length(real);
-
-%compute the mean pixel values of the two images
-meanreal=mean(real);
-meanres=mean(res);
-
-diffreal=real-meanreal;
-diffres=res-meanres;
-
-a=sqrt(sum(diffreal.^2));
-b=sqrt(sum(diffres.^2));
-
-cor=sum(diffreal.*diffres)/(a.*b);
+cor=corr(real(:),res(:));
 
 
 end

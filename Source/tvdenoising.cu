@@ -47,12 +47,7 @@ Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
 
-// Code by:
-// Imanol Luengo
-// PhD student University of Nottingham
-// imaluengo@gmail.com
-// 2015
-// Sligtly modified by Ander Biguri
+
 
 // http://gpu4vision.icg.tugraz.at/papers/2010/knoll.pdf#pub47
 #define MAXTREADS 1024

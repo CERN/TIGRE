@@ -25,17 +25,17 @@ clear;
 close all;
 
 %% Define Geometry
-% 
+% I
 % VARIABLE                                   DESCRIPTION                    UNITS
 %-------------------------------------------------------------------------------------
 geo.DSD = 1536;                             % Distance Source Detector      (mm)
 geo.DSO = 1000;                             % Distance Source Origin        (mm)
 % Detector parameters
-geo.nDetector=[512; 512];					% number of pixels              (px)
+geo.nDetector=[512; 512]*4;					% number of pixels              (px)
 geo.dDetector=[0.8; 0.8]; 					% size of each pixel            (mm)
 geo.sDetector=geo.nDetector.*geo.dDetector; % total size of the detector    (mm)
 % Image parameters
-geo.nVoxel=[128;128;128];                   % number of voxels              (vx)
+geo.nVoxel=[128;128;128]*4;                   % number of voxels              (vx)
 geo.sVoxel=[256;256;256];                   % total size of the image       (mm)
 geo.dVoxel=geo.sVoxel./geo.nVoxel;          % size of each voxel            (mm)
 % Offsets
@@ -46,7 +46,7 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 
 %% Load data and generate projections 
 % see previous demo for explanation
-angles=linspace(0,2*pi,100);
+angles=linspace(0,2*pi,200);
 thorax=thoraxPhantom(geo.nVoxel);
 projections=Ax(thorax,geo,angles,'interpolated');
 noise_projections=addCTnoise(projections);
