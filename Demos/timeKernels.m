@@ -51,31 +51,40 @@ Geometry.accuracy=0.5;
      for jj=0:4
          Geometry.nVoxel=[64;64;64]*2^jj;
          Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
-         img=rand(Geometry.nVoxel'); 
-         t_interpolation(ii+1,jj+1)=str2double(evalc('b=Ax(img,Geometry,alpha);'));
-         t_backprojection(ii+1,jj+1)=str2double(evalc('Atb(b,Geometry,alpha);'));
+         img=single(rand(Geometry.nVoxel')); 
+         tic
+         b=Ax(img,Geometry,alpha);
+          t_interpolation(ii+1,jj+1)=toc;
+%          t_interpolation(ii+1,jj+1)=str2double(evalc('b=Ax(img,Geometry,alpha);'));
+%          t_backprojection(ii+1,jj+1)=str2double(evalc('Atb(b,Geometry,alpha);'));
+         tic
+         Atb(b,Geometry,alpha);
+          t_backprojection(ii+1,jj+1)=toc;
          clear  b;
      end
  end
  
-%  Geometry.accuracy=0.1;
-%  for ii=0:4
-%      Geometry.nDetector=[64; 64]*2^ii;
-%      Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
-%      for jj=0:4
-%          Geometry.nVoxel=[64;64;64]*2^jj;
-%          Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
-%          img=rand(Geometry.nVoxel');       
+ Geometry.accuracy=0.5;
+ for ii=0:4
+     Geometry.nDetector=[64; 64]*2^ii;
+     Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
+     for jj=0:4
+         Geometry.nVoxel=[64;64;64]*2^jj;
+         Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
+         img=single(rand(Geometry.nVoxel'));       
 %          t_siddon(ii+1,jj+1)=str2double(evalc('b=Ax(img,Geometry,alpha,''ray-voxel'');'));
-%          % Backprojection takes same time, as its just a different weigth
-%          clear  b;
-%      end
-%  end
+         % Backprojection takes same time, as its just a different weigth
+         tic
+          b=Ax(img,Geometry,alpha,'ray-voxel');
+          t_siddon(ii+1,jj+1)=toc;
+         clear  b;
+     end
+ end
  
  %% Plot projection and bakcprojection performance.
- tplot1=t_interpolation'*10; % base unit 0.1ms
- tplot2=t_siddon*10;
- tplot3=t_backprojection'*10;
+ tplot1=t_interpolation'*1000; % base unit 0.1ms
+ tplot2=t_siddon'*1000;
+ tplot3=t_backprojection'*1000;
 
  
  
