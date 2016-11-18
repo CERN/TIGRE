@@ -14,12 +14,13 @@ Currently it contains Cone Beam CT geometries, and a beta of parallel geometries
 If you wissh to be added to the mailing list of TIGRE, please send an email to tigre.toolbox@gmail.com. 
 We will only contact you whenever a new version of TIGRE is released or with important news.
 
-TIGRE in media:
+TIGRE is still being developed and we are still adding new features to it. If you have any request for your specific application, do not hesitate to contact us!
+
+**TIGRE in media**:
 
 [Article of Medical Physics Web on TIGRE](http://medicalphysicsweb.org/cws/article/research/66343)
 
 
-**IMPORTANT NOTE** Some of the previous releases had a bug that made the software return NaN images. Please make sure you are running TIGRE v1.1.2 or newer.
 
 Donwload: [https://github.com/CERN/TIGRE/releases][7]
 
