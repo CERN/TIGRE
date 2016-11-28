@@ -103,7 +103,7 @@ lambdared=1;
 
 initmode='none';
 
-% 'InitImg' : related to init. The iage to use for initializing the
+% 'InitImg' : related to init. The image to use for initializing the
 % algorithm.
 
 % 'verbose': boolean to make the algorithm display (or not) running state. 

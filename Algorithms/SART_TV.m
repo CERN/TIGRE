@@ -113,10 +113,10 @@ for ii=1:niter
     
     for jj=1:length(angles);
         if size(offOrigin,2)==length(angles)
-            geo.OffOrigin=offOrigin(:,jj);
+            geo.offOrigin=offOrigin(:,index_angles(jj));
         end
         if size(offDetector,2)==length(angles)
-            geo.offDetector=offDetector(:,jj);
+            geo.offDetector=offDetector(:,index_angles(jj));
         end
 %         proj_err=proj(:,:,jj)-Ax(res,geo,angles(jj));        %                                 (b-Ax)
 %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)

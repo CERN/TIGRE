@@ -110,10 +110,10 @@ while ~stop_criteria %POCS
     iter=iter+1;
     for jj=1:length(angles);
         if size(offOrigin,2)==length(angles)
-            geo.OffOrigin=offOrigin(:,jj);
+            geo.offOrigin=offOrigin(:,index_angles(jj));
         end
         if size(offDetector,2)==length(angles)
-            geo.offDetector=offDetector(:,jj);
+            geo.offDetector=offDetector(:,index_angles(jj));
         end
 %         proj_err=proj(:,:,jj)-Ax(f,geo,angles(jj));          %                                 (b-Ax)
 %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
@@ -301,7 +301,7 @@ for ii=1:length(opts)
             %  =========================================================================       
         case 'maxL2err'
             if default
-               epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
+               epsilon=im3Dnorm(FDK(proj,geo,angles),'L2')*0.2; %heuristic
             else
                epsilon=val;
             end
