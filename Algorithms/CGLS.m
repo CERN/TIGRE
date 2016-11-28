@@ -39,7 +39,7 @@ function [x,errorL2]= CGLS(proj,geo,angles,niter,varargin)
 
 
 %% parse inputs'
-opts=     {'Init','InitImg','Verbose'};
+opts=     {'init','initimg','verbose'};
 defaults= [   1  ,    1 , 1];
 
 % Check inputs
@@ -50,7 +50,7 @@ end
 
 % check if option has been passed as input
 for ii=1:2:nVarargs
-    ind=find(ismember(opts,varargin{ii}));
+    ind=find(ismember(opts,lower(varargin{ii})));
     if ~isempty(ind)
         defaults(ind)=0;
     end
@@ -63,8 +63,11 @@ for ii=1:length(opts)
    if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
-            ind=find(isequal(opt,varargin{jj}));
+            ind=find(isequal(opt,lower(varargin{jj})));
             jj=jj+1;
+        end
+        if isempty(ind)
+            error('CBCT:CGLS:InvalidInput',['Optional parameter "' varargin{jj} '" does not exist' ]); 
         end
         val=varargin{jj};
     end

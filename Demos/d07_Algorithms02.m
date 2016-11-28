@@ -119,9 +119,9 @@ qualmeas={'RMSE'};
 % SIRT and SART both have no extra input parameters.
 % =========================================================================
 [imgSIRT,errL2SIRT,qualitySIRT]=SIRT(noise_projections,geo,angles,30,...
-                            'lambda',lambda,'lambdared',lambdared,'verbose',verbose,'QualMeas',qualmeas);
+                            'lambda',lambda,'lambda_red',lambdared,'verbose',verbose,'QualMeas',qualmeas);
 [imgSART,errL2SART,qualitySART]=SART(noise_projections,geo,angles,30,...
-                            'lambda',lambda,'lambdared',lambdared,'verbose',verbose,'QualMeas',qualmeas);
+                            'lambda',lambda,'lambda_red',lambdared,'verbose',verbose,'QualMeas',qualmeas);
 % OS-SART
 % ========================================================================
 % Additionally OS-SART includes a couple of other parameters, related to
@@ -139,21 +139,21 @@ blcks=22;
 %                                     ones used.  (default)
 order='angularDistance';
 [imgOSSART,errL2OSSART,qualityOSSART]=OS_SART(noise_projections,geo,angles,30,...
-                            'lambda',lambda,'lambdared',lambdared,'verbose',verbose,'QualMeas',qualmeas,...
+                            'lambda',lambda,'lambda_red',lambdared,'verbose',verbose,'QualMeas',qualmeas,...
                              'BlockSize',blcks,'OrderStrategy',order);
 %% Lets have a brief show of the results
 % set(0,'DefaultTextInterpreter', 'latex')
 
 subplot(211)
-plot(log10([errL2SIRT;errL2SART;[errL2OSSART nan(1,length(errL2SART)-length(errL2OSSART))]]'));
+plot(log10([errL2SIRT;errL2OSSART;[errL2SART nan(1,length(errL2OSSART)-length(errL2SART))]]'));
 title('Convergence')
 xlabel('Iteration')
 ylabel('$ log_{10}(|Ax-b|) $')
-legend('SIRT','SART','OS-SART')
+legend('SIRT','OS-SART','SART')
 subplot(212)
-plot(log10([qualitySIRT;qualitySART;[qualityOSSART nan(1,length(qualitySART)-length(qualityOSSART))]]'));
+plot(log10([qualitySIRT;qualityOSSART;[qualitySART nan(1,length(qualityOSSART)-length(qualitySART))]]'));
 title('Evolution of RMSE')
-legend('SIRT','SART','OS-SART')
+legend('SIRT','OS-SART','SART')
 xlabel('Iteration')
 ylabel('$ log_{10}(RMSE) $')
 

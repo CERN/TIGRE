@@ -40,7 +40,7 @@ function plotImg(img,varargin)
 %--------------------------------------------------------------------------
 %% Parse inputs
 
-opts=     {'Step','Dim','Savegif','Colormap','Clims','Slice'};
+opts=     {'step','dim','savegif','colormap','clims','slice'};
 defaults= [   1  ,  1  ,    1    ,    1     ,   1 ,1];
 
 % Check inputs
@@ -51,7 +51,7 @@ end
 
 % check if option has been passed as input
 for ii=1:2:nVarargs
-    ind=find(ismember(opts,varargin{ii}));
+    ind=find(ismember(opts,lower(varargin{ii})));
     if ~isempty(ind)
        defaults(ind)=0; 
     end
@@ -65,15 +65,18 @@ for ii=1:length(opts)
     if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
-            ind=find(isequal(opt,varargin{jj}));
+            ind=find(isequal(opt,lower(varargin{jj})));
             jj=jj+1;
+        end
+        if isempty(ind)
+           error('CBCT:plotImgs:InvalidInput',['Optional parameter "' varargin{jj} '" does not exist' ]); 
         end
         val=varargin{jj};
     end
     
     switch opt
 % % % % % %         %Step 
-        case 'Step'
+        case 'step'
             if default
                 steps=1;
             else
@@ -83,7 +86,7 @@ for ii=1:length(opts)
                 steps=val;
             end
 % % % % % %         % Plot single slice
-         case 'Slice'
+         case 'slice'
             if default
                 slice=0;
             else
@@ -91,7 +94,7 @@ for ii=1:length(opts)
             end
 
 % % % % % %         % iterate trhoug what dim?
-        case 'Dim'
+        case 'dim'
             if default
                 crossect=1;
             else
@@ -111,7 +114,7 @@ for ii=1:length(opts)
             end
             
 % % % % % % %         % do you want to save result as gif?
-        case 'Savegif'
+        case 'savegif'
             if default
                 savegif=0;
             else
@@ -122,7 +125,7 @@ for ii=1:length(opts)
                filename=val;
             end
 % % % % % %         % Colormap choice
-        case 'Colormap'
+        case 'colormap'
             if default
                 cmap='gray';
             else
@@ -143,7 +146,7 @@ for ii=1:length(opts)
                 end
             end
 % % % % % %         % Limits of the colors
-        case 'Clims'
+        case 'clims'
             if default
                 if any(size(img)>512) || ~areTheseToolboxesInstalled({'MATLAB','Statistics Toolbox'})  || areTheseToolboxesInstalled({'MATLAB','Statistics and Machine Learning Toolbox'})
                    climits=[0, 0.95*max(img(:))];

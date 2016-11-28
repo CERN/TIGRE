@@ -198,7 +198,7 @@ end
 
 function [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,block_size,OrderStrategy]=parse_inputs(proj,geo,angles,argin)
 
-opts=     {'lambda','lambda_red','TViter','Verbose','alpha','alpha_red','Ratio','maxL2err','BlockSize','OrderStrategy','BlockSize'};
+opts=     {'lambda','lambda_red','tviter','verbose','alpha','alpha_red','ratio','maxl2err','blocksize','orderstrategy','blocksize'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -208,7 +208,7 @@ end
 
 % check if option has been passed as input
 for ii=1:2:nVarargs
-    ind=find(ismember(opts,argin{ii}));
+    ind=find(ismember(opts,lower(argin{ii})));
     if ~isempty(ind)
         defaults(ind)=0;
     end
@@ -221,8 +221,11 @@ for ii=1:length(opts)
     if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
-            ind=find(isequal(opt,argin{jj}));
+            ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
+        end
+         if isempty(ind)
+            error('CBCT:OSC_TV:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
         end
         val=argin{jj};
     end
@@ -230,7 +233,7 @@ for ii=1:length(opts)
     switch opt
         % Verbose
         %  =========================================================================
-        case 'Verbose'
+        case 'verbose'
             if default
                 verbose=1;
             else
@@ -265,7 +268,7 @@ for ii=1:length(opts)
             end
             % Number of iterations of TV
             %  =========================================================================
-        case 'TViter'
+        case 'tviter'
             if default
                 ng=20;
             else
@@ -289,7 +292,7 @@ for ii=1:length(opts)
             end
             %  Maximum update ratio
             %  =========================================================================
-        case 'Ratio'
+        case 'ratio'
             if default
                 rmax=0.95;
             else
@@ -297,7 +300,7 @@ for ii=1:length(opts)
             end
             %  Maximum L2 error to have a "good image"
             %  =========================================================================
-        case 'maxL2err'
+        case 'maxl2err'
             if default
                 epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
             else
@@ -305,7 +308,7 @@ for ii=1:length(opts)
             end
             %  Block size for OS-SART
             %  =========================================================================
-        case 'BlockSize'
+        case 'blocksize'
             if default
                 block_size=20;
             else
@@ -316,7 +319,7 @@ for ii=1:length(opts)
             end
             %  Order strategy
             %  =========================================================================
-        case 'OrderStrategy'
+        case 'orderstrategy'
             if default
                 OrderStrategy='angularDistance';
             else

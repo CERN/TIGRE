@@ -12,7 +12,7 @@ function [res,errorL2,qualMeasOut]=SIRT(proj,geo,angles,niter,varargin)
 %
 %   'lambda':      Sets the value of the hyperparameter. Default is 1
 %
-%   'lambdared':   Reduction of lambda.Every iteration
+%   'lambda_red':   Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.95
 %
 %   'Init':        Describes diferent initialization techniques.
@@ -184,7 +184,7 @@ end
 
 
 function [lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','Init','InitImg','Verbose','lambdaRed','QualMeas'};
+opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -194,7 +194,7 @@ end
 
 % check if option has been passed as input
 for ii=1:2:nVarargs
-    ind=find(ismember(opts,argin{ii}));
+    ind=find(ismember(opts,lower(argin{ii})));
     if ~isempty(ind)
         defaults(ind)=0;
     end
@@ -207,15 +207,18 @@ for ii=1:length(opts)
     if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
-            ind=find(isequal(opt,argin{jj}));
+            ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
+        end
+        if isempty(ind)
+            error('CBCT:SIRT:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
         end
         val=argin{jj};
     end
     
     switch opt
         % % % % % % % Verbose
-        case 'Verbose'
+        case 'verbose'
             if default
                 verbose=1;
             else
@@ -235,7 +238,7 @@ for ii=1:length(opts)
                 end
                 lambda=val;
             end
-        case 'lambdaRed'
+        case 'lambda_red'
             if default
                 lamdbared=1;
             else
@@ -244,7 +247,7 @@ for ii=1:length(opts)
                 end
                 lamdbared=val;
             end
-        case 'Init'
+        case 'init'
             res=[];
             if default || strcmp(val,'none')
                 res=zeros(geo.nVoxel','single');
@@ -266,7 +269,7 @@ for ii=1:length(opts)
                 error('CBCT:SIRT:InvalidInput','Invalid Init option')
             end
             % % % % % % % ERROR
-        case 'InitImg'
+        case 'initimg'
             if default
                 continue;
             end
@@ -277,7 +280,7 @@ for ii=1:length(opts)
                     error('CBCT:SIRT:InvalidInput','Invalid image for initialization');
                 end
             end
-        case 'QualMeas'
+        case 'qualmeas'
             if default
                 QualMeasOpts={};
             else

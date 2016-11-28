@@ -37,8 +37,8 @@ function plotProj(proj,alpha,varargin)
 % Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
 %% Parse inputs
-opts=     {'Step','Colormap','CLims','Savegif','Slice'};
-defaults= [    1,    1     ,   1 ,      1,1];
+opts=     {'step','colormap','clims','savegif','slice'};
+defaults= [    1,    1     ,   1 ,      1 ,   1];
 
 % Check inputs
 nVarargs = length(varargin);
@@ -47,7 +47,7 @@ if mod(nVarargs,2)
 end
 % check if option has been passed as input
 for ii=1:2:nVarargs
-    ind=find(ismember(opts,varargin{ii}));
+    ind=find(ismember(opts,lower(varargin{ii})));
     if ~isempty(ind)
        defaults(ind)=0; 
     end
@@ -61,14 +61,17 @@ for ii=1:length(opts)
     if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
-            ind=find(isequal(opt,varargin{jj}));
+            ind=find(isequal(opt,lower(varargin{jj})));
             jj=jj+1;
+        end
+        if isempty(ind)
+            error('CBCT:plotProj:InvalidInput',['Optional parameter "' varargin{jj} '" does not exist' ]); 
         end
         val=varargin{jj};
     end
     switch opt
 % % % % % %         %Step 
-        case 'Step'
+        case 'step'
             if default
                 steps=1;
             else
@@ -78,7 +81,7 @@ for ii=1:length(opts)
                 steps=val;
             end
 % % % % % %         % Colormap choice            
-        case 'Colormap'
+        case 'colormap'
             if default
                 cmap='gray';
             else
@@ -99,7 +102,7 @@ for ii=1:length(opts)
                 end
             end
 % % % % % %         % Limits of the colors
-        case 'CLims'
+        case 'clims'
             if default
                 climits=[min(proj(:)) max(proj(:))];
             else
@@ -110,7 +113,7 @@ for ii=1:length(opts)
                 end
             end
 % % % % % % %         % do you want to save result as gif?
-        case 'Savegif'
+        case 'savegif'
             if default
                 savegif=0;
             else
@@ -120,7 +123,7 @@ for ii=1:length(opts)
                end
                filename=val;
             end 
-        case 'Slice'
+        case 'slice'
             if default
                 slice=0;
             else

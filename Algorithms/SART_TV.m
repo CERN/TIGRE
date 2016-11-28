@@ -12,7 +12,7 @@ function [res,errorL2,qualMeasOut]=SART_TV(proj,geo,angles,niter,varargin)
 %
 %   'lambda':      Sets the value of the hyperparameter. Default is 1
 %
-%   'lambdared':   Reduction of lambda.Every iteration
+%   'lambda_red':   Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
 %   'Init':        Describes diferent initialization techniques.
@@ -202,7 +202,7 @@ end
 
 
 function [lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','Init','InitImg','Verbose','lambdaRed','QualMeas','TViter','TVlambda','OrderStrategy'};
+opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','tviter','tvlambda','orderstrategy'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -212,7 +212,7 @@ end
 multigrid=false;
 % check if option has been passed as input
 for ii=1:2:nVarargs
-    ind=find(ismember(opts,argin{ii}));
+    ind=find(ismember(opts,lower(argin{ii})));
     if ~isempty(ind)
         defaults(ind)=0;
     end
@@ -225,15 +225,18 @@ for ii=1:length(opts)
     if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
-            ind=find(isequal(opt,argin{jj}));
+            ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
+        end
+         if isempty(ind)
+            error('CBCT:SART_TV:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
         end
         val=argin{jj};
     end
     
     switch opt
         % % % % % % % Verbose
-        case 'Verbose'
+        case 'verbose'
             if default
                 verbose=1;
             else
@@ -249,20 +252,20 @@ for ii=1:length(opts)
                 lambda=1;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:SART:InvalidInput','Invalid lambda')
+                    error('CBCT:SART_TV:InvalidInput','Invalid lambda')
                 end
                 lambda=val;
             end
-        case 'lambdaRed'
+        case 'lambda_red'
             if default
                 lamdbared=0.99;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:SART:InvalidInput','Invalid lambda')
+                    error('CBCT:SART_TV:InvalidInput','Invalid lambda')
                 end
                 lamdbared=val;
             end
-        case 'Init'
+        case 'init'
             res=[];
             if default || strcmp(val,'none')
                 res=zeros(geo.nVoxel','single');
@@ -277,10 +280,10 @@ for ii=1:length(opts)
                 continue;
             end
             if isempty(res)
-                error('CBCT:SART:InvalidInput','Invalid Init option')
+                error('CBCT:SART_TV:InvalidInput','Invalid Init option')
             end
             % % % % % % % ERROR
-        case 'InitImg'
+        case 'initimg'
             if default
                 continue;
             end
@@ -288,39 +291,39 @@ for ii=1:length(opts)
                 if isequal(size(val),geo.nVoxel');
                     res=single(val);
                 else
-                    error('CBCT:SART:InvalidInput','Invalid image for initialization');
+                    error('CBCT:SART_TV:InvalidInput','Invalid image for initialization');
                 end
             end
-        case 'QualMeas'
+        case 'qualmeas'
             if default
                 QualMeasOpts={};
             else
                 if iscellstr(val)
                     QualMeasOpts=val;
                 else
-                    error('CBCT:SART:InvalidInput','Invalid quality measurement parameters');
+                    error('CBCT:SART_TV:InvalidInput','Invalid quality measurement parameters');
                 end
             end
-        case 'TViter'
+        case 'tviter'
             if default
                 TViter=50;
             else
                 TViter=val;
             end
-        case 'TVlambda'
+        case 'tvlambda'
             if default
                 TVlambda=50;
             else
                 TVlambda=val;
             end
-        case 'OrderStrategy'
+        case 'orderstrategy'
             if default
                 OrderStrategy='random';
             else
                 OrderStrategy=val;
             end
         otherwise
-            error('CBCT:SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART()']);
+            error('CBCT:SART_TV:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART()']);
     end
 end
 if multigrid; res=init_multigrid(proj,geo,alpha,TViter,TVlambda);end;

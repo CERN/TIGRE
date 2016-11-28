@@ -12,7 +12,7 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %
 %   'lambda':      Sets the value of the hyperparameter. Default is 1
 %
-%   'lambdared':   Reduction of lambda.Every iteration
+%   'lambda_red':   Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
 %   'Init':        Describes diferent initialization techniques.
@@ -199,7 +199,7 @@ end
 
 
 function [lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','Init','InitImg','Verbose','lambdaRed','QualMeas','OrderStrategy'};
+opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -209,7 +209,7 @@ end
 
 % check if option has been passed as input
 for ii=1:2:nVarargs
-    ind=find(ismember(opts,argin{ii}));
+    ind=find(ismember(opts,lower(argin{ii})));
     if ~isempty(ind)
         defaults(ind)=0;
     end
@@ -222,15 +222,18 @@ for ii=1:length(opts)
     if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
-            ind=find(isequal(opt,argin{jj}));
+            ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
+        end
+         if isempty(ind)
+            error('CBCT:SART:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
         end
         val=argin{jj};
     end
     
     switch opt
         % % % % % % % Verbose
-        case 'Verbose'
+        case 'verbose'
             if default
                 verbose=1;
             else
@@ -250,7 +253,7 @@ for ii=1:length(opts)
                 end
                 lambda=val;
             end
-        case 'lambdaRed'
+        case 'lambda_red'
             if default
                 lamdbared=0.99;
             else
@@ -259,7 +262,7 @@ for ii=1:length(opts)
                 end
                 lamdbared=val;
             end
-        case 'Init'
+        case 'init'
             res=[];
             if default || strcmp(val,'none')
                 res=zeros(geo.nVoxel','single');
@@ -274,14 +277,14 @@ for ii=1:length(opts)
                 continue;
             end
             if strcmp(val,'image')
-                initwithimage=1;
+                initwithimage=1;     % it is used (10 lines below)
                 continue;
             end
             if isempty(res)
                 error('CBCT:SART:InvalidInput','Invalid Init option')
             end
             % % % % % % % ERROR
-        case 'InitImg'
+        case 'initimg'
             if default
                 continue;
             end
@@ -292,7 +295,7 @@ for ii=1:length(opts)
                     error('CBCT:SART:InvalidInput','Invalid image for initialization');
                 end
             end
-        case 'QualMeas'
+        case 'qualmeas'
             if default
                 QualMeasOpts={};
             else
@@ -302,7 +305,7 @@ for ii=1:length(opts)
                     error('CBCT:SART:InvalidInput','Invalid quality measurement parameters');
                 end
             end
-         case 'OrderStrategy'
+         case 'orderstrategy'
             if default
                 OrderStrategy='random';
             else
