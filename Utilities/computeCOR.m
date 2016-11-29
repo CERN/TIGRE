@@ -33,8 +33,8 @@ for i = 1:length(precision)
         gamma_i = gamma - gamma_c;
         beta = 2 * gamma_i + pi;
         
-        s2 = geom.d_sd * tan(2 * gamma_c - gamma);
-        s2 = repmat(s2, 1, length(geom.angles));
+        s2 = geo.DSD * tan(2 * gamma_c - gamma);
+        s2 = repmat(s2, 1, length(angles));
         
         angles_aux = repmat(angles', geo.nDetector(1), 1) + repmat(beta, 1, length(angles));
         test = interp2(angle_grid, det_grid, test_data, angles_aux, s2, 'linear', 0);
