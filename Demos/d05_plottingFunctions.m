@@ -48,8 +48,8 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 %% Load data and generate projections 
 % see previous demo for explanation
 angles=linspace(0,2*pi,100);
-thorax=thoraxPhantom(geo.nVoxel);
-projections=Ax(thorax,geo,angles,'interpolated');
+head=headPhantom(geo.nVoxel);
+projections=Ax(head,geo,angles,'interpolated');
 noise_projections=addCTnoise(projections);
 %% Reconstruct image using OS-SART and FDK
 imgFDK=FDK(noise_projections,geo,angles);
@@ -149,6 +149,6 @@ slice=64;
 plotImg(imgFDK,'Dim',dimension,'Step',step,'CLims',clims,'Colormap',colormap,'Savegif',giffilename);
 
 % Remember: You can always plot more than 1 image together!
-plotImg([thorax imgFDK imgOSSART],'Dim','z')
+plotImg([head imgFDK imgOSSART],'Dim','z')
 % Or even the errors!
-plotImg([abs(thorax-imgFDK) abs(thorax-imgOSSART)],'Dim',3);
+plotImg([abs(head-imgFDK) abs(head-imgOSSART)],'Dim',3);

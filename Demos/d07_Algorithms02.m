@@ -48,8 +48,8 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 %% Load data and generate projections 
 % see previous demo for explanation
 angles=linspace(0,2*pi,100);
-thorax=thoraxPhantom(geo.nVoxel);
-projections=Ax(thorax,geo,angles,'interpolated');
+head=headPhantom(geo.nVoxel);
+projections=Ax(head,geo,angles,'interpolated');
 noise_projections=addCTnoise(projections);
 %% SART family of algorithms
 %
@@ -118,9 +118,9 @@ qualmeas={'RMSE'};
 
 % SIRT and SART both have no extra input parameters.
 % =========================================================================
-[imgSIRT,errL2SIRT,qualitySIRT]=SIRT(noise_projections,geo,angles,30,...
+[imgSIRT,errL2SIRT,qualitySIRT]=SIRT(projections,geo,angles,30,...
                             'lambda',lambda,'lambda_red',lambdared,'verbose',verbose,'QualMeas',qualmeas);
-[imgSART,errL2SART,qualitySART]=SART(noise_projections,geo,angles,30,...
+[imgSART,errL2SART,qualitySART]=SART(projections,geo,angles,30,...
                             'lambda',lambda,'lambda_red',lambdared,'verbose',verbose,'QualMeas',qualmeas);
 % OS-SART
 % ========================================================================
@@ -138,7 +138,7 @@ blcks=22;
 %                                     biggest angular distance with the
 %                                     ones used.  (default)
 order='angularDistance';
-[imgOSSART,errL2OSSART,qualityOSSART]=OS_SART(noise_projections,geo,angles,30,...
+[imgOSSART,errL2OSSART,qualityOSSART]=OS_SART(projections,geo,angles,30,...
                             'lambda',lambda,'lambda_red',lambdared,'verbose',verbose,'QualMeas',qualmeas,...
                              'BlockSize',blcks,'OrderStrategy',order);
 %% Lets have a brief show of the results
@@ -164,7 +164,7 @@ ylabel('$ log_{10}(RMSE) $')
 plotImg([imgSIRT;  imgOSSART; imgSART;],'Dim','Z','Savegif','sarts.gif');
 
 % plot error
-plotImg(abs([thorax-imgSIRT thorax-imgSART thorax-imgOSSART]),'Dim','Z');
+plotImg(abs([head-imgSIRT; head-imgOSSART; head-imgSART; ]),'Dim','Z');
 
 
 

@@ -47,7 +47,7 @@ geo.accuracy=0.5;
 angles=linspace(00.0,2*pi,100);
 angles=[angles angles angles];
 % Load thorax phatom data
-thorax=thoraxPhantom(geo.nVoxel); % yes, not the best example data, but It will do.
+head=headPhantom(geo.nVoxel); % yes, not the best example data, but It will do.
 
 % Thsi makes it helical
 geo.offOrigin(3,:)=linspace(-1024/2+128,1024/2-128,length(angles)).';  % about 256^3 images fit int he detector with this size. 
@@ -55,7 +55,7 @@ geo.offOrigin(1,:)=0;
 geo.offOrigin(2,:)=0;
 
 % project data
-data=Ax(thorax,geo,angles);
+data=Ax(head,geo,angles);
 
 % Uncomment if you want to see the data
 % plotProj(data,angles);
@@ -67,6 +67,6 @@ CGLSimg=CGLS(data,geo,angles,20);
 %% Plot results
 
 % CGLS and SIRT
-plotImg([thorax, OSSARTimg ,CGLSimg],'Dim',3,'Step',3);
+plotImg([head, OSSARTimg ,CGLSimg],'Dim',3,'Step',3);
 
 

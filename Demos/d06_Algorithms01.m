@@ -47,8 +47,8 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 %% Load data and generate projections 
 % see previous demo for explanation
 angles=linspace(0,2*pi,200);
-thorax=thoraxPhantom(geo.nVoxel);
-projections=Ax(thorax,geo,angles,'interpolated');
+head=headPhantom(geo.nVoxel);
+projections=Ax(head,geo,angles,'interpolated');
 noise_projections=addCTnoise(projections);
 
 %% Usage of FDK
@@ -80,4 +80,4 @@ plotImg([imgFDK1 imgFDK2],'Dim','Z');
 
 % but it can be seen that one has bigger errors in the whole image, while
 % hte other just in the boundaries
-plotImg([abs(thorax-imgFDK1) abs(thorax-imgFDK2)],'Dim','Z');
+plotImg([abs(head-imgFDK1) abs(head-imgFDK2)],'Dim','Z');

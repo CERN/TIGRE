@@ -45,8 +45,8 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 %% Load data and generate projections 
 % see previous demo for explanation
 angles=linspace(0,2*pi,100);
-thorax=thoraxPhantom(geo.nVoxel);
-projections=Ax(thorax,geo,angles,'interpolated');
+head=headPhantom(geo.nVoxel);
+projections=Ax(head,geo,angles,'interpolated');
 noise_projections=addCTnoise(projections);
 %% Lets just use FDK
 
@@ -75,6 +75,6 @@ plotImg([imgFDK imgdenoised imcroped],'Dim','Z')
 % however, teh denoising has no knoledge of the original data (projections)
 % this it doesnt reduce the error. The error increases, specially in small
 % areas
-plotImg(abs([thorax-imgFDK thorax-imgdenoised thorax-imcroped]),'Dim','Z')
+plotImg(abs([head-imgFDK head-imgdenoised head-imcroped]),'Dim','Z')
 
 

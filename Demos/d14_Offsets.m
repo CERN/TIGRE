@@ -51,8 +51,8 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 %% Load data and generate projections 
 % see previous demo for explanation
 angles=linspace(0,2*pi,100);
-thorax=thoraxPhantom(geo.nVoxel);
-projections=Ax(thorax,geo,angles,'interpolated');
+head=headPhantom(geo.nVoxel);
+projections=Ax(head,geo,angles,'interpolated');
 
 
 %% lets see it
@@ -66,7 +66,7 @@ plotProj(projections,angles);
 %% Second test: lets test variying offsets:
 
 geo.offDetector=[10*sin(angles); 20*cos(angles)];                     % Offset of Detector            (mm)
-projections2=Ax(thorax,geo,angles,'interpolated');
+projections2=Ax(head,geo,angles,'interpolated');
 %% lets see it
 plotProj(projections2,angles);
 %% reconstruction
@@ -83,7 +83,7 @@ geo.dVoxel=geo.sVoxel./geo.nVoxel;          % size of each voxel            (mm)
 geo.offDetector=[10*sin(angles); 10*cos(angles)];                     % Offset of Detector            (mm)
 geo.offOrigin =[40*sin(angles);linspace(-30,30,100);40*cos(angles)];                     % Offset of image from origin   (mm)              
 
-projections3=Ax(thorax,geo,angles,'interpolated');
+projections3=Ax(head,geo,angles,'interpolated');
 %% lets see it
 plotProj(projections3,angles);
 %% reconstruction

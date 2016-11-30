@@ -48,12 +48,12 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 % define projection angles (in radians)
 angles=linspace(0,2*pi,100);
 % load phatnom image
-thorax=thoraxPhantom(geo.nVoxel);
+head=headPhantom(geo.nVoxel);
 
 % Simulate forward projection.
 % Strongly suggested to use 'iterpolated' option for more accurate
 % projections. reduce geo.accuracy for better results
-projections=Ax(thorax,geo,angles,'interpolated');
+projections=Ax(head,geo,angles,'interpolated');
 
 % Add realistic noise. Adds photon scattering noise ('Poisson') and
 % electronic noise of the detector ('Gaussian').

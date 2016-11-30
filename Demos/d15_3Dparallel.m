@@ -53,8 +53,8 @@ geo.mode='parallel';
 %% Load data and generate projections 
 % see previous demo for explanation
 angles=linspace(0,2*pi,100);
-thorax=thoraxPhantom(geo.nVoxel);
-projections=Ax(thorax,geo,angles,'interpolated');
+head=headPhantom(geo.nVoxel);
+projections=Ax(head,geo,angles,'interpolated');
 noise_projections=addCTnoise(projections);
 
 %% Reconsturction 

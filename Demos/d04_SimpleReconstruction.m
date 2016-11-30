@@ -50,9 +50,9 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 % define angles
 angles=linspace(0,2*pi,100);
 % Load thorax phatom data
-thorax=thoraxPhantom(geo.nVoxel);
+head=headPhantom(geo.nVoxel);
 % generate projections
-projections=Ax(thorax,geo,angles,'interpolated');
+projections=Ax(head,geo,angles,'interpolated');
 % add noise
 noise_projections=addCTnoise(projections);
 

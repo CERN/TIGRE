@@ -74,12 +74,12 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 %--------------------------------------------------------------------------
 
 %--------------------------------------------------------------------------
-% Thorax phantom
+% head phantom
 %
 %
-thorax=thoraxPhantom(geo.nVoxel); %default is 128^3
+head=headPhantom(geo.nVoxel); %default is 128^3
 % show it
-plotImg(thorax,'Dim','Z');
-
+plotImg(head,'Dim','Z');
+citeme('headPhantom')
 
 

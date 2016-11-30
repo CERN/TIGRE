@@ -52,9 +52,9 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 %% Load data and generate projections 
 % see previous demo for explanation
 angles=linspace(0,2*pi,100);
-thorax=thoraxPhantom(geo.nVoxel);
-projections=Ax(thorax,geo,angles,'interpolated');
-noise_projections=addCTnoise(projections,'Poisson',1e4,'Gaussian',[0 50]);
+head=headPhantom(geo.nVoxel);
+projections=Ax(head,geo,angles,'interpolated');
+noise_projections=addCTnoise(projections);
 
 %% Usage CGLS
 %
@@ -95,4 +95,4 @@ legend('SIRT','CGLS')
 % plot images
 plotImg([imgCGLS imgSIRT],'Dim','Z','Step',2)
 %plot errors
-plotImg(abs([thorax-imgCGLS thorax-imgSIRT]),'Dim','Z','Slice',64)
+plotImg(abs([head-imgCGLS head-imgSIRT]),'Dim','Z','Slice',64)

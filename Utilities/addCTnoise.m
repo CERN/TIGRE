@@ -66,7 +66,7 @@ for ii=1:length(opts)
     switch opt
         case 'Poisson'
             if default
-                I0=1e5;
+                I0=65535;
             else
                if ~isscalar(val);error('CBCT:addnoise:WorngInput','Input to Poisson should be scalar');end
                I0=val;
@@ -75,7 +75,7 @@ for ii=1:length(opts)
         case 'Gaussian'
             if default
                 m=0;
-                sigma=10;
+                sigma=0.5;
             else
                 if (size(val,2)~=2);error('CBCT:addnoise:WorngInput','Input to Gaussian should be 1x2');end
                 m=val(1);
@@ -88,7 +88,7 @@ end
 
 %% Add the noise
 %//Lambert-Beer
-Im=I0*exp(-proj);
+Im=I0*exp(-proj/max(proj(:)));
 
 % Photon noise + electronic noise
 if areTheseToolboxesInstalled({'MATLAB','Statistics Toolbox'}) || areTheseToolboxesInstalled({'MATLAB','Statistics and Machine Learning Toolbox'})
@@ -103,6 +103,6 @@ else
          'With I0 ~ 10000'])
      Im=randn(size(Im)).*sigma + m; % this one is slower
 end
-Im(Im<0)=1e-6;
-proj=single(log(I0./Im));
+Im(Im<=0)=1e-6;
+proj=single(log(I0./Im))*max(proj(:));
 end

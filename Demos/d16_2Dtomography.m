@@ -66,9 +66,9 @@ geo.mode='parallel';
 %% Define angles of projection and load phatom image
 
 angles=linspace(0,2*pi,100);
-thorax=single(phantom('Modified Shepp-Logan',geo.nVoxel(1)));
-thorax=cat(3,thorax,thorax);
-projections=Ax(thorax,geo,angles,'interpolated');
+phatom=single(phantom('Modified Shepp-Logan',geo.nVoxel(1)));
+phatom=cat(3,phatom,phatom);
+projections=Ax(phatom,geo,angles,'interpolated');
 %% recosntruct
 
 imgOSSART=OS_SART(projections,geo,angles,40);
@@ -124,9 +124,9 @@ geo.mode='cone';
 %% Define angles of projection and load phatom image
 
 angles=linspace(0,2*pi,100);
-thorax=single(phantom('Modified Shepp-Logan',geo.nVoxel(1)));
-thorax=cat(3,thorax,thorax);
-projections=Ax(thorax,geo,angles,'interpolated');
+phatom=single(phantom('Modified Shepp-Logan',geo.nVoxel(1)));
+phatom=cat(3,phatom,phatom);
+projections=Ax(phatom,geo,angles,'interpolated');
 %% recosntruct
 
 imgOSSART=OS_SART(projections,geo,angles,40);

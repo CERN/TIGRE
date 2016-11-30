@@ -54,8 +54,8 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 %% Load data and generate projections 
 % see previous demo for explanation
 angles=linspace(0,2*pi-2*pi/30,30);
-thorax=thoraxPhantom(geo.nVoxel);
-projections=Ax(thorax,geo,angles,'interpolated');
+head=headPhantom(geo.nVoxel);
+projections=Ax(head,geo,angles,'interpolated');
 noise_projections=addCTnoise(projections);
 
 %% Lets create a OS-SART test for comparison
@@ -205,10 +205,10 @@ imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',50);
 %    
 %     OSC-TV             B-ASD-POCS-beta   SART-TV
 
-plotImg([ imgOSCTV imgBASDPOCSbeta imgSARTTV; thorax imgOSSART  imgASDPOCS ] ,'Dim','Z','Step',2)
+plotImg([ imgOSCTV imgBASDPOCSbeta imgSARTTV; head imgOSSART  imgASDPOCS ] ,'Dim','Z','Step',2)
  % error
 
-plotImg(abs([ thorax-imgOSCTV thorax-imgBASDPOCSbeta thorax-imgSARTTV;thorax-thorax thorax-imgOSSART  thorax-imgASDPOCS ]) ,'Dim','Z','Slice',64)
+plotImg(abs([ head-imgOSCTV head-imgBASDPOCSbeta head-imgSARTTV;head-head head-imgOSSART  head-imgASDPOCS ]) ,'Dim','Z','Slice',64)
 
 
 
