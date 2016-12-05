@@ -73,7 +73,7 @@ for ii=1:length(opts)
     end
     
     switch opt
-        case 'Init'
+        case 'init'
             x=[];
             if default || strcmp(val,'none')
                 x=zeros(geo.nVoxel','single');
@@ -95,7 +95,7 @@ for ii=1:length(opts)
                error('CBCT:CGLS_CBCT:InvalidInput','Invalid Init option') 
             end
             % % % % % % % ERROR
-        case 'InitImg'
+        case 'initimg'
             if default
                 continue;
             end
@@ -106,7 +106,7 @@ for ii=1:length(opts)
                     error('CBCT:CGLS_CBCT:InvalidInput','Invalid image for initialization');
                 end
             end
-         case 'Verbose'
+         case 'verbose'
             if default
                 verbose=1;
             else

@@ -48,7 +48,7 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 %% Load data and generate projections 
 % see previous demo for explanation
 angles=linspace(0,2*pi,100);
-head=headPhantom(geo.nVoxel);
+head=thoraxPhantom(geo.nVoxel);
 projections=Ax(head,geo,angles,'interpolated');
 noise_projections=addCTnoise(projections);
 %% SART family of algorithms
