@@ -44,7 +44,7 @@ geo.accuracy=0.5;
 
 
 %% Create data+ angles
-angles=linspace(00.0,2*pi,100);
+angles=linspace(00.0,2*pi,200);
 angles=[angles angles angles];
 % Load thorax phatom data
 head=headPhantom(geo.nVoxel); % yes, not the best example data, but It will do.

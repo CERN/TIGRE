@@ -1,4 +1,4 @@
-function [ proj ] = filtering(proj,geo,alpha)
+function [ proj ] = filtering(proj,geo,angles,parker)
 %FILTERING Summary of this function goes here
 %   Detailed explanation goes here
 %--------------------------------------------------------------------------
@@ -21,7 +21,9 @@ function [ proj ] = filtering(proj,geo,alpha)
 %--------------------------------------------------------------------------
 
 
-
+if parker
+	proj = permute(parkerWeight(permute(proj,[2 1 3]),geo,angles),[2 1 3]);
+end 
 
 filt_len = max(64,2^nextpow2(2*geo.nDetector(1)));
 [ramp_kernel] = ramp_flat(filt_len);
@@ -30,7 +32,7 @@ d = 1; % cut off (0~1)
 [filt] = Filter(geo.filter, ramp_kernel, filt_len, d);
 filt = repmat(filt',[1 geo.nDetector(2)]);
 
-for ii=1:length(alpha)
+for ii=1:length(angles)
     
     fproj = (zeros(filt_len,geo.nDetector(2),'single'));
     
@@ -43,7 +45,7 @@ for ii=1:length(alpha)
     fproj = (real(ifft(fproj)));
     
   
-    proj(:,:,ii) = fproj(end/2-geo.nDetector(1)/2+1:end/2+geo.nDetector(1)/2,:)/2/geo.dDetector(1)*(2*pi/  length(alpha)   )/2*(geo.DSD/geo.DSO);
+    proj(:,:,ii) = fproj(end/2-geo.nDetector(1)/2+1:end/2+geo.nDetector(1)/2,:)/2/geo.dDetector(1)*(2*pi/  length(angles)   )/2*(geo.DSD/geo.DSO);
     
     
 end
