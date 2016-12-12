@@ -137,7 +137,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     mxArray * geometryMex=(mxArray*)prhs[1];
 
     // IMPORTANT-> Make sure Matlab creates the struct in this order.
-    const char *fieldnames[13];
+    const char *fieldnames[14];
     fieldnames[0] = "nVoxel";
     fieldnames[1] = "sVoxel";
     fieldnames[2] = "dVoxel";
@@ -151,13 +151,13 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     fieldnames[10]= "accuracy";
     fieldnames[11]= "mode";
     fieldnames[12]= "COR";
-
+    fieldnames[13]= "rotDetector";
     
     if(!mxIsStruct(geometryMex))
         mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput",
                 "Second input must be a structure.");
     int nfields = mxGetNumberOfFields(geometryMex);
-    if (nfields < 10 || nfields >13 ){
+    if (nfields < 10 || nfields >14 ){
          
         mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput","there are missing or extra fields in the geometry");
     }
@@ -166,7 +166,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     size_t ncols;
     bool offsetAllOrig=false;
     bool offsetAllDetec=false;
-    for(int ifield=0; ifield<13; ifield++) {
+    bool rotAllDetec=false;
+    for(int ifield=0; ifield<14; ifield++) {
         tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
         if(tmp==NULL){
            //tofix
@@ -218,6 +219,19 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 if (ncols==nalpha)
                     offsetAllDetec=true;
                 break;
+            case 13:
+                mrows = mxGetM(tmp);
+                ncols = mxGetN(tmp);
+                if (mrows!=3 || ( ncols!=1&& ncols!=nalpha)){
+                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
+                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
+                            "Above field has wrong size! Should be 3x1 or 3xlength(angles)!");
+                   
+                }
+                
+                if (ncols==nalpha)
+                    rotAllDetec=true;
+                break;
                 // this ones should be 2x1
             case 3:case 4:case 5:
                 mrows = mxGetM(tmp);
@@ -256,7 +270,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // C structures that MEX can understand.
     double * nVoxel, *nDetec; //we need to cast these to int
     double * sVoxel, *dVoxel,*sDetec,*dDetec, *DSO, *DSD;
-    double *offOrig,*offDetec;
+    double *offOrig,*offDetec,*rotDetector;
     double *  acc, *COR;
     const char* mode;
     int c;
@@ -264,7 +278,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     geo.unitX=1;geo.unitY=1;geo.unitZ=1;
     bool coneBeam=true;
 //     mexPrintf("%d \n",nfields);
-    for(int ifield=0; ifield<13; ifield++) {
+    for(int ifield=0; ifield<14; ifield++) {
         tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
          if(tmp==NULL){
            //tofix
@@ -365,12 +379,33 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 COR=(double*)mxGetData(tmp);
                 geo.COR=(float)COR[0];
                 break;
+             case 13:
+                geo.dRoll= (float*)malloc(nalpha * sizeof(float));
+                geo.dPitch=(float*)malloc(nalpha * sizeof(float));
+                geo.dYaw=  (float*)malloc(nalpha * sizeof(float));
+                
+                rotDetector=(double *)mxGetData(tmp);
+                
+                for (int i=0;i<nalpha;i++){
+                    if (rotAllDetec)
+                        c=i;
+                    else
+                        c=0;
+                    
+                    geo.dYaw[i]  = (float)rotDetector[0+3*c];
+                    geo.dPitch[i]= (float)rotDetector[1+3*c];
+                    geo.dRoll[i] = (float)rotDetector[2+3*c];
+
+                }
+                break;
             default:
                 mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","This shoudl not happen. Weird");
                 break;
                 
         }
     }
+    
+    // fill all optional parameters
     tmp=mxGetField(geometryMex,0,fieldnames[10]);
     if (tmp==NULL)
         geo.accuracy=0.5;
@@ -382,6 +417,21 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     tmp=mxGetField(geometryMex,0,fieldnames[12]);
     if (tmp==NULL)
         geo.COR=0.0;
+    // angle rotationd etector
+    tmp=mxGetField(geometryMex,0,fieldnames[13]);
+    if (tmp==NULL){
+       
+        geo.dRoll= (float*)malloc(nalpha * sizeof(float));
+        geo.dPitch=(float*)malloc(nalpha * sizeof(float));
+        geo.dYaw=  (float*)malloc(nalpha * sizeof(float));
+        memset(geo.dRoll,0,nalpha * sizeof(float));
+        memset(geo.dPitch,0,nalpha * sizeof(float));
+        memset(geo.dYaw,0,nalpha * sizeof(float));
+    }
+    
+    
+    
+    
     // Additional test
     if( (size_img[0]!=geo.nVoxelX)|(size_img[1]!=geo.nVoxelY)|(size_img[2]!=geo.nVoxelZ))
         mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input",

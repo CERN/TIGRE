@@ -22,7 +22,7 @@ function [ proj ] = filtering(proj,geo,angles,parker)
 
 
 if parker
-	proj = permute(parkerWeight(permute(proj,[2 1 3]),geo,angles),[2 1 3]);
+	proj = permute(ParkerWeight(permute(proj,[2 1 3]),geo,angles,parker),[2 1 3]);
 end 
 
 filt_len = max(64,2^nextpow2(2*geo.nDetector(1)));

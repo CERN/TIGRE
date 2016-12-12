@@ -353,6 +353,34 @@ void computeDeltas_Siddon(Geometry geo, float alpha,int i, Point3D* uvorigin, Po
     Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
     Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
     // Geomtric trasnformations:
+     // Now we have the Real world (OXYZ) coordinates of the bottom corner and its two neighbours.
+    // The obkjective is to get a position of the detector in a coordinate system where:
+    // 1-units are voxel size (in each direction can be different)
+    // 2-The image has the its first voxel at (0,0,0)
+    // 3-The image never rotates
+    
+    // To do that, we need to compute the "deltas" the detector, or "by how much 
+    // (in new xyz) does the voxels change when and index is added". To do that 
+    // several geometric steps needs to be changed
+    
+    //1.Roll,pitch,jaw
+    // The detector can have a small rotation. 
+    // according to 
+    //"A geometric calibration method for cone beam CT systems" Yang K1, Kwan AL, Miller DF, Boone JM. Med Phys. 2006 Jun;33(6):1695-706.
+    // Only the Z rotation will have a big influence in the image quality when they are small.
+    // Still all rotations are supported
+    
+    // To roll pitch jaw, the detector has to be in centered in OXYZ. 
+    P.x=0;Pu0.x=0;Pv0.x=0;
+    
+    // Roll pitch yaw
+    rollPitchYaw(geo,i,&P);
+    rollPitchYaw(geo,i,&Pu0);
+    rollPitchYaw(geo,i,&Pv0);
+    //Now ltes translate the points where they shoudl be:
+    P.x=P.x-(geo.DSD-geo.DSO);
+    Pu0.x=Pu0.x-(geo.DSD-geo.DSO);
+    Pv0.x=Pv0.x-(geo.DSD-geo.DSO);
     
     //1: Offset detector
     
@@ -419,6 +447,8 @@ void computeDeltas_Siddon(Geometry geo, float alpha,int i, Point3D* uvorigin, Po
     
     *source=S2;
 }
+
+
 #ifndef PROJECTION_HPP
 
 float maxDistanceCubeXY(Geometry geo, float alpha,int i){
@@ -434,5 +464,24 @@ float maxDistanceCubeXY(Geometry geo, float alpha,int i){
     
     return geo.DSO/geo.dVoxelX-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
     
+}
+void rollPitchYaw(Geometry geo,int i, Point3D* point){
+ Point3D auxPoint;
+ auxPoint.x=point->x;
+ auxPoint.y=point->y;
+ auxPoint.z=point->z;
+ 
+ point->x=cos(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x 
+         +(cos(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) - sin(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y
+         +(cos(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) + sin(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.z;
+ 
+ point->y=sin(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x 
+         +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) + cos(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y
+         +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) - cos(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.z;
+ 
+ point->z=-sin(geo.dPitch[i])*auxPoint.x 
+         +cos(geo.dPitch[1])*sin(geo.dYaw[i])*auxPoint.y
+         +cos(geo.dPitch[1])*cos(geo.dYaw[i])*auxPoint.z;
+ 
 }
 #endif

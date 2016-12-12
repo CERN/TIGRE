@@ -66,7 +66,9 @@ struct  Geometry {
     float dDetecU, dDetecV;
     float *offDetecU, *offDetecV;
     float DSD;
-    
+    float* dRoll;
+    float* dPitch;
+    float* dYaw;
     // The base unit we are working with in mm. 
     float unitX;
     float unitY;
@@ -97,7 +99,7 @@ struct  Geometry {
 int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
 float computeMaxLength(Geometry geo, float alpha);
 void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
-
+void rollPitchYaw(Geometry geo,int i, Point3D* point);
 float maxDistanceCubeXY(Geometry geo, float alpha,int i);
 
 // below, not used

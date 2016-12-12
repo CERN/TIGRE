@@ -21,15 +21,11 @@ function [res,errorL2]=FDK(proj,geo,angles,varargin)
 % Coded by:           Kyungsang Kim, modified by Ander Biguri 
 %--------------------------------------------------------------------------
 [filter,parker]=parse_inputs(proj,geo,angles,varargin);
-
+geo.filter=filter;
 
 %Input is data,geosize,angles
 
-if nargin<4
-    geo.filter='ram-lak'; 
-else
-    geo.filter=filter;
-end
+
 
 if size(geo.offDetector,2)==1
     offset=repmat(geo.offDetector,[1 length(angles)]);
@@ -106,7 +102,7 @@ for ii=1:length(opts)
         % % % % % % % Verbose
         case 'parker'
             if default
-                parker=1;
+                parker=0;
             else
                 parker=val;
             end
@@ -116,13 +112,13 @@ for ii=1:length(opts)
                 filter='ram-lak';
             else
                 if  ~ischar( val)
-                    error('CBCT:SART:InvalidInput','Invalid filter')
+                    error('CBCT:FDK:InvalidInput','Invalid filter')
                 end
                 filter=val;
             end
        
         otherwise
-            error('CBCT:FAK:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in FAK()']);
+            error('CBCT:FDK:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in FAK()']);
     end
 end
 
