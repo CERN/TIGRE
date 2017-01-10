@@ -76,6 +76,10 @@ blocksize=1;
 
 angles=cell2mat(alphablocks);
 index_angles=cell2mat(orig_index);
+% does detector rotation exist?
+if ~isfield(geo,'rotDetector')
+    geo.rotDetector=[0;0;0];
+end
 %% Create weigthing matrices
 
 % Projection weigth, W
@@ -101,6 +105,7 @@ clear A x y dx dz;
 %% Iterate
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
+rotDetector=geo.rotDetector;
 % TODO : Add options for Stopping criteria
 for ii=1:niter
     if (ii==1 && verbose==1);tic;end
@@ -117,6 +122,9 @@ for ii=1:niter
         end
         if size(offDetector,2)==length(angles)
             geo.offDetector=offDetector(:,index_angles(jj));
+        end
+         if size(rotDetector,2)==length(angles)
+            geo.rotDetector=rotDetector(:,index_angles(jj));
         end
 %         proj_err=proj(:,:,jj)-Ax(res,geo,angles(jj));        %                                 (b-Ax)
 %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)

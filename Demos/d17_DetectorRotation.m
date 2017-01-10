@@ -91,14 +91,14 @@ plotProj(projections,angles);
 
 %% lets reconstruct with and without detector rotation
 
-imgRotDet=SIRT(projections,geo,angles,50);
+imgRotDet=OS_SART(projections,geo,angles,50);
 
 % No rotation
 geo.rotDetector=[0;0;0];
 projections2=Ax(head,geo,angles,'interpolated');
 
 
-imgnoRot=SIRT(projections2,geo,angles,50);
+imgnoRot=OS_SART(projections2,geo,angles,50);
 
 %% Plot to show that indeed the recosntruction is rigth
 

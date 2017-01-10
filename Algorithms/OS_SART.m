@@ -77,7 +77,10 @@ if nargout>1
 else
     computeL2=false;
 end
-
+% does detector rotation exists?
+if ~isfield(geo,'rotDetector')
+    geo.rotDetector=[0;0;0];
+end
 %% weigth matrices
 % first order the projection angles
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
@@ -110,6 +113,7 @@ clear A x y dx dz;
 errorL2=[];
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
+rotDetector=geo.rotDetector;
 
 
 
@@ -132,6 +136,9 @@ for ii=1:niter
         end
         if size(offDetector,2)==length(angles)
             geo.offDetector=offDetector(:,orig_index{jj});
+        end
+        if size(rotDetector,2)==length(angles)
+            geo.rotDetector=rotDetector(:,orig_index{jj});
         end
         
         %proj is data: b=Ax

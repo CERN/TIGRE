@@ -61,16 +61,17 @@ function [ fres ] = OSC_TV(proj,geo,angles,maxiter,varargin)
 %% parse inputs
 [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,blocksize,OrderStrategy]=parse_inputs(proj,geo,angles,varargin);
 
-
+% first order the projection angles
+[alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
+if ~isfield(geo,'rotDetector')
+    geo.rotDetector=[0;0;0];
+end
 
 
 %% Create weigthing matrices for the SART step
 % the reason we do this, instead of calling the SART fucntion is not to
 % recompute the weigths every ASD-POCS iteration, thus effectively doubling
 % the computational time
-
-% first order the projection angles
-[alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 
 
 % Projection weigth, W
@@ -103,6 +104,7 @@ stop_criteria=0;
 iter=0;
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
+rotDetector=geo.rotDetector;
 while ~stop_criteria %POCS
     f0=f;
     if (iter==0 && verbose==1);tic;end
@@ -114,6 +116,9 @@ while ~stop_criteria %POCS
         end
         if size(offDetector,2)==length(angles)
             geo.offDetector=offDetector(:,orig_index{jj});
+        end
+        if size(rotDetector,2)==length(angles)
+            geo.rotDetector=rotDetector(:,orig_index{jj});
         end
         
         %proj is data: b=Ax
@@ -131,6 +136,7 @@ while ~stop_criteria %POCS
     
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
+    geo.rotDetector=rotDetector;
     % Save copy of image.
     fres=f;
     % compute L2 error of actual image. Ax-b
