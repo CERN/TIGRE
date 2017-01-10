@@ -68,7 +68,9 @@ struct  Geometry {
     float dDetecU, dDetecV;
     float *offDetecU, *offDetecV;
     float DSD;
-    
+    float* dRoll;
+    float* dPitch;
+    float* dYaw;
     // The base unit we are working with in mm. 
     float unitX;
     float unitY;
