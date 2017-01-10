@@ -1,4 +1,4 @@
-%% DEMO 15: Tricking TIGRE to do 2D tomography 
+%% DEMO 15: 3D parallel tomgoraphy
 %
 %
 %  This demo shows how to run 3D paralel geometry
