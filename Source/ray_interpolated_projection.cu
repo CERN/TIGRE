@@ -316,7 +316,6 @@ void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* 
     P.x=P.x-(geo.DSD-geo.DSO);
     Pu0.x=Pu0.x-(geo.DSD-geo.DSO);
     Pv0.x=Pv0.x-(geo.DSD-geo.DSO);
-    
     //2: Offset detector
     
     //P.x
@@ -391,7 +390,7 @@ float maxDistanceCubeXY(Geometry geo, float alpha,int i){
     
     float maxCubX,maxCubY;
     // Forgetting Z, compute mas distance: diagonal+offset
-    maxCubX=(geo.sVoxelX/2+ abs(geo.offOrigX[i]))/geo.dVoxelX;
+    maxCubX=(geo.sVoxelX/2+ abs(geo.offOrigX[i]))/geo.dVoxelX;        
     maxCubY=(geo.sVoxelY/2+ abs(geo.offOrigY[i]))/geo.dVoxelY;
     
     return geo.DSO/max(geo.dVoxelX,geo.dVoxelY)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
@@ -412,8 +411,8 @@ void rollPitchYaw(Geometry geo,int i, Point3D* point){
          +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) - cos(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.z;
  
  point->z=-sin(geo.dPitch[i])*auxPoint.x 
-         +cos(geo.dPitch[1])*sin(geo.dYaw[i])*auxPoint.y
-         +cos(geo.dPitch[1])*cos(geo.dYaw[i])*auxPoint.z;
+         +cos(geo.dPitch[i])*sin(geo.dYaw[i])*auxPoint.y
+         +cos(geo.dPitch[i])*cos(geo.dYaw[i])*auxPoint.z;
  
 }
 

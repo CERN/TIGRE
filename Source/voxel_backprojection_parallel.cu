@@ -226,10 +226,10 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
               (geo.nVoxelY+divy-1)/divy,
               (geo.nVoxelZ+divz-1)/divz); 
     dim3 block(divx,divy,divz);
-    Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec;
+    Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec,source;
     for (unsigned int i=0;i<nalpha;i++){
         geo.alpha=-alphas[i];
-        computeDeltasCube(geo,geo.alpha,i,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
+        computeDeltasCube(geo,geo.alpha,i,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
         
         offOrig.x=geo.offOrigX[i];
         offOrig.y=geo.offOrigY[i];

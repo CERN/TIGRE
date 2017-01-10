@@ -62,7 +62,9 @@ typedef struct {
     float dDetecU, dDetecV;
     float *offDetecU, *offDetecV;
     float DSD;
-    
+    float* dRoll;
+    float* dPitch;
+    float* dYaw;
     // The base unit we are working with in mm. 
     float unitX;
     float unitY;
@@ -88,7 +90,7 @@ typedef struct{
 
 #ifndef BACKPROJECTION_HPP
 #define BACKPROJECTION_HPP
-
+void rollPitchYawT(Geometry geo,int i, Point3D* point);
 int voxel_backprojection(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha);
-void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ);
+void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S);
 #endif

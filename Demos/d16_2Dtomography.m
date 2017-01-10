@@ -1,4 +1,4 @@
-%% DEMO 15: Tricking TIGRE to do 2D tomography 
+%% DEMO 16: Tricking TIGRE to do 2D tomography 
 %
 %
 %  In this more advanced demo, a way of tricking TIGRE to do 2D tomography

@@ -66,7 +66,9 @@ typedef struct {
     float dDetecU, dDetecV;
     float *offDetecU, *offDetecV;
     float DSD;
-    
+    float* dRoll;
+    float* dPitch;
+    float* dYaw;
     // The base unit we are working with in mm. 
     float unitX;
     float unitY;
@@ -74,7 +76,6 @@ typedef struct {
     
     //projection angle
     float alpha;
-    
     // Centre of Rotation correction.
     float COR;
     //Maximum length of cube
@@ -95,5 +96,5 @@ typedef struct{
 #define BACKPROJECTION2_HPP
 
 int voxel_backprojection2(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha);
-void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ);
+void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S);
 #endif

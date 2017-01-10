@@ -228,7 +228,6 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                             "Above field has wrong size! Should be 3x1 or 3xlength(angles)!");
                    
                 }
-                
                 if (ncols==nalpha)
                     rotAllDetec=true;
                 break;
@@ -417,7 +416,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     tmp=mxGetField(geometryMex,0,fieldnames[12]);
     if (tmp==NULL)
         geo.COR=0.0;
-    // angle rotationd etector
+    // angle rotation detector
     tmp=mxGetField(geometryMex,0,fieldnames[13]);
     if (tmp==NULL){
        

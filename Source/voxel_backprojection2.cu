@@ -72,14 +72,14 @@ do { \
      *            |                             |
      *            |                             |
      *            |      +--------+             |
-              |     /        /|             |
-     A Z      |    /        / |*D           |
-     |        |   +--------+  |             |
-     |        |   |        |  |             |
-     |        |   |     *O |  +             |
-     *--->y   |   |        | /              |
-    /         |   |        |/               |
-   V X        |   +--------+                |
+     *            |     /        /|             |
+     *   A Z      |    /        / |*D           |
+     *   |        |   +--------+  |             |
+     *   |        |   |        |  |             |
+     *   |        |   |     *O |  +             |
+     *   *--->y   |   |        | /              |
+     *  /         |   |        |/               |
+     * V X        |   +--------+                |
      *            |-----------------------------|
      *
      *           *S
@@ -109,30 +109,19 @@ const int VOXELS_PER_THREAD = 8;  // Number of voxels to be computed by s single
 // So we need to keep PROJ_PER_KERNEL*6 values in our deltas array FOR EACH CALL to our main kernel
 // (they will be updated in the main loop before each kernel call).
 
-__constant__ Point3D projParamsArrayDev[6*PROJ_PER_KERNEL];  // Dev means it is on device
+__constant__ Point3D projParamsArray2Dev[7*PROJ_PER_KERNEL];  // Dev means it is on device
 
 // We also need a corresponding array on the host side to be filled before each kernel call, then copied to the device (array in constant memory above)
-Point3D projParamsArray2Host[6*PROJ_PER_KERNEL];   // Host means it is host memory
+Point3D projParamsArray2Host[7*PROJ_PER_KERNEL];   // Host means it is host memory
 
 // Now we also need to store sinAlpha and cosAlpha for each projection (two floats per projection)
-__constant__ float projSinCosArrayDev[2*PROJ_PER_KERNEL];
+__constant__ float projSinCosArray2Dev[2*PROJ_PER_KERNEL];
 
 float projSinCosArray2Host[2*PROJ_PER_KERNEL];
-// 
+//
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // END RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-// 
-// __global__ void FDKweigths(const Geometry geo,float* image,float constant){
-//     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
-//     for(; idx<geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ; idx+=gridDim.x*blockDim.x) {
-//         image[idx]*=constant;
-//     }
-//     
-// }
-
 
 
 //______________________________________________________________________________
@@ -144,9 +133,8 @@ float projSinCosArray2Host[2*PROJ_PER_KERNEL];
 
 __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const int currProjSetNumber, const int totalNoOfProjections)
 {
-    
     // Old kernel call signature:
-    // kernelPixelBackprojectionFDK<<<grid,block>>>(geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,sinalpha,cosalpha);
+    // kernelPixelBackprojection<<<grid,block>>>(geo,dimage,i,deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,sinalpha,cosalpha);
     // We just read in most of the params from the constant memory instead of getting them from the param list.
     // This is because we now have MANY params, since single kernel processes more than one projection!
     /* __global__ void kernelPixelBackprojectionFDK(const Geometry geo,
@@ -196,26 +184,23 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
         // Get the current parameters from parameter arrays in constant memory.
         int indAlpha = currProjSetNumber*PROJ_PER_KERNEL+projNumber;  // This is the ABSOLUTE projection number in the projection array
         
-        // TO DO!! We need to check bounds here: break the loop if indAlpha is larger than totalNoOfProjections
         // Our currImageVal will be updated by hovewer many projections we had left in the "remainder" - that's OK.
         if(indAlpha>=totalNoOfProjections)
             break;
         
-        Point3D deltaX = projParamsArrayDev[6*projNumber];  // 6*projNumber because we have 6 Point3D values per projection
-        Point3D deltaY = projParamsArrayDev[6*projNumber+1];
-        Point3D deltaZ = projParamsArrayDev[6*projNumber+2];
-        Point3D xyzOrigin = projParamsArrayDev[6*projNumber+3];
-        Point3D xyzOffset = projParamsArrayDev[6*projNumber+4];
-        Point3D uv0Offset = projParamsArrayDev[6*projNumber+5];
-        float sinalpha = projSinCosArrayDev[2*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
-        float cosalpha = projSinCosArrayDev[2*projNumber+1];
+        Point3D deltaX = projParamsArray2Dev[7*projNumber];  // 6*projNumber because we have 6 Point3D values per projection
+        Point3D deltaY = projParamsArray2Dev[7*projNumber+1];
+        Point3D deltaZ = projParamsArray2Dev[7*projNumber+2];
+        Point3D xyzOrigin = projParamsArray2Dev[7*projNumber+3];
+        Point3D xyzOffset = projParamsArray2Dev[7*projNumber+4];
+        Point3D uv0Offset = projParamsArray2Dev[7*projNumber+5];
+        Point3D S = projParamsArray2Dev[7*projNumber+6];
+        
+        float sinalpha = projSinCosArray2Dev[2*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
+        float cosalpha = projSinCosArray2Dev[2*projNumber+1];
         
         // Geometric trasnformations:
         //Source, scaled XYZ coordinates
-        Point3D S;
-        S.x=geo.DSO;                  // we dont scale the x direction, because the detector is only in YZ (and the image is rotated)
-        S.y=-uv0Offset.x/geo.dDetecU;
-        S.z=-uv0Offset.y/geo.dDetecV;
         
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
         for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
@@ -240,7 +225,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             vectZ=(P.z -S.z);
             
             // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-            float t=(geo.DSO-geo.DSD /*-DDO*/ - S.x)/vectX;
+            float t=(geo.DSO-geo.DSD /*-DOD*/ - S.x)/vectX;
             float y,z;
             y=vectY*t+S.y;
             z=vectZ*t+S.z;
@@ -249,16 +234,19 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             v=z+geo.nDetecV/2-0.5;
             
             float weigth;
+            //
+            //
             //Real coordinates of Voxel. Instead of reverting the tranformation, its less math (faster) to compute it from the indexes.
             Point3D realvoxel;
             realvoxel.x=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x;
             realvoxel.y=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y;
             realvoxel.z=-geo.sVoxelZ/2+geo.dVoxelZ/2    +indZ*geo.dVoxelZ   +xyzOffset.z;
             //Real coords of Source
-            // We already have S.x, and S.y and S.z are always zero. we just need to rotate
-            S.x= geo.DSO*cosalpha;
-            S.y=-geo.DSO*sinalpha;
-            
+            // We already have S.x (geo.DSO), and S.y and S.z are always zero. we just need to rotate
+            Point3D realS;
+            realS.x= geo.DSO*cosalpha;
+            realS.y=-geo.DSO*sinalpha;
+            realS.z=0;
             // Real XYZ coordinates of Detector.
             Point3D realD, realDaux;
             // We know the index of the detector (u,v). Start from there.
@@ -269,16 +257,16 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             realD.x= realDaux.x*cosalpha  + realDaux.y*sinalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
             realD.y=-realDaux.x*sinalpha  + realDaux.y*cosalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
             float L,l;
-            L = sqrt( (S.x-realD.x)*(S.x-realD.x)+ (S.y-realD.y)*(S.y-realD.y)+ (realD.z)*(realD.z)); // Sz=0 always.
-            l = sqrt( (S.x-realvoxel.x)*(S.x-realvoxel.x)+ (S.y-realvoxel.y)*(S.y-realvoxel.y)+ (S.z-realvoxel.z)*(S.z-realvoxel.z));
+            L = sqrt( (realS.x-realD.x)*(realS.x-realD.x)+ (realS.y-realD.y)*(realS.y-realD.y)+ (realD.z)*(realD.z)); // Sz=0 always.
+            l = sqrt( (realS.x-realvoxel.x)*(realS.x-realvoxel.x)+ (realS.y-realvoxel.y)*(realS.y-realvoxel.y)+ (realS.z-realvoxel.z)*(realS.z-realvoxel.z));
             weigth=L*L*L/(geo.DSD*l*l);
             
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             voxelColumn[colIdx]+=tex3D(tex, u +0.5 ,
                     v +0.5 ,
-                    indAlpha+0.5)
-                    *weigth;
+                    indAlpha+0.5);
+                    //*weigth;
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
@@ -394,7 +382,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
             if(currProjNumber>=nalpha)
                 break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
             
-            Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec;
+            Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec,source;
             float sinalpha,cosalpha;
             
             geo.alpha=-alphas[currProjNumber];
@@ -404,25 +392,26 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
             projSinCosArray2Host[2*j]=sinalpha;  // 2*j because we have 2 float (sin or cos angle) values per projection
             projSinCosArray2Host[2*j+1]=cosalpha;
             
-            computeDeltasCube(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
+            computeDeltasCube(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
             
             offOrig.x=geo.offOrigX[currProjNumber];
             offOrig.y=geo.offOrigY[currProjNumber];
             offDetec.x=geo.offDetecU[currProjNumber];
             offDetec.y=geo.offDetecV[currProjNumber];
             
-            projParamsArray2Host[6*j]=deltaX;		// 6*j because we have 6 Point3D values per projection
-            projParamsArray2Host[6*j+1]=deltaY;
-            projParamsArray2Host[6*j+2]=deltaZ;
-            projParamsArray2Host[6*j+3]=xyzOrigin;
-            projParamsArray2Host[6*j+4]=offOrig;
-            projParamsArray2Host[6*j+5]=offDetec;
+            projParamsArray2Host[7*j]=deltaX;		// 7*j because we have 7 Point3D values per projection
+            projParamsArray2Host[7*j+1]=deltaY;
+            projParamsArray2Host[7*j+2]=deltaZ;
+            projParamsArray2Host[7*j+3]=xyzOrigin;
+            projParamsArray2Host[7*j+4]=offOrig;
+            projParamsArray2Host[7*j+5]=offDetec;
+            projParamsArray2Host[7*j+6]=source;
             
         }   // END for (preparing params for kernel call)
         
         // Copy the prepared parameter arrays to constant memory to make it available for the kernel
-        cudaMemcpyToSymbol(projSinCosArrayDev, projSinCosArray2Host, sizeof(float)*2*PROJ_PER_KERNEL);
-        cudaMemcpyToSymbol(projParamsArrayDev, projParamsArray2Host, sizeof(Point3D)*6*PROJ_PER_KERNEL);
+        cudaMemcpyToSymbol(projSinCosArray2Dev, projSinCosArray2Host, sizeof(float)*2*PROJ_PER_KERNEL);
+        cudaMemcpyToSymbol(projParamsArray2Dev, projParamsArray2Host, sizeof(Point3D)*7*PROJ_PER_KERNEL);
         
         kernelPixelBackprojection<<<grid,block>>>(geo,dimage,i,nalpha);
         cudaCheckErrors("Kernel fail");
@@ -468,9 +457,9 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
 //______________________________________________________________________________
 #ifndef BACKPROJECTION_HPP
 
-void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ)
+void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S)
 {
-    Point3D P0, Px0,Py0,Pz0;
+    Point3D P0, Px0,Py0,Pz0, source;
     // Get coords of Img(0,0,0)
     P0.x=-(geo.sVoxelX/2-geo.dVoxelX/2)+geo.offOrigX[i];
     P0.y=-(geo.sVoxelY/2-geo.dVoxelY/2)+geo.offOrigY[i];
@@ -489,21 +478,72 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     Py.x=Py0.x*cos(alpha)-Py0.y*sin(alpha);       Py.y=Py0.x*sin(alpha)+Py0.y*cos(alpha);      Py.z=Py0.z;
     Pz.x=Pz0.x*cos(alpha)-Pz0.y*sin(alpha);       Pz.y=Pz0.x*sin(alpha)+Pz0.y*cos(alpha);      Pz.z=Pz0.z;
     
+    //detector offset
+    P.z =P.z-geo.offDetecV[i];          P.y =P.y-geo.offDetecU[i];
+    
+    //Detector Roll pitch Yaw
+    //
+    //
+    // first, we need to offset everything so (0,0,0) is the center of the detector
+    // Only X is required for that
+    P.x=P.x+(geo.DSD-geo.DSO);
+    Px.x=Px.x+(geo.DSD-geo.DSO);
+    Py.x=Py.x+(geo.DSD-geo.DSO);
+    Pz.x=Pz.x+(geo.DSD-geo.DSO);
+    rollPitchYawT(geo,i,&P);
+    rollPitchYawT(geo,i,&Px);
+    rollPitchYawT(geo,i,&Py);
+    rollPitchYawT(geo,i,&Pz);
+    
+    P.x=P.x-(geo.DSD-geo.DSO);
+    Px.x=Px.x-(geo.DSD-geo.DSO);
+    Py.x=Py.x-(geo.DSD-geo.DSO);
+    Pz.x=Pz.x-(geo.DSD-geo.DSO);
+    //Done for P, now source
+    
+    source.x=geo.DSD; //allready offseted for rotation of teh detector
+    source.y=-geo.offDetecU[i];
+    source.z=-geo.offDetecV[i];
+    rollPitchYawT(geo,i,&source);
+    
+    source.x=source.x-(geo.DSD-geo.DSO);
+    
     // Scale coords so detector pixels are 1x1
     
     P.z =P.z /geo.dDetecV;                          P.y =P.y/geo.dDetecU;
     Px.z=Px.z/geo.dDetecV;                          Px.y=Px.y/geo.dDetecU;
     Py.z=Py.z/geo.dDetecV;                          Py.y=Py.y/geo.dDetecU;
     Pz.z=Pz.z/geo.dDetecV;                          Pz.y=Pz.y/geo.dDetecU;
-    
-    
+    source.z=source.z/geo.dDetecV;                  source.y=source.y/geo.dDetecU;
+    // get deltas of the changes in voxels
     deltaX->x=Px.x-P.x;   deltaX->y=Px.y-P.y;    deltaX->z=Px.z-P.z;
     deltaY->x=Py.x-P.x;   deltaY->y=Py.y-P.y;    deltaY->z=Py.z-P.z;
     deltaZ->x=Pz.x-P.x;   deltaZ->y=Pz.y-P.y;    deltaZ->z=Pz.z-P.z;
     
     
-    P.z =P.z-geo.offDetecV[i]/geo.dDetecV;          P.y =P.y-geo.offDetecU[i]/geo.dDetecU;
     *xyzorigin=P;
-    
+    *S=source;
 }  // END computeDeltasCube
-#endif 
+
+void rollPitchYawT(Geometry geo,int i, Point3D* point){		
+    Point3D auxPoint;		
+    auxPoint.x=point->x;		
+    auxPoint.y=point->y;		
+    auxPoint.z=point->z;		
+    		
+    point->x=cos(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x		
+            +sin(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.y		
+            -sin(geo.dPitch[i])*auxPoint.z;		
+    		
+    		
+    point->y=(cos(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) - sin(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.x		
+            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) + cos(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y		
+            +cos(geo.dPitch[i])*sin(geo.dYaw[i])*auxPoint.z;		
+    		
+    		
+    point->z=(cos(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) + sin(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.x		
+            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) - cos(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.y		
+            +cos(geo.dPitch[i])*cos(geo.dYaw[i])*auxPoint.z;		
+    		
+}
+#endif
