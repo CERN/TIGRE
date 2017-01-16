@@ -68,7 +68,7 @@ angles=linspace(0,2*pi,100);
 
 % lets define 3 angles, with big variability in each direction
 
-roll=0.*angles;
+roll=angles;
 pitch=0.7*linspace(0,1,length(angles));
 yaw=0.7*linspace(0,1,length(angles));
 
@@ -76,7 +76,7 @@ yaw=0.7*linspace(0,1,length(angles));
 % geo.rotDetector=[pi/5; 0; pi/10];
 
 geo.rotDetector=[roll;pitch;yaw];
-geo.offDetector=[70; 0];                     % Offset of Detector            (mm)
+
 
 
 %% Load data and generate projections 
@@ -87,22 +87,21 @@ head=headPhantom(geo.nVoxel);
 projections=Ax(head,geo,angles,'interpolated');
 
 %% Lets plot the projections with a rotated detector
-% plotProj(projections,angles);
-imgFDK=FDK(projections,geo,angles);
-% imgFDK=Atb(projections,geo,angles,'FDK');
-plotImg(imgFDK,'dim',3)
+plotProj(projections,angles);
+
 %% lets reconstruct with and without detector rotation
 % 
-% imgRotDet=OS_SART(projections,geo,angles,50);
-% 
-% % No rotation
-% geo.rotDetector=[0;0;0];
-% projections2=Ax(head,geo,angles,'interpolated');
-% 
-% 
-% imgnoRot=OS_SART(projections2,geo,angles,50);
-% 
+imgRotDet=OS_SART(projections,geo,angles,50);
+
+% No rotation
+geo.rotDetector=[0;0;0];
+projections2=Ax(head,geo,angles,'interpolated');
+
+
+imgnoRot=OS_SART(projections2,geo,angles,50);
+
 % %% Plot to show that indeed the recosntruction is rigth
 % 
 % 
 % 
+plotImg([imgRotDet imgnoRot] ,'dim',3)
