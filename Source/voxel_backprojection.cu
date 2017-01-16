@@ -469,7 +469,10 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     
     //detector offset
     P.z =P.z-geo.offDetecV[i];          P.y =P.y-geo.offDetecU[i];
-    
+    Px.z =Px.z-geo.offDetecV[i];          Px.y =Px.y-geo.offDetecU[i];
+    Py.z =Py.z-geo.offDetecV[i];          Py.y =Py.y-geo.offDetecU[i];
+    Pz.z =Pz.z-geo.offDetecV[i];          Pz.y =Pz.y-geo.offDetecU[i];
+
     //Detector Roll pitch Yaw
     //
     //
