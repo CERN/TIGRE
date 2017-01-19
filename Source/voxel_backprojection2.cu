@@ -115,9 +115,9 @@ __constant__ Point3D projParamsArray2Dev[7*PROJ_PER_KERNEL];  // Dev means it is
 Point3D projParamsArray2Host[7*PROJ_PER_KERNEL];   // Host means it is host memory
 
 // Now we also need to store sinAlpha and cosAlpha for each projection (two floats per projection)
-__constant__ float projSinCosArray2Dev[2*PROJ_PER_KERNEL];
+__constant__ float projSinCosArray2Dev[3*PROJ_PER_KERNEL];
 
-float projSinCosArray2Host[2*PROJ_PER_KERNEL];
+float projSinCosArray2Host[3*PROJ_PER_KERNEL];
 //
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // END RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
@@ -196,9 +196,10 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
         Point3D uv0Offset = projParamsArray2Dev[7*projNumber+5];
         Point3D S = projParamsArray2Dev[7*projNumber+6];
         
-        float sinalpha = projSinCosArray2Dev[2*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
-        float cosalpha = projSinCosArray2Dev[2*projNumber+1];
-        
+        float sinalpha = projSinCosArray2Dev[3*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
+        float cosalpha = projSinCosArray2Dev[3*projNumber+1];
+        float COR = projSinCosArray2Dev[3*projNumber+2];
+
         // Geometric trasnformations:
         //Source, scaled XYZ coordinates
         
@@ -215,7 +216,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
             Point3D P;
             P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-geo.COR/geo.dDetecU;
+            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
             P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
             
             // This is the vector defining the line from the source to the Voxel
@@ -389,9 +390,10 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
             sinalpha=sin(geo.alpha);
             cosalpha=cos(geo.alpha);
             
-            projSinCosArray2Host[2*j]=sinalpha;  // 2*j because we have 2 float (sin or cos angle) values per projection
-            projSinCosArray2Host[2*j+1]=cosalpha;
-            
+            projSinCosArray2Host[3*j]=sinalpha;  // 2*j because we have 2 float (sin or cos angle) values per projection
+            projSinCosArray2Host[3*j+1]=cosalpha;
+            projSinCosArray2Host[3*j+2]=geo.COR[i];
+
             computeDeltasCube(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
             
             offOrig.x=geo.offOrigX[currProjNumber];
@@ -410,7 +412,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
         }   // END for (preparing params for kernel call)
         
         // Copy the prepared parameter arrays to constant memory to make it available for the kernel
-        cudaMemcpyToSymbol(projSinCosArray2Dev, projSinCosArray2Host, sizeof(float)*2*PROJ_PER_KERNEL);
+        cudaMemcpyToSymbol(projSinCosArray2Dev, projSinCosArray2Host, sizeof(float)*3*PROJ_PER_KERNEL);
         cudaMemcpyToSymbol(projParamsArray2Dev, projParamsArray2Host, sizeof(Point3D)*7*PROJ_PER_KERNEL);
         
         kernelPixelBackprojection<<<grid,block>>>(geo,dimage,i,nalpha);
