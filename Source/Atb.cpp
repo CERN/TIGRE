@@ -208,7 +208,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     bool offsetAllOrig=false;
     bool offsetAllDetec=false;
     bool rotAllDetec=false;
-
+    bool CORAll=false;
     for(int ifield=0; ifield<14; ifield++) {
         tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
         if(tmp==NULL){
@@ -238,7 +238,24 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 }
                 break;
                 // this ones should be 1x1
-            case 6:case 7:case 10: case 12:
+                
+            case 12://COR
+                mrows = mxGetM(tmp);
+                ncols = mxGetN(tmp);
+
+                if (mrows!=1 || ( ncols!=1&& ncols!=nalpha) ){
+                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
+                    mexPrintf("%ld x %ld \n", "FIELD: ", (long int)mrows,(long int)ncols);
+                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
+                            "Above field has wrong size! Should be 3x1 or 3xlength(angles)!");
+                    
+                }
+               
+                if (ncols==nalpha)
+                    CORAll=true;
+                break;
+                
+            case 6:case 7:case 10:
                 mrows = mxGetM(tmp);
                 ncols = mxGetN(tmp);
                 if (mrows!=1 || ncols!=1){
@@ -406,9 +423,17 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 else if (strcmp(mode,"cone"))
                     mexErrMsgIdAndTxt( "CBCT:MEX:Atb:Mode","Unkown mode. Should be parallel or cone");
                 break;
-            case 12:
+             case 12:
                 COR=(double*)mxGetData(tmp);
-                geo.COR=(float)COR[0];
+                geo.COR=(float*)malloc(nalpha * sizeof(float));
+                 for (int i=0;i<nalpha;i++){
+                    if (CORAll)
+                        c=i;
+                    else
+                        c=0;
+                    
+                    geo.COR[i]  = (float)COR[0+c]; 
+                }
                 break;
             case 13:
                 geo.dRoll= (float*)malloc(nalpha * sizeof(float));
@@ -445,10 +470,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     tmp=mxGetField(geometryMex,0,fieldnames[11]);
     if (tmp==NULL)
         coneBeam=true;
-    // COR
+   // COR
     tmp=mxGetField(geometryMex,0,fieldnames[12]);
-    if (tmp==NULL)
-        geo.COR=0.0;
+    if (tmp==NULL){
+        geo.COR=(float*)malloc(nalpha * sizeof(float));
+        memset(geo.COR,0,nalpha * sizeof(float));
+    }
     // angle rotation detector
     tmp=mxGetField(geometryMex,0,fieldnames[13]);
     if (tmp==NULL){

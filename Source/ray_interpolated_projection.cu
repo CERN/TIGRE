@@ -357,11 +357,11 @@ void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* 
     S2.x      =S2.x/geo.dVoxelX;          S2.y      =S2.y/geo.dVoxelY;            S2.z      =S2.z/geo.dVoxelZ;
     
     
-      
+    //mexPrintf("COR: %f \n",geo.COR[i]);
     //5. apply COR. Wherever everything was, now its offesetd by a bit
     float CORx, CORy;
-    CORx=-geo.COR*sin(geo.alpha)/geo.dVoxelX;
-    CORy= geo.COR*cos(geo.alpha)/geo.dVoxelY;
+    CORx=-geo.COR[i]*sin(geo.alpha)/geo.dVoxelX;
+    CORy= geo.COR[i]*cos(geo.alpha)/geo.dVoxelY;
     Pfinal.x+=CORx;   Pfinal.y+=CORy;
     Pfinalu0.x+=CORx;   Pfinalu0.y+=CORy;
     Pfinalv0.x+=CORx;   Pfinalv0.y+=CORy;

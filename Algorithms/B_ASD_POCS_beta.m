@@ -224,7 +224,7 @@ end
 
 function [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,bregman,bregman_red,bregman_iter,OrderStrategy]=parse_inputs(proj,geo,angles,argin)
 
-opts=     {'lambda','lambda_red','tviter','verbose','alpha','alpha_red','ratio','maxL2err','beta','beta_red','bregman_iter','orderstrategy'};
+opts=     {'lambda','lambda_red','tviter','verbose','alpha','alpha_red','ratio','maxl2err','beta','beta_red','bregman_iter','orderstrategy'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);

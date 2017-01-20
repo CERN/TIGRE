@@ -115,9 +115,9 @@ __constant__ Point3D projParamsArrayDev[6*PROJ_PER_KERNEL];  // Dev means it is 
 Point3D projParamsArrayHost[6*PROJ_PER_KERNEL];   // Host means it is host memory
 
 // Now we also need to store sinAlpha and cosAlpha for each projection (two floats per projection)
-__constant__ float projSinCosArrayDev[2*PROJ_PER_KERNEL];
+__constant__ float projSinCosArrayDev[3*PROJ_PER_KERNEL];
 
-float projSinCosArrayHost[2*PROJ_PER_KERNEL];
+float projSinCosArrayHost[3*PROJ_PER_KERNEL];
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // END RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
@@ -208,9 +208,10 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         Point3D xyzOffset = projParamsArrayDev[6*projNumber+4];
         Point3D S = projParamsArrayDev[6*projNumber+5];
         
-        float sinalpha = projSinCosArrayDev[2*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
-        float cosalpha = projSinCosArrayDev[2*projNumber+1];
-        
+        float sinalpha = projSinCosArrayDev[3*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
+        float cosalpha = projSinCosArrayDev[3*projNumber+1];
+        float COR = projSinCosArrayDev[3*projNumber+2];
+
         // Geometric trasnformations:
         //Source, scaled XYZ coordinates
         
@@ -227,7 +228,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
             Point3D P;
             P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-geo.COR/geo.dDetecU;
+            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
             P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
             
             // This is the vector defining the line from the source to the Voxel
@@ -248,7 +249,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             float weigth;
             float realx,realy;
             realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x;
-            realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y+geo.COR;
+            realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y+COR;
             
             weigth=(geo.DSO+realy*sinalpha-realx*cosalpha)/geo.DSO;
             weigth=1/(weigth*weigth);
@@ -382,8 +383,9 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
             sinalpha=sin(geo.alpha);
             cosalpha=cos(geo.alpha);
             
-            projSinCosArrayHost[2*j]=sinalpha;  // 2*j because we have 2 float (sin or cos angle) values per projection
-            projSinCosArrayHost[2*j+1]=cosalpha;
+            projSinCosArrayHost[3*j]=sinalpha;  // 2*j because we have 2 float (sin or cos angle) values per projection
+            projSinCosArrayHost[3*j+1]=cosalpha;
+            projSinCosArrayHost[3*j+2]=geo.COR[i];
             
             computeDeltasCube(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
             
@@ -400,7 +402,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         }   // END for (preparing params for kernel call)
         
         // Copy the prepared parameter arrays to constant memory to make it available for the kernel
-        cudaMemcpyToSymbol(projSinCosArrayDev, projSinCosArrayHost, sizeof(float)*2*PROJ_PER_KERNEL);
+        cudaMemcpyToSymbol(projSinCosArrayDev, projSinCosArrayHost, sizeof(float)*3*PROJ_PER_KERNEL);
         cudaMemcpyToSymbol(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*6*PROJ_PER_KERNEL);
         
         kernelPixelBackprojectionFDK<<<grid,block>>>(geo,dimage,i,nalpha);

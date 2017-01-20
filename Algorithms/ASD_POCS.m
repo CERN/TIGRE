@@ -1,4 +1,4 @@
-function [ fres,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
+function [ f,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 %ASD_POCS Solves the ASD_POCS total variation constrained image in 3D
 % tomography.
 %
