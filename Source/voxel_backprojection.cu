@@ -258,9 +258,8 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             voxelColumn[colIdx]+=tex3D(tex, u +0.5 ,
                     v +0.5 ,
-                    indAlpha+0.5);
+                    indAlpha+0.5)*weigth;
 
-                    //*weigth;
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
@@ -385,7 +384,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
             
             projSinCosArrayHost[3*j]=sinalpha;  // 2*j because we have 2 float (sin or cos angle) values per projection
             projSinCosArrayHost[3*j+1]=cosalpha;
-            projSinCosArrayHost[3*j+2]=geo.COR[i];
+            projSinCosArrayHost[3*j+2]=geo.COR[currProjNumber];
             
             computeDeltasCube(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
             
@@ -462,7 +461,6 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     Px0.z=P0.z;                   Py0.z=P0.z;                Pz0.z=P0.z+geo.dVoxelZ;
     
     // Rotate image (this is equivalent of rotating the source and detector)
-    
     Point3D P, Px,Py,Pz; // We need other auxiliar variables to be able to perform the rotation, or we would overwrite values!
     P.x =P0.x *cos(alpha)-P0.y *sin(alpha);       P.y =P0.x *sin(alpha)+P0.y *cos(alpha);      P.z =P0.z;
     Px.x=Px0.x*cos(alpha)-Px0.y*sin(alpha);       Px.y=Px0.x*sin(alpha)+Px0.y*cos(alpha);      Px.z=Px0.z;
@@ -498,8 +496,8 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     source.x=geo.DSD; //allready offseted for rotation
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
-    rollPitchYawT(geo,i,&source);
-//       mexPrintf("%f,%f,%f\n",source.x,source.y,source.z);
+    rollPitchYawT(geo,i,&source); 
+
     
     source.x=source.x-(geo.DSD-geo.DSO);//   source.y=source.y-auxOff.y;    source.z=source.z-auxOff.z;
     
@@ -510,7 +508,9 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     Px.z=Px.z/geo.dDetecV;                          Px.y=Px.y/geo.dDetecU;
     Py.z=Py.z/geo.dDetecV;                          Py.y=Py.y/geo.dDetecU;
     Pz.z=Pz.z/geo.dDetecV;                          Pz.y=Pz.y/geo.dDetecU;
+    
     source.z=source.z/geo.dDetecV;                  source.y=source.y/geo.dDetecU;
+
     // get deltas of the changes in voxels
     deltaX->x=Px.x-P.x;   deltaX->y=Px.y-P.y;    deltaX->z=Px.z-P.z;
     deltaY->x=Py.x-P.x;   deltaY->y=Py.y-P.y;    deltaY->z=Py.z-P.z;
@@ -519,6 +519,7 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     
     *xyzorigin=P;
     *S=source;
+    
 }  // END computeDeltasCube
 
 void rollPitchYawT(Geometry geo,int i, Point3D* point){

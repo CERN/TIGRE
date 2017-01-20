@@ -266,8 +266,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             voxelColumn[colIdx]+=tex3D(tex, u +0.5 ,
                     v +0.5 ,
-                    indAlpha+0.5);
-                    //*weigth;
+                    indAlpha+0.5)*weigth;
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
@@ -392,7 +391,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
             
             projSinCosArray2Host[3*j]=sinalpha;  // 2*j because we have 2 float (sin or cos angle) values per projection
             projSinCosArray2Host[3*j+1]=cosalpha;
-            projSinCosArray2Host[3*j+2]=geo.COR[i];
+            projSinCosArray2Host[3*j+2]=geo.COR[currProjNumber];
 
             computeDeltasCube(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
             

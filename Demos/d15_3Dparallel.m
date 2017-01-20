@@ -27,7 +27,7 @@ close all;
 % 
 % VARIABLE                                   DESCRIPTION                    UNITS
 %-------------------------------------------------------------------------------------
-geo.DSD = 1536;                             % Distance Source Detector      (mm)
+geo.DSD = 2000;                             % Distance Source Detector      (mm)
 geo.DSO = 1000;                             % Distance Source Origin        (mm)
 % Detector parameters
 
@@ -39,7 +39,7 @@ geo.dDetector=[2; 2]; 					    % size of each pixel            (mm)
 geo.sDetector=geo.nDetector.*geo.dDetector; % total size of the detector    (mm)
 % Image parameters
 geo.nVoxel=[128;128;128];                   % number of voxels              (vx)
-geo.sVoxel=[256;256;256];                   % total size of the image       (mm)
+geo.sVoxel=[512;512;512];                   % total size of the image       (mm)
 geo.dVoxel=geo.sVoxel./geo.nVoxel;          % size of each voxel            (mm)
 % Offsets
 geo.offOrigin =[0;0;0];                     % Offset of image from origin   (mm)              
