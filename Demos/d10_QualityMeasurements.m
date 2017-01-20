@@ -121,25 +121,25 @@ blcks=22;
 
 %%RMSE plot
 figure
-plot([qualitySIRT(1,:);qualitySART(1,:);[qualityOSSART(1,:) nan(1,length(qualitySART)-length(qualityOSSART))]]');
+plot([qualitySIRT(1,:);[qualitySART(1,:) nan(1,length(qualityOSSART)-length(qualitySART))];qualityOSSART(1,:)]');
 title('Evolution of RMSE per iteration')
 legend('SIRT','SART','OS-SART')
                    
 %%CC plot
 figure
-plot([qualitySIRT(2,:);qualitySART(2,:);[qualityOSSART(2,:) nan(1,length(qualitySART)-length(qualityOSSART))]]');
+plot([qualitySIRT(2,:);[qualitySART(2,:) nan(1,length(qualityOSSART)-length(qualitySART))];qualityOSSART(2,:)]');
 title('Evolution of correlation coefficient (CC) per iteration')
 legend('SIRT','SART','OS-SART')
 
 %%MSSIM plot
 figure
-plot([qualitySIRT(3,:);qualitySART(3,:);[qualityOSSART(3,:) nan(1,length(qualitySART)-length(qualityOSSART))]]');
+plot([qualitySIRT(3,:);[qualitySART(3,:) nan(1,length(qualityOSSART)-length(qualitySART))];qualityOSSART(3,:)]');
 title('Evolution of mean structural similarity index per iteration')
 legend('SIRT','SART','OS-SART')
                         
 %%UQI plot
 figure
-plot([qualitySIRT(4,:);qualitySART(4,:);[qualityOSSART(4,:) nan(1,length(qualitySART)-length(qualityOSSART))]]');
+plot([qualitySIRT(4,:);[qualitySART(4,:) nan(1,length(qualityOSSART)-length(qualitySART))];qualityOSSART(4,:)]');
 title('Evolution of universal quality index per iteration')
 legend('SIRT','SART','OS-SART')
                         
