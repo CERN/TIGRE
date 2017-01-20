@@ -79,7 +79,8 @@ geo.dVoxel=geo.sVoxel./geo.nVoxel;          % size of each voxel            (mm)
 % Offsets
 geo.offOrigin =[0;0;0];                     % Offset of image from origin   (mm)              
 geo.offDetector=[0; 0];                     % Offset of Detector            (mm)
-
+                                            % These two can be also defined
+                                            % per angle
 
 % Auxiliary 
 geo.accuracy=0.5;                           % Variable to define accuracy of
@@ -88,10 +89,23 @@ geo.accuracy=0.5;                           % Variable to define accuracy of
                                             % samples per voxel.
                                             % Recommended <=0.5             (vx/sample)
 
+% Optional Parameters
+% There is no need to define these unless you actually need them in your
+% reconstruction
+                                            
+                                            
 geo.COR=0;                                  % y direction displacement for 
                                             % centre of rotation
                                             % correction                   (mm)
-                                            % 
+                                            % This can also be defined per
+                                            % angle
+                                            
+geo.rotDetector=[0;0;0];                    % Rotation of the detector, by 
+                                            % X,Y and Z axis respectively. (rad)
+                                            % This can also be defined per
+                                            % angle        
+                                            
+geo.mode='cone';                            % Or 'parallel'. Geometry type.                                             
 %% Plot the geometry
                                             
 plotgeometry(geo,-pi/6);                   
