@@ -90,7 +90,13 @@ do { \
      *
      **/
     texture<float, cudaTextureType3D , cudaReadModeElementType> tex;
-
+__global__ void matrixConstantMultiply(const Geometry geo,float* image,float constant){
+    size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
+     for(; idx<geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ; idx+=gridDim.x*blockDim.x) {
+            image[idx]*=constant;
+     }
+    
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -259,14 +265,16 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             realD.y=-realDaux.x*sinalpha  + realDaux.y*cosalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
             float L,l;
             L = sqrt( (realS.x-realD.x)*(realS.x-realD.x)+ (realS.y-realD.y)*(realS.y-realD.y)+ (realD.z)*(realD.z)); // Sz=0 always.
-            l = sqrt( (realS.x-realvoxel.x)*(realS.x-realvoxel.x)+ (realS.y-realvoxel.y)*(realS.y-realvoxel.y)+ (realS.z-realvoxel.z)*(realS.z-realvoxel.z));
+            l = sqrt( (realS.x-realvoxel.x)*(realS.x-realvoxel.x)
+                    + (realS.y-realvoxel.y)*(realS.y-realvoxel.y)
+                    + (realS.z-realvoxel.z)*(realS.z-realvoxel.z));
             weigth=L*L*L/(geo.DSD*l*l);
             
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             voxelColumn[colIdx]+=tex3D(tex, u +0.5 ,
                     v +0.5 ,
-                    indAlpha+0.5)*weigth;
+                    indAlpha+0.5)* weigth;
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
@@ -415,9 +423,11 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
         cudaMemcpyToSymbol(projParamsArray2Dev, projParamsArray2Host, sizeof(Point3D)*7*PROJ_PER_KERNEL);
         
         kernelPixelBackprojection<<<grid,block>>>(geo,dimage,i,nalpha);
+
         cudaCheckErrors("Kernel fail");
     }  // END for
-    
+    matrixConstantMultiply<<<60,MAXTREADS>>>( geo,dimage,geo.dVoxelX*geo.dVoxelY*geo.dVoxelZ/(geo.dDetecU*geo.dDetecV));
+
     //////////////////////////////////////////////////////////////////////////////////////
     // END Main reconstruction loop: go through projections (rotation angles) and backproject
     //////////////////////////////////////////////////////////////////////////////////////

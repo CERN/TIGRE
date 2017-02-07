@@ -141,7 +141,9 @@ for ii=1:niter
     if ii>1 && errorL2(ii)>errorL2(ii-1)
         % OUT!
        x=x-alpha*p;
-
+       if verbose
+          disp(['CGLS stoped in iteration N', num2str(ii),' due to divergence.']) 
+       end
        return; 
     end
     % If step is adecuatem, then continue withg CGLS

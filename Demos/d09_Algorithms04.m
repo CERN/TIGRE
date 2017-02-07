@@ -108,7 +108,7 @@ lambdared=0.98;
 
 
 %   'alpha_red':   Defines the reduction rate of the TV hyperparameter
-alpha_red=0.95;
+alpha_red=0.noise_projections95;
 
 %   'Ratio':       The maximum allowed image/TV update ration. If the TV 
 %                  update changes the image more than this, the parameter
