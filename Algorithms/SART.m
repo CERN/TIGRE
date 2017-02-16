@@ -221,6 +221,8 @@ for ii=1:2:nVarargs
     ind=find(ismember(opts,lower(argin{ii})));
     if ~isempty(ind)
         defaults(ind)=0;
+    else
+       error('CBCT:SART:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
     end
 end
 

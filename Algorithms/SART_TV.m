@@ -215,7 +215,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('CBCT:SART:InvalidInput','Invalid number of inputs')
+    error('CBCT:SART_TV:InvalidInput','Invalid number of inputs')
 end
 multigrid=false;
 % check if option has been passed as input
@@ -223,6 +223,8 @@ for ii=1:2:nVarargs
     ind=find(ismember(opts,lower(argin{ii})));
     if ~isempty(ind)
         defaults(ind)=0;
+    else
+       error('CBCT:SART_TV:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
     end
 end
 

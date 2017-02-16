@@ -54,6 +54,8 @@ for ii=1:2:nVarargs
     ind=find(ismember(opts,lower(varargin{ii})));
     if ~isempty(ind)
        defaults(ind)=0; 
+    else
+       error('CBCT:plotImgs:InvalidInput',['Optional parameter "' varargin{ii} '" does not exist' ]); 
     end
 end
 
