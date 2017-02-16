@@ -46,7 +46,7 @@ defaults= [   1  ,  1  ,    1    ,    1     ,   1 ,1];
 % Check inputs
 nVarargs = length(varargin);
 if mod(nVarargs,2)
-    error('CBCT:plotImgs:InvalidInput','Invalid number of inputs')
+    error('CBCT:plotImg:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -55,7 +55,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
        defaults(ind)=0; 
     else
-       error('CBCT:plotImgs:InvalidInput',['Optional parameter "' varargin{ii} '" does not exist' ]); 
+       error('CBCT:plotImg:InvalidInput',['Optional parameter "' varargin{ii} '" does not exist' ]); 
     end
 end
 
