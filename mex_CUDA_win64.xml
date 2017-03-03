@@ -4,7 +4,7 @@
     Name="NVIDIA CUDA Compiler"
     ShortName="nvcc"
     Manufacturer="NVIDIA"
-    Version="7.5"
+    Version="8.0"
     Language="CUDA"
     Priority="A"
     Location="$NVCC" >

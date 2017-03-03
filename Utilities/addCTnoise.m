@@ -17,12 +17,12 @@ function proj=addCTnoise(proj,varargin)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
-% 
-% Copyright (c) 2015, University of Bath and 
+%
+% Copyright (c) 2015, University of Bath and
 %                     CERN-European Organization for Nuclear Research
 %                     All rights reserved.
 %
-% License:            Open Source under BSD. 
+% License:            Open Source under BSD.
 %                     See the full license at
 %                     https://github.com/CERN/TIGRE/license.txt
 %
@@ -66,12 +66,16 @@ for ii=1:length(opts)
     switch opt
         case 'Poisson'
             if default
-                I0=65535;
+                I0=60000;
+                if max(proj(:)>I0)
+                    I0=max(proj(:))/5;
+                end
             else
-               if ~isscalar(val);error('CBCT:addnoise:WorngInput','Input to Poisson should be scalar');end
-               I0=val;
+                if ~isscalar(val);error('CBCT:addnoise:WorngInput','Input to Poisson should be scalar');end
+                I0=val;
             end
-
+            
+            
         case 'Gaussian'
             if default
                 m=0;
@@ -91,17 +95,20 @@ end
 Im=I0*exp(-proj/max(proj(:)));
 
 % Photon noise + electronic noise
-if areTheseToolboxesInstalled({'MATLAB','Statistics Toolbox'}) || areTheseToolboxesInstalled({'MATLAB','Statistics and Machine Learning Toolbox'})
+if areTheseToolboxesInstalled({'MATLAB','Image Processing Toolbox'})
+    Im=imnoise(Im/I0,'poisson')*I0;
+    Im=imnoise(Im/I0,'gaussian',m,sigma/I0)*I0;
+elseif areTheseToolboxesInstalled({'MATLAB','Statistics Toolbox'}) || areTheseToolboxesInstalled({'MATLAB','Statistics and Machine Learning Toolbox'})
     Im=poissrnd(Im)+randn(size(Im)).*sigma + m;
 else
-     warning(['You dont have Statistic toolbox, so poisson random noise is not available in MATLAB.',...
-         java.lang.System.getProperty('line.separator').char,...
-         'If you want to add that noise, use the following command:',...
-         java.lang.System.getProperty('line.separator').char,...
-         'Im=poissonrandom(I0*exp(-proj)); Im(Im<0)=1e-6; proj=single(log(I0./Im));',...
-         java.lang.System.getProperty('line.separator').char,...,
-         'With I0 ~ 10000'])
-     Im=randn(size(Im)).*sigma + m; % this one is slower
+    warning(['You dont have Statistic toolbox, so poisson random noise is not available in MATLAB.',...
+        java.lang.System.getProperty('line.separator').char,...
+        'If you want to add that noise, use the following command:',...
+        java.lang.System.getProperty('line.separator').char,...
+        'Im=poissonrandom(I0*exp(-proj)); Im(Im<0)=1e-6; proj=single(log(I0./Im));',...
+        java.lang.System.getProperty('line.separator').char,...,
+        'With I0 ~ 10000'])
+    Im=randn(size(Im)).*sigma + m; % this one is slower
 end
 Im(Im<=0)=1e-6;
 proj=single(log(I0./Im))*max(proj(:));

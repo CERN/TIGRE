@@ -2,49 +2,49 @@
  *
  * CUDA functions for ray-voxel intersection based projection
  *
- * This file has the necesary fucntiosn to perform X-ray CBCT projection 
+ * This file has the necesary fucntiosn to perform X-ray CBCT projection
  * operation given a geaometry, angles and image. It usesthe so-called
- * Jacobs algorithm to compute efficiently the length of the x-rays over 
+ * Jacobs algorithm to compute efficiently the length of the x-rays over
  * voxel space.
  *
  * CODE by       Ander Biguri
  *
----------------------------------------------------------------------------
----------------------------------------------------------------------------
-Copyright (c) 2015, University of Bath and CERN- European Organization for 
-Nuclear Research
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, 
-this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, 
-this list of conditions and the following disclaimer in the documentation 
-and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors
-may be used to endorse or promote products derived from this software without
-specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
- ---------------------------------------------------------------------------
-
-Contact: tigre.toolbox@gmail.com
-Codes  : https://github.com/CERN/TIGRE
---------------------------------------------------------------------------- 
+ * ---------------------------------------------------------------------------
+ * ---------------------------------------------------------------------------
+ * Copyright (c) 2015, University of Bath and CERN- European Organization for
+ * Nuclear Research
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * ---------------------------------------------------------------------------
+ *
+ * Contact: tigre.toolbox@gmail.com
+ * Codes  : https://github.com/CERN/TIGRE
+ * ---------------------------------------------------------------------------
  */
 
 #include <algorithm>
@@ -104,16 +104,16 @@ __global__ void kernelPixelDetector( Geometry geo,
         Point3D uvOrigin){
     
 //     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
-
+    
     unsigned long y = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long x = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned long idx =  x  * geo.nDetecV + y;
-
+    
     if ((x>= geo.nDetecU) | (y>= geo.nDetecV))
         return;
     
     
-
+    
     
     /////// Get coordinates XYZ of pixel UV
     int pixelV = geo.nDetecV-y-1;
@@ -211,7 +211,7 @@ __global__ void kernelPixelDetector( Geometry geo,
     unsigned int Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
     
-    for (unsigned int ii=0;ii<Np;ii++){ 
+    for (unsigned int ii=0;ii<Np;ii++){
         if (ax==aminc){
             sum+=(ax-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
             i=i+iu;
@@ -236,8 +236,8 @@ __global__ void kernelPixelDetector( Geometry geo,
 
 int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha){
     
-        
-  
+    
+    
     //DONE, Tesla found
     
     // copy data to CUDA memory
@@ -259,7 +259,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     
     // Configure texture options
     tex.normalized = false;
-    tex.filterMode = cudaFilterModePoint; //we dotn want itnerpolation
+    tex.filterMode = cudaFilterModePoint; //we dont want interpolation
     tex.addressMode[0] = cudaAddressModeBorder;
     tex.addressMode[1] = cudaAddressModeBorder;
     tex.addressMode[2] = cudaAddressModeBorder;
@@ -284,10 +284,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     bool timekernel=false; // For debuggin purposes
     cudaEvent_t start, stop;
     float elapsedTime;
-    if (timekernel){
-        cudaEventCreate(&start);
-        cudaEventRecord(start,0);
-    }
+
     Point3D source, deltaU, deltaV, uvOrigin;
     
     // 16x16 gave the best performance empirically
@@ -296,30 +293,35 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     divU=16;
     divV=16;
     dim3 grid((geo.nDetecU+divU-1)/divU,(geo.nDetecV+divV-1)/divV,1);
-    dim3 block(divU,divV,1); 
+    dim3 block(divU,divV,1);
     for (unsigned int i=0;i<nalpha;i++){
         
         geo.alpha=alphas[i];
-
+        
         //precomute distances for faster execution
         //Precompute per angle constant stuff for speed
         computeDeltas_Siddon(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Ray tracing!
+        if (timekernel){
+            cudaEventCreate(&start);
+            cudaEventRecord(start,0);
+        }
         kernelPixelDetector<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin);
         cudaCheckErrors("Kernel fail");
+        if (timekernel){
+            cudaEventCreate(&stop);
+            cudaEventRecord(stop,0);
+            cudaEventSynchronize(stop);
+            cudaEventElapsedTime(&elapsedTime, start,stop);
+            mexPrintf("%f\n" ,elapsedTime);
+        }
         // copy result to host
         cudaMemcpy(result[i], dProjection, num_bytes, cudaMemcpyDeviceToHost);
         cudaCheckErrors("cudaMemcpy fail");
         
         
     }
-    if (timekernel){
-        cudaEventCreate(&stop);
-        cudaEventRecord(stop,0);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&elapsedTime, start,stop);
-        mexPrintf("%f\n" ,elapsedTime);
-    }
+    
     
     cudaUnbindTexture(tex);
     cudaCheckErrors("Unbind  fail");
@@ -353,24 +355,24 @@ void computeDeltas_Siddon(Geometry geo, float alpha,int i, Point3D* uvorigin, Po
     Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
     Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
     // Geomtric trasnformations:
-     // Now we have the Real world (OXYZ) coordinates of the bottom corner and its two neighbours.
+    // Now we have the Real world (OXYZ) coordinates of the bottom corner and its two neighbours.
     // The obkjective is to get a position of the detector in a coordinate system where:
     // 1-units are voxel size (in each direction can be different)
     // 2-The image has the its first voxel at (0,0,0)
     // 3-The image never rotates
     
-    // To do that, we need to compute the "deltas" the detector, or "by how much 
-    // (in new xyz) does the voxels change when and index is added". To do that 
+    // To do that, we need to compute the "deltas" the detector, or "by how much
+    // (in new xyz) does the voxels change when and index is added". To do that
     // several geometric steps needs to be changed
     
     //1.Roll,pitch,jaw
-    // The detector can have a small rotation. 
-    // according to 
+    // The detector can have a small rotation.
+    // according to
     //"A geometric calibration method for cone beam CT systems" Yang K1, Kwan AL, Miller DF, Boone JM. Med Phys. 2006 Jun;33(6):1695-706.
     // Only the Z rotation will have a big influence in the image quality when they are small.
     // Still all rotations are supported
     
-    // To roll pitch jaw, the detector has to be in centered in OXYZ. 
+    // To roll pitch jaw, the detector has to be in centered in OXYZ.
     P.x=0;Pu0.x=0;Pv0.x=0;
     
     // Roll pitch yaw
@@ -423,7 +425,7 @@ void computeDeltas_Siddon(Geometry geo, float alpha,int i, Point3D* uvorigin, Po
     S2.x      =S2.x/geo.dVoxelX;          S2.y      =S2.y/geo.dVoxelY;            S2.z      =S2.z/geo.dVoxelZ;
     
     
-    //mexPrintf("COR: %f \n",geo.COR[i]);  
+    //mexPrintf("COR: %f \n",geo.COR[i]);
     //5. apply COR. Wherever everything was, now its offesetd by a bit
     float CORx, CORy;
     CORx=-geo.COR[i]*sin(geo.alpha)/geo.dVoxelX;
@@ -466,22 +468,22 @@ float maxDistanceCubeXY(Geometry geo, float alpha,int i){
     
 }
 void rollPitchYaw(Geometry geo,int i, Point3D* point){
- Point3D auxPoint;
- auxPoint.x=point->x;
- auxPoint.y=point->y;
- auxPoint.z=point->z;
- 
- point->x=cos(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x 
-         +(cos(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) - sin(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y
-         +(cos(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) + sin(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.z;
- 
- point->y=sin(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x 
-         +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) + cos(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y
-         +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) - cos(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.z;
- 
- point->z=-sin(geo.dPitch[i])*auxPoint.x 
-         +cos(geo.dPitch[1])*sin(geo.dYaw[i])*auxPoint.y
-         +cos(geo.dPitch[1])*cos(geo.dYaw[i])*auxPoint.z;
- 
+    Point3D auxPoint;
+    auxPoint.x=point->x;
+    auxPoint.y=point->y;
+    auxPoint.z=point->z;
+    
+    point->x=cos(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x
+            +(cos(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) - sin(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y
+            +(cos(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) + sin(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.z;
+    
+    point->y=sin(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x
+            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) + cos(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y
+            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) - cos(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.z;
+    
+    point->z=-sin(geo.dPitch[i])*auxPoint.x
+            +cos(geo.dPitch[1])*sin(geo.dYaw[i])*auxPoint.y
+            +cos(geo.dPitch[1])*cos(geo.dYaw[i])*auxPoint.z;
+    
 }
 #endif
