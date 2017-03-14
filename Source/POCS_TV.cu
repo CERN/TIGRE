@@ -257,6 +257,7 @@ do { \
         float *d_image, *d_dimgTV,*d_norm2aux,*d_norm2;
         // memory for image
         cudaMalloc(&d_image, mem_size);
+        cudaCheckErrors("Malloc Image error");
         cudaMemcpy(d_image, img, mem_size, cudaMemcpyHostToDevice);
         cudaCheckErrors("Memory Malloc and Memset: SRC");
         // memory for df
@@ -291,7 +292,7 @@ do { \
             
             
             cudaMemcpy(d_norm2, d_dimgTV, mem_size, cudaMemcpyDeviceToDevice);
-            
+            cudaCheckErrors("Copy from gradient call error");
             // Compute the L2 norm of the gradint. For that, reduction is used.
             //REDUCE
             size_t dimblockRed = MAXTHREADS;
@@ -313,10 +314,13 @@ do { \
             //NOMRALIZE
             //in a Tesla, maximum blocks =15 SM * 4 blocks/SM
             divideArrayScalar  <<<60,MAXTHREADS>>>(d_dimgTV,sqrt(sumnorm2),total_pixels);
+            cudaCheckErrors("Division error");
             //MULTIPLY HYPERPARAMETER
             multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dimgTV,alpha,   total_pixels);
+            cudaCheckErrors("Multiplication error");
             //SUBSTRACT GRADIENT
             substractArrays    <<<60,MAXTHREADS>>>(d_image,d_dimgTV, total_pixels);
+            cudaCheckErrors("Substraction error");
             sumnorm2=0;
         }
         

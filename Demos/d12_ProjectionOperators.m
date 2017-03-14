@@ -37,7 +37,7 @@ close all;
 geo.DSD = 1536;                             % Distance Source Detector      (mm)
 geo.DSO = 1000;                             % Distance Source Origin        (mm)
 % Detector parameters
-geo.nDetector=[512; 512];					% number of pixels              (px)
+geo.nDetector=[512; 100];					% number of pixels              (px)
 geo.dDetector=[0.8; 0.8]; 					% size of each pixel            (mm)
 geo.sDetector=geo.nDetector.*geo.dDetector; % total size of the detector    (mm)
 % Image parameters

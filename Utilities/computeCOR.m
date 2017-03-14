@@ -8,6 +8,9 @@
 % Get central slice
 data=squeeze(data(floor(end/2)+1,:,:));
 
+if size(angles,1)==1
+   anlges=angles'; 
+end
 
 % Set up coordinate grids for testing the fit to data
 [angle_grid, det_grid] = meshgrid(angles',linspace(-geo.sDetector(1)/2+geo.dDetector(1)/2,+geo.sDetector(1)/2-geo.dDetector(1)/2,geo.nDetector(1))');
@@ -19,7 +22,7 @@ test_data = double(repmat(data,1,3));
 % Start search using midpoint at zero
 midpoint = 0;
 % Vector of precision values to search at
-precision = [1 0.1 0.01 0.001 0.0001];
+precision = [1 0.1 0.01 0.001 0.0001 0.00001 0.000001];
 
 for i = 1:length(precision)
     
@@ -49,5 +52,5 @@ for i = 1:length(precision)
 end
 
 % transform centre to required value
-centre = midpoint * geo.DSO / geo.DSD;
+centre =- midpoint * geo.DSO / geo.DSD;
 

@@ -1,5 +1,5 @@
 function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
-% SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
+%SART solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
 %   SART(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
