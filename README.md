@@ -2,8 +2,8 @@ TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
 ======
 
 TIGRE is a MATLAB/CUDA toolbox for fast and accurate 3D tomographic 
-reconstruction, created jointly by University of Bath's Engineering Tomography Lab and CERN. The aim of TIGRE is to provide a wide range of easy-to-use 
-iterative algorithms to the tomographic research community. 
+reconstruction, created jointly by University of Bath's Engineering Tomography Lab and CERN. 
+The aim of TIGRE is to provide a wide range of easy-to-use iterative algorithms to the tomographic research community. 
 We would like to build an stronger bridge between algorithm researchers and
 imaging researchers, by encouraging and supporting contributions from both sides into
 TIGRE. TIGRE is free to use and distribute, use it, modify it, break it, share it; 
@@ -65,6 +65,8 @@ issue][2] if it doesnt work in other arch/OS)
    
    - Install  CUDA Toolkit (the later, the better)
      Download [here][1]
+     
+   - Install a compatible compiler
    
    - Run Compile.m
 
@@ -78,6 +80,8 @@ If it doesn't work
      mex_CUDA_glnxa64.xml should be present, and inside it the proper links to CUDA will have to be set up.
 
    - On linux machines, make sure you modify `mex_CUDA_glnxa64.xml` line 44 to the correct path to libcudart on your system.
+   
+   - Try `getenv('CUDA_PATH')`. If it doesn't return the path of the compiler, then try `setenv('CUDA_PATH','C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0')` (change with your CUDA path)
    
    - Run Compile.m
 
@@ -160,10 +164,9 @@ this. Hopefully we can find a solution for this without the need of restarting M
 
 **Q: Does it work in MATLAB XXXX with Compiler XXXX in OS XXXX**
 
-*A: Yes it should. Currently the only known compiler to possibly not be compatible is MinGW,
-due to problems in the MATHWORKS side. The rest should be OK. Unfortunatedly we have been unable
-to test all posible combinations, but please, give it a try and if there is any problem,
-raise an issue or contact us to get it fixed*
+*A: In Widows, it seems that the only supperted compiler is Microsoft Visual Studio.
+Apart from that, any MATLAB version in any OS should work, with the suported compilers. 
+Let us know if you find an incompatibility*
 
 **Q: I get a fair amount of warnings when I compile the code, what is happening?**
 
