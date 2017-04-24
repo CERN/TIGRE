@@ -48,7 +48,7 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 %% Load data and generate projections 
 % see previous demo for explanation
 angles=linspace(0,2*pi,100);
-head=headPhantom(geo.nVoxel);
+head=thoraxPhantom(geo.nVoxel);
 projections=Ax(head,geo,angles,'interpolated');
 noise_projections=addCTnoise(projections);
 %% SART family of algorithms
@@ -80,13 +80,13 @@ noise_projections=addCTnoise(projections);
 % 'lambda': hyperparameter. The update will be multiplied by this number
 % every iteration, to make the steps bigger or smaller. Default: 1
 %
-lambda=0.9;
+lambda=1;
 
 
 % 'lambdared': reduction multiplier for the hyperparameter.
 % lambda=lambda*lambdared every iterations, so the steps can be smaller
 % the further the update. Default=0.99
-lambdared=1;
+lambdared=0.999;
 
 % 'Init' : Initialization method. Possible options are
 %          'none' (default). There will be no initialization method, just
@@ -118,9 +118,9 @@ qualmeas={'RMSE'};
 
 % SIRT and SART both have no extra input parameters.
 % =========================================================================
-[imgSIRT,errL2SIRT,qualitySIRT]=SIRT(projections,geo,angles,30,...
+[imgSIRT,errL2SIRT,qualitySIRT]=SIRT(projections,geo,angles,200,...
                             'lambda',lambda,'lambda_red',lambdared,'verbose',verbose,'QualMeas',qualmeas);
-[imgSART,errL2SART,qualitySART]=SART(projections,geo,angles,30,...
+[imgSART,errL2SART,qualitySART]=SART(projections,geo,angles,200,...
                             'lambda',lambda,'lambda_red',lambdared,'verbose',verbose,'QualMeas',qualmeas);
 % OS-SART
 % ========================================================================
@@ -130,7 +130,7 @@ qualmeas={'RMSE'};
 %   'BlockSize':   Sets the projection block size used simultaneously. If
 %                  BlockSize = 1 OS-SART becomes SART and if  BlockSize = length(angles)
 %                  then OS-SART becomes SIRT. Default is 20.
-blcks=22;
+blcks=8;
 % 'OrderStrategy':  Chooses the subset ordering strategy. Options are
 %                  'ordered' :uses them in the input order, but divided
 %                  'random'  : orders them randomply
@@ -138,20 +138,20 @@ blcks=22;
 %                                     biggest angular distance with the
 %                                     ones used.  (default)
 order='angularDistance';
-[imgOSSART,errL2OSSART,qualityOSSART]=OS_SART(projections,geo,angles,30,...
+[imgOSSART,errL2OSSART,qualityOSSART]=OS_SART(projections,geo,angles,200,...
                             'lambda',lambda,'lambda_red',lambdared,'verbose',verbose,'QualMeas',qualmeas,...
                              'BlockSize',blcks,'OrderStrategy',order);
 %% Lets have a brief show of the results
 % set(0,'DefaultTextInterpreter', 'latex')
 
 subplot(211)
-plot(log10([errL2SIRT;errL2OSSART;[errL2SART nan(1,length(errL2OSSART)-length(errL2SART))]]'));
+plot(log10([errL2SIRT;[errL2OSSART nan(1,length(errL2SART)-length(errL2OSSART))];errL2SART]'));
 title('Convergence')
 xlabel('Iteration')
 ylabel('$ log_{10}(|Ax-b|) $')
 legend('SIRT','OS-SART','SART')
 subplot(212)
-plot(log10([qualitySIRT;qualityOSSART;[qualitySART nan(1,length(qualityOSSART)-length(qualitySART))]]'));
+plot(log10([qualitySIRT;[qualityOSSART nan(1,length(qualitySART)-length(qualityOSSART))];qualitySART]'));
 title('Evolution of RMSE')
 legend('SIRT','OS-SART','SART')
 xlabel('Iteration')
@@ -161,6 +161,11 @@ ylabel('$ log_{10}(RMSE) $')
 
 % It is clear that SART will get to better results for the same amoutn of
 % iterations, however, it takes x7 more time to run.
+
+% SART 
+% OS-SART
+% SIRT
+
 plotImg([imgSIRT;  imgOSSART; imgSART;],'Dim','Z','Savegif','sarts.gif');
 
 % plot error

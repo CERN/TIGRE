@@ -211,7 +211,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         float sinalpha = projSinCosArrayDev[3*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
         float cosalpha = projSinCosArrayDev[3*projNumber+1];
         float COR = projSinCosArrayDev[3*projNumber+2];
-
+        
         // Geometric trasnformations:
         //Source, scaled XYZ coordinates
         
@@ -259,7 +259,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             voxelColumn[colIdx]+=tex3D(tex, u +0.5 ,
                     v +0.5 ,
                     indAlpha+0.5)*weigth;
-
+            
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
@@ -337,10 +337,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     bool timekernel=false;
     cudaEvent_t start, stop;
     float elapsedTime;
-    if (timekernel){
-        cudaEventCreate(&start);
-        cudaEventRecord(start,0);
-    }
+    
     
     int divx,divy,divz;
     
@@ -403,9 +400,22 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         // Copy the prepared parameter arrays to constant memory to make it available for the kernel
         cudaMemcpyToSymbol(projSinCosArrayDev, projSinCosArrayHost, sizeof(float)*3*PROJ_PER_KERNEL);
         cudaMemcpyToSymbol(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*6*PROJ_PER_KERNEL);
-        
+        if (timekernel){
+            cudaEventCreate(&start);
+            cudaEventRecord(start,0);
+        }
         kernelPixelBackprojectionFDK<<<grid,block>>>(geo,dimage,i,nalpha);
         cudaCheckErrors("Kernel fail");
+        if (timekernel)
+        {
+            cudaEventCreate(&stop);
+            cudaEventRecord(stop,0);
+            cudaEventSynchronize(stop);
+            cudaEventElapsedTime(&elapsedTime, start,stop);
+            mexPrintf("%f\n" ,elapsedTime);
+            cudaCheckErrors("cuda Timing fail");
+            
+        }
     }  // END for
     
     //////////////////////////////////////////////////////////////////////////////////////
@@ -413,16 +423,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     //////////////////////////////////////////////////////////////////////////////////////
     
     
-    if (timekernel)
-    {
-        cudaEventCreate(&stop);
-        cudaEventRecord(stop,0);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&elapsedTime, start,stop);
-        mexPrintf("%f\n" ,elapsedTime);
-        cudaCheckErrors("cuda Timing fail");
-        
-    }
+
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
     cudaCheckErrors("cudaMemcpy result fail");
     
@@ -472,7 +473,7 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     Px.z =Px.z-geo.offDetecV[i];          Px.y =Px.y-geo.offDetecU[i];
     Py.z =Py.z-geo.offDetecV[i];          Py.y =Py.y-geo.offDetecU[i];
     Pz.z =Pz.z-geo.offDetecV[i];          Pz.y =Pz.y-geo.offDetecU[i];
-
+    
     //Detector Roll pitch Yaw
     //
     //
@@ -496,8 +497,8 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     source.x=geo.DSD; //allready offseted for rotation
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
-    rollPitchYawT(geo,i,&source); 
-
+    rollPitchYawT(geo,i,&source);
+    
     
     source.x=source.x-(geo.DSD-geo.DSO);//   source.y=source.y-auxOff.y;    source.z=source.z-auxOff.z;
     
@@ -510,7 +511,7 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     Pz.z=Pz.z/geo.dDetecV;                          Pz.y=Pz.y/geo.dDetecU;
     
     source.z=source.z/geo.dDetecV;                  source.y=source.y/geo.dDetecU;
-
+    
     // get deltas of the changes in voxels
     deltaX->x=Px.x-P.x;   deltaX->y=Px.y-P.y;    deltaX->z=Px.z-P.z;
     deltaY->x=Py.x-P.x;   deltaY->y=Py.y-P.y;    deltaY->z=Py.z-P.z;
