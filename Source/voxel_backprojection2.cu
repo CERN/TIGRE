@@ -405,6 +405,8 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
             
             offOrig.x=geo.offOrigX[currProjNumber];
             offOrig.y=geo.offOrigY[currProjNumber];
+            offOrig.y=geo.offOrigZ[currProjNumber];
+
             offDetec.x=geo.offDetecU[currProjNumber];
             offDetec.y=geo.offDetecV[currProjNumber];
             

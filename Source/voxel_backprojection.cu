@@ -387,7 +387,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
             
             offOrig.x=geo.offOrigX[currProjNumber];
             offOrig.y=geo.offOrigY[currProjNumber];
-            
+            offOrig.z=geo.offOrigZ[currProjNumber];
             
             projParamsArrayHost[6*j]=deltaX;		// 6*j because we have 6 Point3D values per projection
             projParamsArrayHost[6*j+1]=deltaY;
