@@ -1,12 +1,12 @@
-function [ fres ] = OSC_TV(proj,geo,angles,maxiter,varargin)
-%ASD_POCS Solves the ASD_POCS total variation constrained image in 3D
+function [ fres ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
+%ASD_POCS Solves theOS_ASD_POCS total variation constrained image in 3D
 % tomography.
 %
-%   ASD_POCS(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
+%   OS_ASD_POCS(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
 %   to the geometry descrived in GEO, using NITER iterations.
 %
-%   ASD_POCS(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
+%   OS_ASD_POCS(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 %
 %
@@ -209,7 +209,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('CBCT:OSC_TV:InvalidInput','Invalid number of inputs')
+    error('CBCT:OS_ASD_POCS :InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -218,7 +218,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('CBCT:OSC_TV:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+       error('CBCT:OS_ASD_POCS :InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
     end
 end
 
@@ -233,7 +233,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
          if isempty(ind)
-            error('CBCT:OSC_TV:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+            error('CBCT:OS_ASD_POCS :InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
         end
         val=argin{jj};
     end
@@ -253,13 +253,13 @@ for ii=1:length(opts)
             end
             % Lambda
             %  =========================================================================
-            % Its called beta in OSC_TV
+            % Its called beta in OS_ASD_POCS 
         case 'lambda'
             if default
                 beta=1;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:OSC_TV:InvalidInput','Invalid lambda')
+                    error('CBCT:OS_ASD_POCS :InvalidInput','Invalid lambda')
                 end
                 beta=val;
             end
@@ -270,7 +270,7 @@ for ii=1:length(opts)
                 beta_red=0.99;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:OSC_TV:InvalidInput','Invalid lambda')
+                    error('CBCT:OS_ASD_POCS :InvalidInput','Invalid lambda')
                 end
                 beta_red=val;
             end
@@ -321,7 +321,7 @@ for ii=1:length(opts)
                 block_size=20;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:OSC_TV:InvalidInput','Invalid BlockSize')
+                    error('CBCT:OS_ASD_POCS :InvalidInput','Invalid BlockSize')
                 end
                 block_size=val;
             end
@@ -334,7 +334,7 @@ for ii=1:length(opts)
                 OrderStrategy=val;
             end
         otherwise
-            error('CBCT:OSC_TV:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OSC_TV()']);
+            error('CBCT:OS_ASD_POCS :InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_ASD_POCS ()']);
             
     end
 end

@@ -82,8 +82,8 @@ geo.COR=geom.source.y;
 % Angles
 angles=-geom.angles.';
 
-
- data=permute(data,[2 1 3]);
+data=reshape(data,1564,1564,length(angles));
+data=permute(data,[2 1 3]);
 
 %% Now use any algorithms you want
 

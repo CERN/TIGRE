@@ -56,6 +56,8 @@ Codes  : https://github.com/CERN/TIGRE
 
 #include <string.h>
 #include "voxel_backprojection_parallel.hpp"
+#include "voxel_backprojection_parallel2.hpp"
+
 // #include <time.h>
 
 
@@ -505,7 +507,14 @@ void mexFunction(int  nlhs , mxArray *plhs[],
             voxel_backprojection(img,geo,result,alphas,nalpha);
         }
     }else{
-        voxel_backprojection_parallel(img,geo,result,alphas,nalpha);
+        if (krylov_proj){
+            voxel_backprojection_parallel2(img,geo,result,alphas,nalpha);
+            
+        }
+        else{
+            voxel_backprojection_parallel(img,geo,result,alphas,nalpha);
+        }
+
     }
     
     /*

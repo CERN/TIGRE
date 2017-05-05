@@ -149,7 +149,7 @@ for ii=1:niter
 %         weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
 %         res=res+lambda*weigth_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
         
-                res=res+lambda* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj})),geo,alphablocks{jj}));
+                res=res+lambda* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'interpolated')),geo,alphablocks{jj}));
         
         
         % Non-negativity constrain

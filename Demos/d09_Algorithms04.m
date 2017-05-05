@@ -127,7 +127,7 @@ imgASDPOCS=ASD_POCS(noise_projections,geo,angles,50,...
 
 
                  
-%  OSC-TV: Odered Subset Convex-TV algorithm
+%  OS_ASD_POCS: Odered Subset-TV algorithm
 %==========================================================================
 %==========================================================================
 %
@@ -137,7 +137,7 @@ imgASDPOCS=ASD_POCS(noise_projections,geo,angles,50,...
 % The parameters are the same as in ASD-POCS, but also have 'BlockSize' and
 % @OrderStrategy', taken from OS-SART
 
-imgOSCTV=OSC_TV(noise_projections,geo,angles,50,...
+imgOSASDPOCS=OS_ASD_POCS(noise_projections,geo,angles,50,...
                     'TViter',ng,'maxL2err',epsilon,'alpha',alpha,... % these are very important
                      'lambda',lambda,'lambda_red',lambdared,'Ratio',ratio,'Verbose',verb,...% less important.
                       'BlockSize',length(angles)/10,'OrderStrategy','angularDistance'); %OSC options
@@ -205,10 +205,10 @@ imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',50);
 %    
 %     OSC-TV             B-ASD-POCS-beta   SART-TV
 
-plotImg([ imgOSCTV imgBASDPOCSbeta imgSARTTV; head imgOSSART  imgASDPOCS ] ,'Dim','Z','Step',2)
+plotImg([ imgOSASDPOCS imgBASDPOCSbeta imgSARTTV; head imgOSSART  imgASDPOCS ] ,'Dim','Z','Step',2)
  % error
 
-plotImg(abs([ head-imgOSCTV head-imgBASDPOCSbeta head-imgSARTTV;head-head head-imgOSSART  head-imgASDPOCS ]) ,'Dim','Z','Slice',64)
+plotImg(abs([ head-imgOSASDPOCS head-imgBASDPOCSbeta head-imgSARTTV;head-head head-imgOSSART  head-imgASDPOCS ]) ,'Dim','Z','Slice',64)
 
 
 
