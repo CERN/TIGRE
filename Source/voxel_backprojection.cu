@@ -280,7 +280,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         // We did all the reads into the local array at the BEGINNING of this kernel. According to Papenhausen, this type of read-write split is
         // better for avoiding memory congestion.
     }  // END copy updated voxels from local array to our 3D volume
-    
+    __syncthreads();
 }  // END kernelPixelBackprojectionFDK
 
 
