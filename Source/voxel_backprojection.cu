@@ -89,8 +89,7 @@ do { \
      *
      *
      **/
-    texture<float, cudaTextureType3D , cudaReadModeElementType> tex;
-
+texture<float, cudaTextureType2DLayered , cudaReadModeElementType> tex;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -122,18 +121,6 @@ float projSinCosArrayHost[3*PROJ_PER_KERNEL];
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // END RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-//______________________________________________________________________________
-//
-//      Function:       rollPitchYaw
-//
-//      Description:    Main FDK backprojection kernel
-//______________________________________________________________________________
-
 
 
 //______________________________________________________________________________
@@ -177,7 +164,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
     // work on them (update them by computing values from multiple projections) locally - avoiding main memory reads/writes
     
     int colIdx;
-    
+    #pragma unroll
     for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
     {
         unsigned long indZ = startIndZ + colIdx;
@@ -192,6 +179,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
     }  // END copy 3D volume voxels to local array
     
     // Now iterate through projections
+    #pragma unroll
     for(int projNumber=0; projNumber<PROJ_PER_KERNEL; projNumber++)
     {
         // Get the current parameters from parameter arrays in constant memory.
@@ -216,6 +204,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         //Source, scaled XYZ coordinates
         
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
+        #pragma unroll
         for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
         {
             unsigned long indZ = startIndZ + colIdx;
@@ -256,15 +245,16 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
-            voxelColumn[colIdx]+=tex3D(tex, u +0.5 ,
+   
+            voxelColumn[colIdx]+=tex2DLayered(tex, u +0.5 ,
                     v +0.5 ,
-                    indAlpha+0.5)*weigth;
-            
+                    indAlpha)*weigth;
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
     
     // And finally copy the updated local voxelColumn array back to our 3D volume (main memory)
+    #pragma unroll
     for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
     {
         unsigned long indZ = startIndZ + colIdx;
@@ -298,10 +288,13 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     /*
      * Allocate texture memory on the device
      */
+    
+    
+   
     // copy data to CUDA memory
     cudaArray *d_projectiondata = 0;
     const cudaExtent extent = make_cudaExtent(geo.nDetecU,geo.nDetecV,nalpha);
-    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
+    cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent,cudaArrayLayered);
     cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent);
     cudaCheckErrors("cudaMalloc3D error 3D tex");
     
@@ -347,6 +340,8 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     divx=16;
     divy=32;
     divz=VOXELS_PER_THREAD;      // We now only have 32 x 16 threads per block (flat tile, see below), BUT each thread works on a Z column of VOXELS_PER_THREAD voxels, so we effectively need fewer blocks!
+    
+  
     dim3 grid((geo.nVoxelX+divx-1)/divx,
             (geo.nVoxelY+divy-1)/divy,
             (geo.nVoxelZ+divz-1)/divz);
@@ -433,7 +428,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     cudaFree(dimage);
     cudaFreeArray(d_projectiondata);
     cudaCheckErrors("cudaFree d_imagedata fail");
-    //cudaDeviceReset();
+    //cudaDeviceReset(); // For the Nvidia Visual Profiler
     return 0;
     
 }  // END voxel_backprojection
