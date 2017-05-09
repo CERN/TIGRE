@@ -89,7 +89,7 @@ do { \
      *
      *
      **/
-texture<float, cudaTextureType2DLayered , cudaReadModeElementType> tex;
+    texture<float, cudaTextureType2DLayered , cudaReadModeElementType> tex;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -164,7 +164,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
     // work on them (update them by computing values from multiple projections) locally - avoiding main memory reads/writes
     
     int colIdx;
-    #pragma unroll
+#pragma unroll
     for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
     {
         unsigned long indZ = startIndZ + colIdx;
@@ -179,7 +179,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
     }  // END copy 3D volume voxels to local array
     
     // Now iterate through projections
-    #pragma unroll
+#pragma unroll
     for(int projNumber=0; projNumber<PROJ_PER_KERNEL; projNumber++)
     {
         // Get the current parameters from parameter arrays in constant memory.
@@ -200,11 +200,10 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         float cosalpha = projSinCosArrayDev[3*projNumber+1];
         float COR = projSinCosArrayDev[3*projNumber+2];
         
-        // Geometric trasnformations:
-        //Source, scaled XYZ coordinates
+        
         
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
-        #pragma unroll
+#pragma unroll
         for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
         {
             unsigned long indZ = startIndZ + colIdx;
@@ -245,7 +244,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
-   
+            
             voxelColumn[colIdx]+=tex2DLayered(tex, u +0.5 ,
                     v +0.5 ,
                     indAlpha)*weigth;
@@ -254,7 +253,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
     }  // END iterating through multiple projections
     
     // And finally copy the updated local voxelColumn array back to our 3D volume (main memory)
-    #pragma unroll
+#pragma unroll
     for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
     {
         unsigned long indZ = startIndZ + colIdx;
@@ -290,12 +289,12 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
      */
     
     
-   
+    
     // copy data to CUDA memory
     cudaArray *d_projectiondata = 0;
     const cudaExtent extent = make_cudaExtent(geo.nDetecU,geo.nDetecV,nalpha);
+    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
     cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent,cudaArrayLayered);
-    cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent);
     cudaCheckErrors("cudaMalloc3D error 3D tex");
     
     cudaMemcpy3DParms copyParams = { 0 };
@@ -341,7 +340,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     divy=32;
     divz=VOXELS_PER_THREAD;      // We now only have 32 x 16 threads per block (flat tile, see below), BUT each thread works on a Z column of VOXELS_PER_THREAD voxels, so we effectively need fewer blocks!
     
-  
+    
     dim3 grid((geo.nVoxelX+divx-1)/divx,
             (geo.nVoxelY+divy-1)/divy,
             (geo.nVoxelZ+divz-1)/divz);
@@ -418,7 +417,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     //////////////////////////////////////////////////////////////////////////////////////
     
     
-
+    
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
     cudaCheckErrors("cudaMemcpy result fail");
     
