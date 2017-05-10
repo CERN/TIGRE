@@ -89,7 +89,7 @@ do { \
      *
      *
      **/
-    texture<float, cudaTextureType3D , cudaReadModeElementType> tex;
+    texture<float, cudaTextureType2DLayered , cudaReadModeElementType> tex;
 __global__ void matrixConstantMultiply(const Geometry geo,float* image,float constant){
     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
      for(; idx<geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ; idx+=gridDim.x*blockDim.x) {
@@ -164,13 +164,14 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
         return;
     
     // We'll keep a local auxiliary array of values of a column of voxels that this thread will update
+    #pragma unroll
     float voxelColumn[VOXELS_PER_THREAD];
     
     // First we need to copy the curent 3D volume values from the column to our auxiliary array so that we can then
     // work on them (update them by computing values from multiple projections) locally - avoiding main memory reads/writes
     
     int colIdx;
-    
+    #pragma unroll
     for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
     {
         unsigned long indZ = startIndZ + colIdx;
@@ -185,6 +186,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
     }  // END copy 3D volume voxels to local array
     
     // Now iterate through projections
+    #pragma unroll
     for(int projNumber=0; projNumber<PROJ_PER_KERNEL; projNumber++)
     {
         // Get the current parameters from parameter arrays in constant memory.
@@ -210,6 +212,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
         //Source, scaled XYZ coordinates
         
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
+        #pragma unroll
         for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
         {
             unsigned long indZ = startIndZ + colIdx;
@@ -239,7 +242,9 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             float u,v;
             u=y+geo.nDetecU/2-0.5;
             v=z+geo.nDetecV/2-0.5;
-            
+            float sample=tex2DLayered(tex, u +0.5 ,
+                    v +0.5 ,
+                    indAlpha);
             float weigth;
             //
             //
@@ -272,14 +277,13 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
-            voxelColumn[colIdx]+=tex3D(tex, u +0.5 ,
-                    v +0.5 ,
-                    indAlpha+0.5)* weigth;
+            voxelColumn[colIdx]+=sample* weigth;
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
     
     // And finally copy the updated local voxelColumn array back to our 3D volume (main memory)
+    #pragma unroll
     for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
     {
         unsigned long indZ = startIndZ + colIdx;
@@ -317,7 +321,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
     cudaArray *d_projectiondata = 0;
     const cudaExtent extent = make_cudaExtent(geo.nDetecU,geo.nDetecV,nalpha);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
-    cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent);
+    cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent,cudaArrayLayered);
     cudaCheckErrors("cudaMalloc3D error 3D tex");
     
     cudaMemcpy3DParms copyParams = { 0 };
@@ -454,7 +458,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
     cudaFree(dimage);
     cudaFreeArray(d_projectiondata);
     cudaCheckErrors("cudaFree d_imagedata fail");
-    cudaDeviceReset();
+    //cudaDeviceReset();
     return 0;
     
 }  // END voxel_backprojection
