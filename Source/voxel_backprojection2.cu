@@ -458,7 +458,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
     cudaFree(dimage);
     cudaFreeArray(d_projectiondata);
     cudaCheckErrors("cudaFree d_imagedata fail");
-    //cudaDeviceReset();
+    cudaDeviceReset();
     return 0;
     
 }  // END voxel_backprojection
