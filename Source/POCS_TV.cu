@@ -335,6 +335,6 @@ do { \
         cudaFree(d_norm2);
 
         cudaCheckErrors("Memory free");
-        
+        cudaDeviceReset();
     }
     

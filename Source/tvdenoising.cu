@@ -236,5 +236,5 @@ void tvdenoising(const float* src, float* dst, float lambda,
     cudaFree(d_pz);
     cudaFree(d_py);
     cudaFree(d_px);
-    //cudaDeviceReset();
+    cudaDeviceReset();
 }

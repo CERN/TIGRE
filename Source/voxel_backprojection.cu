@@ -427,7 +427,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     cudaFree(dimage);
     cudaFreeArray(d_projectiondata);
     cudaCheckErrors("cudaFree d_imagedata fail");
-    //cudaDeviceReset(); // For the Nvidia Visual Profiler
+    cudaDeviceReset(); // For the Nvidia Visual Profiler
     return 0;
     
 }  // END voxel_backprojection

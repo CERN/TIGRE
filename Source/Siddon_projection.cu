@@ -331,8 +331,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     
     
     
-    // tehre is no need to reset the device, but if one whants to use the NVIDIA Visual profiler, one should.
-    //cudaDeviceReset();
+    cudaDeviceReset();
     return 0;
 }
 
