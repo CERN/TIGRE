@@ -151,6 +151,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 
     
     
+    
+    
+    
+    
+    // TODO: change the kernel, so it does this inside, no need to permute
     float *  img = (float*)malloc(size_proj[0] *size_proj[1] *size_proj2* sizeof(float));
 
 

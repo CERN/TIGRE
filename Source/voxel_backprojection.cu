@@ -326,7 +326,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     cudaCheckErrors("cudaMalloc fail");
     
     // If we are going to time
-    bool timekernel=false;
+    bool timekernel=true;
     cudaEvent_t start, stop;
     float elapsedTime;
     

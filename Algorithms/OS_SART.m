@@ -1,13 +1,13 @@
 function [res,errorL2,qualMeasOut]=OS_SART(proj,geo,angles,niter,varargin)
 
-% OS_SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
+% OS_SART solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
-%   OS_SART_CBCT(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
+%   OS_SART(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
 %   to the geometry descrived in GEO, using NITER iterations.
 %
-%   OS_SART_CBCT(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
+%   OS_SART(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 %
 %   'BlockSize':   Sets the projection block size used simultaneously. If
@@ -69,7 +69,7 @@ function [res,errorL2,qualMeasOut]=OS_SART(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 
-[blocksize,lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy]=parse_inputs(proj,geo,angles,varargin);
+[blocksize,lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 
 if nargout>1
@@ -92,7 +92,7 @@ geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not 
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
 W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
-W(W<min(geo.dVoxel)/4)=Inf;
+W(W<min(geo.dVoxel)/2)=Inf;
 W=1./W;
 % Back-Projection weigth, V
 if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
@@ -102,7 +102,8 @@ if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
     V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
     V=permute(single(V),[2 1 3]);
 else
-    V=ones([geo.nVoxel(1:2).',length(angles)],'single');
+%     V=length(angles)./Atb(ones([geo.nDetector(1:2).',length(angles)],'single'),geo,angles);
+      V=ones([geo.sVoxel(1:2).',length(angles)],'single');
 end
 
 clear A x y dx dz;
@@ -141,20 +142,22 @@ for ii=1:niter
             geo.rotDetector=rotDetector(:,orig_index{jj});
         end
         
-        %proj is data: b=Ax
-        %res= initial image is zero (default)
-%         proj_err=proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'interpolated'); %                                 (b-Ax)
-%         weighted_err=W(:,:,orig_index{jj}).*proj_err;                                 %                          W^-1 * (b-Ax)
-%         backprj=Atb(weighted_err,geo,alphablocks{jj},'FDK');                          %                     At * W^-1 * (b-Ax)
-%         weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
-%         res=res+lambda*weigth_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
-        
-                res=res+lambda* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'interpolated')),geo,alphablocks{jj}));
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%%%% Slower and memory-eating code (but clearer)%%%%%%%%%%%%%%%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %proj_err=proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'interpolated'); %                                 (b-Ax)
+        %weighted_err=W(:,:,orig_index{jj}).*proj_err;                                 %                          W^-1 * (b-Ax)
+        %backprj=Atb(weighted_err,geo,alphablocks{jj},'FDK');                          %                     At * W^-1 * (b-Ax)
+        %weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
+        %res=res+lambda*weigth_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        res=res+lambda* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'interpolated')),geo,alphablocks{jj}));
         
         
         % Non-negativity constrain
-        res(res<0)=0;
-        
+        if nonneg
+         res(res<0)=0;
+        end
         
     end
     
@@ -193,9 +196,6 @@ for ii=1:niter
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
     end
-    
-    
-    
     
 end
 end
@@ -237,13 +237,13 @@ end
 end
 
 %% Parse inputs
-function [block_size,lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'blocksize','lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy'};
+function [block_size,lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'blocksize','lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('CBCT:OS-SART:InvalidInput','Invalid number of inputs')
+    error('TIGRE:OS_SART:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -252,7 +252,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('CBCT:OS-SART:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+        error('TIGRE:OS_SART:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -266,8 +266,8 @@ for ii=1:length(opts)
             ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
         end
-         if isempty(ind)
-            error('CBCT:OS-SART:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+        if isempty(ind)
+            error('CBCT:OS-SART:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -361,6 +361,12 @@ for ii=1:length(opts)
                 OrderStrategy='angularDistance';
             else
                 OrderStrategy=val;
+            end
+          case 'nonneg'
+            if default
+                nonneg=true;
+            else 
+                nonneg=val;
             end
         otherwise
             error('CBCT:OS_SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_SART_CBCT()']);

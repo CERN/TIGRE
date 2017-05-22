@@ -2,7 +2,7 @@ function [ fres ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargin)
 
 % B_ASD_POCS_beta Solves the ASD_POCS total variation constrained image in 3D
 % tomography using bregman iteration for the data.
-% 
+%
 %   ASD_POCS(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
 %   to the geometry descrived in GEO, using NITER iterations.
@@ -11,7 +11,7 @@ function [ fres ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargin)
 %   possible options in OPT are:
 %
 %
-%   'lambda':      Sets the value of the hyperparameter for the SART iterations. 
+%   'lambda':      Sets the value of the hyperparameter for the SART iterations.
 %                  Default is 1
 %
 %   'lambdared':   Reduction of lambda.Every  iteration
@@ -21,21 +21,21 @@ function [ fres ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargin)
 %                  iteration. Default is 20
 %
 %   'alpha':       Defines the TV hyperparameter. default is 0.002
-% 
+%
 %   'alpha_red':   Defines the reduction rate of the TV hyperparameter
 %
-%   'Ratio':       The maximum allowed image/TV update ration. If the TV 
+%   'Ratio':       The maximum allowed image/TV update ration. If the TV
 %                  update changes the image more than this, the parameter
 %                  will be reduced.default is 0.95
 %   'maxL2err'     Maximum L2 error to accept an image as valid. This
 %                  parameter is crucial for the algorithm, determines at
 %                  what point an image should not be updated further.
 %                  Default is 20% of the FDK L2 norm.
-%  
+%
 %   'beta'         hyperparameter controling the Bragman update. default=1
-% 
+%
 %   'beta_red'     reduction of the beta hyperparameter. default =0.75
-% 
+%
 %   'bregman_iter' amount of global bregman iterations. This will define
 %                  how often the bregman iteration is executed. It has to
 %                  be smaller than the number of iterations.
@@ -51,18 +51,18 @@ function [ fres ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargin)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
-% 
-% Copyright (c) 2015, University of Bath and 
+%
+% Copyright (c) 2015, University of Bath and
 %                     CERN-European Organization for Nuclear Research
 %                     All rights reserved.
 %
-% License:            Open Source under BSD. 
+% License:            Open Source under BSD.
 %                     See the full license at
 %                     https://github.com/CERN/TIGRE/license.txt
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
-% Coded by:           Ander Biguri 
+% Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
 
 % http://ieeexplore.ieee.org/xpl/abstractAuthors.jsp?arnumber=5874264
@@ -70,7 +70,7 @@ function [ fres ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargin)
 %% parse inputs
 blocksize=1;
 
-[beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,bregman,bregman_red,bregman_iter,OrderStrategy]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,bregman,bregman_red,bregman_iter,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 
 angles=cell2mat(alphablocks);
@@ -103,7 +103,7 @@ if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
     A = permute(angles+pi/2, [1 3 2]);
     V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
     V=permute(single(V),[2 1 3]);
-
+    
 else
     V=ones([geo.nVoxel(1:2).',length(angles)],'single');
 end
@@ -132,18 +132,20 @@ while ~stop_criteria %POCS
         if size(offDetector,2)==length(angles)
             geo.offDetector=offDetector(:,index_angles(jj));
         end
-         if size(rotDetector,2)==length(angles)
+        if size(rotDetector,2)==length(angles)
             geo.rotDetector=rotDetector(:,index_angles(jj));
         end
-%         proj_err=proj(:,:,jj)-Ax(f,geo,angles(jj));          %                                 (b-Ax)
-%         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
-%         backprj=Atb(weighted_err,geo,angles(jj));            %                     At * W^-1 * (b-Ax)
-%         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
-%         f=f+beta*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
-         f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(f,geo,angles(jj))),geo,angles(jj)));
-
+        %         proj_err=proj(:,:,jj)-Ax(f,geo,angles(jj));          %                                 (b-Ax)
+        %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
+        %         backprj=Atb(weighted_err,geo,angles(jj));            %                     At * W^-1 * (b-Ax)
+        %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
+        %         f=f+beta*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
+        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(f,geo,angles(jj))),geo,angles(jj)));
+        
         % Enforce positivity
+        if nonneg
         f(f<0)=0;
+        end
     end
     
     geo.offDetector=offDetector;
@@ -166,13 +168,13 @@ while ~stop_criteria %POCS
     % =========================================================================
     %  Call GPU to minimize TV
     f=minimizeTV(f0,dtvg,ng);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
-%                                             for ii=1:ng
-% %                                                 Steepest descend of TV norm
-%                                                 tv(ng*(iter-1)+ii)=im3Dnorm(f,'TV','forward');
-%                                                 df=gradientTVnorm(f,'forward');
-%                                                 df=df./im3Dnorm(df,'L2');
-%                                                 f=f-dtvg.*df;
-%                                             end
+    %                                             for ii=1:ng
+    % %                                                 Steepest descend of TV norm
+    %                                                 tv(ng*(iter-1)+ii)=im3Dnorm(f,'TV','forward');
+    %                                                 df=gradientTVnorm(f,'forward');
+    %                                                 df=df./im3Dnorm(df,'L2');
+    %                                                 f=f-dtvg.*df;
+    %                                             end
     
     % update parameters
     % ==========================================================================
@@ -203,7 +205,7 @@ while ~stop_criteria %POCS
     if ~mod(iter,bregman_iter)
         proj=proj+bregman*(proj(:,:,index_angles)-Ax(f,geo,angles));
         bregman=bregman*bregman_red;
-
+        
     end
     
     
@@ -222,14 +224,14 @@ end
 
 end
 
-function [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,bregman,bregman_red,bregman_iter,OrderStrategy]=parse_inputs(proj,geo,angles,argin)
+function [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,bregman,bregman_red,bregman_iter,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,argin)
 
-opts=     {'lambda','lambda_red','tviter','verbose','alpha','alpha_red','ratio','maxl2err','beta','beta_red','bregman_iter','orderstrategy'};
+opts=     {'lambda','lambda_red','tviter','verbose','alpha','alpha_red','ratio','maxl2err','beta','beta_red','bregman_iter','orderstrategy','nonneg'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('CBCT:B_ASD_POCS_beta:InvalidInput','Invalid number of inputs')
+    error(B_ASD_POCS_beta:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -238,7 +240,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('CBCT:B_ASD_POCS_beta:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+        error('B_ASD_POCS_beta:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -253,7 +255,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
         if isempty(ind)
-            error('CBCT:B_ASD_POCS_beta:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+            error('B_ASD_POCS_beta:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -318,8 +320,8 @@ for ii=1:length(opts)
             else
                 alpha_red=val;
             end
-            %  Maximum update ratio 
-            %  =========================================================================            
+            %  Maximum update ratio
+            %  =========================================================================
         case 'ratio'
             if default
                 rmax=0.95;
@@ -327,12 +329,12 @@ for ii=1:length(opts)
                 rmax=val;
             end
             %  Maximum L2 error to have a "good image"
-            %  =========================================================================       
+            %  =========================================================================
         case 'maxl2err'
             if default
-               epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
+                epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
             else
-               epsilon=val;
+                epsilon=val;
             end
             %  TV bregman hyperparameter
             %  =========================================================================
@@ -353,7 +355,7 @@ for ii=1:length(opts)
         case 'bregman_iter'
             if default
                 bregman_iter=5;
-            else 
+            else
                 bregman_iter=val;
             end
         case 'orderstrategy'
@@ -362,9 +364,15 @@ for ii=1:length(opts)
             else
                 OrderStrategy=val;
             end
+        case 'nonneg'
+            if default
+                nonneg=true;
+            else
+                nonneg=val;
+            end
         otherwise
-             error('CBCT:B_ASD_POCS_beta:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in ASD_POCS()']);
-    
+            error('B_ASD_POCS_beta:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option']);
+            
     end
 end
 

@@ -62,7 +62,7 @@ function [res,errorL2,qualMeasOut]=SART_TV(proj,geo,angles,niter,varargin)
 %--------------------------------------------------------------------------
 
 %% Deal with input parameters
-[lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
     computeL2=true;
@@ -123,17 +123,18 @@ for ii=1:niter
         if size(offDetector,2)==length(angles)
             geo.offDetector=offDetector(:,index_angles(jj));
         end
-         if size(rotDetector,2)==length(angles)
+        if size(rotDetector,2)==length(angles)
             geo.rotDetector=rotDetector(:,index_angles(jj));
         end
-%         proj_err=proj(:,:,jj)-Ax(res,geo,angles(jj));        %                                 (b-Ax)
-%         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
-%         backprj=Atb(weighted_err,geo,angles(jj));            %                     At * W^-1 * (b-Ax)
-%         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
-%         res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
+        %         proj_err=proj(:,:,jj)-Ax(res,geo,angles(jj));        %                                 (b-Ax)
+        %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
+        %         backprj=Atb(weighted_err,geo,angles(jj));            %                     At * W^-1 * (b-Ax)
+        %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
+        %         res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
         res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(res,geo,angles(jj))),geo,angles(jj)));
-
-        res(res<0)=0;
+        if nonneg
+            res(res<0)=0;
+        end
     end
     
     % If quality is being measured
@@ -209,8 +210,8 @@ end
 end
 
 
-function [lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','tviter','tvlambda','orderstrategy'};
+function [lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy,nonneg]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','tviter','tvlambda','orderstrategy','nonneg'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -224,7 +225,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('CBCT:SART_TV:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+        error('CBCT:SART_TV:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -238,8 +239,8 @@ for ii=1:length(opts)
             ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
         end
-         if isempty(ind)
-            error('CBCT:SART_TV:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+        if isempty(ind)
+            error('CBCT:SART_TV:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -331,6 +332,13 @@ for ii=1:length(opts)
                 OrderStrategy='random';
             else
                 OrderStrategy=val;
+            end
+            
+          case 'nonneg'
+            if default
+                nonneg=true;
+            else 
+                nonneg=val;
             end
         otherwise
             error('CBCT:SART_TV:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART()']);

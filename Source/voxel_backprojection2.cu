@@ -164,7 +164,6 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
         return;
     
     // We'll keep a local auxiliary array of values of a column of voxels that this thread will update
-    #pragma unroll
     float voxelColumn[VOXELS_PER_THREAD];
     
     // First we need to copy the curent 3D volume values from the column to our auxiliary array so that we can then
@@ -208,8 +207,13 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
         float cosalpha = projSinCosArray2Dev[3*projNumber+1];
         float COR = projSinCosArray2Dev[3*projNumber+2];
 
-        // Geometric trasnformations:
-        //Source, scaled XYZ coordinates
+       // Precomputations for the weights:
+        //Real coords of Source
+        // We already have S.x (geo.DSO), and S.y and S.z are always zero. we just need to rotate
+            Point3D realS;
+            realS.x= geo.DSO*cosalpha;
+            realS.y=-geo.DSO*sinalpha;
+            realS.z=0;
         
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
         #pragma unroll
@@ -245,20 +249,18 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             float sample=tex2DLayered(tex, u +0.5 ,
                     v +0.5 ,
                     indAlpha);
-            float weigth;
+            float weigth=0;
             //
+            //
+            //
+            // IMPORTANT: The weights are almost 50% of the computational time. Is there a way of speeding this up??
             //
             //Real coordinates of Voxel. Instead of reverting the tranformation, its less math (faster) to compute it from the indexes.
             Point3D realvoxel;
             realvoxel.x=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x;
             realvoxel.y=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y;
             realvoxel.z=-geo.sVoxelZ/2+geo.dVoxelZ/2    +indZ*geo.dVoxelZ   +xyzOffset.z;
-            //Real coords of Source
-            // We already have S.x (geo.DSO), and S.y and S.z are always zero. we just need to rotate
-            Point3D realS;
-            realS.x= geo.DSO*cosalpha;
-            realS.y=-geo.DSO*sinalpha;
-            realS.z=0;
+
             // Real XYZ coordinates of Detector.
             Point3D realD, realDaux;
             // We know the index of the detector (u,v). Start from there.
@@ -268,12 +270,13 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             //rotate the detector
             realD.x= realDaux.x*cosalpha  + realDaux.y*sinalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
             realD.y=-realDaux.x*sinalpha  + realDaux.y*cosalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
-            float L,l;
+            float L=0,l=0;
+                  
             L = sqrt( (realS.x-realD.x)*(realS.x-realD.x)+ (realS.y-realD.y)*(realS.y-realD.y)+ (realD.z)*(realD.z)); // Sz=0 always.
             l = sqrt( (realS.x-realvoxel.x)*(realS.x-realvoxel.x)
-                    + (realS.y-realvoxel.y)*(realS.y-realvoxel.y)
-                    + (realS.z-realvoxel.z)*(realS.z-realvoxel.z));
-            weigth=L*L*L/(geo.DSD*l*l);
+                         + (realS.y-realvoxel.y)*(realS.y-realvoxel.y)
+                         + (realS.z-realvoxel.z)*(realS.z-realvoxel.z));
+             weigth=L*L*L/(geo.DSD*l*l);
             
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
@@ -353,7 +356,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
     cudaCheckErrors("cudaMalloc fail");
     
     // If we are going to time
-    bool timekernel=false;
+    bool timekernel=true;
     cudaEvent_t start, stop;
     float elapsedTime;
     if (timekernel){

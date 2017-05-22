@@ -281,7 +281,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     cudaCheckErrors("cudaMalloc fail");
     
     
-    bool timekernel=false; // For debuggin purposes
+    bool timekernel=true; // For debuggin purposes
     cudaEvent_t start, stop;
     float elapsedTime;
 

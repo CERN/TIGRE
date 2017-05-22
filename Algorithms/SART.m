@@ -56,7 +56,7 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 blocksize=1;
-[lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
     computeL2=true;
@@ -134,7 +134,9 @@ for ii=1:niter
         %--------- Memory cheap(er)-----------
         
         res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(res,geo,angles(jj))),geo,angles(jj)));
-        res(res<0)=0;
+        if nonneg
+            res(res<0)=0;
+        end
     end
     
     % If quality is being measured
@@ -207,13 +209,13 @@ end
 end
 
 
-function [lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy'};
+function [lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('CBCT:SART:InvalidInput','Invalid number of inputs')
+    error('SART:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -222,7 +224,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('CBCT:SART:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+       error('SART:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
     end
 end
 
@@ -237,7 +239,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
          if isempty(ind)
-            error('CBCT:SART:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+            error('SART:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
         end
         val=argin{jj};
     end
@@ -260,7 +262,7 @@ for ii=1:length(opts)
                 lambda=1;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:SART:InvalidInput','Invalid lambda')
+                    error('SART:InvalidInput','Invalid lambda')
                 end
                 lambda=val;
             end
@@ -269,7 +271,7 @@ for ii=1:length(opts)
                 lamdbared=0.99;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:SART:InvalidInput','Invalid lambda')
+                    error('SART:InvalidInput','Invalid lambda')
                 end
                 lamdbared=val;
             end
@@ -292,7 +294,7 @@ for ii=1:length(opts)
                 continue;
             end
             if isempty(res)
-                error('CBCT:SART:InvalidInput','Invalid Init option')
+                error('SART:InvalidInput','Invalid Init option')
             end
             % % % % % % % ERROR
         case 'initimg'
@@ -303,7 +305,7 @@ for ii=1:length(opts)
                 if isequal(size(val),geo.nVoxel');
                     res=single(val);
                 else
-                    error('CBCT:SART:InvalidInput','Invalid image for initialization');
+                    error('SART:InvalidInput','Invalid image for initialization');
                 end
             end
         case 'qualmeas'
@@ -313,7 +315,7 @@ for ii=1:length(opts)
                 if iscellstr(val)
                     QualMeasOpts=val;
                 else
-                    error('CBCT:SART:InvalidInput','Invalid quality measurement parameters');
+                    error('SART:InvalidInput','Invalid quality measurement parameters');
                 end
             end
          case 'orderstrategy'
@@ -322,8 +324,14 @@ for ii=1:length(opts)
             else
                 OrderStrategy=val;
             end
+          case 'nonneg'
+            if default
+                nonneg=true;
+            else 
+                nonneg=val;
+            end
         otherwise
-            error('CBCT:SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART()']);
+            error('SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option']);
     end
 end
 

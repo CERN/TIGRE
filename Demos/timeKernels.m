@@ -44,26 +44,27 @@ Geometry.accuracy=0.5;
 
 
 
- alpha=1; 
- for ii=0:4
-     Geometry.nDetector=[64; 64]*2^ii;
-     Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
-     for jj=0:4
-         Geometry.nVoxel=[64;64;64]*2^jj;
-         Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
-         img=single(rand(Geometry.nVoxel')); 
-         tic
-         b=Ax(img,Geometry,alpha);
-          t_interpolation(ii+1,jj+1)=toc;
+ alpha=linspace(0,pi,100); 
+ alpha=alpha(1:32);
+%  for ii=0:4
+%      Geometry.nDetector=[64; 64]*2^ii;
+%      Geometry.dDetector=Geometry.sDetector./Geometry.nDetector;
+%      for jj=0:4
+%          Geometry.nVoxel=[64;64;64]*2^jj;
+%          Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
+%          img=single(rand(Geometry.nVoxel')); 
+% %          tic
+% %          b=Ax(img,Geometry,alpha);
+% %           t_interpolation(ii+1,jj+1)=toc;
 %          t_interpolation(ii+1,jj+1)=str2double(evalc('b=Ax(img,Geometry,alpha);'));
 %          t_backprojection(ii+1,jj+1)=str2double(evalc('Atb(b,Geometry,alpha);'));
-         tic
-         Atb(b,Geometry,alpha);
-          t_backprojection(ii+1,jj+1)=toc;
-         clear  b;
-     end
- end
- 
+% %          tic
+% %          Atb(b,Geometry,alpha);
+% %           t_backprojection(ii+1,jj+1)=toc;
+%          clear  b;
+%      end
+%  end
+%  
  Geometry.accuracy=0.5;
  for ii=0:4
      Geometry.nDetector=[64; 64]*2^ii;
@@ -72,19 +73,19 @@ Geometry.accuracy=0.5;
          Geometry.nVoxel=[64;64;64]*2^jj;
          Geometry.dVoxel=Geometry.sVoxel./Geometry.nVoxel;
          img=single(rand(Geometry.nVoxel'));       
-%          t_siddon(ii+1,jj+1)=str2double(evalc('b=Ax(img,Geometry,alpha,''ray-voxel'');'));
-         % Backprojection takes same time, as its just a different weigth
-         tic
-          b=Ax(img,Geometry,alpha,'ray-voxel');
-          t_siddon(ii+1,jj+1)=toc;
+         t_siddon(ii+1,jj+1)=str2double(evalc('b=Ax(img,Geometry,alpha,''ray-voxel'');'));
+         t_backprojection2(ii+1,jj+1)=str2double(evalc('Atb(b,Geometry,alpha,''matched'');'));
+         t_backprojection(ii+1,jj+1)=str2double(evalc('Atb(b,Geometry,alpha,''FDK'');'));
+
+%           t_siddon(ii+1,jj+1)=toc;
          clear  b;
      end
  end
- 
+ break
  %% Plot projection and bakcprojection performance.
- tplot1=t_interpolation'*1000; % base unit 0.1ms
- tplot2=t_siddon'*1000;
- tplot3=t_backprojection'*1000;
+ tplot1=t_interpolation'*100; % base unit 1ms
+ tplot2=t_siddon'*100;
+ tplot3=t_backprojection';
 
  
  
@@ -99,18 +100,19 @@ subplot(121)
 cmap=[cmap; repmat(cmap(end,:),[100,1])];
  
  b=bar3(log10(tplot1));
- zlim([0 log10(15000)])
-
- set(gca,'Ztick',log10([ 1,10,100,1000,10000])); % because now our units are 0.1ms, this doesnt fit with next line, but its rigth
- set(gca,'ZtickLabel',{'0.1ms','1ms','10ms','100ms','1s'});
- title('Projection with Interpolation','fontsize',20)
- xlabel('Detector size','fontsize',20)
+ zlim([0 log10(20000)])
+ set(gca,'Ztick',log10([1,10,100,1000,10000,20000]));
+ set(gca,'ZtickLabel',{'10ns','100ns','1ms','10ms','100ms','200ms'});
+ title('Projection with Interpolation','fontsize',25)
+ xlabel('Detector size','fontsize',25)
  grid on
  ax=gca;
+  set(ax,'fontsize',20);
+
  ax.XTickLabel={'64^2','128^2','256^2','512^2','1024^2'};
  ax.YTickLabel={'64^3','128^3','256^3','512^3','1024^3'};
- ylabel('Image size','fontsize',20)
- zlabel('Time','fontsize',20)
+ ylabel('Image size','fontsize',25)
+ zlabel('Time','fontsize',25)
  colormap(cmap);
  ax.CLim=[0 log10(10000)];
  for k = 1:length(b)
@@ -118,25 +120,27 @@ cmap=[cmap; repmat(cmap(end,:),[100,1])];
     b(k).CData = zdata;
     b(k).FaceColor = 'interp';
  end
- view(-133,26)
  set(gca,'DataAspectRatio',[1 1 0.9]);
- xlim([0,6])
- ylim([0,6])
+ xlim([0,5.4])
+ ylim([0,5.4])
+ view(-133,26)
 
  subplot(122)
  
  b=bar3(log10(tplot2));
- zlim([0 log10(15000)])
- set(gca,'Ztick',log10([ 1,10,100,1000,10000])); % because now our units are 0.1ms, this doesnt fit with next line, but its rigth
- set(gca,'ZtickLabel',{'0.1ms','1ms','10ms','100ms','1s'});
- title('Projection with ray-voxel intersection','fontsize',20)
- xlabel('Detector size','fontsize',20)
+  zlim([0 log10(20000)])
+ set(gca,'Ztick',log10([1,10,100,1000,10000,20000]));
+ set(gca,'ZtickLabel',{'10ns','100ns','1ms','10ms','100ms','200ms'});
+ title('Projection with ray-voxel intersection','fontsize',25)
+ xlabel('Detector size','fontsize',25)
  grid on
  ax=gca;
+  set(ax,'fontsize',20);
+
  ax.XTickLabel={'64^2','128^2','256^2','512^2','1024^2'};
  ax.YTickLabel={'64^3','128^3','256^3','512^3','1024^3'};
- ylabel('Image size','fontsize',20)
- zlabel('Time','fontsize',20)
+ ylabel('Image size','fontsize',25)
+ zlabel('Time','fontsize',25)
  colormap(cmap);
  ax.CLim=[0 log10(10000)];
  for k = 1:length(b)
@@ -144,39 +148,75 @@ cmap=[cmap; repmat(cmap(end,:),[100,1])];
     b(k).CData = zdata;
     b(k).FaceColor = 'interp';
  end
- view(-133,26)
  set(gca,'DataAspectRatio',[1 1 0.9]);
- xlim([0,6])
- ylim([0,6])
+ xlim([0,5.4])
+ ylim([0,5.4])
+ view(-133,26)
 
- 
+ %%
  % Backprojection plot.
+ tplot3=t_backprojection'*100/32;
+ tplot4=t_backprojection2'*100/32;
+ 
  figure(2)
+ subplot(121)
 set(gcf,'units','normalized','outerposition',[0 0 1 1])
 
 
  cmap=plasma();
  cmap=[cmap; repmat(cmap(end,:),[100,1])];
  b=bar3(log10(tplot3));
- zlim([0 log10(10000)])
- set(gca,'Ztick',log10([1,10,100,1000,10000]));
- set(gca,'ZtickLabel',{'1ms','10ms','100ms','1s','10s'});
- title('Backprojection','fontsize',20)
- xlabel('Detector size','fontsize',20)
+ zlim([0 log10(20000)])
+ set(gca,'Ztick',log10([1,10,100,1000,10000,20000]));
+ set(gca,'ZtickLabel',{'10ns','100ns','1ms','10ms','100ms','200ms'});
+ title('Backprojection (FDK)','fontsize',25)
+ xlabel('Detector size','fontsize',25)
  grid on
  ax=gca;
  ax.XTickLabel={'64^2','128^2','256^2','512^2','1024^2'};
  ax.YTickLabel={'64^3','128^3','256^3','512^3','1024^3'};
- ylabel('Image size','fontsize',20)
- zlabel('Time','fontsize',20)
+ set(ax,'fontsize',20);
+ ylabel('Image size','fontsize',25)
+ zlabel('Time','fontsize',25)
  colormap(cmap);
- ax.CLim=[0 log10(10000)];
+ ax.CLim=[0 log10(20000)];
  for k = 1:length(b)
     zdata = b(k).ZData;
     b(k).CData = zdata;
     b(k).FaceColor = 'interp';
  end
- set(gca,'DataAspectRatio',[1 1 0.9]);
- xlim([0,6])
- ylim([0,6])
+ set(gca,'DataAspectRatio',[1 1 1]);
+ xlim([0,5.4])
+ ylim([0,5.4])
+ view(-133,26)
+ 
+  subplot(122)
+set(gcf,'units','normalized','outerposition',[0 0 1 1])
+
+
+ cmap=plasma();
+ cmap=[cmap; repmat(cmap(end,:),[100,1])];
+ b=bar3(log10(tplot4));
+ zlim([0 log10(20000)])
+ set(gca,'Ztick',log10([1,10,100,1000,10000,20000]));
+ set(gca,'ZtickLabel',{'10ns','100ns','1ms','10ms','100ms','200ms'});
+ title('Backprojection (pseudo-matched)','fontsize',25)
+ xlabel('Detector size','fontsize',25)
+ grid on
+ ax=gca;
+ ax.XTickLabel={'64^2','128^2','256^2','512^2','1024^2'};
+ ax.YTickLabel={'64^3','128^3','256^3','512^3','1024^3'};
+ set(ax,'fontsize',20);
+ ylabel('Image size','fontsize',25)
+ zlabel('Time','fontsize',25)
+ colormap(cmap);
+ ax.CLim=[0 log10(20000)];
+ for k = 1:length(b)
+    zdata = b(k).ZData;
+    b(k).CData = zdata;
+    b(k).FaceColor = 'interp';
+ end
+ set(gca,'DataAspectRatio',[1 1 1]);
+ xlim([0,5.4])
+ ylim([0,5.4])
  view(-133,26)

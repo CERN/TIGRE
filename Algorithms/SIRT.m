@@ -35,23 +35,23 @@ function [res,errorL2,qualMeasOut]=SIRT(proj,geo,angles,niter,varargin)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
-% 
-% Copyright (c) 2015, University of Bath and 
+%
+% Copyright (c) 2015, University of Bath and
 %                     CERN-European Organization for Nuclear Research
 %                     All rights reserved.
 %
-% License:            Open Source under BSD. 
+% License:            Open Source under BSD.
 %                     See the full license at
 %                     https://github.com/CERN/TIGRE/license.txt
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
-% Coded by:           Ander Biguri 
+% Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
 
 %% Deal with input parameters
 
-[lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lamdbared,verbose,QualMeasOpts,nonneg]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
     computeL2=true;
@@ -100,17 +100,20 @@ for ii=1:niter
         res_prev=res;
     end
     % --------- Memory expensive-----------
-%         proj_err=proj-Ax(res,geo,angles);                 %                                 (b-Ax)
-%         weighted_err=W.*proj_err;                         %                          W^-1 * (b-Ax)
-%         backprj=Atb(weighted_err,geo,angles);             %                     At * W^-1 * (b-Ax)
-%         weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
-%         res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)
+    %         proj_err=proj-Ax(res,geo,angles);                 %                                 (b-Ax)
+    %         weighted_err=W.*proj_err;                         %                          W^-1 * (b-Ax)
+    %         backprj=Atb(weighted_err,geo,angles);             %                     At * W^-1 * (b-Ax)
+    %         weigth_backprj=bsxfun(@times,1./V,backprj);       %                 V * At * W^-1 * (b-Ax)
+    %         res=res+lambda*weigth_backprj;                    % x= x + lambda * V * At * W^-1 * (b-Ax)
     % ------------------------------------
     % --------- Memory cheap(er)-----------
     
     res=res+lambda*bsxfun(@times,1./V,Atb(W.*(proj-Ax(res,geo,angles)),geo,angles)); % x= x + lambda * V * At * W^-1 * (b-Ax)
     % ------------------------------------
-    res(res<0)=0;
+    
+    if nonneg
+        res(res<0)=0;
+    end
     
     % If quality is being measured
     if measurequality
@@ -118,7 +121,7 @@ for ii=1:niter
         qualMeasOut(:,ii)=Measure_Quality(res_prev,res,QualMeasOpts);
     end
     
-   if computeL2
+    if computeL2
         errornow=im3Dnorm(proj-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
         % If the error is not minimized.
         if  ii~=1 && errornow>errorL2(end)
@@ -131,7 +134,7 @@ for ii=1:niter
     end
     lambda=lambda*lamdbared;
     
-   
+    
     if (ii==1 && verbose==1);
         expected_time=toc*niter;
         disp('SIRT');
@@ -183,8 +186,8 @@ end
 end
 
 
-function [lambda,res,lamdbared,verbose,QualMeasOpts]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas'};
+function [lambda,res,lamdbared,verbose,QualMeasOpts,nonneg]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','nonneg'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -198,7 +201,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('CBCT:SIRT:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+        error('CBCT:SIRT:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -213,7 +216,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
         if isempty(ind)
-            error('CBCT:SIRT:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+            error('CBCT:SIRT:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -291,6 +294,12 @@ for ii=1:length(opts)
                 else
                     error('CBCT:SIRT:InvalidInput','Invalid quality measurement parameters');
                 end
+            end
+              case 'nonneg'
+            if default
+                nonneg=true;
+            else 
+                nonneg=val;
             end
         otherwise
             error('CBCT:SIRT:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SIRT()']);
