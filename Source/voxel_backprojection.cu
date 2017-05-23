@@ -4,7 +4,7 @@
  *
  *
  * CODE by  Ander Biguri
- * Optimized and modified by Robert Bryll
+ * Optimized and modified by RB
  * ---------------------------------------------------------------------------
  * ---------------------------------------------------------------------------
  * Copyright (c) 2015, University of Bath and CERN- European Organization for
@@ -94,7 +94,7 @@ do { \
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// The optimal values of two constants obtained by Robert Bryll on NVIDIA Quadro K2200 (4 GB RAM, 640 CUDA cores) for 512^3 volume and 512^3 projections (512 proj, each 512 x 512) were:
+// The optimal values of two constants obtained by RB on NVIDIA Quadro K2200 (4 GB RAM, 640 CUDA cores) for 512^3 volume and 512^3 projections (512 proj, each 512 x 512) were:
 // PROJ_PER_KERNEL = 32 or 16 (very similar times)
 // VOXELS_PER_THREAD = 8
 // Speedup of the entire FDK backprojection (not only kernel run, also memcpy etc.) was nearly 4x relative to the original (single projection, single voxel per thread) code.
@@ -245,8 +245,8 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             
-            voxelColumn[colIdx]+=tex2DLayered(tex, u +0.5 ,
-                    v +0.5 ,
+            voxelColumn[colIdx]+=tex2DLayered(tex, v +0.5 ,// u and v seem swaped, but this is due to the row/column major
+                    u +0.5 ,
                     indAlpha)*weigth;
         }  // END iterating through column of voxels
         
@@ -262,7 +262,8 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         if(indZ>=geo.nVoxelZ)
             break;   // break the loop.
         
-        unsigned long long idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
+         unsigned long long idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
+//         unsigned long long idx =indY*geo.nVoxelX*geo.nVoxelZ+indZ*geo.nVoxelX + indX;
         image[idx] = voxelColumn[colIdx];   // Read the current volume value that we'll update by computing values from MULTIPLE projections (not just one)
         // We'll be updating the local (register) variable, avoiding reads/writes from the slow main memory.
         // According to references (Papenhausen), doing = is better than +=, since += requires main memory read followed by a write.
@@ -326,7 +327,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     cudaCheckErrors("cudaMalloc fail");
     
     // If we are going to time
-    bool timekernel=true;
+    bool timekernel=false;
     cudaEvent_t start, stop;
     float elapsedTime;
     

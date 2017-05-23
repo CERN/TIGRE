@@ -214,7 +214,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     
     
 //     If we are going to time
-    bool timekernel=true;
+    bool timekernel=false;
     cudaEvent_t start, stop;
     float elapsedTime;
 

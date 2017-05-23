@@ -246,8 +246,8 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             float u,v;
             u=y+geo.nDetecU/2-0.5;
             v=z+geo.nDetecV/2-0.5;
-            float sample=tex2DLayered(tex, u +0.5 ,
-                    v +0.5 ,
+            float sample=tex2DLayered(tex, v +0.5 ,    // u and v seem swaped, but this is due to the row/column major
+                    u +0.5 ,
                     indAlpha);
             float weigth=0;
             //
@@ -356,7 +356,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
     cudaCheckErrors("cudaMalloc fail");
     
     // If we are going to time
-    bool timekernel=true;
+    bool timekernel=false;
     cudaEvent_t start, stop;
     float elapsedTime;
     if (timekernel){

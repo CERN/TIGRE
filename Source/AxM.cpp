@@ -1,7 +1,6 @@
-
 /*-------------------------------------------------------------------------
  *
- * MATLAB MEX gateway for backprojection
+ * MATLAB MEX gateway for projection
  *
  * This file gets the data from MATLAB, checks it for errors and then 
  * parses it to C and calls the relevant C/CUDA fucntions.
@@ -51,66 +50,80 @@ Codes  : https://github.com/CERN/TIGRE
 #include "tmwtypes.h"
 #include "mex.h"
 #include "matrix.h"
-#include "voxel_backprojection.hpp"
-#include "voxel_backprojection2.hpp"
-
+#include "ray_interpolated_projection_motion.hpp"
+#include "Siddon_projection.hpp"
 #include <string.h>
-#include "voxel_backprojection_parallel.hpp"
-
-// #include <time.h>
-
-
-
-
 
 /**
  * MEX gateway
- *
- * This function takes data from MATLAB and passes it to the MEX code.
- * It checks and casts the inputs and prepares teh outputs for MATLAB.
- *
- *
  */
 
+
+
 void mexFunction(int  nlhs , mxArray *plhs[],
-        int nrhs, mxArray const *prhs[]){
+        int nrhs, mxArray const *prhs[])
+{
+//     clock_t begin, end;
+//     begin = clock();
+    
     
     //Check amount of inputs
-    if (nrhs<3 ||nrhs>4) {
-        mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput", "Wrong number of inputs provided");
+    if (nrhs!=5) {
+        mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput", "Invalid number of inputs to MEX file.");
     }
-    /*
-     ** 4rd argument is matched or un matched.
-     */
-    bool krylov_proj=false; // Caled krylov, because I designed it for krylov case....
+    ////////////////////////////////////////////////////////////////////////
+    //5th argument: MVF
+    ////////////////////////////////////////////////////////////////////////
+    if ( !mxIsStruct(prhs[4]))
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","5th input shoudl be a structure");
+     float   *  mvfX =(float*)mxGetData(mxGetField(prhs[4],0,"x"));
+     float   *  mvfY =(float*)mxGetData(mxGetField(prhs[4],0,"y"));
+     float   *  mvfZ =(float*)mxGetData(mxGetField(prhs[4],0,"z"));
+    // lets assume for now that we now what we are doing and sizes are the same
+     const mwSize *size_mvf= mxGetDimensions(mxGetField(prhs[4],0,"x")); 
+
+//     float *  mvfX = (float*)malloc(size_mvf[0] *size_mvf[1] *size_mvf[2]* sizeof(float));
+//     float *  mvfY = (float*)malloc(size_mvf[0] *size_mvf[1] *size_mvf[2]* sizeof(float));
+//     float *  mvfZ = (float*)malloc(size_mvf[0] *size_mvf[1] *size_mvf[2]* sizeof(float));
+// 
+//     for (int i=0;i<size_mvf[0] *size_mvf[1] *size_mvf[2];i++){
+//         mvfX[i]=(float)mvfXaux[i];
+//         mvfY[i]=(float)mvfYaux[i];
+//         mvfZ[i]=(float)mvfZaux[i];
+//     }
+    
+    mfvInfo mvfData;
+    mvfData.nVoxelX=(int)size_mvf[0];
+    mvfData.nVoxelY=(int)size_mvf[1];
+    mvfData.nVoxelZ=(int)size_mvf[2];
+    
+    ////////////////////////////
+    //4rd argument is interpolated or ray-voxel
+    bool interpolated=false;
     if (nrhs==4){
         if ( mxIsChar(prhs[3]) != 1)
-            mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput","4rd input shoudl be a string");
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be a string");
         
         /* copy the string data from prhs[0] into a C string input_ buf.    */
         char *krylov = mxArrayToString(prhs[3]);
-        if (strcmp(krylov,"FDK") && strcmp(krylov,"matched"))
-            mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput","4rd input shoudl be either 'FDK' or 'matched'");
+        if (strcmp(krylov,"interpolated") && strcmp(krylov,"ray-voxel"))
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be either 'interpolated' or 'ray-voxel'");
         else
-            if (!strcmp(krylov,"matched"))
-                krylov_proj=true;
+            // If its not ray-voxel, its "interpolated"
+            if (~strcmp(krylov,"ray-voxel"))
+                interpolated=true;
     }
-    /*
-     ** Third argument: angle of projection.
-     */
-    size_t mrows,ncols;
+    ///////////////////////// 3rd argument: angle of projection.
     
-    mrows = mxGetM(prhs[2]);
-    ncols = mxGetN(prhs[2]);
-    
+    size_t mrows = mxGetM(prhs[2]);
+    size_t nalpha = mxGetN(prhs[2]);
     if( !mxIsDouble(prhs[2]) || mxIsComplex(prhs[2]) ||
             !(mrows==1) ) {
-        mexErrMsgIdAndTxt( "CBCT:MEX:Atb:input",
-                "Input alpha must be a double, noncomplex array.");
+        mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput",
+                "Input alpha must be a noncomplex array.");
     }
-    
-    size_t nalpha=ncols;
     mxArray const * const ptralphas=prhs[2];
+    
     
     double const * const alphasM= static_cast<double const *>(mxGetData(ptralphas));
     // just copy paste the data to a float array
@@ -118,70 +131,37 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     for (int i=0;i<nalpha;i++)
         alphas[i]=(float)alphasM[i];
     
-    /**
-     * First input: The projections
-     */
     
-    // First input should be b from (Ax=b) i.e. the projections.
-    mxArray const * const image = prhs[0];                 // Get pointer of the data
-    mwSize const numDims = mxGetNumberOfDimensions(image); // Get numer of Dimensions of input matrix.
+    ////////////////////////// First input.
+    // First input should be x from (Ax=b), or the image.
+    mxArray const * const image = prhs[0];
+    mwSize const numDims = mxGetNumberOfDimensions(image);
+    
     // Image should be dim 3
-    if (!(numDims==3 && nalpha>1) && !(numDims==2 && nalpha==1) ){
-        mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",  "Projection data is not the rigth size");
+    if (numDims!=3){
+        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput", "Invalid dimension size of image (x) to MEX file.");
     }
      if( !mxIsSingle(prhs[0])) {
        mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput",
                 "Input image must be a single noncomplex array.");
      }
     // Now that input is ok, parse it to C data types.
-    // NOTE: while Number of dimensions is the size of the matrix in Matlab, the data is 1D row-wise mayor.
-    
+    float const * const imgaux = static_cast<float const *>(mxGetData(image));
     // We need a float image, and, unfortunatedly, the only way of casting it is by value
-    const mwSize *size_proj= mxGetDimensions(image); //get size of image
-    mrows = mxGetM(image);
-    ncols = mxGetN(image);
-    size_t size_proj2;
-    if (nalpha==1)
-        size_proj2=1;
-    else
-        size_proj2=size_proj[2];
+    const mwSize *size_img= mxGetDimensions(image); //get size of image
+    
+    float *  img = (float*)malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float));
+    for (unsigned long long i=0;i<size_img[0] *size_img[1] *size_img[2];i++)
+        img[i]=(float)imgaux[i];
+    
+    ///////////////////// Second input argument,
+    // Geometry structure that has all the needed geometric data.
     
     
-    float const * const projections= static_cast<float const *>(mxGetData(image));
-
-    
-    // TODO: change the kernel, so it does this inside, no need to permute
-//     float *  projections= (float*)malloc(size_proj[0] *size_proj[1] *size_proj2* sizeof(float));
-// 
-// 
-//     const long size0 = size_proj[0];
-//     const long size1 = size_proj[1];
-//     const long size2 = size_proj2;
-//     // Permute(imgaux,[2 1 3]);
-//     
-//     for (unsigned int j = 0; j < size2; j++)
-//     {
-//         unsigned long jOffset = j*size0*size1;
-//         for (unsigned int k = 0; k < size0; k++)
-//         {
-//             int kOffset1 = k*size1;
-//             for (unsigned int i = 0; i < size1; i++)
-//             {
-//                 unsigned long iOffset2 = i*size0;
-//                 img[i + jOffset + kOffset1] = imgaux[iOffset2 + jOffset + k];
-//             }
-//         }
-//     }
-      
-    
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    /**
-     * Second input: Geometry structure
-     */
     mxArray * geometryMex=(mxArray*)prhs[1];
-    
+
     // IMPORTANT-> Make sure Matlab creates the struct in this order.
-    const char *fieldnames[14];
+    const char *fieldnames[13];
     fieldnames[0] = "nVoxel";
     fieldnames[1] = "sVoxel";
     fieldnames[2] = "dVoxel";
@@ -195,22 +175,22 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     fieldnames[10]= "accuracy";
     fieldnames[11]= "mode";
     fieldnames[12]= "COR";
-    fieldnames[13]= "rotDetector";
-    // Make sure input is structure
-    if(!mxIsStruct(geometryMex))
-        mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
-                "Second input must be a structure.");
-    // Check number of fields
-    int nfields = mxGetNumberOfFields(geometryMex);
-    if (nfields < 10 || nfields >14 )
-        mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput","There are missing or extra fields in the geometry");
+
     
+    if(!mxIsStruct(geometryMex))
+        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput",
+                "Second input must be a structure.");
+    int nfields = mxGetNumberOfFields(geometryMex);
+    if (nfields < 10 || nfields >13 ){
+         
+        mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput","there are missing or extra fields in the geometry");
+    }
+    // Check that all names are good
     mxArray    *tmp;
+    size_t ncols;
     bool offsetAllOrig=false;
     bool offsetAllDetec=false;
-    bool rotAllDetec=false;
-    bool CORAll=false;
-    for(int ifield=0; ifield<14; ifield++) {
+    for(int ifield=0; ifield<13; ifield++) {
         tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
         if(tmp==NULL){
            //tofix
@@ -223,28 +203,21 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 mrows = mxGetM(tmp);
                 ncols = mxGetN(tmp);
                 if (mrows!=3 || ncols!=1){
+                    
                     mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
-                    mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
+                    mexPrintf("%d x %d \n", "FIELD: ", (int)mrows,(int)ncols);
+                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
                             "Above field has wrong size! Should be 3x1!");
                 }
-                break;
-                // this ones should be 2x1
-            case 3:case 4:case 5:
-                mrows = mxGetM(tmp);
-                ncols = mxGetN(tmp);
-                if (mrows!=2 || ncols!=1){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
-                    mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
-                            "Above field has wrong size! Should be 2x1!");
-                }
-                break;
-                // this ones should be 1x1
                 
-            case 12://COR
+                break;
+                //this one can be either 3x1 or 3xNangles
+            case 8:
+   
                 mrows = mxGetM(tmp);
                 ncols = mxGetN(tmp);
 
-                if (mrows!=1 || ( ncols!=1&& ncols!=nalpha) ){
+                if (mrows!=3 || ( ncols!=1&& ncols!=nalpha) ){
                     mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
                     mexPrintf("%ld x %ld \n", "FIELD: ", (long int)mrows,(long int)ncols);
                     mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
@@ -253,31 +226,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 }
                
                 if (ncols==nalpha)
-                    CORAll=true;
-                break;
-                
-            case 6:case 7:case 10:
-                mrows = mxGetM(tmp);
-                ncols = mxGetN(tmp);
-                if (mrows!=1 || ncols!=1){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
-                    mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",
-                            "Above field has wrong size! Should be 1x1!");
-                }
-                break;
-            case 8:
-                mrows = mxGetM(tmp);
-                ncols = mxGetN(tmp);
-                if (mrows!=3 || ( ncols!=1&& ncols!=nalpha) ){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
-                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
-                            "Above field has wrong size! Should be 3x1 or 3xlength(angles)!");
-                    
-                }
-                
-                if (ncols==nalpha)
                     offsetAllOrig=true;
-                
                 break;
                 
             case 9:
@@ -286,12 +235,32 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 if (mrows!=2 || ( ncols!=1&& ncols!=nalpha)){
                     mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
                     mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
-                            "Above field has wrong size! Should be 2x1 or 3xlength(angles)!");
-                    
+                            "Above field has wrong size! Should be 2x1 or 2xlength(angles)!");
+                   
                 }
                 
                 if (ncols==nalpha)
                     offsetAllDetec=true;
+                break;
+                // this ones should be 2x1
+            case 3:case 4:case 5:
+                mrows = mxGetM(tmp);
+                ncols = mxGetN(tmp);
+                if (mrows!=2 || ncols!=1){
+                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
+                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
+                            "Above field has wrong size! Should be 2x1!");
+                }
+                break;
+                // this ones should be 1x1
+            case 6:case 7:case 10:case 12:
+                mrows = mxGetM(tmp);
+                ncols = mxGetN(tmp);
+                if (mrows!=1 || ncols!=1){
+                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
+                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
+                            "Above field has wrong size! Should be 1x1!");
+                }
                 
                 break;
             case 11:
@@ -300,41 +269,28 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                     mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
                             "Above field is not string!");
                 }
-                
-                break;
-            case 13:
-                mrows = mxGetM(tmp);
-                ncols = mxGetN(tmp);
-                if (mrows!=3 || ( ncols!=1&& ncols!=nalpha)){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
-                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
-                            "Above field has wrong size! Should be 3x1 or 3xlength(angles)!");
-                   
-                }
-                
-                if (ncols==nalpha)
-                    rotAllDetec=true;
                 break;
             default:
-                mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
-                        "Something wrong happened. Ensure Geometric struct has correct amount of inputs.");
+                mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input",
+                        "something wrong happened. Ensure Geometric struct has correct amount of inputs.");
         }
         
     }
     // Now we know that all the input struct is good! Parse it from mxArrays to
     // C structures that MEX can understand.
-    
     double * nVoxel, *nDetec; //we need to cast these to int
-    double * sVoxel, *dVoxel,*sDetec,*dDetec, *DSO, *DSD,*offOrig,*offDetec;
-    double *acc, *COR,*rotDetector;
+    double * sVoxel, *dVoxel,*sDetec,*dDetec, *DSO, *DSD;
+    double *offOrig,*offDetec;
+    double *  acc, *COR;
     const char* mode;
-    bool coneBeam=true;
-    Geometry geo;
     int c;
+    Geometry geo;
     geo.unitX=1;geo.unitY=1;geo.unitZ=1;
-    for(int ifield=0; ifield<14; ifield++) {
+    bool coneBeam=true;
+//     mexPrintf("%d \n",nfields);
+    for(int ifield=0; ifield<13; ifield++) {
         tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
-          if(tmp==NULL){
+         if(tmp==NULL){
            //tofix
             continue;
         }
@@ -360,18 +316,18 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 break;
             case 3:
                 nDetec=(double *)mxGetData(tmp);
-                geo.nDetecU=(int)nDetec[1];
-                geo.nDetecV=(int)nDetec[0];
+                geo.nDetecU=(int)nDetec[0];
+                geo.nDetecV=(int)nDetec[1];
                 break;
             case 4:
                 sDetec=(double *)mxGetData(tmp);
-                geo.sDetecU=(float)sDetec[1];
-                geo.sDetecV=(float)sDetec[0];
+                geo.sDetecU=(float)sDetec[0];
+                geo.sDetecV=(float)sDetec[1];
                 break;
             case 5:
                 dDetec=(double *)mxGetData(tmp);
-                geo.dDetecU=(float)dDetec[1];
-                geo.dDetecV=(float)dDetec[0];
+                geo.dDetecU=(float)dDetec[0];
+                geo.dDetecV=(float)dDetec[1];
                 break;
             case 6:
                 DSD=(double *)mxGetData(tmp);
@@ -380,8 +336,10 @@ void mexFunction(int  nlhs , mxArray *plhs[],
             case 7:
                 DSO=(double *)mxGetData(tmp);
                 geo.DSO=(float)DSO[0];
-            case 8:
                 
+                break;
+            case 8:
+               
                 geo.offOrigX=(float*)malloc(nalpha * sizeof(float));
                 geo.offOrigY=(float*)malloc(nalpha * sizeof(float));
                 geo.offOrigZ=(float*)malloc(nalpha * sizeof(float));
@@ -408,12 +366,15 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                         c=i;
                     else
                         c=0;
-                    geo.offDetecU[i]=(float)offDetec[1+2*c];
-                    geo.offDetecV[i]=(float)offDetec[0+2*c];
+                    geo.offDetecU[i]=(float)offDetec[0+2*c];
+                    geo.offDetecV[i]=(float)offDetec[1+2*c];
                 }
                 break;
             case 10:
                 acc=(double*)mxGetData(tmp);
+                if (acc[0]<0.001)
+                   mexErrMsgIdAndTxt( "CBCT:MEX:Ax:Accuracy","Accuracy should be bigger than 0");
+                   
                 geo.accuracy=(float)acc[0];
                 break;
             case 11:
@@ -422,48 +383,18 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 if (!strcmp(mode,"parallel"))
                     coneBeam=false;
                 else if (strcmp(mode,"cone"))
-                    mexErrMsgIdAndTxt( "CBCT:MEX:Atb:Mode","Unkown mode. Should be parallel or cone");
-                break;
+                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:Mode","Unkown mode. Should be parallel or cone");
+                break; 
              case 12:
                 COR=(double*)mxGetData(tmp);
-                geo.COR=(float*)malloc(nalpha * sizeof(float));
-                 for (int i=0;i<nalpha;i++){
-                    if (CORAll)
-                        c=i;
-                    else
-                        c=0;
-                    
-                    geo.COR[i]  = (float)COR[0+c]; 
-                }
-                break;
-            case 13:
-                geo.dRoll= (float*)malloc(nalpha * sizeof(float));
-                geo.dPitch=(float*)malloc(nalpha * sizeof(float));
-                geo.dYaw=  (float*)malloc(nalpha * sizeof(float));
-                
-                rotDetector=(double *)mxGetData(tmp);
-                
-                for (int i=0;i<nalpha;i++){
-                    if (rotAllDetec)
-                        c=i;
-                    else
-                        c=0;
-                    
-                    geo.dYaw[i]  = (float)rotDetector[0+3*c];
-                    geo.dPitch[i]= (float)rotDetector[1+3*c];
-                    geo.dRoll[i] = (float)rotDetector[2+3*c];
-
-                }
+                geo.COR=(float)COR[0];
                 break;
             default:
-                mexErrMsgIdAndTxt( "CBCT:MEX:Atb:unknown","This shoudl not happen. Weird");
+                mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","This shoudl not happen. Weird");
                 break;
                 
         }
     }
-    
-    //Spetiall cases
-    // Accuracy
     tmp=mxGetField(geometryMex,0,fieldnames[10]);
     if (tmp==NULL)
         geo.accuracy=0.5;
@@ -471,69 +402,56 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     tmp=mxGetField(geometryMex,0,fieldnames[11]);
     if (tmp==NULL)
         coneBeam=true;
-   // COR
+    // COR
     tmp=mxGetField(geometryMex,0,fieldnames[12]);
-    if (tmp==NULL){
-        geo.COR=(float*)malloc(nalpha * sizeof(float));
-        memset(geo.COR,0,nalpha * sizeof(float));
-    }
-    // angle rotation detector
-    tmp=mxGetField(geometryMex,0,fieldnames[13]);
-    if (tmp==NULL){
-       
-        geo.dRoll= (float*)malloc(nalpha * sizeof(float));
-        geo.dPitch=(float*)malloc(nalpha * sizeof(float));
-        geo.dYaw=  (float*)malloc(nalpha * sizeof(float));
-        memset(geo.dRoll,0,nalpha * sizeof(float));
-        memset(geo.dPitch,0,nalpha * sizeof(float));
-        memset(geo.dYaw,0,nalpha * sizeof(float));
-    }
-    /*
-     * allocate memory for the output
-     */
+    if (tmp==NULL)
+        geo.COR=0.0;
+    // Additional test
+    if( (size_img[0]!=geo.nVoxelX)|(size_img[1]!=geo.nVoxelY)|(size_img[2]!=geo.nVoxelZ))
+        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:input",
+                "Image size and nVoxel are not same size.");
     
-//     float* result = (float*)malloc(geo.nVoxelX *geo.nVoxelY*geo.nVoxelZ*sizeof(float));
+    size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(float);
     
-    
-    /*
-     * Call the CUDA kernel
-     */
-    mwSize imgsize[3];
-    imgsize[0]=geo.nVoxelX;
-    imgsize[1]=geo.nVoxelY;
-    imgsize[2]=geo.nVoxelZ;
-     plhs[0] = mxCreateNumericArray(3,imgsize, mxSINGLE_CLASS, mxREAL);
-    float *result = (float *)mxGetPr(plhs[0]);
-    if (coneBeam){
-        if (krylov_proj){
-            voxel_backprojection2(projections,geo,result,alphas,nalpha);
+    float** result = (float**)malloc(nalpha * sizeof(float*));
+    for (int i=0; i<nalpha ;i++)
+        result[i]=(float*)malloc(geo.nDetecU*geo.nDetecV *sizeof(float));
+    // call the real function
+//     if (coneBeam){
+        if (interpolated){
+            siddon_ray_projection(img,geo,result,alphas,nalpha);
+        }else{
+            interpolation_projection_motion(img,geo,result,alphas,nalpha,mvfX,mvfY,mvfZ,mvfData);
         }
-        else{
-            voxel_backprojection(projections,geo,result,alphas,nalpha);
-        }
-    }else{
-//         if (krylov_proj){
-//             voxel_backprojection_parallel2(img,geo,result,alphas,nalpha);
-//             
+//     }else{
+//         if (interpolated){
+// //             mexErrMsgIdAndTxt( "CBCT:MEX:Ax:debug",
+// //                             "ray-voxel intersection is still unavailable for parallel beam, as there are some bugs on it.");
+//             siddon_ray_projection_parallel(img,geo,result,alphas,nalpha);
+//         }else{
+//             interpolation_projection_parallel(img,geo,result,alphas,nalpha);
 //         }
-//         else{
-            voxel_backprojection_parallel(projections,geo,result,alphas,nalpha);
-//         }
-
-    }
+//     }
+    // Set outputs and exit
     
-    /*
-     * Prepare the outputs
-     */
-
+    mwSize* outsize;
+    outsize[0]=geo.nDetecV;
+    outsize[1]=geo.nDetecU;
+    outsize[2]= nalpha;
     
-   
+    plhs[0] = mxCreateNumericArray(3,outsize,mxSINGLE_CLASS,mxREAL);
+    float *outProjections = (float*)mxGetPr(plhs[0]);
+    for (int i=0; i<nalpha ;i++)
+        for (unsigned long j=0; j<geo.nDetecU*geo.nDetecV;j++)
+            outProjections[geo.nDetecU*geo.nDetecV*i+j]=(float)result[i][j];
+            
     
-
+    for (int i=0; i<nalpha ;i++)
+        free (result[i]);
+    free(result);
     
-//     free(img);
+    // Free image data
+    free(img);
+    return; 
     
-    return;
 }
-
-

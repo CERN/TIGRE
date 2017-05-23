@@ -466,12 +466,28 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(float);
     
-    float** result = (float**)malloc(nalpha * sizeof(float*));
-    for (int i=0; i<nalpha ;i++)
-        result[i]=(float*)malloc(geo.nDetecU*geo.nDetecV *sizeof(float));
+
+    mwSize outsize[3];
+    outsize[0]=geo.nDetecV;
+    outsize[1]=geo.nDetecU;
+    outsize[2]= nalpha;
+    plhs[0] = mxCreateNumericArray(3, outsize, mxSINGLE_CLASS, mxREAL);
+	float *outProjections = (float*)mxGetPr(plhs[0]);  // WE will NOT be freeing this pointer!
+
+													   // MODIFICATION, RB, 5/12/2017: As said above, we do not allocate anything, just
+													   // set pointers in result to point to outProjections
+	float** result = (float**)malloc(nalpha * sizeof(float*)); // Thi sonly allocates memory for pointers
+	unsigned long long projSizeInPixels = geo.nDetecU * geo.nDetecV;
+	for (int i = 0; i < nalpha; i++)
+	{
+		unsigned long long currProjIndex = projSizeInPixels*i;
+		result[i] = &outProjections[currProjIndex]; // now the pointers are the same
+	}   
+    
+    
+    
     
     // call the real function
-    
     if (coneBeam){
         if (rayvoxel){
             siddon_ray_projection(img,geo,result,alphas,nalpha);
@@ -480,33 +496,13 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         }
     }else{
         if (rayvoxel){
-//             mexErrMsgIdAndTxt( "CBCT:MEX:Ax:debug",
-//                             "ray-voxel intersection is still unavailable for parallel beam, as there are some bugs on it.");
             siddon_ray_projection_parallel(img,geo,result,alphas,nalpha);
         }else{
             interpolation_projection_parallel(img,geo,result,alphas,nalpha);
         }
     }
-    // Set outputs and exit
     
-    mwSize outsize[3];
-    outsize[0]=geo.nDetecV;
-    outsize[1]=geo.nDetecU;
-    outsize[2]= nalpha;
-    
-    plhs[0] = mxCreateNumericArray(3,outsize,mxSINGLE_CLASS,mxREAL);
-    float *outProjections = (float*)mxGetPr(plhs[0]);
-    for (int i=0; i<nalpha ;i++)
-        for (unsigned long j=0; j<geo.nDetecU*geo.nDetecV;j++)
-            outProjections[geo.nDetecU*geo.nDetecV*i+j]=(float)result[i][j];
-            
-    
-    for (unsigned int i=0; i<nalpha ;i++)
-        free (result[i]);
-    free(result);
-    
-    // Free image data
-    //free(img);
+   
     return; 
     
 }

@@ -96,11 +96,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising", "Image is not 3D");
     }
     // Now that input is ok, parse it to C data types.
-    float const * const imgaux = static_cast<float const *>(mxGetData(image));
+    float const * const img = static_cast<float const *>(mxGetData(image));
     // We need a float image, and, unfortunatedly, the only way of casting it is by value
     const mwSize *size_img= mxGetDimensions(image); //get size of image
     
-    float *  img = (float*)malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float));
+//     float *  img = (float*)malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float));
 //     for (int i=0;i<size_img[0] *size_img[1] *size_img[2];i++)
 //         img[i]=(float)imgaux[i];
 //     for(int i=0;i<size_img[0];i++)
@@ -108,26 +108,26 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 //             for(int k=0;k<size_img[2];k++)
 //                img[i*size_img[0]*size_img[1]+j*size_img[1]+k]=(float)imgaux[k*size_img[1]*size_img[2]+j*size_img[2]+i];
 //     
-    for(int i=0;i<size_img[0]*size_img[1]*size_img[2];i++)
-        img[i]=(float)imgaux[i];
+//     for(int i=0;i<size_img[0]*size_img[1]*size_img[2];i++)
+//         img[i]=(float)imgaux[i];
     //////////////
-    
+    //prepareotputs
+    plhs[0] = mxCreateNumericArray(3,size_img, mxSINGLE_CLASS, mxREAL);
+    float *imgout =(float*) mxGetPr(plhs[0]);
     // Allocte output image
-    float *  imgout = (float*)malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float));
+//     float *  imgout = (float*)malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float));
     // call C function with the CUDA denoising
     const float spacing[3]={1,1,1};
     const long imageSize[3]={size_img[0] ,size_img[1],size_img[2] };
    
     tvdenoising(img,imgout, lambda, spacing, imageSize, maxIter); 
     
-    //prepareotputs
-    plhs[0] = mxCreateNumericArray(3,size_img, mxSINGLE_CLASS, mxREAL);
-    float *mxImgout =(float*) mxGetPr(plhs[0]);
     
-    memcpy(mxImgout,imgout,size_img[0] *size_img[1] *size_img[2]*sizeof(float));
+    
+//     memcpy(mxImgout,imgout,size_img[0] *size_img[1] *size_img[2]*sizeof(float));
     //free memory
-    free(img);
-    free(imgout);
+//     free(img);
+//     free(imgout);
      
 
 }
