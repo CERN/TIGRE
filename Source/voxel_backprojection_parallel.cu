@@ -255,8 +255,8 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
-            voxelColumn[colIdx]+=tex3D(tex, u +0.5 ,
-                    v +0.5 ,
+            voxelColumn[colIdx]+=tex3D(tex, v +0.5 ,
+                    u +0.5 ,
                     indAlpha+0.5);
 
         }  // END iterating through column of voxels
@@ -300,7 +300,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
      */
     // copy data to CUDA memory
     cudaArray *d_projectiondata = 0;
-    const cudaExtent extent = make_cudaExtent(geo.nDetecU,geo.nDetecV,nalpha);
+    const cudaExtent extent = make_cudaExtent(geo.nDetecV,geo.nDetecU,nalpha);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
     cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent);
     cudaCheckErrors("cudaMalloc3D error 3D tex");

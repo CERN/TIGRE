@@ -44,18 +44,18 @@ function [ fres ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
-% 
-% Copyright (c) 2015, University of Bath and 
+%
+% Copyright (c) 2015, University of Bath and
 %                     CERN-European Organization for Nuclear Research
 %                     All rights reserved.
 %
-% License:            Open Source under BSD. 
+% License:            Open Source under BSD.
 %                     See the full license at
 %                     https://github.com/CERN/TIGRE/license.txt
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
-% Coded by:           Ander Biguri 
+% Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
 
 %% parse inputs
@@ -84,7 +84,7 @@ W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
 if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
-
+    
     [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
         -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
     A = permute(angles+pi/2, [1 3 2]);
@@ -123,16 +123,16 @@ while ~stop_criteria %POCS
         
         %proj is data: b=Ax
         %res= initial image is zero (default)
-%         proj_err=proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{jj},'interpolated'); %                                 (b-Ax)
-%         weighted_err=W(:,:,orig_index{jj}).*proj_err;                                 %                          W^-1 * (b-Ax)
-%         backprj=Atb(weighted_err,geo,alphablocks{jj},'FDK');                          %                     At * W^-1 * (b-Ax)
-%         weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
-%         f=f+beta*weigth_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
+        %         proj_err=proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{jj},'interpolated'); %                                 (b-Ax)
+        %         weighted_err=W(:,:,orig_index{jj}).*proj_err;                                 %                          W^-1 * (b-Ax)
+        %         backprj=Atb(weighted_err,geo,alphablocks{jj},'FDK');                          %                     At * W^-1 * (b-Ax)
+        %         weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
+        %         f=f+beta*weigth_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
         f=f+beta* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{jj})),geo,alphablocks{jj}));
-
+        
         % Non-negativity constrain
         if nonneg
-        f(f<0)=0;
+            f(f<0)=0;
         end
     end
     
@@ -157,13 +157,13 @@ while ~stop_criteria %POCS
     % =========================================================================
     %  Call GPU to minimize TV
     f=minimizeTV(f0,dtvg,ng);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
-%                                             for ii=1:ng
-% %                                                 Steepest descend of TV norm
-%                                                 tv(ng*(iter-1)+ii)=im3Dnorm(f,'TV','forward');
-%                                                 df=gradientTVnorm(f,'forward');
-%                                                 df=df./im3Dnorm(df,'L2');
-%                                                 f=f-dtvg.*df;
-%                                             end
+    %                                             for ii=1:ng
+    % %                                                 Steepest descend of TV norm
+    %                                                 tv(ng*(iter-1)+ii)=im3Dnorm(f,'TV','forward');
+    %                                                 df=gradientTVnorm(f,'forward');
+    %                                                 df=df./im3Dnorm(df,'L2');
+    %                                                 f=f-dtvg.*df;
+    %                                             end
     
     % update parameters
     % ==========================================================================
@@ -220,7 +220,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('OS_ASD_POCS:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+        error('OS_ASD_POCS:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -234,8 +234,8 @@ for ii=1:length(opts)
             ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
         end
-         if isempty(ind)
-            error('OS_ASD_POCS:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+        if isempty(ind)
+            error('OS_ASD_POCS:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -255,7 +255,7 @@ for ii=1:length(opts)
             end
             % Lambda
             %  =========================================================================
-            % Its called beta in OS_ASD_POCS 
+            % Its called beta in OS_ASD_POCS
         case 'lambda'
             if default
                 beta=1;
@@ -335,10 +335,10 @@ for ii=1:length(opts)
             else
                 OrderStrategy=val;
             end
-          case 'nonneg'
+        case 'nonneg'
             if default
                 nonneg=true;
-            else 
+            else
                 nonneg=val;
             end
         otherwise

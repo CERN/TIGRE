@@ -126,9 +126,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // We need a float image, and, unfortunatedly, the only way of casting it is by value
     const mwSize *size_img= mxGetDimensions(image); //get size of image
     
-//     float *  img = (float*)malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float));
-//     for (unsigned long long i=0;i<size_img[0] *size_img[1] *size_img[2];i++)
-//         img[i]=(float)imgaux[i];
+   
     
     ///////////////////// Second input argument,
     // Geometry structure that has all the needed geometric data.
@@ -476,7 +474,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 
 													   // MODIFICATION, RB, 5/12/2017: As said above, we do not allocate anything, just
 													   // set pointers in result to point to outProjections
-	float** result = (float**)malloc(nalpha * sizeof(float*)); // Thi sonly allocates memory for pointers
+	float** result = (float**)malloc(nalpha * sizeof(float*)); // This only allocates memory for pointers
 	unsigned long long projSizeInPixels = geo.nDetecU * geo.nDetecV;
 	for (int i = 0; i < nalpha; i++)
 	{
@@ -484,9 +482,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 		result[i] = &outProjections[currProjIndex]; // now the pointers are the same
 	}   
     
-    
-    
-    
+       
     // call the real function
     if (coneBeam){
         if (rayvoxel){
@@ -502,7 +498,6 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         }
     }
     
-   
     return; 
     
 }

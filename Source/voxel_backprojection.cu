@@ -245,7 +245,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             
-            voxelColumn[colIdx]+=tex2DLayered(tex, v +0.5 ,// u and v seem swaped, but this is due to the row/column major
+            voxelColumn[colIdx]+=tex2DLayered(tex, v +0.5 ,
                     u +0.5 ,
                     indAlpha)*weigth;
         }  // END iterating through column of voxels
@@ -262,8 +262,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         if(indZ>=geo.nVoxelZ)
             break;   // break the loop.
         
-         unsigned long long idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
-//         unsigned long long idx =indY*geo.nVoxelX*geo.nVoxelZ+indZ*geo.nVoxelX + indX;
+        unsigned long long idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
         image[idx] = voxelColumn[colIdx];   // Read the current volume value that we'll update by computing values from MULTIPLE projections (not just one)
         // We'll be updating the local (register) variable, avoiding reads/writes from the slow main memory.
         // According to references (Papenhausen), doing = is better than +=, since += requires main memory read followed by a write.
@@ -293,7 +292,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     
     // copy data to CUDA memory
     cudaArray *d_projectiondata = 0;
-    const cudaExtent extent = make_cudaExtent(geo.nDetecU,geo.nDetecV,nalpha);
+    const cudaExtent extent = make_cudaExtent(geo.nDetecV,geo.nDetecU,nalpha);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
     cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent,cudaArrayLayered);
     cudaCheckErrors("cudaMalloc3D error 3D tex");
@@ -464,7 +463,7 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     Pz.x=Pz0.x*cos(alpha)-Pz0.y*sin(alpha);       Pz.y=Pz0.x*sin(alpha)+Pz0.y*cos(alpha);      Pz.z=Pz0.z;
     
     //detector offset
-    P.z =P.z-geo.offDetecV[i];          P.y =P.y-geo.offDetecU[i];
+    P.z =P.z-geo.offDetecV[i];            P.y =P.y-geo.offDetecU[i];
     Px.z =Px.z-geo.offDetecV[i];          Px.y =Px.y-geo.offDetecU[i];
     Py.z =Py.z-geo.offDetecV[i];          Py.y =Py.y-geo.offDetecU[i];
     Pz.z =Pz.z-geo.offDetecV[i];          Pz.y =Pz.y-geo.offDetecU[i];

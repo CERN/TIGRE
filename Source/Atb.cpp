@@ -360,18 +360,18 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 break;
             case 3:
                 nDetec=(double *)mxGetData(tmp);
-                geo.nDetecU=(int)nDetec[1];
-                geo.nDetecV=(int)nDetec[0];
+                geo.nDetecU=(int)nDetec[0];
+                geo.nDetecV=(int)nDetec[1];
                 break;
             case 4:
                 sDetec=(double *)mxGetData(tmp);
-                geo.sDetecU=(float)sDetec[1];
-                geo.sDetecV=(float)sDetec[0];
+                geo.sDetecU=(float)sDetec[0];
+                geo.sDetecV=(float)sDetec[1];
                 break;
             case 5:
                 dDetec=(double *)mxGetData(tmp);
-                geo.dDetecU=(float)dDetec[1];
-                geo.dDetecV=(float)dDetec[0];
+                geo.dDetecU=(float)dDetec[0];
+                geo.dDetecV=(float)dDetec[1];
                 break;
             case 6:
                 DSD=(double *)mxGetData(tmp);
@@ -408,8 +408,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                         c=i;
                     else
                         c=0;
-                    geo.offDetecU[i]=(float)offDetec[1+2*c];
-                    geo.offDetecV[i]=(float)offDetec[0+2*c];
+                    geo.offDetecU[i]=(float)offDetec[0+2*c];
+                    geo.offDetecV[i]=(float)offDetec[1+2*c];
                 }
                 break;
             case 10:
