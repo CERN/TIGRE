@@ -37,14 +37,17 @@ end
 
 % Replace path fo current CUDA version in xml
 if ispc
-    fid  = fopen('mex_CUDA_win64.xml','r+');
+    fid  = fopen('mex_CUDA_win64.xml','r');
     f=fread(fid,'*char')';
+    fclose(fid);
     cudaverdiff=strfind(f,cudapath(end-2:end));
     if ~isempty(cudaverdiff)
+        fid  = fopen('mex_CUDA_win64.xml','w');
         f=strrep(f,'8.0',cudapath(end-2:end)); %the mex file has 8.0 on it
+        fwrite(fid,f);
+        fclose(fid);
     end
-    fwrite(fid,f);
-    fclose(fid);
+    
 end
 
 % Compile for x64 or x32
@@ -58,23 +61,29 @@ if ispc
     msv14=getenv('VS140COMNTOOLS');
     
     if ~isempty(msv10)
-        fid  = fopen('mex_CUDA_win64.xml','r+');
+        fid  = fopen('mex_CUDA_win64.xml','r');
         f=fread(fid,'*char')';
+        fclose(fid);
         f=strrep(f,'VS120COMNTOOLS','VS100COMNTOOLS');
+
+        fid  = fopen('mex_CUDA_win64.xml','w');
         fwrite(fid,f);
         fclose(fid);
     end
     if ~isempty(msv14)
-        fid  = fopen('mex_CUDA_win64.xml','r+');
+        fid  = fopen('mex_CUDA_win64.xml','r');
         f=fread(fid,'*char')';
-        f=strrep(f,'VS120COMNTOOLS','VS140COMNTOOLS'); 
+        fclose(fid);
+        f=strrep(f,'VS120COMNTOOLS','VS140COMNTOOLS');
+
+        fid  = fopen('mex_CUDA_win64.xml','w');
         fwrite(fid,f);
         fclose(fid);
     end
     if(isempty(msv14)&&isempty(msv10)&&isempty(msv12))
-       error('VSCOMNTOOLS not found'); 
+        error('VSCOMNTOOLS not found');
     end
-  
+    
     if ~isempty(strfind(computer('arch'),'64'))
         mex -largeArrayDims ./Source/Ax.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/win64
         mex -largeArrayDims ./Source/Atb.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu ./Source/voxel_backprojection_parallel.cu -outdir ./Mex_files/win64
