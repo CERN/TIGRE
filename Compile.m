@@ -74,7 +74,7 @@ if ispc
     if(isempty(msv14)&&isempty(msv10)&&isempty(msv12))
        error('VSCOMNTOOLS not found'); 
     end
-    break
+  
     if ~isempty(strfind(computer('arch'),'64'))
         mex -largeArrayDims ./Source/Ax.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/win64
         mex -largeArrayDims ./Source/Atb.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu ./Source/voxel_backprojection_parallel.cu -outdir ./Mex_files/win64
