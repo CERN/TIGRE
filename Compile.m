@@ -34,19 +34,47 @@ cudapath=getenv('CUDA_PATH');
 if isempty(cudapath)
     error(sprintf('CUDA Path not found. \nAdd the path by writting in MATLAB:\nsetenv(''CUDA_PATH'',''your path'')\nWhere "your path" is C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v8.0, for example')) ;
 end
+
+% Replace path fo current CUDA version in xml
+if ispc
+    fid  = fopen('mex_CUDA_win64.xml','r+');
+    f=fread(fid,'*char')';
+    cudaverdiff=strfind(f,cudapath(end-2:end));
+    if ~isempty(cudaverdiff)
+        f=strrep(f,'8.0',cudapath(end-2:end)); %the mex file has 8.0 on it
+    end
+    fwrite(fid,f);
+    fclose(fid);
+end
+
 % Compile for x64 or x32
 disp('Compiling TIGRE source...')
 disp('This may take a couple of minutes....')
 
 if ispc
-    
+    % make sure the correc VS commons is in the file
     msv10=getenv('VS100COMNTOOLS');
     msv12=getenv('VS120COMNTOOLS');
     msv14=getenv('VS140COMNTOOLS');
     
     if ~isempty(msv10)
-        
+        fid  = fopen('mex_CUDA_win64.xml','r+');
+        f=fread(fid,'*char')';
+        f=strrep(f,'VS120COMNTOOLS','VS100COMNTOOLS');
+        fwrite(fid,f);
+        fclose(fid);
     end
+    if ~isempty(msv14)
+        fid  = fopen('mex_CUDA_win64.xml','r+');
+        f=fread(fid,'*char')';
+        f=strrep(f,'VS120COMNTOOLS','VS140COMNTOOLS'); 
+        fwrite(fid,f);
+        fclose(fid);
+    end
+    if(isempty(msv14)&&isempty(msv10)&&isempty(msv12))
+       error('VSCOMNTOOLS not found'); 
+    end
+    break
     if ~isempty(strfind(computer('arch'),'64'))
         mex -largeArrayDims ./Source/Ax.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/win64
         mex -largeArrayDims ./Source/Atb.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu ./Source/voxel_backprojection_parallel.cu -outdir ./Mex_files/win64
