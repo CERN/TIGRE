@@ -112,7 +112,7 @@ for ii=1:niter
     % ------------------------------------
     
     if nonneg
-        res(res<0)=0;
+        res=max(res,0);
     end
     
     % If quality is being measured

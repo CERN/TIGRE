@@ -133,7 +133,7 @@ while ~stop_criteria %POCS
         f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(f,geo,angles(jj))),geo,angles(jj)));
         % non-negativity constrain
         if nonneg
-            f(f<0)=0;
+            f=max(f,0);
         end
     end
     

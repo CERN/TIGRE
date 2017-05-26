@@ -156,7 +156,7 @@ for ii=1:niter
         
         % Non-negativity constrain
         if nonneg
-         res(res<0)=0;
+         rex=max(res,0);
         end
         
     end

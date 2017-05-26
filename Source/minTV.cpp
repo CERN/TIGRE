@@ -83,7 +83,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
      if (mrows!=1 || ncols !=1)
         mexErrMsgIdAndTxt("err", "POCS parameters shoudl be 1x1");
      alpha= (float)(mxGetScalar(prhs[1]));
-     maxIter=(int)round(mxGetScalar(prhs[2]));
+     maxIter=(int)floor(mxGetScalar(prhs[2])+0.5);
     }
     
 ////////////////////////// First input.

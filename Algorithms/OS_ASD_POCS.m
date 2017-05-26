@@ -132,7 +132,7 @@ while ~stop_criteria %POCS
         
         % Non-negativity constrain
         if nonneg
-            f(f<0)=0;
+            f=max(f,0);
         end
     end
     

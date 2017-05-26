@@ -133,7 +133,7 @@ for ii=1:niter
         %         res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
         res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(res,geo,angles(jj))),geo,angles(jj)));
         if nonneg
-            res(res<0)=0;
+            res=max(res,0);
         end
     end
     
