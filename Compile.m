@@ -3,9 +3,9 @@
 %
 %
 % IMPORTANT:
-% This has only been tested in win systems, due to hardware limitations we
-% have been unable to test elsewhere. Please, report any issue with
-% compilation in other systems
+% Due to hardware limitations we
+% have been unable to test in all possible OS an dMATLAB versions.
+% Please, report any issue with compilation in other systems
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -79,7 +79,29 @@ if ispc
         fid  = fopen('mex_CUDA_win64.xml','w');
         fwrite(fid,f);
         fclose(fid);
+        
+        warning('You are using VS2015.')
+        disp('If you are using Visual Studio 2015 you may get errors in compilation.')
+        disp('If you the following error:')
+        disp('LINK : fatal error LNK1104: cannot open file ''ucrt.lib''')
+        disp('Do the following:')
+        disp(char(10))
+        disp('1: Locate your file ''ucrt.lib'' file, it would be somewhere similar to:')
+        disp('C:\Program Files (x86)\Windows Kits\10\Lib\10.0.10240.0\ucrt\x64      (The numbers may differ)')
+        disp(char(10))
+        disp('2: Open Compile.m')
+        disp(char(10))
+        disp('3: On lines 102-105, add in the end of the lines the following string with the correct path in your PC')
+        disp(' -I''C:\Program Files (x86)\Windows Kits\10\Include\10.0.10150.0\ucrt'' -L''C:\Program Files (x86)\Windows Kits\10\Lib\10.0.10150.0\ucrt\x64''')
+        disp(char(10))
+        disp('4: Try compiling again');
+        disp(char(10))
+        disp('If this does not work, copy ''ucrt.lib'' from the previous path to TIGRE folder and compile again (without the lines ons tep 3)')
+        disp(char(10))
+        disp('For any other error please contact the authors for help')
+        warning('END VS2015 WARNING')
     end
+    
     if(isempty(msv14)&&isempty(msv10)&&isempty(msv12))
         error('VSCOMNTOOLS not found');
     end
