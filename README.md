@@ -25,6 +25,11 @@ TIGRE is still being developed and we are still adding new features to it. If yo
 Donwload: [https://github.com/CERN/TIGRE/releases][7]
 
 
+**NEWS**
+
+The first version of python-TIGRE will be released soon. We expect to have a Linux-working version some time before July. 
+If you are interested, please contact us. 
+
 
 **TIGRE features**:
 
