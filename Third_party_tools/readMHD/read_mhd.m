@@ -29,7 +29,7 @@ elseif (ndims == 3)
     img.datax = datax; clear datax;
     img.datay=datay; clear datay;
     img.dataz = dataz; clear dataz;
-    img.data = img.datax.^2+img.datay.^2+img.dataz.^2;
+    img.data = img.datax.^2+img.datay.^2+img.dataz.^2; % SQRT???
 end
 
  

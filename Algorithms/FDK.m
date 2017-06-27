@@ -35,7 +35,6 @@ end
 
 
 %% Weight
-%proj=data
 proj=permute(proj,[2 1 3]);
 for ii=1:length(angles)
     
@@ -49,7 +48,6 @@ for ii=1:length(angles)
     %Multiply the weights with projection data
     proj(:,:,ii) = proj(:,:,ii).*w';
 end
-
 %% filter
 proj_filt = filtering(proj,geo,angles,parker); % Not sure if offsets are good in here
 %RMFIELD Remove fields from a structure array.
