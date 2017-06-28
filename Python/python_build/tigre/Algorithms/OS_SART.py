@@ -95,7 +95,7 @@ def OS_SART(proj, geo, alpha, niter,
       --------------------------------------------------------------------------
         Coded by:          MATLAB (original code): Ander Biguri
                            PYTHON : Reuben Lindroos,Sam Loescher, """)
-    if verbose == True:
+    if verbose:
         print('OS_SART algorithm in progress.')
 
     angleblocks, angle_index = order_subsets(alpha, blocksize, OrderStrategy)
@@ -142,11 +142,11 @@ def OS_SART(proj, geo, alpha, niter,
     lq = []
     l2l =[]
     if init == 'multigrid':
-        if verbose == True:
+        if verbose:
             print('init multigrid in progress...')
             print('default blocksize=1 for init_multigrid(OS_SART)')
         res = init_multigrid(proj, geo, alpha, alg='SART')
-        if verbose == True:
+        if verbose:
             print('init multigrid complete.')
     if init == 'FDK':
         res=FDK(proj,geo,alpha).transpose()
@@ -158,7 +158,7 @@ def OS_SART(proj, geo, alpha, niter,
 
         else:
             raise ValueError('wrong dimension of array for initialisation')
-    elif init == None:
+    elif init is None:
         res = np.zeros(geo.nVoxel, dtype=np.float32)
 
     # Iterate
@@ -166,11 +166,11 @@ def OS_SART(proj, geo, alpha, niter,
     tic = None
     toc = time.clock()
     for i in range(niter):
-        if Quameasopts != None:
+        if Quameasopts is not None:
             res_prev = res
-        if verbose == True:
+        if verbose:
             if i == 1:
-                if tic == None:
+                if tic is None:
                     pass
                 else:
                     print('Esitmated time until completetion (s): ' + str(niter * (tic - toc)))
@@ -202,7 +202,7 @@ def OS_SART(proj, geo, alpha, niter,
             # res+=1*weighted_backprj
             # res[res < 0] = 0
 
-        if Quameasopts != None:
+        if Quameasopts is not None:
             lq.append(MQ(res, res_prev, Quameasopts))
             res_prev = res
         if computel2:
@@ -215,14 +215,14 @@ def OS_SART(proj, geo, alpha, niter,
     # parkerweight(projsirt,TIGRE_parameters,angles,q=1)
     if computel2:
         return res.transpose(),l2l
-    if Quameasopts != None:
+    if Quameasopts is not None:
         return res.transpose(), lq
     else:
         return res
 def adddim(array,dimexp):
     # This function makes sure the dimensions of the arrays are only expanded if
     # blocksize ==1. There may be a nicer way of doing this!
-    if dimexp==True:
+    if dimexp:
         return np.expand_dims(array,axis=2)
     else:
         return array

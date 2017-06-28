@@ -4,10 +4,10 @@ import numpy as np
 
 def order_subsets(angles, blocksize, mode):
     # Parse no blocks
-    if blocksize==1 or blocksize==None:
+    if blocksize is None or blocksize==1:
         index_alpha=np.arange(len(angles))
 
-        if mode =='ordered' or mode==None:
+        if mode is None or mode =='ordered':
             return angles, index_alpha
 
         if mode =='random':
@@ -48,7 +48,7 @@ def order_subsets(angles, blocksize, mode):
         oldindex=np.arange(len(angles))
         index_alpha = [oldindex[i:i+blocksize] for i in range(0,len(oldindex),blocksize)]
         block_alpha = [angles[i:i+blocksize] for i in range(0,len(angles),blocksize)]
-        if mode == 'ordered' or mode==None:
+        if mode is None or mode == 'ordered':
             return block_alpha, index_alpha
 
         if mode == 'random':
