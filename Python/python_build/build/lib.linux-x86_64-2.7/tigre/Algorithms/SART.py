@@ -94,7 +94,7 @@ def SART(proj, geo, alpha, niter,
       --------------------------------------------------------------------------
         Coded by:          MATLAB (original code): Ander Biguri
                            PYTHON : Sam Loescher, Reuben Lindroos""")
-    if verbose == True:
+    if verbose:
         print('SART algorithm in progress.')
 
     blocksize = 1
@@ -147,10 +147,10 @@ def SART(proj, geo, alpha, niter,
 
     # Set up init parameters
     if init == 'multigrid':
-        if verbose == True:
+        if verbose:
             print('init multigrid in progress...')
         res = init_multigrid(proj, geo, alpha, alg='SART')
-        if verbose == True:
+        if verbose:
             print('init multigrid complete.')
     if init == 'FDK':
         raise ValueError('FDK not implemented as of yet (coming soon)!')
@@ -162,7 +162,7 @@ def SART(proj, geo, alpha, niter,
 
         else:
             raise ValueError('wrong dimension of array for initialisation')
-    elif init == None:
+    elif init is None:
         res = np.zeros(geo.nVoxel, dtype=np.float32)
 
     # List for storing Quality measure
@@ -171,11 +171,11 @@ def SART(proj, geo, alpha, niter,
 
 
     for i in range(niter):
-        if Quameasopts != None:
+        if Quameasopts is not None:
             res_prev = res
-        if verbose == True:
+        if verbose:
             if i == 1:
-                if tic == None:
+                if tic is None:
                     pass
                 else:
                     print('Esitmated time until completetion (s): ' + str((niter - 1) * (tic - toc)))
@@ -200,13 +200,13 @@ def SART(proj, geo, alpha, niter,
             if noneg:
                 res = res.clip(min=0)
 
-        if Quameasopts != None:
+        if Quameasopts is not None:
             lq.append(MQ(res, res_prev, Quameasopts))
 
             res_prev = res
         tic = time.clock()
     lmbda *= lmbda_red
-    if Quameasopts != None:
+    if Quameasopts is not None:
         return res.transpose(), lq
     else:
         return res.transpose()

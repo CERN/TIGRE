@@ -23,8 +23,8 @@ def plotproj(projections):
         plt.pause(0.001)
 
 def ppslice(projections,slice=None,Dim=2):
-    if slice==None:
-        slice=projections.shape[2]/2
+    if slice is None:
+        slice = projections.shape[2]/2
     min_val = np.amin(projections)
     max_val = np.amax(projections)
     plt.clf()

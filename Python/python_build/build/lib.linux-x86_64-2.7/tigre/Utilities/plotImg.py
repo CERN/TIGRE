@@ -34,9 +34,9 @@ class plotImg:
         self.slice = slice
         self.dimint = None  # keeps track of what dim
         self.dimlist = ['X', 'Y', 'Z', 'x', 'y', 'z', None]  # accepted parameters for dim
-        if self.slice == None:
+        if self.slice is None:
             self.run()
-        if self.slice != None:
+        if self.slice is not None:
             self.slicer()
 
     def run(self):

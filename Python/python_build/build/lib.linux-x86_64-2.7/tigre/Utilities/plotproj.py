@@ -24,8 +24,8 @@ def plot_projections(projections):
 
 def ppslice(projections,slice=None,Dim=2):
     # plt.ion()
-    if slice==None:
-        slice=projections.shape[2]/2
+    if slice is None:
+        slice = projections.shape[2]/2
     print(slice)
     min_val = np.amin(projections)
     max_val = np.amax(projections)

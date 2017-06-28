@@ -94,7 +94,7 @@ def SIRT(proj, geo, alpha, niter,
       --------------------------------------------------------------------------
         Coded by:          MATLAB (original code): Ander Biguri
                            PYTHON : Reuben Lindroos,Sam Loescher, """)
-    if verbose==True:
+    if verbose:
         print('SIRT algorithm in progress.')
 
     blocksize = 1
@@ -113,7 +113,7 @@ def SIRT(proj, geo, alpha, niter,
     W = Ax(np.ones(geox.nVoxel, dtype=np.float32), geox, alpha, "ray-voxel")
     W[W < min(geo.dVoxel / 4)] = np.inf
     W = 1 / W
-    geox=None
+    geox = None
 
     #     Back_Proj weight
     #     NOTE: hstack(array,last value) as np.arange does not include upper limit of interval.
@@ -146,10 +146,10 @@ def SIRT(proj, geo, alpha, niter,
     l2l=[]
 
     if init == 'multigrid':
-        if verbose==True:
+        if verbose:
             print('init multigrid in progress...')
         res= init_multigrid(proj, geo, alpha,alg='SIRT')
-        if verbose==True:
+        if verbose:
             print('init multigrid complete.')
     if init == 'FDK':
         raise ValueError('FDK not implemented as of yet (coming soon)!')
@@ -161,15 +161,15 @@ def SIRT(proj, geo, alpha, niter,
 
         else:
             raise ValueError('wrong dimension of array for initialisation')
-    elif init==None:
+    elif init is None:
         res=np.zeros(geo.nVoxel, dtype=np.float32)
 
-    tic=None
+    tic = None
     toc=time.clock()
     for i in range(niter):
-        if Quameasopts != None:
+        if Quameasopts is not None:
             res_prev = res
-        if verbose==True:
+        if verbose:
             if i==1:
                     print('Esitmated time until completetion (s): '+ str(niter*(tic-toc)))
 
@@ -185,7 +185,7 @@ def SIRT(proj, geo, alpha, niter,
                                       alpha, 'FDK')
         if noneg:
             res = res.clip(min=0)
-        if Quameasopts != None:
+        if Quameasopts is not None:
             lq.append(MQ(res, res_prev, Quameasopts))
             res_prev = res
 
@@ -198,7 +198,7 @@ def SIRT(proj, geo, alpha, niter,
     lmbda *= lmbda_red
     if computel2:
         return res.transpose(), l2l
-    if Quameasopts != None:
+    if Quameasopts is not None:
         return res.transpose(), lq
     else:
         return res.transpose()
