@@ -214,9 +214,9 @@ def OS_SART(proj, geo, alpha, niter,
     lmbda *= lmbda_red
     # parkerweight(projsirt,TIGRE_parameters,angles,q=1)
     if computel2:
-        return res.transpose(),l2l
+        return res,l2l
     if Quameasopts is not None:
-        return res.transpose(), lq
+        return res, lq
     else:
         return res
 def adddim(array,dimexp):

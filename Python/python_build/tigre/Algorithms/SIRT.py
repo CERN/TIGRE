@@ -197,11 +197,11 @@ def SIRT(proj, geo, alpha, niter,
 
     lmbda *= lmbda_red
     if computel2:
-        return res.transpose(), l2l
+        return res, l2l
     if Quameasopts is not None:
-        return res.transpose(), lq
+        return res, lq
     else:
-        return res.transpose()
+        return res
 
 
 
