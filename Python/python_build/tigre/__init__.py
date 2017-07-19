@@ -4,6 +4,7 @@ from .Algorithms.SIRT import SIRT
 from .Algorithms.SART import SART
 from .Algorithms.OS_SART import OS_SART
 from .Algorithms.FDK import FDK
+from .Algorithms.SART_TV import SART_TV
 
 # utilities
 from .Utilities.plotImg import plotImg
