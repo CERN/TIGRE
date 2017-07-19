@@ -157,7 +157,7 @@ class custom_build_ext(build_ext):
 
 
 setup(name='tigre',
-      version = '0.0.0',
+      version = '0.0.1',
       author = 'Reuben Lindroos, Sam loescher',
       packages = find_packages(),
       include_package_data=True,
