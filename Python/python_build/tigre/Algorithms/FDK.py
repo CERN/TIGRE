@@ -9,7 +9,7 @@ from _Ax import Ax
 from _Atb import Atb
 from tigre.Utilities.filtering import filtering
 import scipy.io
-
+import tigre
 # TODO: this is quite nasty; it would be nice to reorganise file structure later so top level folder is always in path
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '..'))
@@ -68,15 +68,10 @@ def FDK(projh, geo, angles,filter=None):
         (xx, yy) = np.meshgrid(xv, yv)
 
         w = geo.DSD/np.sqrt((geo.DSD ** 2 + xx ** 2 + yy ** 2))
-        proj[ii] = proj[ii]*w.transpose()
+        proj[ii] = proj[ii]*w
 
 
     proj_filt=filtering(proj.transpose(0,2,1),geo,angles,parker=False).transpose()
-    # m = {
-    #     'py_projfilt': proj_filt,
-    #
-    # }
-    # scipy.io.savemat('Tests/Filter_data', m)
     res = Atb(proj_filt,geo,angles,'FDK')
     return res
 

@@ -44,8 +44,7 @@ def geo(tomoshape, **kwargs):
     ---------
     >>> import numpy as np
     >>> import tigre
-    >>> obj = np.zeros((64,128,256))
-    >>> geo = tigre.geo(obj,geo={'filter':'ram_lak','nVoxel':np.array((64,64,64))})
+    >>> geo = tigre.geo((64,64,64),geo={'filter':'ram_lak','nVoxel':np.array((64,64,64))})
     >>> print(geo.nVoxel, geo.filter)
     # returns: (array([64, 64, 64]), 'ram_lak')
 

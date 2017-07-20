@@ -15,12 +15,11 @@ def filtering(proj,geo,angles,parker):
     filt=filter(geo.filter,ramp_kernel[0],filt_len,d)
 
 
-    filt=np.kron(np.ones((geo.nDetector[0],1)),filt).transpose()
+    filt=np.kron(np.ones((geo.nDetector[1],1)),filt).transpose()
 
 
     for i in range(len(angles)):
-        fproj=np.zeros((filt_len,geo.nDetector[0]),dtype=np.float32)
-
+        fproj=np.zeros((filt_len,geo.nDetector[1]),dtype=np.float32)
         fproj[int(filt_len/2-geo.nDetector[0]/2):int(filt_len/2+geo.nDetector[0]/2),:]=proj[i]
 
         fproj=np.fft.fft(fproj,axis=0)
@@ -29,11 +28,11 @@ def filtering(proj,geo,angles,parker):
 
         fproj=np.real(np.fft.ifft(fproj,axis=0))
         end=len(fproj)
-        proj[i]=np.transpose(fproj[int(end/2-geo.nDetector[0]/2):int(end/2+geo.nDetector[0]/2),:]/2/geo.dDetector[0]*(2*np.pi/
+        proj[i]=fproj[int(end/2-geo.nDetector[0]/2):int(end/2+geo.nDetector[0]/2),:]/2/geo.dDetector[0]*(2*np.pi/
                                                                                                  len(angles)
-                                                                                                 )/2*(geo.DSD/geo.DSO))
+                                                                                                 )/2*(geo.DSD/geo.DSO)
 
-    return proj.transpose(0,2,1)
+    return proj
 
 def ramp_flat(n):
     nn=np.arange(-n/2,n/2)

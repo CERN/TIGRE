@@ -142,7 +142,7 @@ def SART(proj, geo, alpha, niter,
 
 
     elif geo.mode == 'parallel':
-        V = np.ones([len(alpha), geo.nVoxel[1], geo.nVoxel[0]], dtype=np.float32)
+        V = np.ones([geo.nVoxel[1], geo.nVoxel[0], len(alpha)], dtype=np.float32)
 
     # Set up init parameters
     if init == 'multigrid':

@@ -135,8 +135,8 @@ def OS_SART(proj, geo, alpha, niter,
         V = np.array(V, dtype=np.float32)
 
 
-    elif geo.mode == 'parallel':
-        V = np.ones([len(alpha), geo.nVoxel[1], geo.nVoxel[0]], dtype=np.float32)
+    elif geo.mode is 'parallel':
+        V = np.ones([geo.nVoxel[1], geo.nVoxel[0],len(alpha)], dtype=np.float32)
 
     # Set up init parameters
     lq = []
