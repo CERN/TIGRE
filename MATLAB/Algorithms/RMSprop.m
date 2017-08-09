@@ -143,16 +143,16 @@ for ii=1:niter
         %--------- Memory cheap(er)-----------
         
         grad= bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(res,geo,angles(jj))),geo,angles(jj)));
-        cumgrad=cumgrad-grad;
+        cumgrad=cumgrad+(grad);
         res=res+lambda.*grad;
         
-        
-        if nonneg
-            res(res<0)=0;
-        end
+%         
+%         if nonneg
+%             res(res<0)=0;
+%         end
     end
     cache=gamma*cache+(1-gamma)*cumgrad.^2;
-    lambda=1/sqrt(cache+1e-6);
+    lambda=0.01/sqrt(cache+1e-6);
     cumgrad=zeros(size(res),'single');
     % If quality is being measured
     if measurequality
