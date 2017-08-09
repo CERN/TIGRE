@@ -1,4 +1,4 @@
-function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
+function [res,errorL2,qualMeasOut]=Adam(proj,geo,angles,niter,varargin)
 %SART solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -40,18 +40,18 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
-% 
-% Copyright (c) 2015, University of Bath and 
+%
+% Copyright (c) 2015, University of Bath and
 %                     CERN-European Organization for Nuclear Research
 %                     All rights reserved.
 %
-% License:            Open Source under BSD. 
+% License:            Open Source under BSD.
 %                     See the full license at
 %                     https://github.com/CERN/TIGRE/license.txt
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
-% Coded by:           Ander Biguri 
+% Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
 
 %% Deal with input parameters
@@ -100,6 +100,19 @@ else
 end
 clear A x y dx dz;
 
+
+% Nesterov stuff
+% V=ones(size(V),'single');
+% W=ones(size(W),'single');
+
+
+momentum=res;
+variation=res;
+beta1=0.9;
+beta2=0.999;
+momentumT=1
+variationT=1;
+cumgrad=res;
 %% Iterate
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
@@ -109,9 +122,9 @@ for ii=1:niter
     if (ii==1 && verbose==1);tic;end
     % If quality is going to be measured, then we need to save previous image
     % THIS TAKES MEMORY!
-    if measurequality
-        res_prev=res;
-    end
+    %     if measurequality
+    res_prev=res;
+    %     end
     
     
     for jj=1:length(angles);
@@ -134,19 +147,32 @@ for ii=1:niter
         %------------------------------------
         %--------- Memory cheap(er)-----------
         
-        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(res,geo,angles(jj))),geo,angles(jj)));
+        grad= bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(res,geo,angles(jj))),geo,angles(jj)));
+       
+        cumgrad=cumgrad-grad;
+        res=res+momentumT./sqrt(variationT+1e-6).*grad;
+        
+        
         if nonneg
             res(res<0)=0;
         end
     end
+    momentum=beta1*momentum+(1-beta1)*cumgrad;
+    momentumT=momentum./(1-beta1^ii);
+    variation=beta2*variation+(1-beta1)*cumgrad.^2;
+    variationT=variation/(1-beta2^ii);
     
+    cumgrad=zeros(size(res),'single');
     % If quality is being measured
     if measurequality
         % HERE GOES
         qualMeasOut(:,ii)=Measure_Quality(res,res_prev,QualMeasOpts);
     end
     
-    lambda=lambda*lamdbared;
+    %     lambda=lambda*lamdbared;
+    
+    
+    
     
     if computeL2
         geo.offOrigin=offOrigin;
@@ -225,7 +251,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('SART:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+        error('SART:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -239,8 +265,8 @@ for ii=1:length(opts)
             ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
         end
-         if isempty(ind)
-            error('SART:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+        if isempty(ind)
+            error('SART:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -319,16 +345,16 @@ for ii=1:length(opts)
                     error('SART:InvalidInput','Invalid quality measurement parameters');
                 end
             end
-         case 'orderstrategy'
+        case 'orderstrategy'
             if default
                 OrderStrategy='random';
             else
                 OrderStrategy=val;
             end
-          case 'nonneg'
+        case 'nonneg'
             if default
                 nonneg=true;
-            else 
+            else
                 nonneg=val;
             end
         otherwise

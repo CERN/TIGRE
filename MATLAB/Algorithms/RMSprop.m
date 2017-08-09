@@ -1,4 +1,4 @@
-function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
+function [res,errorL2,qualMeasOut]=RMSprop(proj,geo,angles,niter,varargin)
 %SART solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -100,6 +100,14 @@ else
 end
 clear A x y dx dz;
 
+
+% Nesterov stuff
+% V=ones(size(V),'single');
+% W=ones(size(W),'single');
+lambda=1;
+gamma=0.99;
+cache=res;
+cumgrad=cache;
 %% Iterate
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
@@ -109,9 +117,9 @@ for ii=1:niter
     if (ii==1 && verbose==1);tic;end
     % If quality is going to be measured, then we need to save previous image
     % THIS TAKES MEMORY!
-    if measurequality
+%     if measurequality
         res_prev=res;
-    end
+%     end
     
     
     for jj=1:length(angles);
@@ -134,20 +142,29 @@ for ii=1:niter
         %------------------------------------
         %--------- Memory cheap(er)-----------
         
-        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(res,geo,angles(jj))),geo,angles(jj)));
+        grad= bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(res,geo,angles(jj))),geo,angles(jj)));
+        cumgrad=cumgrad-grad;
+        res=res+lambda.*grad;
+        
+        
         if nonneg
             res(res<0)=0;
         end
     end
-    
+    cache=gamma*cache+(1-gamma)*cumgrad.^2;
+    lambda=1/sqrt(cache+1e-6);
+    cumgrad=zeros(size(res),'single');
     % If quality is being measured
     if measurequality
         % HERE GOES
         qualMeasOut(:,ii)=Measure_Quality(res,res_prev,QualMeasOpts);
     end
     
-    lambda=lambda*lamdbared;
-    
+%     lambda=lambda*lamdbared;
+     
+
+
+
     if computeL2
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
@@ -156,6 +173,7 @@ for ii=1:niter
         if  ii~=1 && errornow>errorL2(end)
             if verbose
                 disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
+                res=res_prev;
             end
             return;
         end

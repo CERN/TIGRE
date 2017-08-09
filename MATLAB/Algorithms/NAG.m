@@ -123,6 +123,7 @@ for ii=1:niter
     gamma=(1-lambda);
     lambda=(1+sqrt(1+4*lambda^2))/2;
     gamma=gamma/lambda;
+    
     for jj=1:length(angles);
         if size(offOrigin,2)==length(angles)
             geo.offOrigin=offOrigin(:,index_angles(jj));

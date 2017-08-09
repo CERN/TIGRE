@@ -104,8 +104,9 @@ clear A x y dx dz;
 % Nesterov stuff
 % V=ones(size(V),'single');
 % W=ones(size(W),'single');
-lambda=0.0001;
+lambda=0.001;
 cache=res;
+cumgrad=cache;
 %% Iterate
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
@@ -128,7 +129,7 @@ for ii=1:niter
             geo.offDetector=offDetector(:,index_angles(jj));
         end
         if size(rotDetector,2)==length(angles)
-            geo.offDetector=rotDetector(:,index_angles(jj));
+            geo.rotDetector=rotDetector(:,index_angles(jj));
         end
         % --------- Memory expensive----------- % and does not include angle reordering!!!
         
@@ -141,6 +142,7 @@ for ii=1:niter
         %--------- Memory cheap(er)-----------
         
         grad= bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(res,geo,angles(jj))),geo,angles(jj)));
+        cumgrad=cumgrad-grad;
         res=res+lambda.*grad;
         
         
@@ -148,8 +150,9 @@ for ii=1:niter
             res(res<0)=0;
         end
     end
-    cache=cache+grad.^2;
+    cache=cache+cumgrad.^2;
     lambda=1/sqrt(cache+1e-6);
+    cumgrad=zeros(size(res),'single');
     % If quality is being measured
     if measurequality
         % HERE GOES
