@@ -57,6 +57,7 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %% Deal with input parameters
 blocksize=1;
 [lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
+
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
     computeL2=true;
@@ -65,11 +66,8 @@ else
 end
 errorL2=[];
 
-% reorder angles
-[alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
-
-angles=cell2mat(alphablocks);
-index_angles=cell2mat(orig_index);
+ [~,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
+ index_angles=cell2mat(orig_index);
 
 % does detector rotation exists?
 if ~isfield(geo,'rotDetector')
@@ -113,18 +111,19 @@ for ii=1:niter
         res_prev=res;
     end
     
-    
-    for jj=1:length(angles);
+    % reorder angles
+
+    for jj=index_angles;
         if size(offOrigin,2)==length(angles)
-            geo.offOrigin=offOrigin(:,index_angles(jj));
+            geo.offOrigin=offOrigin(:,jj);
         end
         if size(offDetector,2)==length(angles)
-            geo.offDetector=offDetector(:,index_angles(jj));
+            geo.offDetector=offDetector(:,jj);
         end
         if size(rotDetector,2)==length(angles)
-            geo.rotDetector=rotDetector(:,index_angles(jj));
+            geo.rotDetector=rotDetector(:,jj);
         end
-        % --------- Memory expensive----------- % and does not include angle reordering!!!
+        % --------- Memory expensive----------- 
         
         %         proj_err=proj(:,:,jj)-Ax(res,geo,angles(jj));       %                                 (b-Ax)
         %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
@@ -134,7 +133,7 @@ for ii=1:niter
         %------------------------------------
         %--------- Memory cheap(er)-----------
         
-        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(res,geo,angles(jj))),geo,angles(jj)));
+        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(jj))),geo,angles(jj)));
         if nonneg
             res(res<0)=0;
         end
@@ -151,14 +150,14 @@ for ii=1:niter
     if computeL2
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
-        errornow=im3Dnorm(proj(:,:,index_angles)-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
+        errornow=im3Dnorm(proj-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
         % If the error is not minimized.
-        if  ii~=1 && errornow>errorL2(end)
-            if verbose
-                disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
-            end
-            return;
-        end
+%         if  ii~=1 && errornow>errorL2(end)
+%             if verbose
+%                 disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
+%             end
+%             return;
+%         end
         errorL2=[errorL2 errornow];
     end
     
