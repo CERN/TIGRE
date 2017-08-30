@@ -1,0 +1,379 @@
+
+TIGRE
+
+Ander Biguri, Manjit Dosanjh, Steven Hancock and Manuchehr Soleimani
+TIGRE: A MATLAB-GPU toolbox for CBCT image reconstruction 
+Biomedical Physics & Engineering Express, 2(5):055010 ,2016
+
+@article{TIGRE,
+  author={Ander Biguri and Manjit Dosanjh and Steven Hancock and Manuchehr Soleimani},
+  title={TIGRE: a MATLAB-GPU toolbox for CBCT image reconstruction},
+  journal={Biomedical Physics & Engineering Express},
+  volume={2},
+  number={5},
+  pages={055010},
+  url={http://stacks.iop.org/2057-1976/2/i=5/a=055010},
+  year={2016},
+  abstract={In this article the Tomographic Iterative GPU-based Reconstruction (TIGRE) Toolbox, a MATLAB/CUDA toolbox for fast and accurate 3D x-ray image reconstruction, is presented. One of the key features is the implementation of a wide variety of iterative algorithms as well as FDK, including a range of algorithms in the SART family, the Krylov subspace family and a range of methods using total variation regularization. Additionally, the toolbox has GPU-accelerated projection and back projection using the latest techniques and it has a modular design that facilitates the implementation of new algorithms. We present an overview of the structure and techniques used in the creation of the toolbox, together with two usage examples. The TIGRE Toolbox is released under an open source licence, encouraging people to contribute.}
+}
+	
+
+ASD_POCS
+
+E.Y. Sidky and X. Pan. 
+Image reconstruction in circular cone-beam computed tomography by constrained, total-variation minimization. 
+Physics in Medicine and Biology, 53(17):4777, 2008.
+DOI: 10.1088/0031-9155/53/17/021
+
+@article{ASD_POCS,
+  author={Sidky, E.Y. and Pan, X.},
+  title={Image reconstruction in circular cone-beam computed tomography by constrained, total-variation minimization},
+  journal={Physics in Medicine and Biology},
+  volume={53},
+  number={17},
+  pages={4777},
+  url={http://stacks.iop.org/0031-9155/53/i=17/a=021},
+  year={2008},
+  abstract={An iterative algorithm, based on recent work in compressive sensing, is developed for volume image reconstruction from a circular cone-beam scan. The algorithm minimizes the total variation (TV) of the image subject to the constraint that the estimated projection data is within a specified tolerance of the available data and that the values of the volume image are non-negative. The constraints are enforced by the use of projection onto convex sets (POCS) and the TV objective is minimized by steepest descent with an adaptive step-size. The algorithm is referred to as adaptive-steepest-descent-POCS (ASD-POCS). It appears to be robust against cone-beam artifacts, and may be particularly useful when the angular range is limited or when the angular sampling rate is low. The ASD-POCS algorithm is tested with the Defrise disk and jaw computerized phantoms. Some comparisons are performed with the POCS and expectation-maximization (EM) algorithms. Although the algorithm is presented in the context of circular cone-beam image reconstruction, it can also be applied to scanning geometries involving other x-ray source trajectories.}
+}
+
+B_ASD_POCS_beta
+
+H. Xue, L. Zhang, Z. Cheng, Y. Xing and Y. Xiao. 
+An improved tv minimization algorithm for incomplete data problem in computer tomography. 
+Nuclear Science Symposium Conference Record (NSS/MIC), 2010 IEEE, pages 2621-2624, Oct 2010
+DOI: 10.1109/NSSMIC.2010.5874264
+
+@INPROCEEDINGS{B_ASD_POCS_beta, 
+author={H. Xue and L. Zhang and Z. Cheng and Y. Xing and Y. Xiao}, 
+booktitle={Nuclear Science Symposium Conference Record (NSS/MIC), 2010 IEEE}, 
+title={An improved TV minimization algorithm for incomplete data problem in computer tomography}, 
+year={2010}, 
+pages={2621-2624}, 
+keywords={computerised tomography;image reconstruction;iterative methods;medical image processing;minimisation;B-POCS-TV-$\beta$;Bregman iteration;POCS-TV method;TV minimization algorithm;computer tomography;convergence speed;image quality;incomplete data problem;reconstruction error;total variation;Computed tomography;Convergence;Image reconstruction;Minimization;Optimization;TV;B-POCS-TV-$\beta$;Computer tomography (CT);POCS-TV;TV minimization;few-view;limited-angle}, 
+doi={10.1109/NSSMIC.2010.5874264}, 
+ISSN={1095-7863}, 
+month={Oct}
+}
+
+CGLS
+
+Åke Björck
+Numerical Methods for Least Squares Problems
+Society for Industrial and Applied Mathematics, 1996
+DOI: 10.1137/1.9781611971484
+
+@book{doi:10.1137/1.9781611971484,
+author = {Björck, Å.},
+title = {Numerical Methods for Least Squares Problems},
+publisher = {Society for Industrial and Applied Mathematics},
+year = {1996},
+doi = {10.1137/1.9781611971484},
+address = {},
+edition   = {},
+URL = {http://epubs.siam.org/doi/abs/10.1137/1.9781611971484},
+eprint = {http://epubs.siam.org/doi/pdf/10.1137/1.9781611971484}
+}
+
+FDK
+
+L.A. Feldkamp, L.C. Davis and J.W. Kress. 
+Practical cone-beam algorithm. 
+J. Opt.Soc. Am. A, 1(6):612{619, Jun 1984.
+DOI: 10.1364/JOSAA.1.000612
+
+@article{FDK, 
+author = {L.A. Feldkamp and L.C. Davis and J.W. Kress}, 
+journal = {J. Opt. Soc. Am. A}, 
+keywords = {},
+number = {6}, 
+pages = {612--619}, 
+publisher = {OSA},
+title = {Practical cone-beam algorithm}, 
+volume = {1}, 
+month = {Jun},
+year = {1984},
+url = {http://josaa.osa.org/abstract.cfm?URI=josaa-1-6-612},
+doi = {10.1364/JOSAA.1.000612},
+abstract = {A convolution-backprojection formula is deduced for direct reconstruction of a three-dimensional density function from a set of two-dimensional projections. The formula is approximate but has useful properties, including errors that are relatively small in many practical instances and a form that leads to convenient computation. It reduces to the standard fan-beam formula in the plane that is perpendicular to the axis of rotation and contains the point source. The algorithm is applied to a mathematical phantom as an example of its performance.},
+}
+
+OS_SART
+
+Y. Censor and T. Elfving. 
+Block-iterative algorithms with diagonally scaled oblique projections for the linear feasibility problem. 
+SIAM Journal on Matrix Analysis and Applications, 24(1):40-58, 2002.
+DOI: 10.1137/S089547980138705X
+
+@article{OS_SART,
+author = {Y. Censor and T. Elfving},
+title = {Block-Iterative Algorithms with Diagonally Scaled Oblique Projections for the Linear Feasibility Problem},
+journal = {SIAM Journal on Matrix Analysis and Applications},
+volume = {24},
+number = {1},
+pages = {40-58},
+year = {2002},
+doi = {10.1137/S089547980138705X},
+URL = { http://dx.doi.org/10.1137/S089547980138705X},
+eprint = {  http://dx.doi.org/10.1137/S089547980138705X}
+}
+
+OSC_TV
+
+D. Matenine, Y.s Goussard and P. Despres.
+GPU-accelerated regularized iterative reconstruction for few-view cone beam CT. 
+Medical Physics, 42(4), 2015.
+DOI: 10.1118/1.4914143
+
+	@article{Matenine2015,
+   author = "Matenine, D. and Goussard, Y.s and Despr\'es, P.",
+   title = "{GPU}-accelerated regularized iterative reconstruction for few-view cone beam {CT}",
+   journal = "Medical Physics",
+   year = "2015",
+   volume = "42",
+   number = "4", 
+   eid = ,
+   pages = "1505-1517",
+   url = "http://scitation.aip.org/content/aapm/journal/medphys/42/4/10.1118/1.4914143",
+   doi = "http://dx.doi.org/10.1118/1.4914143" 
+}
+
+SART
+
+A. H. Andersen and A. C. Kak. 
+Simultaneous algebraic reconstruction technique(SART): a superior implementation of the ART algorithm. 
+Ultrasonic imaging, 6(1):81-94, 1984
+DOI: 10.1016/0161-7346(84)90008-7
+@article{SART,
+  title={Simultaneous algebraic reconstruction technique ({SART}): a superior implementation of the {ART} algorithm},
+  author={Andersen, A.H. and Kak, A.C.},
+  journal={Ultrasonic imaging},
+  volume={6},
+  number={1},
+  pages={81--94},
+  year={1984},
+  publisher={SAGE Publications}
+}
+
+
+SART_TV
+
+X. Jia, Y. Lou, J. Lewis, R. Li, X. Gu, C. Men, W.Y. Song and S.B. Jiang. 
+GPU based fast low-dose cone beam CT reconstruction via total variation. 
+Journal of X-ray Science and Technology, 19(2):139-154, 2011
+DOI: 10.3233/XST-2011-0283
+@article{SART_TV,
+  title={{GPU}-based fast low-dose cone beam {CT} reconstruction via total variation},
+  author={Jia, X. and Lou, Y. and Lewis, J. and Li, R. and Gu, X. and Men, C. and Song, W.Y. and Jiang, S.B.},
+  journal={Journal of X-ray Science and Technology},
+  volume={19},
+  number={2},
+  pages={139--154},
+  year={2011},
+  publisher={IOS Press}
+}
+
+SIRT
+
+A. C. Kak and Malcolm Slaney
+Principles of Computerized Tomographic Imaging
+Society of Industrial and Applied Mathematics, 2001.
+DOI: 10.1137/1.9780898719277
+
+@book{SIRT,
+   title = "Principles of computerized tomographic imaging",
+   author = "Kak, Avinash C. and Slaney, Malcolm and IEEE Engineering in Medicine and Biology Society",
+   publisher = "IEEE Press",
+   address = "New York",
+   url = "http://opac.inria.fr/record=b1086573",
+   isbn = "0-87942-198-3",
+   note = "Published under the sponsorship of the IEEE Engineering in Medicine and Biology Society.",
+   year = 1988
+}
+
+
+sheppLogan3D
+
+If the 'yu-ye-wang' option is used:
+
+Hengyong Yu, Yangbo Ye and Ge Wang 
+Katsevich-type algorithms for variable radius spiral cone-beam CT
+Proceedings of SPIE - The International Society for Optical Engineering. 10/2004; 5535:550-557. 
+DOI: 10.1117/12.559300
+
+@inproceedings{sheppLogan3D,
+  title={Katsevich-type algorithims for variable radius spiral cone-beam CT},
+  author={Yu, Hengyong and Ye, Yangbo and Wang, Ge},
+  booktitle={Optical Science and Technology, the SPIE 49th Annual Meeting},
+  pages={550--557},
+  year={2004},
+  organization={International Society for Optics and Photonics}
+}
+
+phantom3dAniso
+
+If the 'yu-ye-wang' option is used:
+
+Hengyong Yu, Yangbo Ye and Ge Wang 
+Katsevich-type algorithms for variable radius spiral cone-beam CT
+Proceedings of SPIE - The International Society for Optical Engineering. 10/2004; 5535:550-557. 
+DOI: 10.1117/12.559300
+
+@inproceedings{sheppLogan3D,
+  title={Katsevich-type algorithims for variable radius spiral cone-beam CT},
+  author={Yu, Hengyong and Ye, Yangbo and Wang, Ge},
+  booktitle={Optical Science and Technology, the SPIE 49th Annual Meeting},
+  pages={550--557},
+  year={2004},
+  organization={International Society for Optics and Photonics}
+}
+
+Measure_Quality
+
+Please refer to the individual parameters used instead of the function itself
+
+@notabib{
+Please refer to the individual parameters used instead of the function itself
+}
+
+
+
+RMSE
+
+J-H Kim,J Nuyts,A Kyme,Z Kuncic and R Fulton
+A rigid motion correction method for helical computed tomography (CT)
+Physics in Medicine & Biology, Phys. Med. Biol. 60 (2015) 2047–2073
+DOI:10.1088/0031-9155/60/5/2047 
+
+@article{kim2015rigid,
+  title={A rigid motion correction method for helical computed tomography (CT)},
+  author={Kim, JH and Nuyts, Johan and Kyme, A and Kuncic, Z and Fulton, R},
+  journal={Physics in medicine and biology},
+  volume={60},
+  number={5},
+  pages={2047},
+  year={2015},
+  publisher={IOP Publishing}
+}
+
+CC
+
+J-H Kim,J Nuyts,A Kyme,Z Kuncic and R Fulton
+A rigid motion correction method for helical computed tomography (CT)
+Physics in Medicine & Biology, Phys. Med. Biol. 60 (2015) 2047–2073
+DOI:10.1088/0031-9155/60/5/2047 
+
+@article{kim2015rigid,
+  title={A rigid motion correction method for helical computed tomography (CT)},
+  author={Kim, JH and Nuyts, Johan and Kyme, A and Kuncic, Z and Fulton, R},
+  journal={Physics in medicine and biology},
+  volume={60},
+  number={5},
+  pages={2047},
+  year={2015},
+  publisher={IOP Publishing}
+}
+
+MSSIM
+
+J-H Kim,J Nuyts,A Kyme,Z Kuncic and R Fulton
+A rigid motion correction method for helical computed tomography (CT)
+Physics in Medicine & Biology, Phys. Med. Biol. 60 (2015) 2047–2073
+DOI:10.1088/0031-9155/60/5/2047 
+
+@article{kim2015rigid,
+  title={A rigid motion correction method for helical computed tomography (CT)},
+  author={Kim, JH and Nuyts, Johan and Kyme, A and Kuncic, Z and Fulton, R},
+  journal={Physics in medicine and biology},
+  volume={60},
+  number={5},
+  pages={2047},
+  year={2015},
+  publisher={IOP Publishing}
+}
+
+UQI
+
+Wang, Zhou, and Alan C. Bovik. 
+A universal image quality index.
+IEEE signal processing letters 9, no. 3 (2002): 81-84.
+DOI: 
+
+@article{wang2002universal,
+  title={A universal image quality index},
+  author={Wang, Zhou and Bovik, Alan C},
+  journal={IEEE signal processing letters},
+  volume={9},
+  number={3},
+  pages={81--84},
+  year={2002},
+  publisher={IEEE}
+}
+
+SophiaBeads data
+
+S. B. Coban and S. A. McDonald
+SophiaBeads Dataset Project. 
+Zenodo (2015)  
+DOI: http://dx.doi.org/10.5281/zenodo.16474.
+
+@misc{coban_2015_16474,
+  author       = {Coban, S. B. and
+                  McDonald, S. A.},
+  title        = {SophiaBeads Dataset Project},
+  month        = mar,
+  year         = 2015,
+  doi          = {10.5281/zenodo.16474},
+  url          = {http://dx.doi.org/10.5281/zenodo.16474}
+}
+
+SophiaBeads code
+
+S. B. Coban 
+SophiaBeads Dataset Project Codes 
+Zenodo (2015)  
+DOI: http://dx.doi.org/10.5281/zenodo.16539
+
+@misc{coban_2015_16539,
+  author       = {Coban, S. B.},
+  title        = {SophiaBeads Dataset Project Codes},
+  month        = apr,
+  year         = 2015,
+  doi          = {10.5281/zenodo.16539},
+  url          = {http://dx.doi.org/10.5281/zenodo.16539}
+}
+
+MLEM
+
+J. M. Ollinger
+Maximum-likelihood reconstruction of transmission images in emission computed tomography via the EM algorithm
+IEEE Transactions on Medical Imaging, 12 (1994) p89-101
+DOI: 10.1109/42.276147
+
+@article{ollinger1994maximum,
+  title={Maximum-likelihood reconstruction of transmission images in emission computed tomography via the EM algorithm},
+  author={Ollinger, John M},
+  journal={IEEE transactions on medical imaging},
+  volume={13},
+  number={1},
+  pages={89--101},
+  year={1994},
+  publisher={IEEE}
+}
+
+headPhantom
+
+A. Aichert, M. Manhart, B. Navalpakkam, R. Grimm, J. Hutter, A. Maier, J. Hornegger, A. Doerfler
+A Realistic Digital Phantom for Perfusion C-Arm CT Based on MRI Data
+2013 IEEE Nuclear Science Symposium and Medical Imaging Conference Record (NSS/MIC), Seoul, Korea, 2013.
+
+@inproceedings{aichert2013realistic,
+  title={A realistic digital phantom for perfusion C-arm CT based on MRI data},
+  author={Aichert, Andr{\'e} and Manhart, Michael T and Navalpakkam, Bharath K and Grimm, Robert and Hutter, Jana and Maier, Andreas and Hornegger, Joachim and Doerfler, Arnd},
+  booktitle={2013 IEEE Nuclear Science Symposium and Medical Imaging Conference (2013 NSS/MIC)},
+  pages={1--2},
+  year={2013},
+  organization={IEEE}
+}
+
+End of Bib (leave this here)
