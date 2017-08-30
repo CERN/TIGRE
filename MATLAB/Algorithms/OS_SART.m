@@ -69,7 +69,7 @@ function [res,errorL2,qualMeasOut]=OS_SART(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 
-[blocksize,lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
+[blocksize,lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 
 if nargout>1
@@ -103,14 +103,22 @@ if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
     V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
     V=permute(single(V),[2 1 3]);
 else
-%     V=length(angles)./Atb(ones([geo.nDetector(1:2).',length(angles)],'single'),geo,angles);
-      V=ones([geo.sVoxel(1:2).',length(angles)],'single');
+    %     V=length(angles)./Atb(ones([geo.nDetector(1:2).',length(angles)],'single'),geo,angles);
+    V=ones([geo.sVoxel(1:2).',length(angles)],'single');
 end
 
 clear A x y dx dz;
 
 
-
+%% hyperparameter stuff
+nesterov=false;
+if ischar(lambda)&&strcmp(lambda,'nesterov')
+    nesterov=true;
+    lambda=(1+sqrt(1+4))/2;
+    gamma=0;
+    ynesterov=zeros(size(res),'single');
+    ynesterov_prev=ynesterov;
+end
 %% Iterate
 errorL2=[];
 offOrigin=geo.offOrigin;
@@ -152,12 +160,18 @@ for ii=1:niter
         %weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
         %res=res+lambda*weigth_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        res=res+lambda* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'interpolated')),geo,alphablocks{jj}));
-        
+        if nesterov
+            % The nesterov update is quite similar to the normal update, it
+            % just uses this update, plus part of the last one.
+            ynesterov=res +bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'interpolated')),geo,alphablocks{jj}));
+            res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
+        else
+            res=res+lambda* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'interpolated')),geo,alphablocks{jj}));
+        end
         
         % Non-negativity constrain
         if nonneg
-         rex=max(res,0);
+            rex=max(res,0);
         end
         
     end
@@ -172,7 +186,14 @@ for ii=1:niter
     end
     
     % reduce hyperparameter
-    lambda=lambda*lamdbared;
+    if nesterov
+        gamma=(1-lambda);
+        lambda=(1+sqrt(1+4*lambda^2))/2;
+        gamma=gamma/lambda;
+    else
+        lambda=lambda*lambdared;
+    end
+    
     if computeL2
         % Compute error norm2 of b-Ax
         geo.offOrigin=offOrigin;
@@ -238,7 +259,7 @@ end
 end
 
 %% Parse inputs
-function [block_size,lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,alpha,argin)
+function [block_size,lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,alpha,argin)
 opts=     {'blocksize','lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg'};
 defaults=ones(length(opts),1);
 % Check inputs
@@ -288,21 +309,22 @@ for ii=1:length(opts)
             % % % % % % % hyperparameter, LAMBDA
         case 'lambda'
             if default
-                lambda=0.99;
+                lambda=1;
+            elseif ischar(lambda)&&strcmpi(lambda,'nesterov');
+                lambda='nesterov'; %just for lowercase/upercase
+            elseif length(val)>1 || ~isnumeric( val)
+                error('CBCT:OS_SART_CBCT:InvalidInput','Invalid lambda')
             else
-                if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:OS_SART_CBCT:InvalidInput','Invalid lambda')
-                end
                 lambda=val;
             end
         case 'lambda_red'
             if default
-                lamdbared=1;
+                lambdared=1;
             else
                 if length(val)>1 || ~isnumeric( val)
                     error('CBCT:OS_SART_CBCT:InvalidInput','Invalid lambda')
                 end
-                lamdbared=val;
+                lambdared=val;
             end
         case 'blocksize'
             if default
@@ -363,10 +385,10 @@ for ii=1:length(opts)
             else
                 OrderStrategy=val;
             end
-          case 'nonneg'
+        case 'nonneg'
             if default
                 nonneg=true;
-            else 
+            else
                 nonneg=val;
             end
         otherwise

@@ -51,7 +51,7 @@ function [res,errorL2,qualMeasOut]=SIRT(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 
-[lambda,res,lamdbared,verbose,QualMeasOpts,nonneg]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lambdared,verbose,QualMeasOpts,nonneg]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
     computeL2=true;
@@ -88,6 +88,15 @@ else
 end
 clear A x y dx dz;
 
+%% hyperparameter stuff
+nesterov=false;
+if ischar(lambda)&&strcmp(lambda,'nesterov')
+    nesterov=true;
+    lambda=(1+sqrt(1+4))/2;
+    gamma=0;
+    ynesterov=zeros(size(res),'single');
+    ynesterov_prev=ynesterov;
+end
 %% Iterate
 
 errorL2=[];
@@ -109,13 +118,26 @@ for ii=1:niter
     % ------------------------------------
     % --------- Memory cheap(er)-----------
     
-    res=res+lambda*bsxfun(@times,1./V,Atb(W.*(proj-Ax(res,geo,angles)),geo,angles)); % x= x + lambda * V * At * W^-1 * (b-Ax)
+    if nesterov
+        % The nesterov update is quite similar to the normal update, it
+        % just uses this update, plus part of the last one.
+        ynesterov=res + bsxfun(@times,1./V,Atb(W.*(proj-Ax(res,geo,angles)),geo,angles));
+        res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
+    else
+        res=res+lambda*bsxfun(@times,1./V,Atb(W.*(proj-Ax(res,geo,angles)),geo,angles)); % x= x + lambda * V * At * W^-1 * (b-Ax)
+    end
     % ------------------------------------
     
     if nonneg
         res=max(res,0);
     end
-    
+    if nesterov
+        gamma=(1-lambda);
+        lambda=(1+sqrt(1+4*lambda^2))/2;
+        gamma=gamma/lambda;
+    else
+        lambda=lambda*lambdared;
+    end
     % If quality is being measured
     if measurequality
         % HERE GOES
@@ -133,7 +155,6 @@ for ii=1:niter
         end
         errorL2=[errorL2 errornow];
     end
-    lambda=lambda*lamdbared;
     
     
     if (ii==1 && verbose==1);
@@ -187,7 +208,7 @@ end
 end
 
 
-function [lambda,res,lamdbared,verbose,QualMeasOpts,nonneg]=parse_inputs(proj,geo,alpha,argin)
+function [lambda,res,lambdared,verbose,QualMeasOpts,nonneg]=parse_inputs(proj,geo,alpha,argin)
 opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','nonneg'};
 defaults=ones(length(opts),1);
 % Check inputs
@@ -237,21 +258,22 @@ for ii=1:length(opts)
             % % % % % % % hyperparameter, LAMBDA
         case 'lambda'
             if default
-                lambda=0.99;
+                lambda=1;
+            elseif ischar(lambda)&&strcmpi(lambda,'nesterov');
+                lambda='nesterov'; %just for lowercase/upercase
+            elseif length(val)>1 || ~isnumeric( val)
+                error('CBCT:SIRT:InvalidInput','Invalid lambda')
             else
-                if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:SIRT:InvalidInput','Invalid lambda')
-                end
                 lambda=val;
             end
         case 'lambda_red'
             if default
-                lamdbared=1;
+                lambdared=1;
             else
                 if length(val)>1 || ~isnumeric( val)
                     error('CBCT:SIRT:InvalidInput','Invalid lambda')
                 end
-                lamdbared=val;
+                lambdared=val;
             end
         case 'init'
             res=[];
@@ -296,10 +318,10 @@ for ii=1:length(opts)
                     error('CBCT:SIRT:InvalidInput','Invalid quality measurement parameters');
                 end
             end
-              case 'nonneg'
+        case 'nonneg'
             if default
                 nonneg=true;
-            else 
+            else
                 nonneg=val;
             end
         otherwise

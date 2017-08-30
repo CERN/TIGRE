@@ -40,23 +40,24 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
-% 
-% Copyright (c) 2015, University of Bath and 
+%
+% Copyright (c) 2015, University of Bath and
 %                     CERN-European Organization for Nuclear Research
 %                     All rights reserved.
 %
-% License:            Open Source under BSD. 
+% License:            Open Source under BSD.
 %                     See the full license at
 %                     https://github.com/CERN/TIGRE/license.txt
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
-% Coded by:           Ander Biguri 
+% Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
 
 %% Deal with input parameters
 blocksize=1;
-[lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
+
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
     computeL2=true;
@@ -65,10 +66,7 @@ else
 end
 errorL2=[];
 
-% reorder angles
-[alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
-
-angles=cell2mat(alphablocks);
+[~,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 index_angles=cell2mat(orig_index);
 
 % does detector rotation exists?
@@ -99,7 +97,15 @@ else
     V=ones([geo.nVoxel(1:2).',length(angles)],'single');
 end
 clear A x y dx dz;
-
+%% hyperparameter stuff
+nesterov=false;
+if ischar(lambda)&&strcmp(lambda,'nesterov')
+    nesterov=true;
+    lambda=(1+sqrt(1+4))/2;
+    gamma=0;
+    ynesterov=zeros(size(res),'single');
+    ynesterov_prev=ynesterov;
+end
 %% Iterate
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
@@ -113,18 +119,19 @@ for ii=1:niter
         res_prev=res;
     end
     
+    % reorder angles
     
-    for jj=1:length(angles);
+    for jj=index_angles;
         if size(offOrigin,2)==length(angles)
-            geo.offOrigin=offOrigin(:,index_angles(jj));
+            geo.offOrigin=offOrigin(:,jj);
         end
         if size(offDetector,2)==length(angles)
-            geo.offDetector=offDetector(:,index_angles(jj));
+            geo.offDetector=offDetector(:,jj);
         end
         if size(rotDetector,2)==length(angles)
-            geo.offDetector=rotDetector(:,index_angles(jj));
+            geo.rotDetector=rotDetector(:,jj);
         end
-        % --------- Memory expensive----------- % and does not include angle reordering!!!
+        % --------- Memory expensive-----------
         
         %         proj_err=proj(:,:,jj)-Ax(res,geo,angles(jj));       %                                 (b-Ax)
         %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
@@ -133,8 +140,14 @@ for ii=1:niter
         %         res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
         %------------------------------------
         %--------- Memory cheap(er)-----------
-        
-        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(res,geo,angles(jj))),geo,angles(jj)));
+        if nesterov
+            % The nesterov update is quite similar to the normal update, it
+            % just uses this update, plus part of the last one.
+            ynesterov=res +  bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(jj))),geo,angles(jj)));
+            res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
+        else
+            res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(jj))),geo,angles(jj)));
+        end
         if nonneg
             res(res<0)=0;
         end
@@ -146,19 +159,24 @@ for ii=1:niter
         qualMeasOut(:,ii)=Measure_Quality(res,res_prev,QualMeasOpts);
     end
     
-    lambda=lambda*lamdbared;
-    
+ if nesterov
+        gamma=(1-lambda);
+        lambda=(1+sqrt(1+4*lambda^2))/2;
+        gamma=gamma/lambda;
+    else
+        lambda=lambda*lambdared;
+    end    
     if computeL2
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
-        errornow=im3Dnorm(proj(:,:,index_angles)-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
+        errornow=im3Dnorm(proj-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
         % If the error is not minimized.
-        if  ii~=1 && errornow>errorL2(end)
-            if verbose
-                disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
-            end
-            return;
-        end
+        %         if  ii~=1 && errornow>errorL2(end)
+        %             if verbose
+        %                 disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
+        %             end
+        %             return;
+        %         end
         errorL2=[errorL2 errornow];
     end
     
@@ -210,7 +228,7 @@ end
 end
 
 
-function [lambda,res,lamdbared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,alpha,argin)
+function [lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,alpha,argin)
 opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg'};
 defaults=ones(length(opts),1);
 % Check inputs
@@ -225,7 +243,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('SART:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+        error('SART:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -239,8 +257,8 @@ for ii=1:length(opts)
             ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
         end
-         if isempty(ind)
-            error('SART:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+        if isempty(ind)
+            error('SART:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -261,20 +279,21 @@ for ii=1:length(opts)
         case 'lambda'
             if default
                 lambda=1;
+            elseif ischar(lambda)&&strcmpi(lambda,'nesterov');
+                lambda='nesterov'; %just for lowercase/upercase
+            elseif length(val)>1 || ~isnumeric( val)
+                error('SART:InvalidInput','Invalid lambda')
             else
-                if length(val)>1 || ~isnumeric( val)
-                    error('SART:InvalidInput','Invalid lambda')
-                end
                 lambda=val;
             end
         case 'lambda_red'
             if default
-                lamdbared=0.99;
+                lambdared=1;
             else
                 if length(val)>1 || ~isnumeric( val)
                     error('SART:InvalidInput','Invalid lambda')
                 end
-                lamdbared=val;
+                lambdared=val;
             end
         case 'init'
             res=[];
@@ -319,16 +338,16 @@ for ii=1:length(opts)
                     error('SART:InvalidInput','Invalid quality measurement parameters');
                 end
             end
-         case 'orderstrategy'
+        case 'orderstrategy'
             if default
                 OrderStrategy='random';
             else
                 OrderStrategy=val;
             end
-          case 'nonneg'
+        case 'nonneg'
             if default
                 nonneg=true;
-            else 
+            else
                 nonneg=val;
             end
         otherwise
