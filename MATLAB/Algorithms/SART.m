@@ -159,24 +159,24 @@ for ii=1:niter
         qualMeasOut(:,ii)=Measure_Quality(res,res_prev,QualMeasOpts);
     end
     
- if nesterov
+    if nesterov
         gamma=(1-lambda);
         lambda=(1+sqrt(1+4*lambda^2))/2;
         gamma=gamma/lambda;
     else
         lambda=lambda*lambdared;
-    end    
-    if computeL2
+    end
+    if computeL2 || nesterov
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
         errornow=im3Dnorm(proj-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
-        % If the error is not minimized.
-        %         if  ii~=1 && errornow>errorL2(end)
-        %             if verbose
-        %                 disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
-        %             end
-        %             return;
-        %         end
+        %         If the error is not minimized.
+        if  ii~=1 && errornow>errorL2(end)
+            if verbose
+                disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
+            end
+            return;
+        end
         errorL2=[errorL2 errornow];
     end
     

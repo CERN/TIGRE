@@ -193,8 +193,8 @@ for ii=1:niter
     else
         lambda=lambda*lambdared;
     end
-    
-    if computeL2
+     
+    if computeL2 || nesterov
         % Compute error norm2 of b-Ax
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
