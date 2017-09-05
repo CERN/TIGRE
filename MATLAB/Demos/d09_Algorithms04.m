@@ -55,6 +55,7 @@ geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/
 % see previous demo for explanation
 angles=linspace(0,2*pi-2*pi/30,30);
 head=headPhantom(geo.nVoxel);
+head=thoraxPhantom(geo.nVoxel);
 projections=Ax(head,geo,angles,'interpolated');
 noise_projections=addCTnoise(projections);
 
@@ -108,7 +109,7 @@ lambdared=0.98;
 
 
 %   'alpha_red':   Defines the reduction rate of the TV hyperparameter
-alpha_red=0.noise_projections95;
+alpha_red=0.95;
 
 %   'Ratio':       The maximum allowed image/TV update ration. If the TV 
 %                  update changes the image more than this, the parameter
@@ -216,6 +217,6 @@ plotImg(abs([ head-imgOSASDPOCS head-imgBASDPOCSbeta head-imgSARTTV;head-head he
 %%
 
 % Obligatory XKCD reference: https://xkcd.com/833/
-% plotImg needs fising for when one 
+
 
 

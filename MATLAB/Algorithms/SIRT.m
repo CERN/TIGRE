@@ -1,12 +1,12 @@
 function [res,errorL2,qualMeasOut]=SIRT(proj,geo,angles,niter,varargin)
-% SIRT_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
+% SIRT solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
-%   SIRT_CBCT(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
+%   SIRT(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
 %   to the geometry descrived in GEO, using NITER iterations.
 %
-%   SIRT_CBCT(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
+%   SIRT(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 %
 %
@@ -259,7 +259,7 @@ for ii=1:length(opts)
         case 'lambda'
             if default
                 lambda=1;
-            elseif ischar(lambda)&&strcmpi(lambda,'nesterov');
+            elseif ischar(val)&&strcmpi(val,'nesterov');
                 lambda='nesterov'; %just for lowercase/upercase
             elseif length(val)>1 || ~isnumeric( val)
                 error('CBCT:SIRT:InvalidInput','Invalid lambda')

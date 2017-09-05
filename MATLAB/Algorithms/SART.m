@@ -279,7 +279,7 @@ for ii=1:length(opts)
         case 'lambda'
             if default
                 lambda=1;
-            elseif ischar(lambda)&&strcmpi(lambda,'nesterov');
+            elseif ischar(val)&&strcmpi(val,'nesterov');
                 lambda='nesterov'; %just for lowercase/upercase
             elseif length(val)>1 || ~isnumeric( val)
                 error('SART:InvalidInput','Invalid lambda')
