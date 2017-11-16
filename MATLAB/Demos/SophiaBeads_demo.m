@@ -66,7 +66,7 @@ geo.sDetector=geo.nDetector.*geo.dDetector;
 geo.nVoxel=geom.voxels.';  % this is the datasheets standard size, but its 
 % very big size and most ocmputers will not be able to run it. We redefine
 % it in the next line, but feel free to use the original
-geo.nVoxel=[200 200 200].';
+geo.nVoxel=[500 500 200].';
 geo.sVoxel=[geom.voxel_size.*geom.voxels].'; 
 geo.dVoxel=geo.sVoxel./geo.nVoxel; 
 
@@ -88,7 +88,9 @@ data=permute(data,[2 1 3]);
 %% Now use any algorithms you want
 
 % example:
-beadsSART=SART(data,geo,angles,15);
+% beadsSART=SART(data,geo,angles,15);
 beadsCGLS=CGLS(data,geo,angles,15);
-
-plotImg([beadsSART beadsCGLS],'Dim','Z','Step',1)
+ImgASD_POCS_20=OS_ASD_POCS(data,geo,angles,50,...
+'TViter',2,'maxL2err',0.5,'alpha',0.002,'alpha_red',0.2,... % these are very important
+'lambda',1,'lambda_red',0.99,'Ratio',1,'Verbose',true);
+% plotImg([beadsSART beadsCGLS],'Dim','Z','Step',1)
