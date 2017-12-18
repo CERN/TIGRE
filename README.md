@@ -74,7 +74,7 @@ issue][2] if it doesnt work in other arch/OS)
    - Install  CUDA Toolkit (the later, the better)
      Download [here][1]
      
-   - Install a compatible compiler
+   - Install a compatible compiler (the Best option Visual Studio 2013 - if you use VS2017 it cause problem because VSCOMMTOOLS14 in VS2017 has completely different directory structure)
    
    - Run Compile.m
 
