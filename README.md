@@ -226,6 +226,6 @@ and the right reference will appear.
 [3]: https://stackoverflow.com/help/mcve
 [4]: https://help.github.com/articles/applying-labels-to-issues-and-pull-requests/
 [5]: http://www.linfo.org/bsdlicense.html
-[6]: https://github.com/CERN/TIGRE/license.txt
+[6]: https://github.com/CERN/TIGRE/blob/master/LICENSE
 [7]: https://github.com/CERN/TIGRE/releases
 [8]: http://iopscience.iop.org/article/10.1088/2057-1976/2/5/055010
