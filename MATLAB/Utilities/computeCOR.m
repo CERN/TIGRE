@@ -1,4 +1,4 @@
- function centre=computeCOR(data,geo,angles)
+ function centre=computeCOR(data,geo,angles,slice)
 % Code modified from SophiaBeads
 % (https://github.com/Sophilyplum/sophiabeads-datasets/blob/master/tools/centre_geom.m)
 % Reference:
@@ -6,10 +6,13 @@
 % Optical Engineering, April 2009.
 
 % Get central slice
-data=squeeze(data(floor(end/2)+1,:,:));
+if nargin<4
+    slice=floor(size(data,1)/2)+1;
+end
+data=squeeze(data(slice,:,:));
 
 if size(angles,1)==1
-   anlges=angles'; 
+   angles=angles'; 
 end
 
 % Set up coordinate grids for testing the fit to data
