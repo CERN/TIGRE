@@ -241,7 +241,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('CBCT:AwPCSD:InvalidInput','Invalid number of inputs')
+    error('TIGRE:AwPCSD:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -250,7 +250,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-        error('CBCT:ASD_POCS:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+        error('TIGRE:AwPCSD:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
     end
 end
 
@@ -265,7 +265,7 @@ for ii=1:length(opts)
             jj=jj+1;
        end
         if isempty(ind)
-            error('CBCT:ASD_POCS:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
+            error('TIGRE:AwPCSD:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -280,7 +280,7 @@ for ii=1:length(opts)
                 verbose=val;
             end
             if ~is2014bOrNewer
-               warning('Verbose mode not available for older versions than MATLAB R2014b');
+               warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
                verbose=false;
             end
             % Lambda
@@ -290,7 +290,7 @@ for ii=1:length(opts)
                 beta=1;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:AwPCSD:InvalidInput','Invalid lambda')
+                    error('TIGRE:AwPCSD:InvalidInput','Invalid lambda')
                 end
                 beta=val;
             end
@@ -301,7 +301,7 @@ for ii=1:length(opts)
                 beta_red=0.99;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:AwPCSD:InvalidInput','Invalid lambda')
+                    error('TIGRE:AwPCSD:InvalidInput','Invalid lambda')
                 end
                 beta_red=val;
             end
@@ -350,7 +350,7 @@ for ii=1:length(opts)
                 if iscellstr(val)
                     QualMeasOpts=val;
                 else
-                    error('CBCT:{AwPCSD:InvalidInput','Invalid quality measurement parameters');
+                    error('TIGRE:AwPCSD:InvalidInput','Invalid quality measurement parameters');
                 end
             end
              %  =========================================================================
@@ -361,7 +361,7 @@ for ii=1:length(opts)
 %                 OrderStrategy=val;
 %             end
         otherwise
-            error('CBCT:AwPCSD:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in AwPCSD()']);
+            error('TIGRE:AwPCSD:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in AwPCSD()']);
             
     end
 end

@@ -69,7 +69,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('CBCT:SART:InvalidInput','Invalid number of inputs')
+    error('CBCT:FDK:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input

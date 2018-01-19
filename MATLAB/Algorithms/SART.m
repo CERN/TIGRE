@@ -234,7 +234,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('SART:InvalidInput','Invalid number of inputs')
+    error('TIGRE:SART:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -243,7 +243,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-        error('SART:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
+        error('TIGRE:SART:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -258,7 +258,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
         if isempty(ind)
-            error('SART:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
+            error('TIGRE:SART:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -272,7 +272,7 @@ for ii=1:length(opts)
                 verbose=val;
             end
             if ~is2014bOrNewer
-                warning('Verbose mode not available for older versions than MATLAB R2014b');
+                warning('TIGRE: Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
             % % % % % % % hyperparameter, LAMBDA
@@ -282,7 +282,7 @@ for ii=1:length(opts)
             elseif ischar(val)&&strcmpi(val,'nesterov');
                 lambda='nesterov'; %just for lowercase/upercase
             elseif length(val)>1 || ~isnumeric( val)
-                error('SART:InvalidInput','Invalid lambda')
+                error('TIGRE:SART:InvalidInput','Invalid lambda')
             else
                 lambda=val;
             end
@@ -291,7 +291,7 @@ for ii=1:length(opts)
                 lambdared=1;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('SART:InvalidInput','Invalid lambda')
+                    error('TIGRE:SART:InvalidInput','Invalid lambda')
                 end
                 lambdared=val;
             end
@@ -314,7 +314,7 @@ for ii=1:length(opts)
                 continue;
             end
             if isempty(res)
-                error('SART:InvalidInput','Invalid Init option')
+                error('TIGRE:SART:InvalidInput','Invalid Init option')
             end
             % % % % % % % ERROR
         case 'initimg'
@@ -325,7 +325,7 @@ for ii=1:length(opts)
                 if isequal(size(val),geo.nVoxel');
                     res=single(val);
                 else
-                    error('SART:InvalidInput','Invalid image for initialization');
+                    error('TIGRE:SART:InvalidInput','Invalid image for initialization');
                 end
             end
         case 'qualmeas'
@@ -335,7 +335,7 @@ for ii=1:length(opts)
                 if iscellstr(val)
                     QualMeasOpts=val;
                 else
-                    error('SART:InvalidInput','Invalid quality measurement parameters');
+                    error('TIGRE:SART:InvalidInput','Invalid quality measurement parameters');
                 end
             end
         case 'orderstrategy'
@@ -351,7 +351,7 @@ for ii=1:length(opts)
                 nonneg=val;
             end
         otherwise
-            error('SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option']);
+            error('TIGRE:SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option']);
     end
 end
 

@@ -20,6 +20,12 @@ function [res,errorL2]=FBP(proj,geo,angles,varargin)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Kyungsang Kim, modified by Ander Biguri 
 %--------------------------------------------------------------------------
+
+% Assertion exploiting lazy evaluation
+if isfield(geo,'mode') && ~strcmpi(geo.mode,'cone')
+     assert(false,'Only use FBP for parallel beam CT')
+end
+
 [filter,parker]=parse_inputs(proj,geo,angles,varargin);
 geo.filter=filter;
 
@@ -60,7 +66,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('CBCT:SART:InvalidInput','Invalid number of inputs')
+    error('TIGRE:FBP:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input

@@ -217,7 +217,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('CBCT:SART_TV:InvalidInput','Invalid number of inputs')
+    error('TIGRE:SART_TV:InvalidInput','Invalid number of inputs')
 end
 multigrid=false;
 % check if option has been passed as input
@@ -226,7 +226,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-        error('CBCT:SART_TV:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
+        error('TIGRE:SART_TV:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -241,7 +241,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
         if isempty(ind)
-            error('CBCT:SART_TV:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
+            error('TIGRE:SART_TV:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -255,7 +255,7 @@ for ii=1:length(opts)
                 verbose=val;
             end
             if ~is2014bOrNewer
-                warning('Verbose mode not available for older versions than MATLAB R2014b');
+                warning('TIGRE: Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
             % % % % % % % hyperparameter, LAMBDA
@@ -264,7 +264,7 @@ for ii=1:length(opts)
                 lambda=1;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:SART_TV:InvalidInput','Invalid lambda')
+                    error('TIGRE:SART_TV:InvalidInput','Invalid lambda')
                 end
                 lambda=val;
             end
@@ -273,7 +273,7 @@ for ii=1:length(opts)
                 lamdbared=0.99;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:SART_TV:InvalidInput','Invalid lambda')
+                    error('TIGRE:SART_TV:InvalidInput','Invalid lambda')
                 end
                 lamdbared=val;
             end
@@ -292,7 +292,7 @@ for ii=1:length(opts)
                 continue;
             end
             if isempty(res)
-                error('CBCT:SART_TV:InvalidInput','Invalid Init option')
+                error('TIGRE:SART_TV:InvalidInput','Invalid Init option')
             end
             % % % % % % % ERROR
         case 'initimg'
@@ -303,7 +303,7 @@ for ii=1:length(opts)
                 if isequal(size(val),geo.nVoxel');
                     res=single(val);
                 else
-                    error('CBCT:SART_TV:InvalidInput','Invalid image for initialization');
+                    error('TIGRE:SART_TV:InvalidInput','Invalid image for initialization');
                 end
             end
         case 'qualmeas'
@@ -342,7 +342,7 @@ for ii=1:length(opts)
                 nonneg=val;
             end
         otherwise
-            error('CBCT:SART_TV:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART()']);
+            error('TIGRE:SART_TV:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART()']);
     end
 end
 if multigrid; res=init_multigrid(proj,geo,alpha,TViter,TVlambda);end;

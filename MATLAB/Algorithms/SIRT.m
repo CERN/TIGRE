@@ -214,7 +214,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('CBCT:SIRT:InvalidInput','Invalid number of inputs')
+    error('TIGRE:SIRT:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -223,7 +223,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-        error('CBCT:SIRT:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
+        error('TIGRE:SIRT:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -238,7 +238,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
         if isempty(ind)
-            error('CBCT:SIRT:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
+            error('TIGRE:SIRT:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -252,7 +252,7 @@ for ii=1:length(opts)
                 verbose=val;
             end
             if ~is2014bOrNewer
-                warning('Verbose mode not available for older versions than MATLAB R2014b');
+                warning('TIGRE: Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
             % % % % % % % hyperparameter, LAMBDA
@@ -262,7 +262,7 @@ for ii=1:length(opts)
             elseif ischar(val)&&strcmpi(val,'nesterov');
                 lambda='nesterov'; %just for lowercase/upercase
             elseif length(val)>1 || ~isnumeric( val)
-                error('CBCT:SIRT:InvalidInput','Invalid lambda')
+                error('TIGRE:SIRT:InvalidInput','Invalid lambda')
             else
                 lambda=val;
             end
@@ -271,7 +271,7 @@ for ii=1:length(opts)
                 lambdared=1;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:SIRT:InvalidInput','Invalid lambda')
+                    error('TIGRE:SIRT:InvalidInput','Invalid lambda')
                 end
                 lambdared=val;
             end
@@ -294,7 +294,7 @@ for ii=1:length(opts)
                 continue;
             end
             if isempty(res)
-                error('CBCT:SIRT:InvalidInput','Invalid Init option')
+                error('TIGRE:SIRT:InvalidInput','Invalid Init option')
             end
             % % % % % % % ERROR
         case 'initimg'
@@ -305,7 +305,7 @@ for ii=1:length(opts)
                 if isequal(size(val),geo.nVoxel');
                     res=single(val);
                 else
-                    error('CBCT:SIRT:InvalidInput','Invalid image for initialization');
+                    error('TIGRE:SIRT:InvalidInput','Invalid image for initialization');
                 end
             end
         case 'qualmeas'
@@ -315,7 +315,7 @@ for ii=1:length(opts)
                 if iscellstr(val)
                     QualMeasOpts=val;
                 else
-                    error('CBCT:SIRT:InvalidInput','Invalid quality measurement parameters');
+                    error('TIGRE:SIRT:InvalidInput','Invalid quality measurement parameters');
                 end
             end
         case 'nonneg'
@@ -325,7 +325,7 @@ for ii=1:length(opts)
                 nonneg=val;
             end
         otherwise
-            error('CBCT:SIRT:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SIRT()']);
+            error('TIGRE:SIRT:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SIRT()']);
     end
 end
 

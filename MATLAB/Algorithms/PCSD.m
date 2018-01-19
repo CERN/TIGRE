@@ -61,7 +61,7 @@ geoaux=geo;
 geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
@@ -95,33 +95,33 @@ while ~stop_criteria %POCS
     delta_p=im3Dnorm(est_proj-proj,'L2');
     
     %Enforcing ART along all projections if squared delta_p > epsilon
-     if (delta_p^2)>epsilon
-        for jj=1:length(angles);
-        if size(offOrigin,2)==length(angles)
-           geo.offOrigin=offOrigin(:,jj);
-        end
-        if size(offDetector,2)==length(angles)
-            geo.offDetector=offDetector(:,jj);
-        end
-         if size(rotDetector,2)==length(angles)
-            geo.rotDetector=rotDetector(:,jj);
-        end
+    if (delta_p^2)>epsilon
+        for jj=1:length(angles)
+            if size(offOrigin,2)==length(angles)
+                geo.offOrigin=offOrigin(:,jj);
+            end
+            if size(offDetector,2)==length(angles)
+                geo.offDetector=offDetector(:,jj);
+            end
+            if size(rotDetector,2)==length(angles)
+                geo.rotDetector=rotDetector(:,jj);
+            end
             
-         f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(f,geo,angles(jj))),geo,angles(jj)));
-           
+            f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(f,geo,angles(jj))),geo,angles(jj)));
+            
         end
     end
     
     %Non-negativity projection on all pixels
-    f=max(f,0);  
+    f=max(f,0);
     
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
-   
+    
     if measurequality
         qualMeasOut(:,iter)=Measure_Quality(f0,f,QualMeasOpts);
     end
-        
+    
     % Compute L2 error of actual image. Ax-b
     g=Ax(f,geo,angles);
     dd=im3Dnorm(g-proj,'L2');
@@ -129,36 +129,36 @@ while ~stop_criteria %POCS
     dp_vec=(f-f0);
     
     if iter==1
-       step=1;
+        step=1;
     else
-       step=delta_p/delta_p_first;
+        step=delta_p/delta_p_first;
     end
     f0=f;
     %  TV MINIMIZATION
     % =========================================================================
     %  Call GPU to minimize TV
     f=minimizeTV(f0,step,ng);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
-%                                             for ii=1:ng
-%                                                 %delta=-0.00038 for thorax phantom
-%                                                 df=weighted_gradientTVnorm(f,delta);
-%                                                 df=df./im3Dnorm(df,'L2');
-%                                                 f=f-(step.*df);
-%                                             end
-
+    %                                             for ii=1:ng
+    %                                                 %delta=-0.00038 for thorax phantom
+    %                                                 df=weighted_gradientTVnorm(f,delta);
+    %                                                 df=df./im3Dnorm(df,'L2');
+    %                                                 f=f-(step.*df);
+    %                                             end
+    
     % Compute change by TV min
     dg_vec=(f-f0);
     
     if iter==1
-    delta_p_first=im3Dnorm((Ax(f0,geo,angles,'interpolated'))-proj,'L2');
+        delta_p_first=im3Dnorm((Ax(f0,geo,angles,'interpolated'))-proj,'L2');
     end
     
     % Reduce SART step
     beta=beta*beta_red;
-
+    
     % Check convergence criteria
     % ==========================================================================
     
-     %Define c_alpha as in equation 21 in the journal
+    %Define c_alpha as in equation 21 in the journal
     c=dot(dg_vec(:),dp_vec(:))/(norm(dg_vec(:),2)*norm(dp_vec(:),2));
     %This c is examined to see if it is close to -1.0
     
@@ -172,14 +172,14 @@ while ~stop_criteria %POCS
         stop_criteria=true;
     end
     
-      if (iter==1 && verbose==1);
+    if (iter==1 && verbose==1);
         expected_time=toc*maxiter;
         disp('PCSD');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
-     end
-
+    end
+    
 end
 end
 
@@ -199,7 +199,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-        error('CBCT:PCSD:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+        error('CBCT:PCSD:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -212,7 +212,7 @@ for ii=1:length(opts)
         while isempty(ind)
             ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
-       end
+        end
         if isempty(ind)
             error('CBCT:PCSD:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
@@ -229,8 +229,8 @@ for ii=1:length(opts)
                 verbose=val;
             end
             if ~is2014bOrNewer
-               warning('Verbose mode not available for older versions than MATLAB R2014b');
-               verbose=false;
+                warning('Verbose mode not available for older versions than MATLAB R2014b');
+                verbose=false;
             end
             % Lambda
             %  =========================================================================
@@ -243,7 +243,7 @@ for ii=1:length(opts)
                 end
                 beta=val;
             end
-              % Lambda reduction
+            % Lambda reduction
             %  =========================================================================
         case 'lambda_red'
             if default
@@ -262,7 +262,7 @@ for ii=1:length(opts)
             else
                 ng=val;
             end
-             %  Maximum L2 error to have a "good image"
+            %  Maximum L2 error to have a "good image"
             %  =========================================================================
         case 'maxl2err'
             if default
@@ -270,8 +270,8 @@ for ii=1:length(opts)
             else
                 epsilon=val;
             end
-         %Image Quality Measure
-         %  =========================================================================
+            %Image Quality Measure
+            %  =========================================================================
         case 'qualmeas'
             if default
                 QualMeasOpts={};
@@ -279,7 +279,7 @@ for ii=1:length(opts)
                 if iscellstr(val)
                     QualMeasOpts=val;
                 else
-                    error('CBCT:{PCSD:InvalidInput','Invalid quality measurement parameters');
+                    error('CBCT:PCSD:InvalidInput','Invalid quality measurement parameters');
                 end
             end
         otherwise

@@ -3,11 +3,11 @@ function [ fres ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargin)
 % B_ASD_POCS_beta Solves the ASD_POCS total variation constrained image in 3D
 % tomography using bregman iteration for the data.
 %
-%   ASD_POCS(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
+%   B_ASD_POCS_beta(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
 %   to the geometry descrived in GEO, using NITER iterations.
 %
-%   ASD_POCS(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
+%   B_ASD_POCS_beta(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 %
 %
@@ -241,7 +241,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-        error('B_ASD_POCS_beta:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
+        error('TIGRE:B_ASD_POCS_beta:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -256,7 +256,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
         if isempty(ind)
-            error('B_ASD_POCS_beta:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
+            error('TIGRE:B_ASD_POCS_beta:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -271,7 +271,7 @@ for ii=1:length(opts)
                 verbose=val;
             end
             if ~is2014bOrNewer
-                warning('Verbose mode not available for older versions than MATLAB R2014b');
+                warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
             % Lambda
@@ -282,7 +282,7 @@ for ii=1:length(opts)
                 beta=1;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:ASD_POCS:InvalidInput','Invalid lambda')
+                    error('TIGRE:B_ASD_POCS_beta:InvalidInput','Invalid lambda')
                 end
                 beta=val;
             end
@@ -293,7 +293,7 @@ for ii=1:length(opts)
                 beta_red=0.99;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:ASD_POCS:InvalidInput','Invalid lambda')
+                    error('TIGRE:B_ASD_POCS_beta:InvalidInput','Invalid lambda')
                 end
                 beta_red=val;
             end
@@ -372,7 +372,7 @@ for ii=1:length(opts)
                 nonneg=val;
             end
         otherwise
-            error('B_ASD_POCS_beta:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option']);
+            error('TIGRE:B_ASD_POCS_beta:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option']);
             
     end
 end

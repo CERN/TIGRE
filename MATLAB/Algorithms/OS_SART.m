@@ -289,7 +289,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
         if isempty(ind)
-            error('CBCT:OS-SART:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
+            error('TIGRE:OS_SART:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -303,7 +303,7 @@ for ii=1:length(opts)
                 verbose=val;
             end
             if ~is2014bOrNewer
-                warning('Verbose mode not available for older versions than MATLAB R2014b');
+                warning('TIGRE: Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
             % % % % % % % hyperparameter, LAMBDA
@@ -313,7 +313,7 @@ for ii=1:length(opts)
             elseif ischar(val)&&strcmpi(val,'nesterov');
                 lambda='nesterov'; %just for lowercase/upercase
             elseif length(val)>1 || ~isnumeric( val)
-                error('CBCT:OS_SART_CBCT:InvalidInput','Invalid lambda')
+                error('TIGRE:OS_SART:InvalidInput','Invalid lambda')
             else
                 lambda=val;
             end
@@ -322,7 +322,7 @@ for ii=1:length(opts)
                 lambdared=1;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:OS_SART_CBCT:InvalidInput','Invalid lambda')
+                    error('TIGRE:OS_SART:InvalidInput','Invalid lambda')
                 end
                 lambdared=val;
             end
@@ -331,7 +331,7 @@ for ii=1:length(opts)
                 block_size=20;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:OS_SART_CBCT:InvalidInput','Invalid BlockSize')
+                    error('TIGRE:OS_SART:InvalidInput','Invalid BlockSize')
                 end
                 block_size=val;
             end
@@ -355,7 +355,7 @@ for ii=1:length(opts)
                 continue;
             end
             if isempty(res)
-                error('CBCT:OS_SART:InvalidInput','Invalid Init option')
+                error('TIGRE:OS_SART:InvalidInput','Invalid Init option')
             end
             % % % % % % % ERROR
         case 'initimg'
@@ -366,7 +366,7 @@ for ii=1:length(opts)
                 if isequal(size(val),geo.nVoxel');
                     res=single(val);
                 else
-                    error('CBCT:OS_SART:InvalidInput','Invalid image for initialization');
+                    error('TIGRE:OS_SART:InvalidInput','Invalid image for initialization');
                 end
             end
         case 'qualmeas'
@@ -376,7 +376,7 @@ for ii=1:length(opts)
                 if iscellstr(val)
                     QualMeasOpts=val;
                 else
-                    error('CBCT:OS_SART:InvalidInput','Invalid quality measurement parameters');
+                    error('TIGRE:OS_SART:InvalidInput','Invalid quality measurement parameters');
                 end
             end
         case 'orderstrategy'
@@ -392,7 +392,7 @@ for ii=1:length(opts)
                 nonneg=val;
             end
         otherwise
-            error('CBCT:OS_SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_SART_CBCT()']);
+            error('TIGRE:OS_SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_SART_CBCT()']);
     end
 end
 

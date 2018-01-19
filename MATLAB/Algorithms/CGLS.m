@@ -45,7 +45,7 @@ defaults= [   1  ,    1 , 1];
 % Check inputs
 nVarargs = length(varargin);
 if mod(nVarargs,2)
-    error('CBCT:CGLS:InvalidInput','Invalid number of inputs')
+    error('TIGRE:CGLS:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -54,7 +54,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('CBCT:CGLS:InvalidInput',['Optional parameter "' varargin{ii} '" does not exist' ]); 
+       error('TIGRE:CGLS:InvalidInput',['Optional parameter "' varargin{ii} '" does not exist' ]); 
     end
 end
 
@@ -69,7 +69,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
         if isempty(ind)
-            error('CBCT:CGLS:InvalidInput',['Optional parameter "' varargin{jj} '" does not exist' ]); 
+            error('TIGRE:CGLS:InvalidInput',['Optional parameter "' varargin{jj} '" does not exist' ]); 
         end
         val=varargin{jj};
     end
@@ -94,7 +94,7 @@ for ii=1:length(opts)
                 continue;
             end
             if isempty(x)
-               error('CBCT:CGLS_CBCT:InvalidInput','Invalid Init option') 
+               error('TIGRE:CGLS:InvalidInput','Invalid Init option') 
             end
             % % % % % % % ERROR
         case 'initimg'
@@ -105,7 +105,7 @@ for ii=1:length(opts)
                 if isequal(size(val),geo.nVoxel');
                     x=single(val);
                 else
-                    error('CBCT:CGLS_CBCT:InvalidInput','Invalid image for initialization');
+                    error('TIGRE:CGLS:InvalidInput','Invalid image for initialization');
                 end
             end
          case 'verbose'
@@ -115,7 +115,7 @@ for ii=1:length(opts)
                 verbose=val;
             end
             if ~is2014bOrNewer
-                warning('Verbose mode not available for older versions than MATLAB R2014b');
+                warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
         otherwise 

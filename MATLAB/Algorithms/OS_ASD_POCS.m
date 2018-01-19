@@ -193,7 +193,7 @@ while ~stop_criteria %POCS
     end
     if (iter==1 && verbose==1);
         expected_time=toc*maxiter;
-        disp('OSC-TV');
+        disp('OSC-ASD-POCS');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
         disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
@@ -212,7 +212,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('OS_ASD_POCS:InvalidInput','Invalid number of inputs')
+    error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -221,7 +221,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-        error('OS_ASD_POCS:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
+        error('TIGRE:OS_ASD_POCS:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -236,7 +236,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
         if isempty(ind)
-            error('OS_ASD_POCS:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
+            error('TIGRE:OS_ASD_POCS:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -251,7 +251,7 @@ for ii=1:length(opts)
                 verbose=val;
             end
             if ~is2014bOrNewer
-                warning('Verbose mode not available for older versions than MATLAB R2014b');
+                warning('TIGRE: Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
             % Lambda
@@ -262,7 +262,7 @@ for ii=1:length(opts)
                 beta=1;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('OS_ASD_POCS:InvalidInput','Invalid lambda')
+                    error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid lambda')
                 end
                 beta=val;
             end
@@ -273,7 +273,7 @@ for ii=1:length(opts)
                 beta_red=0.99;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('OS_ASD_POCS:InvalidInput','Invalid lambda')
+                    error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid lambda')
                 end
                 beta_red=val;
             end
@@ -324,7 +324,7 @@ for ii=1:length(opts)
                 block_size=20;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('OS_ASD_POCS:InvalidInput','Invalid BlockSize')
+                    error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid BlockSize')
                 end
                 block_size=val;
             end
@@ -343,7 +343,7 @@ for ii=1:length(opts)
                 nonneg=val;
             end
         otherwise
-            error('OS_ASD_POCS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option']);
+            error('TIGRE:OS_ASD_POCS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option']);
             
     end
 end
