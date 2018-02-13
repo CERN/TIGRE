@@ -244,10 +244,10 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             y=vectY*t+S.y;
             z=vectZ*t+S.z;
             float u,v;
-            u=y+geo.nDetecU/2-0.5;
-            v=z+geo.nDetecV/2-0.5;
-            float sample=tex2DLayered(tex, v +0.5 ,    // u and v seem swaped, but this is due to the row/column major
-                    u +0.5 ,
+            u=y+geo.nDetecU/2;
+            v=z+geo.nDetecV/2;
+            float sample=tex2DLayered(tex, v  ,    // u and v seem swaped, but this is due to the row/column major
+                    u  ,
                     indAlpha);
             float weigth=0;
             //

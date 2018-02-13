@@ -512,27 +512,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
             voxel_backprojection(projections,geo,result,alphas,nalpha);
         }
     }else{
-//         if (krylov_proj){
-//             voxel_backprojection_parallel2(img,geo,result,alphas,nalpha);
-//             
-//         }
-//         else{
+
             voxel_backprojection_parallel(projections,geo,result,alphas,nalpha);
-//         }
 
     }
     
-    /*
-     * Prepare the outputs
-     */
-
-    
-   
-    
-
-    
-//     free(img);
-    
+ 
     return;
 }
 

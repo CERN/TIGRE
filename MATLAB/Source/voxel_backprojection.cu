@@ -231,8 +231,8 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             y=vectY*t+S.y;
             z=vectZ*t+S.z;
             float u,v;
-            u=y+geo.nDetecU/2-0.5;
-            v=z+geo.nDetecV/2-0.5;
+            u=y+geo.nDetecU/2;
+            v=z+geo.nDetecV/2;
             
             float weigth;
             float realx,realy;
@@ -245,8 +245,8 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             
-            voxelColumn[colIdx]+=tex2DLayered(tex, v +0.5 ,
-                    u +0.5 ,
+            voxelColumn[colIdx]+=tex2DLayered(tex, v ,
+                    u ,
                     indAlpha)*weigth;
         }  // END iterating through column of voxels
         
