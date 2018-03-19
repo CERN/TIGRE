@@ -22,7 +22,7 @@ function [res,errorL2]=FBP(proj,geo,angles,varargin)
 %--------------------------------------------------------------------------
 
 % Assertion exploiting lazy evaluation
-if isfield(geo,'mode') && ~strcmpi(geo.mode,'cone')
+if isfield(geo,'mode') && strcmpi(geo.mode,'parallel')
      assert(false,'Only use FBP for parallel beam CT')
 end
 
