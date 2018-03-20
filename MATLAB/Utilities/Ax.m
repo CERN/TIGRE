@@ -1,0 +1,32 @@
+function [ projections ] = Ax(img, geo, angles, varargin )
+%AX computes projections for images and geometry information
+
+
+
+% Lets make 100% sure that data is correct
+%% OPtionals
+
+ptype='interpolated';
+if nargin > 3
+   assert(any(strcmpi(varargin{1},{'ray-voxel','interpolated'})),'TIGRE:Ax:InvalidInput','Projection type not understood (4th input).');
+   ptype=varargin{1};
+end
+
+
+%% image
+assert(isa(img,'single'),'TIGRE:Ax:InvalidInput','Image shoudl be single type');
+assert(isreal(img),'TIGRE:Ax:InvalidInput','Image shoudl be real (non-complex)');
+assert(size(img,3)>1,'TIGRE:Ax:InvalidInput', 'image shoudl be 3D'); %TODO: needed? 
+%% Angles
+assert(isreal(angles),'TIGRE:Ax:InvalidInput','Angles shoudl be real (non-complex)');
+assert(size(angles,1)==1 | size(angles,1)==3 ,'TIGRE:Ax:InvalidInput','Angles shoudl be of size 1xN or 3xN');
+angles=double(angles); %in case they were single.
+
+%% geometry
+geo=checkGeo(geo,angles);
+assert(isequal(size(img),geo.nVoxel.'),'TIGRE:Ax:BadGeometry','nVoxel does not match with provided image size');
+
+%% Thats it, lets call the mex fucntion
+
+projections=Ax_mex(img,geo,angles,ptype);
+

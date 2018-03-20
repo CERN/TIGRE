@@ -3,47 +3,47 @@
  *
  * MATLAB MEX gateway for backprojection
  *
- * This file gets the data from MATLAB, checks it for errors and then 
+ * This file gets the data from MATLAB, checks it for errors and then
  * parses it to C and calls the relevant C/CUDA fucntions.
  *
  * CODE by       Ander Biguri
  *
----------------------------------------------------------------------------
----------------------------------------------------------------------------
-Copyright (c) 2015, University of Bath and CERN- European Organization for 
-Nuclear Research
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, 
-this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, 
-this list of conditions and the following disclaimer in the documentation 
-and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors
-may be used to endorse or promote products derived from this software without
-specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
- ---------------------------------------------------------------------------
-
-Contact: tigre.toolbox@gmail.com
-Codes  : https://github.com/CERN/TIGRE
---------------------------------------------------------------------------- 
+ * ---------------------------------------------------------------------------
+ * ---------------------------------------------------------------------------
+ * Copyright (c) 2015, University of Bath and CERN- European Organization for
+ * Nuclear Research
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * ---------------------------------------------------------------------------
+ *
+ * Contact: tigre.toolbox@gmail.com
+ * Codes  : https://github.com/CERN/TIGRE
+ * ---------------------------------------------------------------------------
  */
 
 
@@ -84,16 +84,10 @@ void mexFunction(int  nlhs , mxArray *plhs[],
      */
     bool krylov_proj=false; // Caled krylov, because I designed it for krylov case....
     if (nrhs==4){
-        if ( mxIsChar(prhs[3]) != 1)
-            mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput","4rd input shoudl be a string");
-        
         /* copy the string data from prhs[0] into a C string input_ buf.    */
         char *krylov = mxArrayToString(prhs[3]);
-        if (strcmp(krylov,"FDK") && strcmp(krylov,"matched"))
-            mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput","4rd input shoudl be either 'FDK' or 'matched'");
-        else
-            if (!strcmp(krylov,"matched"))
-                krylov_proj=true;
+        if (!strcmp(krylov,"matched")) // if its 0, they are the same
+            krylov_proj=true;
     }
     /*
      ** Third argument: angle of projection.
@@ -129,10 +123,10 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     if (!(numDims==3 && nalpha>1) && !(numDims==2 && nalpha==1) ){
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",  "Projection data is not the rigth size");
     }
-     if( !mxIsSingle(prhs[0])) {
-       mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput",
+    if( !mxIsSingle(prhs[0])) {
+        mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput",
                 "Input image must be a single noncomplex array.");
-     }
+    }
     // Now that input is ok, parse it to C data types.
     // NOTE: while Number of dimensions is the size of the matrix in Matlab, the data is 1D row-wise mayor.
     
@@ -148,17 +142,17 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     
     float const * const projections= static_cast<float const *>(mxGetData(image));
-
     
-    // TODO: change the kernel, so it does this inside, no need to permute
+    
+    // TODO (DONE): change the kernel, so it does this inside, no need to permute
 //     float *  projections= (float*)malloc(size_proj[0] *size_proj[1] *size_proj2* sizeof(float));
-// 
-// 
+//
+//
 //     const long size0 = size_proj[0];
 //     const long size1 = size_proj[1];
 //     const long size2 = size_proj2;
 //     // Permute(imgaux,[2 1 3]);
-//     
+//
 //     for (unsigned int j = 0; j < size2; j++)
 //     {
 //         unsigned long jOffset = j*size0*size1;
@@ -172,7 +166,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 //             }
 //         }
 //     }
-      
+    
     
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /**
@@ -197,130 +191,9 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     fieldnames[12]= "COR";
     fieldnames[13]= "rotDetector";
     // Make sure input is structure
-    if(!mxIsStruct(geometryMex))
-        mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
-                "Second input must be a structure.");
-    // Check number of fields
-    int nfields = mxGetNumberOfFields(geometryMex);
-    if (nfields < 10 || nfields >14 )
-        mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput","There are missing or extra fields in the geometry");
-    
-    mxArray    *tmp;
-    bool offsetAllOrig=false;
-    bool offsetAllDetec=false;
-    bool rotAllDetec=false;
-    bool CORAll=false;
-    for(int ifield=0; ifield<14; ifield++) {
-        tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
-        if(tmp==NULL){
-           //tofix
-            continue;
-        }
-        switch(ifield){
-            
-            // cases where we want 3 input arrays.
-            case 0:case 1:case 2:
-                mrows = mxGetM(tmp);
-                ncols = mxGetN(tmp);
-                if (mrows!=3 || ncols!=1){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
-                    mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
-                            "Above field has wrong size! Should be 3x1!");
-                }
-                break;
-                // this ones should be 2x1
-            case 3:case 4:case 5:
-                mrows = mxGetM(tmp);
-                ncols = mxGetN(tmp);
-                if (mrows!=2 || ncols!=1){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
-                    mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
-                            "Above field has wrong size! Should be 2x1!");
-                }
-                break;
-                // this ones should be 1x1
-                
-            case 12://COR
-                mrows = mxGetM(tmp);
-                ncols = mxGetN(tmp);
 
-                if (mrows!=1 || ( ncols!=1&& ncols!=nalpha) ){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
-                    mexPrintf("%ld x %ld \n", "FIELD: ", (long int)mrows,(long int)ncols);
-                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
-                            "Above field has wrong size! Should be 3x1 or 3xlength(angles)!");
-                    
-                }
-               
-                if (ncols==nalpha)
-                    CORAll=true;
-                break;
-                
-            case 6:case 7:case 10:
-                mrows = mxGetM(tmp);
-                ncols = mxGetN(tmp);
-                if (mrows!=1 || ncols!=1){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
-                    mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",
-                            "Above field has wrong size! Should be 1x1!");
-                }
-                break;
-            case 8:
-                mrows = mxGetM(tmp);
-                ncols = mxGetN(tmp);
-                if (mrows!=3 || ( ncols!=1&& ncols!=nalpha) ){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
-                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
-                            "Above field has wrong size! Should be 3x1 or 3xlength(angles)!");
-                    
-                }
-                
-                if (ncols==nalpha)
-                    offsetAllOrig=true;
-                
-                break;
-                
-            case 9:
-                mrows = mxGetM(tmp);
-                ncols = mxGetN(tmp);
-                if (mrows!=2 || ( ncols!=1&& ncols!=nalpha)){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
-                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
-                            "Above field has wrong size! Should be 2x1 or 3xlength(angles)!");
-                    
-                }
-                
-                if (ncols==nalpha)
-                    offsetAllDetec=true;
-                
-                break;
-            case 11:
-                if (!mxIsChar(tmp)){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
-                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
-                            "Above field is not string!");
-                }
-                
-                break;
-            case 13:
-                mrows = mxGetM(tmp);
-                ncols = mxGetN(tmp);
-                if (mrows!=3 || ( ncols!=1&& ncols!=nalpha)){
-                    mexPrintf("%s %s \n", "FIELD: ", fieldnames[ifield]);
-                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:inputsize",
-                            "Above field has wrong size! Should be 3x1 or 3xlength(angles)!");
-                   
-                }
-                
-                if (ncols==nalpha)
-                    rotAllDetec=true;
-                break;
-            default:
-                mexErrMsgIdAndTxt( "CBCT:MEX:Atb:InvalidInput",
-                        "Something wrong happened. Ensure Geometric struct has correct amount of inputs.");
-        }
-        
-    }
+    mxArray    *tmp;
+
     // Now we know that all the input struct is good! Parse it from mxArrays to
     // C structures that MEX can understand.
     
@@ -334,8 +207,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     geo.unitX=1;geo.unitY=1;geo.unitZ=1;
     for(int ifield=0; ifield<14; ifield++) {
         tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
-          if(tmp==NULL){
-           //tofix
+        if(tmp==NULL){
+            //tofix
             continue;
         }
         switch(ifield){
@@ -389,10 +262,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 offOrig=(double *)mxGetData(tmp);
                 
                 for (int i=0;i<nalpha;i++){
-                    if (offsetAllOrig)
                         c=i;
-                    else
-                        c=0;
+
                     geo.offOrigX[i]=(float)offOrig[0+3*c];
                     geo.offOrigY[i]=(float)offOrig[1+3*c];
                     geo.offOrigZ[i]=(float)offOrig[2+3*c];
@@ -404,10 +275,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 
                 offDetec=(double *)mxGetData(tmp);
                 for (int i=0;i<nalpha;i++){
-                    if (offsetAllDetec)
                         c=i;
-                    else
-                        c=0;
+
                     geo.offDetecU[i]=(float)offDetec[0+2*c];
                     geo.offDetecV[i]=(float)offDetec[1+2*c];
                 }
@@ -415,25 +284,23 @@ void mexFunction(int  nlhs , mxArray *plhs[],
             case 10:
                 acc=(double*)mxGetData(tmp);
                 geo.accuracy=(float)acc[0];
+                if (acc[0]<0.001)
+                    mexErrMsgIdAndTxt( "CBCT:MEX:Ax:Accuracy","Accuracy should be bigger than 0.001");
+                
                 break;
             case 11:
                 mode="";
                 mode=mxArrayToString(tmp);
                 if (!strcmp(mode,"parallel"))
                     coneBeam=false;
-                else if (strcmp(mode,"cone"))
-                    mexErrMsgIdAndTxt( "CBCT:MEX:Atb:Mode","Unkown mode. Should be parallel or cone");
                 break;
-             case 12:
+            case 12:
                 COR=(double*)mxGetData(tmp);
                 geo.COR=(float*)malloc(nalpha * sizeof(float));
-                 for (int i=0;i<nalpha;i++){
-                    if (CORAll)
+                for (int i=0;i<nalpha;i++){
                         c=i;
-                    else
-                        c=0;
-                    
-                    geo.COR[i]  = (float)COR[0+c]; 
+
+                    geo.COR[i]  = (float)COR[0+c];
                 }
                 break;
             case 13:
@@ -444,15 +311,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 rotDetector=(double *)mxGetData(tmp);
                 
                 for (int i=0;i<nalpha;i++){
-                    if (rotAllDetec)
                         c=i;
-                    else
-                        c=0;
-                    
                     geo.dYaw[i]  = (float)rotDetector[0+3*c];
                     geo.dPitch[i]= (float)rotDetector[1+3*c];
                     geo.dRoll[i] = (float)rotDetector[2+3*c];
-
+                    
                 }
                 break;
             default:
@@ -462,34 +325,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         }
     }
     
-    //Spetiall cases
-    // Accuracy
-    tmp=mxGetField(geometryMex,0,fieldnames[10]);
-    if (tmp==NULL)
-        geo.accuracy=0.5;
-    // Geometry
-    tmp=mxGetField(geometryMex,0,fieldnames[11]);
-    if (tmp==NULL)
-        coneBeam=true;
-   // COR
-    tmp=mxGetField(geometryMex,0,fieldnames[12]);
-    if (tmp==NULL){
-        geo.COR=(float*)malloc(nalpha * sizeof(float));
-        memset(geo.COR,0,nalpha * sizeof(float));
-    }
-    // angle rotation detector
-    tmp=mxGetField(geometryMex,0,fieldnames[13]);
-    if (tmp==NULL){
-       
-        geo.dRoll= (float*)malloc(nalpha * sizeof(float));
-        geo.dPitch=(float*)malloc(nalpha * sizeof(float));
-        geo.dYaw=  (float*)malloc(nalpha * sizeof(float));
-        memset(geo.dRoll,0,nalpha * sizeof(float));
-        memset(geo.dPitch,0,nalpha * sizeof(float));
-        memset(geo.dYaw,0,nalpha * sizeof(float));
-    }
     /*
-     * allocate memory for the output
+     * allocate memory for the output (No longer needed)
      */
     
 //     float* result = (float*)malloc(geo.nVoxelX *geo.nVoxelY*geo.nVoxelZ*sizeof(float));
@@ -502,7 +339,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     imgsize[0]=geo.nVoxelX;
     imgsize[1]=geo.nVoxelY;
     imgsize[2]=geo.nVoxelZ;
-     plhs[0] = mxCreateNumericArray(3,imgsize, mxSINGLE_CLASS, mxREAL);
+    plhs[0] = mxCreateNumericArray(3,imgsize, mxSINGLE_CLASS, mxREAL);
     float *result = (float *)mxGetPr(plhs[0]);
     if (coneBeam){
         if (krylov_proj){
@@ -512,12 +349,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
             voxel_backprojection(projections,geo,result,alphas,nalpha);
         }
     }else{
-
-            voxel_backprojection_parallel(projections,geo,result,alphas,nalpha);
-
+        
+        voxel_backprojection_parallel(projections,geo,result,alphas,nalpha);
+        
     }
     
- 
+    
     return;
 }
 
