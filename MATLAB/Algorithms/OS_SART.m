@@ -104,7 +104,7 @@ if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
     V=permute(single(V),[2 1 3]);
 else
     %     V=length(angles)./Atb(ones([geo.nDetector(1:2).',length(angles)],'single'),geo,angles);
-    V=ones([geo.sVoxel(1:2).',length(angles)],'single');
+    V=ones([geo.nVoxel(1:2).',length(angles)],'single');
 end
 
 clear A x y dx dz;
@@ -139,7 +139,7 @@ for ii=1:niter
     end
     
     
-    for jj=1:length(alphablocks);
+    for jj=1:length(alphablocks)
         % Get offsets
         if size(offOrigin,2)==length(angles)
             geo.offOrigin=offOrigin(:,orig_index{jj});

@@ -34,8 +34,8 @@ geo.DSO = 1000;                             % Distance Source Origin        (mm)
 % Make the pixels in the detector the same size as the image voxels
 % (or viceversa)!
 
-geo.nDetector=[512; 512];					% number of pixels              (px)
-geo.dDetector=[2; 2]; 					    % size of each pixel            (mm)
+geo.nDetector=[128; 128];					% number of pixels              (px)
+geo.dDetector=[5.5; 5.5]; 					% size of each pixel            (mm)
 geo.sDetector=geo.nDetector.*geo.dDetector; % total size of the detector    (mm)
 % Image parameters
 geo.nVoxel=[128;128;128];                   % number of voxels              (vx)
@@ -59,8 +59,11 @@ noise_projections=addCTnoise(projections);
 
 %% Reconsturction 
 % 
+imgFBP=FBP(projections,geo,angles);
 imgOSSART=OS_SART(projections,geo,angles,40);
-imgASDPOCS=ASD_POCS(projections,geo,angles,40);
+% This one takes some time, uncomment if oyu want to run it.
+% imgASDPOCS=ASD_POCS(projections,geo,angles,40);
 
 %% Plot
-plotImg([imgOSSART;imgASDPOCS ],'Dim',3); %top is ASD_POCS, nottom OSSART
+plotImg([imgOSSART;imgFBP],'Dim',3); 
+% plotImg([imgASDPOCS ;imgOSSART;imgFBP],'Dim',3); 
