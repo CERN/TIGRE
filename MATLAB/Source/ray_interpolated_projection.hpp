@@ -74,9 +74,10 @@ struct  Geometry {
     float unitY;
     float unitZ;
     
-    //projection angle
+    //rotation angle for e uler (ZYZ)
     float alpha;
-    
+    float theta;
+    float psi;
     // Centre of Rotation correction.
     float* COR;
     //Maximum length of cube
@@ -98,9 +99,10 @@ struct  Geometry {
 
 int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
 float computeMaxLength(Geometry geo, float alpha);
-void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
+void computeDeltas(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 void rollPitchYaw(Geometry geo,int i, Point3D* point);
 float maxDistanceCubeXY(Geometry geo, float alpha,int i);
+void eulerZYZ(Geometry geo, int i, Point3D* point);
 
 // below, not used
 Geometry nomralizeGeometryImage(Geometry geo);

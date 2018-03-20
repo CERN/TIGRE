@@ -164,7 +164,8 @@ __global__ void kernelPixelDetector( Geometry geo,
 
 
 
-int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha){
+// legnth(angles)=3 x nagnles, as we have roll, pitch, yaw.
+int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
     
     
     // copy data to CUDA memory
@@ -229,13 +230,15 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     
     Point3D source, deltaU, deltaV, uvOrigin;
     float maxdist;
-    for (unsigned int i=0;i<nalpha;i++){
+    for (unsigned int i=0;i<nangles;i++){
         
-        geo.alpha=alphas[i];
+        geo.alpha=angles[i];
+        geo.theta=angles[i+nangles];
+        geo.psi  =angles[i+nangles*2];
         //precomute distances for faster execution
-        maxdist=maxDistanceCubeXY(geo,geo.alpha,i);
+        maxdist=maxDistanceCubeXY(geo,geo.alpha,i); // TODO: this needs reworking for 3D
         //Precompute per angle constant stuff for speed
-        computeDeltas(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
+        computeDeltas(geo,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Interpolation!!
         if (timekernel){
             cudaEventCreate(&start);
@@ -279,7 +282,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
  * to compute the locations of the x-rays. While it seems verbose and overly-optimized,
  * it does saves about 30% of each of the kernel calls. Thats something!
  **/
-void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
+void computeDeltas(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
     Point3D S;
     S.x=geo.DSO;
     S.y=0;
@@ -324,43 +327,44 @@ void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* 
     Pv0.x=Pv0.x-(geo.DSD-geo.DSO);
     //2: Offset detector
     
-    //P.x
-    P.y  =P.y  +geo.offDetecU[i];    P.z  =P.z  +geo.offDetecV[i];
-    Pu0.y=Pu0.y+geo.offDetecU[i];    Pu0.z=Pu0.z+geo.offDetecV[i];
-    Pv0.y=Pv0.y+geo.offDetecU[i];    Pv0.z=Pv0.z+geo.offDetecV[i];
+
     //S doesnt need to chagne
     
     
-    //3: Rotate (around z)!
+    
+    //3: Rotate around RZ RY RZ
     Point3D Pfinal, Pfinalu0, Pfinalv0;
+    Pfinal.x  =P.x;
+    Pfinal.y  =P.y  +geo.offDetecU[i]; Pfinal.z  =P.z  +geo.offDetecV[i];
+    Pfinalu0.x=Pu0.x;
+    Pfinalu0.y=Pu0.y  +geo.offDetecU[i]; Pfinalu0.z  =Pu0.z  +geo.offDetecV[i];
+    Pfinalv0.x=Pv0.x;
+    Pfinalv0.y=Pv0.y  +geo.offDetecU[i]; Pfinalv0.z  =Pv0.z  +geo.offDetecV[i];
     
-    Pfinal.x  =P.x*cos(geo.alpha)-P.y*sin(geo.alpha);       Pfinal.y  =P.y*cos(geo.alpha)+P.x*sin(geo.alpha);       Pfinal.z  =P.z;
-    Pfinalu0.x=Pu0.x*cos(geo.alpha)-Pu0.y*sin(geo.alpha);   Pfinalu0.y=Pu0.y*cos(geo.alpha)+Pu0.x*sin(geo.alpha);   Pfinalu0.z=Pu0.z;
-    Pfinalv0.x=Pv0.x*cos(geo.alpha)-Pv0.y*sin(geo.alpha);   Pfinalv0.y=Pv0.y*cos(geo.alpha)+Pv0.x*sin(geo.alpha);   Pfinalv0.z=Pv0.z;
-    
-    Point3D S2;
-    S2.x=S.x*cos(geo.alpha)-S.y*sin(geo.alpha);
-    S2.y=S.y*cos(geo.alpha)+S.x*sin(geo.alpha);
-    S2.z=S.z;
+    eulerZYZ(geo, i,&Pfinal);
+    eulerZYZ(geo, i,&Pfinalu0);
+    eulerZYZ(geo, i,&Pfinalv0);
+    eulerZYZ(geo, i,&S);
+
     
     //3: Offset image (instead of offseting image, -offset everything else)
     
     Pfinal.x  =Pfinal.x-geo.offOrigX[i];     Pfinal.y  =Pfinal.y-geo.offOrigY[i];     Pfinal.z  =Pfinal.z-geo.offOrigZ[i];
     Pfinalu0.x=Pfinalu0.x-geo.offOrigX[i];   Pfinalu0.y=Pfinalu0.y-geo.offOrigY[i];   Pfinalu0.z=Pfinalu0.z-geo.offOrigZ[i];
     Pfinalv0.x=Pfinalv0.x-geo.offOrigX[i];   Pfinalv0.y=Pfinalv0.y-geo.offOrigY[i];   Pfinalv0.z=Pfinalv0.z-geo.offOrigZ[i];
-    S2.x=S2.x-geo.offOrigX[i];               S2.y=S2.y-geo.offOrigY[i];               S2.z=S2.z-geo.offOrigZ[i];
+    S.x=S.x-geo.offOrigX[i];                 S.y=S.y-geo.offOrigY[i];                 S.z=S.z-geo.offOrigZ[i];
     
     // As we want the (0,0,0) to be in a corner of the image, we need to translate everything (after rotation);
     Pfinal.x  =Pfinal.x+geo.sVoxelX/2-geo.dVoxelX/2;      Pfinal.y  =Pfinal.y+geo.sVoxelY/2-geo.dVoxelY/2;          Pfinal.z  =Pfinal.z  +geo.sVoxelZ/2-geo.dVoxelZ/2;
     Pfinalu0.x=Pfinalu0.x+geo.sVoxelX/2-geo.dVoxelX/2;    Pfinalu0.y=Pfinalu0.y+geo.sVoxelY/2-geo.dVoxelY/2;        Pfinalu0.z=Pfinalu0.z+geo.sVoxelZ/2-geo.dVoxelZ/2;
     Pfinalv0.x=Pfinalv0.x+geo.sVoxelX/2-geo.dVoxelX/2;    Pfinalv0.y=Pfinalv0.y+geo.sVoxelY/2-geo.dVoxelY/2;        Pfinalv0.z=Pfinalv0.z+geo.sVoxelZ/2-geo.dVoxelZ/2;
-    S2.x      =S2.x+geo.sVoxelX/2-geo.dVoxelX/2;          S2.y      =S2.y+geo.sVoxelY/2-geo.dVoxelY/2;              S2.z      =S2.z      +geo.sVoxelZ/2-geo.dVoxelZ/2;
+    S.x       =S.x+geo.sVoxelX/2-geo.dVoxelX/2;           S.y       =S.y+geo.sVoxelY/2-geo.dVoxelY/2;               S.z       =S.z      +geo.sVoxelZ/2-geo.dVoxelZ/2;
     
     //4. Scale everything so dVoxel==1
     Pfinal.x  =Pfinal.x/geo.dVoxelX;      Pfinal.y  =Pfinal.y/geo.dVoxelY;        Pfinal.z  =Pfinal.z/geo.dVoxelZ;
     Pfinalu0.x=Pfinalu0.x/geo.dVoxelX;    Pfinalu0.y=Pfinalu0.y/geo.dVoxelY;      Pfinalu0.z=Pfinalu0.z/geo.dVoxelZ;
     Pfinalv0.x=Pfinalv0.x/geo.dVoxelX;    Pfinalv0.y=Pfinalv0.y/geo.dVoxelY;      Pfinalv0.z=Pfinalv0.z/geo.dVoxelZ;
-    S2.x      =S2.x/geo.dVoxelX;          S2.y      =S2.y/geo.dVoxelY;            S2.z      =S2.z/geo.dVoxelZ;
+    S.x       =S.x/geo.dVoxelX;           S.y       =S.y/geo.dVoxelY;             S.z       =S.z/geo.dVoxelZ;
     
     
     //mexPrintf("COR: %f \n",geo.COR[i]);
@@ -371,7 +375,7 @@ void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* 
     Pfinal.x+=CORx;   Pfinal.y+=CORy;
     Pfinalu0.x+=CORx;   Pfinalu0.y+=CORy;
     Pfinalv0.x+=CORx;   Pfinalv0.y+=CORy;
-    S2.x+=CORx; S2.y+=CORy;
+    S.x+=CORx; S.y+=CORy;
     
     // return
     
@@ -385,7 +389,7 @@ void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* 
     deltaV->y=Pfinalv0.y-Pfinal.y;
     deltaV->z=Pfinalv0.z-Pfinal.z;
     
-    *source=S2;
+    *source=S;
 }
 
 float maxDistanceCubeXY(Geometry geo, float alpha,int i){
@@ -421,4 +425,23 @@ void rollPitchYaw(Geometry geo,int i, Point3D* point){
             +cos(geo.dPitch[i])*cos(geo.dYaw[i])*auxPoint.z;
     
 }
+void eulerZYZ(Geometry geo, int i, Point3D* point){
+    Point3D auxPoint;
+    auxPoint.x=point->x;
+    auxPoint.y=point->y;
+    auxPoint.z=point->z;
+    
+    point->x=(+cos(geo.alpha)*cos(geo.theta)*cos(geo.psi)-sin(geo.alpha)*sin(geo.psi))*auxPoint.x+
+             (-cos(geo.alpha)*cos(geo.theta)*sin(geo.psi)-sin(geo.alpha)*cos(geo.psi))*auxPoint.y+
+              cos(geo.alpha)*sin(geo.theta)*auxPoint.z;
+    
+    point->y=(+sin(geo.alpha)*cos(geo.theta)*cos(geo.psi)+cos(geo.alpha)*sin(geo.psi))*auxPoint.x+
+             (-sin(geo.alpha)*cos(geo.theta)*sin(geo.psi)+cos(geo.alpha)*cos(geo.psi))*auxPoint.y+
+              sin(geo.alpha)*sin(geo.theta)*auxPoint.z;
+    
+    point->z=-sin(geo.theta)*cos(geo.psi)*auxPoint.x+
+              sin(geo.theta)*sin(geo.psi)*auxPoint.y+
+              cos(geo.theta)*auxPoint.z;
 
+
+}
