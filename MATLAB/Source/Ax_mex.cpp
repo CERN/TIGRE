@@ -98,8 +98,9 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     double const * const anglesM= static_cast<double const *>(mxGetData(ptrangles));
     // just copy paste the data to a float array
     float  *  angles= (float*)malloc(nangles*mrows*sizeof(float));
-    for (int i=0;i<nangles*mrows;i++)
+    for (int i=0;i<nangles*mrows;i++){
         angles[i]=(float)anglesM[i];
+    }
     
     
     ////////////////////////// First input.
@@ -293,7 +294,6 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         unsigned long long currProjIndex = projSizeInPixels*i;
         result[i] = &outProjections[currProjIndex]; // now the pointers are the same
     }
-    
     
     // call the real function
     if (coneBeam){

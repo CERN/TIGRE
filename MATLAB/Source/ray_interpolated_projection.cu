@@ -227,14 +227,13 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     dim3 grid((geo.nDetecU+divU-1)/divU,(geo.nDetecV+divV-1)/divV,1);
     dim3 block(divU,divV,1);
     
-    
     Point3D source, deltaU, deltaV, uvOrigin;
     float maxdist;
     for (unsigned int i=0;i<nangles;i++){
         
-        geo.alpha=angles[i];
-        geo.theta=angles[i+nangles];
-        geo.psi  =angles[i+nangles*2];
+        geo.alpha=angles[i*3];
+        geo.theta=angles[i*3+1];
+        geo.psi  =angles[i*3+2];
         //precomute distances for faster execution
         maxdist=maxDistanceCubeXY(geo,geo.alpha,i); // TODO: this needs reworking for 3D
         //Precompute per angle constant stuff for speed

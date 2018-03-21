@@ -12,7 +12,7 @@ function [res,errorL2]=FDK(proj,geo,angles,varargin)
 %
 % License:            Open Source under BSD. 
 %                     See the full license at
-%                     https://github.com/CERN/TIGRE/license.txt
+%                     https://github.com/CERN/TIGRE/blob/master/LICENSE
 %                     and
 %                     https://www.mathworks.com/matlabcentral/fileexchange/view_license?file_info_id=35548
 %

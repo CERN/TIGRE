@@ -98,7 +98,7 @@ struct  Geometry {
 int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
 
 //double computeMaxLength(Geometry geo, double alpha);
-void computeDeltas_Siddon(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
+void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 
 //double maxDistanceCubeXY(Geometry geo, double alpha,int i);
 

@@ -41,13 +41,12 @@ function [ f,errorSART,errorTV,errorL2,qualMeasOut] = AwPCSD(proj,geo,angles,max
 %
 % License:            Open Source under BSD.
 %                     See the full license at
-%                     https://github.com/CERN/TIGRE/license.txt
+%                     https://github.com/CERN/TIGRE/blob/master/LICENSE
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Ander Biguri and Manasavee Lohvithee
 %--------------------------------------------------------------------------
-% err=[];
 %% parse inputs
 [beta,beta_red,ng,verbose,epsilon,delta,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
 
