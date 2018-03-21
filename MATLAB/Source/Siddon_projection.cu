@@ -195,7 +195,7 @@ __global__ void kernelPixelDetector( Geometry geo,
     k=(int)floor(source.z+ (aminc+am)/2*ray.z);
     // Initialize
     float ac=am;
-    //eq (28), unit alphas
+    //eq (28), unit anlges
     float axu,ayu,azu;
     axu=1/abs(ray.x);
     ayu=1/abs(ray.y);
@@ -234,7 +234,7 @@ __global__ void kernelPixelDetector( Geometry geo,
 }
 
 
-int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha){
+int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
     
     
     
@@ -295,8 +295,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     dim3 grid((geo.nDetecU+divU-1)/divU,(geo.nDetecV+divV-1)/divV,1);
     dim3 block(divU,divV,1);
     
-    for (unsigned int i=0;i<nalpha;i++){
-        
+    for (unsigned int i=0;i<nangles;i++){
         geo.alpha=angles[i*3];
         geo.theta=angles[i*3+1];
         geo.psi  =angles[i*3+2];
@@ -387,10 +386,7 @@ void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU
     
     //1: Offset detector
     
-    //P.x
-    P.y  =P.y  +geo.offDetecU[i];    P.z  =P.z  +geo.offDetecV[i];
-    Pu0.y=Pu0.y+geo.offDetecU[i];    Pu0.z=Pu0.z+geo.offDetecV[i];
-    Pv0.y=Pv0.y+geo.offDetecU[i];    Pv0.z=Pv0.z+geo.offDetecV[i];
+   
     //S doesnt need to chagne
     
     
