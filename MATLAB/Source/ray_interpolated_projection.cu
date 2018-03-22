@@ -147,8 +147,8 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     
     // limit the amount of mem access after the cube, but before the detector.
-    if ((geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+maxdist)/geo.accuracy  <   length)
-        length=ceil((geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+maxdist)/geo.accuracy);
+    if ((2*geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+maxdist)/geo.accuracy  <   length)
+        length=ceil((2*geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+maxdist)/geo.accuracy);
     //Length is not actually a length, but the amount of memreads with given accuracy ("samples per voxel")
     for (i=floor(maxdist/geo.accuracy); i<=length; i=i+1){
         tx=vectX*i+source.x;
@@ -234,6 +234,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         geo.alpha=alphas[i];
         //precomute distances for faster execution
         maxdist=maxDistanceCubeXY(geo,geo.alpha,i);
+        mexPrintf("%f \n",maxdist);
         //Precompute per angle constant stuff for speed
         computeDeltas(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Interpolation!!
@@ -396,10 +397,17 @@ float maxDistanceCubeXY(Geometry geo, float alpha,int i){
     
     float maxCubX,maxCubY;
     // Forgetting Z, compute mas distance: diagonal+offset
-    maxCubX=(geo.sVoxelX/2+ abs(geo.offOrigX[i]))/geo.dVoxelX;
-    maxCubY=(geo.sVoxelY/2+ abs(geo.offOrigY[i]))/geo.dVoxelY;
+    maxCubX=(geo.nVoxelX/2+ abs(geo.offOrigX[i])/geo.dVoxelX);
+    maxCubY=(geo.nVoxelY/2+ abs(geo.offOrigY[i])/geo.dVoxelY);
     
-    return geo.DSO/max(geo.dVoxelX,geo.dVoxelY)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
+    float a,b;
+    a=geo.DSO/geo.dVoxelX;
+    b=geo.DSO/geo.dVoxelY;
+    
+//  As the return of this value is in "voxel space", the source may have an elliptical curve.
+//  The distance returned is the safe distance that can be skipped for a given anlge alpha, before we need to start sampling.
+    return max(a*b/sqrt(a*a*sin(geo.alpha)*sin(geo.alpha)+b*b*cos(geo.alpha)*cos(geo.alpha))
+           -sqrt(maxCubX*maxCubX+maxCubY*maxCubY),0.0f);
     
 }
 void rollPitchYaw(Geometry geo,int i, Point3D* point){
