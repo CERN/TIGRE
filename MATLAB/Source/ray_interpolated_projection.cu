@@ -234,7 +234,6 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         geo.alpha=alphas[i];
         //precomute distances for faster execution
         maxdist=maxDistanceCubeXY(geo,geo.alpha,i);
-        mexPrintf("%f \n",maxdist);
         //Precompute per angle constant stuff for speed
         computeDeltas(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Interpolation!!
