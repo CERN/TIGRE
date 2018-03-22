@@ -101,7 +101,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
 float computeMaxLength(Geometry geo, float alpha);
 void computeDeltas(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 void rollPitchYaw(Geometry geo,int i, Point3D* point);
-float maxDistanceCubeXY(Geometry geo, float alpha,int i);
+float maxdistanceCuboid(Geometry geo,int i);
 void eulerZYZ(Geometry geo, int i, Point3D* point);
 
 // below, not used

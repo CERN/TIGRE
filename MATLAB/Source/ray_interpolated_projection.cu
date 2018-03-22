@@ -107,7 +107,7 @@ __global__ void kernelPixelDetector( Geometry geo,
         Point3D deltaU,
         Point3D deltaV,
         Point3D uvOrigin,
-        float maxdist){
+        float cropdist_init){
     
     unsigned long  y = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long  x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -147,10 +147,11 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     
     // limit the amount of mem access after the cube, but before the detector.
-    if ((geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+maxdist)/geo.accuracy  <   length)
-        length=ceil((geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+maxdist)/geo.accuracy);
+    //If the maximum possible distance between source an cylinder center+ the radious of it its smaller than the length...
+     if ((geo.DSO/min(min(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy  <   length)
+         length=ceil((geo.DSO/min(min(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy);
     //Length is not actually a length, but the amount of memreads with given accuracy ("samples per voxel")
-    for (i=floor(maxdist/geo.accuracy); i<=length; i=i+1){
+    for (i=floor(cropdist_init/geo.accuracy); i<=length; i=i+1){
         tx=vectX*i+source.x;
         ty=vectY*i+source.y;
         tz=vectZ*i+source.z;
@@ -228,14 +229,15 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     dim3 block(divU,divV,1);
     
     Point3D source, deltaU, deltaV, uvOrigin;
-    float maxdist;
+    float cropdist_init;
     for (unsigned int i=0;i<nangles;i++){
         
         geo.alpha=angles[i*3];
         geo.theta=angles[i*3+1];
         geo.psi  =angles[i*3+2];
         //precomute distances for faster execution
-        maxdist=maxDistanceCubeXY(geo,geo.alpha,i); // TODO: this needs reworking for 3D
+        cropdist_init=maxdistanceCuboid(geo,i); // TODO: this needs reworking for 3D
+        mexPrintf("%f", cropdist_init);
         //Precompute per angle constant stuff for speed
         computeDeltas(geo,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Interpolation!!
@@ -244,7 +246,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
             cudaEventRecord(start,0);
         }
         
-        kernelPixelDetector<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(maxdist));
+        kernelPixelDetector<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(cropdist_init));
         cudaCheckErrors("Kernel fail");
         if (timekernel){
             cudaEventCreate(&stop);
@@ -320,7 +322,7 @@ void computeDeltas(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point
     rollPitchYaw(geo,i,&P);
     rollPitchYaw(geo,i,&Pu0);
     rollPitchYaw(geo,i,&Pv0);
-    //Now ltes translate the points where they shoudl be:
+    //Now ltes translate the detector coordinates to DOD (original position on real coordinate system:
     P.x=P.x-(geo.DSD-geo.DSO);
     Pu0.x=Pu0.x-(geo.DSD-geo.DSO);
     Pv0.x=Pv0.x-(geo.DSD-geo.DSO);
@@ -367,7 +369,8 @@ void computeDeltas(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point
     
     
     //mexPrintf("COR: %f \n",geo.COR[i]);
-    //5. apply COR. Wherever everything was, now its offesetd by a bit
+    //5. apply COR. Wherever everything was, now its offesetd by a bit.
+//     Only wors for standard rotaiton, not aribtary axis rotation.
     float CORx, CORy;
     CORx=-geo.COR[i]*sin(geo.alpha)/geo.dVoxelX;
     CORy= geo.COR[i]*cos(geo.alpha)/geo.dVoxelY;
@@ -391,19 +394,29 @@ void computeDeltas(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point
     *source=S;
 }
 
-float maxDistanceCubeXY(Geometry geo, float alpha,int i){
+float maxdistanceCuboid(Geometry geo,int i){
     ///////////
     // Compute initial "t" so we access safely as less as out of bounds as possible.
     //////////
+        
     
-    
-    float maxCubX,maxCubY;
+    float maxCubX,maxCubY,maxCubZ;
     // Forgetting Z, compute mas distance: diagonal+offset
     maxCubX=(geo.sVoxelX/2+ abs(geo.offOrigX[i]))/geo.dVoxelX;
     maxCubY=(geo.sVoxelY/2+ abs(geo.offOrigY[i]))/geo.dVoxelY;
+    maxCubZ=(geo.sVoxelZ/2+ abs(geo.offOrigZ[i]))/geo.dVoxelZ;
     
-    return geo.DSO/max(geo.dVoxelX,geo.dVoxelY)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
+//     This is the start of a cylinder surroudning the image. 
+//     The first term is the minimum possible distance between the source and the center of the cylinder (as we warp the domain, this ditance may change)
+//     The second term is the radious of the cylinder
+    mexPrintf("%f %f \n",geo.theta,geo.psi);
+    if (geo.theta==0.0f & geo.psi==0.0f) // Special case, it will make the code faster
+        return geo.DSO/max(geo.dVoxelX,geo.dVoxelY)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
+    mexPrintf("nope?\n");
+    //TODO: think of more special cases?
+    return geo.DSO/max(max(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY+maxCubZ*maxCubZ);
     
+
 }
 void rollPitchYaw(Geometry geo,int i, Point3D* point){
     Point3D auxPoint;
