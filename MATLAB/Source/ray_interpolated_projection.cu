@@ -100,8 +100,8 @@ do { \
  *
  **/
 
-
-__global__ void kernelPixelDetector( Geometry geo,
+template<bool sphericalrotation>
+        __global__ void kernelPixelDetector( Geometry geo,
         float* detector,
         Point3D source ,
         Point3D deltaU,
@@ -148,8 +148,18 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     // limit the amount of mem access after the cube, but before the detector.
     //If the maximum possible distance between source an cylinder center+ the radious of it its smaller than the length...
-     if ((geo.DSO/min(min(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy  <   length)
-         length=ceil((geo.DSO/min(min(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy);
+    
+//  Because I have no idea how to efficiently cutoff the legth path in 3D, a very upper limit is computed (see maxdistanceCuboid)
+//  for the 3D case. However it would be bad to lose performance in the 3D case
+//  TODO: can ge really improve this?
+    if (sphericalrotation){
+        if ((2*geo.DSO/min(min(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy  <   length)
+            length=ceil((2*geo.DSO/min(min(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy);
+    }
+    else{
+        if ((2*geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+cropdist_init)/geo.accuracy  <   length)
+            length=ceil((2*geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+cropdist_init)/geo.accuracy);
+    }
     //Length is not actually a length, but the amount of memreads with given accuracy ("samples per voxel")
     for (i=floor(cropdist_init/geo.accuracy); i<=length; i=i+1){
         tx=vectX*i+source.x;
@@ -219,7 +229,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     bool timekernel=false;
     cudaEvent_t start, stop;
     float elapsedTime;
-
+    
     
     
     int divU,divV;
@@ -237,7 +247,6 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         geo.psi  =angles[i*3+2];
         //precomute distances for faster execution
         cropdist_init=maxdistanceCuboid(geo,i); // TODO: this needs reworking for 3D
-        mexPrintf("%f", cropdist_init);
         //Precompute per angle constant stuff for speed
         computeDeltas(geo,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Interpolation!!
@@ -246,7 +255,13 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
             cudaEventRecord(start,0);
         }
         
-        kernelPixelDetector<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(cropdist_init));
+//      This is for acceleration purposes. We can optimize more if we know the rotation is around the Z axis
+//      TODO: we could do this around X and Y axis too, but we would need to compute the new axis of rotation (not possible to know from jsut the angles)
+        if (geo.theta==0.0f & geo.psi==0.0f)
+            kernelPixelDetector<false><<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(cropdist_init));
+        else
+            kernelPixelDetector<true><<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(cropdist_init));
+        
         cudaCheckErrors("Kernel fail");
         if (timekernel){
             cudaEventCreate(&stop);
@@ -261,7 +276,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         
         
     }
-
+    
     cudaUnbindTexture(tex);
     cudaCheckErrors("Unbind  fail");
     
@@ -328,7 +343,7 @@ void computeDeltas(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point
     Pv0.x=Pv0.x-(geo.DSD-geo.DSO);
     //2: Offset detector
     
-
+    
     //S doesnt need to chagne
     
     
@@ -346,7 +361,7 @@ void computeDeltas(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point
     eulerZYZ(geo, i,&Pfinalu0);
     eulerZYZ(geo, i,&Pfinalv0);
     eulerZYZ(geo, i,&S);
-
+    
     
     //3: Offset image (instead of offseting image, -offset everything else)
     
@@ -398,25 +413,28 @@ float maxdistanceCuboid(Geometry geo,int i){
     ///////////
     // Compute initial "t" so we access safely as less as out of bounds as possible.
     //////////
-        
+    
     
     float maxCubX,maxCubY,maxCubZ;
     // Forgetting Z, compute mas distance: diagonal+offset
-    maxCubX=(geo.sVoxelX/2+ abs(geo.offOrigX[i]))/geo.dVoxelX;
-    maxCubY=(geo.sVoxelY/2+ abs(geo.offOrigY[i]))/geo.dVoxelY;
-    maxCubZ=(geo.sVoxelZ/2+ abs(geo.offOrigZ[i]))/geo.dVoxelZ;
+    maxCubX=(geo.nVoxelX/2+ abs(geo.offOrigX[i])/geo.dVoxelX);
+    maxCubY=(geo.nVoxelY/2+ abs(geo.offOrigY[i])/geo.dVoxelY);
+    maxCubZ=(geo.nVoxelZ/2+ abs(geo.offOrigZ[i])/geo.dVoxelZ);
     
-//     This is the start of a cylinder surroudning the image. 
-//     The first term is the minimum possible distance between the source and the center of the cylinder (as we warp the domain, this ditance may change)
-//     The second term is the radious of the cylinder
-    mexPrintf("%f %f \n",geo.theta,geo.psi);
+    float a,b;
+    a=geo.DSO/geo.dVoxelX;
+    b=geo.DSO/geo.dVoxelY;
+    
+//  As the return of this value is in "voxel space", the source may have an elliptical curve.
+//  The distance returned is the safe distance that can be skipped for a given anlge alpha, before we need to start sampling.
+    
     if (geo.theta==0.0f & geo.psi==0.0f) // Special case, it will make the code faster
-        return geo.DSO/max(geo.dVoxelX,geo.dVoxelY)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
-    mexPrintf("nope?\n");
+        return max(a*b/sqrt(a*a*sin(geo.alpha)*sin(geo.alpha)+b*b*cos(geo.alpha)*cos(geo.alpha))-
+                sqrt(maxCubX*maxCubX+maxCubY*maxCubY),0.0f);
     //TODO: think of more special cases?
-    return geo.DSO/max(max(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY+maxCubZ*maxCubZ);
+    return max(geo.DSO/max(max(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY+maxCubZ*maxCubZ),0.0f);
     
-
+    
 }
 void rollPitchYaw(Geometry geo,int i, Point3D* point){
     Point3D auxPoint;
@@ -444,16 +462,16 @@ void eulerZYZ(Geometry geo, int i, Point3D* point){
     auxPoint.z=point->z;
     
     point->x=(+cos(geo.alpha)*cos(geo.theta)*cos(geo.psi)-sin(geo.alpha)*sin(geo.psi))*auxPoint.x+
-             (-cos(geo.alpha)*cos(geo.theta)*sin(geo.psi)-sin(geo.alpha)*cos(geo.psi))*auxPoint.y+
-              cos(geo.alpha)*sin(geo.theta)*auxPoint.z;
+            (-cos(geo.alpha)*cos(geo.theta)*sin(geo.psi)-sin(geo.alpha)*cos(geo.psi))*auxPoint.y+
+            cos(geo.alpha)*sin(geo.theta)*auxPoint.z;
     
     point->y=(+sin(geo.alpha)*cos(geo.theta)*cos(geo.psi)+cos(geo.alpha)*sin(geo.psi))*auxPoint.x+
-             (-sin(geo.alpha)*cos(geo.theta)*sin(geo.psi)+cos(geo.alpha)*cos(geo.psi))*auxPoint.y+
-              sin(geo.alpha)*sin(geo.theta)*auxPoint.z;
+            (-sin(geo.alpha)*cos(geo.theta)*sin(geo.psi)+cos(geo.alpha)*cos(geo.psi))*auxPoint.y+
+            sin(geo.alpha)*sin(geo.theta)*auxPoint.z;
     
     point->z=-sin(geo.theta)*cos(geo.psi)*auxPoint.x+
-              sin(geo.theta)*sin(geo.psi)*auxPoint.y+
-              cos(geo.theta)*auxPoint.z;
-
-
+            sin(geo.theta)*sin(geo.psi)*auxPoint.y+
+            cos(geo.theta)*auxPoint.z;
+    
+    
 }
