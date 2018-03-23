@@ -34,7 +34,11 @@ assert(size(projections,3)==size(angles,2),'TIGRE:Atb:InvalidInput', 'Number of 
 assert(isreal(angles),'TIGRE:Atb:InvalidInput','Angles shoudl be real (non-complex)');
 assert(size(angles,1)==1 | size(angles,1)==3 ,'TIGRE:Atb:InvalidInput','Angles shoudl be of size 1xN or 3xN');
 angles=double(angles); %in case they were single.
-
+if size(angles,1)==1
+   angles=repmat(angles,[3 1]);
+   angles(2,:)=0;
+   angles(3,:)=0;
+end
 %% geometry
 geo=checkGeo(geo,angles);
 assert(isequal([size(projections,2) size(projections,1)],geo.nDetector.'),'TIGRE:checkGeo:BadGeometry','nVoxel does not match with provided image size');

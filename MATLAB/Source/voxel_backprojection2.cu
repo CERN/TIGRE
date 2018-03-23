@@ -400,7 +400,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
             Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec,source;
             float sinalpha,cosalpha;
             
-            geo.alpha=-alphas[currProjNumber];
+            geo.alpha=-alphas[currProjNumber*3];
             sinalpha=sin(geo.alpha);
             cosalpha=cos(geo.alpha);
             

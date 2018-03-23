@@ -82,37 +82,33 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     /*
      ** 4rd argument is matched or un matched.
      */
-    bool krylov_proj=false; // Caled krylov, because I designed it for krylov case....
+    bool pseudo_matched=false; // Caled krylov, because I designed it for krylov case....
     if (nrhs==4){
         /* copy the string data from prhs[0] into a C string input_ buf.    */
         char *krylov = mxArrayToString(prhs[3]);
         if (!strcmp(krylov,"matched")) // if its 0, they are the same
-            krylov_proj=true;
+            pseudo_matched=true;
     }
     /*
      ** Third argument: angle of projection.
      */
-    size_t mrows,ncols;
+    size_t mrows,nangles;
     
     mrows = mxGetM(prhs[2]);
-    ncols = mxGetN(prhs[2]);
+    nangles = mxGetN(prhs[2]);
+
+
+    mxArray const * const ptrangles=prhs[2];
     
-    if( !mxIsDouble(prhs[2]) || mxIsComplex(prhs[2]) ||
-            !(mrows==1) ) {
-        mexErrMsgIdAndTxt( "CBCT:MEX:Atb:input",
-                "Input alpha must be a double, noncomplex array.");
-    }
     
-    size_t nalpha=ncols;
-    mxArray const * const ptralphas=prhs[2];
-    
-    double const * const alphasM= static_cast<double const *>(mxGetData(ptralphas));
+    double const * const anglesM= static_cast<double const *>(mxGetData(ptrangles));
     // just copy paste the data to a float array
-    float  *  alphas= (float*)malloc(nalpha*sizeof(float));
-    for (int i=0;i<nalpha;i++)
-        alphas[i]=(float)alphasM[i];
-    
+    float  *  angles= (float*)malloc(nangles*mrows*sizeof(float));
+    for (int i=0;i<nangles*mrows;i++){
+        angles[i]=(float)anglesM[i];
+    }
     /**
+     *
      * First input: The projections
      */
     
@@ -120,7 +116,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     mxArray const * const image = prhs[0];                 // Get pointer of the data
     mwSize const numDims = mxGetNumberOfDimensions(image); // Get numer of Dimensions of input matrix.
     // Image should be dim 3
-    if (!(numDims==3 && nalpha>1) && !(numDims==2 && nalpha==1) ){
+    if (!(numDims==3 && nangles>1) && !(numDims==2 && nangles==1) ){
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",  "Projection data is not the rigth size");
     }
     if( !mxIsSingle(prhs[0])) {
@@ -131,41 +127,19 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // NOTE: while Number of dimensions is the size of the matrix in Matlab, the data is 1D row-wise mayor.
     
     // We need a float image, and, unfortunatedly, the only way of casting it is by value
-    const mwSize *size_proj= mxGetDimensions(image); //get size of image
-    mrows = mxGetM(image);
-    ncols = mxGetN(image);
-    size_t size_proj2;
-    if (nalpha==1)
-        size_proj2=1;
-    else
-        size_proj2=size_proj[2];
+//     const mwSize *size_proj= mxGetDimensions(image); //get size of image
+//     mrows = mxGetM(image);
+//     nangles = mxGetN(image);
+//     size_t size_proj2;
+//     if (nangles==1)
+//         size_proj2=1;
+//     else
+//         size_proj2=size_proj[2];
     
     
     float const * const projections= static_cast<float const *>(mxGetData(image));
     
     
-    // TODO (DONE): change the kernel, so it does this inside, no need to permute
-//     float *  projections= (float*)malloc(size_proj[0] *size_proj[1] *size_proj2* sizeof(float));
-//
-//
-//     const long size0 = size_proj[0];
-//     const long size1 = size_proj[1];
-//     const long size2 = size_proj2;
-//     // Permute(imgaux,[2 1 3]);
-//
-//     for (unsigned int j = 0; j < size2; j++)
-//     {
-//         unsigned long jOffset = j*size0*size1;
-//         for (unsigned int k = 0; k < size0; k++)
-//         {
-//             int kOffset1 = k*size1;
-//             for (unsigned int i = 0; i < size1; i++)
-//             {
-//                 unsigned long iOffset2 = i*size0;
-//                 img[i + jOffset + kOffset1] = imgaux[iOffset2 + jOffset + k];
-//             }
-//         }
-//     }
     
     
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -255,13 +229,13 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 geo.DSO=(float)DSO[0];
             case 8:
                 
-                geo.offOrigX=(float*)malloc(nalpha * sizeof(float));
-                geo.offOrigY=(float*)malloc(nalpha * sizeof(float));
-                geo.offOrigZ=(float*)malloc(nalpha * sizeof(float));
+                geo.offOrigX=(float*)malloc(nangles * sizeof(float));
+                geo.offOrigY=(float*)malloc(nangles * sizeof(float));
+                geo.offOrigZ=(float*)malloc(nangles * sizeof(float));
                 
                 offOrig=(double *)mxGetData(tmp);
                 
-                for (int i=0;i<nalpha;i++){
+                for (int i=0;i<nangles;i++){
                         c=i;
 
                     geo.offOrigX[i]=(float)offOrig[0+3*c];
@@ -270,11 +244,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 }
                 break;
             case 9:
-                geo.offDetecU=(float*)malloc(nalpha * sizeof(float));
-                geo.offDetecV=(float*)malloc(nalpha * sizeof(float));
+                geo.offDetecU=(float*)malloc(nangles * sizeof(float));
+                geo.offDetecV=(float*)malloc(nangles * sizeof(float));
                 
                 offDetec=(double *)mxGetData(tmp);
-                for (int i=0;i<nalpha;i++){
+                for (int i=0;i<nangles;i++){
                         c=i;
 
                     geo.offDetecU[i]=(float)offDetec[0+2*c];
@@ -296,21 +270,21 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 break;
             case 12:
                 COR=(double*)mxGetData(tmp);
-                geo.COR=(float*)malloc(nalpha * sizeof(float));
-                for (int i=0;i<nalpha;i++){
+                geo.COR=(float*)malloc(nangles * sizeof(float));
+                for (int i=0;i<nangles;i++){
                         c=i;
 
                     geo.COR[i]  = (float)COR[0+c];
                 }
                 break;
             case 13:
-                geo.dRoll= (float*)malloc(nalpha * sizeof(float));
-                geo.dPitch=(float*)malloc(nalpha * sizeof(float));
-                geo.dYaw=  (float*)malloc(nalpha * sizeof(float));
+                geo.dRoll= (float*)malloc(nangles * sizeof(float));
+                geo.dPitch=(float*)malloc(nangles * sizeof(float));
+                geo.dYaw=  (float*)malloc(nangles * sizeof(float));
                 
                 rotDetector=(double *)mxGetData(tmp);
                 
-                for (int i=0;i<nalpha;i++){
+                for (int i=0;i<nangles;i++){
                         c=i;
                     geo.dYaw[i]  = (float)rotDetector[0+3*c];
                     geo.dPitch[i]= (float)rotDetector[1+3*c];
@@ -341,16 +315,23 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     imgsize[2]=geo.nVoxelZ;
     plhs[0] = mxCreateNumericArray(3,imgsize, mxSINGLE_CLASS, mxREAL);
     float *result = (float *)mxGetPr(plhs[0]);
+    
+    
+
     if (coneBeam){
-        if (krylov_proj){
-            voxel_backprojection2(projections,geo,result,alphas,nalpha);
+        
+        if (pseudo_matched){
+            voxel_backprojection2(projections,geo,result,angles,nangles);
         }
+        
+        
+        
         else{
-            voxel_backprojection(projections,geo,result,alphas,nalpha);
+            voxel_backprojection(projections,geo,result,angles,nangles);
         }
     }else{
         
-        voxel_backprojection_parallel(projections,geo,result,alphas,nalpha);
+        voxel_backprojection_parallel(projections,geo,result,angles,nangles);
         
     }
     

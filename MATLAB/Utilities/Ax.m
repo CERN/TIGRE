@@ -1,7 +1,6 @@
 function [ projections ] = Ax(img, geo, angles, varargin )
 %AX computes projections for images and geometry information
 
-
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
 %

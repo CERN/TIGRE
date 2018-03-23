@@ -72,6 +72,8 @@ typedef struct {
     
     //projection angle
     float alpha;
+    float theta;
+    float psi;
     // Centre of Rotation correction.
     float* COR;
     //Maximum length of cube
