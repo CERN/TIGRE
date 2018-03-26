@@ -384,6 +384,8 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
     
     // Since we'll have multiple projections processed by a SINGLE kernel call, compute how many
     // kernel calls we'll need altogether.
+    
+    
     int noOfKernelCalls = (nalpha+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_KERNEL
     
     for (unsigned int i=0; i<noOfKernelCalls; i++)

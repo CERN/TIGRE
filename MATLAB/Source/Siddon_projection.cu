@@ -399,10 +399,10 @@ void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU
     Pfinalv0.x=Pv0.x;
     Pfinalv0.y=Pv0.y  +geo.offDetecU[i]; Pfinalv0.z  =Pv0.z  +geo.offDetecV[i];
     
-    eulerZYZ(geo, i,&Pfinal);
-    eulerZYZ(geo, i,&Pfinalu0);
-    eulerZYZ(geo, i,&Pfinalv0);
-    eulerZYZ(geo, i,&S);
+    eulerZYZ(geo,&Pfinal);
+    eulerZYZ(geo,&Pfinalu0);
+    eulerZYZ(geo,&Pfinalv0);
+    eulerZYZ(geo,&S);
     
     //2: Offset image (instead of offseting image, -offset everything else)
     
@@ -485,7 +485,7 @@ void rollPitchYaw(Geometry geo,int i, Point3D* point){
             +cos(geo.dPitch[1])*cos(geo.dYaw[i])*auxPoint.z;
     
 }
-void eulerZYZ(Geometry geo, int i, Point3D* point){
+void eulerZYZ(Geometry geo, Point3D* point){
     Point3D auxPoint;
     auxPoint.x=point->x;
     auxPoint.y=point->y;

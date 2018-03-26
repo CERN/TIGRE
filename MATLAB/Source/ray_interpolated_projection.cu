@@ -246,10 +246,11 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         geo.theta=angles[i*3+1];
         geo.psi  =angles[i*3+2];
         //precomute distances for faster execution
-        cropdist_init=maxdistanceCuboid(geo,i); // TODO: this needs reworking for 3D
+        
         //Precompute per angle constant stuff for speed
         computeDeltas(geo,i, &uvOrigin, &deltaU, &deltaV, &source);
-        //Interpolation!!
+        
+        cropdist_init=maxdistanceCuboid(geo,i); // TODO: this needs reworking for 3D
         if (timekernel){
             cudaEventCreate(&start);
             cudaEventRecord(start,0);
@@ -357,10 +358,10 @@ void computeDeltas(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point
     Pfinalv0.x=Pv0.x;
     Pfinalv0.y=Pv0.y  +geo.offDetecU[i]; Pfinalv0.z  =Pv0.z  +geo.offDetecV[i];
     
-    eulerZYZ(geo, i,&Pfinal);
-    eulerZYZ(geo, i,&Pfinalu0);
-    eulerZYZ(geo, i,&Pfinalv0);
-    eulerZYZ(geo, i,&S);
+    eulerZYZ(geo,&Pfinal);
+    eulerZYZ(geo,&Pfinalu0);
+    eulerZYZ(geo,&Pfinalv0);
+    eulerZYZ(geo,&S);
     
     
     //3: Offset image (instead of offseting image, -offset everything else)
@@ -426,7 +427,7 @@ float maxdistanceCuboid(Geometry geo,int i){
     b=geo.DSO/geo.dVoxelY;
     
 //  As the return of this value is in "voxel space", the source may have an elliptical curve.
-//  The distance returned is the safe distance that can be skipped for a given anlge alpha, before we need to start sampling.
+//  The distance returned is the safe distance that can be skipped for a given angle alpha, before we need to start sampling.
     
     if (geo.theta==0.0f & geo.psi==0.0f) // Special case, it will make the code faster
         return max(a*b/sqrt(a*a*sin(geo.alpha)*sin(geo.alpha)+b*b*cos(geo.alpha)*cos(geo.alpha))-
@@ -455,7 +456,7 @@ void rollPitchYaw(Geometry geo,int i, Point3D* point){
             +cos(geo.dPitch[i])*cos(geo.dYaw[i])*auxPoint.z;
     
 }
-void eulerZYZ(Geometry geo, int i, Point3D* point){
+void eulerZYZ(Geometry geo,  Point3D* point){
     Point3D auxPoint;
     auxPoint.x=point->x;
     auxPoint.y=point->y;

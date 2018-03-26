@@ -53,7 +53,8 @@
 #include "matrix.h"
 #include "voxel_backprojection.hpp"
 #include "voxel_backprojection2.hpp"
-
+#include "voxel_backprojection_spherical.hpp"
+#include "voxel_backprojection2_spherical.hpp"
 #include <string.h>
 #include "voxel_backprojection_parallel.hpp"
 
@@ -96,8 +97,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     mrows = mxGetM(prhs[2]);
     nangles = mxGetN(prhs[2]);
-
-
+    
+    
     mxArray const * const ptrangles=prhs[2];
     
     
@@ -165,9 +166,9 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     fieldnames[12]= "COR";
     fieldnames[13]= "rotDetector";
     // Make sure input is structure
-
+    
     mxArray    *tmp;
-
+    
     // Now we know that all the input struct is good! Parse it from mxArrays to
     // C structures that MEX can understand.
     
@@ -236,8 +237,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 offOrig=(double *)mxGetData(tmp);
                 
                 for (int i=0;i<nangles;i++){
-                        c=i;
-
+                    c=i;
+                    
                     geo.offOrigX[i]=(float)offOrig[0+3*c];
                     geo.offOrigY[i]=(float)offOrig[1+3*c];
                     geo.offOrigZ[i]=(float)offOrig[2+3*c];
@@ -249,8 +250,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 
                 offDetec=(double *)mxGetData(tmp);
                 for (int i=0;i<nangles;i++){
-                        c=i;
-
+                    c=i;
+                    
                     geo.offDetecU[i]=(float)offDetec[0+2*c];
                     geo.offDetecV[i]=(float)offDetec[1+2*c];
                 }
@@ -272,8 +273,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 COR=(double*)mxGetData(tmp);
                 geo.COR=(float*)malloc(nangles * sizeof(float));
                 for (int i=0;i<nangles;i++){
-                        c=i;
-
+                    c=i;
+                    
                     geo.COR[i]  = (float)COR[0+c];
                 }
                 break;
@@ -285,7 +286,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 rotDetector=(double *)mxGetData(tmp);
                 
                 for (int i=0;i<nangles;i++){
-                        c=i;
+                    c=i;
                     geo.dYaw[i]  = (float)rotDetector[0+3*c];
                     geo.dPitch[i]= (float)rotDetector[1+3*c];
                     geo.dRoll[i] = (float)rotDetector[2+3*c];
@@ -317,17 +318,48 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     float *result = (float *)mxGetPr(plhs[0]);
     
     
-
+    
+    // To know which backprojection to call, we also need to know if the rotation is the orthodox/standard circular
+    // rotation around the Z axis, or of its something else. This is because the current backprojection for
+    // curcular scans is optimized with a trick that assumes that the voxels in Z direction
+    // on the image are aligned with the axis of rotation, to incearse memory latency.
+    // This however does not apply in arbitrary axis of rotation cases.
+    // TODO: test if we really need 2 different codes, or if running the accelerated code
+    // with the worng assumptions will just result in a speed like the non-accelerated code,
+    // without sacrificing speedup in the standard case.
+    
+    // test if we have standard rotation
+    float alpha,theta,psi;
+    for (int i=0;i<nangles;i++){
+        alpha+=angles[i*3];
+        theta+=angles[i*3+1];
+        psi  +=angles[i*3+2];
+    }
+    bool standard_rotation;
+    if ((theta==0.0f) & (psi== 0.0f))
+        standard_rotation=true;
+    else
+        standard_rotation=false;
+    
+    
+    // Run the CUDA code.
     if (coneBeam){
         
         if (pseudo_matched){
-            voxel_backprojection2(projections,geo,result,angles,nangles);
+            if (standard_rotation){
+                voxel_backprojection2(projections,geo,result,angles,nangles);
+            }
+            else{
+                voxel_backprojection2_spherical(projections,geo,result,angles,nangles);
+            }
+            
         }
         
-        
-        
         else{
-            voxel_backprojection(projections,geo,result,angles,nangles);
+            if (standard_rotation)
+                voxel_backprojection(projections,geo,result,angles,nangles);
+            else
+                voxel_backprojection_spherical(projections,geo,result,angles,nangles);
         }
     }else{
         
