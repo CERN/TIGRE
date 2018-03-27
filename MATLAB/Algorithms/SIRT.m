@@ -80,11 +80,11 @@ clear geoaux;
 if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
     [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
         -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-    A = permute(angles+pi/2, [1 3 2]);
+    A = permute(angles(1,:)+pi/2, [1 3 2]);
     V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
     V=single(sum(V,3))';
 else
-    V=ones([geo.nVoxel(1:2).'],'single')*length(angles);
+    V=ones([geo.nVoxel(1:2).'],'single')*size(angles,2);
 end
 clear A x y dx dz;
 

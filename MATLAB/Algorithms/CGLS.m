@@ -158,7 +158,7 @@ for ii=1:niter
     p=s+beta*p;
     
    
-     if (ii==1 && verbose);
+     if (ii==1 && verbose)
         expected_time=toc*niter;   
         disp('CGLS');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);

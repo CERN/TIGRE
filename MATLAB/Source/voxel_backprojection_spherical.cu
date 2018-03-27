@@ -145,8 +145,8 @@ __global__ void kernelPixelBackprojectionFDK_spherical(const Geometry geo,
     y=vectY*t+source.y;
     z=vectZ*t+source.z;
     float u,v;
-    u=y+geo.nDetecU/2-0.5;
-    v=z+geo.nDetecV/2-0.5;
+    u=y+geo.nDetecU/2;
+    v=z+geo.nDetecV/2;
     
     
     float weigth;
@@ -161,11 +161,11 @@ __global__ void kernelPixelBackprojectionFDK_spherical(const Geometry geo,
     weigth=1/(weigth*weigth);
     
     // Get Value in the computed (U,V) and multiply by the corresponding weigth.
-    image[idx]+=tex3D(tex, u +0.5 ,
-            v +0.5 ,
+    image[idx]+=tex3D(tex, v ,
+            u  ,
             indAlpha+0.5)
             *weigth;
-    
+//     image[idx]=v;
     
 }
 

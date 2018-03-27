@@ -145,8 +145,8 @@ __global__ void kernelPixelBackprojectionSpherical(const Geometry geo,
     y=vectY*t+source.y;
     z=vectZ*t+source.z;
     float u,v;
-    u=y+geo.nDetecU/2-0.5;
-    v=z+geo.nDetecV/2-0.5;
+    u=y+geo.nDetecU/2;
+    v=z+geo.nDetecV/2;
     
     // TODO: put this in a separate kernel?
     // Compute the weigth of the matched backprojection , as in doi: 10.1088/0031-9155/56/13/004, eq (3)
@@ -184,8 +184,8 @@ __global__ void kernelPixelBackprojectionSpherical(const Geometry geo,
     weigth=L*L*L/(geo.DSD*l*l);
     
    // Get Value in the computed (U,V) and multiply by the corresponding weigth.
-    image[idx]+=tex3D(tex, u +0.5 ,
-                           v +0.5 ,
+    image[idx]+=tex3D(tex, v  ,
+                           u  ,
                            indAlpha+0.5)
                            *weigth;
     
