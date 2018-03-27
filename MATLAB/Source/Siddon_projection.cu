@@ -181,9 +181,9 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     // get intersection point N1. eq(20-21) [(also eq 9-10)]
     float ax,ay,az;
-    ax=(source.x<pixel1D.x)?  (imin-source.x)/ray.x  :  (imax-source.x)/ray.x;
-    ay=(source.y<pixel1D.y)?  (jmin-source.y)/ray.y  :  (jmax-source.y)/ray.y;
-    az=(source.z<pixel1D.z)?  (kmin-source.z)/ray.z  :  (kmax-source.z)/ray.z;
+    ax=(source.x<pixel1D.x)?  (imin-source.x)/(ray.x+0.000000000001) :  (imax-source.x)/(ray.x+0.000000000001);
+    ay=(source.y<pixel1D.y)?  (jmin-source.y)/(ray.y+0.000000000001) :  (jmax-source.y)/(ray.y+0.000000000001);
+    az=(source.z<pixel1D.z)?  (kmin-source.z)/(ray.z+0.000000000001) :  (kmax-source.z)/(ray.z+0.000000000001);
     
     
     

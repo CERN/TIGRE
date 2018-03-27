@@ -330,6 +330,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     // test if we have standard rotation
     float alpha,theta,psi;
+    theta=0;
+    psi=0;
     for (int i=0;i<nangles;i++){
         alpha+=angles[i*3];
         theta+=angles[i*3+1];

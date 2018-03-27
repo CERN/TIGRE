@@ -317,6 +317,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
 
 int voxel_backprojection2(float const * const projections, Geometry geo, float* result,float const * const alphas, int nalpha)
 {
+    
     /*
      * Allocate texture memory on the device
      */
