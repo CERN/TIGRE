@@ -57,7 +57,7 @@
 #include "voxel_backprojection2_spherical.hpp"
 #include <string.h>
 #include "voxel_backprojection_parallel.hpp"
-
+#include <math.h>
 // #include <time.h>
 
 
@@ -329,13 +329,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // without sacrificing speedup in the standard case.
     
     // test if we have standard rotation
-    float alpha,theta,psi;
+    float theta,psi;
     theta=0;
     psi=0;
     for (int i=0;i<nangles;i++){
-        alpha+=angles[i*3];
-        theta+=angles[i*3+1];
-        psi  +=angles[i*3+2];
+        theta+=fabs(angles[i*3+1]);
+        psi  +=fabs(angles[i*3+2]);
     }
     bool standard_rotation;
     if ((theta==0.0f) & (psi== 0.0f))

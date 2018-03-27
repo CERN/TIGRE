@@ -4,7 +4,7 @@
  *
  *
  * CODE by  Ander Biguri
- * Optimized and modified by Robert Bryll
+ * Optimized and modified by RB
  * ---------------------------------------------------------------------------
  * ---------------------------------------------------------------------------
  * Copyright (c) 2015, University of Bath and CERN- European Organization for
@@ -101,7 +101,7 @@ __global__ void matrixConstantMultiply(const Geometry geo,float* image,float con
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// The optimal values of two constants obtained by Robert Bryll on NVIDIA Quadro K2200 (4 GB RAM, 640 CUDA cores) for 512^3 volume and 512^3 projections (512 proj, each 512 x 512) were:
+// The optimal values of two constants obtained by RB on NVIDIA Quadro K2200 (4 GB RAM, 640 CUDA cores) for 512^3 volume and 512^3 projections (512 proj, each 512 x 512) were:
 // PROJ_PER_KERNEL = 32 or 16 (very similar times)
 // VOXELS_PER_THREAD = 8
 // Speedup of the entire FDK backprojection (not only kernel run, also memcpy etc.) was nearly 4x relative to the original (single projection, single voxel per thread) code.

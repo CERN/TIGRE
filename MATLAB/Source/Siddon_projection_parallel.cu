@@ -198,8 +198,8 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     
     // get intersection point N1. eq(20-21) [(also eq 9-10)]
     float ax,ay;
-    ax=(source.x<pixel1D.x)?  (imin-source.x)/ray.x  :  (imax-source.x)/ray.x;
-    ay=(source.y<pixel1D.y)?  (jmin-source.y)/ray.y  :  (jmax-source.y)/ray.y;
+    ax=(source.x<pixel1D.x)?  (imin-source.x)/(ray.x+0.000000000001)  :  (imax-source.x)/(ray.x+0.000000000001);
+    ay=(source.y<pixel1D.y)?  (jmin-source.y)/(ray.y+0.000000000001)  :  (jmax-source.y)/(ray.y+0.000000000001);
 //     az=(source.z<pixel1D.z)?  (kmin-source.z)/ray.z  :  (kmax-source.z)/ray.z;
     
     
@@ -213,7 +213,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
 //     k=(int)source.z;
     // Initialize
     float ac=am;
-    //eq (28), unit alphas
+    //eq (28), unit angles
     float axu,ayu;
     axu=1/abs(ray.x);
     ayu=1/abs(ray.y);
@@ -249,11 +249,10 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
         aminc=min(ay,ax);
     }
     detector[idx]=maxlength*sum;
-//     detector[idx]=(iu);
 }
 
 
-int siddon_ray_projection_parallel(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha){
+int siddon_ray_projection_parallel(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
     
     
   
@@ -312,9 +311,11 @@ int siddon_ray_projection_parallel(float const * const img, Geometry geo, float*
     divV=16;
     dim3 grid((geo.nDetecU+divU-1)/divU,(geo.nDetecV+divV-1)/divV,1);
     dim3 block(divU,divV,1); 
-    for (int i=0;i<nalpha;i++){
+    for (int i=0;i<nangles;i++){
         
-        geo.alpha=alphas[i];
+        geo.alpha=angles[i*3];
+        geo.theta=angles[i*3+1];
+        geo.psi  =angles[i*3+2];
         if(geo.alpha==0.0 || abs(geo.alpha-1.5707963267949)<0.0000001){
             geo.alpha=geo.alpha+1.1920929e-07;
         }
@@ -356,7 +357,7 @@ int siddon_ray_projection_parallel(float const * const img, Geometry geo, float*
  * to compute the locations of the x-rays. While it seems verbose and overly-optimized,
  * it does saves about 30% of each of the kernel calls. Thats something!
  **/
-void computeDeltas_Siddon_parallel(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
+void computeDeltas_Siddon_parallel(Geometry geo, float angles,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
     Point3D S;
 
     S.x  =geo.DSO;   S.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       S.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
@@ -436,7 +437,7 @@ void computeDeltas_Siddon_parallel(Geometry geo, float alpha,int i, Point3D* uvo
 }
 #ifndef PROJECTION_HPP
 
-float maxDistanceCubeXY(Geometry geo, float alpha,int i){
+float maxDistanceCubeXY(Geometry geo, float angles,int i){
     ///////////
     // Compute initial "t" so we access safely as less as out of bounds as possible.
     //////////
