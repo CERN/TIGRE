@@ -226,7 +226,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     float maxdist;
     for (unsigned int i=0;i<nalpha;i++){
         
-        geo.alpha=alphas[i];
+        geo.alpha=alphas[i*3];
         //precomute distances for faster execution
         maxdist=maxdistanceCuboid(geo,i);
         //Precompute per angle constant stuff for speed
