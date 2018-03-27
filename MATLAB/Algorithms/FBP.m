@@ -34,7 +34,7 @@ geo.filter=filter;
 
 
 if size(geo.offDetector,2)==1
-    offset=repmat(geo.offDetector,[1 length(angles)]);
+    offset=repmat(geo.offDetector,[1 size(angles,2)]);
 else
     offset=geo.offDetector;
 end

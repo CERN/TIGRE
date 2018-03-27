@@ -99,12 +99,12 @@ W=1./W;
 if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
     [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
         -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-    A = permute(angles+pi/2, [1 3 2]);
+    A = permute(angles(1,:)+pi/2, [1 3 2]);
     V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
     V=permute(single(V),[2 1 3]);
 else
-    %     V=length(angles)./Atb(ones([geo.nDetector(1:2).',length(angles)],'single'),geo,angles);
-    V=ones([geo.nVoxel(1:2).',length(angles)],'single');
+    %     V=size(angles,2)./Atb(ones([geo.nDetector(1:2).',size(angles,2)],'single'),geo,angles);
+    V=ones([geo.nVoxel(1:2).',size(angles,2)],'single');
 end
 
 clear A x y dx dz;
@@ -141,13 +141,13 @@ for ii=1:niter
     
     for jj=1:length(alphablocks)
         % Get offsets
-        if size(offOrigin,2)==length(angles)
+        if size(offOrigin,2)==size(angles,2)
             geo.offOrigin=offOrigin(:,orig_index{jj});
         end
-        if size(offDetector,2)==length(angles)
+        if size(offDetector,2)==size(angles,2)
             geo.offDetector=offDetector(:,orig_index{jj});
         end
-        if size(rotDetector,2)==length(angles)
+        if size(rotDetector,2)==size(angles,2)
             geo.rotDetector=rotDetector(:,orig_index{jj});
         end
         

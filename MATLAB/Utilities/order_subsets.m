@@ -1,8 +1,8 @@
 function [ordered_alpha,index_alpha]=order_subsets(angles,blocksize, mode)
-index_alpha=1:length(angles);
+index_alpha=1:size(angles,2);
 
-block_alpha=mat2cell(angles      ,1,[repmat(blocksize,1,floor(length(angles)/blocksize)) mod(length(angles),blocksize)]);
-index_alpha=mat2cell(index_alpha,1,[repmat(blocksize,1,floor(length(angles)/blocksize)) mod(length(angles),blocksize)]);
+block_alpha=mat2cell(angles      ,1,[repmat(blocksize,1,floor(size(angles,2)/blocksize)) mod(size(angles,2),blocksize)]);
+index_alpha=mat2cell(index_alpha,1,[repmat(blocksize,1,floor(size(angles,2)/blocksize)) mod(size(angles,2),blocksize)]);
 
 block_alpha=block_alpha(~cellfun('isempty',block_alpha));
 index_alpha=index_alpha(~cellfun('isempty',index_alpha));
@@ -24,11 +24,11 @@ end
 if strcmp(mode,'angularDistance') 
     % we need them sorted, so we need to recompute the blocks, but sorted
     [angles,sortindex]=sort(angles);
-    index_alpha=1:length(angles);
+    index_alpha=1:size(angles,2);
     index_alpha=index_alpha(sortindex);
     
-    block_alpha=mat2cell(angles      ,1,[repmat(blocksize,1,floor(length(angles)/blocksize)) mod(length(angles),blocksize)]);
-    index_alpha=mat2cell(index_alpha,1,[repmat(blocksize,1,floor(length(angles)/blocksize)) mod(length(angles),blocksize)]);
+    block_alpha=mat2cell(angles      ,1,[repmat(blocksize,1,floor(size(angles,2)/blocksize)) mod(size(angles,2),blocksize)]);
+    index_alpha=mat2cell(index_alpha,1,[repmat(blocksize,1,floor(size(angles,2)/blocksize)) mod(size(angles,2),blocksize)]);
     
     block_alpha=block_alpha(~cellfun('isempty',block_alpha));
     index_alpha=index_alpha(~cellfun('isempty',index_alpha));

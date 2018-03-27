@@ -40,9 +40,9 @@ for i = 1:length(precision)
         beta = 2 * gamma_i + pi;
         
         s2 = geo.DSD * tan(2 * gamma_c - gamma);
-        s2 = repmat(s2, 1, length(angles));
+        s2 = repmat(s2, 1, size(angles,2));
         
-        angles_aux = repmat(angles', geo.nDetector(1), 1) + repmat(beta, 1, length(angles));
+        angles_aux = repmat(angles', geo.nDetector(1), 1) + repmat(beta, 1, size(angles,2));
         test = interp2(angle_grid, det_grid, test_data, angles_aux, s2, 'linear', 0);
         
         nonzero = find(test > 0);

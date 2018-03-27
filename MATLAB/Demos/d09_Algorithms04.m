@@ -141,7 +141,7 @@ imgASDPOCS=ASD_POCS(noise_projections,geo,angles,50,...
 imgOSASDPOCS=OS_ASD_POCS(noise_projections,geo,angles,50,...
                     'TViter',ng,'maxL2err',epsilon,'alpha',alpha,... % these are very important
                      'lambda',lambda,'lambda_red',lambdared,'Ratio',ratio,'Verbose',verb,...% less important.
-                      'BlockSize',length(angles)/10,'OrderStrategy','angularDistance'); %OSC options
+                      'BlockSize',size(angles,2)/10,'OrderStrategy','angularDistance'); %OSC options
            
                 
            

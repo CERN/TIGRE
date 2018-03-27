@@ -50,7 +50,7 @@ angles=[angles angles angles];
 head=headPhantom(geo.nVoxel); % yes, not the best example data, but It will do.
 
 % Thsi makes it helical
-geo.offOrigin(3,:)=linspace(-1024/2+128,1024/2-128,length(angles)).';  % about 256^3 images fit int he detector with this size. 
+geo.offOrigin(3,:)=linspace(-1024/2+128,1024/2-128,size(angles,2)).';  % about 256^3 images fit int he detector with this size. 
 geo.offOrigin(1,:)=0;
 geo.offOrigin(2,:)=0;
 

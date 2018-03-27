@@ -61,7 +61,7 @@ assert(geo.DSD>=geo.DSO, 'TIGRE:checkGeo:BadGeometry','DSD shoudl be bigger or e
 %                     'mode','accuracy'};
 
 if isfield(geo,'offOrigin')
-   assert(isequal(size(geo.offOrigin),[3 1]) | isequal(size(geo.offOrigin),[3 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offOrigin Should be 3x1 or 3xlength(angles)') 
+   assert(isequal(size(geo.offOrigin),[3 1]) | isequal(size(geo.offOrigin),[3 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offOrigin Should be 3x1 or 3xsize(angles,2)') 
    assert(isa(geo.offOrigin,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.offOrigin is not double type.' )
    if isequal(size(geo.offOrigin),[3 1])
       geo.offOrigin=repmat(geo.offOrigin,[1, size(angles,2)]);
@@ -71,7 +71,7 @@ else
 end
 
 if isfield(geo,'offDetector')
-   assert(isequal(size(geo.offDetector),[2 1]) | isequal(size(geo.offDetector),[2 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offDetector Should be 3x1 or 3xlength(angles)') 
+   assert(isequal(size(geo.offDetector),[2 1]) | isequal(size(geo.offDetector),[2 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offDetector Should be 3x1 or 3xsize(angles,2)') 
    assert(isa(geo.offDetector,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.offDetector is not double type.' )
    if isequal(size(geo.offDetector),[2 1])
       geo.offDetector=repmat(geo.offDetector,[1, size(angles,2)]);
@@ -81,7 +81,7 @@ else
 end
 
 if isfield(geo,'rotDetector')
-   assert(isequal(size(geo.rotDetector),[3 1]) | isequal(size(geo.rotDetector),[3 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.rotDetector Should be 3x1 or 3xlength(angles)') 
+   assert(isequal(size(geo.rotDetector),[3 1]) | isequal(size(geo.rotDetector),[3 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.rotDetector Should be 3x1 or 3xsize(angles,2)') 
    assert(isa(geo.rotDetector,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.rotDetector is not double type.' )
    if isequal(size(geo.rotDetector),[3 1])
       geo.rotDetector=repmat(geo.rotDetector,[1, size(angles,2)]);
@@ -91,7 +91,7 @@ else
 end
 
 if isfield(geo,'COR')
-   assert(isequal(size(geo.COR),[1 1]) | isequal(size(geo.COR),[1 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.COR Should be 1x1 or 1xlength(angles)') 
+   assert(isequal(size(geo.COR),[1 1]) | isequal(size(geo.COR),[1 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.COR Should be 1x1 or 1xsize(angles,2)') 
    assert(isa(geo.COR,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.COR is not double type.' )
    if isequal(size(geo.COR),[1 1])
       geo.COR=repmat(geo.COR,[1, size(angles,2)]);

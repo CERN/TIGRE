@@ -28,7 +28,7 @@ geo.filter=filter;
 
 
 if size(geo.offDetector,2)==1
-    offset=repmat(geo.offDetector,[1 length(angles)]);
+    offset=repmat(geo.offDetector,[1 size(angles,2)]);
 else
     offset=geo.offDetector;
 end
@@ -36,7 +36,7 @@ end
 
 %% Weight
 proj=permute(proj,[2 1 3]);
-for ii=1:length(angles)
+for ii=1:size(angles,2)
     
     us = ((-geo.nDetector(1)/2+0.5):1:(geo.nDetector(1)/2-0.5))*geo.dDetector(1) + offset(1,ii);
     vs = ((-geo.nDetector(2)/2+0.5):1:(geo.nDetector(2)/2-0.5))*geo.dDetector(2) + offset(2,ii);

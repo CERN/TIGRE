@@ -128,7 +128,7 @@ qualmeas={'RMSE'};
 % the subsets.
 %
 %   'BlockSize':   Sets the projection block size used simultaneously. If
-%                  BlockSize = 1 OS-SART becomes SART and if  BlockSize = length(angles)
+%                  BlockSize = 1 OS-SART becomes SART and if  BlockSize = size(angles,2)
 %                  then OS-SART becomes SIRT. Default is 20.
 blcks=8;
 % 'OrderStrategy':  Chooses the subset ordering strategy. Options are
