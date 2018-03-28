@@ -32,7 +32,7 @@ function plotImg(img,varargin)
 %
 % License:            Open Source under BSD. 
 %                     See the full license at
-%                     https://github.com/CERN/TIGRE/license.txt
+%                     https://github.com/CERN/TIGRE/blob/master/LICENSE
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/

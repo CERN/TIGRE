@@ -4,7 +4,7 @@
  *
  *
  * CODE by  Ander Biguri
- * Optimized and modified by Robert Bryll
+ * Optimized and modified by RB
  * ---------------------------------------------------------------------------
  * ---------------------------------------------------------------------------
  * Copyright (c) 2015, University of Bath and CERN- European Organization for
@@ -101,7 +101,7 @@ __global__ void matrixConstantMultiply(const Geometry geo,float* image,float con
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// The optimal values of two constants obtained by Robert Bryll on NVIDIA Quadro K2200 (4 GB RAM, 640 CUDA cores) for 512^3 volume and 512^3 projections (512 proj, each 512 x 512) were:
+// The optimal values of two constants obtained by RB on NVIDIA Quadro K2200 (4 GB RAM, 640 CUDA cores) for 512^3 volume and 512^3 projections (512 proj, each 512 x 512) were:
 // PROJ_PER_KERNEL = 32 or 16 (very similar times)
 // VOXELS_PER_THREAD = 8
 // Speedup of the entire FDK backprojection (not only kernel run, also memcpy etc.) was nearly 4x relative to the original (single projection, single voxel per thread) code.
@@ -317,6 +317,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
 
 int voxel_backprojection2(float const * const projections, Geometry geo, float* result,float const * const alphas, int nalpha)
 {
+    
     /*
      * Allocate texture memory on the device
      */
@@ -384,6 +385,8 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
     
     // Since we'll have multiple projections processed by a SINGLE kernel call, compute how many
     // kernel calls we'll need altogether.
+    
+    
     int noOfKernelCalls = (nalpha+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_KERNEL
     
     for (unsigned int i=0; i<noOfKernelCalls; i++)
@@ -400,7 +403,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
             Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec,source;
             float sinalpha,cosalpha;
             
-            geo.alpha=-alphas[currProjNumber];
+            geo.alpha=-alphas[currProjNumber*3];
             sinalpha=sin(geo.alpha);
             cosalpha=cos(geo.alpha);
             

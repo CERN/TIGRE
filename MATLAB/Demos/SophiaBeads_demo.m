@@ -31,7 +31,7 @@
 %
 % License:            Open Source under BSD. 
 %                     See the full license at
-%                     https://github.com/CERN/TIGRE/license.txt
+%                     https://github.com/CERN/TIGRE/blob/master/LICENSE
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
@@ -82,7 +82,7 @@ geo.COR=geom.source.y;
 % Angles
 angles=-geom.angles.';
 
-data=reshape(data,1564,1564,length(angles));
+data=reshape(data,1564,1564,size(angles,2));
 data=permute(data,[2 1 3]);
 
 %% Now use any algorithms you want

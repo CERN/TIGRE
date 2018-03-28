@@ -53,10 +53,12 @@
 #include "matrix.h"
 #include "voxel_backprojection.hpp"
 #include "voxel_backprojection2.hpp"
-
+#include "voxel_backprojection_spherical.hpp"
+#include "voxel_backprojection2_spherical.hpp"
 #include <string.h>
 #include "voxel_backprojection_parallel.hpp"
-
+#include "voxel_backprojection_parallel_spherical.hpp"
+#include <math.h>
 // #include <time.h>
 
 
@@ -82,37 +84,33 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     /*
      ** 4rd argument is matched or un matched.
      */
-    bool krylov_proj=false; // Caled krylov, because I designed it for krylov case....
+    bool pseudo_matched=false; // Caled krylov, because I designed it for krylov case....
     if (nrhs==4){
         /* copy the string data from prhs[0] into a C string input_ buf.    */
         char *krylov = mxArrayToString(prhs[3]);
         if (!strcmp(krylov,"matched")) // if its 0, they are the same
-            krylov_proj=true;
+            pseudo_matched=true;
     }
     /*
      ** Third argument: angle of projection.
      */
-    size_t mrows,ncols;
+    size_t mrows,nangles;
     
     mrows = mxGetM(prhs[2]);
-    ncols = mxGetN(prhs[2]);
+    nangles = mxGetN(prhs[2]);
     
-    if( !mxIsDouble(prhs[2]) || mxIsComplex(prhs[2]) ||
-            !(mrows==1) ) {
-        mexErrMsgIdAndTxt( "CBCT:MEX:Atb:input",
-                "Input alpha must be a double, noncomplex array.");
-    }
     
-    size_t nalpha=ncols;
-    mxArray const * const ptralphas=prhs[2];
+    mxArray const * const ptrangles=prhs[2];
     
-    double const * const alphasM= static_cast<double const *>(mxGetData(ptralphas));
+    
+    double const * const anglesM= static_cast<double const *>(mxGetData(ptrangles));
     // just copy paste the data to a float array
-    float  *  alphas= (float*)malloc(nalpha*sizeof(float));
-    for (int i=0;i<nalpha;i++)
-        alphas[i]=(float)alphasM[i];
-    
+    float  *  angles= (float*)malloc(nangles*mrows*sizeof(float));
+    for (int i=0;i<nangles*mrows;i++){
+        angles[i]=(float)anglesM[i];
+    }
     /**
+     *
      * First input: The projections
      */
     
@@ -120,7 +118,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     mxArray const * const image = prhs[0];                 // Get pointer of the data
     mwSize const numDims = mxGetNumberOfDimensions(image); // Get numer of Dimensions of input matrix.
     // Image should be dim 3
-    if (!(numDims==3 && nalpha>1) && !(numDims==2 && nalpha==1) ){
+    if (!(numDims==3 && nangles>1) && !(numDims==2 && nangles==1) ){
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",  "Projection data is not the rigth size");
     }
     if( !mxIsSingle(prhs[0])) {
@@ -131,41 +129,19 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // NOTE: while Number of dimensions is the size of the matrix in Matlab, the data is 1D row-wise mayor.
     
     // We need a float image, and, unfortunatedly, the only way of casting it is by value
-    const mwSize *size_proj= mxGetDimensions(image); //get size of image
-    mrows = mxGetM(image);
-    ncols = mxGetN(image);
-    size_t size_proj2;
-    if (nalpha==1)
-        size_proj2=1;
-    else
-        size_proj2=size_proj[2];
+//     const mwSize *size_proj= mxGetDimensions(image); //get size of image
+//     mrows = mxGetM(image);
+//     nangles = mxGetN(image);
+//     size_t size_proj2;
+//     if (nangles==1)
+//         size_proj2=1;
+//     else
+//         size_proj2=size_proj[2];
     
     
     float const * const projections= static_cast<float const *>(mxGetData(image));
     
     
-    // TODO (DONE): change the kernel, so it does this inside, no need to permute
-//     float *  projections= (float*)malloc(size_proj[0] *size_proj[1] *size_proj2* sizeof(float));
-//
-//
-//     const long size0 = size_proj[0];
-//     const long size1 = size_proj[1];
-//     const long size2 = size_proj2;
-//     // Permute(imgaux,[2 1 3]);
-//
-//     for (unsigned int j = 0; j < size2; j++)
-//     {
-//         unsigned long jOffset = j*size0*size1;
-//         for (unsigned int k = 0; k < size0; k++)
-//         {
-//             int kOffset1 = k*size1;
-//             for (unsigned int i = 0; i < size1; i++)
-//             {
-//                 unsigned long iOffset2 = i*size0;
-//                 img[i + jOffset + kOffset1] = imgaux[iOffset2 + jOffset + k];
-//             }
-//         }
-//     }
     
     
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -191,9 +167,9 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     fieldnames[12]= "COR";
     fieldnames[13]= "rotDetector";
     // Make sure input is structure
-
+    
     mxArray    *tmp;
-
+    
     // Now we know that all the input struct is good! Parse it from mxArrays to
     // C structures that MEX can understand.
     
@@ -255,28 +231,28 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 geo.DSO=(float)DSO[0];
             case 8:
                 
-                geo.offOrigX=(float*)malloc(nalpha * sizeof(float));
-                geo.offOrigY=(float*)malloc(nalpha * sizeof(float));
-                geo.offOrigZ=(float*)malloc(nalpha * sizeof(float));
+                geo.offOrigX=(float*)malloc(nangles * sizeof(float));
+                geo.offOrigY=(float*)malloc(nangles * sizeof(float));
+                geo.offOrigZ=(float*)malloc(nangles * sizeof(float));
                 
                 offOrig=(double *)mxGetData(tmp);
                 
-                for (int i=0;i<nalpha;i++){
-                        c=i;
-
+                for (int i=0;i<nangles;i++){
+                    c=i;
+                    
                     geo.offOrigX[i]=(float)offOrig[0+3*c];
                     geo.offOrigY[i]=(float)offOrig[1+3*c];
                     geo.offOrigZ[i]=(float)offOrig[2+3*c];
                 }
                 break;
             case 9:
-                geo.offDetecU=(float*)malloc(nalpha * sizeof(float));
-                geo.offDetecV=(float*)malloc(nalpha * sizeof(float));
+                geo.offDetecU=(float*)malloc(nangles * sizeof(float));
+                geo.offDetecV=(float*)malloc(nangles * sizeof(float));
                 
                 offDetec=(double *)mxGetData(tmp);
-                for (int i=0;i<nalpha;i++){
-                        c=i;
-
+                for (int i=0;i<nangles;i++){
+                    c=i;
+                    
                     geo.offDetecU[i]=(float)offDetec[0+2*c];
                     geo.offDetecV[i]=(float)offDetec[1+2*c];
                 }
@@ -296,22 +272,21 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 break;
             case 12:
                 COR=(double*)mxGetData(tmp);
-                geo.COR=(float*)malloc(nalpha * sizeof(float));
-                for (int i=0;i<nalpha;i++){
-                        c=i;
-
-                    geo.COR[i]  = (float)COR[0+c];
+                geo.COR=(float*)malloc(nangles * sizeof(float));
+                for (int i=0;i<nangles;i++){
+                    
+                    geo.COR[i]  = (float)COR[i];
                 }
                 break;
             case 13:
-                geo.dRoll= (float*)malloc(nalpha * sizeof(float));
-                geo.dPitch=(float*)malloc(nalpha * sizeof(float));
-                geo.dYaw=  (float*)malloc(nalpha * sizeof(float));
+                geo.dRoll= (float*)malloc(nangles * sizeof(float));
+                geo.dPitch=(float*)malloc(nangles * sizeof(float));
+                geo.dYaw=  (float*)malloc(nangles * sizeof(float));
                 
                 rotDetector=(double *)mxGetData(tmp);
                 
-                for (int i=0;i<nalpha;i++){
-                        c=i;
+                for (int i=0;i<nangles;i++){
+                    c=i;
                     geo.dYaw[i]  = (float)rotDetector[0+3*c];
                     geo.dPitch[i]= (float)rotDetector[1+3*c];
                     geo.dRoll[i] = (float)rotDetector[2+3*c];
@@ -341,16 +316,61 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     imgsize[2]=geo.nVoxelZ;
     plhs[0] = mxCreateNumericArray(3,imgsize, mxSINGLE_CLASS, mxREAL);
     float *result = (float *)mxGetPr(plhs[0]);
+    
+    
+    
+    // To know which backprojection to call, we also need to know if the rotation is the orthodox/standard circular
+    // rotation around the Z axis, or of its something else. This is because the current backprojection for
+    // curcular scans is optimized with a trick that assumes that the voxels in Z direction
+    // on the image are aligned with the axis of rotation, to incearse memory latency.
+    // This however does not apply in arbitrary axis of rotation cases.
+    // TODO: test if we really need 2 different codes, or if running the accelerated code
+    // with the worng assumptions will just result in a speed like the non-accelerated code,
+    // without sacrificing speedup in the standard case.
+    
+    // test if we have standard rotation
+    float theta,psi;
+    theta=0;
+    psi=0;
+    for (int i=0;i<nangles;i++){
+        theta+=fabs(angles[i*3+1]);
+        psi  +=fabs(angles[i*3+2]);
+    }
+    bool standard_rotation;
+    if ((theta==0.0f) & (psi== 0.0f))
+        standard_rotation=true;
+    else
+        standard_rotation=false;
+    
+    
+    // Run the CUDA code.
     if (coneBeam){
-        if (krylov_proj){
-            voxel_backprojection2(projections,geo,result,alphas,nalpha);
+        
+        if (pseudo_matched){
+            if (standard_rotation){
+                voxel_backprojection2(projections,geo,result,angles,nangles);
+            }
+            else{
+                voxel_backprojection2_spherical(projections,geo,result,angles,nangles);
+            }
+            
         }
+        
         else{
-            voxel_backprojection(projections,geo,result,alphas,nalpha);
+            if (standard_rotation)
+                voxel_backprojection(projections,geo,result,angles,nangles);
+            else
+                voxel_backprojection_spherical(projections,geo,result,angles,nangles);
         }
     }else{
+        if (standard_rotation){
+            voxel_backprojection_parallel(projections,geo,result,angles,nangles);
+        }else{
+//             mexPrintf("Out fucntion COR %p \n",geo.COR);
+//             mexPrintf("Out fucntion offOrig %p \n",geo.offOrigX);
+            voxel_backprojection_parallel_spherical(projections,geo,result,angles,nangles);
+        }
         
-        voxel_backprojection_parallel(projections,geo,result,alphas,nalpha);
         
     }
     

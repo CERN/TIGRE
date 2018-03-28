@@ -369,7 +369,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
             Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, /*offDetec,*/source;
             float sinalpha,cosalpha;
             
-            geo.alpha=-alphas[currProjNumber];
+            geo.alpha=-alphas[currProjNumber*3];//we got 3 angles now.
             sinalpha=sin(geo.alpha);
             cosalpha=cos(geo.alpha);
             

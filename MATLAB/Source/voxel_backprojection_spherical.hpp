@@ -1,10 +1,9 @@
 /*-------------------------------------------------------------------------
  *
- * Header CUDA functions for ray-voxel intersection based projection
+ * HEader CUDA function for backrpojection using FDK weigts for CBCT
  *
  *
- * CODE by       Ander Biguri
- *
+ * CODE by  Ander Biguri
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 Copyright (c) 2015, University of Bath and CERN- European Organization for 
@@ -43,15 +42,8 @@ Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
 
-
-
-
-
-#include "ray_interpolated_projection.hpp"
-
 #ifndef TYPES_CBCT
-#define TYPES_CBCT
-struct  Geometry {
+typedef struct {
     // Geometry assumptions:
     //  -> Origin is at (0,0,0). Image center is there +offOrig
     //  -> at angle 0, source + image centre (without the offset) + detector centre (without offset) 
@@ -76,36 +68,32 @@ struct  Geometry {
     float unitY;
     float unitZ;
     
-    
-    // Centre of Rotation correction.
-    float* COR;
-    
     //projection angle
     float alpha;
     float theta;
     float psi;
+
+    // Centre of Rotation correction.
+    float* COR;
     //Maximum length of cube
     float maxLength;
-    //User option
+     //User option
     float accuracy;
-};
+}Geometry;
 
- struct Point3D{
+typedef struct{
     float x;
     float y;
     float z;
-};
+}Point3D;
+#define TYPES_CBCT
 #endif
 
-#ifndef PROJECTION_PARALLEL_HPP_SIDDON
-#define PROJECTION_PARALLEL_HPP_SIDDON
-int siddon_ray_projection_parallel(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
 
-//double computeMaxLength(Geometry geo, double alpha);
-void computeDeltas_Siddon_parallel(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 
-//double maxDistanceCubeXY(Geometry geo, double alpha,int i);
-
-// below, not used
-//Geometry nomralizeGeometryImage(Geometry geo);
+int voxel_backprojection_spherical(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha);
+#ifndef BACKPROJECTION_SPHERICAL_HPP
+#define BACKPROJECTION_SPHERICAL_HPP
+void computeDeltasCubeSpherical(Geometry geo, int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D *source);
+void eulerZYZT(Geometry geo, Point3D* point);
 #endif

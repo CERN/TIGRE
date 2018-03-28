@@ -24,7 +24,7 @@
 %
 % License:            Open Source under BSD. 
 %                     See the full license at
-%                     https://github.com/CERN/TIGRE/license.txt
+%                     https://github.com/CERN/TIGRE/blob/master/LICENSE
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
@@ -69,8 +69,8 @@ angles=linspace(0,2*pi,100);
 % lets define 3 angles, with big variability in each direction
 
 roll=angles;
-pitch=0.7*linspace(0,1,length(angles));
-yaw=0.7*linspace(0,1,length(angles));
+pitch=0.7*linspace(0,1,size(angles,2));
+yaw=0.7*linspace(0,1,size(angles,2));
 
 % Fill rotDetector. It can also be a 3x1, if its not angle dependent. e.g.
 % geo.rotDetector=[pi/5; 0; pi/10];

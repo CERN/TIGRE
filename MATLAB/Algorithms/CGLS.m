@@ -30,7 +30,7 @@ function [x,errorL2]= CGLS(proj,geo,angles,niter,varargin)
 %
 % License:            Open Source under BSD. 
 %                     See the full license at
-%                     https://github.com/CERN/TIGRE/license.txt
+%                     https://github.com/CERN/TIGRE/blob/master/LICENSE
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
@@ -158,7 +158,7 @@ for ii=1:niter
     p=s+beta*p;
     
    
-     if (ii==1 && verbose);
+     if (ii==1 && verbose)
         expected_time=toc*niter;   
         disp('CGLS');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);

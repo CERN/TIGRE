@@ -69,6 +69,9 @@ typedef struct {
     
     //projection angle
     float alpha;
+    float psi;
+    float theta;
+    
     float *COR;
     //Maximum length of cube
     float maxLength;
@@ -87,7 +90,7 @@ typedef struct{
 #ifndef BACKPROJECTION_PARALLEL_HPP
 #define BACKPROJECTION_PARALLEL_HPP
 
-int voxel_backprojection_parallel(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha);
+int  voxel_backprojection_parallel(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha);
 void computeDeltasCubeParallel(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S);
 //  void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ);
 #endif

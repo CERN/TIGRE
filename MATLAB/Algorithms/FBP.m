@@ -12,7 +12,7 @@ function [res,errorL2]=FBP(proj,geo,angles,varargin)
 %
 % License:            Open Source under BSD. 
 %                     See the full license at
-%                     https://github.com/CERN/TIGRE/license.txt
+%                     https://github.com/CERN/TIGRE/blob/master/LICENSE
 %                     and
 %                     https://www.mathworks.com/matlabcentral/fileexchange/view_license?file_info_id=35548
 %
@@ -34,7 +34,7 @@ geo.filter=filter;
 
 
 if size(geo.offDetector,2)==1
-    offset=repmat(geo.offDetector,[1 length(angles)]);
+    offset=repmat(geo.offDetector,[1 size(angles,2)]);
 else
     offset=geo.offDetector;
 end

@@ -55,7 +55,7 @@ function [ f,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,varargin)
 %
 % License:            Open Source under BSD.
 %                     See the full license at
-%                     https://github.com/CERN/TIGRE/license.txt
+%                     https://github.com/CERN/TIGRE/blob/master/LICENSE
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
@@ -95,11 +95,11 @@ if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
     
     [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
         -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-    A = permute(angles+pi/2, [1 3 2]);
+    A = permute(angles(1,:)+pi/2, [1 3 2]);
     V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
     V=permute(single(V),[2 1 3]);
 else
-    V=ones([geo.nVoxel(1:2).',length(angles)],'single');
+    V=ones([geo.nVoxel(1:2).',size(angles,2)],'single');
 end
 clear A x y dx dz;
 
@@ -118,14 +118,14 @@ while ~stop_criteria %POCS
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;
     
-    for jj=1:length(angles);
-        if size(offOrigin,2)==length(angles)
+    for jj=1:size(angles,2);
+        if size(offOrigin,2)==size(angles,2)
             geo.offOrigin=offOrigin(:,index_angles(jj));
         end
-        if size(offDetector,2)==length(angles)
+        if size(offDetector,2)==size(angles,2)
             geo.offDetector=offDetector(:,index_angles(jj));
         end
-        if size(rotDetector,2)==length(angles)
+        if size(rotDetector,2)==size(angles,2)
             geo.rotDetector=rotDetector(:,index_angles(jj));
         end
         f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(f,geo,angles(jj))),geo,angles(jj)));

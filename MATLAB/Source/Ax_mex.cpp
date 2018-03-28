@@ -90,16 +90,17 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     ///////////////////////// 3rd argument: angle of projection.
     
     size_t mrows = mxGetM(prhs[2]);
-    size_t nalpha = mxGetN(prhs[2]);
+    size_t nangles = mxGetN(prhs[2]);
 
     mxArray const * const ptrangles=prhs[2];
     
     
     double const * const anglesM= static_cast<double const *>(mxGetData(ptrangles));
     // just copy paste the data to a float array
-    float  *  angles= (float*)malloc(nalpha*sizeof(float));
-    for (int i=0;i<nalpha;i++)
+    float  *  angles= (float*)malloc(nangles*mrows*sizeof(float));
+    for (int i=0;i<nangles*mrows;i++){
         angles[i]=(float)anglesM[i];
+    }
     
     
     ////////////////////////// First input.
@@ -203,13 +204,13 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 break;
             case 8:
                 
-                geo.offOrigX=(float*)malloc(nalpha * sizeof(float));
-                geo.offOrigY=(float*)malloc(nalpha * sizeof(float));
-                geo.offOrigZ=(float*)malloc(nalpha * sizeof(float));
+                geo.offOrigX=(float*)malloc(nangles * sizeof(float));
+                geo.offOrigY=(float*)malloc(nangles * sizeof(float));
+                geo.offOrigZ=(float*)malloc(nangles * sizeof(float));
                 
                 offOrig=(double *)mxGetData(tmp);
                 
-                for (int i=0;i<nalpha;i++){
+                for (int i=0;i<nangles;i++){
                     c=i;
                     geo.offOrigX[i]=(float)offOrig[0+3*c];
                     geo.offOrigY[i]=(float)offOrig[1+3*c];
@@ -217,11 +218,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 }
                 break;
             case 9:
-                geo.offDetecU=(float*)malloc(nalpha * sizeof(float));
-                geo.offDetecV=(float*)malloc(nalpha * sizeof(float));
+                geo.offDetecU=(float*)malloc(nangles * sizeof(float));
+                geo.offDetecV=(float*)malloc(nangles * sizeof(float));
                 
                 offDetec=(double *)mxGetData(tmp);
-                for (int i=0;i<nalpha;i++){
+                for (int i=0;i<nangles;i++){
                     c=i;
                     geo.offDetecU[i]=(float)offDetec[0+2*c];
                     geo.offDetecV[i]=(float)offDetec[1+2*c];
@@ -242,8 +243,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 break;
             case 12:
                 COR=(double*)mxGetData(tmp);
-                geo.COR=(float*)malloc(nalpha * sizeof(float));
-                for (int i=0;i<nalpha;i++){
+                geo.COR=(float*)malloc(nangles * sizeof(float));
+                for (int i=0;i<nangles;i++){
 
                     c=i;
                     geo.COR[i]  = (float)COR[0+c];
@@ -251,13 +252,13 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 break;
                 
             case 13:
-                geo.dRoll= (float*)malloc(nalpha * sizeof(float));
-                geo.dPitch=(float*)malloc(nalpha * sizeof(float));
-                geo.dYaw=  (float*)malloc(nalpha * sizeof(float));
+                geo.dRoll= (float*)malloc(nangles * sizeof(float));
+                geo.dPitch=(float*)malloc(nangles * sizeof(float));
+                geo.dYaw=  (float*)malloc(nangles * sizeof(float));
                 
                 rotDetector=(double *)mxGetData(tmp);
                 
-                for (int i=0;i<nalpha;i++){
+                for (int i=0;i<nangles;i++){
                   
                     c=i;
                     geo.dYaw[i]  = (float)rotDetector[0+3*c];
@@ -280,33 +281,32 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     mwSize outsize[3];
     outsize[0]=geo.nDetecV;
     outsize[1]=geo.nDetecU;
-    outsize[2]= nalpha;
+    outsize[2]= nangles;
     plhs[0] = mxCreateNumericArray(3, outsize, mxSINGLE_CLASS, mxREAL);
     float *outProjections = (float*)mxGetPr(plhs[0]);  // WE will NOT be freeing this pointer!
     
     // MODIFICATION, RB, 5/12/2017: As said above, we do not allocate anything, just
     // set pointers in result to point to outProjections
-    float** result = (float**)malloc(nalpha * sizeof(float*)); // This only allocates memory for pointers
+    float** result = (float**)malloc(nangles * sizeof(float*)); // This only allocates memory for pointers
     unsigned long long projSizeInPixels = geo.nDetecU * geo.nDetecV;
-    for (int i = 0; i < nalpha; i++)
+    for (int i = 0; i < nangles; i++)
     {
         unsigned long long currProjIndex = projSizeInPixels*i;
         result[i] = &outProjections[currProjIndex]; // now the pointers are the same
     }
     
-    
     // call the real function
     if (coneBeam){
         if (rayvoxel){
-            siddon_ray_projection(img,geo,result,angles,nalpha);
+            siddon_ray_projection(img,geo,result,angles,nangles);
         }else{
-            interpolation_projection(img,geo,result,angles,nalpha);
+            interpolation_projection(img,geo,result,angles,nangles);
         }
     }else{
         if (rayvoxel){
-            siddon_ray_projection_parallel(img,geo,result,angles,nalpha);
+            siddon_ray_projection_parallel(img,geo,result,angles,nangles);
         }else{
-            interpolation_projection_parallel(img,geo,result,angles,nalpha);
+            interpolation_projection_parallel(img,geo,result,angles,nangles);
         }
     }
     

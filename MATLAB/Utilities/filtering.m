@@ -11,7 +11,7 @@ function [ proj ] = filtering(proj,geo,angles,parker)
 %
 % License:            Open Source under BSD. 
 %                     See the full license at
-%                     https://github.com/CERN/TIGRE/license.txt
+%                     https://github.com/CERN/TIGRE/blob/master/LICENSE
 %                     and
 %                     https://www.mathworks.com/matlabcentral/fileexchange/view_license?file_info_id=35548
 %
@@ -32,7 +32,7 @@ d = 1; % cut off (0~1)
 [filt] = Filter(geo.filter, ramp_kernel, filt_len, d);
 filt = repmat(filt',[1 geo.nDetector(2)]);
 
-for ii=1:length(angles)
+for ii=1:size(angles,2)
     
     fproj = (zeros(filt_len,geo.nDetector(2),'single'));
     
@@ -45,7 +45,7 @@ for ii=1:length(angles)
     fproj = (real(ifft(fproj)));
     
   
-    proj(:,:,ii) = fproj(end/2-geo.nDetector(1)/2+1:end/2+geo.nDetector(1)/2,:)/2/geo.dDetector(1)*(2*pi/  length(angles)   )/2*(geo.DSD/geo.DSO);
+    proj(:,:,ii) = fproj(end/2-geo.nDetector(1)/2+1:end/2+geo.nDetector(1)/2,:)/2/geo.dDetector(1)*(2*pi/  size(angles,2)   )/2*(geo.DSD/geo.DSO);
     
     
 end
