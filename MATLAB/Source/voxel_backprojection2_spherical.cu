@@ -3,7 +3,7 @@
  * CUDA function for backrpojection using matched weigts for CBCT
  *
  *
- * CODE by  Ander Biguri
+ * CODE by  Ander Biguri & Sepideh Hatamikia
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 Copyright (c) 2015, University of Bath and CERN- European Organization for 

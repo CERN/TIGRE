@@ -4,7 +4,7 @@
  *
  *
  * CODE by  Ander Biguri
- * Optimized and modified by RB
+ *          Optimized and modified by RB
  * ---------------------------------------------------------------------------
  * ---------------------------------------------------------------------------
  * Copyright (c) 2015, University of Bath and CERN- European Organization for

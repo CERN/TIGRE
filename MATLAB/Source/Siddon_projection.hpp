@@ -4,7 +4,7 @@
  *
  *
  * CODE by       Ander Biguri
- *
+ *               Sepideh Hatamikia (arbitrary rotation)
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 Copyright (c) 2015, University of Bath and CERN- European Organization for 
