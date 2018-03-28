@@ -332,7 +332,7 @@ for ii=1:length(opts)
             %  =========================================================================
         case 'orderstrategy'
             if default
-                OrderStrategy='angularDistance';
+                OrderStrategy='random';
             else
                 OrderStrategy=val;
             end

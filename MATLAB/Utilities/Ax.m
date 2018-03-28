@@ -47,7 +47,7 @@ assert(isequal(size(img),geo.nVoxel.'),'TIGRE:Ax:BadGeometry','nVoxel does not m
 
 s= sum(abs(angles),2);
 if (s(2)~=0 || s(3)~=0) && strcmp(ptype,'ray-voxel') && strcmp(geo.mode,'parallel')
-    warning('''ray-voxel'' Not supported for parallel beam, changed to ''interpolated''. Ignore this message if you are not purposedly triying enforce its use.');
+    warning(['''ray-voxel'' Not supported for parallel beam arbitrary axis rotation, changed to ''interpolated''.',char(10),'Ignore this message if you are not purposedly triying enforce its use.']);
     ptype='interpolated';
 end
 

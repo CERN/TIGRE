@@ -57,6 +57,7 @@
 #include "voxel_backprojection2_spherical.hpp"
 #include <string.h>
 #include "voxel_backprojection_parallel.hpp"
+#include "voxel_backprojection_parallel_spherical.hpp"
 #include <math.h>
 // #include <time.h>
 
@@ -273,9 +274,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 COR=(double*)mxGetData(tmp);
                 geo.COR=(float*)malloc(nangles * sizeof(float));
                 for (int i=0;i<nangles;i++){
-                    c=i;
                     
-                    geo.COR[i]  = (float)COR[0+c];
+                    geo.COR[i]  = (float)COR[i];
                 }
                 break;
             case 13:
@@ -363,8 +363,14 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 voxel_backprojection_spherical(projections,geo,result,angles,nangles);
         }
     }else{
+        if (standard_rotation){
+            voxel_backprojection_parallel(projections,geo,result,angles,nangles);
+        }else{
+//             mexPrintf("Out fucntion COR %p \n",geo.COR);
+//             mexPrintf("Out fucntion offOrig %p \n",geo.offOrigX);
+            voxel_backprojection_parallel_spherical(projections,geo,result,angles,nangles);
+        }
         
-        voxel_backprojection_parallel(projections,geo,result,angles,nangles);
         
     }
     

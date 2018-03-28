@@ -48,8 +48,8 @@ Codes  : https://github.com/CERN/TIGRE
 #include <algorithm>
 #include <cuda_runtime_api.h>
 #include <cuda.h>
-#include "voxel_backprojection_parallel.hpp"
 #include "voxel_backprojection.hpp"
+#include "voxel_backprojection_parallel.hpp"
 
 #include "mex.h"
 #include <math.h>
@@ -377,7 +377,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
             Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, /*offDetec,*/source;
             float sinalpha,cosalpha;
             
-            geo.alpha=-alphas[currProjNumber];
+            geo.alpha=-alphas[currProjNumber*3];
             sinalpha=sin(geo.alpha);
             cosalpha=cos(geo.alpha);
             
