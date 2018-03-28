@@ -146,9 +146,7 @@ template<bool sphericalrotation>
     float i;
     
     
-    // limit the amount of mem access after the cube, but before the detector.
-    //If the maximum possible distance between source an cylinder center+ the radious of it its smaller than the length...
-    
+
 //  Because I have no idea how to efficiently cutoff the legth path in 3D, a very upper limit is computed (see maxdistanceCuboid)
 //  for the 3D case. However it would be bad to lose performance in the 3D case
 //  TODO: can ge really improve this?
@@ -160,6 +158,7 @@ template<bool sphericalrotation>
         if ((2*geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+cropdist_init)/geo.accuracy  <   length)
             length=ceil((2*geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+cropdist_init)/geo.accuracy);
     }
+
     //Length is not actually a length, but the amount of memreads with given accuracy ("samples per voxel")
     for (i=floor(cropdist_init/geo.accuracy); i<=length; i=i+1){
         tx=vectX*i+source.x;
@@ -434,8 +433,7 @@ float maxdistanceCuboid(Geometry geo,int i){
                 sqrt(maxCubX*maxCubX+maxCubY*maxCubY),0.0f);
     //TODO: think of more special cases?
     return max(geo.DSO/max(max(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY+maxCubZ*maxCubZ),0.0f);
-    
-    
+
 }
 void rollPitchYaw(Geometry geo,int i, Point3D* point){
     Point3D auxPoint;

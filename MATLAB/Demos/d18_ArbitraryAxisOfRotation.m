@@ -14,8 +14,7 @@
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
-% 
-% Copyright (c) 2015, University of Bath and 
+% % Copyright (c) 2015, University of Bath and 
 %                     CERN-European Organization for Nuclear Research
 %                     All rights reserved.
 %
