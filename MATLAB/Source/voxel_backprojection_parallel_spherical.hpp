@@ -3,7 +3,7 @@
  * Header CUDA function for backrpojection  for parallel beam
  *
  *
- * CODE by  Ander Biguri
+ * CODE by  Ander Biguri & Sepideh Hatamikia
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 Copyright (c) 2015, University of Bath and CERN- European Organization for 
