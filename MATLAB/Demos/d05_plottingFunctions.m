@@ -69,8 +69,8 @@ step=2;
 % 'Colormap': Defines the colormap used to plot. Default is 'gray'. any
 % MATLAB colromap can be used, also any user created Nx3 colorpam can be
 % used. Additionally, TIGRE includes perceptually uniform colormaps, where
-% ?color == ?data. The perceptuall yuniform options are the default 'gray',
-% 'magma', 'viridis', 'inferno' and 'plasma'
+% ?color == ?data. The perceptuall uniform options are the default 'gray',
+%  abd 'magma', 'viridis', 'inferno' and 'plasma'
 
 colormap=hsv(10);
 colormap='gray';
@@ -82,7 +82,7 @@ colormap='gray';
 % see some specific range. The default uses the minimum and maximum of the
 % data.
 
-clims=[0 4];
+clims=[0 200];
 
 % 'Savegif': allows to save the plotted figure as an animated gif,
 % specified by the given filename.
@@ -99,7 +99,7 @@ plotProj(noise_projections,angles,'Step',step,'Colormap',colormap,'CLims',clims,
 % Remember you can also plot errors, for example the added noise by:
 
 noise=abs(noise_projections-projections); %abs is what we are interested in plotting
-plotProj(noise,angles,'CLims',[0,0.05]); 
+plotProj(noise,angles,'CLims',[0,2]); 
 
 
 %% What about plotting the Image? plotImg()
@@ -133,7 +133,7 @@ colormap='gray';
 % see some specific range. The default computes the 5% and 95% percentiles
 % of the data and uses that as limit.
 
-clims=[0 0.03];
+clims=[0 01];
 
 % 'Savegif': allows to save the plotted figure as an animated gif,
 % specified by the given filename.
