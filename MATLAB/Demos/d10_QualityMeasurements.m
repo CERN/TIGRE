@@ -142,4 +142,13 @@ figure
 plot([qualitySIRT(4,:);[qualitySART(4,:) nan(1,length(qualityOSSART)-length(qualitySART))];qualityOSSART(4,:)]');
 title('Evolution of universal quality index per iteration')
 legend('SIRT','SART','OS-SART')
-                        
+
+%% Compute the parameters for the target image
+% Knowing change of the parameters per iteration can be interesting, but
+% the main use of them would be to compare a ecosntructed image to a given
+% known target image. 
+
+disp('UQI for SART,   SIRT,   OS-SART')
+disp(['       ',num2str(UQI(head,imgSART)),' ', num2str(UQI(head,imgSIRT)),' ' ,num2str(UQI(head,imgOSSART))])
+disp('RMSE for SART,   SIRT,   OS-SART')
+disp(['       ',num2str(RMSE(head,imgSART)),' ', num2str(RMSE(head,imgSIRT)),' ' ,num2str(RMSE(head,imgOSSART))])
