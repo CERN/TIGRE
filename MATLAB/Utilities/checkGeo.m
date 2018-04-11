@@ -71,7 +71,7 @@ else
 end
 
 if isfield(geo,'offDetector')
-   assert(isequal(size(geo.offDetector),[2 1]) | isequal(size(geo.offDetector),[2 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offDetector Should be 3x1 or 3xsize(angles,2)') 
+   assert(isequal(size(geo.offDetector),[3 1]) | isequal(size(geo.offDetector),[3 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offDetector Should be 3x1 or 3xsize(angles,2)') 
    assert(isa(geo.offDetector,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.offDetector is not double type.' )
    if isequal(size(geo.offDetector),[2 1])
       geo.offDetector=repmat(geo.offDetector,[1, size(angles,2)]);
