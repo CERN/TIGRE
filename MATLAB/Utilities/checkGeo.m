@@ -39,12 +39,12 @@ assert(isequal(size(geo.dVoxel),[3 1]),'TIGRE:checkGeo:BadGeometry','geo.sVoxel 
 assert(sum(abs(geo.dVoxel.*geo.nVoxel-geo.sVoxel))<1e-6, 'TIGRE:checkGeo:BadGeometry', 'nVoxel*dVoxel is not sVoxel, something is wrong in the numbers')
 
 % Detector data
-assert(isequal(size(geo.nDetector),[2 1]),'TIGRE:checkGeo:BadGeometry','geo.nDetector should be 3x1')
+assert(isequal(size(geo.nDetector),[2 1]),'TIGRE:checkGeo:BadGeometry','geo.nDetector should be 2x1')
 assert(isequal(geo.nDetector,round(geo.nDetector)),'TIGRE:checkGeo:BadGeometry','geo.nDetector should be a natural number.')
 
-assert(isequal(size(geo.sDetector),[2 1]),'TIGRE:checkGeo:BadGeometry','geo.sDetector should be 3x1')
+assert(isequal(size(geo.sDetector),[2 1]),'TIGRE:checkGeo:BadGeometry','geo.sDetector should be 2x1')
 
-assert(isequal(size(geo.dDetector),[2 1]),'TIGRE:checkGeo:BadGeometry','geo.sDetector should be 3x1')
+assert(isequal(size(geo.dDetector),[2 1]),'TIGRE:checkGeo:BadGeometry','geo.sDetector should be 2x1')
 
 assert(sum(abs(geo.dDetector.*geo.nDetector-geo.sDetector))<1e-6, 'TIGRE:checkGeo:BadGeometry', 'nDetector*dDetector is not sDetector, something is wrong in the numbers')
 
@@ -71,7 +71,7 @@ else
 end
 
 if isfield(geo,'offDetector')
-   assert(isequal(size(geo.offDetector),[2 1]) | isequal(size(geo.offDetector),[2 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offDetector Should be 3x1 or 3xsize(angles,2)') 
+   assert(isequal(size(geo.offDetector),[2 1]) | isequal(size(geo.offDetector),[2 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offDetector Should be 2x1 or 2xsize(angles,2)') 
    assert(isa(geo.offDetector,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.offDetector is not double type.' )
    if isequal(size(geo.offDetector),[2 1])
       geo.offDetector=repmat(geo.offDetector,[1, size(angles,2)]);
