@@ -44,50 +44,8 @@ Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
 #ifndef TYPES_CBCT
-typedef struct {
-    // Geometry assumptions:
-    //  -> Origin is at (0,0,0). Image center is there +offOrig
-    //  -> at angle 0, source + image centre (without the offset) + detector centre (without offset) 
-    //     are aligned in the Y_Z plane.
-    //  -> detector is orthonormal to projection plane.
-    
-    //Parameters part of the image geometry
-    int   nVoxelX, nVoxelY, nVoxelZ;
-    float sVoxelX, sVoxelY, sVoxelZ;
-    float dVoxelX, dVoxelY, dVoxelZ;
-    float *offOrigX,*offOrigY,*offOrigZ;
-    float DSO;
-    // Parameters  of the Detector.
-    int   nDetecU, nDetecV;
-    float sDetecU, sDetecV;
-    float dDetecU, dDetecV;
-    float *offDetecU, *offDetecV;
-    float DSD;
-    
-    // The base unit we are working with in mm. 
-    float unitX;
-    float unitY;
-    float unitZ;
-    
-    //projection angle
-    float alpha;
-    float psi;
-    float theta;
-    
-    float *COR;
-    //Maximum length of cube
-    float maxLength;
-     //User option
-    float accuracy;
-}Geometry;
+#include "types_TIGRE.hpp"
 
-typedef struct{
-    float x;
-    float y;
-    float z;
-}Point3D;
-#define TYPES_CBCT
-#endif
 
 #ifndef BACKPROJECTION_PARALLEL_HPP
 #define BACKPROJECTION_PARALLEL_HPP

@@ -48,49 +48,7 @@ Codes  : https://github.com/CERN/TIGRE
 
 #include "ray_interpolated_projection.hpp"
 
-
-#ifndef TYPES_CBCT
-#define TYPES_CBCT
-struct  Geometry {
-    // Geometry assumptions:
-    //  -> Origin is at (0,0,0). Image center is there +offOrig
-    //  -> at angle 0, source + image centre (without the offset) + detector centre (without offset) 
-    //     are aligned in the Y_Z plane.
-    //  -> detector is orthonormal to projection plane.
-    
-    //Parameters part of the image geometry
-    int   nVoxelX, nVoxelY, nVoxelZ;
-    float sVoxelX, sVoxelY, sVoxelZ;
-    float dVoxelX, dVoxelY, dVoxelZ;
-    float *offOrigX,*offOrigY,*offOrigZ;
-    float DSO;
-    // Parameters  of the Detector.
-    int   nDetecU, nDetecV;
-    float sDetecU, sDetecV;
-    float dDetecU, dDetecV;
-    float *offDetecU, *offDetecV;
-    float DSD;
-    
-    // The base unit we are working with in mm. 
-    float unitX;
-    float unitY;
-    float unitZ;
-    
-    //projection angle
-    float alpha;
-    
-    //Maximum length of cube
-    float maxLength;
-    //User option
-    float accuracy;
-};
-
- struct Point3D{
-    float x;
-    float y;
-    float z;
-};
-#endif
+#include "types_TIGRE.hpp"
 
 
 #ifndef PROJECTION_PARALLEL_HPP
