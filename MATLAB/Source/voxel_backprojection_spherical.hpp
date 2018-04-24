@@ -42,7 +42,6 @@ Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
 
-#ifndef TYPES_CBCT
 #include "types_TIGRE.hpp"
 
 

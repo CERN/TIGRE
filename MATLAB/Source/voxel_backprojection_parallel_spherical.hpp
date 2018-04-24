@@ -41,7 +41,7 @@ Contact: tigre.toolbox@gmail.com
 Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
-#include "types_TIGRE"
+#include "types_TIGRE.hpp"
 
 
 int voxel_backprojection_parallel_spherical(float const * const projections, Geometry geo, float* result,float const * const angles,int nangles);
