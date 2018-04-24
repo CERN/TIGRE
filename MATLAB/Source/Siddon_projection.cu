@@ -344,16 +344,16 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
  **/
 void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
     Point3D S;
-    S.x=geo.DSO;
+    S.x=geo.DSO[i];
     S.y=0;
     S.z=0;
     
     //End point
     Point3D P,Pu0,Pv0;
     
-    P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
-    Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
-    Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
+    P.x  =-(geo.DSD[i]-geo.DSO[i]);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
+    Pu0.x=-(geo.DSD[i]-geo.DSO[i]);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
+    Pv0.x=-(geo.DSD[i]-geo.DSO[i]);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
     // Geomtric trasnformations:
     // Now we have the Real world (OXYZ) coordinates of the bottom corner and its two neighbours.
     // The obkjective is to get a position of the detector in a coordinate system where:
@@ -380,9 +380,9 @@ void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU
     rollPitchYaw(geo,i,&Pu0);
     rollPitchYaw(geo,i,&Pv0);
     //Now ltes translate the points where they shoudl be:
-    P.x=P.x-(geo.DSD-geo.DSO);
-    Pu0.x=Pu0.x-(geo.DSD-geo.DSO);
-    Pv0.x=Pv0.x-(geo.DSD-geo.DSO);
+    P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
+    Pu0.x=Pu0.x-(geo.DSD[i]-geo.DSO[i]);
+    Pv0.x=Pv0.x-(geo.DSD[i]-geo.DSO[i]);
     
     //1: Offset detector
     
@@ -463,7 +463,7 @@ float maxDistanceCubeXY(Geometry geo, float alpha,int i){
     maxCubX=(geo.sVoxelX/2+ abs(geo.offOrigX[i]))/geo.dVoxelX;
     maxCubY=(geo.sVoxelY/2+ abs(geo.offOrigY[i]))/geo.dVoxelY;
     
-    return geo.DSO/geo.dVoxelX-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
+    return geo.DSO[i]/geo.dVoxelX-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
     
 }
 void rollPitchYaw(Geometry geo,int i, Point3D* point){

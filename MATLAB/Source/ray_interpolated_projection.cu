@@ -64,6 +64,7 @@ do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
                 mexPrintf("%s \n",msg);\
+                cudaDeviceReset();\
                 mexErrMsgIdAndTxt("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
         } \
 } while (0)
@@ -107,6 +108,7 @@ template<bool sphericalrotation>
         Point3D deltaU,
         Point3D deltaV,
         Point3D uvOrigin,
+        float DSO,
         float cropdist_init){
     
     unsigned long  y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -151,12 +153,12 @@ template<bool sphericalrotation>
 //  for the 3D case. However it would be bad to lose performance in the 3D case
 //  TODO: can ge really improve this?
     if (sphericalrotation){
-        if ((2*geo.DSO/min(min(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy  <   length)
-            length=ceil((2*geo.DSO/min(min(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy);
+        if ((2*DSO/min(min(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy  <   length)
+            length=ceil((2*DSO/min(min(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy);
     }
     else{
-        if ((2*geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+cropdist_init)/geo.accuracy  <   length)
-            length=ceil((2*geo.DSO/min(geo.dVoxelX,geo.dVoxelY)+cropdist_init)/geo.accuracy);
+        if ((2*DSO/min(geo.dVoxelX,geo.dVoxelY)+cropdist_init)/geo.accuracy  <   length)
+            length=ceil((2*DSO/min(geo.dVoxelX,geo.dVoxelY)+cropdist_init)/geo.accuracy);
     }
 
     //Length is not actually a length, but the amount of memreads with given accuracy ("samples per voxel")
@@ -179,7 +181,6 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     
     
     // copy data to CUDA memory
-    
     cudaArray *d_imagedata = 0;
     
     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
@@ -257,12 +258,14 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         
 //      This is for acceleration purposes. We can optimize more if we know the rotation is around the Z axis
 //      TODO: we could do this around X and Y axis too, but we would need to compute the new axis of rotation (not possible to know from jsut the angles)
-        if (geo.theta==0.0f & geo.psi==0.0f)
-            kernelPixelDetector<false><<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(cropdist_init));
+        if (geo.theta==0.0f & geo.psi==0.0f){
+            kernelPixelDetector<false><<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,geo.DSO[i],floor(cropdist_init));
+        }
         else
-            kernelPixelDetector<true><<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(cropdist_init));
+            kernelPixelDetector<true><<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,geo.DSO[i],floor(cropdist_init));
         
         cudaCheckErrors("Kernel fail");
+
         if (timekernel){
             cudaEventCreate(&stop);
             cudaEventRecord(stop,0);
@@ -298,18 +301,18 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
  * to compute the locations of the x-rays. While it seems verbose and overly-optimized,
  * it does saves about 30% of each of the kernel calls. Thats something!
  **/
-void computeDeltas(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
+void computeDeltas(Geometry geo,unsigned int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
     Point3D S;
-    S.x=geo.DSO;
+    S.x=geo.DSO[i];
     S.y=0;
     S.z=0;
     
     //End point
     Point3D P,Pu0,Pv0;
     
-    P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
-    Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
-    Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
+    P.x  =-(geo.DSD[i]-geo.DSO[i]);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
+    Pu0.x=-(geo.DSD[i]-geo.DSO[i]);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
+    Pv0.x=-(geo.DSD[i]-geo.DSO[i]);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
     // Geomtric trasnformations:
     
     
@@ -338,9 +341,9 @@ void computeDeltas(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point
     rollPitchYaw(geo,i,&Pu0);
     rollPitchYaw(geo,i,&Pv0);
     //Now ltes translate the detector coordinates to DOD (original position on real coordinate system:
-    P.x=P.x-(geo.DSD-geo.DSO);
-    Pu0.x=Pu0.x-(geo.DSD-geo.DSO);
-    Pv0.x=Pv0.x-(geo.DSD-geo.DSO);
+    P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
+    Pu0.x=Pu0.x-(geo.DSD[i]-geo.DSO[i]);
+    Pv0.x=Pv0.x-(geo.DSD[i]-geo.DSO[i]);
     //2: Offset detector
     
     
@@ -409,7 +412,7 @@ void computeDeltas(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point
     *source=S;
 }
 
-float maxdistanceCuboid(Geometry geo,int i){
+float maxdistanceCuboid(Geometry geo,unsigned int i){
     ///////////
     // Compute initial "t" so we access safely as less as out of bounds as possible.
     //////////
@@ -422,8 +425,8 @@ float maxdistanceCuboid(Geometry geo,int i){
     maxCubZ=(geo.nVoxelZ/2+ abs(geo.offOrigZ[i])/geo.dVoxelZ);
     
     float a,b;
-    a=geo.DSO/geo.dVoxelX;
-    b=geo.DSO/geo.dVoxelY;
+    a=geo.DSO[i]/geo.dVoxelX;
+    b=geo.DSO[i]/geo.dVoxelY;
     
 //  As the return of this value is in "voxel space", the source may have an elliptical curve.
 //  The distance returned is the safe distance that can be skipped for a given angle alpha, before we need to start sampling.
@@ -432,10 +435,10 @@ float maxdistanceCuboid(Geometry geo,int i){
         return max(a*b/sqrt(a*a*sin(geo.alpha)*sin(geo.alpha)+b*b*cos(geo.alpha)*cos(geo.alpha))-
                 sqrt(maxCubX*maxCubX+maxCubY*maxCubY),0.0f);
     //TODO: think of more special cases?
-    return max(geo.DSO/max(max(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY+maxCubZ*maxCubZ),0.0f);
+    return max(geo.DSO[i]/max(max(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY+maxCubZ*maxCubZ),0.0f);
 
 }
-void rollPitchYaw(Geometry geo,int i, Point3D* point){
+void rollPitchYaw(Geometry geo,unsigned int i, Point3D* point){
     Point3D auxPoint;
     auxPoint.x=point->x;
     auxPoint.y=point->y;
