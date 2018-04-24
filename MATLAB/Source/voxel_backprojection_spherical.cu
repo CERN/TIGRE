@@ -105,6 +105,8 @@ __global__ void kernelPixelBackprojectionFDK_spherical(const Geometry geo,
         float* image,
         const int indAlpha,
         const float COR,
+        const float DSD,
+        const float DSO,
         const Point3D deltaX,
         const Point3D deltaY,
         const Point3D deltaZ,
@@ -140,7 +142,7 @@ __global__ void kernelPixelBackprojectionFDK_spherical(const Geometry geo,
     
     
     // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-    float t=(geo.DSO-geo.DSD /*-DDO*/ - source.x)/vectX;
+    float t=(DSO-DSD /*-DDO*/ - source.x)/vectX;
     float y,z;
     y=vectY*t+source.y;
     z=vectZ*t+source.z;
@@ -157,7 +159,7 @@ __global__ void kernelPixelBackprojectionFDK_spherical(const Geometry geo,
     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y+COR;
     
     
-    weigth=(geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha))/geo.DSO; //TODO: This is wrong for shperical
+    weigth=(DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha))/DSO; //TODO: This is wrong for shperical
     weigth=1/(weigth*weigth);
     
     // Get Value in the computed (U,V) and multiply by the corresponding weigth.
@@ -244,7 +246,7 @@ int voxel_backprojection_spherical(float const * const projections, Geometry geo
         offDetec.x=geo.offDetecU[i];
         offDetec.y=geo.offDetecV[i];
         
-        kernelPixelBackprojectionFDK_spherical<<<grid,block>>>(geo,dimage,i,geo.COR[i],deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,source);
+        kernelPixelBackprojectionFDK_spherical<<<grid,block>>>(geo,dimage,i,geo.COR[i],geo.DSD[i],geo.DSO[i],deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,source);
         cudaCheckErrors("Kernel fail");
     }
     if (timekernel){
@@ -304,28 +306,28 @@ void computeDeltasCubeSpherical(Geometry geo, int i, Point3D* xyzorigin, Point3D
     //
     // first, we need to offset everything so (0,0,0) is the center of the detector
     // Only X is required for that
-    P.x=P.x+(geo.DSD-geo.DSO);
-    Px.x=Px.x+(geo.DSD-geo.DSO);
-    Py.x=Py.x+(geo.DSD-geo.DSO);
-    Pz.x=Pz.x+(geo.DSD-geo.DSO);
+    P.x=P.x+(geo.DSD[i]-geo.DSO[i]);
+    Px.x=Px.x+(geo.DSD[i]-geo.DSO[i]);
+    Py.x=Py.x+(geo.DSD[i]-geo.DSO[i]);
+    Pz.x=Pz.x+(geo.DSD[i]-geo.DSO[i]);
     rollPitchYawT(geo,i,&P);
     rollPitchYawT(geo,i,&Px);
     rollPitchYawT(geo,i,&Py);
     rollPitchYawT(geo,i,&Pz);
     
-    P.x=P.x-(geo.DSD-geo.DSO);
-    Px.x=Px.x-(geo.DSD-geo.DSO);
-    Py.x=Py.x-(geo.DSD-geo.DSO);
-    Pz.x=Pz.x-(geo.DSD-geo.DSO);
+    P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
+    Px.x=Px.x-(geo.DSD[i]-geo.DSO[i]);
+    Py.x=Py.x-(geo.DSD[i]-geo.DSO[i]);
+    Pz.x=Pz.x-(geo.DSD[i]-geo.DSO[i]);
     //Done for P, now source
     Point3D source;
-    source.x=geo.DSD; //allready offseted for rotation
+    source.x=geo.DSD[i]; //allready offseted for rotation
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
     rollPitchYawT(geo,i,&source);
     
     
-    source.x=source.x-(geo.DSD-geo.DSO);//   source.y=source.y-auxOff.y;    source.z=source.z-auxOff.z;
+    source.x=source.x-(geo.DSD[i]-geo.DSO[i]);//   source.y=source.y-auxOff.y;    source.z=source.z-auxOff.z;
     
 //       mexPrintf("%f,%f,%f\n",source.x,source.y,source.z);
     // Scale coords so detector pixels are 1x1

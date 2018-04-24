@@ -106,6 +106,10 @@ __global__ void kernelPixelBackprojectionSpherical(const Geometry geo,
         float* image,
         int indAlpha,
         const float COR,
+        const float DSD,
+        const float DSO,
+        const float cosa,
+        const float sina,
         const Point3D deltaX ,
         const Point3D deltaY,
         const Point3D deltaZ,
@@ -140,7 +144,7 @@ __global__ void kernelPixelBackprojectionSpherical(const Geometry geo,
     
     
     // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-    float t=(geo.DSO-geo.DSD /*-DDO*/ - source.x)/vectX;
+    float t=(DSO-DSD /*-DDO*/ - source.x)/vectX;
     float y,z;
     y=vectY*t+source.y;
     z=vectZ*t+source.z;
@@ -166,22 +170,22 @@ __global__ void kernelPixelBackprojectionSpherical(const Geometry geo,
     //Real coords of Source
     // We already have S.x, and S.y and S.z are always zero. we just need to rotate
     Point3D S;
-    S.x= geo.DSO*cos(geo.alpha);
-    S.y=-geo.DSO*sin(geo.alpha); 
+    S.x= DSO*cosa;
+    S.y=-DSO*sina; 
    
     // Real XYZ coordinates of Detector.
     Point3D realD, realDaux; 
     // We know the index of the detector (u,v). Start from there.
-    realDaux.x=-(geo.DSD-geo.DSO); 
+    realDaux.x=-(DSD-DSO); 
     realDaux.y=-geo.sDetecU/2+geo.dDetecU/2 + u*geo.dDetecU +uv0Offset.x;
     realD.z   =-geo.sDetecV/2+geo.dDetecV/2 + v*geo.dDetecV +uv0Offset.y;
     //rotate the detector
-    realD.x= realDaux.x*cos(geo.alpha)  + realDaux.y*sin(geo.alpha); //sin(-x)=-sin(x) , cos(-x)=cos(x)
-    realD.y=-realDaux.x*sin(geo.alpha)  + realDaux.y*cos(geo.alpha); //sin(-x)=-sin(x) , cos(-x)=cos(x)
+    realD.x= realDaux.x*cosa  + realDaux.y*sina; //sin(-x)=-sin(x) , cos(-x)=cos(x)
+    realD.y=-realDaux.x*sina  + realDaux.y*cosa; //sin(-x)=-sin(x) , cos(-x)=cos(x)
     float L,l;
     L = sqrt( (S.x-realD.x)*(S.x-realD.x)+ (S.y-realD.y)*(S.y-realD.y)+ (realD.z)*(realD.z)); // Sz=0 always.
     l = sqrt( (S.x-realvoxel.x)*(S.x-realvoxel.x)+ (S.y-realvoxel.y)*(S.y-realvoxel.y)+ (S.z-realvoxel.z)*(S.z-realvoxel.z));
-    weigth=L*L*L/(geo.DSD*l*l);
+    weigth=L*L*L/(DSD*l*l);
     
    // Get Value in the computed (U,V) and multiply by the corresponding weigth.
     image[idx]+=tex3D(tex, v  ,
@@ -269,7 +273,7 @@ int voxel_backprojection2_spherical(float const * const projections, Geometry ge
         offDetec.y=geo.offDetecV[i];
         
         kernelPixelBackprojectionSpherical<<<grid,block>>>
-                (geo,dimage,i,geo.COR[i],deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,source);
+                (geo,dimage,i,geo.COR[i],geo.DSD[i],geo.DSO[i],cos(geo.alpha),sin(geo.alpha),deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,source);
         cudaCheckErrors("Kernel fail");
     }
     // If we are timing this
@@ -332,28 +336,28 @@ void computeDeltasCubeSpherical(Geometry geo,int i, Point3D* xyzorigin, Point3D*
     //
     // first, we need to offset everything so (0,0,0) is the center of the detector
     // Only X is required for that
-    P.x=P.x+(geo.DSD-geo.DSO);
-    Px.x=Px.x+(geo.DSD-geo.DSO);
-    Py.x=Py.x+(geo.DSD-geo.DSO);
-    Pz.x=Pz.x+(geo.DSD-geo.DSO);
+    P.x=P.x+(geo.DSD[i]-geo.DSO[i]);
+    Px.x=Px.x+(geo.DSD[i]-geo.DSO[i]);
+    Py.x=Py.x+(geo.DSD[i]-geo.DSO[i]);
+    Pz.x=Pz.x+(geo.DSD[i]-geo.DSO[i]);
     rollPitchYawT(geo,i,&P);
     rollPitchYawT(geo,i,&Px);
     rollPitchYawT(geo,i,&Py);
     rollPitchYawT(geo,i,&Pz);
     
-    P.x=P.x-(geo.DSD-geo.DSO);
-    Px.x=Px.x-(geo.DSD-geo.DSO);
-    Py.x=Py.x-(geo.DSD-geo.DSO);
-    Pz.x=Pz.x-(geo.DSD-geo.DSO);
+    P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
+    Px.x=Px.x-(geo.DSD[i]-geo.DSO[i]);
+    Py.x=Py.x-(geo.DSD[i]-geo.DSO[i]);
+    Pz.x=Pz.x-(geo.DSD[i]-geo.DSO[i]);
     //Done for P, now source
     
-    source.x=geo.DSD; //allready offseted for rotation
+    source.x=geo.DSD[i]; //allready offseted for rotation
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
     rollPitchYawT(geo,i,&source);
     
     
-    source.x=source.x-(geo.DSD-geo.DSO);//   source.y=source.y-auxOff.y;    source.z=source.z-auxOff.z;
+    source.x=source.x-(geo.DSD[i]-geo.DSO[i]);//   source.y=source.y-auxOff.y;    source.z=source.z-auxOff.z;
     
 //       mexPrintf("%f,%f,%f\n",source.x,source.y,source.z);
     // Scale coords so detector pixels are 1x1

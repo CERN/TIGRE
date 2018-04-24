@@ -124,7 +124,8 @@ errorL2=[];
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
 rotDetector=geo.rotDetector;
-
+DSD=geo.DSD;
+DSO=geo.DSO;
 
 
 % TODO : Add options for Stopping criteria
@@ -150,7 +151,12 @@ for ii=1:niter
         if size(rotDetector,2)==size(angles,2)
             geo.rotDetector=rotDetector(:,orig_index{jj});
         end
-        
+        if size(DSO,2)==size(angles,2)
+            geo.DSO=DSO(:,orig_index{jj});
+        end
+        if size(DSD,2)==size(angles,2)
+            geo.DSD=DSD(:,orig_index{jj});
+        end
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%%%%% Slower and memory-eating code (but clearer)%%%%%%%%%%%%%%%%
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
