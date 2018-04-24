@@ -45,53 +45,8 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 
-#ifndef TYPES_CBCT
-#define TYPES_CBCT
-struct  Geometry {
-    // Geometry assumptions:
-    //  -> Origin is at (0,0,0). Image center is there +offOrig
-    //  -> at angle 0, source + image centre (without the offset) + detector centre (without offset) 
-    //     are aligned in the Y_Z plane.
-    //  -> detector is orthonormal to projection plane.
-    
-    //Parameters part of the image geometry
-    int   nVoxelX, nVoxelY, nVoxelZ;
-    float sVoxelX, sVoxelY, sVoxelZ;
-    float dVoxelX, dVoxelY, dVoxelZ;
-    float *offOrigX,*offOrigY,*offOrigZ;
-    float DSO;
-    // Parameters  of the Detector.
-    int   nDetecU, nDetecV;
-    float sDetecU, sDetecV;
-    float dDetecU, dDetecV;
-    float *offDetecU, *offDetecV;
-    float DSD;
-    float* dRoll;
-    float* dPitch;
-    float* dYaw;
-    // The base unit we are working with in mm. 
-    float unitX;
-    float unitY;
-    float unitZ;
-    
-    //rotation angle for e uler (ZYZ)
-    float alpha;
-    float theta;
-    float psi;
-    // Centre of Rotation correction.
-    float* COR;
-    //Maximum length of cube
-    float maxLength;
-    //User option
-    float accuracy;
-};
+#include "types_TIGRE.hpp"
 
- struct Point3D{
-    float x;
-    float y;
-    float z;
-};
-#endif
 
 
 #ifndef PROJECTION_HPP
@@ -99,9 +54,9 @@ struct  Geometry {
 
 int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
 float computeMaxLength(Geometry geo, float alpha);
-void computeDeltas(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
-void rollPitchYaw(Geometry geo,int i, Point3D* point);
-float maxdistanceCuboid(Geometry geo,int i);
+void computeDeltas(Geometry geo,unsigned int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
+void rollPitchYaw(Geometry geo,unsigned int i, Point3D* point);
+float maxdistanceCuboid(Geometry geo,unsigned int i);
 void eulerZYZ(Geometry geo, Point3D* point);
 
 // below, not used

@@ -25,11 +25,11 @@ imshow(geoimg);
 h = xlabel(''); 
 pos = get(h,'Position'); 
 delete(h)
-h = title(char('Geometry definition for CBCT','    ©TIGRE toolbox','   DOI: XXX-XXXX XXXX'));
+h = title(char('Geometry definition for CBCT','    ©TIGRE toolbox','   DOI: 10.1088/2057-1976/2/5/055010'));
 set(h,'Position',pos);
 set(gca, 'XAxisLocation','top')
 set(gcf, 'Color','white')
-
+warning('Current TIGRE is more flexible than what is shown in the figure.');
 else
     disp('showGeoCBCTDiagram() needs Internet to work. Run doc(''TIGRE/Geometry'') to see the diagram.')
     

@@ -2,16 +2,16 @@ function geo=checkGeo(geo, angles )
 %CHECKGEO Summary of this function goes here
 %   Detailed explanation goes here
 geofields_mandatory={'nVoxel','sVoxel','dVoxel', ...
-                     'nDetector','sDetector','dDetector',...
-                     'DSO','DSD'};
-       
+    'nDetector','sDetector','dDetector',...
+    'DSO','DSD'};
+
 geofields_optional={'offOrigin','offDetector','rotDetector','COR',...
-                    'mode','accuracy'};
+    'mode','accuracy'};
 allfields=horzcat(geofields_mandatory,geofields_optional);
 fnames=fieldnames(geo);
 % Find if geo has fields we do not recongize
 unknown=~ismember(fnames,allfields);
-% there must be not unknown variables 
+% there must be not unknown variables
 % TODO: Do we really want to enforce this? Perhaps just a warning?
 assert(~sum(unknown),'TIGRE:checkGeo:BadGeometry',['The following fields are not known by TIGRE:\n' strjoin(fnames(unknown)),'\nMake sure you have not misspelled any field or introduced unnecesary fields.'])
 
@@ -39,63 +39,73 @@ assert(isequal(size(geo.dVoxel),[3 1]),'TIGRE:checkGeo:BadGeometry','geo.sVoxel 
 assert(sum(abs(geo.dVoxel.*geo.nVoxel-geo.sVoxel))<1e-6, 'TIGRE:checkGeo:BadGeometry', 'nVoxel*dVoxel is not sVoxel, something is wrong in the numbers')
 
 % Detector data
-assert(isequal(size(geo.nDetector),[2 1]),'TIGRE:checkGeo:BadGeometry','geo.nDetector should be 3x1')
+assert(isequal(size(geo.nDetector),[2 1]),'TIGRE:checkGeo:BadGeometry','geo.nDetector should be 2x1')
 assert(isequal(geo.nDetector,round(geo.nDetector)),'TIGRE:checkGeo:BadGeometry','geo.nDetector should be a natural number.')
 
-assert(isequal(size(geo.sDetector),[2 1]),'TIGRE:checkGeo:BadGeometry','geo.sDetector should be 3x1')
+assert(isequal(size(geo.sDetector),[2 1]),'TIGRE:checkGeo:BadGeometry','geo.sDetector should be 2x1')
 
-assert(isequal(size(geo.dDetector),[2 1]),'TIGRE:checkGeo:BadGeometry','geo.sDetector should be 3x1')
+assert(isequal(size(geo.dDetector),[2 1]),'TIGRE:checkGeo:BadGeometry','geo.sDetector should be 2x1')
 
 assert(sum(abs(geo.dDetector.*geo.nDetector-geo.sDetector))<1e-6, 'TIGRE:checkGeo:BadGeometry', 'nDetector*dDetector is not sDetector, something is wrong in the numbers')
 
 % DSD DSO
-assert(isscalar(geo.DSD),'TIGRE:checkGeo:BadGeometry','geo.DSD should be a scalar');
-assert(isscalar(geo.DSD),'TIGRE:checkGeo:BadGeometry','geo.DSO should be a scalar');
-assert(geo.DSD>=geo.DSO, 'TIGRE:checkGeo:BadGeometry','DSD shoudl be bigger or equal to DSO');
+
+assert(isequal(size(geo.DSD),[1 1]) | isequal(size(geo.DSD),[1 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.DSD Should be 1x1 or 1xsize(angles,2)')
+if isequal(size(geo.DSD),[1 1])
+    geo.DSD=repmat(geo.DSD,[1, size(angles,2)]);
+end
+assert(isequal(size(geo.DSO),[1 1]) | isequal(size(geo.DSO),[1 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.DSD Should be 1x1 or 1xsize(angles,2)')
+
+if isequal(size(geo.DSO),[1 1])
+    geo.DSO=repmat(geo.DSO,[1, size(angles,2)]);
+    
+end
+
+assert(all(geo.DSD>=geo.DSO), 'TIGRE:checkGeo:BadGeometry','DSD shoudl be bigger or equal to DSO');
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Now we know that optional fields are properly written or they would have
-% been flagged before. 
+% been flagged before.
 % We need to be explicit here again.
 % geofields_optional={'offOrigin','offDetector','rotDetector','COR',...
 %                     'mode','accuracy'};
 
 if isfield(geo,'offOrigin')
-   assert(isequal(size(geo.offOrigin),[3 1]) | isequal(size(geo.offOrigin),[3 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offOrigin Should be 3x1 or 3xsize(angles,2)') 
-   assert(isa(geo.offOrigin,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.offOrigin is not double type.' )
-   if isequal(size(geo.offOrigin),[3 1])
-      geo.offOrigin=repmat(geo.offOrigin,[1, size(angles,2)]);
-   end
+    assert(isequal(size(geo.offOrigin),[3 1]) | isequal(size(geo.offOrigin),[3 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offOrigin Should be 3x1 or 3xsize(angles,2)')
+    assert(isa(geo.offOrigin,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.offOrigin is not double type.' )
+    if isequal(size(geo.offOrigin),[3 1])
+        geo.offOrigin=repmat(geo.offOrigin,[1, size(angles,2)]);
+    end
 else
     geo.offOrigin=zeros(3,size(angles,2));
 end
 
 if isfield(geo,'offDetector')
-   assert(isequal(size(geo.offDetector),[2 1]) | isequal(size(geo.offDetector),[2 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offDetector Should be 3x1 or 3xsize(angles,2)') 
-   assert(isa(geo.offDetector,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.offDetector is not double type.' )
-   if isequal(size(geo.offDetector),[2 1])
-      geo.offDetector=repmat(geo.offDetector,[1, size(angles,2)]);
-   end
+    assert(isequal(size(geo.offDetector),[2 1]) | isequal(size(geo.offDetector),[2 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offDetector Should be 2x1 or 2xsize(angles,2)')
+    assert(isa(geo.offDetector,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.offDetector is not double type.' )
+    if isequal(size(geo.offDetector),[2 1])
+        geo.offDetector=repmat(geo.offDetector,[1, size(angles,2)]);
+    end
 else
     geo.offDetector=zeros(2,size(angles,2));
 end
 
 if isfield(geo,'rotDetector')
-   assert(isequal(size(geo.rotDetector),[3 1]) | isequal(size(geo.rotDetector),[3 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.rotDetector Should be 3x1 or 3xsize(angles,2)') 
-   assert(isa(geo.rotDetector,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.rotDetector is not double type.' )
-   if isequal(size(geo.rotDetector),[3 1])
-      geo.rotDetector=repmat(geo.rotDetector,[1, size(angles,2)]);
-   end
+    assert(isequal(size(geo.rotDetector),[3 1]) | isequal(size(geo.rotDetector),[3 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.rotDetector Should be 3x1 or 3xsize(angles,2)')
+    assert(isa(geo.rotDetector,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.rotDetector is not double type.' )
+    if isequal(size(geo.rotDetector),[3 1])
+        geo.rotDetector=repmat(geo.rotDetector,[1, size(angles,2)]);
+    end
 else
     geo.rotDetector=zeros(3,size(angles,2));
 end
 
 if isfield(geo,'COR')
-   assert(isequal(size(geo.COR),[1 1]) | isequal(size(geo.COR),[1 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.COR Should be 1x1 or 1xsize(angles,2)') 
-   assert(isa(geo.COR,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.COR is not double type.' )
-   if isequal(size(geo.COR),[1 1])
-      geo.COR=repmat(geo.COR,[1, size(angles,2)]);
-   end
+    assert(isequal(size(geo.COR),[1 1]) | isequal(size(geo.COR),[1 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.COR Should be 1x1 or 1xsize(angles,2)')
+    assert(isa(geo.COR,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.COR is not double type.' )
+    if isequal(size(geo.COR),[1 1])
+        geo.COR=repmat(geo.COR,[1, size(angles,2)]);
+    end
 else
     geo.COR=zeros(1,size(angles,2));
 end
@@ -104,7 +114,7 @@ if isfield(geo,'mode')
     assert(ischar(geo.mode),'TIGRE:checkGeo:BadGeometry','geo.mode shoudl be a character array');
     assert(strcmp(geo.mode,'cone')|strcmp(geo.mode,'parallel'),'TIGRE:checkGeo:BadGeometry','geo.mode shoudl ''cone'' or ''parallel''')
 else
-   geo.mode='cone'; 
+    geo.mode='cone';
 end
 
 if isfield(geo,'accuracy')
@@ -116,7 +126,7 @@ if isfield(geo,'accuracy')
 else
     geo.accuracy=0.5;
 end
-          
+
 
 end
 

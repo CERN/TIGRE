@@ -211,8 +211,8 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
         Point3D xyzOffset = projParamsArrayDevParallel[6*projNumber+4];
         Point3D S = projParamsArrayDevParallel[6*projNumber+5];
         
-        //float sinalpha = projSinCosArrayDev[3*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
-        //float cosalpha = projSinCosArrayDev[3*projNumber+1];
+        float DSD = projSinCosArrayDevParallel[3*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
+        float DSO = projSinCosArrayDevParallel[3*projNumber+1];
         float COR = projSinCosArrayDevParallel[3*projNumber+2];
 
         // Geometric trasnformations:
@@ -230,7 +230,7 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             
             // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
             Point3D P;
-            S.x=geo.DSO;
+            S.x=DSO;
             P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
             P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
             P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
@@ -243,7 +243,7 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             vectZ=(P.z -S.z);
             
             // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-            float t=(geo.DSO-geo.DSD /*-DOD*/ - S.x)/vectX;
+            float t=(DSO-DSD /*-DOD*/ - S.x)/vectX;
             float y,z;
             y=vectY*t+S.y;
             z=vectZ*t+S.z;
@@ -378,14 +378,14 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
             float sinalpha,cosalpha;
             
             geo.alpha=-alphas[currProjNumber*3];
-            sinalpha=sin(geo.alpha);
-            cosalpha=cos(geo.alpha);
+//             sinalpha=sin(geo.alpha);
+//             cosalpha=cos(geo.alpha);
             
-            projSinCosArrayHostParallel[3*j]=sinalpha;  // 3*j because we have 3 float (sin or cos angle) values per projection
-            projSinCosArrayHostParallel[3*j+1]=cosalpha;
+            projSinCosArrayHostParallel[3*j]=geo.DSD[currProjNumber];  // 3*j because we have 3 float (sin or cos angle) values per projection
+            projSinCosArrayHostParallel[3*j+1]=geo.DSO[currProjNumber];
             projSinCosArrayHostParallel[3*j+2]=geo.COR[currProjNumber];
             
-            computeDeltasCubeParallel(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
+            computeDeltasCubeParallel(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
             
             offOrig.x=geo.offOrigX[currProjNumber];
             offOrig.y=geo.offOrigY[currProjNumber];
@@ -436,7 +436,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
     
 }  // END voxel_backprojection
 
-void computeDeltasCubeParallel(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S)
+void computeDeltasCubeParallel(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ)
 {
     Point3D P0, Px0,Py0,Pz0, source;
     // Get coords of Img(0,0,0)
@@ -471,7 +471,6 @@ void computeDeltasCubeParallel(Geometry geo, float alpha,int i, Point3D* xyzorig
     Py.z=Py.z/geo.dDetecV;                          Py.y=Py.y/geo.dDetecU;
     Pz.z=Pz.z/geo.dDetecV;                          Pz.y=Pz.y/geo.dDetecU;
     
-    source.z=source.z/geo.dDetecV;                  source.y=source.y/geo.dDetecU;
 
     // get deltas of the changes in voxels
     deltaX->x=Px.x-P.x;   deltaX->y=Px.y-P.y;    deltaX->z=Px.z-P.z;
@@ -480,6 +479,5 @@ void computeDeltasCubeParallel(Geometry geo, float alpha,int i, Point3D* xyzorig
     
     
     *xyzorigin=P;
-    *S=source;
     
 }  // END computeDeltasCube

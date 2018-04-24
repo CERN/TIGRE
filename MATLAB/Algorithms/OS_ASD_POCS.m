@@ -106,6 +106,8 @@ iter=0;
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
 rotDetector=geo.rotDetector;
+DSD=geo.DSD;
+DSO=geo.DSO;
 while ~stop_criteria %POCS
     f0=f;
     if (iter==0 && verbose==1);tic;end
@@ -120,6 +122,12 @@ while ~stop_criteria %POCS
         end
         if size(rotDetector,2)==size(angles,2)
             geo.rotDetector=rotDetector(:,orig_index{jj});
+        end
+        if size(DSO,2)==size(angles,2)
+            geo.DSO=DSO(:,orig_index{jj});
+        end
+        if size(DSD,2)==size(angles,2)
+            geo.DSD=DSD(:,orig_index{jj});
         end
         
         %proj is data: b=Ax

@@ -222,13 +222,20 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 geo.dDetecU=(float)dDetec[0];
                 geo.dDetecV=(float)dDetec[1];
                 break;
-            case 6:
+           case 6:
+                geo.DSD=(float*)malloc(nangles * sizeof(float));
                 DSD=(double *)mxGetData(tmp);
-                geo.DSD=(float)DSD[0];
+                for (int i=0;i<nangles;i++){
+                    geo.DSD[i]=(float)DSD[i];
+                }
                 break;
             case 7:
+                geo.DSO=(float*)malloc(nangles * sizeof(float));
                 DSO=(double *)mxGetData(tmp);
-                geo.DSO=(float)DSO[0];
+                for (int i=0;i<nangles;i++){
+                    geo.DSO[i]=(float)DSO[i];
+                }
+                break;
             case 8:
                 
                 geo.offOrigX=(float*)malloc(nangles * sizeof(float));

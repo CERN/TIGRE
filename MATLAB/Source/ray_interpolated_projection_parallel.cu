@@ -104,6 +104,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
         Point3D deltaU,
         Point3D deltaV,
         Point3D uvOrigin,
+        float DSO,
         float maxdist){
     
     unsigned long y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -148,8 +149,8 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     
     
     // limit the amount of mem access after the cube, but before the detector.
-    if ((2*geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy  <   length)
-        length=ceil((2*geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy);  
+    if ((2*DSO/geo.dVoxelX+maxdist)/geo.accuracy  <   length)
+        length=ceil((2*DSO/geo.dVoxelX+maxdist)/geo.accuracy);  
     //Length is not actually a length, but the amount of memreads with given accuracy ("samples per voxel")
     
     for (i=floor(maxdist/geo.accuracy); i<=length; i=i+1){
@@ -235,7 +236,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
         computeDeltas_parallel(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Interpolation!!
         
-        kernelPixelDetector_parallel<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(maxdist));
+        kernelPixelDetector_parallel<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,geo.DSO[i],floor(maxdist));
         cudaCheckErrors("Kernel fail");
         // copy result to host
         cudaMemcpy(result[i], dProjection, num_bytes, cudaMemcpyDeviceToHost);
@@ -273,18 +274,18 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
  * to compute the locations of the x-rays. While it seems verbose and overly-optimized,
  * it does saves about 30% of each of the kernel calls. Thats something!
  **/
-void computeDeltas_parallel(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
+void computeDeltas_parallel(Geometry geo, float alpha,unsigned int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
     Point3D S;
-    S.x=geo.DSO;
+    S.x=geo.DSO[i];
     S.y=geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);
     S.z=geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
     
     //End point
     Point3D P,Pu0,Pv0;
     
-    P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
-    Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
-    Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
+    P.x  =-(geo.DSD[i]-geo.DSO[i]);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
+    Pu0.x=-(geo.DSD[i]-geo.DSO[i]);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
+    Pv0.x=-(geo.DSD[i]-geo.DSO[i]);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
     // Geomtric trasnformations:
     
     //1: Offset detector

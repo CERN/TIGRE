@@ -75,14 +75,14 @@ do { \
      *            |                             |
      *            |                             |
      *            |      +--------+             |
-              |     /        /|             |
-     A Z      |    /        / |*D           |
-     |        |   +--------+  |             |
-     |        |   |        |  |             |
-     |        |   |     *O |  +             |
-     *--->y   |   |        | /              |
-    /         |   |        |/               |
-   V X        |   +--------+                |
+     *            |     /        /|             |
+     *   A Z      |    /        / |*D           |
+     *   |        |   +--------+  |             |
+     *   |        |   |        |  |             |
+     *   |        |   |     *O |  +             |
+     *   *--->y   |   |        | /              |
+     *  /         |   |        |/               |
+     * V X        |   +--------+                |
      *            |-----------------------------|
      *
      *           *S
@@ -100,6 +100,8 @@ __global__ void kernelPixelBackprojection_parallel_spherical(const Geometry geo,
         float* image,
         const int indAlpha,
         const float COR,
+        const float DSD,
+        const float DSO,
         const Point3D deltaX,
         const Point3D deltaY,
         const Point3D deltaZ,
@@ -137,7 +139,7 @@ __global__ void kernelPixelBackprojection_parallel_spherical(const Geometry geo,
     
     
     // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-    float t=(geo.DSO-geo.DSD /*-DDO*/ - source.x)/vectX;
+    float t=(DSO-DSD /*-DDO*/ - source.x)/vectX;
     float y,z;
     y=vectY*t+source.y;
     z=vectZ*t+source.z;
@@ -154,7 +156,7 @@ __global__ void kernelPixelBackprojection_parallel_spherical(const Geometry geo,
     realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y+COR;
     
     
-    weigth=(geo.DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha))/geo.DSO; //TODO: This is wrong for shperical
+    weigth=(DSO+realy*sin(geo.alpha)-realx*cos(geo.alpha))/DSO; //TODO: This is wrong for shperical
     weigth=1/(weigth*weigth);
     
     // Get Value in the computed (U,V) and multiply by the corresponding weigth.
@@ -246,7 +248,7 @@ int voxel_backprojection_parallel_spherical(float const * const projections, Geo
         offDetec.y=geo.offDetecV[i];
    
 
-        kernelPixelBackprojection_parallel_spherical<<<grid,block>>>(geo,dimage,i,geo.COR[i],deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,source);
+        kernelPixelBackprojection_parallel_spherical<<<grid,block>>>(geo,dimage,i,geo.COR[i],geo.DSD[i],geo.DSO[i],deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,source);
         cudaCheckErrors("Kernel fail");
     }
     if (timekernel){
@@ -331,7 +333,7 @@ void computeDeltasCubeSphericalParallel(Geometry geo, int i, Point3D* xyzorigin,
     // Scale coords so detector pixels are 1x1
     
     Point3D source;
-    source.x=geo.DSO; //allready offseted for rotation
+    source.x=geo.DSO[i]; //allready offseted for rotation
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
     
