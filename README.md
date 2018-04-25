@@ -1,15 +1,17 @@
 TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
 ======
 
-TIGRE is a MATLAB/CUDA toolbox for fast and accurate 3D tomographic 
-reconstruction, created jointly by University of Bath's Engineering Tomography Lab and CERN. 
+TIGRE is a MATLAB and Python/CUDA toolbox for fast and accurate 3D tomographic 
+reconstruction (any geometry), created jointly by University of Bath's Engineering Tomography Lab and CERN. 
+
 The aim of TIGRE is to provide a wide range of easy-to-use iterative algorithms to the tomographic research community. 
 We would like to build an stronger bridge between algorithm researchers and
 imaging researchers, by encouraging and supporting contributions from both sides into
-TIGRE. TIGRE is free to use and distribute, use it, modify it, break it, share it; 
+TIGRE. 
+
+TIGRE is free to use and distribute, use it, modify it, break it, share it; 
 the only requirement is proper referencing to the authors.
 
-Currently it contains Cone Beam CT geometries, and a beta of parallel geometries. 
 
 If you wissh to be added to the mailing list of TIGRE, please send an email to tigre.toolbox@gmail.com. 
 We will only contact you whenever a new version of TIGRE is released or with important news.
@@ -27,15 +29,17 @@ Donwload: [https://github.com/CERN/TIGRE/releases][7]
 
 **NEWS**
 
-The first version of python-TIGRE will be released soon. We expect to have a Linux-working version some time before July. 
-If you are interested, please contact us. 
+There is a somehow working version of Python that still needs a bit of work regarding setup.
+If you are interested in controbuting, please contact us. 
 
 
 **TIGRE features**:
 
-  - Fast, state of the art projection using interpolation or Siddon (Jacob) ray-tracing
+  - Fast, state of the art projection using two modes of ray tracing (interpolation or Siddon (Jacob))
 
-  - Fast, state of the art backprojection, with FDK weight or matched weight 
+  - Fast, state of the art backprojection using two modes (FDK weight or matched weight (for krylov subspace algorithms)) 
+  
+  - Wide geometric flexibility, being possible to change most parameters per-projeciton
 
   - A wide range of algorithms with multiple configurations for each 
       - FDK
@@ -59,7 +63,7 @@ If you are interested, please contact us.
 
   - TV denoising for 3D images
 
-  - A variety of plotting functions
+  - A variety of basic plotting functions
 
   - Quality measures
 
@@ -74,7 +78,7 @@ issue][2] if it doesnt work in other arch/OS)
    - Install  CUDA Toolkit (the later, the better)
      Download [here][1]
      
-   - Install a compatible compiler (the Best option Visual Studio 2013 - if you use VS2017 it cause problem because VSCOMMTOOLS14 in VS2017 has completely different directory structure)
+   - Install a compatible compiler (the Best option Visual Studio 2013 - if you use VS2017 it may cause problems because VSCOMMTOOLS14 in VS2017 has completely different directory structure)
    
    - Run Compile.m
 
@@ -172,9 +176,9 @@ this. Hopefully we can find a solution for this without the need of restarting M
 
 **Q: Does it work in MATLAB XXXX with Compiler XXXX in OS XXXX**
 
-*A: In Widows, it seems that the only supperted compiler is Microsoft Visual Studio.
-Apart from that, any MATLAB version in any OS should work, with the suported compilers. 
-Let us know if you find an incompatibility*
+*A: In general, it should, as long as you are following both CUDAs and MATLABs s upportedcompilers.
+The truth is that there is few compilers that fit the eeligibility criteria for both. MATLAB version and OS 
+should not be a problem.*
 
 **Q: I get a fair amount of warnings when I compile the code, what is happening?**
 
@@ -198,7 +202,7 @@ tigre.toolbox@gmail.com
 
 or contact the author directly in
 
-a.biguri@bath.ac.uk
+ander.biguri@gmail.com
 
 We will make an effort to answer as soon as we can.
 
