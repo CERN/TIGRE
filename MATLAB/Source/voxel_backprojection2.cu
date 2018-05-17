@@ -318,7 +318,6 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
 
 int voxel_backprojection2(float const * const projections, Geometry geo, float* result,float const * const alphas, int nalpha)
 {
-    
     /*
      * Allocate texture memory on the device
      */
@@ -411,8 +410,8 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
             projSinCosArray2Host[5*j]=sinalpha;  // 2*j because we have 2 float (sin or cos angle) values per projection
             projSinCosArray2Host[5*j+1]=cosalpha;
             projSinCosArray2Host[5*j+2]=geo.COR[currProjNumber];
-            projSinCosArray2Host[5*j+1]=geo.DSD[currProjNumber];
-            projSinCosArray2Host[5*j+2]=geo.DSO[currProjNumber];
+            projSinCosArray2Host[5*j+3]=geo.DSD[currProjNumber];
+            projSinCosArray2Host[5*j+4]=geo.DSO[currProjNumber];
 
             computeDeltasCube(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
             
