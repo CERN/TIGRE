@@ -18,7 +18,11 @@ We will only contact you whenever a new version of TIGRE is released or with imp
 
 TIGRE is still being developed and we are still adding new features to it. If you have any request for your specific application, do not hesitate to contact us!
 
-**TIGRE in media**:
+
+[Read the PhD Thesis of Ander Biguri](https://github.com/AnderBiguri/PhDThesis) for a detailed description of TIGRE, iterative algorithms and GPU computing, among other things. 
+
+---- 
+## **TIGRE in media**:
 
 [Article of Medical Physics Web on TIGRE](http://medicalphysicsweb.org/cws/article/research/66343)
 
@@ -27,13 +31,13 @@ TIGRE is still being developed and we are still adding new features to it. If yo
 Donwload: [https://github.com/CERN/TIGRE/releases][7]
 
 
-**NEWS**
+## **NEWS**
 
 There is a somehow working version of Python that still needs a bit of work regarding setup.
 If you are interested in controbuting, please contact us. 
 
 
-**TIGRE features**:
+## **TIGRE features**:
 
   - Fast, state of the art projection using two modes of ray tracing (interpolation or Siddon (Jacob))
 
