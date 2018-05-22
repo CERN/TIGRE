@@ -132,12 +132,12 @@ while ~stop_criteria %POCS
         
         %proj is data: b=Ax
         %res= initial image is zero (default)
-        %         proj_err=proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{jj},'interpolated'); %                                 (b-Ax)
+        %         proj_err=proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj},'interpolated'); %                                 (b-Ax)
         %         weighted_err=W(:,:,orig_index{jj}).*proj_err;                                 %                          W^-1 * (b-Ax)
-        %         backprj=Atb(weighted_err,geo,alphablocks{jj},'FDK');                          %                     At * W^-1 * (b-Ax)
+        %         backprj=Atb(weighted_err,geo,alphablocks{:,jj},'FDK');                          %                     At * W^-1 * (b-Ax)
         %         weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
         %         f=f+beta*weigth_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
-        f=f+beta* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{jj})),geo,alphablocks{jj}));
+        f=f+beta* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj})),geo,alphablocks{:,jj}));
         
         % Non-negativity constrain
         if nonneg

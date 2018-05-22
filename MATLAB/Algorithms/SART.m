@@ -143,10 +143,10 @@ for ii=1:niter
         if nesterov
             % The nesterov update is quite similar to the normal update, it
             % just uses this update, plus part of the last one.
-            ynesterov=res +  bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(jj))),geo,angles(jj)));
+            ynesterov=res +  bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(:,jj))),geo,angles(:,jj)));
             res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
         else
-            res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(jj))),geo,angles(jj)));
+            res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(:,jj))),geo,angles(:,jj)));
         end
         if nonneg
             res(res<0)=0;

@@ -160,19 +160,19 @@ for ii=1:niter
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%%%%%% Slower and memory-eating code (but clearer)%%%%%%%%%%%%%%%%
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        %proj_err=proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'interpolated'); %                                 (b-Ax)
+        %proj_err=proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{:,jj},'interpolated'); %                                 (b-Ax)
         %weighted_err=W(:,:,orig_index{jj}).*proj_err;                                 %                          W^-1 * (b-Ax)
-        %backprj=Atb(weighted_err,geo,alphablocks{jj},'FDK');                          %                     At * W^-1 * (b-Ax)
+        %backprj=Atb(weighted_err,geo,alphablocks{:,jj},'FDK');                          %                     At * W^-1 * (b-Ax)
         %weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
         %res=res+lambda*weigth_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         if nesterov
             % The nesterov update is quite similar to the normal update, it
             % just uses this update, plus part of the last one.
-            ynesterov=res +bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'interpolated')),geo,alphablocks{jj}));
+            ynesterov=res +bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{:,jj},'interpolated')),geo,alphablocks{:,jj}));
             res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
         else
-            res=res+lambda* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{jj},'interpolated')),geo,alphablocks{jj}));
+            res=res+lambda* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{:,jj},'interpolated')),geo,alphablocks{:,jj}));
         end
         
         % Non-negativity constrain

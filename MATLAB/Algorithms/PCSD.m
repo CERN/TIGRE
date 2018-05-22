@@ -108,7 +108,7 @@ while ~stop_criteria %POCS
                 geo.rotDetector=rotDetector(:,jj);
             end
             
-            f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(f,geo,angles(jj))),geo,angles(jj)));
+            f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(f,geo,angles(:,jj))),geo,angles(:,jj)));
             
         end
     end

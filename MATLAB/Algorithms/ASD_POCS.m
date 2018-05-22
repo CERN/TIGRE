@@ -117,21 +117,21 @@ while ~stop_criteria %POCS
     
     for jj=1:size(angles,2);
         if size(offOrigin,2)==size(angles,2)
-            geo.offOrigin=offOrigin(:,index_angles(jj));
+            geo.offOrigin=offOrigin(:,index_angles(:,jj));
         end
         if size(offDetector,2)==size(angles,2)
-            geo.offDetector=offDetector(:,index_angles(jj));
+            geo.offDetector=offDetector(:,index_angles(:,jj));
         end
          if size(rotDetector,2)==size(angles,2)
-            geo.rotDetector=rotDetector(:,index_angles(jj));
+            geo.rotDetector=rotDetector(:,index_angles(:,jj));
         end
-        %         proj_err=proj(:,:,jj)-Ax(f,geo,angles(jj));          %                                 (b-Ax)
+        %         proj_err=proj(:,:,jj)-Ax(f,geo,angles(:,jj));          %                                 (b-Ax)
         %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
-        %         backprj=Atb(weighted_err,geo,angles(jj));            %                     At * W^-1 * (b-Ax)
+        %         backprj=Atb(weighted_err,geo,angles(:,jj));            %                     At * W^-1 * (b-Ax)
         %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
         %         f=f+beta*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
         % Enforce positivity
-        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(jj))-Ax(f,geo,angles(jj))),geo,angles(jj)));
+        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles(:,jj))),geo,angles(:,jj)));
         % non-negativity constrain
         if nonneg
             f=max(f,0);
