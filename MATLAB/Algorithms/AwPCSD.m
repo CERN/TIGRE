@@ -25,7 +25,7 @@ function [ f,errorSART,errorTV,errorL2,qualMeasOut] = AwPCSD(proj,geo,angles,max
 %                  Default is 20% of the FDK L2 norm.
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
-%   'delta'        Defines Parameter to control the amount of smoothing 
+%   'delta'        Defines Parameter to control the amount of smoothing
 %                  for pixels at the edges. A large 'delta' is not able to
 %                  differentiate image gradients at different pixels. A
 %                  small 'delta' give low weights to almost every pixels,
@@ -64,7 +64,7 @@ errorSART=[];
 errorTV=[];
 
 % [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
-% 
+%
 % angles=cell2mat(alphablocks);
 % index_angles=cell2mat(orig_index);
 
@@ -85,7 +85,7 @@ geoaux.sVoxel([1 2])=geo.sVoxel([1 2])*1.1; % a Bit bigger, to avoid numerical d
 geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
@@ -121,27 +121,33 @@ while ~stop_criteria %POCS
     %Enforcing ART along all projections if squared delta_p > epsilon
     if (delta_p^2)>epsilon
         for jj=1:size(angles,2);
-        if size(offOrigin,2)==size(angles,2)
-           geo.offOrigin=offOrigin(:,jj);
-        end
-        if size(offDetector,2)==size(angles,2)
-           geo.offDetector=offDetector(:,jj);
-        end
-         if size(rotDetector,2)==size(angles,2)
-           geo.rotDetector=rotDetector(:,jj);
-        end
+            if size(offOrigin,2)==size(angles,2)
+                geo.offOrigin=offOrigin(:,jj);
+            end
+            if size(offDetector,2)==size(angles,2)
+                geo.offDetector=offDetector(:,jj);
+            end
+            if size(rotDetector,2)==size(angles,2)
+                geo.rotDetector=rotDetector(:,jj);
+            end
+            if size(DSD,2)==size(angles,2)
+                geo.DSD=DSD(jj);
+            end
+            if size(DSO,2)==size(angles,2)
+                geo.DSO=DSO(jj);
+            end
             
-          f=f+beta* bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(f,geo,angles(:,jj))),geo,angles(:,jj)));
-                  
+            f=f+beta* bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(f,geo,angles(:,jj))),geo,angles(:,jj)));
+            
         end
     end
     
     %Non-negativity projection on all pixels
-    f=max(f,0);  
+    f=max(f,0);
     
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
-   
+    
     if measurequality
         qualMeasOut(:,iter)=Measure_Quality(f0,f,QualMeasOpts);
     end
@@ -152,44 +158,44 @@ while ~stop_criteria %POCS
     
     
     %Compute errorSART
-       errorSARTnow=im3Dnorm(proj-Ax(f,geo,angles),'L2');  
-       errorSART=[errorSART errorSARTnow];
+    errorSARTnow=im3Dnorm(proj-Ax(f,geo,angles),'L2');
+    errorSART=[errorSART errorSARTnow];
     
     
     % Compute change in the image after last SART iteration
     dp_vec=(f-f0);
-
+    
     if iter==1
-       step=1;
+        step=1;
     else
-       step=delta_p/delta_p_first;
+        step=delta_p/delta_p_first;
     end
     f0=f;
     %  TV MINIMIZATION
     % =========================================================================
     %  Call GPU to minimize AwTV
     f=minimizeAwTV(f0,step,ng,delta);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
-%                                             for ii=1:ng
-%                                                 %delta=-0.00038 for thorax phantom
-%                                                 df=weighted_gradientTVnorm(f,delta);
-%                                                 df=df./im3Dnorm(df,'L2');
-%                                                 f=f-(step.*df);
-%                                             end
+    %                                             for ii=1:ng
+    %                                                 %delta=-0.00038 for thorax phantom
+    %                                                 df=weighted_gradientTVnorm(f,delta);
+    %                                                 df=df./im3Dnorm(df,'L2');
+    %                                                 f=f-(step.*df);
+    %                                             end
     % Compute change by TV min
     dg_vec=(f-f0);
-
+    
     if iter==1
-    delta_p_first=im3Dnorm((Ax(f0,geo,angles,'interpolated'))-proj,'L2');
+        delta_p_first=im3Dnorm((Ax(f0,geo,angles,'interpolated'))-proj,'L2');
     end
     
-     %Compute errorTV
-       errorTVnow=im3Dnorm(proj-Ax(f,geo,angles),'L2');  
-       errorTV=[errorTV errorTVnow];
+    %Compute errorTV
+    errorTVnow=im3Dnorm(proj-Ax(f,geo,angles),'L2');
+    errorTV=[errorTV errorTVnow];
     
     
     % Reduce SART step
     beta=beta*beta_red;
-
+    
     
     % Check convergence criteria
     % ==========================================================================
@@ -198,7 +204,7 @@ while ~stop_criteria %POCS
     c=dot(dg_vec(:),dp_vec(:))/(norm(dg_vec(:),2)*norm(dp_vec(:),2));
     %This c is examined to see if it is close to -1.0
     
-     if (c<-0.99 && dd<=epsilon) || beta<0.005|| iter>maxiter
+    if (c<-0.99 && dd<=epsilon) || beta<0.005|| iter>maxiter
         if verbose
             disp(['Stopping criteria met']);
             disp(['   c    = ' num2str(c)]);
@@ -206,36 +212,36 @@ while ~stop_criteria %POCS
             disp(['   iter = ' num2str(iter)]);
         end
         stop_criteria=true;
-     end
+    end
     
-     if computeL2
-         geo.offOrigin=offOrigin;
-         geo.offDetector=offDetector;
-         errornow=im3Dnorm(proj-Ax(f,geo,angles),'L2');                       % Compute error norm2 of b-Ax
-         % If the error is not minimized.
-         if  iter~=1 && errornow>errorL2(end)
-             if verbose
-                 disp(['Convergence criteria met, exiting on iteration number:', num2str(iter)]);
-             end
-             return;
-         end
-         errorL2=[errorL2 errornow];
-     end
- 
+    if computeL2
+        geo.offOrigin=offOrigin;
+        geo.offDetector=offDetector;
+        errornow=im3Dnorm(proj-Ax(f,geo,angles),'L2');                       % Compute error norm2 of b-Ax
+        % If the error is not minimized.
+        if  iter~=1 && errornow>errorL2(end)
+            if verbose
+                disp(['Convergence criteria met, exiting on iteration number:', num2str(iter)]);
+            end
+            return;
+        end
+        errorL2=[errorL2 errornow];
+    end
     
-      if (iter==1 && verbose==1);
+    
+    if (iter==1 && verbose==1);
         expected_time=toc*maxiter;
         disp('AwPCSD');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
-     end
-  
+    end
+    
 end
 end
 
 
- function [beta,beta_red,ng,verbose,epsilon,delta,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
+function [beta,beta_red,ng,verbose,epsilon,delta,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
 opts=     {'lambda','lambda_red','tviter','verbose','maxl2err','delta','qualmeas'};
 defaults=ones(length(opts),1);
 % Check inputs
@@ -250,7 +256,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-        error('TIGRE:AwPCSD:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+        error('TIGRE:AwPCSD:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -263,7 +269,7 @@ for ii=1:length(opts)
         while isempty(ind)
             ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
-       end
+        end
         if isempty(ind)
             error('TIGRE:AwPCSD:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
@@ -280,8 +286,8 @@ for ii=1:length(opts)
                 verbose=val;
             end
             if ~is2014bOrNewer
-               warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
-               verbose=false;
+                warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
+                verbose=false;
             end
             % Lambda
             %  =========================================================================
@@ -294,7 +300,7 @@ for ii=1:length(opts)
                 end
                 beta=val;
             end
-              % Lambda reduction
+            % Lambda reduction
             %  =========================================================================
         case 'lambda_red'
             if default
@@ -313,7 +319,7 @@ for ii=1:length(opts)
             else
                 ng=val;
             end
-             %  Maximum L2 error to have a "good image"
+            %  Maximum L2 error to have a "good image"
             %  =========================================================================
         case 'maxl2err'
             if default
@@ -322,28 +328,28 @@ for ii=1:length(opts)
                 epsilon=val;
             end
             %  =========================================================================
-%             case 'blocksize'
-%             if default
-%                 block_size=20;
-%             else
-%                 if length(val)>1 || ~isnumeric( val)
-%                     error('CBCT:OS_SART_CBCT:InvalidInput','Invalid BlockSize')
-%                 end
-%                 block_size=val;
-%             end
+            %             case 'blocksize'
+            %             if default
+            %                 block_size=20;
+            %             else
+            %                 if length(val)>1 || ~isnumeric( val)
+            %                     error('CBCT:OS_SART_CBCT:InvalidInput','Invalid BlockSize')
+            %                 end
+            %                 block_size=val;
+            %             end
             
-              %Parameter to control the amount of smoothing for pixels at the
+            %Parameter to control the amount of smoothing for pixels at the
             %edges
             %  =========================================================================
         case 'delta'
             if default
-              delta=-0.005;
+                delta=-0.005;
             else
                 delta=val;
             end
             %Image Quality Measure
             %  =========================================================================
-            case 'qualmeas'
+        case 'qualmeas'
             if default
                 QualMeasOpts={};
             else
@@ -353,13 +359,13 @@ for ii=1:length(opts)
                     error('TIGRE:AwPCSD:InvalidInput','Invalid quality measurement parameters');
                 end
             end
-             %  =========================================================================
-%              case 'orderstrategy'
-%             if default
-%                 OrderStrategy='random';
-%             else
-%                 OrderStrategy=val;
-%             end
+            %  =========================================================================
+            %              case 'orderstrategy'
+            %             if default
+            %                 OrderStrategy='random';
+            %             else
+            %                 OrderStrategy=val;
+            %             end
         otherwise
             error('TIGRE:AwPCSD:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in AwPCSD()']);
             

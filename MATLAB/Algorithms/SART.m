@@ -110,6 +110,8 @@ end
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
 rotDetector=geo.rotDetector;
+DSD=geo.DSD;
+DSO=geo.DSO;
 % TODO : Add options for Stopping criteria
 for ii=1:niter
     if (ii==1 && verbose==1);tic;end
@@ -130,6 +132,12 @@ for ii=1:niter
         end
         if size(rotDetector,2)==size(angles,2)
             geo.rotDetector=rotDetector(:,jj);
+        end
+        if size(DSD,2)==size(angles,2)
+            geo.DSD=DSD(jj);
+        end
+        if size(DSO,2)==size(angles,2)
+            geo.DSO=DSO(jj);
         end
         % --------- Memory expensive-----------
         

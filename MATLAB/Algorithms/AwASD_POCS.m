@@ -128,6 +128,12 @@ while ~stop_criteria %POCS
         if size(rotDetector,2)==size(angles,2)
             geo.rotDetector=rotDetector(:,index_angles(:,jj));
         end
+        if size(DSD,2)==size(angles,2)
+            geo.DSD=DSD(jj);
+        end
+        if size(DSO,2)==size(angles,2)
+            geo.DSO=DSO(jj);
+        end
         f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles(:,jj))),geo,angles(:,jj)));
         f(f<0)=0;
     end
@@ -152,7 +158,7 @@ while ~stop_criteria %POCS
         %step-size to an absolute image distance on the first iteration.
     end
     f0=f;
- 
+    
     %  TV MINIMIZATION
     % =========================================================================
     %  Call GPU to minimize TV

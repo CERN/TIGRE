@@ -122,8 +122,14 @@ while ~stop_criteria %POCS
         if size(offDetector,2)==size(angles,2)
             geo.offDetector=offDetector(:,index_angles(:,jj));
         end
-         if size(rotDetector,2)==size(angles,2)
+        if size(rotDetector,2)==size(angles,2)
             geo.rotDetector=rotDetector(:,index_angles(:,jj));
+        end
+        if size(DSD,2)==size(angles,2)
+            geo.DSD=DSD(jj);
+        end
+        if size(DSO,2)==size(angles,2)
+            geo.DSO=DSO(jj);
         end
         %         proj_err=proj(:,:,jj)-Ax(f,geo,angles(:,jj));          %                                 (b-Ax)
         %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
@@ -228,7 +234,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('TIGRE:ASD_POCS:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+        error('TIGRE:ASD_POCS:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -343,7 +349,7 @@ for ii=1:length(opts)
         case 'nonneg'
             if default
                 nonneg=true;
-            else 
+            else
                 nonneg=val;
             end
         otherwise
