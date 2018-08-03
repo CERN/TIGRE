@@ -45,7 +45,7 @@ for ii=1:size(angles,2)
     fproj = (real(ifft(fproj)));
     
   
-    proj(:,:,ii) = fproj(end/2-geo.nDetector(1)/2+1:end/2+geo.nDetector(1)/2,:)/2/geo.dDetector(1)*(2*pi/  size(angles,2)   )/2*(geo.DSD/geo.DSO);
+    proj(:,:,ii) = fproj(end/2-geo.nDetector(1)/2+1:end/2+geo.nDetector(1)/2,:)/2/geo.dDetector(1)*(2*pi/  size(angles,2)   )/2*(geo.DSD(ii)/geo.DSO(ii));
     
     
 end

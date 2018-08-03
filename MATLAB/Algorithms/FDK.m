@@ -21,6 +21,7 @@ function [res,errorL2]=FDK(proj,geo,angles,varargin)
 % Coded by:           Kyungsang Kim, modified by Ander Biguri 
 %--------------------------------------------------------------------------
 [filter,parker]=parse_inputs(proj,geo,angles,varargin);
+geo=checkGeo(geo,angles);
 geo.filter=filter;
 
 %Input is data,geosize,angles
@@ -43,7 +44,7 @@ for ii=1:size(angles,2)
     [uu,vv] = meshgrid(us,vs); %detector
     
     %Create weight according to each detector element
-    w = (geo.DSD)./sqrt((geo.DSD)^2+uu.^2 + vv.^2);
+    w = (geo.DSD(ii))./sqrt((geo.DSD(ii))^2+uu.^2 + vv.^2);
     
     %Multiply the weights with projection data
     proj(:,:,ii) = proj(:,:,ii).*w';
