@@ -21,11 +21,6 @@ TIGRE is still being developed and we are still adding new features to it. If yo
 
 [Read the PhD Thesis of Ander Biguri](https://github.com/AnderBiguri/PhDThesis) for a detailed description of TIGRE, iterative algorithms and GPU computing, among other things. 
 
----- 
-## **TIGRE in media**:
-
-[Article of Medical Physics Web on TIGRE](http://medicalphysicsweb.org/cws/article/research/66343)
-
 
 
 Donwload: [https://github.com/CERN/TIGRE/releases][7]
