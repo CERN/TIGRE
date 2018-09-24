@@ -1,0 +1,45 @@
+package:
+  name: tigre
+  version: "0.0.2"
+
+source:
+  git_url: https://github.com/CERN/TIGRE.git
+
+build:
+  script_env:
+    - CUDAHOME
+
+  number: 11
+requirements:
+
+  preserve_egg_dir: True
+
+  build:
+    - python 
+    - setuptools
+    - cython >=0.13
+    - numpy
+    - scipy
+    - matplotlib
+    
+
+  run:
+    - python 
+    - setuptools
+    - numpy
+    - scipy
+    - matplotlib
+
+about:
+  home: https://github.com/CERN/TIGRE
+  license: BSD - 3 - CLAUSE
+test:
+  imports:
+    - tigre
+  
+  
+
+
+# See
+# http://docs.continuum.io/conda/build.html for
+# more information about meta.yaml

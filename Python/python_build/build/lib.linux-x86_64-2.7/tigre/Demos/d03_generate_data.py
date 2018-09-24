@@ -10,7 +10,7 @@ import numpy as np
 import Demos.geometry as geometry
 import Test_data.data_loader as data_loader
 import scipy.io
-from tigre.Utilities.plotproj import plotproj
+import Utilities.plotting_utils as plotter
 
 from _Ax import Ax
 
@@ -28,7 +28,7 @@ angles = np.linspace(0, 2*np.pi, 20, dtype=np.float32)
 
 projections = Ax(head, TIGRE_parameters, angles, 'interpolated')
 
-plotproj(projections)
+plotter.plot_projections(projections)
 
 # m = {'projections': projections}
 # scipy.io.savemat('projections_python', m)
