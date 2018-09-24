@@ -16,7 +16,6 @@ so.*
 Python/build
 Python/tigre.egg-info/
 Python/dist
-Python/purge.sh
 # Object files
 *.o
 *.ko
