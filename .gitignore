@@ -16,6 +16,7 @@ so.*
 Python/build
 Python/tigre.egg-info/
 Python/dist
+Python/.idea/
 # Object files
 *.o
 *.ko
