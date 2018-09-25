@@ -132,6 +132,21 @@ Atb_ext = Extension('_Atb',
                     extra_compile_args={'gcc': [],
                                          'nvcc': ['-arch=sm_20', '--ptxas-options=-v', '-c',
                                                   '--compiler-options', "'-fPIC'"]},
+                    include_dirs=[numpy_include, CUDA['include'], 'tigre/Source'])
+tvdenoising_ext = Extension('_tvdenoising',
+                    sources=(['tigre/Source/voxel_backprojection.cu', 'tigre/Source/tvdenoising.cu',
+                              'tigre/Source/_types.pxd',
+                              'tigre/Source/_tvdenoising.pyx']),
+                    library_dirs=[CUDA['lib64']],
+                    libraries=['cudart'],
+                    language='c++',
+                    runtime_library_dirs=[CUDA['lib64']],
+                    # this syntax is specific to this build system
+                    # we're only going to use certain compiler args with nvcc and not with gcc
+                    # the implementation of this trick is in customize_compiler() below
+                    extra_compile_args={'gcc': [],
+                                         'nvcc': ['-arch=sm_20', '--ptxas-options=-v', '-c',
+                                                  '--compiler-options', "'-fPIC'"]},
                     include_dirs=[numpy_include, CUDA['include'], 'Source'])
 
 # run the customize_compiler
@@ -142,11 +157,11 @@ class custom_build_ext(build_ext):
 
 
 setup(name='tigre',
-      version = '0.0.0',
-      author = 'Reuben Lindroos',
+      version = '0.0.2',
+      author = 'Reuben Lindroos, Sam loescher',
       packages = find_packages(),
       include_package_data=True,
-      ext_modules=[Ax_ext, Atb_ext],
+      ext_modules=[Ax_ext, Atb_ext,tvdenoising_ext],
 
       # inject our custom trigger
       cmdclass={'build_ext': custom_build_ext},

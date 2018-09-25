@@ -1,4 +1,4 @@
-from _types cimport Geometry as c_Geometry, convert_to_c_geometry, free_c_geometry
+from tigre.Source._types cimport Geometry as c_Geometry, convert_to_c_geometry, free_c_geometry
 
 cimport numpy as np
 import numpy as np

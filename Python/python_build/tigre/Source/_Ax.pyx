@@ -1,6 +1,6 @@
 cimport numpy as np
 import numpy as np
-from _types cimport Geometry as c_Geometry, convert_to_c_geometry, free_c_geometry
+from tigre.Source._types cimport Geometry as c_Geometry, convert_to_c_geometry, free_c_geometry
 
 # Numpy must be initialized. When using numpy from C or Cython you must
 # _always_ do that, or you will have segfaults

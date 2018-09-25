@@ -56,12 +56,7 @@ Codes  : https://github.com/CERN/TIGRE
 #define cudaCheckErrors(msg) \
 do { \
         cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
-                mexPrintf("%s \n",msg);\
-                mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising",cudaGetErrorString(__err));\
-        } \
 } while (0)
-
 
 
 __device__ __inline__
