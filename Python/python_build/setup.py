@@ -39,14 +39,14 @@ def locate_cuda():
             raise EnvironmentError('CUDA_PATH could not be found in your environment variables.')
         home = os.path.dirname(os.path.dirname(nvcc))
         cudaconfig = {'home': home, 'nvcc': nvcc,
-                      'lib': pjoin(home, 'lib'),
+                      'include': pjoin(home, 'include'),
                       'x64': pjoin(home,'lib', 'x64')}
         for k, v in cudaconfig.iteritems():
             if not os.path.exists(v):
                 raise EnvironmentError('The CUDA %s path could not be located in %s' % (k, v))
 
 
-    #defaulting to linux until this can be tested.
+    #defaulting to linux for now.
     else:
 
     # first check if the CUDAHOME env variable is in use
@@ -117,16 +117,21 @@ def customize_compiler_for_nvcc(self):
     # inject our redefined _compile method into the class
     self._compile = _compile
 
+#NOTE: again, defaulting to linux.
+lib_string = 'lib64'
+if platform == 'win32':
+    lib_string = 'x64'
+
 Ax_ext = Extension('_Ax',
                    sources=(['tigre/Source/projection.cpp',
                              'tigre/Source/Siddon_projection.cu', 'tigre/Source/Siddon_projection_parallel.cu',
                              'tigre/Source/ray_interpolated_projection.cu', 'tigre/Source/ray_interpolated_projection_parallel.cu',
                              'tigre/Source/_types.pxd',
                              'tigre/Source/_Ax.pyx']),
-                   library_dirs=[CUDA['lib64']],
+                   library_dirs=[CUDA[lib_string]],
                    libraries=['cudart'],
                    language='c++',
-                   runtime_library_dirs=[CUDA['lib64']],
+                   runtime_library_dirs=[CUDA[lib_string]],
                    # this syntax is specific to this build system
                    # we're only going to use certain compiler args with nvcc and not with gcc
                    # the implementation of this trick is in customize_compiler() below
@@ -140,10 +145,10 @@ Atb_ext = Extension('_Atb',
                               'tigre/Source/voxel_backprojection_parallel.cu',
                               'tigre/Source/_types.pxd',
                               'tigre/Source/_Atb.pyx']),
-                    library_dirs=[CUDA['lib64']],
+                    library_dirs=[CUDA[lib_string]],
                     libraries=['cudart'],
                     language='c++',
-                    runtime_library_dirs=[CUDA['lib64']],
+                    runtime_library_dirs=[CUDA[lib_string]],
                     # this syntax is specific to this build system
                     # we're only going to use certain compiler args with nvcc and not with gcc
                     # the implementation of this trick is in customize_compiler() below
@@ -155,10 +160,10 @@ tvdenoising_ext = Extension('_tvdenoising',
                     sources=(['tigre/Source/voxel_backprojection.cu', 'tigre/Source/tvdenoising.cu',
                               'tigre/Source/_types.pxd',
                               'tigre/Source/_tvdenoising.pyx']),
-                    library_dirs=[CUDA['lib64']],
+                    library_dirs=[CUDA[lib_string]],
                     libraries=['cudart'],
                     language='c++',
-                    runtime_library_dirs=[CUDA['lib64']],
+                    runtime_library_dirs=[CUDA[lib_string]],
                     # this syntax is specific to this build system
                     # we're only going to use certain compiler args with nvcc and not with gcc
                     # the implementation of this trick is in customize_compiler() below
@@ -170,7 +175,9 @@ tvdenoising_ext = Extension('_tvdenoising',
 # run the customize_compiler
 class custom_build_ext(build_ext):
     def build_extensions(self):
+        #print(self.compiler)
         customize_compiler_for_nvcc(self.compiler)
+        self.compiler.compile
         build_ext.build_extensions(self)
 
 
