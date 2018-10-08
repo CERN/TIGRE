@@ -100,10 +100,11 @@ def customize_compiler_for_nvcc(self):
     # now redefine the _compile method. This gets executed for each
     # object but distutils doesn't have the ability to change compilers
     # based on source extension: we add it.
+
     def _compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
         if os.path.splitext(src)[1] == '.cu':
             # use the cuda for .cu files
-            self.set_executable('compiler_so', CUDA['nvcc'])
+            self.set_executable('compiler_so', "C:/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v9.0/bin/nvcc.exe" )
             # use only a subset of the extra_postargs, which are 1-1 translated
             # from the extra_compile_args in the Extension class
             postargs = extra_postargs['nvcc']
@@ -135,9 +136,9 @@ Ax_ext = Extension('_Ax',
                    # this syntax is specific to this build system
                    # we're only going to use certain compiler args with nvcc and not with gcc
                    # the implementation of this trick is in customize_compiler() below
-                   extra_compile_args={'gcc': [],
-                                        'nvcc': ['-arch=sm_20', '--ptxas-options=-v', '-c',
-                                                 '--compiler-options', "'-fPIC'"]},
+                   extra_compile_args={'gcc': [], 'nvcc':['-arch=sm_30', '--ptxas-options=-v', '-c']},
+                                        #'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c',
+                                         #        '--compiler-options', '-fPIC', '-Wall', '-Wfatal-errors']},
                    include_dirs=[numpy_include, CUDA['include'], 'Source'])
 
 Atb_ext = Extension('_Atb',
@@ -153,8 +154,8 @@ Atb_ext = Extension('_Atb',
                     # we're only going to use certain compiler args with nvcc and not with gcc
                     # the implementation of this trick is in customize_compiler() below
                     extra_compile_args={'gcc': [],
-                                         'nvcc': ['-arch=sm_20', '--ptxas-options=-v', '-c',
-                                                  '--compiler-options', "'-fPIC'"]},
+                                         'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c']},
+                                                  #'--compiler-options', "'-fPIC'"]},
                     include_dirs=[numpy_include, CUDA['include'], 'tigre/Source'])
 tvdenoising_ext = Extension('_tvdenoising',
                     sources=(['tigre/Source/voxel_backprojection.cu', 'tigre/Source/tvdenoising.cu',
@@ -168,16 +169,14 @@ tvdenoising_ext = Extension('_tvdenoising',
                     # we're only going to use certain compiler args with nvcc and not with gcc
                     # the implementation of this trick is in customize_compiler() below
                     extra_compile_args={'gcc': [],
-                                         'nvcc': ['-arch=sm_20', '--ptxas-options=-v', '-c',
-                                                  '--compiler-options', "'-fPIC'"]},
+                                         'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c']},
+                                                  #'--compiler-options', "'-fPIC'"
                     include_dirs=[numpy_include, CUDA['include'], 'Source'])
 
 # run the customize_compiler
 class custom_build_ext(build_ext):
     def build_extensions(self):
-        #print(self.compiler)
         customize_compiler_for_nvcc(self.compiler)
-        self.compiler.compile
         build_ext.build_extensions(self)
 
 
