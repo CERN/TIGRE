@@ -4,10 +4,10 @@ from os.path import join as pjoin
 from setuptools import setup, find_packages
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
-import subprocess
+from distutils.spawn import spawn, find_executable
 import numpy
 from sys import platform
-
+PATH = os.environ.get('PATH')
 
 # Code from https://github.com/rmcgibbo/npcuda-example/blob/master/cython/setup.py
 
@@ -93,6 +93,10 @@ def customize_compiler_for_nvcc(self):
     # tell the compiler it can processes .cu
     self.src_extensions.append('.cu')
 
+    self.set_executable('compiler_so', 'nvcc')
+    self.set_executable('linker_so', CUDA['nvcc'])
+    self._c_extensions.append('.cu')
+    self._cpp_extensions.append('.cpp')
     # save references to the default compiler_so and _comple methods
     default_compiler_so = self.compiler_so
     super = self._compile
@@ -104,7 +108,7 @@ def customize_compiler_for_nvcc(self):
     def _compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
         if os.path.splitext(src)[1] == '.cu':
             # use the cuda for .cu files
-            self.set_executable('compiler_so', "C:/Program\ Files/NVIDIA\ GPU\ Computing\ Toolkit/CUDA/v9.0/bin/nvcc.exe" )
+            self.set_executable('compiler_so', 'nvcc')
             # use only a subset of the extra_postargs, which are 1-1 translated
             # from the extra_compile_args in the Extension class
             postargs = extra_postargs['nvcc']
@@ -116,12 +120,15 @@ def customize_compiler_for_nvcc(self):
         self.compiler_so = default_compiler_so
 
     # inject our redefined _compile method into the class
+    
     self._compile = _compile
 
 #NOTE: again, defaulting to linux.
 lib_string = 'lib64'
+extra_comp_args = {'gcc': [], 'nvcc':['-arch=sm_30', '--ptxas-options=-v', '-c']}
 if platform == 'win32':
     lib_string = 'x64'
+    extra_comp_args = []
 
 Ax_ext = Extension('_Ax',
                    sources=(['tigre/Source/projection.cpp',
@@ -132,11 +139,11 @@ Ax_ext = Extension('_Ax',
                    library_dirs=[CUDA[lib_string]],
                    libraries=['cudart'],
                    language='c++',
-                   runtime_library_dirs=[CUDA[lib_string]],
+                   #runtime_library_dirs=[CUDA[lib_string]],
                    # this syntax is specific to this build system
                    # we're only going to use certain compiler args with nvcc and not with gcc
                    # the implementation of this trick is in customize_compiler() below
-                   extra_compile_args={'gcc': [], 'nvcc':['-arch=sm_30', '--ptxas-options=-v', '-c']},
+                   extra_compile_args=extra_comp_args,
                                         #'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c',
                                          #        '--compiler-options', '-fPIC', '-Wall', '-Wfatal-errors']},
                    include_dirs=[numpy_include, CUDA['include'], 'Source'])
@@ -149,12 +156,11 @@ Atb_ext = Extension('_Atb',
                     library_dirs=[CUDA[lib_string]],
                     libraries=['cudart'],
                     language='c++',
-                    runtime_library_dirs=[CUDA[lib_string]],
+                    #runtime_library_dirs=[CUDA[lib_string]],
                     # this syntax is specific to this build system
                     # we're only going to use certain compiler args with nvcc and not with gcc
                     # the implementation of this trick is in customize_compiler() below
-                    extra_compile_args={'gcc': [],
-                                         'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c']},
+                    extra_compile_args=extra_comp_args,
                                                   #'--compiler-options', "'-fPIC'"]},
                     include_dirs=[numpy_include, CUDA['include'], 'tigre/Source'])
 tvdenoising_ext = Extension('_tvdenoising',
@@ -164,20 +170,89 @@ tvdenoising_ext = Extension('_tvdenoising',
                     library_dirs=[CUDA[lib_string]],
                     libraries=['cudart'],
                     language='c++',
-                    runtime_library_dirs=[CUDA[lib_string]],
+                    #runtime_library_dirs=[CUDA[lib_string]],
                     # this syntax is specific to this build system
                     # we're only going to use certain compiler args with nvcc and not with gcc
                     # the implementation of this trick is in customize_compiler() below
-                    extra_compile_args={'gcc': [],
-                                         'nvcc': ['-arch=sm_30', '--ptxas-options=-v', '-c']},
+                    extra_compile_args=extra_comp_args,
                                                   #'--compiler-options', "'-fPIC'"
                     include_dirs=[numpy_include, CUDA['include'], 'Source'])
 
 # run the customize_compiler
 class custom_build_ext(build_ext):
     def build_extensions(self):
+
         customize_compiler_for_nvcc(self.compiler)
+        self.compiler.spawn = self.spawn
         build_ext.build_extensions(self)
+
+    def spawn(self, cmd, search_path=1, verbose=1, dry_run=0):
+        """
+        Perform any CUDA specific customizations before actually launching
+        compile/link etc. commands.
+        """
+        print(cmd)
+
+        if self.compiler.compiler_type == 'msvc':
+            # There are several things we need to do to change the commands
+            # issued by MSVCCompiler into one that works with nvcc. In the end,
+            # it might have been easier to write our own CCompiler class for
+            # nvcc, as we're only interested in creating a shared library to
+            # load with ctypes, not in creating an importable Python extension.
+            # - First, we replace the cl.exe or link.exe call with an nvcc
+            #   call. In case we're running Anaconda, we search cl.exe in the
+            #   original search path we captured further above -- Anaconda
+            #   inserts a MSVC version into PATH that is too old for nvcc.
+            cmd[:1] = ['nvcc', '--compiler-bindir',
+                       os.path.dirname(find_executable("cl.exe", PATH))
+                       or cmd[0]]
+
+            # - Secondly, we fix a bunch of command line arguments.
+
+            for idx, c in enumerate(cmd):
+                # create .dll instead of .pyd files
+                #if '.pyd' in c: cmd[idx] = c = c.replace('.pyd', '.dll')
+                # replace /c by -c
+                if c == '/c': cmd[idx] = '-c'
+                # replace /DLL by --shared
+                elif c == '/DLL': cmd[idx] = '--shared'
+                # remove --compiler-options=-fPIC
+                elif '-fPIC' in c: del cmd[idx]
+                # replace /Tc... by ...
+                elif c.startswith('/Tc'): cmd[idx] = c[3:]
+                elif c.startswith('/Tp'):
+                    cmd[idx] = c[3:]
+                # replace /Fo... by -o ...
+                elif c.startswith('/Fo'): cmd[idx:idx+1] = ['-o', c[3:]]
+                # replace /LIBPATH:... by -L...
+                elif c.startswith('/LIBPATH:'): cmd[idx] = '-L' + c[9:]
+                # replace /OUT:... by -o ...
+                elif c.startswith('/OUT:'): cmd[idx:idx+1] = ['-o', c[5:]]
+                # remove /EXPORT:initlibcudamat or /EXPORT:initlibcudalearn
+                elif c.startswith('/EXPORT:'): del cmd[idx]
+                # replace cublas.lib by -lcublas
+                elif c == 'cublas.lib': cmd[idx] = '-lcublas'
+                #elif c.endswith('.obj'):cmd[idx] = c[:len(c)-4]+'.cpp'
+            # - Finally, we pass on all arguments starting with a '/' to the
+            #   compiler or linker, and have nvcc handle all other arguments
+            if '--shared' in cmd:
+                pass_on = '--linker-options='
+                # we only need MSVCRT for a .dll, remove CMT if it sneaks in:
+                cmd.append('/NODEFAULTLIB:libcmt.lib')
+            else:
+                pass_on = '--compiler-options='
+            cmd = ([c for c in cmd if c[0] != '/'] +
+                   [pass_on + ','.join(c for c in cmd if c[0] == '/')])
+            # For the future: Apart from the wrongly set PATH by Anaconda, it
+            # would suffice to run the following for compilation on Windows:
+            # nvcc -c -O -o <file>.obj <file>.cu
+            # And the following for linking:
+            # nvcc --shared -o <file>.dll <file1>.obj <file2>.obj -lcublas
+            # This could be done by a NVCCCompiler class for all platforms.
+
+        print(cmd)
+        spawn(cmd, search_path, verbose, dry_run)
+
 
 
 setup(name='tigre',
