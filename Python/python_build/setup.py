@@ -11,6 +11,12 @@ from sys import platform
 
 # Code from https://github.com/rmcgibbo/npcuda-example/blob/master/cython/setup.py
 
+setup_requires = [
+    'setuptools',
+    'numpy',
+    'Cython'
+]
+install_requires = setup_requires + ['scipy']
 
 def find_in_path(name, path):
     "Find a file in a search path"
@@ -136,7 +142,7 @@ Ax_ext = Extension('_Ax',
                    # we're only going to use certain compiler args with nvcc and not with gcc
                    # the implementation of this trick is in customize_compiler() below
                    extra_compile_args={'gcc': [],
-                                        'nvcc': ['-arch=sm_20', '--ptxas-options=-v', '-c',
+                                        'nvcc': ['-arch=sm_50', '--ptxas-options=-v', '-c',
                                                  '--compiler-options', "'-fPIC'"]},
                    include_dirs=[numpy_include, CUDA['include'], 'Source'])
 
@@ -153,7 +159,7 @@ Atb_ext = Extension('_Atb',
                     # we're only going to use certain compiler args with nvcc and not with gcc
                     # the implementation of this trick is in customize_compiler() below
                     extra_compile_args={'gcc': [],
-                                         'nvcc': ['-arch=sm_20', '--ptxas-options=-v', '-c',
+                                         'nvcc': ['-arch=sm_50', '--ptxas-options=-v', '-c',
                                                   '--compiler-options', "'-fPIC'"]},
                     include_dirs=[numpy_include, CUDA['include'], 'tigre/Source'])
 tvdenoising_ext = Extension('_tvdenoising',
@@ -168,16 +174,14 @@ tvdenoising_ext = Extension('_tvdenoising',
                     # we're only going to use certain compiler args with nvcc and not with gcc
                     # the implementation of this trick is in customize_compiler() below
                     extra_compile_args={'gcc': [],
-                                         'nvcc': ['-arch=sm_20', '--ptxas-options=-v', '-c',
+                                         'nvcc': ['-arch=sm_50', '--ptxas-options=-v', '-c',
                                                   '--compiler-options', "'-fPIC'"]},
                     include_dirs=[numpy_include, CUDA['include'], 'Source'])
 
 # run the customize_compiler
 class custom_build_ext(build_ext):
     def build_extensions(self):
-        #print(self.compiler)
         customize_compiler_for_nvcc(self.compiler)
-        self.compiler.compile
         build_ext.build_extensions(self)
 
 
@@ -187,6 +191,8 @@ setup(name='tigre',
       packages = find_packages(),
       include_package_data=True,
       ext_modules=[Ax_ext, Atb_ext,tvdenoising_ext],
+      setup_requires = setup_requires,
+      install_requires = install_requires,
 
       # inject our custom trigger
       cmdclass={'build_ext': custom_build_ext},

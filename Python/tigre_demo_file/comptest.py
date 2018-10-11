@@ -27,7 +27,8 @@ projsirt = Ax(source_img, geo, angles, 'ray-voxel')
 fdk=FDK(projsirt,geo,angles)
 # blocksize=input('blocksize:')
 niter = 5
-# sart=SART(projsirt,geo,angles,niter,init='multigrid',OrderStrategy='angularDistance')
-ppslice(projsirt)
+sart=SART(projsirt,geo,angles,niter)
+
+plotImg(np.hstack((fdk,sart)))
 
 

@@ -55,6 +55,7 @@ def FDK(projh, geo, angles,filter=None):
       --------------------------------------------------------------------------
         Coded by:          MATLAB (original code): Ander Biguri
                            PYTHON : Reuben Lindroos,Sam Loescher, """)
+
     if filter is not None:
         geo.filter=filter
     # Weight

@@ -3,13 +3,13 @@ from __future__ import division
 import numpy as np
 import scipy.io
 import scipy.ndimage.interpolation
-
+import os
 
 def load_head_phantom(number_of_voxels=None):
     if number_of_voxels is None:
         number_of_voxels = np.array((128, 128, 128))
 
-    test_data = scipy.io.loadmat('Test_data/MRheadbrain/head.mat')
+    test_data = scipy.io.loadmat('../tigre_demo_file/Test_data/MRheadbrain/head.mat')
 
     # Loads data in F_CONTIGUOUS MODE (column major), convert to Row major
     image = test_data['img'].copy(order='C')
