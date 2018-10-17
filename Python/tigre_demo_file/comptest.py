@@ -3,7 +3,7 @@ import os
 import sys
 import scipy as sp
 import numpy as np
-import tigre.geometry as geometry
+import tigre.geometry_default as geometry
 import Test_data.data_loader as data_loader
 from matplotlib import pyplot as plt
 import scipy.io
