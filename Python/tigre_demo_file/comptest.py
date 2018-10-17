@@ -3,7 +3,7 @@ import os
 import sys
 import scipy as sp
 import numpy as np
-import tigre.geometry as geometry
+import tigre.geometry_default as geometry
 import Test_data.data_loader as data_loader
 from matplotlib import pyplot as plt
 import scipy.io
@@ -27,8 +27,7 @@ projsirt = Ax(source_img, geo, angles, 'ray-voxel')
 fdk=FDK(projsirt,geo,angles)
 # blocksize=input('blocksize:')
 niter = 5
-sart=SART(projsirt,geo,angles,niter)
-
-plotImg(np.hstack((fdk,sart)))
+# sart=SART(projsirt,geo,angles,niter,init='multigrid',OrderStrategy='angularDistance')
+ppslice(projsirt)
 
 
