@@ -75,7 +75,7 @@ class geometry:
         elif type(old_attrib) == np.ndarray:
             if len(old_attrib.shape)==1:
                 new_attrib=matlib.repmat(old_attrib,1,len(angles))
-                setattr(attrib,new_attrib)
+                setattr(self,attrib,new_attrib)
 
             elif old_attrib.shape not in [(max(angles.shape), ),
                                           (1, max(angles.shape)),
