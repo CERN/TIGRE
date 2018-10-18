@@ -23,7 +23,7 @@ cdef extern from "ray_interpolated_projection_parallel.hpp":
     cdef int interpolation_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha)
 
 
-def Ax(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=1] angles, krylov="interpolated", mode="cone"):
+def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=1] angles, krylov="interpolated", mode="cone"):
 
     cdef int total_projections = angles.size
 

@@ -19,7 +19,7 @@ cdef extern from "voxel_backprojection2.hpp":
 cdef extern from "voxel_backprojection_parallel.hpp":
     cdef int voxel_backprojection_parallel(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha)
 
-def Atb(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[np.float32_t, ndim=1] angles, krylov="matched", mode="cone"):
+def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[np.float32_t, ndim=1] angles, krylov="matched", mode="cone"):
     cdef int total_projections = angles.size
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
     cdef float* c_model = <float*> malloc(geometry.nVoxel[0] * geometry.nVoxel[1] * geometry.nVoxel[2] * sizeof(float))
