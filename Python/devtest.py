@@ -2,7 +2,7 @@ from __future__ import print_function
 
 import numpy as np
 import tigre.geometry_default as geometry
-import Test_data.data_loader as data_loader
+import tigre_demo_file.Test_data.data_loader as data_loader
 from tigre.Ax import Ax
 from tigre.Utilities.plotproj import ppslice
 from tigre.Utilities.plotproj import plotproj
@@ -19,6 +19,6 @@ plotproj(projsirt)
 # blocksize=input('blocksize:')
 niter = 5
 # sart=SART(projsirt,geo,angles,niter,init='multigrid',OrderStrategy='angularDistance')
-ppslice(projsirt)
+# ppslice(projsirt)
 
 

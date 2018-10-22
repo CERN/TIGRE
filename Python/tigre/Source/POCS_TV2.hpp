@@ -1,7 +1,8 @@
 /*-------------------------------------------------------------------------
  *
- * Header CUDA functions for ray-voxel intersection based projection
+ * Header for CUDA functions for Steepest descend in POCS-type algorithms.
  *
+ * This file has the required headers for POCS_TV.cu
  *
  * CODE by       Ander Biguri
  *
@@ -47,19 +48,13 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 
-#include "ray_interpolated_projection.hpp"
-#include "types_TIGRE.hpp"
 
 
-#ifndef PROJECTION_PARALLEL_HPP_SIDDON
-#define PROJECTION_PARALLEL_HPP_SIDDON
-int siddon_ray_projection_parallel(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
+#ifndef POCS_TV_HPP
+#define POCS_TV_HPP
+#include "mex.h"
+#include "tmwtypes.h"
+void aw_pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter,const float delta);
 
-//double computeMaxLength(Geometry geo, double alpha);
-void computeDeltas_Siddon_parallel(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 
-//double maxDistanceCubeXY(Geometry geo, double alpha,int i);
-
-// below, not used
-//Geometry nomralizeGeometryImage(Geometry geo);
 #endif

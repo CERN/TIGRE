@@ -1,10 +1,11 @@
 from __future__ import division
 import numpy as np
+from tigre.geometry import geometry
 
-
-class TIGREParameters:
+class TIGREParameters(geometry):
 
     def __init__(self, high_quality=True):
+        geometry.__init__(self)
         if high_quality:
             # VARIABLE                                          DESCRIPTION                    UNITS
             # -------------------------------------------------------------------------------------

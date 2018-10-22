@@ -8,7 +8,7 @@
  * X-rays.
  *
  * CODE by       Ander Biguri
- *
+ *               Sepideh Hatamikia (arbitrary rotation)
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 Copyright (c) 2015, University of Bath and CERN- European Organization for 
@@ -53,18 +53,16 @@ Codes  : https://github.com/CERN/TIGRE
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #include "ray_interpolated_projection_parallel.hpp"
-//#include "mex.h"
+#include <stdio.h>
 #include <math.h>
 
-
-//        if (__err != cudaSuccess) { \
-//                  printf("%s \n", msg);\
-//                  printf("%s \n", cudaGetErrorString(__err));\
-//        } \
-// TODO: Error logging
 #define cudaCheckErrors(msg) \
 do { \
         cudaError_t __err = cudaGetLastError(); \
+        if (__err != cudaSuccess) { \
+                printf("%s \n",msg);\
+                printf("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
+        } \
 } while (0)
     
     
@@ -106,6 +104,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
         Point3D deltaU,
         Point3D deltaV,
         Point3D uvOrigin,
+        float DSO,
         float maxdist){
     
     unsigned long y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -150,8 +149,8 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     
     
     // limit the amount of mem access after the cube, but before the detector.
-    if ((geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy  <   length)
-        length=ceil((geo.DSO/geo.dVoxelX+maxdist)/geo.accuracy);  
+    if ((2*DSO/geo.dVoxelX+maxdist)/geo.accuracy  <   length)
+        length=ceil((2*DSO/geo.dVoxelX+maxdist)/geo.accuracy);  
     //Length is not actually a length, but the amount of memreads with given accuracy ("samples per voxel")
     
     for (i=floor(maxdist/geo.accuracy); i<=length; i=i+1){
@@ -169,7 +168,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
 
 
 
-int interpolation_projection_parallel(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha){
+int interpolation_projection_parallel(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
     
  
     // copy data to CUDA memory
@@ -226,16 +225,18 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     dim3 block(32,32,1); 
     Point3D source, deltaU, deltaV, uvOrigin;
     float maxdist;
-    for (unsigned int i=0;i<nalpha;i++){
+    for (unsigned int i=0;i<nangles;i++){
         
-        geo.alpha=alphas[i];
+        geo.alpha=angles[i*3];
+        geo.theta=angles[i*3+1];
+        geo.psi  =angles[i*3+2];
         //precomute distances for faster execution
-        maxdist=maxDistanceCubeXY(geo,geo.alpha,i);
+        maxdist=maxdistanceCuboid(geo,i);
         //Precompute per angle constant stuff for speed
         computeDeltas_parallel(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Interpolation!!
         
-        kernelPixelDetector_parallel<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,floor(maxdist));
+        kernelPixelDetector_parallel<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,geo.DSO[i],floor(maxdist));
         cudaCheckErrors("Kernel fail");
         // copy result to host
         cudaMemcpy(result[i], dProjection, num_bytes, cudaMemcpyDeviceToHost);
@@ -249,8 +250,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
         cudaEventRecord(stop,0);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&elapsedTime, start,stop);
-        //TODO: replace this
-//        mexPrintf("%f\n" ,elapsedTime);
+        printf("%f\n" ,elapsedTime);
     }
 
     cudaUnbindTexture(tex);
@@ -262,7 +262,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     
     
     
-    //cudaDeviceReset();
+    cudaDeviceReset();
     
     return 0;
 }
@@ -274,18 +274,18 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
  * to compute the locations of the x-rays. While it seems verbose and overly-optimized,
  * it does saves about 30% of each of the kernel calls. Thats something!
  **/
-void computeDeltas_parallel(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
+void computeDeltas_parallel(Geometry geo, float alpha,unsigned int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
     Point3D S;
-    S.x=geo.DSO;
+    S.x=geo.DSO[i];
     S.y=geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);
     S.z=geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
     
     //End point
     Point3D P,Pu0,Pv0;
     
-    P.x  =-(geo.DSD-geo.DSO);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
-    Pu0.x=-(geo.DSD-geo.DSO);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
-    Pv0.x=-(geo.DSD-geo.DSO);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
+    P.x  =-(geo.DSD[i]-geo.DSO[i]);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
+    Pu0.x=-(geo.DSD[i]-geo.DSO[i]);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
+    Pv0.x=-(geo.DSD[i]-geo.DSO[i]);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
     // Geomtric trasnformations:
     
     //1: Offset detector
@@ -299,34 +299,38 @@ void computeDeltas_parallel(Geometry geo, float alpha,int i, Point3D* uvorigin, 
     
     //3: Rotate (around z)!
     Point3D Pfinal, Pfinalu0, Pfinalv0;
+    Pfinal.x  =P.x;
+    Pfinal.y  =P.y  +geo.offDetecU[i]; Pfinal.z  =P.z  +geo.offDetecV[i];
+    Pfinalu0.x=Pu0.x;
+    Pfinalu0.y=Pu0.y  +geo.offDetecU[i]; Pfinalu0.z  =Pu0.z  +geo.offDetecV[i];
+    Pfinalv0.x=Pv0.x;
+    Pfinalv0.y=Pv0.y  +geo.offDetecU[i]; Pfinalv0.z  =Pv0.z  +geo.offDetecV[i];
     
-    Pfinal.x  =P.x*cos(geo.alpha)-P.y*sin(geo.alpha);       Pfinal.y  =P.y*cos(geo.alpha)+P.x*sin(geo.alpha);       Pfinal.z  =P.z;
-    Pfinalu0.x=Pu0.x*cos(geo.alpha)-Pu0.y*sin(geo.alpha);   Pfinalu0.y=Pu0.y*cos(geo.alpha)+Pu0.x*sin(geo.alpha);   Pfinalu0.z=Pu0.z;
-    Pfinalv0.x=Pv0.x*cos(geo.alpha)-Pv0.y*sin(geo.alpha);   Pfinalv0.y=Pv0.y*cos(geo.alpha)+Pv0.x*sin(geo.alpha);   Pfinalv0.z=Pv0.z;
-    
-    Point3D S2;
-    S2.x=S.x*cos(geo.alpha)-S.y*sin(geo.alpha);
-    S2.y=S.y*cos(geo.alpha)+S.x*sin(geo.alpha);
-    S2.z=S.z;
+    eulerZYZ(geo,&Pfinal);
+    eulerZYZ(geo,&Pfinalu0);
+    eulerZYZ(geo,&Pfinalv0);
+    eulerZYZ(geo,&S);
+       
+   
     
     //2: Offset image (instead of offseting image, -offset everything else)
     
     Pfinal.x  =Pfinal.x-geo.offOrigX[i];     Pfinal.y  =Pfinal.y-geo.offOrigY[i];     Pfinal.z  =Pfinal.z-geo.offOrigZ[i];
     Pfinalu0.x=Pfinalu0.x-geo.offOrigX[i];   Pfinalu0.y=Pfinalu0.y-geo.offOrigY[i];   Pfinalu0.z=Pfinalu0.z-geo.offOrigZ[i];
     Pfinalv0.x=Pfinalv0.x-geo.offOrigX[i];   Pfinalv0.y=Pfinalv0.y-geo.offOrigY[i];   Pfinalv0.z=Pfinalv0.z-geo.offOrigZ[i];
-    S2.x=S2.x-geo.offOrigX[i];       S2.y=S2.y-geo.offOrigY[i];       S2.z=S2.z-geo.offOrigZ[i];
+    S.x=S.x-geo.offOrigX[i];       S.y=S.y-geo.offOrigY[i];       S.z=S.z-geo.offOrigZ[i];
     
     // As we want the (0,0,0) to be in a corner of the image, we need to translate everything (after rotation);
     Pfinal.x  =Pfinal.x+geo.sVoxelX/2-geo.dVoxelX/2;      Pfinal.y  =Pfinal.y+geo.sVoxelY/2-geo.dVoxelY/2;          Pfinal.z  =Pfinal.z  +geo.sVoxelZ/2-geo.dVoxelZ/2;
     Pfinalu0.x=Pfinalu0.x+geo.sVoxelX/2-geo.dVoxelX/2;    Pfinalu0.y=Pfinalu0.y+geo.sVoxelY/2-geo.dVoxelY/2;        Pfinalu0.z=Pfinalu0.z+geo.sVoxelZ/2-geo.dVoxelZ/2;
     Pfinalv0.x=Pfinalv0.x+geo.sVoxelX/2-geo.dVoxelX/2;    Pfinalv0.y=Pfinalv0.y+geo.sVoxelY/2-geo.dVoxelY/2;        Pfinalv0.z=Pfinalv0.z+geo.sVoxelZ/2-geo.dVoxelZ/2;
-    S2.x      =S2.x+geo.sVoxelX/2-geo.dVoxelX/2;          S2.y      =S2.y+geo.sVoxelY/2-geo.dVoxelY/2;              S2.z      =S2.z      +geo.sVoxelZ/2-geo.dVoxelZ/2;
+    S.x       =S.x+geo.sVoxelX/2-geo.dVoxelX/2;           S.y       =S.y+geo.sVoxelY/2-geo.dVoxelY/2;               S.z       =S.z      +geo.sVoxelZ/2-geo.dVoxelZ/2;
     
     //4. Scale everything so dVoxel==1
     Pfinal.x  =Pfinal.x/geo.dVoxelX;      Pfinal.y  =Pfinal.y/geo.dVoxelY;        Pfinal.z  =Pfinal.z/geo.dVoxelZ;
     Pfinalu0.x=Pfinalu0.x/geo.dVoxelX;    Pfinalu0.y=Pfinalu0.y/geo.dVoxelY;      Pfinalu0.z=Pfinalu0.z/geo.dVoxelZ;
     Pfinalv0.x=Pfinalv0.x/geo.dVoxelX;    Pfinalv0.y=Pfinalv0.y/geo.dVoxelY;      Pfinalv0.z=Pfinalv0.z/geo.dVoxelZ;
-    S2.x      =S2.x/geo.dVoxelX;          S2.y      =S2.y/geo.dVoxelY;            S2.z      =S2.z/geo.dVoxelZ;
+    S.x       =S.x/geo.dVoxelX;           S.y       =S.y/geo.dVoxelY;             S.z       =S.z/geo.dVoxelZ;
     
     
       
@@ -337,7 +341,7 @@ void computeDeltas_parallel(Geometry geo, float alpha,int i, Point3D* uvorigin, 
     Pfinal.x+=CORx;   Pfinal.y+=CORy;
     Pfinalu0.x+=CORx;   Pfinalu0.y+=CORy;
     Pfinalv0.x+=CORx;   Pfinalv0.y+=CORy;
-    S2.x+=CORx; S2.y+=CORy;
+    S.x+=CORx; S.y+=CORy;
     
     // return
     
@@ -351,5 +355,5 @@ void computeDeltas_parallel(Geometry geo, float alpha,int i, Point3D* uvorigin, 
     deltaV->y=Pfinalv0.y-Pfinal.y;
     deltaV->z=Pfinalv0.z-Pfinal.z;
     
-    *source=S2;
+    *source=S;
 }

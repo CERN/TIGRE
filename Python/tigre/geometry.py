@@ -69,12 +69,12 @@ class geometry:
         old_attrib = getattr(self,attrib)
 
         if type(old_attrib) in [float,int,np.float32]:
-            new_attrib = matlib.repmat(old_attrib,1,len(angles))
+            new_attrib = matlib.repmat(old_attrib,1,len(angles))[0]
             setattr(self,attrib,new_attrib)
 
         elif type(old_attrib) == np.ndarray:
             if len(old_attrib.shape)==1:
-                new_attrib=matlib.repmat(old_attrib,1,len(angles))
+                new_attrib=matlib.repmat(old_attrib,len(old_attrib),len(angles))
                 setattr(self,attrib,new_attrib)
 
             elif old_attrib.shape not in [(max(angles.shape), ),

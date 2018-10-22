@@ -142,7 +142,7 @@ Ax_ext = Extension('_Ax',
                    # we're only going to use certain compiler args with nvcc and not with gcc
                    # the implementation of this trick is in customize_compiler() below
                    extra_compile_args={'gcc': [],
-                                        'nvcc': ['-arch=sm_20', '--ptxas-options=-v', '-c',
+                                        'nvcc': ['-arch=sm_21', '--ptxas-options=-v', '-c',
                                                  '--compiler-options', "'-fPIC'"]},
                    include_dirs=[numpy_include, CUDA['include'], 'Source'])
 
@@ -159,7 +159,7 @@ Atb_ext = Extension('_Atb',
                     # we're only going to use certain compiler args with nvcc and not with gcc
                     # the implementation of this trick is in customize_compiler() below
                     extra_compile_args={'gcc': [],
-                                         'nvcc': ['-arch=sm_20', '--ptxas-options=-v', '-c',
+                                         'nvcc': ['-arch=sm_21', '--ptxas-options=-v', '-c',
                                                   '--compiler-options', "'-fPIC'"]},
                     include_dirs=[numpy_include, CUDA['include'], 'tigre/Source'])
 tvdenoising_ext = Extension('_tvdenoising',
@@ -174,7 +174,7 @@ tvdenoising_ext = Extension('_tvdenoising',
                     # we're only going to use certain compiler args with nvcc and not with gcc
                     # the implementation of this trick is in customize_compiler() below
                     extra_compile_args={'gcc': [],
-                                         'nvcc': ['-arch=sm_20', '--ptxas-options=-v', '-c',
+                                         'nvcc': ['-arch=sm_21', '--ptxas-options=-v', '-c',
                                                   '--compiler-options', "'-fPIC'"]},
                     include_dirs=[numpy_include, CUDA['include'], 'Source'])
 

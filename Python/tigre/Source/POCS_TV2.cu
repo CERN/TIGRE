@@ -115,7 +115,7 @@ do { \
     }
     
     __global__ void gradientTV(const float* f, float* dftv,
-            long depth, long rows, long cols){
+            long depth, long rows, long cols,const float delta){
         unsigned long x = threadIdx.x + blockIdx.x * blockDim.x;
         unsigned long y = threadIdx.y + blockIdx.y * blockDim.y;
         unsigned long z = threadIdx.z + blockIdx.z * blockDim.z;
@@ -123,6 +123,7 @@ do { \
         if ( x >= cols || y >= rows || z >= depth )
             return;
         
+        // way faster to precompute and use, but needs imagex4 memory!!
         float df[3] ={0,0,0};
         float dfi[3]={0,0,0}; // dfi== \partial f_{i+1,j,k}
         float dfj[3]={0,0,0};
@@ -131,11 +132,36 @@ do { \
         gradient(f,dfi ,z  ,y  ,x+1, depth,rows,cols);
         gradient(f,dfj ,z  ,y+1,x  , depth,rows,cols);
         gradient(f,dfk ,z+1,y  ,x  , depth,rows,cols);
+        
+        // Weighted norm
+        // expf() is more accurate but slower, use __expf at your own risk
+        float wx=__expf(-(df[0]/delta)*(df[0]/delta));
+        float wy=__expf(-(df[1]/delta)*(df[1]/delta));
+        float wz=__expf(-(df[2]/delta)*(df[2]/delta));
+        
+        float wxi=__expf(-(dfi[0]/delta)*(dfi[0]/delta));
+        float wyi=__expf(-(dfi[1]/delta)*(dfi[1]/delta));
+        float wzi=__expf(-(dfi[2]/delta)*(dfi[2]/delta));
+        
+        float wxj=__expf(-(dfj[0]/delta)*(dfj[0]/delta));
+        float wyj=__expf(-(dfj[1]/delta)*(dfj[1]/delta));
+        float wzj=__expf(-(dfj[2]/delta)*(dfj[2]/delta));
+        
+        float wxk=__expf(-(dfk[0]/delta)*(dfk[0]/delta));
+        float wyk=__expf(-(dfk[1]/delta)*(dfk[1]/delta));
+        float wzk=__expf(-(dfk[2]/delta)*(dfk[2]/delta));
+       // df[0]=wx*df[0];df[1]=wy*df[1];df[2]=wz*df[2];
+       // dfi[0]=wx*dfi[0];dfi[1]=wy*dfi[1];dfi[2]=wz*dfi[2];
+       // dfj[0]=wx*dfj[0];dfj[1]=wy*dfj[1];dfj[2]=wz*dfj[2];
+       // dfk[0]=wx*dfk[0];dfk[1]=wy*dfk[1];dfk[2]=wz*dfk[2];
+        
+        // this hsould do the trick I think
+        
         float eps=0.00000001; //% avoid division by zero
-        dftv[idx]=(df[0]+df[1]+df[2])/(sqrt(df[0] *df[0] +df[1] *df[1] +df[2] *df[2])+eps)
-        -dfi[2]/(sqrt(dfi[0]*dfi[0]+dfi[1]*dfi[1]+dfi[2]*dfi[2]) +eps)     // I wish I coudl precompute this, but if I do then Id need to recompute the gradient.
-        -dfj[1]/(sqrt(dfj[0]*dfj[0]+dfj[1]*dfj[1]+dfj[2]*dfj[2]) +eps)
-        -dfk[0]/(sqrt(dfk[0]*dfk[0]+dfk[1]*dfk[1]+dfk[2]*dfk[2]) +eps);
+        dftv[idx]=(wx*df[0]+wy*df[1]+wz*df[2])/(sqrt(wx*df[0] *df[0] +wy*df[1] *df[1] +wz*df[2] *df[2])+eps)
+        -wzi*dfi[2]/(sqrt(wxi*dfi[0]*dfi[0]+wyi*dfi[1]*dfi[1]+wzi*dfi[2]*dfi[2]) +eps)     // I wish I coudl precompute this, but if I do then Id need to recompute the gradient.
+        -wyj*dfj[1]/(sqrt(wxj*dfj[0]*dfj[0]+wyj*dfj[1]*dfj[1]+wzj*dfj[2]*dfj[2]) +eps)
+        -wxk*dfk[0]/(sqrt(wxk*dfk[0]*dfk[0]+wyk*dfk[1]*dfk[1]+wzk*dfk[2]*dfk[2]) +eps);
         
     }
     
@@ -248,7 +274,7 @@ do { \
     
     
 // main function
- void pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter){
+ void aw_pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter,const float delta){
         
     
         size_t total_pixels = image_size[0] * image_size[1]  * image_size[2] ;
@@ -257,7 +283,6 @@ do { \
         float *d_image, *d_dimgTV,*d_norm2aux,*d_norm2;
         // memory for image
         cudaMalloc(&d_image, mem_size);
-        cudaCheckErrors("Malloc Image error");
         cudaMemcpy(d_image, img, mem_size, cudaMemcpyHostToDevice);
         cudaCheckErrors("Memory Malloc and Memset: SRC");
         // memory for df
@@ -284,15 +309,13 @@ do { \
         
         for(unsigned int i=0;i<maxIter;i++){
             
-            
             // Compute the gradient of the TV norm
-            gradientTV<<<gridGrad, blockGrad>>>(d_image,d_dimgTV,image_size[2], image_size[1],image_size[0]);
+            gradientTV<<<gridGrad, blockGrad>>>(d_image,d_dimgTV,image_size[2], image_size[1],image_size[0],delta);
             cudaCheckErrors("Gradient");
 //             cudaMemcpy(dst, d_dimgTV, mem_size, cudaMemcpyDeviceToHost);
             
-            
             cudaMemcpy(d_norm2, d_dimgTV, mem_size, cudaMemcpyDeviceToDevice);
-            cudaCheckErrors("Copy from gradient call error");
+            
             // Compute the L2 norm of the gradint. For that, reduction is used.
             //REDUCE
             size_t dimblockRed = MAXTHREADS;
@@ -314,13 +337,10 @@ do { \
             //NOMRALIZE
             //in a Tesla, maximum blocks =15 SM * 4 blocks/SM
             divideArrayScalar  <<<60,MAXTHREADS>>>(d_dimgTV,sqrt(sumnorm2),total_pixels);
-            cudaCheckErrors("Division error");
             //MULTIPLY HYPERPARAMETER
             multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dimgTV,alpha,   total_pixels);
-            cudaCheckErrors("Multiplication error");
             //SUBSTRACT GRADIENT
             substractArrays    <<<60,MAXTHREADS>>>(d_image,d_dimgTV, total_pixels);
-            cudaCheckErrors("Substraction error");
             sumnorm2=0;
         }
         
@@ -335,6 +355,6 @@ do { \
         cudaFree(d_norm2);
 
         cudaCheckErrors("Memory free");
-        cudaDeviceReset();
+        
     }
     

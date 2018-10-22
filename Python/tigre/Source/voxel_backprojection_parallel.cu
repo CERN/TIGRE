@@ -4,7 +4,7 @@
  *
  *
  * CODE by  Ander Biguri
- * Optimized and modified by Robert Bryll
+ *          Optimized and modified by RB
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 Copyright (c) 2015, University of Bath and CERN- European Organization for 
@@ -48,21 +48,20 @@ Codes  : https://github.com/CERN/TIGRE
 #include <algorithm>
 #include <cuda_runtime_api.h>
 #include <cuda.h>
-#include "voxel_backprojection_parallel.hpp"
 #include "voxel_backprojection.hpp"
+#include "voxel_backprojection_parallel.hpp"
 
-//#include "mex.h"
+#include <stdio.h>
 #include <math.h>
 
 // https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
-//        if (__err != cudaSuccess) { \
-//                  printf("%s \n", msg);\
-//                  printf("%s \n", cudaGetErrorString(__err));\
-//        } \
-// TODO: Error logging
 #define cudaCheckErrors(msg) \
 do { \
         cudaError_t __err = cudaGetLastError(); \
+        if (__err != cudaSuccess) { \
+                printf("%s \n",msg);\
+                printf("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
+        } \
 } while (0)
     
     
@@ -99,7 +98,7 @@ do { \
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// The optimal values of two constants obtained by Robert Bryll on NVIDIA Quadro K2200 (4 GB RAM, 640 CUDA cores) for 512^3 volume and 512^3 projections (512 proj, each 512 x 512) were:
+// The optimal values of two constants obtained by RB on NVIDIA Quadro K2200 (4 GB RAM, 640 CUDA cores) for 512^3 volume and 512^3 projections (512 proj, each 512 x 512) were:
 // PROJ_PER_KERNEL = 32 or 16 (very similar times)
 // VOXELS_PER_THREAD = 8
 // Speedup of the entire FDK backprojection (not only kernel run, also memcpy etc.) was nearly 4x relative to the original (single projection, single voxel per thread) code.
@@ -212,8 +211,8 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
         Point3D xyzOffset = projParamsArrayDevParallel[6*projNumber+4];
         Point3D S = projParamsArrayDevParallel[6*projNumber+5];
         
-        //float sinalpha = projSinCosArrayDev[3*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
-        //float cosalpha = projSinCosArrayDev[3*projNumber+1];
+        float DSD = projSinCosArrayDevParallel[3*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
+        float DSO = projSinCosArrayDevParallel[3*projNumber+1];
         float COR = projSinCosArrayDevParallel[3*projNumber+2];
 
         // Geometric trasnformations:
@@ -231,7 +230,7 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             
             // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
             Point3D P;
-            S.x=geo.DSO;
+            S.x=DSO;
             P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
             P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
             P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
@@ -244,7 +243,7 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             vectZ=(P.z -S.z);
             
             // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-            float t=(geo.DSO-geo.DSD /*-DOD*/ - S.x)/vectX;
+            float t=(DSO-DSD /*-DOD*/ - S.x)/vectX;
             float y,z;
             y=vectY*t+S.y;
             z=vectZ*t+S.z;
@@ -256,8 +255,8 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
-            voxelColumn[colIdx]+=tex3D(tex, u +0.5 ,
-                    v +0.5 ,
+            voxelColumn[colIdx]+=tex3D(tex, v +0.5 ,
+                    u +0.5 ,
                     indAlpha+0.5);
 
         }  // END iterating through column of voxels
@@ -301,7 +300,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
      */
     // copy data to CUDA memory
     cudaArray *d_projectiondata = 0;
-    const cudaExtent extent = make_cudaExtent(geo.nDetecU,geo.nDetecV,nalpha);
+    const cudaExtent extent = make_cudaExtent(geo.nDetecV,geo.nDetecU,nalpha);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
     cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent);
     cudaCheckErrors("cudaMalloc3D error 3D tex");
@@ -378,15 +377,15 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
             Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, /*offDetec,*/source;
             float sinalpha,cosalpha;
             
-            geo.alpha=-alphas[currProjNumber];
-            sinalpha=sin(geo.alpha);
-            cosalpha=cos(geo.alpha);
+            geo.alpha=-alphas[currProjNumber*3];
+//             sinalpha=sin(geo.alpha);
+//             cosalpha=cos(geo.alpha);
             
-            projSinCosArrayHostParallel[3*j]=sinalpha;  // 3*j because we have 3 float (sin or cos angle) values per projection
-            projSinCosArrayHostParallel[3*j+1]=cosalpha;
+            projSinCosArrayHostParallel[3*j]=geo.DSD[currProjNumber];  // 3*j because we have 3 float (sin or cos angle) values per projection
+            projSinCosArrayHostParallel[3*j+1]=geo.DSO[currProjNumber];
             projSinCosArrayHostParallel[3*j+2]=geo.COR[currProjNumber];
             
-            computeDeltasCubeParallel(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
+            computeDeltasCubeParallel(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ);
             
             offOrig.x=geo.offOrigX[currProjNumber];
             offOrig.y=geo.offOrigY[currProjNumber];
@@ -419,8 +418,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
         cudaEventRecord(stop,0);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&elapsedTime, start,stop);
-        //TODO: replace this
-//        mexPrintf("%f\n" ,elapsedTime);
+        printf("%f\n" ,elapsedTime);
         cudaCheckErrors("cuda Timing fail");
         
     }
@@ -433,12 +431,12 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
     cudaFree(dimage);
     cudaFreeArray(d_projectiondata);
     cudaCheckErrors("cudaFree d_imagedata fail");
-    //cudaDeviceReset();
+    cudaDeviceReset();
     return 0;
     
 }  // END voxel_backprojection
 
-void computeDeltasCubeParallel(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S)
+void computeDeltasCubeParallel(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ)
 {
     Point3D P0, Px0,Py0,Pz0, source;
     // Get coords of Img(0,0,0)
@@ -465,7 +463,7 @@ void computeDeltasCubeParallel(Geometry geo, float alpha,int i, Point3D* xyzorig
     Pz.z =Pz.z-geo.offDetecV[i];          Pz.y =Pz.y-geo.offDetecU[i];
 
     
-//       mexPrintf("%f,%f,%f\n",source.x,source.y,source.z);
+//       printf("%f,%f,%f\n",source.x,source.y,source.z);
     // Scale coords so detector pixels are 1x1
     
     P.z =P.z /geo.dDetecV;                          P.y =P.y/geo.dDetecU;
@@ -473,7 +471,6 @@ void computeDeltasCubeParallel(Geometry geo, float alpha,int i, Point3D* xyzorig
     Py.z=Py.z/geo.dDetecV;                          Py.y=Py.y/geo.dDetecU;
     Pz.z=Pz.z/geo.dDetecV;                          Pz.y=Pz.y/geo.dDetecU;
     
-    source.z=source.z/geo.dDetecV;                  source.y=source.y/geo.dDetecU;
 
     // get deltas of the changes in voxels
     deltaX->x=Px.x-P.x;   deltaX->y=Px.y-P.y;    deltaX->z=Px.z-P.z;
@@ -482,6 +479,5 @@ void computeDeltasCubeParallel(Geometry geo, float alpha,int i, Point3D* xyzorig
     
     
     *xyzorigin=P;
-    *S=source;
     
 }  // END computeDeltasCube

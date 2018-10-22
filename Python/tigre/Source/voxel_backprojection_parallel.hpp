@@ -4,6 +4,8 @@
  *
  *
  * CODE by  Ander Biguri
+ *          Optimized and modified by RB
+ *
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 Copyright (c) 2015, University of Bath and CERN- European Organization for 
@@ -41,13 +43,14 @@ Contact: tigre.toolbox@gmail.com
 Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
+#include "types_TIGRE.hpp"
+
+
 
 #ifndef BACKPROJECTION_PARALLEL_HPP
 #define BACKPROJECTION_PARALLEL_HPP
 
-#include "types.hpp"
-
-int voxel_backprojection_parallel(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha);
-void computeDeltasCubeParallel(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S);
+int  voxel_backprojection_parallel(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha);
+void computeDeltasCubeParallel(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ);
 //  void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ);
 #endif

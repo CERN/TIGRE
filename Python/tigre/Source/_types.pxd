@@ -1,5 +1,5 @@
 from libc.stdlib cimport malloc, free
-cdef extern from "types.hpp":
+cdef extern from "types_TIGRE.hpp":
     ctypedef struct Geometry:
         # Parameters part of the image geometry
         int   nVoxelX, nVoxelY, nVoxelZ;
@@ -8,7 +8,7 @@ cdef extern from "types.hpp":
         float *offOrigX;
         float *offOrigY;
         float *offOrigZ;
-        float DSO;
+        float *DSO;
 
         # Parameters  of the Detector.
         int   nDetecU, nDetecV;
@@ -16,7 +16,7 @@ cdef extern from "types.hpp":
         float dDetecU, dDetecV;
         float *offDetecU;
         float *offDetecV;
-        float DSD;
+        float *DSD;
         float* dRoll;
         float* dPitch;
         float* dYaw;
@@ -28,7 +28,8 @@ cdef extern from "types.hpp":
 
         #projection angle
         float alpha;
-
+        float theta;
+        float psi;
         # Centre of Rotation correction.
         float* COR;
 
@@ -82,12 +83,13 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     c_geom.offOrigX =<float *>malloc(total_projections * sizeof(float))
     c_geom.offOrigY =<float *>malloc(total_projections * sizeof(float))
     c_geom.offOrigZ =<float *>malloc(total_projections * sizeof(float))
+    c_geom.DSO =<float *>malloc(total_projections * sizeof(float))
     for i in range (total_projections):
-        c_geom.offOrigX[i] = p_geometry.offOrigin[0]
-        c_geom.offOrigY[i] = p_geometry.offOrigin[1]
-        c_geom.offOrigZ[i] = p_geometry.offOrigin[2]
-
-    c_geom.DSO = p_geometry.DSO
+        c_geom.offOrigX[i] = p_geometry.offOrigin[0][i]
+        c_geom.offOrigY[i] = p_geometry.offOrigin[1][i]
+        c_geom.offOrigZ[i] = p_geometry.offOrigin[2][i]
+    for i in range(total_projections):
+        c_geom.DSO[i] = p_geometry.DSO[i]
 
     ### Detector ###
     c_geom.nDetecU=p_geometry.nDetector[0]
@@ -102,11 +104,12 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     # TODO: array of constant for each alpha
     c_geom.offDetecU =<float *>malloc(total_projections * sizeof(float))
     c_geom.offDetecV =<float *>malloc(total_projections * sizeof(float))
+    c_geom.DSD =<float *>malloc(total_projections * sizeof(float))
     for i in range (total_projections):
-        c_geom.offDetecU[i] = p_geometry.offDetector[0]
-        c_geom.offDetecV[i] = p_geometry.offDetector[1]
-
-    c_geom.DSD = p_geometry.DSD
+        c_geom.offDetecU[i] = p_geometry.offDetector[0][i]
+        c_geom.offDetecV[i] = p_geometry.offDetector[1][i]
+    for i in range(total_projections):
+        c_geom.DSD[i] = p_geometry.DSD[i]
 
     # TODO: array of 0 for each alpha
     c_geom.dRoll =<float *>malloc(total_projections * sizeof(float))
