@@ -85,9 +85,9 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     c_geom.offOrigZ =<float *>malloc(total_projections * sizeof(float))
     c_geom.DSO =<float *>malloc(total_projections * sizeof(float))
     for i in range (total_projections):
-        c_geom.offOrigX[i] = p_geometry.offOrigin[0][i]
-        c_geom.offOrigY[i] = p_geometry.offOrigin[1][i]
-        c_geom.offOrigZ[i] = p_geometry.offOrigin[2][i]
+        c_geom.offOrigX[i] = p_geometry.offOrigin[i][0]
+        c_geom.offOrigY[i] = p_geometry.offOrigin[i][1]
+        c_geom.offOrigZ[i] = p_geometry.offOrigin[i][2]
     for i in range(total_projections):
         c_geom.DSO[i] = p_geometry.DSO[i]
 
@@ -106,8 +106,8 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     c_geom.offDetecV =<float *>malloc(total_projections * sizeof(float))
     c_geom.DSD =<float *>malloc(total_projections * sizeof(float))
     for i in range (total_projections):
-        c_geom.offDetecU[i] = p_geometry.offDetector[0][i]
-        c_geom.offDetecV[i] = p_geometry.offDetector[1][i]
+        c_geom.offDetecU[i] = p_geometry.offDetector[i][0]
+        c_geom.offDetecV[i] = p_geometry.offDetector[i][1]
     for i in range(total_projections):
         c_geom.DSD[i] = p_geometry.DSD[i]
 

@@ -48,7 +48,7 @@
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #include "voxel_backprojection2.hpp"
-#include <stdio.h>"
+#include <stdio.h>
 #include <math.h>
 
 // https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror

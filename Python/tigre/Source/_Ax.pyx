@@ -23,9 +23,9 @@ cdef extern from "ray_interpolated_projection_parallel.hpp":
     cdef int interpolation_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha)
 
 
-def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=1] angles, krylov="interpolated", mode="cone"):
+def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=2] angles, krylov="interpolated", mode="cone"):
 
-    cdef int total_projections = angles.size
+    cdef int total_projections = angles.shape[0]
 
     # TODO: For now we will just make a new geometry (C) struct from the python one,
     # but this is really ugly and should be changed.
@@ -60,15 +60,30 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
 
     cdef float* c_img = <float*> img.data
     if cone_beam:
-        if interpolated:
+        if not interpolated:
             siddon_ray_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections)
         else:
             interpolation_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections)
     else:
-        if interpolated:
+        if not interpolated:
             siddon_ray_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections)
         else:
             interpolation_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections)
+    cdef float theta,psi;
+    theta=0;
+    psi=0;
+    for i in range(total_projections):
+        theta+=abs(c_angles[i*3+1])
+        psi  +=abs(c_angles[i*3+2])
+    
+    standard_rotation = True;
+    
+    if psi == 0.0 and theta == 0.0:
+        standard_rotation=True
+        print("Standard rotation is True")
+    else:
+        standard_rotation=False
+        print("Standard rotation is False")
 
     img = img.copy(order='C')
 

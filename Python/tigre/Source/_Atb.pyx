@@ -14,13 +14,19 @@ cdef extern from "numpy/arrayobject.h":
 
 cdef extern from "voxel_backprojection.hpp":
     cdef int voxel_backprojection(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha)
+cdef extern from "voxel_backprojection_spherical.hpp":
+    cdef int voxel_backprojection_spherical(float* projections, c_Geometry geo, float* result,float * angles,int nalpha)
 cdef extern from "voxel_backprojection2.hpp":
     cdef int voxel_backprojection2(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha)
+cdef extern from "voxel_backprojection2_spherical.hpp":
+    cdef int voxel_backprojection2_spherical(float* projections, c_Geometry geo, float* result,float * angles,int nalpha)
 cdef extern from "voxel_backprojection_parallel.hpp":
     cdef int voxel_backprojection_parallel(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha)
+cdef extern from "voxel_backprojection_parallel_spherical.hpp":
+    cdef int voxel_backprojection_parallel_spherical(float* projections, c_Geometry geo, float* result,float * angles,int nalpha)
 
-def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[np.float32_t, ndim=1] angles, krylov="matched", mode="cone"):
-    cdef int total_projections = angles.size
+def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[np.float32_t, ndim=2] angles, krylov="matched", mode="cone"):
+    cdef int total_projections = angles.shape[0]
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
     cdef float* c_model = <float*> malloc(geometry.nVoxel[0] * geometry.nVoxel[1] * geometry.nVoxel[2] * sizeof(float))
     cdef float* c_angles = <float*> angles.data
@@ -45,14 +51,42 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
     projections = projections.swapaxes(0,1).copy(order='F')
     cdef float* c_projections = <float*> projections.data
 
+    cdef float theta,psi;
+    theta=0;
+    psi=0;
+    for i in range(total_projections):
+        theta+=abs(c_angles[i*3+1])
+        psi  +=abs(c_angles[i*3+2])
+    
+    standard_rotation = True;
+    
+    if psi == 0.0 and theta == 0.0:
+        standard_rotation=True
+        print("Standard rotation is True")
+    else:
+        standard_rotation=False
+        print("Standard rotation is False")
+
+
     if cone_beam:
         if krylov_proj:
-            voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+            if standard_rotation:
+                voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+            else:
+                voxel_backprojection2_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
         else:
-            voxel_backprojection(c_projections, c_geometry[0], c_model, c_angles, total_projections)
-    else:
-        voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+            if standard_rotation:
+                voxel_backprojection(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+            else:
+                voxel_backprojection_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
 
+
+    else:
+        if standard_rotation:
+            voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+        else:
+            voxel_backprojection_parallel_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+    
     projections = projections.swapaxes(0,1).copy(order='C')
 
     cdef np.npy_intp shape[3]

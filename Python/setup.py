@@ -147,8 +147,12 @@ Ax_ext = Extension('_Ax',
                    include_dirs=[numpy_include, CUDA['include'], 'Source'])
 
 Atb_ext = Extension('_Atb',
-                    sources=(['tigre/Source/voxel_backprojection.cu', 'tigre/Source/voxel_backprojection2.cu',
+                    sources=(['tigre/Source/voxel_backprojection.cu',
+                              'tigre/Source/voxel_backprojection_spherical.cu',
+                              'tigre/Source/voxel_backprojection2.cu',
+                              'tigre/Source/voxel_backprojection2_spherical.cu',
                               'tigre/Source/voxel_backprojection_parallel.cu',
+                              'tigre/Source/voxel_backprojection_parallel_spherical.cu',
                               'tigre/Source/_types.pxd',
                               'tigre/Source/_Atb.pyx']),
                     library_dirs=[CUDA[lib_string]],

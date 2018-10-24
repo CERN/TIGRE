@@ -1,7 +1,8 @@
 from __future__ import division
+from __future__ import print_function
 import numpy as np
 import numpy.matlib as matlib
-
+import inspect
 class geometry:
 
     def __init__(self):
@@ -9,8 +10,22 @@ class geometry:
         self.mode = None
         self.COR = None
         self.accuracy = 0.5
-    def check_geo(self,angles):
+        self.n_proj = None
+        self.angles = None
+    def check_geo(self,angles,verbose=False):
+        if angles.ndim ==1:
+            self.n_proj = angles.shape[0]
+            zeros_array = np.zeros((self.n_proj,1),dtype=np.float32)
+            self.angles = np.hstack((angles.reshape(self.n_proj,1),zeros_array,zeros_array))
 
+        elif angles.ndim ==2:
+            if angles.shape[1]!=3:
+                raise BufferError("Expected angles of dimensions (n, 3), got: " + str(angles.shape))
+            self.n_proj = angles.shape[0]
+            # python is clever and doesnt copy the transpose of a matrix by default. Therefore
+            # we make a copy of the correctly shaped matrix to be sure.
+            angles=angles.copy()
+            setattr(self,'angles',angles)
         if self.mode =='cone':
             manditory_attribs = ['nVoxel','sVoxel','dVoxel',
                                 'nDetector', 'sDetector', 'dDetector',
@@ -38,7 +53,6 @@ class geometry:
             if not sum(abs(self.dDetector*self.nDetector - self.sDetector)) < 1e-6: raise AttributeError(
                 'nDetector*dDetecor is not equal to sVoxel. Check fields.')
 
-            #TODO: DSD, DSO need to be implemented once source code is updated
             for attrib in ['DSD','DSO']:
                 self._check_and_repmat(attrib,angles)
             if hasattr(self,'offOrigin'):
@@ -54,12 +68,22 @@ class geometry:
 
 
         if self.mode == 'paralell':
-            pass
+            for attrib in ['DSD','DSO']:
+                self._check_and_repmat(attrib,angles)
+            if hasattr(self,'offOrigin'):
+                self._check_and_repmat('offOrigin',angles)
+            if hasattr(self,'offDetector'):
+                self._check_and_repmat('offDetector',angles)
+            if hasattr(self, 'rotDetector'):
+                self._check_and_repmat('rotDetector',angles)
+            if self.COR != None:
+                self._check_and_repmat('COR',angles)
+
         elif self.mode == None:
             raise AttributeError("geometry.mode needs to be specified in order for tigre to assess whether the geometry is "
                                  "correctly implemented")
-
-
+        if verbose:
+            self._verbose_output()
     def _check_and_repmat(self, attrib, angles):
         """
         Checks whether the attribute is a single value and repeats it into an array if it is
@@ -69,19 +93,34 @@ class geometry:
         old_attrib = getattr(self,attrib)
 
         if type(old_attrib) in [float,int,np.float32]:
-            new_attrib = matlib.repmat(old_attrib,1,len(angles))[0]
+            new_attrib = matlib.repmat(old_attrib,1,angles.shape[0])[0]
             setattr(self,attrib,new_attrib)
 
         elif type(old_attrib) == np.ndarray:
-            if len(old_attrib.shape)==1:
-                new_attrib=matlib.repmat(old_attrib,len(old_attrib),len(angles))
-                setattr(self,attrib,new_attrib)
-
-            elif old_attrib.shape not in [(max(angles.shape), ),
-                                          (1, max(angles.shape)),
-                                          (old_attrib.shape[0], max(angles.shape))]:
-
-                raise AttributeError(attrib + "array of shape " + str(old_attrib.shape) + " not compatible for " + attrib)
+            if old_attrib.ndim ==1:
+                if old_attrib.shape in [(3, ),(2, ), (1, )]:
+                    new_attrib=matlib.repmat(old_attrib,max(angles.shape),1)
+                    setattr(self,attrib,new_attrib)
+                elif old_attrib.shape == (angles.shape[0], ):
+                    pass
+            else:
+                if old_attrib.shape == (angles.shape[0],old_attrib.shape[1]):
+                    pass
+                else:
+                    raise AttributeError(attrib + " array of shape " + str(old_attrib.shape) + " not compatible for "
+                                                                                               "" + attrib)
+        else:
+            TypeError("Data type not understood for: geo."+attrib + " with type = "+str(type(getattr(self,attrib))))
+    def _verbose_output(self):
+        for obj in inspect.getmembers(self):
+            if obj[0][0]=='_':
+                pass
+            elif obj[0] == 'check_geo':
+                pass
+            elif type(obj[1])==np.ndarray:
+                print(self.mode + ': ' + str((obj[0],obj[1].shape)))
+            else:
+                print(self.mode + ': '+ str(obj))
 
     def __str__(self):
         parameters = []

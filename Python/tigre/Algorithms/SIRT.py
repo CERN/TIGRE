@@ -8,8 +8,8 @@ import sys
 from tigre.Utilities.init_multigrid import init_multigrid
 import numpy as np
 import copy
-from _Ax import Ax
-from _Atb import Atb
+from tigre.Ax import Ax
+from tigre.Atb import Atb
 from tigre.Utilities.im3Dnorm import im3DNORM
 from tigre.Utilities.order_subsets import order_subsets
 from tigre.Utilities.Measure_Quality import Measure_Quality as MQ
