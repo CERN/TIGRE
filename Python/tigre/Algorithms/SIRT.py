@@ -23,7 +23,7 @@ if rootDir not in sys.path:  # add parent dir to paths
 
 
 def SIRT(proj, geo, alpha, niter,
-         lmbda=1, lmbda_red=0.99, OrderStrategy=None, Quameasopts=None, init=None, verbose=True,noneg=True,computel2=True):
+         lmbda=1., lmbda_red=0.99, OrderStrategy=None, Quameasopts=None, init=None, verbose=True,noneg=True,computel2=False):
     ('\n'
      """SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
               Simultaneous Algebraic Reconxtruction Techique algorithm
@@ -99,14 +99,14 @@ def SIRT(proj, geo, alpha, niter,
 
     blocksize = 1
     angles, angle_index = order_subsets(alpha, blocksize, OrderStrategy)
-    alpha = angles.ravel()
+    alpha = angles#.ravel()
 
     #     Projection weight:
     #       - fixing the geometry
     #       - making sure there are no infs in W
 
     geox = copy.deepcopy(geo)
-    geox.sVoxel[0:] = geo.DSD - geo.DSO
+    geox.sVoxel[[0,1]] = geo.sVoxel[[0,1]]*1.1
     geox.sVoxel[2] = max(geox.sDetector[1], geox.sVoxel[2])
     geox.nVoxel = np.array([2, 2, 2])
     geox.dVoxel = geox.sVoxel / geox.nVoxel
@@ -140,7 +140,7 @@ def SIRT(proj, geo, alpha, niter,
         V = np.array(V, dtype=np.float32)
 
     else:
-        V = np.ones([geo.nVoxel[0], geo.nVoxel[1]])*len(alpha)
+        V = np.ones([geo.nVoxel[0], geo.nVoxel[1]])*alpha.shape[0]
     # Iterate
     lq = []
     l2l=[]
@@ -175,14 +175,14 @@ def SIRT(proj, geo, alpha, niter,
 
 
         # VERBOSE:
-        # proj_err = proj-Ax(res,geo,alpha,'interpolated')
-        # weighted_err = W*proj_err
-        # backprj = Atb(weighted_err,geo,alpha,'FDK')
-        # weighted_backprj = 1/V*backprj
-        # res+=lmbda*weighted_backprj
+        proj_err = proj-Ax(res,geo,alpha,'interpolated')
+        weighted_err = W*proj_err
+        backprj = Atb(weighted_err,geo,alpha,'FDK')
+        weighted_backprj = 1/V*backprj
+        res+=weighted_backprj#*lmbda
 
-        res += lmbda *1/V* Atb(W*(proj- Ax(res, geo, alpha, 'ray-voxel')), geo,
-                                      alpha, 'FDK')
+        #res += lmbda *1/V* Atb(W*(proj- Ax(res, geo, alpha, 'ray-voxel')), geo,
+        #                              alpha, 'FDK')
         if noneg:
             res = res.clip(min=0)
         if Quameasopts is not None:
@@ -195,9 +195,10 @@ def SIRT(proj, geo, alpha, niter,
             errornow=im3DNORM(proj-Ax(res,geo,alpha,'ray-voxel'),2)
             l2l.append(errornow)
 
-    lmbda *= lmbda_red
+    #lmbda *= lmbda_red
     if computel2:
         return res.transpose(), l2l
+
     if Quameasopts is not None:
         return res, lq
     else:

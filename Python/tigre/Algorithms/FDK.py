@@ -60,25 +60,29 @@ def FDK(proj, geo, angles,filter=None):
         geo.filter=filter
     # Weight
     #proj=copy.deepcopy(projh)
+
     #proj=proj.transpose()
     #proj=proj.transpose(0,2,1)
-
+    proj_filt = np.empty(proj.shape,dtype=np.float32)
     for ii in range(angles.shape[0]):
         xv=np.arange((-geo.nDetector[0]/2)+0.5, 1+(geo.nDetector[0]/2)-0.5)*geo.dDetector[0]
         yv=np.arange((-geo.nDetector[1]/2)+0.5, 1+(geo.nDetector[1]/2)-0.5)*geo.dDetector[1]
         (xx, yy) = np.meshgrid(xv, yv)
 
         w = geo.DSD[0]/np.sqrt((geo.DSD[0] ** 2 + xx ** 2 + yy ** 2))
-        proj[ii] = proj[ii]*w.transpose()
+        proj_filt[ii] = proj[ii]*w.transpose()
 
 
-    proj_filt=filtering(proj,geo,angles,parker=False)
+    proj_filt=filtering(proj_filt,geo,angles,parker=False)
+    from matplotlib import pyplot as plt
+    plt.matshow(proj_filt[32])
     # m = {
     #     'py_projfilt': proj_filt,
     #
     # }
     # scipy.io.savemat('Tests/Filter_data', m)
-    res = Atb(proj_filt,geo,angles,'FDK')
+    res = Atb(proj_filt,geo,geo.angles,'FDK')
+    #res = 0
    # res = Atb(proj,geo,angles,'FDK')
     return res
 

@@ -27,17 +27,18 @@ class TIGREParameters(geometry):
             self.accuracy = 0.5                                 # Accuracy of FWD proj          (vx/sample)
             # Mode
             self.mode = 'cone'                                  # parallel, cone                ...
+            self.filter = None
         else:
             # VARIABLE                                          DESCRIPTION                    UNITS
             # -------------------------------------------------------------------------------------
             self.DSD = 1536                                     # Distance Source Detector      (mm)
             self.DSO = 1000                                     # Distance Source Origin        (mm)
             # Detector parameters
-            self.nDetector = np.array((128, 128))             # number of pixels              (px)
+            self.nDetector = np.array((128, 127))               # number of pixels              (px)
             self.dDetector = np.array((0.8, 0.8))*4             # size of each pixel            (mm)
             self.sDetector = self.nDetector * self.dDetector    # total size of the detector    (mm)
             # Image parameters
-            self.nVoxel = np.array((64, 64 , 64))           # number of voxels              (vx)
+            self.nVoxel = np.array((63, 62 , 61))               # number of voxels              (vx)
             self.sVoxel = np.array((256, 256, 256))             # total size of the image       (mm)
             self.dVoxel = self.sVoxel / self.nVoxel             # size of each voxel            (mm)
             # Offsets

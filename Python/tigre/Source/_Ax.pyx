@@ -29,6 +29,7 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
 
     # TODO: For now we will just make a new geometry (C) struct from the python one,
     # but this is really ugly and should be changed.
+    geometry.convert_contig_mode()
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
 
     cdef float** c_projections = <float**> malloc(total_projections * sizeof(float*))
@@ -56,7 +57,7 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
         print("Error: Unknown mode, using default cone beam")
         cone_beam = True
 
-    img = img.copy(order='F')
+    img = img.transpose().copy(order='F')
 
     cdef float* c_img = <float*> img.data
     if cone_beam:
@@ -80,10 +81,8 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     
     if psi == 0.0 and theta == 0.0:
         standard_rotation=True
-        print("Standard rotation is True")
     else:
         standard_rotation=False
-        print("Standard rotation is False")
 
     img = img.copy(order='C')
 
@@ -100,9 +99,9 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
 
     free(c_projections)  # Free pointer array, not actual data
     free_c_geometry(c_geometry)
-
-    #TODO: check dstack doesn't cause memory leak, as it seems projections needs multiple free calls
+    geometry.convert_contig_mode()
+    #TODO: check stack doesn't cause memory leak, as it seems projections needs multiple free calls
     # A possible solution is to rewrite SiddonProjection to allow 1d array results
 
     # Returns V x U x Angles
-    return np.dstack(projections).swapaxes(0,1).copy(order='C')
+    return np.stack(projections,0).copy(order='C')

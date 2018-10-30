@@ -16,8 +16,7 @@ def load_head_phantom(number_of_voxels=None):
     test_data = scipy.io.loadmat(dirname)
 
     # Loads data in F_CONTIGUOUS MODE (column major), convert to Row major
-    image = test_data['img'].copy(order='C')
-
+    image = test_data['img'].transpose().copy(order='C')
     image_dimensions = image.shape
 
     zoom_x = number_of_voxels[0] / image_dimensions[0]
@@ -34,7 +33,7 @@ def load_cube(number_of_voxels=None):
     if number_of_voxels is None:
         number_of_voxels = np.array((128, 128, 128))
 
-    test_data = scipy.io.loadmat('Test_data/cube.mat')
+    test_data = scipy.io.loadmat(os.path.join(os.path.dirname(__file__),'cube.mat'))
 
     # Loads data in F_CONTIGUOUS MODE (column major), convert to Row major
     image = test_data['cube'].copy(order='C')
