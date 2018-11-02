@@ -28,7 +28,7 @@ class ProjectionTestCase(unittest.TestCase):
 
     def test_proj_shape(self):
         img = np.ones((63,62,61),dtype=np.float32)
-        self.assertTupleEqual(Ax(img,self.geo,self.angles,'interpolated').shape,(100,127,128))
+        self.assertTupleEqual(Ax(img,self.geo,self.angles,'interpolated').shape,(100,128,127))
 
     def test_backproj_shape(self):
         img = np.ones((63,62,61),dtype=np.float32)

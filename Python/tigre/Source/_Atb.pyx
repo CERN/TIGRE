@@ -49,7 +49,7 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
         print("Error: Unknown mode, using default cone beam")
         cone_beam = True
 
-    projections = projections.swapaxes(0,2).copy(order='F')
+    projections = projections.swapaxes(1,2).swapaxes(0,2).copy(order='F')
     cdef float* c_projections = <float*> projections.data
 
     cdef float theta,psi;
@@ -86,7 +86,7 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
         else:
             voxel_backprojection_parallel_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
     
-    projections = projections.swapaxes(0,2).copy(order='C')
+    projections = projections.swapaxes(0,2).swapaxes(1,2).copy(order='C')
 
     cdef np.npy_intp shape[3]
     shape[0] = <np.npy_intp> geometry.nVoxel[2]

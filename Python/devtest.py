@@ -30,26 +30,18 @@ angles= np.vstack((angles_1,angles_3,angles_3)).T
 
 
 geo.check_geo(angles)
-proj_1 = Ax(source_img,geo,angles,'ray-voxel')
+proj_1 = Ax(source_img,geo,angles,'interpolated')
 
 #--------------------Back Projection ----------------
-fbp = Atb(proj_1,geo,angles,"FDK")
-#fbp = FDK(proj_1,geo,angles)
+#fbp = Atb(proj_1,geo,angles,'FDK')
+fbp = FDK(proj_1,geo,angles)
 
 
 #---------------PLOTS-------------------------------
 
-print("src_img: "+ str(source_img.shape))
-print("nVoxel: "+ str(geo.nVoxel))
-plt.matshow(source_img[32])
+#plt.matshow(np.hstack((fbp[32],otherfbp.T[32])))
 
-print("proj: "+ str(proj_1.shape))
-plt.matshow(proj_1[50])
+#plt.matshow(abs(fbp[32]-otherfbp.T[32]))
 
-print("res: " + str(fbp.shape))
-plt.matshow(fbp[32])
-#plotImg(fbp)
-
-plt.colorbar()
 plt.show()
-#plotImg(np.hstack((source_img,fbp)))
+plotImg(np.hstack((source_img,fbp)))

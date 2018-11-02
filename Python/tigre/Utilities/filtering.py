@@ -13,25 +13,19 @@ def filtering(proj,geo,angles,parker):
 
     d=1
     filt=filter(geo.filter,ramp_kernel[0],filt_len,d)
-
-
-    filt=np.kron(np.ones((geo.nDetector[0],1)),filt).transpose()
-
-
-    for i in range(len(angles)):
-        fproj=np.zeros((filt_len,geo.nDetector[0]),dtype=np.float32)
-
-        fproj[int(filt_len/2-geo.nDetector[0]/2):int(filt_len/2+geo.nDetector[0]/2),:]=proj[i]
-
-        fproj=np.fft.fft(fproj,axis=0)
+    filt=np.kron(np.ones((geo.nDetector[0],1)),filt)
+    for i in range(angles.shape[0]):
+        fproj=np.zeros((geo.nDetector[0],filt_len),dtype=np.float32)
+        y_dim = geo.nDetector[1]
+        fproj[:,int(filt_len/2-geo.nDetector[1]/2):int(filt_len/2+geo.nDetector[1]/2)]=proj[i]
+        fproj=np.fft.fft(fproj,axis=1)
 
         fproj=fproj*filt
 
-        fproj=np.real(np.fft.ifft(fproj,axis=0))
-        end=len(fproj)
-        proj[i]=fproj[int(end/2-geo.nDetector[0]/2):int(end/2+geo.nDetector[0]/2),:]/2/geo.dDetector[0]*(2*np.pi/
+        fproj=np.real(np.fft.ifft(fproj,axis=1))
+        proj[i]=fproj[:,int(filt_len/2-geo.nDetector[1]/2):int(filt_len/2+geo.nDetector[1]/2)]/2/geo.dDetector[0]*(2*np.pi/
                                                                                                  len(angles)
-                                                                                                 )/2*(geo.DSD[0]/geo.DSO[0]).T
+                                                                                                 )/2*(geo.DSD[0]/geo.DSO[0])
 
     return proj
 

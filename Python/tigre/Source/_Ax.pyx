@@ -29,6 +29,9 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
 
     # TODO: For now we will just make a new geometry (C) struct from the python one,
     # but this is really ugly and should be changed.
+
+    #PERMUTE INPUT: convert_contig_mode(C_CONTIG) -> F_CONTIG
+    # (N, V, U) -> (U, V, N) 
     geometry.convert_contig_mode()
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
 
@@ -56,7 +59,7 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     else:
         print("Error: Unknown mode, using default cone beam")
         cone_beam = True
-
+    #PERMUTE INPUT: (Z, Y, X) -> (X ,Y ,Z)
     img = img.transpose().copy(order='F')
 
     cdef float* c_img = <float*> img.data
@@ -103,5 +106,5 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     #TODO: check stack doesn't cause memory leak, as it seems projections needs multiple free calls
     # A possible solution is to rewrite SiddonProjection to allow 1d array results
 
-    # Returns V x U x Angles
-    return np.stack(projections,0).copy(order='C')
+    # PERMUTE OUTPUT: (U, V, N) -> (N, V, U)
+    return np.stack(projections,0).swapaxes(1,2).copy(order='C')
