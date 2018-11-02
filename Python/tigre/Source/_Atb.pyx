@@ -69,21 +69,26 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
     if cone_beam:
         if krylov_proj:
             if standard_rotation:
+                #print("vox_back2 being called")
                 voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections)
             else:
+                #print("vox_back2_spherical being called")
                 voxel_backprojection2_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
         else:
             if standard_rotation:
-
+                #print("vox_back being called")
                 voxel_backprojection(c_projections, c_geometry[0], c_model, c_angles, total_projections)
             else:
+                #print("vox_back_spherical being called")
                 voxel_backprojection_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
 
 
     else:
         if standard_rotation:
+            #print("voxel_backprojection_parallel being called")
             voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections)
         else:
+            #print("voxel_backprojection_parallel_spherical being called")
             voxel_backprojection_parallel_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
     
     projections = projections.swapaxes(0,2).swapaxes(1,2).copy(order='C')

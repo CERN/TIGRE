@@ -2492,7 +2492,7 @@ static PyObject *__pyx_pf_4_Atb__Atb_ext(CYTHON_UNUSED PyObject *__pyx_self, PyA
  *     if cone_beam:
  *         if krylov_proj:             # <<<<<<<<<<<<<<
  *             if standard_rotation:
- *                 voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+ *                 #print("vox_back2 being called")
  */
     __pyx_t_5 = (__pyx_v_krylov_proj != 0);
     if (__pyx_t_5) {
@@ -2501,18 +2501,18 @@ static PyObject *__pyx_pf_4_Atb__Atb_ext(CYTHON_UNUSED PyObject *__pyx_self, PyA
  *     if cone_beam:
  *         if krylov_proj:
  *             if standard_rotation:             # <<<<<<<<<<<<<<
+ *                 #print("vox_back2 being called")
  *                 voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections)
- *             else:
  */
       __pyx_t_5 = (__pyx_v_standard_rotation != 0);
       if (__pyx_t_5) {
 
-        /* "_Atb.pyx":72
- *         if krylov_proj:
+        /* "_Atb.pyx":73
  *             if standard_rotation:
+ *                 #print("vox_back2 being called")
  *                 voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections)             # <<<<<<<<<<<<<<
  *             else:
- *                 voxel_backprojection2_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+ *                 #print("vox_back2_spherical being called")
  */
         (void)(voxel_backprojection2(__pyx_v_c_projections, (__pyx_v_c_geometry[0]), __pyx_v_c_model, __pyx_v_c_angles, __pyx_v_total_projections));
 
@@ -2520,15 +2520,15 @@ static PyObject *__pyx_pf_4_Atb__Atb_ext(CYTHON_UNUSED PyObject *__pyx_self, PyA
  *     if cone_beam:
  *         if krylov_proj:
  *             if standard_rotation:             # <<<<<<<<<<<<<<
+ *                 #print("vox_back2 being called")
  *                 voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections)
- *             else:
  */
         goto __pyx_L12;
       }
 
-      /* "_Atb.pyx":74
- *                 voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+      /* "_Atb.pyx":76
  *             else:
+ *                 #print("vox_back2_spherical being called")
  *                 voxel_backprojection2_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)             # <<<<<<<<<<<<<<
  *         else:
  *             if standard_rotation:
@@ -2543,44 +2543,44 @@ static PyObject *__pyx_pf_4_Atb__Atb_ext(CYTHON_UNUSED PyObject *__pyx_self, PyA
  *     if cone_beam:
  *         if krylov_proj:             # <<<<<<<<<<<<<<
  *             if standard_rotation:
- *                 voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+ *                 #print("vox_back2 being called")
  */
       goto __pyx_L11;
     }
 
-    /* "_Atb.pyx":76
+    /* "_Atb.pyx":78
  *                 voxel_backprojection2_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
  *         else:
  *             if standard_rotation:             # <<<<<<<<<<<<<<
- * 
+ *                 #print("vox_back being called")
  *                 voxel_backprojection(c_projections, c_geometry[0], c_model, c_angles, total_projections)
  */
     /*else*/ {
       __pyx_t_5 = (__pyx_v_standard_rotation != 0);
       if (__pyx_t_5) {
 
-        /* "_Atb.pyx":78
+        /* "_Atb.pyx":80
  *             if standard_rotation:
- * 
+ *                 #print("vox_back being called")
  *                 voxel_backprojection(c_projections, c_geometry[0], c_model, c_angles, total_projections)             # <<<<<<<<<<<<<<
  *             else:
- *                 voxel_backprojection_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+ *                 #print("vox_back_spherical being called")
  */
         (void)(voxel_backprojection(__pyx_v_c_projections, (__pyx_v_c_geometry[0]), __pyx_v_c_model, __pyx_v_c_angles, __pyx_v_total_projections));
 
-        /* "_Atb.pyx":76
+        /* "_Atb.pyx":78
  *                 voxel_backprojection2_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
  *         else:
  *             if standard_rotation:             # <<<<<<<<<<<<<<
- * 
+ *                 #print("vox_back being called")
  *                 voxel_backprojection(c_projections, c_geometry[0], c_model, c_angles, total_projections)
  */
         goto __pyx_L13;
       }
 
-      /* "_Atb.pyx":80
- *                 voxel_backprojection(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+      /* "_Atb.pyx":83
  *             else:
+ *                 #print("vox_back_spherical being called")
  *                 voxel_backprojection_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)             # <<<<<<<<<<<<<<
  * 
  * 
@@ -2602,39 +2602,39 @@ static PyObject *__pyx_pf_4_Atb__Atb_ext(CYTHON_UNUSED PyObject *__pyx_self, PyA
     goto __pyx_L10;
   }
 
-  /* "_Atb.pyx":84
+  /* "_Atb.pyx":87
  * 
  *     else:
  *         if standard_rotation:             # <<<<<<<<<<<<<<
+ *             #print("voxel_backprojection_parallel being called")
  *             voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections)
- *         else:
  */
   /*else*/ {
     __pyx_t_5 = (__pyx_v_standard_rotation != 0);
     if (__pyx_t_5) {
 
-      /* "_Atb.pyx":85
- *     else:
+      /* "_Atb.pyx":89
  *         if standard_rotation:
+ *             #print("voxel_backprojection_parallel being called")
  *             voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections)             # <<<<<<<<<<<<<<
  *         else:
- *             voxel_backprojection_parallel_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+ *             #print("voxel_backprojection_parallel_spherical being called")
  */
       (void)(voxel_backprojection_parallel(__pyx_v_c_projections, (__pyx_v_c_geometry[0]), __pyx_v_c_model, __pyx_v_c_angles, __pyx_v_total_projections));
 
-      /* "_Atb.pyx":84
+      /* "_Atb.pyx":87
  * 
  *     else:
  *         if standard_rotation:             # <<<<<<<<<<<<<<
+ *             #print("voxel_backprojection_parallel being called")
  *             voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections)
- *         else:
  */
       goto __pyx_L14;
     }
 
-    /* "_Atb.pyx":87
- *             voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections)
+    /* "_Atb.pyx":92
  *         else:
+ *             #print("voxel_backprojection_parallel_spherical being called")
  *             voxel_backprojection_parallel_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)             # <<<<<<<<<<<<<<
  * 
  *     projections = projections.swapaxes(0,2).swapaxes(1,2).copy(order='C')
@@ -2646,35 +2646,35 @@ static PyObject *__pyx_pf_4_Atb__Atb_ext(CYTHON_UNUSED PyObject *__pyx_self, PyA
   }
   __pyx_L10:;
 
-  /* "_Atb.pyx":89
+  /* "_Atb.pyx":94
  *             voxel_backprojection_parallel_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
  * 
  *     projections = projections.swapaxes(0,2).swapaxes(1,2).copy(order='C')             # <<<<<<<<<<<<<<
  * 
  *     cdef np.npy_intp shape[3]
  */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_projections), __pyx_n_s_swapaxes); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_projections), __pyx_n_s_swapaxes); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 94, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 94, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_swapaxes); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_swapaxes); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 94, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 94, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_copy); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_copy); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 94, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 94, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_order, __pyx_n_s_C) < 0) __PYX_ERR(0, 89, __pyx_L1_error)
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_empty_tuple, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 89, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_order, __pyx_n_s_C) < 0) __PYX_ERR(0, 94, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_3, __pyx_empty_tuple, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 94, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 89, __pyx_L1_error)
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 94, __pyx_L1_error)
   __pyx_t_6 = ((PyArrayObject *)__pyx_t_1);
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
@@ -2691,83 +2691,83 @@ static PyObject *__pyx_pf_4_Atb__Atb_ext(CYTHON_UNUSED PyObject *__pyx_self, PyA
       __pyx_t_10 = __pyx_t_9 = __pyx_t_8 = 0;
     }
     __pyx_pybuffernd_projections.diminfo[0].strides = __pyx_pybuffernd_projections.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_projections.diminfo[0].shape = __pyx_pybuffernd_projections.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_projections.diminfo[1].strides = __pyx_pybuffernd_projections.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_projections.diminfo[1].shape = __pyx_pybuffernd_projections.rcbuffer->pybuffer.shape[1]; __pyx_pybuffernd_projections.diminfo[2].strides = __pyx_pybuffernd_projections.rcbuffer->pybuffer.strides[2]; __pyx_pybuffernd_projections.diminfo[2].shape = __pyx_pybuffernd_projections.rcbuffer->pybuffer.shape[2];
-    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 89, __pyx_L1_error)
+    if (unlikely(__pyx_t_7 < 0)) __PYX_ERR(0, 94, __pyx_L1_error)
   }
   __pyx_t_6 = 0;
   __Pyx_DECREF_SET(__pyx_v_projections, ((PyArrayObject *)__pyx_t_1));
   __pyx_t_1 = 0;
 
-  /* "_Atb.pyx":92
+  /* "_Atb.pyx":97
  * 
  *     cdef np.npy_intp shape[3]
  *     shape[0] = <np.npy_intp> geometry.nVoxel[2]             # <<<<<<<<<<<<<<
  *     shape[1] = <np.npy_intp> geometry.nVoxel[1]
  *     shape[2] = <np.npy_intp> geometry.nVoxel[0]
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_geometry, __pyx_n_s_nVoxel); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_geometry, __pyx_n_s_nVoxel); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 97, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_1, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_1, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 97, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_15 = __Pyx_PyInt_As_Py_intptr_t(__pyx_t_2); if (unlikely((__pyx_t_15 == ((npy_intp)-1)) && PyErr_Occurred())) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_15 = __Pyx_PyInt_As_Py_intptr_t(__pyx_t_2); if (unlikely((__pyx_t_15 == ((npy_intp)-1)) && PyErr_Occurred())) __PYX_ERR(0, 97, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   (__pyx_v_shape[0]) = ((npy_intp)__pyx_t_15);
 
-  /* "_Atb.pyx":93
+  /* "_Atb.pyx":98
  *     cdef np.npy_intp shape[3]
  *     shape[0] = <np.npy_intp> geometry.nVoxel[2]
  *     shape[1] = <np.npy_intp> geometry.nVoxel[1]             # <<<<<<<<<<<<<<
  *     shape[2] = <np.npy_intp> geometry.nVoxel[0]
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_geometry, __pyx_n_s_nVoxel); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 93, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_geometry, __pyx_n_s_nVoxel); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_GetItemInt(__pyx_t_2, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 93, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_GetItemInt(__pyx_t_2, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_15 = __Pyx_PyInt_As_Py_intptr_t(__pyx_t_1); if (unlikely((__pyx_t_15 == ((npy_intp)-1)) && PyErr_Occurred())) __PYX_ERR(0, 93, __pyx_L1_error)
+  __pyx_t_15 = __Pyx_PyInt_As_Py_intptr_t(__pyx_t_1); if (unlikely((__pyx_t_15 == ((npy_intp)-1)) && PyErr_Occurred())) __PYX_ERR(0, 98, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   (__pyx_v_shape[1]) = ((npy_intp)__pyx_t_15);
 
-  /* "_Atb.pyx":94
+  /* "_Atb.pyx":99
  *     shape[0] = <np.npy_intp> geometry.nVoxel[2]
  *     shape[1] = <np.npy_intp> geometry.nVoxel[1]
  *     shape[2] = <np.npy_intp> geometry.nVoxel[0]             # <<<<<<<<<<<<<<
  * 
  *     # TODO: Swap axis here could be making a copy
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_geometry, __pyx_n_s_nVoxel); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 94, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_geometry, __pyx_n_s_nVoxel); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 99, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_1, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 94, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_1, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 99, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_15 = __Pyx_PyInt_As_Py_intptr_t(__pyx_t_2); if (unlikely((__pyx_t_15 == ((npy_intp)-1)) && PyErr_Occurred())) __PYX_ERR(0, 94, __pyx_L1_error)
+  __pyx_t_15 = __Pyx_PyInt_As_Py_intptr_t(__pyx_t_2); if (unlikely((__pyx_t_15 == ((npy_intp)-1)) && PyErr_Occurred())) __PYX_ERR(0, 99, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   (__pyx_v_shape[2]) = ((npy_intp)__pyx_t_15);
 
-  /* "_Atb.pyx":97
+  /* "_Atb.pyx":102
  * 
  *     # TODO: Swap axis here could be making a copy
  *     model = np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_model)             # <<<<<<<<<<<<<<
  *     PyArray_ENABLEFLAGS(model, np.NPY_OWNDATA) # Attribute new memory owner
  * 
  */
-  __pyx_t_2 = PyArray_SimpleNewFromData(3, __pyx_v_shape, NPY_FLOAT32, __pyx_v_c_model); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __pyx_t_2 = PyArray_SimpleNewFromData(3, __pyx_v_shape, NPY_FLOAT32, __pyx_v_c_model); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_v_model = __pyx_t_2;
   __pyx_t_2 = 0;
 
-  /* "_Atb.pyx":98
+  /* "_Atb.pyx":103
  *     # TODO: Swap axis here could be making a copy
  *     model = np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_model)
  *     PyArray_ENABLEFLAGS(model, np.NPY_OWNDATA) # Attribute new memory owner             # <<<<<<<<<<<<<<
  * 
  *     free_c_geometry(c_geometry)
  */
-  if (!(likely(((__pyx_v_model) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_model, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 98, __pyx_L1_error)
+  if (!(likely(((__pyx_v_model) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_model, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 103, __pyx_L1_error)
   PyArray_ENABLEFLAGS(((PyArrayObject *)__pyx_v_model), NPY_OWNDATA);
 
-  /* "_Atb.pyx":100
+  /* "_Atb.pyx":105
  *     PyArray_ENABLEFLAGS(model, np.NPY_OWNDATA) # Attribute new memory owner
  * 
  *     free_c_geometry(c_geometry)             # <<<<<<<<<<<<<<
@@ -2776,13 +2776,13 @@ static PyObject *__pyx_pf_4_Atb__Atb_ext(CYTHON_UNUSED PyObject *__pyx_self, PyA
  */
   __pyx_f_5tigre_6Source_6_types_free_c_geometry(__pyx_v_c_geometry);
 
-  /* "_Atb.pyx":101
+  /* "_Atb.pyx":106
  * 
  *     free_c_geometry(c_geometry)
  *     geometry.convert_contig_mode()             # <<<<<<<<<<<<<<
  *     return model
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_geometry, __pyx_n_s_convert_contig_mode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 101, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_geometry, __pyx_n_s_convert_contig_mode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_3 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_1))) {
@@ -2795,16 +2795,16 @@ static PyObject *__pyx_pf_4_Atb__Atb_ext(CYTHON_UNUSED PyObject *__pyx_self, PyA
     }
   }
   if (__pyx_t_3) {
-    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 101, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 106, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   } else {
-    __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 101, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_CallNoArg(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 106, __pyx_L1_error)
   }
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "_Atb.pyx":102
+  /* "_Atb.pyx":107
  *     free_c_geometry(c_geometry)
  *     geometry.convert_contig_mode()
  *     return model             # <<<<<<<<<<<<<<
@@ -6234,17 +6234,17 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "_Atb.pyx":89
+  /* "_Atb.pyx":94
  *             voxel_backprojection_parallel_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections)
  * 
  *     projections = projections.swapaxes(0,2).swapaxes(1,2).copy(order='C')             # <<<<<<<<<<<<<<
  * 
  *     cdef np.npy_intp shape[3]
  */
-  __pyx_tuple__3 = PyTuple_Pack(2, __pyx_int_0, __pyx_int_2); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(2, __pyx_int_0, __pyx_int_2); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 94, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
-  __pyx_tuple__4 = PyTuple_Pack(2, __pyx_int_1, __pyx_int_2); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __pyx_tuple__4 = PyTuple_Pack(2, __pyx_int_1, __pyx_int_2); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 94, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__4);
   __Pyx_GIVEREF(__pyx_tuple__4);
 

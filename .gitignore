@@ -10,7 +10,7 @@ so.*
 *.pdb
 
 ## C ignore
-
+*.npy
 *.pyc
 ## python build files
 Python/python_build/build

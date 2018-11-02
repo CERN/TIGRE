@@ -8,13 +8,11 @@ import inspect
 class geometry:
 
     def __init__(self):
-
         self.mode = None
-        self.COR = None
         self.accuracy = 0.5
         self.n_proj = None
         self.angles = None
-
+        self.filter = None
     def check_geo(self, angles, verbose=False):
         if angles.ndim == 1:
             self.n_proj = angles.shape[0]
@@ -25,8 +23,6 @@ class geometry:
             if angles.shape[1] != 3:
                 raise BufferError("Expected angles of dimensions (n, 3), got: " + str(angles.shape))
             self.n_proj = angles.shape[0]
-            # python is clever and doesnt copy the transpose of a matrix by default. Therefore
-            # we make a copy of the correctly shaped matrix to be sure.
             angles = angles.copy()
             setattr(self, 'angles', angles)
         if self.mode == None:
@@ -42,7 +38,7 @@ class geometry:
                                      'missing from geometry:' + str([attrib for attrib in manditory_attribs
                                                                      if not hasattr(self, attrib)])
                                      )
-            optional_fields = ['offOrigin', 'offDetector', 'rotDetector', 'COR',
+            optional_attribs = ['offOrigin', 'offDetector', 'rotDetector', 'COR',
                                'mode', 'accuracy']
 
             # image data
@@ -61,15 +57,27 @@ class geometry:
 
             for attrib in ['DSD', 'DSO']:
                 self._check_and_repmat(attrib, angles)
+
             if hasattr(self, 'offOrigin'):
                 self._check_and_repmat('offOrigin', angles)
+            else:
+                self.offOrigin = np.array([0,0,0])
+                self._check_and_repmat('offOrigin',angles)
+
             if hasattr(self, 'offDetector'):
                 self._check_and_repmat('offDetector', angles)
+            else:
+                self.offDetector =np.zeros((angles.shape[0],2))
+
+
             if hasattr(self, 'rotDetector'):
                 self._check_and_repmat('rotDetector', angles)
-            if self.COR != None:
+            else:
+                self.rotDetector = np.zeros((angles.shape[0],2))
+
+            if hasattr(self, 'COR'):
                 self._check_and_repmat('COR', angles)
-            elif self.COR == None:
+            else:
                 self.COR = np.zeros(angles.shape[0])
 
         if self.mode == 'parallel':
@@ -104,7 +112,7 @@ class geometry:
         elif type(old_attrib) == np.ndarray:
             if old_attrib.ndim == 1:
                 if old_attrib.shape in [(3,), (2,), (1,)]:
-                    new_attrib = matlib.repmat(old_attrib, max(angles.shape), 1)
+                    new_attrib = matlib.repmat(old_attrib, angles.shape[0], 1)
                     setattr(self, attrib, new_attrib)
                 elif old_attrib.shape == (angles.shape[0],):
                     pass
