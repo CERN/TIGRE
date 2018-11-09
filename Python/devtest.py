@@ -17,11 +17,11 @@ geo = geometry()
 geo.DSD = 1536                                     # Distance Source Detector      (mm)
 geo.DSO = 1000                                     # Distance Source Origin        (mm)
 # Detector parameters
-geo.nDetector = np.array((512, 512))               # number of pixels              (px)
-geo.dDetector = np.array((0.8, 0.8))               # size of each pixel            (mm)
+geo.nDetector = np.array((128, 127))               # number of pixels              (px)
+geo.dDetector = np.array((0.8, 0.8))*4               # size of each pixel            (mm)
 geo.sDetector = geo.nDetector * geo.dDetector    # total size of the detector    (mm)
 # Image parameters
-geo.nVoxel = np.array((256, 256, 256))             # number of voxels              (vx)
+geo.nVoxel = np.array((64, 64, 64))             # number of voxels              (vx)
 geo.sVoxel = np.array((256, 256, 256))             # total size of the image       (mm)
 geo.dVoxel = geo.sVoxel/geo.nVoxel               # size of each voxel            (mm)
 geo.mode = 'cone'
@@ -39,12 +39,11 @@ angles_3 = np.zeros((100),dtype=np.float32)
 angles= np.vstack((angles_1,angles_2,angles_3)).T
 
 
-proj_1 = Ax(source_img,geo,angles,'interpolated')
-geo.check_geo(angles)
+proj_1 = Ax(source_img,geo,angles,'ray-voxel')
+
 #--------------------Back Projection ----------------
 #fbp = Atb(proj_1,geo,angles,'FDK')
 fbp = FDK(proj_1,geo,angles)
-
 
 #---------------PLOTS-------------------------------
 #plotproj(proj_1)
@@ -56,4 +55,5 @@ fbp = FDK(proj_1,geo,angles)
 #plotImg(np.hstack((source_img,fbp)))
 plotImg(fbp)
 plt.matshow(fbp[32])
+plt.colorbar()
 plt.show()

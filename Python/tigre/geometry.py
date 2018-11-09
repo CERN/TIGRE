@@ -25,74 +25,64 @@ class geometry:
             self.n_proj = angles.shape[0]
             angles = angles.copy()
             setattr(self, 'angles', angles)
+        else:
+            raise BufferError("Unexpected angles shape: "+ str(angles.shape))
         if self.mode == None:
             setattr(self, 'mode', 'cone')
 
-        if self.mode == 'cone':
-            manditory_attribs = ['nVoxel', 'sVoxel', 'dVoxel',
-                                 'nDetector', 'sDetector', 'dDetector',
-                                 'DSO', 'DSD']
-            included_attribs_indx = [hasattr(self, attrib) for attrib in manditory_attribs]
-            if not all(included_attribs_indx):
-                raise AttributeError('following manditory fields '
-                                     'missing from geometry:' + str([attrib for attrib in manditory_attribs
-                                                                     if not hasattr(self, attrib)])
-                                     )
-            optional_attribs = ['offOrigin', 'offDetector', 'rotDetector', 'COR',
-                               'mode', 'accuracy']
 
-            # image data
-            if not self.nVoxel.shape == (3,): raise AttributeError('geo.nVoxel.shape should be (3, )')
-            if not self.sVoxel.shape == (3,): raise AttributeError('geo.sVoxel.shape should be (3, )')
-            if not self.dVoxel.shape == (3,): raise AttributeError('geo.dVoxel.shape should be (3, )')
-            if not sum(abs(self.dVoxel * self.nVoxel - self.sVoxel)) < 1e-6: 'nVoxel*dVoxel is not equal to sVoxel. ' \
-                                                                             'Check fields.'
+        manditory_attribs = ['nVoxel', 'sVoxel', 'dVoxel',
+                             'nDetector', 'sDetector', 'dDetector',
+                             'DSO', 'DSD']
+        included_attribs_indx = [hasattr(self, attrib) for attrib in manditory_attribs]
+        if not all(included_attribs_indx):
+            raise AttributeError('following manditory fields '
+                                 'missing from geometry:' + str([attrib for attrib in manditory_attribs
+                                                                 if not hasattr(self, attrib)])
+                                 )
+        optional_attribs = ['offOrigin', 'offDetector', 'rotDetector', 'COR',
+                           'mode', 'accuracy']
 
-            # Detector Data
-            if not self.nDetector.shape == (2,): raise AttributeError('geo.nDecetor.shape should be (2, )')
-            if not self.sDetector.shape == (2,): raise AttributeError('geo.sDetector.shape should be (2, )')
-            if not self.dDetector.shape == (2,): raise AttributeError('geo.dDetector.shape should be (2, )')
-            if not sum(abs(self.dDetector * self.nDetector - self.sDetector)) < 1e-6: raise AttributeError(
-                'nDetector*dDetecor is not equal to sVoxel. Check fields.')
+        # image data
+        if not self.nVoxel.shape == (3,): raise AttributeError('geo.nVoxel.shape should be (3, )')
+        if not self.sVoxel.shape == (3,): raise AttributeError('geo.sVoxel.shape should be (3, )')
+        if not self.dVoxel.shape == (3,): raise AttributeError('geo.dVoxel.shape should be (3, )')
+        if not sum(abs(self.dVoxel * self.nVoxel - self.sVoxel)) < 1e-6: 'nVoxel*dVoxel is not equal to sVoxel. ' \
+                                                                         'Check fields.'
 
-            for attrib in ['DSD', 'DSO']:
-                self._check_and_repmat(attrib, angles)
+        # Detector Data
+        if not self.nDetector.shape == (2,): raise AttributeError('geo.nDecetor.shape should be (2, )')
+        if not self.sDetector.shape == (2,): raise AttributeError('geo.sDetector.shape should be (2, )')
+        if not self.dDetector.shape == (2,): raise AttributeError('geo.dDetector.shape should be (2, )')
+        if not sum(abs(self.dDetector * self.nDetector - self.sDetector)) < 1e-6: raise AttributeError(
+            'nDetector*dDetecor is not equal to sVoxel. Check fields.')
 
-            if hasattr(self, 'offOrigin'):
-                self._check_and_repmat('offOrigin', angles)
-            else:
-                self.offOrigin = np.array([0,0,0])
-                self._check_and_repmat('offOrigin',angles)
+        for attrib in ['DSD', 'DSO']:
+            self._check_and_repmat(attrib, angles)
 
-            if hasattr(self, 'offDetector'):
-                self._check_and_repmat('offDetector', angles)
-            else:
-                self.offDetector =np.zeros((angles.shape[0],2))
+        if hasattr(self, 'offOrigin'):
+            self._check_and_repmat('offOrigin', angles)
+        else:
+            self.offOrigin = np.array([0,0,0])
+            self._check_and_repmat('offOrigin',angles)
+
+        if hasattr(self, 'offDetector'):
+            self._check_and_repmat('offDetector', angles)
+        else:
+            self.offDetector =np.zeros((angles.shape[0],2))
 
 
-            if hasattr(self, 'rotDetector'):
-                self._check_and_repmat('rotDetector', angles)
-            else:
-                self.rotDetector = np.zeros((angles.shape[0],2))
+        if hasattr(self, 'rotDetector'):
+            self._check_and_repmat('rotDetector', angles)
+        else:
+            self.rotDetector = np.zeros((angles.shape[0],3))
 
-            if hasattr(self, 'COR'):
-                self._check_and_repmat('COR', angles)
-            else:
-                self.COR = np.zeros(angles.shape[0])
+        if hasattr(self, 'COR'):
+            self._check_and_repmat('COR', angles)
+        else:
+            self.COR = np.zeros(angles.shape[0])
 
-        if self.mode == 'parallel':
-            for attrib in ['DSD', 'DSO']:
-                self._check_and_repmat(attrib, angles)
-            if hasattr(self, 'offOrigin'):
-                self._check_and_repmat('offOrigin', angles)
-            if hasattr(self, 'offDetector'):
-                self._check_and_repmat('offDetector', angles)
-            if hasattr(self, 'rotDetector'):
-                self._check_and_repmat('rotDetector', angles)
-            if self.COR == None:
-                self.COR = np.zeros(angles.shape[0], dtype=np.float32)
-            elif self.COR != None:
-                self._check_and_repmat('COR', angles)
+
 
         if verbose:
             self._verbose_output()

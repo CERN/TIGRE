@@ -55,7 +55,8 @@ def FDK(proj, geo, angles,filter=None):
       --------------------------------------------------------------------------
         Coded by:          MATLAB (original code): Ander Biguri
                            PYTHON : Reuben Lindroos,Sam Loescher, """)
-
+    geo = copy.deepcopy(geo)
+    geo.check_geo(angles)
     if filter is not None:
         geo.filter=filter
     # Weight
