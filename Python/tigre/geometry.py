@@ -81,9 +81,7 @@ class geometry:
             self._check_and_repmat('COR', angles)
         else:
             self.COR = np.zeros(angles.shape[0])
-
-
-
+        
         if verbose:
             self._verbose_output()
 
@@ -95,7 +93,7 @@ class geometry:
         """
         old_attrib = getattr(self, attrib)
 
-        if type(old_attrib) in [float, int, np.float32]:
+        if type(old_attrib) in [float, int, np.float32, np.float64]:
             new_attrib = matlib.repmat(old_attrib, 1, angles.shape[0])[0]
             setattr(self, attrib, new_attrib)
 

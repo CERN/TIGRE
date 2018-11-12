@@ -99,7 +99,7 @@ def SIRT(proj, geo, alpha, niter,
 
     blocksize = 1
     angles, angle_index = order_subsets(alpha, blocksize, OrderStrategy)
-    alpha = angles#.ravel()
+    alpha = angles.ravel()
 
     #     Projection weight:
     #       - fixing the geometry
@@ -110,7 +110,7 @@ def SIRT(proj, geo, alpha, niter,
     geox.sVoxel[2] = max(geox.sDetector[1], geox.sVoxel[2])
     geox.nVoxel = np.array([2, 2, 2])
     geox.dVoxel = geox.sVoxel / geox.nVoxel
-    W = Ax(np.ones(geox.nVoxel, dtype=np.float32), geox, alpha, "ray-voxel")
+    W = Ax(np.ones(geox.nVoxel, dtype=np.float32), geox, angles, "ray-voxel")
     W[W < min(geo.dVoxel / 4)] = np.inf
     W = 1 / W
     geox = None
@@ -140,7 +140,7 @@ def SIRT(proj, geo, alpha, niter,
         V = np.array(V, dtype=np.float32)
 
     else:
-        V = np.ones([geo.nVoxel[0], geo.nVoxel[1]])*alpha.shape[0]
+        V = np.ones([geo.nVoxel[0], geo.nVoxel[1]])*angles.shape[0]
     # Iterate
     lq = []
     l2l=[]
@@ -175,14 +175,14 @@ def SIRT(proj, geo, alpha, niter,
 
 
         # VERBOSE:
-        proj_err = proj-Ax(res,geo,alpha,'interpolated')
-        weighted_err = W*proj_err
-        backprj = Atb(weighted_err,geo,alpha,'FDK')
-        weighted_backprj = 1/V*backprj
-        res+=weighted_backprj#*lmbda
+        #proj_err = proj-Ax(res,geo,angles,'interpolated')
+        #weighted_err = W*proj_err
+        #backprj = Atb(weighted_err,geo,angles,'FDK')
+        #weighted_backprj = 1/V*backprj
+        #res+=weighted_backprj#*lmbda
 
-        #res += lmbda *1/V* Atb(W*(proj- Ax(res, geo, alpha, 'ray-voxel')), geo,
-        #                              alpha, 'FDK')
+        res += lmbda *1/V* Atb(W*(proj- Ax(res, geo, angles, 'ray-voxel')), geo,
+                                      angles, 'FDK')
         if noneg:
             res = res.clip(min=0)
         if Quameasopts is not None:

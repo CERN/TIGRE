@@ -74,7 +74,7 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     c_geom.sVoxelX = p_geometry.sVoxel[0]
     c_geom.sVoxelY = p_geometry.sVoxel[1]
     c_geom.sVoxelZ = p_geometry.sVoxel[2]
-
+    
     c_geom.dVoxelX = p_geometry.dVoxel[0]
     c_geom.dVoxelY = p_geometry.dVoxel[1]
     c_geom.dVoxelZ = p_geometry.dVoxel[2]
