@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!-- Copyright 2013-2014 The MathWorks, Inc. -->
 <config
     Name="NVIDIA CUDA Compiler"
     ShortName="nvcc"
     Manufacturer="NVIDIA"
-    Version="8.0"
+    Version="9.2"
     Language="CUDA"
     Priority="A"
     Location="$NVCC" >
@@ -25,83 +24,181 @@
         CompilerDefineFormatter="--compiler-options=/D%s"
         LinkerLibrarySwitchFormatter="lib%s.lib;%s.lib"
         LinkerPathFormatter="/LIBPATH:%s"
-        LibrarySearchPath="$$LIB;$$LIBPATH;$$PATH;$$INCLUDE;$MATLABROOT\extern\lib\$ARCH\microsoft"
-    />
+        LibrarySearchPath="$$LIB;$$LIBPATH;$$PATH;$$INCLUDE;$MATLABROOT\extern\lib\$ARCH\microsoft"    />
     <!-- Switch guide: http://msdn.microsoft.com/en-us/library/fwkeyyhe(v=vs.71).aspx -->
     <vars
-          CMDLINE100="$COMPILER -c $COMPFLAGS $OPTIM $COMPDEFINES $INCLUDE $SRC -o $OBJ"
-          CMDLINE200="$LINKER $LINKFLAGS $LINKTYPE $LINKOPTIM $LINKEXPORT $LINKLIBS $OBJS /out:$EXE"
-          CMDLINE250="mt -outputresource:$EXE;2 -manifest $MANIFEST"
-          CMDLINE300="del $OBJ $EXP $LIB $MANIFEST $ILK"
-          
-          COMPILER="nvcc"
-          COMPFLAGS="-gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=&#92;&quot;sm_50,compute_50&#92;&quot; -gencode arch=compute_52,code=sm_52 --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"
-          COMPDEFINES="--compiler-options=/D_CRT_SECURE_NO_DEPRECATE,/D_SCL_SECURE_NO_DEPRECATE,/D_SECURE_SCL=0,$MATLABMEX"
-          MATLABMEX="/DMATLAB_MEX_FILE"
-          OPTIMFLAGS="--compiler-options=/O2,/Oy-,/DNDEBUG"
-          INCLUDE="-I&quot;$MATLABROOT\extern\include&quot; -I&quot;$MATLABROOT\simulink\include&quot;"
-          DEBUGFLAGS="--compiler-options=/Z7"
-
-          LINKER="link"
-          LINKFLAGS="/nologo /manifest"
-          LINKTYPE="/DLL "
-          LINKEXPORT="/EXPORT:mexFunction"
-          LINKLIBS="/LIBPATH:&quot;$MATLABROOT\extern\lib\$ARCH\microsoft&quot; libmx.lib libmex.lib libmat.lib gpu.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib  ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib"
-          LINKDEBUGFLAGS="/debug /PDB:&quot;$TEMPNAME$LDEXT.pdb&quot;"
-          LINKOPTIMFLAGS=""
-          OBJEXT=".obj"
-          LDEXT=".mexw64"
-          SETENV="set COMPILER=$COMPILER 
-                  set COMPFLAGS=$COMPFLAGS $COMPDEFINES 
-                  set OPTIMFLAGS=$OPTIMFLAGS 
-                  set DEBUGFLAGS=$DEBUGFLAGS 
-                  set LINKER=$LINKER 
-                  set LINKFLAGS=$LINKFLAGS /export:%ENTRYPOINT% $LINKTYPE $LINKLIBS $LINKEXPORT 
-                  set LINKDEBUGFLAGS=/debug /PDB:&quot;%OUTDIR%%MEX_NAME%$LDEXT.pdb&quot; 
-                  set NAME_OUTPUT=/out:&quot;%OUTDIR%%MEX_NAME%%MEX_EXT%&quot;"
+        CMDLINE100="$COMPILER -c $COMPFLAGS $OPTIM $COMPDEFINES $INCLUDE $SRC -o $OBJ"
+        CMDLINE200="$LINKER $LINKFLAGS $LINKTYPE $LINKOPTIM $LINKEXPORT $LINKLIBS $OBJS /out:$EXE"
+        CMDLINE250="mt -outputresource:$EXE;2 -manifest $MANIFEST"
+        CMDLINE300="del $OBJ $EXP $LIB $MANIFEST $ILK"
+        
+        COMPILER="nvcc"
+        COMPFLAGS="-gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_61,code=sm_61  --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"
+        COMPDEFINES="--compiler-options=/D_CRT_SECURE_NO_DEPRECATE,/D_SCL_SECURE_NO_DEPRECATE,/D_SECURE_SCL=0,$MATLABMEX"
+        MATLABMEX="/DMATLAB_MEX_FILE"
+        OPTIMFLAGS="--compiler-options=/O2,/Oy-,/DNDEBUG"
+        INCLUDE="-I&quot;$MATLABROOT\extern\include&quot; -I&quot;$MATLABROOT\simulink\include&quot;"
+        DEBUGFLAGS="--compiler-options=/Z7"
+        
+        LINKER="link"
+        LINKFLAGS="/nologo /manifest"
+        LINKTYPE="/DLL "
+        LINKEXPORT="/EXPORT:mexFunction"
+        LINKLIBS="/LIBPATH:&quot;$MATLABROOT\extern\lib\$ARCH\microsoft&quot; libmx.lib libmex.lib libmat.lib gpu.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib  ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib"
+        LINKDEBUGFLAGS="/debug /PDB:&quot;$TEMPNAME$LDEXT.pdb&quot;"
+        LINKOPTIMFLAGS=""
+        OBJEXT=".obj"
+        LDEXT=".mexw64"
+        SETENV="set COMPILER=$COMPILER 
+        set COMPFLAGS=$COMPFLAGS $COMPDEFINES 
+        set OPTIMFLAGS=$OPTIMFLAGS 
+        set DEBUGFLAGS=$DEBUGFLAGS 
+        set LINKER=$LINKER 
+        set LINKFLAGS=$LINKFLAGS /export:%ENTRYPOINT% $LINKTYPE $LINKLIBS $LINKEXPORT 
+        set LINKDEBUGFLAGS=/debug /PDB:&quot;%OUTDIR%%MEX_NAME%$LDEXT.pdb&quot; 
+        set NAME_OUTPUT=/out:&quot;%OUTDIR%%MEX_NAME%%MEX_EXT%&quot;"
     />
+    <client>
+        <engine
+            LINKLIBS="$LINKLIBS libeng.lib"
+            LINKEXPORT=""
+            LINKEXPORTVER=""
+            LDEXT=".exe"
+            LINKTYPE=""
+            MATLABMEX=""
+        />
+        <mbuild
+            CMDLINE100="$COMPILER /c $COMPFLAGS $OPTIM $COMPDEFINES $INCLUDE $SRC /Fo$OBJ"
+            CMDLINE200="$LINKER $LINKFLAGS $LINKTYPE $LINKOPTIM $LINKEXPORT $OBJS $LINKLIBS /out:$EXE"
+            CMDLINE250="$MTCMDLINE"
+            CMDLINE300="del $MANIFEST &quot;$TEMPNAME.map&quot; "
+            LINKFLAGS="/nologo /manifest"
+            LINKLIBS="/MACHINE:AMD64 /LIBPATH:&quot;$MATLABROOT\extern\lib\$ARCH\microsoft&quot; mclmcrrt.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib"
+            INCLUDE="-I&quot;$MATLABROOT\extern\include&quot; -I&quot;$MATLABROOT\extern\include\$ARCH&quot;"
+            COMPFLAGS="-MD -Zp8 -GR -W3 -EHsc- -Zc:wchar_t- -nologo"
+            COMPDEFINES="/DMSVC /DIBMPC /D_CRT_SECURE_NO_DEPRECATE"
+            OPTIMFLAGS="-O2 -DNDEBUG"
+            LINKEXPORT=""
+            LINKEXPORTVER=""
+            LDEXT=".exe"
+            MATLABMEX=""
+            MTCMDLINE="mt -outputresource:$EXE;1 -manifest $MANIFEST"
+            LINKTYPE=""
+            LINKDEBUGFLAGS="/debug /PDB:&quot;$TEMPNAME.pdb&quot;"
+        />
+        
+        <mbuild_com
+            CMDLINE000="copy &quot;$MATLABROOT\extern\include\$ARCH\mwcomutil.tlb&quot; ."
+            CMDLINE001="midl /nologo /$ARCH $COMPINCLUDE /D NDEBUG /out &quot;$OUTDIR&quot; mwcomtypes.idl"
+            CMDLINE002="midl /nologo /$ARCH $COMPINCLUDE /D NDEBUG /out &quot;$OUTDIR&quot; &quot;$COMIDL&quot;"
+            CMDLINE100="$COMPILER $COMPFLAGS $OPTIM $COMPDEFINES $INCLUDE $COMPINCLUDE $SRC /Fo$OBJ"
+            CMDLINE150="rc /fo &quot;$RESFILE&quot; &quot;$RCFILE&quot;"
+            CMDLINE250="mt -outputresource:$EXE;2 -manifest $MANIFEST"
+            CMDLINE275="&quot;$MATLABROOT\runtime\$ARCH\mwregsvr.exe&quot; $EXE"
+            CMDLINE300="del $MANIFEST mwcomutil.tlb &quot;$RESFILE&quot;"
+            
+            OUTDIR="."
+            INCLUDE="$INCLUDE -I&quot;$OUTDIR&quot; -I&quot;$MATLABROOT\extern\include\$ARCH&quot;"
+            COMPFLAGS="/c /GR /W3 /EHsc- -Zc:wchar_t /nologo /MT"
+            COMPDEFINES="/DMSVC /DIBMPC /D_CRT_SECURE_NO_DEPRECATE"
+            COMPINCLUDE="-I&quot;$MATLABROOT\extern\include&quot;"
+            
+            LINKEXPORT="/DLL /def:&quot;$DEFFILE&quot;"
+            LINKEXPORTVER="/DLL /def:&quot;$DEFFILE&quot;"
+            LINKLIBS="/MACHINE:AMD64 $LINKLIBS mclmcrrt.lib $MCLMAINLIB_MS &quot;$RESFILE&quot;"
+            LDEXT=".dll"
+            USERONLY=""
+            LINKTYPE=""
+            MATLABMEX=""
+        />
+    </client>
     <locationFinder>
-        <VSROOT>
+        <VCROOT>
             <and>
-                <envVarExists name="VS120COMNTOOLS" />
-                <fileExists name="$$\..\..\VC\bin\amd64\cl.exe" />
-                <dirExists name="$$\..\..\.." />
+                <or>
+                    <hklmExists path="SOFTWARE\Microsoft\VisualStudio\SxS\VC7" name="14.0" />
+                    <hkcuExists path="SOFTWARE\Microsoft\VisualStudio\SxS\VC7" name="14.0" />
+                    <hklmExists path="SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VC7" name="14.0" />
+                    <hkcuExists path="SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VC7" name="14.0" />
+                </or>
+                <fileExists name="$$\bin\amd64\cl.exe" />
+                <dirExists name="$$\..\.." />
             </and>
-        </VSROOT>
+        </VCROOT>
         <SDKROOT>
             <or>
-                <hklmExists path="SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A" name="InstallationFolder" />
-                <hkcuExists path="SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A" name="InstallationFolder" />
+                <hklmExists path="SOFTWARE\Microsoft\Microsoft SDKs\Windows\v8.1" name="InstallationFolder" />
+                <hkcuExists path="SOFTWARE\Microsoft\Microsoft SDKs\Windows\v8.1" name="InstallationFolder" />
+                <hklmExists path="SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\v8.1" name="InstallationFolder" />
+                <hkcuExists path="SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\v8.1" name="InstallationFolder" />
             </or>
         </SDKROOT>
-        <PROF_ENV>
-            <and>
-                <envVarExists name="VS120COMNTOOLS" />
-                <fileExists name="$$\..\IDE\devenv.exe" />
-                <not>
-                    <fileExists name="$$\..\IDE\VCExpress.exe" />
-                </not>
-            </and>
-        </PROF_ENV>
+        <VSINSTALLDIR>
+            <or>
+                <hklmExists path="SOFTWARE\Microsoft\VisualStudio\SxS\VS7" name="14.0" />
+                <hkcuExists path="SOFTWARE\Microsoft\VisualStudio\SxS\VS7" name="14.0" />
+                <hklmExists path="SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VS7" name="14.0" />
+                <hkcuExists path="SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VS7" name="14.0" />
+                <hklmExists path="SOFTWARE\Microsoft\VisualStudio\SxS\VS7" name="15.0" />
+                <hkcuExists path="SOFTWARE\Microsoft\VisualStudio\SxS\VS7" name="15.0" />
+                <hklmExists path="SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VS7" name="15.0" />
+                <hkcuExists path="SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VS7" name="15.0" />
+            </or>
+        </VSINSTALLDIR>
+        <VCINSTALLDIR>
+            <or>
+                <hklmExists path="SOFTWARE\Microsoft\VisualStudio\SxS\VC7" name="14.0" />
+                <hkcuExists path="SOFTWARE\Microsoft\VisualStudio\SxS\VC7" name="14.0" />
+                <hklmExists path="SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VC7" name="14.0" />
+                <hkcuExists path="SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VC7" name="14.0" />
+            </or>
+        </VCINSTALLDIR>
         <VCVARSALLDIR>
             <and>
-                <envVarExists name="VS120COMNTOOLS" />
-                <fileExists name="$$\..\..\VC\vcvarsall.bat" />
+                <or>
+                    <hklmExists path="SOFTWARE\Microsoft\VisualStudio\SxS\VC7" name="14.0" />
+                    <hkcuExists path="SOFTWARE\Microsoft\VisualStudio\SxS\VC7" name="14.0" />
+                    <hklmExists path="SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VC7" name="14.0" />
+                    <hkcuExists path="SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VC7" name="14.0" />
+                </or>
+                <fileExists name="$$\vcvarsall.bat" />
                 <dirExists name="$$"/>
             </and>
         </VCVARSALLDIR>
+        <KITSROOT>
+            <or>
+                <hklmExists path="SOFTWARE\Wow6432Node\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                <hkcuExists path="SOFTWARE\Wow6432Node\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                <hklmExists path="SOFTWARE\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                <hkcuExists path="SOFTWARE\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                
+            </or>
+        </KITSROOT>
+        <SDKVERSION>
+            <and>
+                <or>
+                    <hklmExists path="SOFTWARE\Wow6432Node\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                    <hkcuExists path="SOFTWARE\Wow6432Node\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                    <hklmExists path="SOFTWARE\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                    <hkcuExists path="SOFTWARE\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                    
+                </or>
+                <!-- For each folder inside '<KITSROOT>\include' check for 'ucrt' and if exists return that folder name -->
+                <cmdReturns name="echo off&amp;set &quot;sdkversion=&quot;&amp;(for /f %a IN ('dir &quot;$$\include\&quot; /b /ad-h /on') do ( @if exist &quot;$$\include\%a\ucrt\&quot; set &quot;sdkversion=%a&quot; ))&amp;call echo %sdkversion%" />
+            </and>
+        </SDKVERSION>
         <CUDA_LIB_PATH>
             <or>
-              <and>
-                <envVarExists name="CUDA_LIB_PATH"/>
-                <fileExists name="$$\cudart.lib" />
-                <dirExists name="$$" />
-              </and>
-              <and>
-                <envVarExists name="CUDA_PATH"/>
-                <fileExists name="$$\lib\x64\cudart.lib" />
-                <dirExists name="$$" />
-              </and>
+                <and>
+                    <envVarExists name="CUDA_LIB_PATH"/>
+                    <fileExists name="$$\cudart.lib" />
+                    <dirExists name="$$" />
+                </and>
+                <and>
+                    <envVarExists name="CUDA_PATH"/>
+                    <fileExists name="$$\lib\x64\cudart.lib" />
+                    <dirExists name="$$" />
+                </and>
             </or>
         </CUDA_LIB_PATH>
         <CUDA_BIN_PATH>
@@ -122,16 +219,16 @@
                     <dirExists name="$$" />
                 </and>
                 <and>
-                  <fileExists name="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.1\bin\nvcc.exe" />
-                  <dirExists name="$$" />
+                    <fileExists name="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.2\bin\nvcc.exe" />
+                    <dirExists name="$$" />
                 </and>
             </or>
         </CUDA_BIN_PATH>
     </locationFinder>
     <env
-        PATH="$CUDA_BIN_PATH;$VSROOT\VC\Bin\amd64;$VSROOT\VC\Bin\VCPackages;$VSROOT\Common7\IDE;$VSROOT\Common7\Tools;$VSROOT\Common7\Tools\bin;$SDKROOT\Bin\x64;$SDKROOT\Bin\win64\x64;$SDKROOT\Bin;$PATH"
-        INCLUDE="$VSROOT\VC\ATLMFC\INCLUDE;$VSROOT\VC\INCLUDE;$SDKROOT\include;$MATLABROOT\extern\include;$MATLABROOT\toolbox\distcomp\gpu\extern\include"
-        LIB="$VSROOT\VC\ATLMFC\LIB\amd64;$VSROOT\VC\Lib\amd64;$SDKROOT\Lib\X64;$MATLABROOT\lib\$ARCH;$CUDA_LIB_PATH"
-        LIBPATH="&$VSROOT\VC\Lib\amd64;"
+        PATH="$CUDA_BIN_PATH;$VCROOT\Bin\amd64;$VCROOT\Bin\VCPackages;$VCROOT\..\Common7\IDE;$VCROOT\..\Common7\Tools;$SDKROOT\Bin\x64;$SDKROOT\Bin\x86;"
+        INCLUDE="$VCROOT\INCLUDE;$VCROOT\ATLMFC\INCLUDE;$KITSROOT\include\$SDKVERSION\ucrt;$SDKROOT\include\shared;$SDKROOT\include\um;$SDKROOT\include\winrt;$MATLABROOT\extern\include;$MATLABROOT\toolbox\distcomp\gpu\extern\include"
+        LIB="$VCROOT\Lib\amd64;$VCROOT\ATLMFC\Lib\amd64;$KITSROOT\Lib\$SDKVERSION\ucrt\x64;$SDKROOT\lib\winv6.3\um\x64;$MATLABROOT\lib\$ARCH;$CUDA_LIB_PATH"
+        LIBPATH="$VCROOT\Lib\amd64;$VCROOT\ATLMFC\Lib\amd64"
     />
 </config>
