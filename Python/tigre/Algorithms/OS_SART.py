@@ -22,8 +22,7 @@ if rootDir not in sys.path:  # add parent dir to paths
 from scipy.linalg import *
 
 
-def OS_SART(proj, geo, alpha, niter,
-            blocksize=20, lmbda=1, lmbda_red=0.99, OrderStrategy=None, Quameasopts=None, init=None, verbose=True,noneg=True,computel2=False):
+def OS_SART(proj, geo, alpha, niter,**kwargs):
 
     ('\n'
      """SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets
@@ -96,6 +95,15 @@ def OS_SART(proj, geo, alpha, niter,
       --------------------------------------------------------------------------
         Coded by:          MATLAB (original code): Ander Biguri
                            PYTHON : Reuben Lindroos,Sam Loescher, """)
+
+    options = dict(blocksize=20, lmbda=1, lmbda_red=0.99, OrderStrategy=None, Quameasopts=None, init=None, verbose=True,noneg=True,computel2=False)
+
+    options.update(**kwargs)
+
+    blocksize = options['blocksize']
+    OrderStrategy = options['OrderStrategy']
+    verbose = options['verbose']
+
     if verbose:
         print('OS_SART algorithm in progress.')
 
@@ -140,6 +148,7 @@ def OS_SART(proj, geo, alpha, niter,
         V = np.ones([len(alpha), geo.nVoxel[1], geo.nVoxel[0]], dtype=np.float32)
 
     # Set up init parameters
+    init = options['init']
     lq = []
     l2l =[]
     if init == 'multigrid':
@@ -163,6 +172,12 @@ def OS_SART(proj, geo, alpha, niter,
         res = np.zeros(geo.nVoxel, dtype=np.float32)
 
     # Iterate
+
+    Quameasopts = options['Quameasopts']
+    lmbda = options['lmbda']
+    noneg = options['noneg']
+    lmbda_red = options['lmbda_red']
+    computel2 = options['computel2']
 
     tic = None
     toc = time.clock()
