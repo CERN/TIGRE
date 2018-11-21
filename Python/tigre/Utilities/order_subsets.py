@@ -5,7 +5,7 @@ import numpy as np
 def order_subsets(angles, blocksize, mode):
     # Parse no blocks
     if blocksize is None or blocksize==1:
-        index_alpha=np.arange(len(angles))
+        index_alpha=np.arange(angles.shape[0])
 
         if mode is None or mode =='ordered':
             return angles, index_alpha
@@ -45,9 +45,9 @@ def order_subsets(angles, blocksize, mode):
     # Parse with blocks
     elif blocksize>1:
         # using list comprehension to form the blocks.
-        oldindex=np.arange(len(angles))
+        oldindex=np.arange(angles.shape[0])
         index_alpha = [oldindex[i:i+blocksize] for i in range(0,len(oldindex),blocksize)]
-        block_alpha = [angles[i:i+blocksize] for i in range(0,len(angles),blocksize)]
+        block_alpha = [angles[i:i+blocksize] for i in range(0,angles.shape[0],blocksize)]
         if mode is None or mode == 'ordered':
             return block_alpha, index_alpha
 

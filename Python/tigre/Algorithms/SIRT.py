@@ -99,7 +99,7 @@ def SIRT(proj, geo, alpha, niter,
 
     blocksize = 1
     angles, angle_index = order_subsets(alpha, blocksize, OrderStrategy)
-    alpha = angles.ravel()
+    alpha = angles
 
     #     Projection weight:
     #       - fixing the geometry
@@ -134,10 +134,14 @@ def SIRT(proj, geo, alpha, niter,
         xx = np.expand_dims(xx, axis=2)
         yy = np.expand_dims(yy, axis=2)
 
-        A = (alpha + np.pi / 2)
+        A = (alpha[:,0] + np.pi / 2)
         V = (geo.DSO / (geo.DSO + (yy * np.sin(-A)) - (xx * np.cos(-A)))) ** 2
         V=np.sum(V,axis=2)
         V = np.array(V, dtype=np.float32)
+
+        np.save('../../Documents/OSSART_data/V_sirt', V)
+        np.save('../../Documents/OSSART_data/W_sirt', W)
+        np.save('../../Documents/OSSART_data/proj_sirt', proj)
 
     else:
         V = np.ones([geo.nVoxel[0], geo.nVoxel[1]])*angles.shape[0]

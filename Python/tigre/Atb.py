@@ -11,7 +11,7 @@ def Atb(projections, geo, angles,  krylov="matched"):
     geox.check_geo(angles)
 
     if projections.shape != (geox.angles.shape[0],geox.nDetector[0],geox.nDetector[1]):
-        raise ValueError("Input data should be of shape geo.nDetector should be: " + str(geox.nDetector) +
-                         " not: " + str(projections.shape))
+        raise ValueError("Expected data shape: " + str((geox.angles.shape[0], geox.nDetector[0],geox.nDetector[1])) +
+                         " not compatible with: " + str(projections.shape))
 
     return _Atb_ext(projections, geox, geox.angles, krylov,geox.mode)

@@ -7,8 +7,8 @@ from tigre.Utilities.init_multigrid import init_multigrid
 from scipy.linalg import *
 import numpy as np
 import copy
-from _Ax import Ax
-from _Atb import Atb
+from tigre.Ax import Ax
+from tigre.Atb import Atb
 from tigre.Utilities.im3Dnorm import im3DNORM
 from tigre.Utilities.order_subsets import order_subsets
 from tigre.Utilities.Measure_Quality import Measure_Quality as MQ
@@ -100,13 +100,13 @@ def SART(proj, geo, alpha, niter,
 
     blocksize = 1
     angles, angle_index = order_subsets(alpha, blocksize, OrderStrategy)
-    alpha = angles.ravel()
+    alpha = angles
 
     #     Projection weight:
     #       - fixing the geometry
     #       - making sure there are no infs in W
     geox = copy.deepcopy(geo)
-    geox.sVoxel[0:]=geo.DSD-geo.DSO
+    geox.sVoxel[[0, 1]] = geo.sVoxel[[0, 1]] * 1.1
     geox.sVoxel[2] = max(geox.sDetector[1], geox.sVoxel[2])
     geox.nVoxel = np.array([2, 2, 2])
     geox.dVoxel = geox.sVoxel / geox.nVoxel
@@ -134,7 +134,7 @@ def SART(proj, geo, alpha, niter,
         (yy,xx) = np.meshgrid(yv,xv)
         xx = np.expand_dims(xx,axis=2)
         yy = np.expand_dims(yy,axis=2)
-        A = (alpha + np.pi / 2)
+        A = (alpha[:,0] + np.pi / 2)
         V = (geo.DSO / (geo.DSO + (yy * np.sin(-A)) - (xx * np.cos(-A)))) ** 2
         V = np.array(V, dtype=np.float32)
 
@@ -195,7 +195,7 @@ def SART(proj, geo, alpha, niter,
             angle = np.array([alpha[j]], dtype=np.float32)
 
             res += lmbda * 1 / V[:,:,angle_index[j]] * Atb(
-                np.expand_dims(W[:,:,j],axis=2) * (np.expand_dims(proj[:,:,angle_index[j]],axis=2) - Ax(res, geo, angle, 'ray-voxel')),
+                W[j] * (proj[angle_index[j]] - Ax(res, geo, angle, 'interpolated')),
                 geo, angle, 'FDK')
             if noneg:
                 res = res.clip(min=0)

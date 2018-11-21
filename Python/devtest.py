@@ -8,6 +8,8 @@ from tigre.Ax import Ax
 from tigre.Atb import Atb
 from tigre.Algorithms.FDK import FDK
 from tigre.Algorithms.SIRT import SIRT
+from tigre.Algorithms.SART import SART
+from tigre.Algorithms.OS_SART import OS_SART
 from tigre.Utilities.plotproj import plotproj
 from tigre.Utilities.plotproj import ppslice
 from tigre.Utilities.plotImg import plotImg
@@ -16,7 +18,7 @@ from matplotlib import pyplot as plt
 
 geo = TIGREParameters(high_quality=False)
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
-
+geo.mode = 'cone'
 
 
 #---------------------ANGLES--------------------------------------------
@@ -24,14 +26,17 @@ source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
 angles_1 = np.linspace(0, 2*np.pi, 100, dtype=np.float32)
 angles_2 = np.ones((100),dtype=np.float32)*np.array(np.pi/4, dtype=np.float32)
 angles_3 = np.zeros((100),dtype=np.float32)
-angles= np.vstack((angles_1,angles_2,angles_3)).T
+angles= np.vstack((angles_1,angles_3,angles_3)).T
 #--------------------PROJECTION----------------------
-proj_1 = Ax(source_img,geo,angles)
+proj_1 = Ax(source_img,geo,angles,'interpolated')
 #--------------------Back Projection ----------------
-sirt = SIRT(proj_1,geo,angles,niter=20)
+ossart = OS_SART(proj_1,geo,angles,niter=5, **dict(blocksize = 1))
+sart = SART(proj_1,geo,angles,niter=5)
+plt.imshow(np.hstack((ossart[32],sart[32])))
+plt.show()
 #fdk = FDK(proj_1,geo,angles)
 
 #---------------PLOTS-------------------------------
 
 #plotImg(np.hstack((sirt,fdk)))
-plotImg(sirt)
+#plotImg(ossart)

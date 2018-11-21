@@ -7,8 +7,8 @@ from tigre.Utilities.init_multigrid import init_multigrid
 from scipy.linalg import *
 import numpy as np
 import copy
-from _Ax import Ax
-from _Atb import Atb
+from tigre.Ax import Ax
+from tigre.Atb import Atb
 from tigre.Utilities.order_subsets import order_subsets
 from tigre.Utilities.Measure_Quality import Measure_Quality as MQ
 from tigre.Algorithms.FDK import FDK
@@ -112,7 +112,7 @@ def OS_SART(proj, geo, alpha, niter,**kwargs):
     #       - fixing the geometry
     #       - making sure there are no infs in W
     geox = copy.deepcopy(geo)
-    geox.sVoxel[0:] = geo.DSD - geo.DSO
+    geox.sVoxel[[0, 1]] = geo.sVoxel[[0, 1]] * 1.1
     geox.sVoxel[2] = max(geox.sDetector[1], geox.sVoxel[2])
     geox.nVoxel = np.array([2, 2, 2])
     geox.dVoxel = geox.sVoxel / geox.nVoxel
@@ -122,7 +122,6 @@ def OS_SART(proj, geo, alpha, niter,**kwargs):
 
     geox = None
     #     Back_Proj weight
-    #     NOTE: hstack(array,last value) as np.arange does not include upper limit of interval.
     if geo.mode != 'parallel':
 
         start = geo.sVoxel[1] / 2 - geo.dVoxel[1] / 2 + geo.offOrigin[1]
@@ -138,14 +137,14 @@ def OS_SART(proj, geo, alpha, niter,**kwargs):
         (yy, xx) = np.meshgrid(yv, xv)
         xx = np.expand_dims(xx, axis=2)
         yy = np.expand_dims(yy, axis=2)
-
-        A = (alpha + np.pi / 2)
+        A = (alpha[:,0] + np.pi / 2)
         V = (geo.DSO / (geo.DSO + (yy * np.sin(-A)) - (xx * np.cos(-A)))) ** 2
         V = np.array(V, dtype=np.float32)
-
-
+        np.save('../../Documents/OSSART_data/V_ossart',V)
+        np.save('../../Documents/OSSART_data/W_ossart', W)
+        np.save('../../Documents/OSSART_data/proj_ossart', proj)
     elif geo.mode == 'parallel':
-        V = np.ones([len(alpha), geo.nVoxel[1], geo.nVoxel[0]], dtype=np.float32)
+        V = np.ones([geo.nVoxel[1], geo.nVoxel[2],alpha.shape[0]], dtype=np.float32)
 
     # Set up init parameters
     init = options['init']
@@ -194,30 +193,25 @@ def OS_SART(proj, geo, alpha, niter,**kwargs):
         for j in range(len(angleblocks)):
             if blocksize == 1:
                 angle = np.array([angleblocks[j]], dtype=np.float32)
-                sumax = 0
-                dim_exp=True
             else:
                 angle = angleblocks[j]
-                sumax = 3
-                dim_exp=False
 
             # PRESENT FOR LOOP
-            res += lmbda * 1 / np.array(np.sum(np.expand_dims(
-                V[:,:,angle_index[j]], axis=0), axis=sumax), dtype=np.float32) * Atb(
-                adddim(W[:,:,angle_index[j]], dim_exp) * (adddim(proj[:,:,angle_index[j]], dim_exp)
-                                     - Ax(res, geo, angle, 'ray-voxel')),
+
+            res += lmbda * 1/third_dim_sum(V[:,:,angle_index[j]]) * Atb(W[angle_index[j]] * (proj[angle_index[j]]
+                                     - Ax(res, geo, angle, 'interpolated')),
                 geo, angle, 'FDK')
             if noneg:
                 res = res.clip(min=0)
 
             # VERBOSE:
-            # proj_err = proj[angle_index[j]] - Ax(res, geo, angle_blocks[j],'ray-voxel')
-            # weighted_err = W[angle_index[j]]*proj_err
-            # backprj = Atb(weighted_err,geo,angle_blocks[j],'FDK')
-            # weighted_backprj = 1/V[angle_index[j]]*backprj
-            # res+=1*weighted_backprj
-            # res[res < 0] = 0
-
+            #proj_err = proj[angle_index[j]] - Ax(res, geo, alpha,'interpolated')
+            #weighted_err = W[angle_index[j]]*proj_err
+            #backprj = Atb(weighted_err,geo,angle,'FDK')
+            #weighted_backprj = 1/third_dim_sum(V[:,:,angle_index[j]])*backprj
+            #res+=1*weighted_backprj
+            #if noneg:
+            #    res = res.clip(min=0)
         if Quameasopts is not None:
             lq.append(MQ(res, res_prev, Quameasopts))
             res_prev = res
@@ -235,10 +229,8 @@ def OS_SART(proj, geo, alpha, niter,**kwargs):
         return res, lq
     else:
         return res
-def adddim(array,dimexp):
-    # This function makes sure the dimensions of the arrays are only expanded if
-    # blocksize ==1. There may be a nicer way of doing this!
-    if dimexp:
-        return np.expand_dims(array,axis=2)
+def third_dim_sum(V):
+    if V.ndim == 3:
+        return np.sum(V,axis = 2,dtype = np.float32)
     else:
-        return array
+        return V
