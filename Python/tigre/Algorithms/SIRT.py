@@ -139,10 +139,6 @@ def SIRT(proj, geo, alpha, niter,
         V=np.sum(V,axis=2)
         V = np.array(V, dtype=np.float32)
 
-        np.save('../../Documents/OSSART_data/V_sirt', V)
-        np.save('../../Documents/OSSART_data/W_sirt', W)
-        np.save('../../Documents/OSSART_data/proj_sirt', proj)
-
     else:
         V = np.ones([geo.nVoxel[0], geo.nVoxel[1]])*angles.shape[0]
     # Iterate
