@@ -1,17 +1,17 @@
+from __future__ import division
 import unittest
-from tigre.geometry import geometry
+import tigre
 from tigre.Ax import Ax
-from tigre.Atb import Atb
 import numpy as np
-
+from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 class AlgorithmsTestCase(unittest.TestCase):
 
     def setUp(self):
-        geo = geometry()
+        geo = tigre.geometry()
         geo.DSD = 1536
         geo.DSO = 1000
         geo.nDetector = np.array((128, 127))
-        geo.dDetector = np.array((0.8, 0.8)) * 4
+        geo.dDetector = np.array((0.8, 0.8)) * 4.
         geo.sDetector = geo.nDetector * geo.dDetector
         geo.nVoxel = np.array((63, 62, 61))
         geo.sVoxel = np.array((256, 256, 256))
@@ -24,5 +24,19 @@ class AlgorithmsTestCase(unittest.TestCase):
         self.geo = geo
         self.img = np.ones((63, 62, 61), dtype=np.float32)
         self.proj = Ax(self.img,self.geo,self.angles)
-    def test_geo(self):
-        self.assertIsNone(self.geo.check_geo(self.angles))
+        self.niter=2
+    def test_mainiter_itrecalg(self):
+        alg = IterativeReconAlg(self.proj,self.geo,self.angles,self.niter,**dict(verbose=False))
+        self.assertIsNone(alg.run_main_iter())
+
+    def test_shape_sart(self):
+        self.assertTupleEqual(tigre.algorithms.sart(self.proj,self.geo,self.angles,niter=1).shape,
+                              tuple(self.geo.nVoxel))
+    def test_shape_sirt(self):
+        self.assertTupleEqual(tigre.algorithms.sirt(self.proj,self.geo,self.angles,niter=1).shape,
+                              tuple(self.geo.nVoxel))
+    def test_shape_ossart(self):
+        self.assertTupleEqual(tigre.algorithms.sirt(self.proj,self.geo,self.angles,niter=1).shape,
+                              tuple(self.geo.nVoxel))
+if __name__=='__main__':
+        unittest.main()

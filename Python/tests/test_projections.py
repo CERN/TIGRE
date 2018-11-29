@@ -1,5 +1,5 @@
 import unittest
-from tigre.geometry import geometry
+from tigre.utilities.geometry import geometry
 from tigre.Ax import Ax
 from tigre.Atb import Atb
 import numpy as np
