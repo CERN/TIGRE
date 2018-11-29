@@ -121,7 +121,8 @@ iter=0;
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
 rotDetector=geo.rotDetector;
-
+DSD=geo.DSD;
+DSO=geo.DSO;
 while ~stop_criteria %POCS
     f0=f;
     if (iter==0 && verbose==1);tic;end

@@ -107,6 +107,8 @@ clear A x y dx dz;
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
 rotDetector=geo.rotDetector;
+DSD=geo.DSD;
+DSO=geo.DSO;
 % TODO : Add options for Stopping criteria
 for ii=1:niter
     if (ii==1 && verbose==1);tic;end
