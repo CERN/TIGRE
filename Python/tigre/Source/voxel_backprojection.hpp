@@ -4,6 +4,7 @@
  *
  *
  * CODE by  Ander Biguri
+ *          Optimized and modified by RB
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 Copyright (c) 2015, University of Bath and CERN- European Organization for 
@@ -42,13 +43,12 @@ Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
 
+#include "types_TIGRE.hpp"
+
+
 #ifndef BACKPROJECTION_HPP
 #define BACKPROJECTION_HPP
-
-#include "types.hpp"
-
 void rollPitchYawT(Geometry geo,int i, Point3D* point);
 int voxel_backprojection(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha);
 void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S);
-
 #endif

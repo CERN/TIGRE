@@ -17,7 +17,7 @@ Python/tigre.egg-info/
 Python/dist
 Python/purge.sh
 Python/.idea/
-Python/purge.sh
+Python/devtest.py
 # Object files
 *.o
 *.ko

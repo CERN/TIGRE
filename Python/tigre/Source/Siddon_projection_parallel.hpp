@@ -43,12 +43,16 @@ Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
 
-#ifndef PROJECTION_PARALLEL_HPP_SIDDON
-#define PROJECTION_PARALLEL_HPP_SIDDON
+
+
+
 
 #include "ray_interpolated_projection.hpp"
-#include "types.hpp"
+#include "types_TIGRE.hpp"
 
+
+#ifndef PROJECTION_PARALLEL_HPP_SIDDON
+#define PROJECTION_PARALLEL_HPP_SIDDON
 int siddon_ray_projection_parallel(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
 
 //double computeMaxLength(Geometry geo, double alpha);
