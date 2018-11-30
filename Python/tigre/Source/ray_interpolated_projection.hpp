@@ -4,7 +4,7 @@
  *
  *
  * CODE by       Ander Biguri
- *
+ *               Sepideh Hatamikia (arbitrary rotation)
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 Copyright (c) 2015, University of Bath and CERN- European Organization for 
@@ -43,16 +43,21 @@ Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
 
+
+
+#include "types_TIGRE.hpp"
+
+
+
 #ifndef PROJECTION_HPP
 #define PROJECTION_HPP
 
-#include "types.hpp"
-
 int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
 float computeMaxLength(Geometry geo, float alpha);
-void computeDeltas(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
-void rollPitchYaw(Geometry geo,int i, Point3D* point);
-float maxDistanceCubeXY(Geometry geo, float alpha,int i);
+void computeDeltas(Geometry geo,unsigned int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
+void rollPitchYaw(Geometry geo,unsigned int i, Point3D* point);
+float maxdistanceCuboid(Geometry geo,unsigned int i);
+void eulerZYZ(Geometry geo, Point3D* point);
 
 // below, not used
 Geometry nomralizeGeometryImage(Geometry geo);

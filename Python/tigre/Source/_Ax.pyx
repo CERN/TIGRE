@@ -23,12 +23,16 @@ cdef extern from "ray_interpolated_projection_parallel.hpp":
     cdef int interpolation_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha)
 
 
-def Ax(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=1] angles, krylov="interpolated", mode="cone"):
+def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=2] angles, krylov="interpolated", mode="cone"):
 
-    cdef int total_projections = angles.size
+    cdef int total_projections = angles.shape[0]
 
     # TODO: For now we will just make a new geometry (C) struct from the python one,
     # but this is really ugly and should be changed.
+
+    #PERMUTE INPUT: convert_contig_mode(C_CONTIG) -> F_CONTIG
+    # (N, V, U) -> (U, V, N) 
+    geometry.convert_contig_mode()
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
 
     cdef float** c_projections = <float**> malloc(total_projections * sizeof(float*))
@@ -55,20 +59,33 @@ def Ax(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, 
     else:
         print("Error: Unknown mode, using default cone beam")
         cone_beam = True
-
-    img = img.copy(order='F')
+    #PERMUTE INPUT: (Z, Y, X) -> (X ,Y ,Z)
+    img = img.transpose().copy(order='F')
 
     cdef float* c_img = <float*> img.data
     if cone_beam:
-        if interpolated:
+        if not interpolated:
             siddon_ray_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections)
         else:
             interpolation_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections)
     else:
-        if interpolated:
+        if not interpolated:
             siddon_ray_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections)
         else:
             interpolation_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections)
+    cdef float theta,psi;
+    theta=0;
+    psi=0;
+    for i in range(total_projections):
+        theta+=abs(c_angles[i*3+1])
+        psi  +=abs(c_angles[i*3+2])
+    
+    standard_rotation = True;
+    
+    if psi == 0.0 and theta == 0.0:
+        standard_rotation=True
+    else:
+        standard_rotation=False
 
     img = img.copy(order='C')
 
@@ -85,9 +102,9 @@ def Ax(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, 
 
     free(c_projections)  # Free pointer array, not actual data
     free_c_geometry(c_geometry)
-
-    #TODO: check dstack doesn't cause memory leak, as it seems projections needs multiple free calls
+    geometry.convert_contig_mode()
+    #TODO: check stack doesn't cause memory leak, as it seems projections needs multiple free calls
     # A possible solution is to rewrite SiddonProjection to allow 1d array results
 
-    # Returns V x U x Angles
-    return np.dstack(projections).swapaxes(0,1).copy(order='C')
+    # PERMUTE OUTPUT: (U, V, N) -> (N, V, U)
+    return np.stack(projections,0).swapaxes(1,2).copy(order='C')

@@ -4,7 +4,7 @@
  *
  *
  * CODE by       Ander Biguri
- *
+ *               Sepideh Hatamikia (arbitrary rotation)
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
 Copyright (c) 2015, University of Bath and CERN- European Organization for 
@@ -43,15 +43,20 @@ Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
 
+
+
+
+#include "ray_interpolated_projection.hpp"
+
+#include "types_TIGRE.hpp"
+
+
 #ifndef PROJECTION_PARALLEL_HPP
 #define PROJECTION_PARALLEL_HPP
 
-#include "ray_interpolated_projection.hpp"
-#include "types.hpp"
-
 int interpolation_projection_parallel(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
 // float computeMaxLength(Geometry geo, float alpha);
-void computeDeltas_parallel(Geometry geo, float alpha,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
+void computeDeltas_parallel(Geometry geo, float alpha,unsigned int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 
 // float maxDistanceCubeXY(Geometry geo, float alpha,int i);
 
