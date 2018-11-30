@@ -18,7 +18,7 @@ Python/dist
 Python/purge.sh
 Python/.idea/
 Python/devtest.py
-Python/tigre/demos/.ipynb_checkpoints/
+.ipynb_checkpoints
 # Object files
 *.o
 *.ko
