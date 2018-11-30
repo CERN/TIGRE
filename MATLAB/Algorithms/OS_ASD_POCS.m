@@ -148,6 +148,7 @@ while ~stop_criteria %POCS
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
     geo.rotDetector=rotDetector;
+    geo.DSD=DSD;
     % Save copy of image.
     fres=f;
     % compute L2 error of actual image. Ax-b

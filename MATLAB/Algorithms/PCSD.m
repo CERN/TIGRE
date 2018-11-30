@@ -124,7 +124,8 @@ while ~stop_criteria %POCS
     
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
-    
+    geo.DSD=DSD;
+    geo.rotDetector=rotDetector
     if measurequality
         qualMeasOut(:,iter)=Measure_Quality(f0,f,QualMeasOpts);
     end
