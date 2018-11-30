@@ -157,7 +157,7 @@ __global__ void kernelPixelDetector( Geometry geo,
     // for X
     if( source.x<pixel1D.x){
         imin=(am==axm)? 1             : ceil (source.x+am*ray.x);
-        imax=(aM==axM)? geo.nVoxelX : floor(source.x+aM*ray.x);
+        imax=(aM==axM)? geo.nVoxelX   : floor(source.x+aM*ray.x);
     }else{
         imax=(am==axm)? geo.nVoxelX-1 : floor(source.x+am*ray.x);
         imin=(aM==axM)? 0             : ceil (source.x+aM*ray.x);
@@ -165,7 +165,7 @@ __global__ void kernelPixelDetector( Geometry geo,
     // for Y
     if( source.y<pixel1D.y){
         jmin=(am==aym)? 1             : ceil (source.y+am*ray.y);
-        jmax=(aM==ayM)? geo.nVoxelY : floor(source.y+aM*ray.y);
+        jmax=(aM==ayM)? geo.nVoxelY   : floor(source.y+aM*ray.y);
     }else{
         jmax=(am==aym)? geo.nVoxelY-1 : floor(source.y+am*ray.y);
         jmin=(aM==ayM)? 0             : ceil (source.y+aM*ray.y);
@@ -173,7 +173,7 @@ __global__ void kernelPixelDetector( Geometry geo,
     // for Z
     if( source.z<pixel1D.z){
         kmin=(am==azm)? 1             : ceil (source.z+am*ray.z);
-        kmax=(aM==azM)? geo.nVoxelZ : floor(source.z+aM*ray.z);
+        kmax=(aM==azM)? geo.nVoxelZ   : floor(source.z+aM*ray.z);
     }else{
         kmax=(am==azm)? geo.nVoxelZ-1 : floor(source.z+am*ray.z);
         kmin=(aM==azM)? 0             : ceil (source.z+aM*ray.z);
@@ -238,10 +238,56 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     
     
     
-    //DONE, Tesla found
     
-    // copy data to CUDA memory
+    
+    
+    
+    
+    
+    // Prepare for MultiGPU
+    int deviceCount = 0;
+    gpuErrchk(cudaGetDeviceCount(&deviceCount));
+    if (deviceCount == 0) {
+        mexErrMsgIdAndTxt("Ax:Siddon_projection:GPUselect","There are no available device(s) that support CUDA\n");
+    }
+    //
+    // CODE assumes
+    // 1.-All available devices are usable by this code
+    // 2.-All available devices are equal, they are the same machine (warning trhown)
+    int dev;
+    char * devicenames;
+    cudaDeviceProp deviceProp;
+    
+    for (dev = 0; dev < deviceCount; dev++) {
+        cudaSetDevice(dev);
+        cudaGetDeviceProperties(&deviceProp, dev);
+        if (dev>0){
+            if (strcmp(devicenames,deviceProp.name)!=0){
+                mexWarnMsgIdAndTxt("Ax:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 266.");
+                break;
+            }
+        }
+        devicenames=deviceProp.name;
+    }
+    cudaSetDevice(0);
+    cudaGetDeviceProperties(&deviceProp, 0);
+    unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem*0.9);
+    size_t mem_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ*sizeof(float);
+    size_t mem_proj=geo.nDetecU*geo.nDetecV * sizeof(float);
+    
+    // Does everything fit in the GPUs?
+    bool fits_in_memory=false;
+    if (mem_image+mem_proj<mem_GPU_global){
+        fits_in_memory=true;
+    }
+     else{
+     }
+    
     cudaArray *d_imagedata = 0;
+    for (dev = 0; dev < deviceCount; dev++) {
+        cudaSetDevice(dev);
+    // copy data to CUDA memory
+    
     
     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
@@ -267,7 +313,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     cudaBindTextureToArray(tex, d_imagedata, channelDesc);
     
     cudaCheckErrors("3D texture memory bind fail");
-    
+    }
     
     
     
@@ -335,7 +381,46 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     cudaDeviceReset();
     return 0;
 }
+void CreateTexture(int num_devices, float* imagedata,Geo geo, cudaTextureObject_t *texImage)
+{
+    size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+    for (unsigned int i = 0; i < num_devices; i++){
+        cudaSetDevice(i);        
 
+        //cudaArray Descriptor
+        cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
+        //cuda Array
+        cudaArray *d_cuArr;
+        cudaMalloc3DArray(&d_cuArr, &channelDesc, make_cudaExtent(geo.nVoxelX*sizeof(float),geo.nVoxelY,geo.nVoxelZ), 0);
+        cudaCheckErrors("Texture memory allocation fail");
+        cudaMemcpy3DParms copyParams = {0};
+
+
+        //Array creation
+        copyParams.srcPtr   = make_cudaPitchedPtr((void *)imagedata, geo.nVoxelX*sizeof(float), geo.nVoxelY, geo.nVoxelZ);
+        copyParams.dstArray = d_cuArr;
+        copyParams.extent   = make_cudaExtent(geo.nVoxelX,geo.nVoxelY,geo.nVoxelZ);
+        copyParams.kind     = cudaMemcpyHostToDevice;
+        cudaMemcpy3D(&copyParams);
+        checkCudaErrors("Texture memory data copy fail");
+        //Array creation End
+
+        cudaResourceDesc    texRes;
+        memset(&texRes, 0, sizeof(cudaResourceDesc));
+        texRes.resType = cudaResourceTypeArray;
+        texRes.res.array.array  = d_cuArr;
+        cudaTextureDesc     texDescr;
+        memset(&texDescr, 0, sizeof(cudaTextureDesc));
+        texDescr.normalizedCoords = false;
+        texDescr.filterMode = cudaFilterModePoint;
+        texDescr.addressMode[0] = cudaAddressModeBorder;  
+        texDescr.addressMode[1] = cudaAddressModeBorder;
+        texDescr.addressMode[2] = cudaAddressModeBorder;
+        texDescr.readMode = cudaReadModeElementType;
+        cudaCreateTextureObject(&texImage[i], &texRes, &texDescr, NULL);
+        checkCudaErrors("Texture object creation fail");
+    }
+}
 
 
 /* This code precomputes The location of the source and the Delta U and delta V (in the warped space)
@@ -505,4 +590,6 @@ void eulerZYZ(Geometry geo, Point3D* point){
 
 
 }
+
+
 #endif

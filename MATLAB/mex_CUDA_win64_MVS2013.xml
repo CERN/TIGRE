@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!-- Copyright 2013-2014 The MathWorks, Inc. -->
 <config
     Name="NVIDIA CUDA Compiler"
     ShortName="nvcc"
     Manufacturer="NVIDIA"
-    Version="9.2"
+    Version="9.1"
     Language="CUDA"
     Priority="A"
     Location="$NVCC" >
@@ -28,56 +29,54 @@
     />
     <!-- Switch guide: http://msdn.microsoft.com/en-us/library/fwkeyyhe(v=vs.71).aspx -->
     <vars
-        CMDLINE100="$COMPILER -c $COMPFLAGS $OPTIM $COMPDEFINES $INCLUDE $SRC -o $OBJ"
-        CMDLINE200="$LINKER $LINKFLAGS $LINKTYPE $LINKOPTIM $LINKEXPORT $LINKLIBS $OBJS /out:$EXE"
-        CMDLINE250="mt -outputresource:$EXE;2 -manifest $MANIFEST"
-        CMDLINE300="del $OBJ $EXP $LIB $MANIFEST $ILK"
-        
-        COMPILER="nvcc"
-        COMPFLAGS="-gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=&#92;&quot;sm_50,compute_50&#92;&quot; -gencode arch=compute_52,code=sm_52 --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"
-        COMPDEFINES="--compiler-options=/D_CRT_SECURE_NO_DEPRECATE,/D_SCL_SECURE_NO_DEPRECATE,/D_SECURE_SCL=0,$MATLABMEX"
-        MATLABMEX="/DMATLAB_MEX_FILE"
-        OPTIMFLAGS="--compiler-options=/O2,/Oy-,/DNDEBUG"
-        INCLUDE="-I&quot;$MATLABROOT\extern\include&quot; -I&quot;$MATLABROOT\simulink\include&quot;"
-        DEBUGFLAGS="--compiler-options=/Z7"
-        
-        LINKER="link"
-        LINKFLAGS="/nologo /manifest"
-        LINKTYPE="/DLL "
-        LINKEXPORT="/EXPORT:mexFunction"
-        LINKLIBS="/LIBPATH:&quot;$MATLABROOT\extern\lib\$ARCH\microsoft&quot; libmx.lib libmex.lib libmat.lib gpu.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib  ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib"
-        LINKDEBUGFLAGS="/debug /PDB:&quot;$TEMPNAME$LDEXT.pdb&quot;"
-        LINKOPTIMFLAGS=""
-        OBJEXT=".obj"
-        LDEXT=".mexw64"
-        SETENV="set COMPILER=$COMPILER 
-        set COMPFLAGS=$COMPFLAGS $COMPDEFINES 
-        set OPTIMFLAGS=$OPTIMFLAGS 
-        set DEBUGFLAGS=$DEBUGFLAGS 
-        set LINKER=$LINKER 
-        set LINKFLAGS=$LINKFLAGS /export:%ENTRYPOINT% $LINKTYPE $LINKLIBS $LINKEXPORT 
-        set LINKDEBUGFLAGS=/debug /PDB:&quot;%OUTDIR%%MEX_NAME%$LDEXT.pdb&quot; 
-        set NAME_OUTPUT=/out:&quot;%OUTDIR%%MEX_NAME%%MEX_EXT%&quot;"
+          CMDLINE100="$COMPILER -c $COMPFLAGS $OPTIM $COMPDEFINES $INCLUDE $SRC -o $OBJ"
+          CMDLINE200="$LINKER $LINKFLAGS $LINKTYPE $LINKOPTIM $LINKEXPORT $LINKLIBS $OBJS /out:$EXE"
+          CMDLINE250="mt -outputresource:$EXE;2 -manifest $MANIFEST"
+          CMDLINE300="del $OBJ $EXP $LIB $MANIFEST $ILK"
+          
+          COMPILER="nvcc"
+          COMPFLAGS="-gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=&#92;&quot;sm_50,compute_50&#92;&quot; -gencode arch=compute_52,code=sm_52 --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"
+          COMPDEFINES="--compiler-options=/D_CRT_SECURE_NO_DEPRECATE,/D_SCL_SECURE_NO_DEPRECATE,/D_SECURE_SCL=0,$MATLABMEX"
+          MATLABMEX="/DMATLAB_MEX_FILE"
+          OPTIMFLAGS="--compiler-options=/O2,/Oy-,/DNDEBUG"
+          INCLUDE="-I&quot;$MATLABROOT\extern\include&quot; -I&quot;$MATLABROOT\simulink\include&quot;"
+          DEBUGFLAGS="--compiler-options=/Z7"
+
+          LINKER="link"
+          LINKFLAGS="/nologo /manifest"
+          LINKTYPE="/DLL "
+          LINKEXPORT="/EXPORT:mexFunction"
+          LINKLIBS="/LIBPATH:&quot;$MATLABROOT\extern\lib\$ARCH\microsoft&quot; libmx.lib libmex.lib libmat.lib gpu.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib  ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib"
+          LINKDEBUGFLAGS="/debug /PDB:&quot;$TEMPNAME$LDEXT.pdb&quot;"
+          LINKOPTIMFLAGS=""
+          OBJEXT=".obj"
+          LDEXT=".mexw64"
+          SETENV="set COMPILER=$COMPILER 
+                  set COMPFLAGS=$COMPFLAGS $COMPDEFINES 
+                  set OPTIMFLAGS=$OPTIMFLAGS 
+                  set DEBUGFLAGS=$DEBUGFLAGS 
+                  set LINKER=$LINKER 
+                  set LINKFLAGS=$LINKFLAGS /export:%ENTRYPOINT% $LINKTYPE $LINKLIBS $LINKEXPORT 
+                  set LINKDEBUGFLAGS=/debug /PDB:&quot;%OUTDIR%%MEX_NAME%$LDEXT.pdb&quot; 
+                  set NAME_OUTPUT=/out:&quot;%OUTDIR%%MEX_NAME%%MEX_EXT%&quot;"
     />
     <locationFinder>
         <VSROOT>
             <and>
-                <envVarExists name="VS140COMNTOOLS" />
+                <envVarExists name="VS120COMNTOOLS" />
                 <fileExists name="$$\..\..\VC\bin\amd64\cl.exe" />
                 <dirExists name="$$\..\..\.." />
             </and>
         </VSROOT>
         <SDKROOT>
             <or>
-                <hklmExists name="InstallationFolder" path="SOFTWARE\Microsoft\Microsoft SDKs\Windows\v8.1"/>
-                <hkcuExists name="InstallationFolder" path="SOFTWARE\Microsoft\Microsoft SDKs\Windows\v8.1"/>
-                <hklmExists name="InstallationFolder" path="SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\v8.1"/>
-                <hkcuExists name="InstallationFolder" path="SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\v8.1"/>
+                <hklmExists path="SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A" name="InstallationFolder" />
+                <hkcuExists path="SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A" name="InstallationFolder" />
             </or>
         </SDKROOT>
         <PROF_ENV>
             <and>
-                <envVarExists name="VS140COMNTOOLS" />
+                <envVarExists name="VS120COMNTOOLS" />
                 <fileExists name="$$\..\IDE\devenv.exe" />
                 <not>
                     <fileExists name="$$\..\IDE\VCExpress.exe" />
@@ -86,23 +85,23 @@
         </PROF_ENV>
         <VCVARSALLDIR>
             <and>
-                <envVarExists name="VS140COMNTOOLS" />
+                <envVarExists name="VS120COMNTOOLS" />
                 <fileExists name="$$\..\..\VC\vcvarsall.bat" />
                 <dirExists name="$$"/>
             </and>
         </VCVARSALLDIR>
         <CUDA_LIB_PATH>
             <or>
-                <and>
-                    <envVarExists name="CUDA_LIB_PATH"/>
-                    <fileExists name="$$\cudart.lib" />
-                    <dirExists name="$$" />
-                </and>
-                <and>
-                    <envVarExists name="CUDA_PATH"/>
-                    <fileExists name="$$\lib\x64\cudart.lib" />
-                    <dirExists name="$$" />
-                </and>
+              <and>
+                <envVarExists name="CUDA_LIB_PATH"/>
+                <fileExists name="$$\cudart.lib" />
+                <dirExists name="$$" />
+              </and>
+              <and>
+                <envVarExists name="CUDA_PATH"/>
+                <fileExists name="$$\lib\x64\cudart.lib" />
+                <dirExists name="$$" />
+              </and>
             </or>
         </CUDA_LIB_PATH>
         <CUDA_BIN_PATH>
@@ -123,8 +122,8 @@
                     <dirExists name="$$" />
                 </and>
                 <and>
-                    <fileExists name="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.2\bin\nvcc.exe" />
-                    <dirExists name="$$" />
+                  <fileExists name="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.1\bin\nvcc.exe" />
+                  <dirExists name="$$" />
                 </and>
             </or>
         </CUDA_BIN_PATH>
