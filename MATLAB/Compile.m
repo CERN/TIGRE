@@ -4,7 +4,7 @@
 %
 % IMPORTANT:
 % Due to hardware limitations we
-% have been unable to test in all possible OS an dMATLAB versions.
+% have been unable to test in all possible OS and MATLAB versions.
 % Please, report any issue with compilation in other systems
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
