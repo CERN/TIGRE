@@ -18,6 +18,7 @@ Python/dist
 Python/purge.sh
 Python/.idea/
 Python/devtest.py
+.ipynb_checkpoints
 # Object files
 *.o
 *.ko
