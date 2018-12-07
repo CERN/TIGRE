@@ -24,7 +24,7 @@ class SIRT(IterativeReconAlg):
 
                "SIRT(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem\n"
                "using the projection data PROJ taken over ALPHA angles, corresponding\n"
-               "to the geometry descrived in GEO, using NITER iterations.") + IterativeReconAlg.__doc__
+               "to the geometry descrived in GEO, using NITER iterations.\n") + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
         kwargs.update(dict(blocksize=angles.shape[0]))
@@ -41,7 +41,7 @@ class OS_SART(IterativeReconAlg):
 
                "OS_SART(PROJ,GEO,ALPHA,NITER,BLOCKSIZE=20) solves the reconstruction problem\n"
                "using the projection data PROJ taken over ALPHA angles, corresponding\n"
-               "to the geometry descrived in GEO, using NITER iterations.") + IterativeReconAlg.__doc__
+               "to the geometry descrived in GEO, using NITER iterations.\n") + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
         IterativeReconAlg.__init__(self,proj, geo, angles, niter, **kwargs)

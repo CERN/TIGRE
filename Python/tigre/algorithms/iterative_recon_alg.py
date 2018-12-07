@@ -6,8 +6,7 @@ from tigre.utilities.order_subsets import order_subsets
 from tigre.utilities.init_multigrid import init_multigrid
 from tigre.utilities.Measure_Quality import Measure_Quality as MQ
 from tigre.utilities.im3Dnorm import im3DNORM
-from tigre.algorithms.FDK import FDK
-import copy
+from tigre.algorithms.fdk_algorithm import FDK
 import time
 import copy
 
@@ -63,13 +62,11 @@ class IterativeReconAlg(Regularisation, DataMinimization):
         Feedback print statements for algorithm progress
         default=True
 
-    :keyword QualMeas: (list)
+    :keyword Quameasopts: (list)
         Asks the algorithm for a set of quality measurement
         parameters. Input should contain a list or tuple of strings of
-        quality measurement names. These will be computed in each iteration.
-        Example:
-          ["CC","RMSE","MSSIM"]
-
+        quality measurement names. Examples:
+            RMSE, CC, UQI, MSSIM
 
     :keyword OrderStrategy : (str)
         Chooses the subset ordering strategy. Options are:
@@ -90,19 +87,23 @@ class IterativeReconAlg(Regularisation, DataMinimization):
         self.geo = geo
         self.niter = niter
 
-        options = dict(blocksize=20, lmbda=1, lmbda_red=0.99, OrderStrategy=None, Quameasopts=None, init=None,
-                       verbose=True, noneg=True, computel2=False, dataminimizing='default_data_minimizing')
+        options = dict(blocksize=20, lmbda=1, lmbda_red=0.99,
+                       OrderStrategy=None, Quameasopts=None,
+                       init=None,verbose=True, noneg=True,
+                       computel2=False, dataminimizing='art_data_minimizing',
+                       regularisation='minimizeTV')
+        allowed_keywords = ['V','W','log_parameters','angleblocks','angle_index']
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
         for kw in kwargs.keys():
-            if not options.has_key(kw):
+            if not options.has_key(kw) and (kw not in allowed_keywords):
                 if self.verbose:
                     # Note: might not want this warning (typo checking).
                     print("Warning: " + kw + " not recognised as default parameter for instance of IterativeReconAlg.")
         if self.angles.ndim == 1:
             a1 = self.angles
-            a2 = np.zeros(self.angles.shape[0],dtype=np.float32)
-            setattr(self,'angles',np.vstack((a1,a2,a2)).T)
+            a2 = np.zeros(self.angles.shape[0], dtype=np.float32)
+            setattr(self, 'angles', np.vstack((a1, a2, a2)).T)
         if not hasattr(self, 'W'):
             self.set_w()
         if not hasattr(self, 'V'):
@@ -111,6 +112,8 @@ class IterativeReconAlg(Regularisation, DataMinimization):
             self.set_res()
         if not all([hasattr(self, 'angleindex'), hasattr(self, 'angleblocks')]):
             self.set_angle_index()
+        setattr(self, 'lq', [])  # quameasoptslist
+        setattr(self, 'l2l', [])  # l2list
 
     def set_w(self):
         """
@@ -201,14 +204,11 @@ class IterativeReconAlg(Regularisation, DataMinimization):
         :return: None
         """
         Quameasopts = self.Quameasopts
-        computel2 = self.computel2
 
         for i in range(self.niter):
+            res_prev = None
             if Quameasopts is not None:
-                res_prev = self.res
-                setattr(self, 'lq', [])
-            if computel2:
-                setattr(self, 'l2l', [])
+                res_prev = copy.deepcopy(self.res)
             if self.verbose:
                 if i == 0:
                     print("Algorithm in progress.")
@@ -217,50 +217,21 @@ class IterativeReconAlg(Regularisation, DataMinimization):
                     tic = time.clock()
                     print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()
-            if Quameasopts is not None:
-                self.lq.append(MQ(self.res, res_prev, Quameasopts))
-            if computel2:
-                # compute l2 borm for b-Ax
+            self.error_measurement(res_prev, i)
 
-                errornow = im3DNORM(self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel'), 2)
-                self.l2l.append(errornow)
-
-        setattr(self, 'prev_geo_config', copy.deepcopy(self.geo.__dict__))
-        setattr(self, 'prev_angles', copy.deepcopy(self.angles))
-        setattr(self, 'prev_niter', copy.deepcopy(self.niter))
+    def error_measurement(self, res_prev, iter):
+        if self.Quameasopts is not None and iter > 0:
+            self.lq.append(MQ(self.res, res_prev, self.Quameasopts))
+        if self.computel2:
+            # compute l2 borm for b-Ax
+            errornow = im3DNORM(self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel'), 2)
+            self.l2l.append(errornow)
 
     def getres(self):
-        """
-        Checks if the main iteration has been performed
-        on the given configuration. If it hasn't it calls
-        run_main_iter() and returns the required result.
+        return self.res
 
-        :return res: (np.ndarray, dtype=np.float32)
-        Result of performing the main iteration fo the algorithm.
-
-        if :keyword Quameasopts is not none:
-            :return res, lq: (np.ndarray, list)
-                where lq is the result of tigre.utilities.MQ for
-                every iteration
-
-        if :keyword computel2:
-            :return res, l2l: (np.ndarray, list)
-                where l2l is the result of computing the l2 norm
-                for every iteration.
-        """
-        prev_config = ['prev_angles', 'prev_niter', 'prev_geo_config']
-        if all([hasattr(self, attrib) for attrib in prev_config]):
-            if all([self.geo.issame(self.prev_geo_config), (self.angles == self.prev_angles).all(),
-                    self.niter == self.prev_niter]):
-                pass
-        else:
-            self.run_main_iter()
-        if self.computel2:
-            return self.res, self.l2l
-        if self.Quameasopts is not None:
-            return self.res, self.lq
-        else:
-            return self.res
+    def getl2(self):
+        return self.l2l
 
 
 def decorator(IterativeReconAlg, name=None, docstring=None):
@@ -276,7 +247,11 @@ def decorator(IterativeReconAlg, name=None, docstring=None):
 
     def iterativereconalg(proj, geo, angles, niter, **kwargs):
         alg = IterativeReconAlg(proj, geo, angles, niter, **kwargs)
-        return alg.getres()
+        alg.run_main_iter()
+        if alg.computel2:
+            return alg.getres(), alg.getl2()
+        else:
+            return alg.getres()
 
     if docstring is not None:
         setattr(iterativereconalg, '__doc__', docstring + IterativeReconAlg.__doc__)

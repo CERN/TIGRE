@@ -2,17 +2,19 @@ from __future__ import print_function
 import tigre
 import numpy as np
 import tigre.demos.Test_data.data_loader as data_loader
-from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
+from tigre.algorithms.cgls_algorithm import CGLS
+from tigre.algorithms.pocs_algorithms import ASD_POCS
+from tigre.algorithms.art_family_algorithms import SART
 from matplotlib import pyplot as plt
 import tigre
+import tigre.algorithms as algs
 from tigre.Ax import Ax
 
 # ---------------GEOMETRY---------------------------
 
 geo = tigre.geometry_default(high_quality=False)
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
-geo.mode = 'cone'
-print(source_img.shape)
+geo.mode = 'parallel'
 # ---------------------ANGLES-------------------------
 
 angles_1 = np.linspace(0, 2 * np.pi, 100, dtype=np.float32)
@@ -24,16 +26,18 @@ angles = np.vstack((angles_1, angles_3, angles_3)).T
 proj_1 = Ax(source_img, geo, angles, 'interpolated')
 
 # --------------------BACK PROJECTION ----------------
-alg = IterativeReconAlg(proj_1,geo,angles,2,**dict(verbose=False))
-alg.run_main_iter()
-sart = alg.getres()
-#sart = tigre.algorithms.iterativereconalg(proj_1, geo, angles, 5)
-#sart = tigre.algorithms.iterativereconalg(proj_1,geo,angles,niter=5, **dict(blocksize= 1))
+#alg = ASD_POCS(proj_1,geo,angles,2,**dict(verbose=False))
+#geo.check_geo(angles)
+res = algs.fbp(proj_1,geo,angles)
+#res = algs.ossart(proj_1,geo,angles,15,**dict(blocksize=12))
 
 
-#fdk = FDK(proj_1,geo,angles)
-
-# ---------------PLOTS-------------------------------
-plt.matshow(sart[32])
+# ---------------PLOTS------------------------------
+"""
+plt.matshow(abs(new_head[32] - source_img[32]))
+plt.colorbar()
 plt.show()
-
+"""
+plt.matshow(res[32])
+plt.colorbar()
+plt.show()

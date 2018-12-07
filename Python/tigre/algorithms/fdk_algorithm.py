@@ -2,13 +2,10 @@ from __future__ import division
 from __future__ import print_function
 import os
 import sys
-import math
 import numpy as np
 import copy
-from tigre.Ax import Ax
 from tigre.Atb import Atb
 from tigre.utilities.filtering import filtering
-import scipy.io
 
 # TODO: this is quite nasty; it would be nice to reorganise file structure later so top level folder is always in path
 currDir = os.path.dirname(os.path.realpath(__file__))
@@ -16,7 +13,8 @@ rootDir = os.path.abspath(os.path.join(currDir, '..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
-def FDK(proj, geo, angles,filter=None):
+
+def FDK(proj, geo, angles, filter=None,verbose=False):
     ('\n'
      'FDK solves Cone Beam CT image reconstruction'
      '\n'
@@ -58,26 +56,27 @@ def FDK(proj, geo, angles,filter=None):
     geo = copy.deepcopy(geo)
     geo.check_geo(angles)
     if filter is not None:
-        geo.filter=filter
+        geo.filter = filter
     # Weight
-    proj_filt = np.zeros(proj.shape,dtype=np.float32)
+    proj_filt = np.zeros(proj.shape, dtype=np.float32)
     for ii in range(angles.shape[0]):
-        xv=np.arange((-geo.nDetector[1]/2)+0.5, 1+(geo.nDetector[1]/2)-0.5)*geo.dDetector[1]
-        yv=np.arange((-geo.nDetector[0]/2)+0.5, 1+(geo.nDetector[0]/2)-0.5)*geo.dDetector[0]
+        xv = np.arange((-geo.nDetector[1] / 2) + 0.5, 1 + (geo.nDetector[1] / 2) - 0.5) * geo.dDetector[1]
+        yv = np.arange((-geo.nDetector[0] / 2) + 0.5, 1 + (geo.nDetector[0] / 2) - 0.5) * geo.dDetector[0]
         (xx, yy) = np.meshgrid(xv, yv)
 
-        w = geo.DSD[0]/np.sqrt((geo.DSD[0] ** 2 + xx ** 2 + yy ** 2))
-        proj_filt[ii] = proj[ii]*w
+        w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx ** 2 + yy ** 2))
+        proj_filt[ii] = proj[ii] * w
 
-
-    proj_filt=filtering(proj_filt,geo,angles,parker=False)
+    proj_filt = filtering(proj_filt, geo, angles, parker=False,verbose=verbose)
     # m = {
     #     'py_projfilt': proj_filt,
     #
     # }
     # scipy.io.savemat('Tests/Filter_data', m)
-    res = Atb(proj_filt,geo,geo.angles,'FDK')
-    #res = 0
-   # res = Atb(proj,geo,angles,'FDK')
+    res = Atb(proj_filt, geo, geo.angles, 'FDK')
+    # res = 0
+    # res = Atb(proj,geo,angles,'FDK')
     return res
 
+
+fdk = FDK

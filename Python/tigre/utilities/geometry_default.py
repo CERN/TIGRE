@@ -38,17 +38,17 @@ class TIGREParameters(geometry):
             self.dDetector = np.array((0.8, 0.8))*4             # size of each pixel            (mm)
             self.sDetector = self.nDetector * self.dDetector    # total size of the detector    (mm)
             # Image parameters
-            self.nVoxel = np.array((63, 62 , 61))               # number of voxels              (vx)
+            self.nVoxel = np.array((64, 64 , 64))               # number of voxels              (vx)
             self.sVoxel = np.array((256, 256, 256))             # total size of the image       (mm)
             self.dVoxel = self.sVoxel / self.nVoxel             # size of each voxel            (mm)
             # Offsets
             self.offOrigin = np.array((0, 0, 0))                # Offset of image from origin   (mm)
             self.offDetector = np.array((0, 0))                 # Offset of Detector            (mm)
-
+            self.rotDetector = np.array((0,0,0))
             # Auxiliary
             self.accuracy = 0.5                                 # Accuracy of FWD proj          (vx/sample)
             # Mode
-            self.mode=None                                      # parallel, cone                ...
+            self.mode='cone'                                    # parallel, cone                ...
             self.filter=None
     def __str__(self):
         parameters = []
