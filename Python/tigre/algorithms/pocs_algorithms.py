@@ -70,3 +70,14 @@ class ASD_POCS(IterativeReconAlg):
 
 
 asd_pocs = decorator(ASD_POCS,name='asd_pocs')
+
+class AwASD_POCS(ASD_POCS):
+    __doc__ = ASD_POCS.__doc__
+
+    def __init__(self,proj,geo,angles,niter,**kwargs):
+        kwargs.update(dict(regularisation = 'minimizeAwTV'))
+        if not kwargs.has_key('delta'):
+            self.delta = -0.005
+        ASD_POCS.__init__(self,proj,geo,angles,niter,**kwargs)
+
+

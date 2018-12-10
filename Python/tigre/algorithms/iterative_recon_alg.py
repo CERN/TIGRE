@@ -92,7 +92,7 @@ class IterativeReconAlg(Regularisation, DataMinimization):
                        init=None,verbose=True, noneg=True,
                        computel2=False, dataminimizing='art_data_minimizing',
                        regularisation='minimizeTV')
-        allowed_keywords = ['V','W','log_parameters','angleblocks','angle_index']
+        allowed_keywords = ['V','W','log_parameters','angleblocks','angle_index','delta']
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
         for kw in kwargs.keys():

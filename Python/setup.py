@@ -196,7 +196,21 @@ minTV_ext = Extension('_minTV',
                                          'nvcc': ['-arch=sm_21', '--ptxas-options=-v', '-c',
                                                   '--compiler-options', "'-fPIC'"]},
                     include_dirs=[numpy_include, CUDA['include'], 'Source'])
-
+AwminTV_ext = Extension('_AwminTV',
+                    sources=(['tigre/Source/POCS_TV2.cu',
+                              'tigre/Source/_types.pxd',
+                              'tigre/Source/_AwminTV.pyx']),
+                    library_dirs=[CUDA[lib_string]],
+                    libraries=['cudart'],
+                    language='c++',
+                    runtime_library_dirs=[CUDA[lib_string]],
+                    # this syntax is specific to this build system
+                    # we're only going to use certain compiler args with nvcc and not with gcc
+                    # the implementation of this trick is in customize_compiler() below
+                    extra_compile_args={'gcc': [],
+                                         'nvcc': ['-arch=sm_21', '--ptxas-options=-v', '-c',
+                                                  '--compiler-options', "'-fPIC'"]},
+                    include_dirs=[numpy_include, CUDA['include'], 'Source'])
 # run the customize_compiler
 class custom_build_ext(build_ext):
     def build_extensions(self):
@@ -205,11 +219,11 @@ class custom_build_ext(build_ext):
 
 
 setup(name='tigre',
-      version = '0.0.2',
+      version = '0.1.0',
       author = 'Reuben Lindroos, Sam loescher',
       packages = find_packages(),
       include_package_data=True,
-      ext_modules=[Ax_ext, Atb_ext,tvdenoising_ext,minTV_ext],
+      ext_modules=[Ax_ext, Atb_ext,tvdenoising_ext,minTV_ext, AwminTV_ext],
       setup_requires = setup_requires,
       install_requires = install_requires,
 
