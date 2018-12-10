@@ -27,7 +27,11 @@ Donwload: [https://github.com/CERN/TIGRE/releases][7]
 
 **NEWS**
 
-The first version of python-TIGRE is here! 
+TIGRE-python version 0.1.0 released for use. Changes have been made to the architecture to make it more modular. 
+As well as this, style follows the formal python format more closely; classes are either all upper case or
+SemiUpperCase. Functions, such as the algorithms, are lowercase and are extensions of the umbrella class
+IterativeReconAlg. Demos have been updated for this format and can be launched from the ipython console. More detailed
+instructions will follow as progress continues towards making a more stable and modular TIGRE-python.
 
 
 **TIGRE features**:
@@ -51,18 +55,18 @@ The first version of python-TIGRE is here!
 
 (Tested on Linux 64 machines, please [report any 
 issue][2] if it doesnt work in other arch/OS)
- 
-   - install conda2 or miniconda2 if you havent already done so.
-   
+
    - Install  CUDA Toolkit (the later, the better)
      Download [here][1]
-     or install using conda command: 
-
-       > conda install -c numba cudatoolkit=8.0 (or later version)
-     
-   - Install TIGRE using the conda command: 
-
-       > conda install -c tigretoolbox tigre
+   - Clone the repo by:  
+      > git clone https://github.com/CERN/TIGRE.git
+   - Change directory 
+      > cd TIGRE/Python/ 
+   - and run the setup file:  
+      > python setup.py install
+   - python may need permission to install to certain directories, 
+   in which case do:
+      > sudo --preserve-env python setup.py install
 
 If it doesn't work
 

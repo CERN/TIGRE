@@ -10,6 +10,15 @@ so.*
 *.pdb
 
 ## C ignore
+*.pyc
+## python build files
+Python/build
+Python/tigre.egg-info/
+Python/dist
+Python/purge.sh
+Python/.idea/
+Python/devtest.py
+.ipynb_checkpoints
 # Object files
 *.o
 *.ko
