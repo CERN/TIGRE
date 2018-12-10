@@ -163,8 +163,7 @@ while ~stop_criteria %POCS
     % Save copy of image.
     fres=f;
     % compute L2 error of actual image. Ax-b
-    g=Ax(f,geo,angles);
-    dd=im3Dnorm(g-proj(:,:,index_angles),'L2');
+    dd=im3Dnorm(Ax(f,geo,angles)-proj,'L2');
     % compute change in the image after last SART iteration
     dp_vec=(f-f0);
     dp=im3Dnorm(dp_vec,'L2');

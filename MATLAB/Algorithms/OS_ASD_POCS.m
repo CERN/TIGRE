@@ -149,11 +149,11 @@ while ~stop_criteria %POCS
     geo.offOrigin=offOrigin;
     geo.rotDetector=rotDetector;
     geo.DSD=DSD;
+    geo.DSO=DSO;
     % Save copy of image.
     fres=f;
     % compute L2 error of actual image. Ax-b
-    g=Ax(f,geo,angles);
-    dd=im3Dnorm(g-proj,'L2');
+    dd=im3Dnorm(gAx(f,geo,angles)-proj,'L2');
     % compute change in the image after last SART iteration
     dp_vec=(f-f0);
     dp=im3Dnorm(dp_vec,'L2');

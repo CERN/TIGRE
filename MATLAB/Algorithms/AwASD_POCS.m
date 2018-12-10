@@ -142,14 +142,14 @@ while ~stop_criteria %POCS
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
     geo.DSD=DSD;
+    geo.DSO=DSO;
     geo.rotDetector=rotDetector;
     if measurequality
         qualMeasOut(:,iter)=Measure_Quality(f0,f,QualMeasOpts);
     end
     
     % compute L2 error of actual image. Ax-b
-    g=Ax(f,geo,angles);
-    dd=im3Dnorm(g-proj(:,:,index_angles),'L2');
+    dd=im3Dnorm(Ax(f,geo,angles)-proj,'L2');
     % compute change in the image after last SART iteration
     dp_vec=(f-f0);
     dp=im3Dnorm(dp_vec,'L2');

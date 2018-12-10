@@ -154,8 +154,7 @@ while ~stop_criteria %POCS
     end
     
     % Compute L2 error of actual image. Ax-b
-    g=Ax(f,geo,angles);
-    dd=im3Dnorm(g-proj,'L2');
+    dd=im3Dnorm(Ax(f,geo,angles)-proj,'L2');
     
     
     %Compute errorSART
