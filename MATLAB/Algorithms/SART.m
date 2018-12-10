@@ -177,6 +177,8 @@ for ii=1:niter
     if computeL2 || nesterov
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
+        geo.DSD=DSD;
+        geo.rotDetector=rotDetector;
         errornow=im3Dnorm(proj-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
         %         If the error is not minimized.
         if  ii~=1 && errornow>errorL2(end)

@@ -107,6 +107,8 @@ clear A x y dx dz;
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
 rotDetector=geo.rotDetector;
+DSD=geo.DSD;
+DSO=geo.DSO;
 % TODO : Add options for Stopping criteria
 for ii=1:niter
     if (ii==1 && verbose==1);tic;end
@@ -158,6 +160,8 @@ for ii=1:niter
     if computeL2
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
+        geo.DSD=DSD;
+        geo.rotDetector=rotDetector;
         errornow=im3Dnorm(proj(:,:,index_angles)-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
         % If the error is not minimized.
         if  ii~=1 && errornow>errorL2(end)

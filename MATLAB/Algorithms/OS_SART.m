@@ -204,6 +204,8 @@ for ii=1:niter
         % Compute error norm2 of b-Ax
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
+        geo.DSD=DSD;
+        geo.rotDetector=rotDetector;
         errornow=im3Dnorm(proj-Ax(res,geo,angles,'ray-voxel'),'L2');
         %     If the error is not minimized
         if ii~=1 && errornow>errorL2(end) % This 1.1 is for multigrid, we need to focus to only that case

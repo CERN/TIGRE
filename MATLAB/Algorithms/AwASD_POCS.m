@@ -111,7 +111,8 @@ iter=0;
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
 rotDetector=geo.rotDetector;
-
+DSD=geo.DSD;
+DSO=geo.DSO;
 
 while ~stop_criteria %POCS
     f0=f;
@@ -140,7 +141,8 @@ while ~stop_criteria %POCS
     
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
-    
+    geo.DSD=DSD;
+    geo.rotDetector=rotDetector;
     if measurequality
         qualMeasOut(:,iter)=Measure_Quality(f0,f,QualMeasOpts);
     end
