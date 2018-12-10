@@ -157,7 +157,7 @@ for ii=1:niter
             res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(:,jj))),geo,angles(:,jj)));
         end
         if nonneg
-            res(res<0)=0;
+            res=max(res,0);
         end
     end
     
