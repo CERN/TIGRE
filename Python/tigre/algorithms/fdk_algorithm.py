@@ -1,5 +1,6 @@
 from __future__ import division
 from __future__ import print_function
+from __future__ import absolute_import
 import os
 import sys
 import numpy as np
@@ -12,8 +13,6 @@ currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-
-
 def FDK(proj, geo, angles, filter=None,verbose=False):
     ('\n'
      'FDK solves Cone Beam CT image reconstruction'

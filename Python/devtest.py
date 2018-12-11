@@ -26,9 +26,9 @@ angles = np.vstack((angles_1, angles_3, angles_3)).T
 proj_1 = Ax(source_img, geo, angles, 'interpolated')
 
 # --------------------BACK PROJECTION ----------------
-res = algs.awasd_pocs(proj_1,geo,angles,10,**dict(blocksize=20))
+#res = algs.awasd_pocs(proj_1,geo,angles,10,**dict(blocksize=20))
 #res = algs.ossart(proj_1,geo,angles,15,**dict(blocksize=12))
-
+tigre.demos.test()
 
 # ---------------PLOTS------------------------------
 """
@@ -36,6 +36,3 @@ plt.matshow(abs(new_head[32] - source_img[32]))
 plt.colorbar()
 plt.show()
 """
-plt.matshow(res[32])
-plt.colorbar()
-plt.show()
