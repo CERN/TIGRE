@@ -77,7 +77,7 @@ class AwASD_POCS(ASD_POCS):
     def __init__(self,proj,geo,angles,niter,**kwargs):
         kwargs.update(dict(regularisation = 'minimizeAwTV'))
         if not kwargs.has_key('delta'):
-            self.delta = -0.005
+            self.delta = np.array([-0.005],dtype=np.float32)[0]
         ASD_POCS.__init__(self,proj,geo,angles,niter,**kwargs)
 
-
+awasd_pocs = decorator(AwASD_POCS,name='awasd_pocs')

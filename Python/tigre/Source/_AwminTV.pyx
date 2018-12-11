@@ -28,13 +28,13 @@ cdef extern from "numpy/arrayobject.h":
 cdef extern from "POCS_TV2.hpp":
     cdef void aw_pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter, float delta)
 
-def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100, float delta=0.0):
+def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100, float delta=-0.005):
 
     
     cdef np.npy_intp size_img[3]
-    size_img[2]= <np.npy_intp> src.shape[0]
+    size_img[0]= <np.npy_intp> src.shape[0]
     size_img[1]= <np.npy_intp> src.shape[1]
-    size_img[0]= <np.npy_intp> src.shape[2]
+    size_img[2]= <np.npy_intp> src.shape[2]
 
     cdef float* c_imgout = <float*> malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float))
 

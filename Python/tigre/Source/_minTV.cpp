@@ -1777,32 +1777,32 @@ static PyObject *__pyx_pf_6_minTV_minTV(CYTHON_UNUSED PyObject *__pyx_self, PyAr
   /* "_minTV.pyx":35
  * 
  *     cdef np.npy_intp size_img[3]
- *     size_img[2]= <np.npy_intp> src.shape[0]             # <<<<<<<<<<<<<<
+ *     size_img[0]= <np.npy_intp> src.shape[0]             # <<<<<<<<<<<<<<
  *     size_img[1]= <np.npy_intp> src.shape[1]
- *     size_img[0]= <np.npy_intp> src.shape[2]
+ *     size_img[2]= <np.npy_intp> src.shape[2]
  */
-  (__pyx_v_size_img[2]) = ((npy_intp)(__pyx_v_src->dimensions[0]));
+  (__pyx_v_size_img[0]) = ((npy_intp)(__pyx_v_src->dimensions[0]));
 
   /* "_minTV.pyx":36
  *     cdef np.npy_intp size_img[3]
- *     size_img[2]= <np.npy_intp> src.shape[0]
+ *     size_img[0]= <np.npy_intp> src.shape[0]
  *     size_img[1]= <np.npy_intp> src.shape[1]             # <<<<<<<<<<<<<<
- *     size_img[0]= <np.npy_intp> src.shape[2]
+ *     size_img[2]= <np.npy_intp> src.shape[2]
  * 
  */
   (__pyx_v_size_img[1]) = ((npy_intp)(__pyx_v_src->dimensions[1]));
 
   /* "_minTV.pyx":37
- *     size_img[2]= <np.npy_intp> src.shape[0]
+ *     size_img[0]= <np.npy_intp> src.shape[0]
  *     size_img[1]= <np.npy_intp> src.shape[1]
- *     size_img[0]= <np.npy_intp> src.shape[2]             # <<<<<<<<<<<<<<
+ *     size_img[2]= <np.npy_intp> src.shape[2]             # <<<<<<<<<<<<<<
  * 
  *     cdef float* c_imgout = <float*> malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float))
  */
-  (__pyx_v_size_img[0]) = ((npy_intp)(__pyx_v_src->dimensions[2]));
+  (__pyx_v_size_img[2]) = ((npy_intp)(__pyx_v_src->dimensions[2]));
 
   /* "_minTV.pyx":39
- *     size_img[0]= <np.npy_intp> src.shape[2]
+ *     size_img[2]= <np.npy_intp> src.shape[2]
  * 
  *     cdef float* c_imgout = <float*> malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float))             # <<<<<<<<<<<<<<
  * 

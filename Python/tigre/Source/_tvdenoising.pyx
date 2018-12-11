@@ -32,9 +32,9 @@ def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lam
 
     
     cdef np.npy_intp size_img[3]
-    size_img[2]= <np.npy_intp> src.shape[0]
+    size_img[0]= <np.npy_intp> src.shape[0]
     size_img[1]= <np.npy_intp> src.shape[1]
-    size_img[0]= <np.npy_intp> src.shape[2]
+    size_img[2]= <np.npy_intp> src.shape[2]
 
     cdef float* c_imgout = <float*> malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float))
 
@@ -55,4 +55,4 @@ def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lam
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
     PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)
 
-    return imgout.transpose()
+    return imgout

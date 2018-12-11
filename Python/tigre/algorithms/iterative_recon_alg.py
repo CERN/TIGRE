@@ -159,9 +159,8 @@ class IterativeReconAlg(Regularisation, DataMinimization):
             setattr(self, 'V', V)
 
         else:
-            V = np.ones([self.angles.shape[0], geo.nVoxel[1], geo.nVoxel[0]], dtype=np.float32)
-
-        setattr(self, 'V', V)
+            V = np.ones([ geo.nVoxel[1], geo.nVoxel[2], self.angles.shape[0]], dtype=np.float32)
+            setattr(self, 'V', V)
 
     def set_res(self):
         """

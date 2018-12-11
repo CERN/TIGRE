@@ -62,8 +62,8 @@ Codes  : https://github.com/CERN/TIGRE
 do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
-                printf("ERROR in: %s \n",msg);\
-                printf("err",cudaGetErrorString(__err));\
+                printf("%s \n",msg);\
+                printf("CBCT:CUDA:POCS_TV2",cudaGetErrorString(__err));\
         } \
 } while (0)
     

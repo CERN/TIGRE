@@ -1658,7 +1658,7 @@ static PyObject *__pyx_codeobj__11;
 /* "_AwminTV.pyx":31
  *     cdef void aw_pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter, float delta)
  * 
- * def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100, float delta=0.0):             # <<<<<<<<<<<<<<
+ * def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100, float delta=-0.005):             # <<<<<<<<<<<<<<
  * 
  * 
  */
@@ -1746,7 +1746,7 @@ static PyObject *__pyx_pw_8_AwminTV_1AwminTV(PyObject *__pyx_self, PyObject *__p
     if (values[3]) {
       __pyx_v_delta = __pyx_PyFloat_AsFloat(values[3]); if (unlikely((__pyx_v_delta == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 31, __pyx_L3_error)
     } else {
-      __pyx_v_delta = ((float)0.0);
+      __pyx_v_delta = ((float)-0.005);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
@@ -1795,32 +1795,32 @@ static PyObject *__pyx_pf_8_AwminTV_AwminTV(CYTHON_UNUSED PyObject *__pyx_self, 
   /* "_AwminTV.pyx":35
  * 
  *     cdef np.npy_intp size_img[3]
- *     size_img[2]= <np.npy_intp> src.shape[0]             # <<<<<<<<<<<<<<
+ *     size_img[0]= <np.npy_intp> src.shape[0]             # <<<<<<<<<<<<<<
  *     size_img[1]= <np.npy_intp> src.shape[1]
- *     size_img[0]= <np.npy_intp> src.shape[2]
+ *     size_img[2]= <np.npy_intp> src.shape[2]
  */
-  (__pyx_v_size_img[2]) = ((npy_intp)(__pyx_v_src->dimensions[0]));
+  (__pyx_v_size_img[0]) = ((npy_intp)(__pyx_v_src->dimensions[0]));
 
   /* "_AwminTV.pyx":36
  *     cdef np.npy_intp size_img[3]
- *     size_img[2]= <np.npy_intp> src.shape[0]
+ *     size_img[0]= <np.npy_intp> src.shape[0]
  *     size_img[1]= <np.npy_intp> src.shape[1]             # <<<<<<<<<<<<<<
- *     size_img[0]= <np.npy_intp> src.shape[2]
+ *     size_img[2]= <np.npy_intp> src.shape[2]
  * 
  */
   (__pyx_v_size_img[1]) = ((npy_intp)(__pyx_v_src->dimensions[1]));
 
   /* "_AwminTV.pyx":37
- *     size_img[2]= <np.npy_intp> src.shape[0]
+ *     size_img[0]= <np.npy_intp> src.shape[0]
  *     size_img[1]= <np.npy_intp> src.shape[1]
- *     size_img[0]= <np.npy_intp> src.shape[2]             # <<<<<<<<<<<<<<
+ *     size_img[2]= <np.npy_intp> src.shape[2]             # <<<<<<<<<<<<<<
  * 
  *     cdef float* c_imgout = <float*> malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float))
  */
-  (__pyx_v_size_img[0]) = ((npy_intp)(__pyx_v_src->dimensions[2]));
+  (__pyx_v_size_img[2]) = ((npy_intp)(__pyx_v_src->dimensions[2]));
 
   /* "_AwminTV.pyx":39
- *     size_img[0]= <np.npy_intp> src.shape[2]
+ *     size_img[2]= <np.npy_intp> src.shape[2]
  * 
  *     cdef float* c_imgout = <float*> malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float))             # <<<<<<<<<<<<<<
  * 
@@ -1917,7 +1917,7 @@ static PyObject *__pyx_pf_8_AwminTV_AwminTV(CYTHON_UNUSED PyObject *__pyx_self, 
   /* "_AwminTV.pyx":31
  *     cdef void aw_pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter, float delta)
  * 
- * def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100, float delta=0.0):             # <<<<<<<<<<<<<<
+ * def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100, float delta=-0.005):             # <<<<<<<<<<<<<<
  * 
  * 
  */
@@ -4589,7 +4589,7 @@ static int __Pyx_InitCachedConstants(void) {
   /* "_AwminTV.pyx":31
  *     cdef void aw_pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter, float delta)
  * 
- * def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100, float delta=0.0):             # <<<<<<<<<<<<<<
+ * def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100, float delta=-0.005):             # <<<<<<<<<<<<<<
  * 
  * 
  */
@@ -4888,7 +4888,7 @@ if (!__Pyx_RefNanny) {
   /* "_AwminTV.pyx":31
  *     cdef void aw_pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter, float delta)
  * 
- * def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100, float delta=0.0):             # <<<<<<<<<<<<<<
+ * def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100, float delta=-0.005):             # <<<<<<<<<<<<<<
  * 
  * 
  */

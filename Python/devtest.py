@@ -14,7 +14,7 @@ from tigre.Ax import Ax
 
 geo = tigre.geometry_default(high_quality=False)
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
-geo.mode = 'parallel'
+geo.mode = 'cone'
 # ---------------------ANGLES-------------------------
 
 angles_1 = np.linspace(0, 2 * np.pi, 100, dtype=np.float32)
@@ -26,9 +26,7 @@ angles = np.vstack((angles_1, angles_3, angles_3)).T
 proj_1 = Ax(source_img, geo, angles, 'interpolated')
 
 # --------------------BACK PROJECTION ----------------
-#alg = ASD_POCS(proj_1,geo,angles,2,**dict(verbose=False))
-#geo.check_geo(angles)
-res = algs.fbp(proj_1,geo,angles)
+res = algs.awasd_pocs(proj_1,geo,angles,10,**dict(blocksize=20))
 #res = algs.ossart(proj_1,geo,angles,15,**dict(blocksize=12))
 
 
