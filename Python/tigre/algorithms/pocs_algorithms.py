@@ -2,7 +2,7 @@ from __future__ import division
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.utilities.im3Dnorm import im3DNORM
-from tigre.algorithms.fdk_algorithm import FDK
+from tigre.algorithms.single_pass_algorithms import FDK
 from tigre.Ax import Ax
 import time
 import copy

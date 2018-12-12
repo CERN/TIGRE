@@ -1,17 +1,75 @@
 import numpy as np
 from tigre.Ax import Ax
-from tigre.algorithms.data_minimization import DataMinimization
-from tigre.algorithms.regularisation import Regularisation
+from tigre.Atb import Atb
 from tigre.utilities.order_subsets import order_subsets
 from tigre.utilities.init_multigrid import init_multigrid
 from tigre.utilities.Measure_Quality import Measure_Quality as MQ
 from tigre.utilities.im3Dnorm import im3DNORM
-from tigre.algorithms.fdk_algorithm import FDK
+from tigre.algorithms.single_pass_algorithms import FDK
+from _minTV import minTV
+from _AwminTV import AwminTV
 import time
 import copy
-
+"""
+This module is where the umbrella class IterativeReconAlg is located
+which is the umbrella class to all the other algorithms apart from 
+the single pass type algorithms. 
+"""
 
 # coding: utf8
+class DataMinimization(object):
+    """
+    Class to used to define the methods used in run_main_iter in IterativeReconAlg.
+    """
+    def art_data_minimizing(self):
+        """
+        VERBOSE:
+        for j in range(angleblocks):
+            angle = np.array([alpha[j]], dtype=np.float32)
+            proj_err = proj[angle_index[j]] - Ax(res, geo, angle, 'ray-voxel')
+            weighted_err = W[angle_index[j]] * proj_err
+            backprj = Atb(weighted_err, geo, angle, 'FDK')
+            weighted_backprj = 1 / V[angle_index[j]] * backprj
+            res += weighted_backprj
+            res[res<0]=0
+
+        :return: None
+        """
+        geo = copy.deepcopy(self.geo)
+        for j in range(len(self.angleblocks)):
+            if self.blocksize == 1:
+                angle = np.array([self.angleblocks[j]], dtype=np.float32)
+            else:
+                angle = self.angleblocks[j]
+            if geo.offOrigin.shape[0] ==self.angles.shape[0]:
+               geo.offOrigin = self.geo.offOrigin[j]
+            if geo.offDetector.shape[0] == self.angles.shape[0]:
+                geo.offOrin = self.geo.offDetector[j]
+            if geo.rotDetector.shape[0] ==self.angles.shape[0]:
+                geo.rotDetector=self.geo.rotDetector[j]
+            if hasattr(geo.DSD,'shape'):
+                if geo.DSD.shape[0] ==self.angles.shape[0]:
+                    geo.DSD = self.geo.DSD[j]
+            if hasattr(geo.DSO,'shape'):
+                if geo.DSO.shape[0] ==self.angles.shape[0]:
+                    geo.DSO = self.geo.DSO[j]
+            self.res += self.lmbda * 1/self.third_dim_sum(self.V[:,:,self.angle_index[j]]) * Atb(self.W[self.angle_index[j]] * (self.proj[self.angle_index[j]]
+                                     - Ax(self.res, geo, angle, 'interpolated')),geo, angle, 'FDK')
+
+    def third_dim_sum(self,V):
+        if V.ndim == 3:
+            return np.sum(V, axis=2, dtype=np.float32)
+        else:
+            return V
+
+class Regularisation(object):
+
+    def minimizeTV(self,res_prev,dtvg):
+        return minTV(res_prev,dtvg,self.numiter_tv)
+
+    def minimizeAwTV(self,res_prev,dtvg):
+        return AwminTV(res_prev,dtvg,self.numiter_tv,self.delta)
+
 
 class IterativeReconAlg(Regularisation, DataMinimization):
     """
@@ -235,6 +293,8 @@ class IterativeReconAlg(Regularisation, DataMinimization):
 
 def decorator(IterativeReconAlg, name=None, docstring=None):
     """
+    Calls run_main_iter when parameters are given to it.
+
     :param IterativeReconAlg: obj, class
         instance of IterativeReconAlg
     :param name: str
@@ -242,6 +302,18 @@ def decorator(IterativeReconAlg, name=None, docstring=None):
     :param docstring: str
         other documentation that may need to be included from external source.
     :return: func
+
+    Examples
+    --------
+    import tigre
+    from tigre.demos.Test_data.data_loader import load_head_phantom
+    geo = tigre.geometry_defaut(high_quality=False)
+    src = load_head_phantom(number_of_voxels=geo.nVoxel)
+    proj = Ax(src,geo,angles)
+    angles = np.linspace(0,2*np.pi,100)
+    iterativereconalg = decorator(IterativeReconAlg)
+    output = iterativereconalg(proj,geo,angles, niter=50)
+
     """
 
     def iterativereconalg(proj, geo, angles, niter, **kwargs):

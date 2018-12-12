@@ -2,7 +2,7 @@ from __future__ import print_function
 import tigre
 import numpy as np
 import tigre.demos.Test_data.data_loader as data_loader
-from tigre.algorithms.cgls_algorithm import CGLS
+from tigre.algorithms.congruent_gradient_algorithms import CGLS
 from tigre.algorithms.pocs_algorithms import ASD_POCS
 from tigre.algorithms.art_family_algorithms import SART
 from matplotlib import pyplot as plt
@@ -28,7 +28,8 @@ proj_1 = Ax(source_img, geo, angles, 'interpolated')
 # --------------------BACK PROJECTION ----------------
 #res = algs.awasd_pocs(proj_1,geo,angles,10,**dict(blocksize=20))
 #res = algs.ossart(proj_1,geo,angles,15,**dict(blocksize=12))
-tigre.demos.test()
+from tigre.demos.__test import test
+test()
 
 # ---------------PLOTS------------------------------
 """

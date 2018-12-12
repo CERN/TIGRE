@@ -79,3 +79,14 @@ def FDK(proj, geo, angles, filter=None,verbose=False):
 
 
 fdk = FDK
+
+def fbp(proj,geo,angles,filter=None,verbose=False):
+    if geo.mode != 'parallel':
+        raise ValueError("Only use FBP for parallel beam. Check geo.mode.")
+    geox = copy.deepcopy(geo)
+    geox.check_geo(angles)
+    proj_filt = filtering(proj,geox,angles,parker=False,verbose=verbose)
+
+    res = Atb(proj_filt,geo,angles)*geo.DSO/geo.DSD
+
+    return res

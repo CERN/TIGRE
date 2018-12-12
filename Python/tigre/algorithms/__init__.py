@@ -3,8 +3,9 @@ from .art_family_algorithms import sart
 from .art_family_algorithms import sirt
 from .art_family_algorithms import ossart
 from .iterative_recon_alg import iterativereconalg
-from .fdk_algorithm import FDK
+from .single_pass_algorithms import FDK
 from .pocs_algorithms import asd_pocs
 from .pocs_algorithms import awasd_pocs
-from .fbp_algorithm import fbp
-from .cgls_algorithm import cgls
+from .single_pass_algorithms import fbp
+from .single_pass_algorithms import fdk
+from .congruent_gradient_algorithms import cgls
