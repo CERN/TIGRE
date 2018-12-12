@@ -4,6 +4,7 @@ import tigre
 from tigre.Ax import Ax
 import numpy as np
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
+import tigre.algorithms as algs
 class AlgorithmsTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -37,6 +38,12 @@ class AlgorithmsTestCase(unittest.TestCase):
                               tuple(self.geo.nVoxel))
     def test_shape_ossart(self):
         self.assertTupleEqual(tigre.algorithms.sirt(self.proj,self.geo,self.angles,niter=1).shape,
+                              tuple(self.geo.nVoxel))
+    def test_shape_asdpocs(self):
+        self.assertTupleEqual(algs.asd_pocs(self.proj,self.geo,self.angles,niter=1).shape,
+                              tuple(self.geo.nVoxel))
+    def test_shape_awasdpocs(self):
+        self.assertTupleEqual(algs.awasd_pocs(self.proj,self.geo,self.angles,niter=1).shape,
                               tuple(self.geo.nVoxel))
 if __name__=='__main__':
         unittest.main()

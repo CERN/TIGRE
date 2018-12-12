@@ -573,15 +573,15 @@ static CYTHON_INLINE float __PYX_NAN() {
   #endif
 #endif
 
-#define __PYX_HAVE___tvdenoising
-#define __PYX_HAVE_API___tvdenoising
+#define __PYX_HAVE___minTV
+#define __PYX_HAVE_API___minTV
 /* Early includes */
 #include <string.h>
 #include <stdio.h>
 #include "numpy/arrayobject.h"
 #include "numpy/ufuncobject.h"
 #include <stdlib.h>
-#include "tvdenoising.hpp"
+#include "POCS_TV.hpp"
 #ifdef _OPENMP
 #include <omp.h>
 #endif /* _OPENMP */
@@ -807,7 +807,7 @@ static const char *__pyx_filename;
 
 
 static const char *__pyx_f[] = {
-  "tigre/Source/_tvdenoising.pyx",
+  "tigre/Source/_minTV.pyx",
   "__init__.pxd",
   "type.pxd",
 };
@@ -1566,13 +1566,13 @@ static CYTHON_INLINE int __pyx_f_5numpy_import_array(void); /*proto*/
 
 /* Module declarations from 'libc.stdlib' */
 
-/* Module declarations from '_tvdenoising' */
+/* Module declarations from '_minTV' */
 static __Pyx_TypeInfo __Pyx_TypeInfo_nn___pyx_t_5numpy_float32_t = { "float32_t", NULL, sizeof(__pyx_t_5numpy_float32_t), { 0 }, 0, 'R', 0, 0 };
-#define __Pyx_MODULE_NAME "_tvdenoising"
-extern int __pyx_module_is_main__tvdenoising;
-int __pyx_module_is_main__tvdenoising = 0;
+#define __Pyx_MODULE_NAME "_minTV"
+extern int __pyx_module_is_main__minTV;
+int __pyx_module_is_main__minTV = 0;
 
-/* Implementation of '_tvdenoising' */
+/* Implementation of '_minTV' */
 static PyObject *__pyx_builtin_ValueError;
 static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_RuntimeError;
@@ -1581,26 +1581,25 @@ static const char __pyx_k_np[] = "np";
 static const char __pyx_k_src[] = "src";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_test[] = "__test__";
+static const char __pyx_k_alpha[] = "alpha";
 static const char __pyx_k_c_src[] = "c_src";
-static const char __pyx_k_lamda[] = "lamda";
+static const char __pyx_k_minTV[] = "minTV";
 static const char __pyx_k_numpy[] = "numpy";
 static const char __pyx_k_range[] = "range";
 static const char __pyx_k_imgout[] = "imgout";
 static const char __pyx_k_import[] = "__import__";
 static const char __pyx_k_imgsize[] = "imgsize";
 static const char __pyx_k_maxiter[] = "maxiter";
-static const char __pyx_k_spacing[] = "spacing";
+static const char __pyx_k_minTV_2[] = "_minTV";
 static const char __pyx_k_c_imgout[] = "c_imgout";
 static const char __pyx_k_size_img[] = "size_img";
 static const char __pyx_k_c_maxiter[] = "c_maxiter";
-static const char __pyx_k_tvdenoise[] = "tvdenoise";
 static const char __pyx_k_ValueError[] = "ValueError";
 static const char __pyx_k_ImportError[] = "ImportError";
-static const char __pyx_k_tvdenoising[] = "_tvdenoising";
 static const char __pyx_k_RuntimeError[] = "RuntimeError";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
+static const char __pyx_k_tigre_Source__minTV_pyx[] = "tigre/Source/_minTV.pyx";
 static const char __pyx_k_ndarray_is_not_C_contiguous[] = "ndarray is not C contiguous";
-static const char __pyx_k_tigre_Source__tvdenoising_pyx[] = "tigre/Source/_tvdenoising.pyx";
 static const char __pyx_k_numpy_core_multiarray_failed_to[] = "numpy.core.multiarray failed to import";
 static const char __pyx_k_unknown_dtype_code_in_numpy_pxd[] = "unknown dtype code in numpy.pxd (%d)";
 static const char __pyx_k_Format_string_allocated_too_shor[] = "Format string allocated too short, see comment in numpy.pxd";
@@ -1614,6 +1613,7 @@ static PyObject *__pyx_n_s_ImportError;
 static PyObject *__pyx_kp_u_Non_native_byte_order_not_suppor;
 static PyObject *__pyx_n_s_RuntimeError;
 static PyObject *__pyx_n_s_ValueError;
+static PyObject *__pyx_n_s_alpha;
 static PyObject *__pyx_n_s_c_imgout;
 static PyObject *__pyx_n_s_c_maxiter;
 static PyObject *__pyx_n_s_c_src;
@@ -1621,9 +1621,10 @@ static PyObject *__pyx_n_s_cline_in_traceback;
 static PyObject *__pyx_n_s_imgout;
 static PyObject *__pyx_n_s_imgsize;
 static PyObject *__pyx_n_s_import;
-static PyObject *__pyx_n_s_lamda;
 static PyObject *__pyx_n_s_main;
 static PyObject *__pyx_n_s_maxiter;
+static PyObject *__pyx_n_s_minTV;
+static PyObject *__pyx_n_s_minTV_2;
 static PyObject *__pyx_kp_u_ndarray_is_not_C_contiguous;
 static PyObject *__pyx_kp_u_ndarray_is_not_Fortran_contiguou;
 static PyObject *__pyx_n_s_np;
@@ -1632,14 +1633,11 @@ static PyObject *__pyx_kp_s_numpy_core_multiarray_failed_to;
 static PyObject *__pyx_kp_s_numpy_core_umath_failed_to_impor;
 static PyObject *__pyx_n_s_range;
 static PyObject *__pyx_n_s_size_img;
-static PyObject *__pyx_n_s_spacing;
 static PyObject *__pyx_n_s_src;
 static PyObject *__pyx_n_s_test;
-static PyObject *__pyx_kp_s_tigre_Source__tvdenoising_pyx;
-static PyObject *__pyx_n_s_tvdenoise;
-static PyObject *__pyx_n_s_tvdenoising;
+static PyObject *__pyx_kp_s_tigre_Source__minTV_pyx;
 static PyObject *__pyx_kp_u_unknown_dtype_code_in_numpy_pxd;
-static PyObject *__pyx_pf_12_tvdenoising_tvdenoise(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_src, int __pyx_v_maxiter, float __pyx_v_lamda); /* proto */
+static PyObject *__pyx_pf_6_minTV_minTV(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_src, float __pyx_v_alpha, int __pyx_v_maxiter); /* proto */
 static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info); /* proto */
 static PyObject *__pyx_tuple_;
@@ -1655,26 +1653,26 @@ static PyObject *__pyx_tuple__10;
 static PyObject *__pyx_codeobj__11;
 /* Late includes */
 
-/* "_tvdenoising.pyx":31
- *     cdef void tvdenoising(float* src, float* dst, float lamda, float* spacing, long* image_size, int maxiter)
+/* "_minTV.pyx":31
+ *     cdef void pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter)
  * 
- * def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lamda = 15.0):             # <<<<<<<<<<<<<<
+ * def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100):             # <<<<<<<<<<<<<<
  * 
  * 
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_12_tvdenoising_1tvdenoise(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyMethodDef __pyx_mdef_12_tvdenoising_1tvdenoise = {"tvdenoise", (PyCFunction)__pyx_pw_12_tvdenoising_1tvdenoise, METH_VARARGS|METH_KEYWORDS, 0};
-static PyObject *__pyx_pw_12_tvdenoising_1tvdenoise(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_6_minTV_1minTV(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_6_minTV_1minTV = {"minTV", (PyCFunction)__pyx_pw_6_minTV_1minTV, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_6_minTV_1minTV(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyArrayObject *__pyx_v_src = 0;
+  float __pyx_v_alpha;
   int __pyx_v_maxiter;
-  float __pyx_v_lamda;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("tvdenoise (wrapper)", 0);
+  __Pyx_RefNannySetupContext("minTV (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_src,&__pyx_n_s_maxiter,&__pyx_n_s_lamda,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_src,&__pyx_n_s_alpha,&__pyx_n_s_maxiter,0};
     PyObject* values[3] = {0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
@@ -1697,18 +1695,18 @@ static PyObject *__pyx_pw_12_tvdenoising_1tvdenoise(PyObject *__pyx_self, PyObje
         CYTHON_FALLTHROUGH;
         case  1:
         if (kw_args > 0) {
-          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_maxiter);
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_alpha);
           if (value) { values[1] = value; kw_args--; }
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (kw_args > 0) {
-          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_lamda);
+          PyObject* value = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_maxiter);
           if (value) { values[2] = value; kw_args--; }
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "tvdenoise") < 0)) __PYX_ERR(0, 31, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "minTV") < 0)) __PYX_ERR(0, 31, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -1723,26 +1721,26 @@ static PyObject *__pyx_pw_12_tvdenoising_1tvdenoise(PyObject *__pyx_self, PyObje
     }
     __pyx_v_src = ((PyArrayObject *)values[0]);
     if (values[1]) {
-      __pyx_v_maxiter = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_maxiter == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 31, __pyx_L3_error)
+      __pyx_v_alpha = __pyx_PyFloat_AsFloat(values[1]); if (unlikely((__pyx_v_alpha == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 31, __pyx_L3_error)
     } else {
-      __pyx_v_maxiter = ((int)0x64);
+      __pyx_v_alpha = ((float)15.0);
     }
     if (values[2]) {
-      __pyx_v_lamda = __pyx_PyFloat_AsFloat(values[2]); if (unlikely((__pyx_v_lamda == (float)-1) && PyErr_Occurred())) __PYX_ERR(0, 31, __pyx_L3_error)
+      __pyx_v_maxiter = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_maxiter == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 31, __pyx_L3_error)
     } else {
-      __pyx_v_lamda = ((float)15.0);
+      __pyx_v_maxiter = ((int)0x64);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("tvdenoise", 0, 1, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 31, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("minTV", 0, 1, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 31, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("_tvdenoising.tvdenoise", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("_minTV.minTV", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_src), __pyx_ptype_5numpy_ndarray, 1, "src", 0))) __PYX_ERR(0, 31, __pyx_L1_error)
-  __pyx_r = __pyx_pf_12_tvdenoising_tvdenoise(__pyx_self, __pyx_v_src, __pyx_v_maxiter, __pyx_v_lamda);
+  __pyx_r = __pyx_pf_6_minTV_minTV(__pyx_self, __pyx_v_src, __pyx_v_alpha, __pyx_v_maxiter);
 
   /* function exit code */
   goto __pyx_L0;
@@ -1753,10 +1751,9 @@ static PyObject *__pyx_pw_12_tvdenoising_1tvdenoise(PyObject *__pyx_self, PyObje
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_12_tvdenoising_tvdenoise(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_src, int __pyx_v_maxiter, float __pyx_v_lamda) {
+static PyObject *__pyx_pf_6_minTV_minTV(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_src, float __pyx_v_alpha, int __pyx_v_maxiter) {
   npy_intp __pyx_v_size_img[3];
   float *__pyx_v_c_imgout;
-  float __pyx_v_spacing[3];
   long __pyx_v_imgsize[3];
   float *__pyx_v_c_src;
   npy_intp __pyx_v_c_maxiter;
@@ -1766,7 +1763,7 @@ static PyObject *__pyx_pf_12_tvdenoising_tvdenoise(CYTHON_UNUSED PyObject *__pyx
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
-  __Pyx_RefNannySetupContext("tvdenoise", 0);
+  __Pyx_RefNannySetupContext("minTV", 0);
   __pyx_pybuffer_src.pybuffer.buf = NULL;
   __pyx_pybuffer_src.refcount = 0;
   __pyx_pybuffernd_src.data = NULL;
@@ -1777,7 +1774,7 @@ static PyObject *__pyx_pf_12_tvdenoising_tvdenoise(CYTHON_UNUSED PyObject *__pyx
   }
   __pyx_pybuffernd_src.diminfo[0].strides = __pyx_pybuffernd_src.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_src.diminfo[0].shape = __pyx_pybuffernd_src.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_src.diminfo[1].strides = __pyx_pybuffernd_src.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_src.diminfo[1].shape = __pyx_pybuffernd_src.rcbuffer->pybuffer.shape[1]; __pyx_pybuffernd_src.diminfo[2].strides = __pyx_pybuffernd_src.rcbuffer->pybuffer.strides[2]; __pyx_pybuffernd_src.diminfo[2].shape = __pyx_pybuffernd_src.rcbuffer->pybuffer.shape[2];
 
-  /* "_tvdenoising.pyx":35
+  /* "_minTV.pyx":35
  * 
  *     cdef np.npy_intp size_img[3]
  *     size_img[0]= <np.npy_intp> src.shape[0]             # <<<<<<<<<<<<<<
@@ -1786,7 +1783,7 @@ static PyObject *__pyx_pf_12_tvdenoising_tvdenoise(CYTHON_UNUSED PyObject *__pyx
  */
   (__pyx_v_size_img[0]) = ((npy_intp)(__pyx_v_src->dimensions[0]));
 
-  /* "_tvdenoising.pyx":36
+  /* "_minTV.pyx":36
  *     cdef np.npy_intp size_img[3]
  *     size_img[0]= <np.npy_intp> src.shape[0]
  *     size_img[1]= <np.npy_intp> src.shape[1]             # <<<<<<<<<<<<<<
@@ -1795,7 +1792,7 @@ static PyObject *__pyx_pf_12_tvdenoising_tvdenoise(CYTHON_UNUSED PyObject *__pyx
  */
   (__pyx_v_size_img[1]) = ((npy_intp)(__pyx_v_src->dimensions[1]));
 
-  /* "_tvdenoising.pyx":37
+  /* "_minTV.pyx":37
  *     size_img[0]= <np.npy_intp> src.shape[0]
  *     size_img[1]= <np.npy_intp> src.shape[1]
  *     size_img[2]= <np.npy_intp> src.shape[2]             # <<<<<<<<<<<<<<
@@ -1804,43 +1801,16 @@ static PyObject *__pyx_pf_12_tvdenoising_tvdenoise(CYTHON_UNUSED PyObject *__pyx
  */
   (__pyx_v_size_img[2]) = ((npy_intp)(__pyx_v_src->dimensions[2]));
 
-  /* "_tvdenoising.pyx":39
+  /* "_minTV.pyx":39
  *     size_img[2]= <np.npy_intp> src.shape[2]
  * 
  *     cdef float* c_imgout = <float*> malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float))             # <<<<<<<<<<<<<<
  * 
- *     cdef float spacing[3]
+ *     cdef long imgsize[3]
  */
   __pyx_v_c_imgout = ((float *)malloc(((((__pyx_v_size_img[0]) * (__pyx_v_size_img[1])) * (__pyx_v_size_img[2])) * (sizeof(float)))));
 
-  /* "_tvdenoising.pyx":42
- * 
- *     cdef float spacing[3]
- *     spacing[0]=<float> 1             # <<<<<<<<<<<<<<
- *     spacing[1]=<float> 1
- *     spacing[2]=<float> 1
- */
-  (__pyx_v_spacing[0]) = ((float)1);
-
-  /* "_tvdenoising.pyx":43
- *     cdef float spacing[3]
- *     spacing[0]=<float> 1
- *     spacing[1]=<float> 1             # <<<<<<<<<<<<<<
- *     spacing[2]=<float> 1
- * 
- */
-  (__pyx_v_spacing[1]) = ((float)1);
-
-  /* "_tvdenoising.pyx":44
- *     spacing[0]=<float> 1
- *     spacing[1]=<float> 1
- *     spacing[2]=<float> 1             # <<<<<<<<<<<<<<
- * 
- *     cdef long imgsize[3]
- */
-  (__pyx_v_spacing[2]) = ((float)1);
-
-  /* "_tvdenoising.pyx":47
+  /* "_minTV.pyx":42
  * 
  *     cdef long imgsize[3]
  *     imgsize[0] = <long> size_img[0]             # <<<<<<<<<<<<<<
@@ -1849,7 +1819,7 @@ static PyObject *__pyx_pf_12_tvdenoising_tvdenoise(CYTHON_UNUSED PyObject *__pyx
  */
   (__pyx_v_imgsize[0]) = ((long)(__pyx_v_size_img[0]));
 
-  /* "_tvdenoising.pyx":48
+  /* "_minTV.pyx":43
  *     cdef long imgsize[3]
  *     imgsize[0] = <long> size_img[0]
  *     imgsize[1] = <long> size_img[1]             # <<<<<<<<<<<<<<
@@ -1858,7 +1828,7 @@ static PyObject *__pyx_pf_12_tvdenoising_tvdenoise(CYTHON_UNUSED PyObject *__pyx
  */
   (__pyx_v_imgsize[1]) = ((long)(__pyx_v_size_img[1]));
 
-  /* "_tvdenoising.pyx":49
+  /* "_minTV.pyx":44
  *     imgsize[0] = <long> size_img[0]
  *     imgsize[1] = <long> size_img[1]
  *     imgsize[2] = <long> size_img[2]             # <<<<<<<<<<<<<<
@@ -1867,56 +1837,56 @@ static PyObject *__pyx_pf_12_tvdenoising_tvdenoise(CYTHON_UNUSED PyObject *__pyx
  */
   (__pyx_v_imgsize[2]) = ((long)(__pyx_v_size_img[2]));
 
-  /* "_tvdenoising.pyx":51
+  /* "_minTV.pyx":46
  *     imgsize[2] = <long> size_img[2]
  * 
  *     cdef float* c_src = <float*> src.data             # <<<<<<<<<<<<<<
  *     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
- *     tvdenoising(c_src, c_imgout, lamda, spacing, imgsize, c_maxiter)
+ *     pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter)
  */
   __pyx_v_c_src = ((float *)__pyx_v_src->data);
 
-  /* "_tvdenoising.pyx":52
+  /* "_minTV.pyx":47
  * 
  *     cdef float* c_src = <float*> src.data
  *     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter             # <<<<<<<<<<<<<<
- *     tvdenoising(c_src, c_imgout, lamda, spacing, imgsize, c_maxiter)
- * 
+ *     pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter)
+ *     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
  */
   __pyx_v_c_maxiter = ((npy_intp)__pyx_v_maxiter);
 
-  /* "_tvdenoising.pyx":53
+  /* "_minTV.pyx":48
  *     cdef float* c_src = <float*> src.data
  *     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
- *     tvdenoising(c_src, c_imgout, lamda, spacing, imgsize, c_maxiter)             # <<<<<<<<<<<<<<
- * 
+ *     pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter)             # <<<<<<<<<<<<<<
  *     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
+ *     PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)
  */
-  tvdenoising(__pyx_v_c_src, __pyx_v_c_imgout, __pyx_v_lamda, __pyx_v_spacing, __pyx_v_imgsize, __pyx_v_c_maxiter);
+  pocs_tv(__pyx_v_c_src, __pyx_v_c_imgout, __pyx_v_alpha, __pyx_v_imgsize, __pyx_v_c_maxiter);
 
-  /* "_tvdenoising.pyx":55
- *     tvdenoising(c_src, c_imgout, lamda, spacing, imgsize, c_maxiter)
- * 
+  /* "_minTV.pyx":49
+ *     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
+ *     pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter)
  *     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)             # <<<<<<<<<<<<<<
  *     PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)
  * 
  */
-  __pyx_t_1 = PyArray_SimpleNewFromData(3, __pyx_v_size_img, NPY_FLOAT32, __pyx_v_c_imgout); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __pyx_t_1 = PyArray_SimpleNewFromData(3, __pyx_v_size_img, NPY_FLOAT32, __pyx_v_c_imgout); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 49, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_imgout = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "_tvdenoising.pyx":56
- * 
+  /* "_minTV.pyx":50
+ *     pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter)
  *     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
  *     PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)             # <<<<<<<<<<<<<<
  * 
  *     return imgout
  */
-  if (!(likely(((__pyx_v_imgout) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_imgout, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 56, __pyx_L1_error)
+  if (!(likely(((__pyx_v_imgout) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_imgout, __pyx_ptype_5numpy_ndarray))))) __PYX_ERR(0, 50, __pyx_L1_error)
   PyArray_ENABLEFLAGS(((PyArrayObject *)__pyx_v_imgout), NPY_OWNDATA);
 
-  /* "_tvdenoising.pyx":58
+  /* "_minTV.pyx":52
  *     PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)
  * 
  *     return imgout             # <<<<<<<<<<<<<<
@@ -1926,10 +1896,10 @@ static PyObject *__pyx_pf_12_tvdenoising_tvdenoise(CYTHON_UNUSED PyObject *__pyx
   __pyx_r = __pyx_v_imgout;
   goto __pyx_L0;
 
-  /* "_tvdenoising.pyx":31
- *     cdef void tvdenoising(float* src, float* dst, float lamda, float* spacing, long* image_size, int maxiter)
+  /* "_minTV.pyx":31
+ *     cdef void pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter)
  * 
- * def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lamda = 15.0):             # <<<<<<<<<<<<<<
+ * def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100):             # <<<<<<<<<<<<<<
  * 
  * 
  */
@@ -1943,7 +1913,7 @@ static PyObject *__pyx_pf_12_tvdenoising_tvdenoise(CYTHON_UNUSED PyObject *__pyx
     __Pyx_ErrFetch(&__pyx_type, &__pyx_value, &__pyx_tb);
     __Pyx_SafeReleaseBuffer(&__pyx_pybuffernd_src.rcbuffer->pybuffer);
   __Pyx_ErrRestore(__pyx_type, __pyx_value, __pyx_tb);}
-  __Pyx_AddTraceback("_tvdenoising.tvdenoise", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("_minTV.minTV", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   goto __pyx_L2;
   __pyx_L0:;
@@ -4424,17 +4394,17 @@ static PyMethodDef __pyx_methods[] = {
 #if PY_MAJOR_VERSION >= 3
 #if CYTHON_PEP489_MULTI_PHASE_INIT
 static PyObject* __pyx_pymod_create(PyObject *spec, PyModuleDef *def); /*proto*/
-static int __pyx_pymod_exec__tvdenoising(PyObject* module); /*proto*/
+static int __pyx_pymod_exec__minTV(PyObject* module); /*proto*/
 static PyModuleDef_Slot __pyx_moduledef_slots[] = {
   {Py_mod_create, (void*)__pyx_pymod_create},
-  {Py_mod_exec, (void*)__pyx_pymod_exec__tvdenoising},
+  {Py_mod_exec, (void*)__pyx_pymod_exec__minTV},
   {0, NULL}
 };
 #endif
 
 static struct PyModuleDef __pyx_moduledef = {
     PyModuleDef_HEAD_INIT,
-    "_tvdenoising",
+    "_minTV",
     0, /* m_doc */
   #if CYTHON_PEP489_MULTI_PHASE_INIT
     0, /* m_size */
@@ -4460,6 +4430,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_u_Non_native_byte_order_not_suppor, __pyx_k_Non_native_byte_order_not_suppor, sizeof(__pyx_k_Non_native_byte_order_not_suppor), 0, 1, 0, 0},
   {&__pyx_n_s_RuntimeError, __pyx_k_RuntimeError, sizeof(__pyx_k_RuntimeError), 0, 0, 1, 1},
   {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
+  {&__pyx_n_s_alpha, __pyx_k_alpha, sizeof(__pyx_k_alpha), 0, 0, 1, 1},
   {&__pyx_n_s_c_imgout, __pyx_k_c_imgout, sizeof(__pyx_k_c_imgout), 0, 0, 1, 1},
   {&__pyx_n_s_c_maxiter, __pyx_k_c_maxiter, sizeof(__pyx_k_c_maxiter), 0, 0, 1, 1},
   {&__pyx_n_s_c_src, __pyx_k_c_src, sizeof(__pyx_k_c_src), 0, 0, 1, 1},
@@ -4467,9 +4438,10 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_imgout, __pyx_k_imgout, sizeof(__pyx_k_imgout), 0, 0, 1, 1},
   {&__pyx_n_s_imgsize, __pyx_k_imgsize, sizeof(__pyx_k_imgsize), 0, 0, 1, 1},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
-  {&__pyx_n_s_lamda, __pyx_k_lamda, sizeof(__pyx_k_lamda), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
   {&__pyx_n_s_maxiter, __pyx_k_maxiter, sizeof(__pyx_k_maxiter), 0, 0, 1, 1},
+  {&__pyx_n_s_minTV, __pyx_k_minTV, sizeof(__pyx_k_minTV), 0, 0, 1, 1},
+  {&__pyx_n_s_minTV_2, __pyx_k_minTV_2, sizeof(__pyx_k_minTV_2), 0, 0, 1, 1},
   {&__pyx_kp_u_ndarray_is_not_C_contiguous, __pyx_k_ndarray_is_not_C_contiguous, sizeof(__pyx_k_ndarray_is_not_C_contiguous), 0, 1, 0, 0},
   {&__pyx_kp_u_ndarray_is_not_Fortran_contiguou, __pyx_k_ndarray_is_not_Fortran_contiguou, sizeof(__pyx_k_ndarray_is_not_Fortran_contiguou), 0, 1, 0, 0},
   {&__pyx_n_s_np, __pyx_k_np, sizeof(__pyx_k_np), 0, 0, 1, 1},
@@ -4478,12 +4450,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_s_numpy_core_umath_failed_to_impor, __pyx_k_numpy_core_umath_failed_to_impor, sizeof(__pyx_k_numpy_core_umath_failed_to_impor), 0, 0, 1, 0},
   {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
   {&__pyx_n_s_size_img, __pyx_k_size_img, sizeof(__pyx_k_size_img), 0, 0, 1, 1},
-  {&__pyx_n_s_spacing, __pyx_k_spacing, sizeof(__pyx_k_spacing), 0, 0, 1, 1},
   {&__pyx_n_s_src, __pyx_k_src, sizeof(__pyx_k_src), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
-  {&__pyx_kp_s_tigre_Source__tvdenoising_pyx, __pyx_k_tigre_Source__tvdenoising_pyx, sizeof(__pyx_k_tigre_Source__tvdenoising_pyx), 0, 0, 1, 0},
-  {&__pyx_n_s_tvdenoise, __pyx_k_tvdenoise, sizeof(__pyx_k_tvdenoise), 0, 0, 1, 1},
-  {&__pyx_n_s_tvdenoising, __pyx_k_tvdenoising, sizeof(__pyx_k_tvdenoising), 0, 0, 1, 1},
+  {&__pyx_kp_s_tigre_Source__minTV_pyx, __pyx_k_tigre_Source__minTV_pyx, sizeof(__pyx_k_tigre_Source__minTV_pyx), 0, 0, 1, 0},
   {&__pyx_kp_u_unknown_dtype_code_in_numpy_pxd, __pyx_k_unknown_dtype_code_in_numpy_pxd, sizeof(__pyx_k_unknown_dtype_code_in_numpy_pxd), 0, 1, 0, 0},
   {0, 0, 0, 0, 0, 0, 0}
 };
@@ -4598,17 +4567,17 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__9);
   __Pyx_GIVEREF(__pyx_tuple__9);
 
-  /* "_tvdenoising.pyx":31
- *     cdef void tvdenoising(float* src, float* dst, float lamda, float* spacing, long* image_size, int maxiter)
+  /* "_minTV.pyx":31
+ *     cdef void pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter)
  * 
- * def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lamda = 15.0):             # <<<<<<<<<<<<<<
+ * def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100):             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_tuple__10 = PyTuple_Pack(10, __pyx_n_s_src, __pyx_n_s_maxiter, __pyx_n_s_lamda, __pyx_n_s_size_img, __pyx_n_s_c_imgout, __pyx_n_s_spacing, __pyx_n_s_imgsize, __pyx_n_s_c_src, __pyx_n_s_c_maxiter, __pyx_n_s_imgout); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_tuple__10 = PyTuple_Pack(9, __pyx_n_s_src, __pyx_n_s_alpha, __pyx_n_s_maxiter, __pyx_n_s_size_img, __pyx_n_s_c_imgout, __pyx_n_s_imgsize, __pyx_n_s_c_src, __pyx_n_s_c_maxiter, __pyx_n_s_imgout); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__10);
   __Pyx_GIVEREF(__pyx_tuple__10);
-  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(3, 0, 10, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tigre_Source__tvdenoising_pyx, __pyx_n_s_tvdenoise, 31, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(3, 0, 9, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_tigre_Source__minTV_pyx, __pyx_n_s_minTV, 31, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -4728,11 +4697,11 @@ static int __Pyx_modinit_function_import_code(void) {
 
 
 #if PY_MAJOR_VERSION < 3
-__Pyx_PyMODINIT_FUNC init_tvdenoising(void) CYTHON_SMALL_CODE; /*proto*/
-__Pyx_PyMODINIT_FUNC init_tvdenoising(void)
+__Pyx_PyMODINIT_FUNC init_minTV(void) CYTHON_SMALL_CODE; /*proto*/
+__Pyx_PyMODINIT_FUNC init_minTV(void)
 #else
-__Pyx_PyMODINIT_FUNC PyInit__tvdenoising(void) CYTHON_SMALL_CODE; /*proto*/
-__Pyx_PyMODINIT_FUNC PyInit__tvdenoising(void)
+__Pyx_PyMODINIT_FUNC PyInit__minTV(void) CYTHON_SMALL_CODE; /*proto*/
+__Pyx_PyMODINIT_FUNC PyInit__minTV(void)
 #if CYTHON_PEP489_MULTI_PHASE_INIT
 {
   return PyModuleDef_Init(&__pyx_moduledef);
@@ -4772,7 +4741,7 @@ bad:
 }
 
 
-static int __pyx_pymod_exec__tvdenoising(PyObject *__pyx_pyinit_module)
+static int __pyx_pymod_exec__minTV(PyObject *__pyx_pyinit_module)
 #endif
 #endif
 {
@@ -4793,7 +4762,7 @@ if (!__Pyx_RefNanny) {
       Py_FatalError("failed to import 'refnanny' module");
 }
 #endif
-  __Pyx_RefNannySetupContext("__Pyx_PyMODINIT_FUNC PyInit__tvdenoising(void)", 0);
+  __Pyx_RefNannySetupContext("__Pyx_PyMODINIT_FUNC PyInit__minTV(void)", 0);
   if (__Pyx_check_binary_version() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_empty_tuple = PyTuple_New(0); if (unlikely(!__pyx_empty_tuple)) __PYX_ERR(0, 1, __pyx_L1_error)
   __pyx_empty_bytes = PyBytes_FromStringAndSize("", 0); if (unlikely(!__pyx_empty_bytes)) __PYX_ERR(0, 1, __pyx_L1_error)
@@ -4829,7 +4798,7 @@ if (!__Pyx_RefNanny) {
   Py_INCREF(__pyx_m);
   #else
   #if PY_MAJOR_VERSION < 3
-  __pyx_m = Py_InitModule4("_tvdenoising", __pyx_methods, 0, 0, PYTHON_API_VERSION); Py_XINCREF(__pyx_m);
+  __pyx_m = Py_InitModule4("_minTV", __pyx_methods, 0, 0, PYTHON_API_VERSION); Py_XINCREF(__pyx_m);
   #else
   __pyx_m = PyModule_Create(&__pyx_moduledef);
   #endif
@@ -4848,14 +4817,14 @@ if (!__Pyx_RefNanny) {
   #if PY_MAJOR_VERSION < 3 && (__PYX_DEFAULT_STRING_ENCODING_IS_ASCII || __PYX_DEFAULT_STRING_ENCODING_IS_DEFAULT)
   if (__Pyx_init_sys_getdefaultencoding_params() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
-  if (__pyx_module_is_main__tvdenoising) {
+  if (__pyx_module_is_main__minTV) {
     if (PyObject_SetAttrString(__pyx_m, "__name__", __pyx_n_s_main) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   }
   #if PY_MAJOR_VERSION >= 3
   {
     PyObject *modules = PyImport_GetModuleDict(); if (unlikely(!modules)) __PYX_ERR(0, 1, __pyx_L1_error)
-    if (!PyDict_GetItemString(modules, "_tvdenoising")) {
-      if (unlikely(PyDict_SetItemString(modules, "_tvdenoising", __pyx_m) < 0)) __PYX_ERR(0, 1, __pyx_L1_error)
+    if (!PyDict_GetItemString(modules, "_minTV")) {
+      if (unlikely(PyDict_SetItemString(modules, "_minTV", __pyx_m) < 0)) __PYX_ERR(0, 1, __pyx_L1_error)
     }
   }
   #endif
@@ -4876,7 +4845,7 @@ if (!__Pyx_RefNanny) {
   if (__Pyx_patch_abc() < 0) __PYX_ERR(0, 1, __pyx_L1_error)
   #endif
 
-  /* "_tvdenoising.pyx":18
+  /* "_minTV.pyx":18
  * 
  * cimport numpy as np
  * import numpy as np             # <<<<<<<<<<<<<<
@@ -4888,7 +4857,7 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_np, __pyx_t_1) < 0) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "_tvdenoising.pyx":20
+  /* "_minTV.pyx":20
  * import numpy as np
  * 
  * np.import_array()             # <<<<<<<<<<<<<<
@@ -4897,19 +4866,19 @@ if (!__Pyx_RefNanny) {
  */
   __pyx_t_2 = __pyx_f_5numpy_import_array(); if (unlikely(__pyx_t_2 == ((int)-1))) __PYX_ERR(0, 20, __pyx_L1_error)
 
-  /* "_tvdenoising.pyx":31
- *     cdef void tvdenoising(float* src, float* dst, float lamda, float* spacing, long* image_size, int maxiter)
+  /* "_minTV.pyx":31
+ *     cdef void pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter)
  * 
- * def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lamda = 15.0):             # <<<<<<<<<<<<<<
+ * def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100):             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_12_tvdenoising_1tvdenoise, NULL, __pyx_n_s_tvdenoising); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_6_minTV_1minTV, NULL, __pyx_n_s_minTV_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_tvdenoise, __pyx_t_1) < 0) __PYX_ERR(0, 31, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_minTV, __pyx_t_1) < 0) __PYX_ERR(0, 31, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "_tvdenoising.pyx":1
+  /* "_minTV.pyx":1
  * #   This file is part of the TIGRE Toolbox             # <<<<<<<<<<<<<<
  * 
  * #   Copyright (c) 2015, University of Bath and
@@ -4934,11 +4903,11 @@ if (!__Pyx_RefNanny) {
   __Pyx_XDECREF(__pyx_t_1);
   if (__pyx_m) {
     if (__pyx_d) {
-      __Pyx_AddTraceback("init _tvdenoising", 0, __pyx_lineno, __pyx_filename);
+      __Pyx_AddTraceback("init _minTV", 0, __pyx_lineno, __pyx_filename);
     }
     Py_DECREF(__pyx_m); __pyx_m = 0;
   } else if (!PyErr_Occurred()) {
-    PyErr_SetString(PyExc_ImportError, "init _tvdenoising");
+    PyErr_SetString(PyExc_ImportError, "init _minTV");
   }
   __pyx_L0:;
   __Pyx_RefNannyFinishContext();

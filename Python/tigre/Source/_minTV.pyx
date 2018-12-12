@@ -25,10 +25,10 @@ cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
     void PyArray_CLEARFLAGS(np.ndarray arr, int flags)
 
-cdef extern from "tvdenoising.hpp":
-    cdef void tvdenoising(float* src, float* dst, float lamda, float* spacing, long* image_size, int maxiter)
+cdef extern from "POCS_TV.hpp":
+    cdef void pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter)
 
-def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lamda = 15.0):
+def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100):
 
     
     cdef np.npy_intp size_img[3]
@@ -38,11 +38,6 @@ def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lam
 
     cdef float* c_imgout = <float*> malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float))
 
-    cdef float spacing[3]
-    spacing[0]=<float> 1
-    spacing[1]=<float> 1
-    spacing[2]=<float> 1
-
     cdef long imgsize[3]
     imgsize[0] = <long> size_img[0]
     imgsize[1] = <long> size_img[1]
@@ -50,8 +45,7 @@ def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lam
 
     cdef float* c_src = <float*> src.data
     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
-    tvdenoising(c_src, c_imgout, lamda, spacing, imgsize, c_maxiter)
-
+    pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter)
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
     PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)
 

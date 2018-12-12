@@ -4,7 +4,9 @@ from tigre.utilities.parkerweight import parkerweight
 import numpy as np
 
 import warnings
-def filtering(proj,geo,angles,parker):
+
+#TODO: Fix parker
+def filtering(proj,geo,angles,parker,verbose=False):
     if parker:
         proj=parkerweight(proj.transpose(0,2,1),geo,angles,parker).transpose(0,2,1)
         # proj=parkerweight(proj,geo,angles,parker)
@@ -12,7 +14,7 @@ def filtering(proj,geo,angles,parker):
     ramp_kernel=ramp_flat(filt_len)
 
     d=1
-    filt=filter(geo.filter,ramp_kernel[0],filt_len,d)
+    filt=filter(geo.filter,ramp_kernel[0],filt_len,d,verbose=verbose)
     filt=np.kron(np.ones((geo.nDetector[0],1)),filt)
     for i in range(angles.shape[0]):
         fproj=np.zeros((geo.nDetector[0],filt_len),dtype=np.float32)
@@ -29,7 +31,7 @@ def filtering(proj,geo,angles,parker):
 
     return proj
 
-def ramp_flat(n):
+def ramp_flat(n,verbose=False):
     nn=np.arange(-n/2,n/2)
     h=np.zeros(nn.shape,dtype=np.float32)
     h[int(n/2)]=1/4
@@ -37,7 +39,7 @@ def ramp_flat(n):
     h[odd]=-1/(np.pi*nn[odd])**2
     return h, nn
 
-def filter(filter,kernel,order,d):
+def filter(filter,kernel,order,d,verbose=False):
     f_kernel=abs(np.fft.fft(kernel))*2
 
     filt=f_kernel[:int((order/2)+1)]
@@ -47,7 +49,8 @@ def filter(filter,kernel,order,d):
 
     if filter in {'ram_lak', None}:
         if filter is None:
-            warnings.warn('no filter selected, using default ram_lak')
+            if verbose:
+                warnings.warn('no filter selected, using default ram_lak')
         pass
     if filter=='shepp_logan':
         filt[1:]*=(np.sin(
