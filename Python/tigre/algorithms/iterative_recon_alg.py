@@ -19,7 +19,7 @@ the single pass type algorithms.
 # coding: utf8
 class DataMinimization(object):
     """
-    Class to used to define the methods used in run_main_iter in IterativeReconAlg.
+    Class used to define the methods used in run_main_iter in IterativeReconAlg.
     """
     def art_data_minimizing(self):
         """
@@ -55,6 +55,8 @@ class DataMinimization(object):
                     geo.DSO = self.geo.DSO[j]
             self.res += self.lmbda * 1/self.third_dim_sum(self.V[:,:,self.angle_index[j]]) * Atb(self.W[self.angle_index[j]] * (self.proj[self.angle_index[j]]
                                      - Ax(self.res, geo, angle, 'interpolated')),geo, angle, 'FDK')
+            if self.noneg:
+                self.res = self.res.clip(min=0)
 
     def third_dim_sum(self,V):
         if V.ndim == 3:
