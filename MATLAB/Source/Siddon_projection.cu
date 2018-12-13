@@ -95,6 +95,14 @@ do { \
     void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage);
 
 
+__global__ void vecAddInPlace(float *a, float *b, unsigned long  n)
+{
+    int idx = blockIdx.x*blockDim.x+threadIdx.x;
+    // Make sure we do not go out of bounds
+    if (idx < n)
+        a[idx] = a[idx] + b[idx];
+}
+
 __global__ void kernelPixelDetector( Geometry geo,
         float* detector,
         Point3D source ,
@@ -285,96 +293,124 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         geoArray=(Geometry*)malloc(sizeof(Geometry));
         geoArray[0]=geo;
     }
-    else{
-        mexPrintf("Image is too big, returning");
-        return;
+   else{
         fits_in_memory=false; // Oh dear.
         // approx free memory we have. We already have left some extra 10% free for internal stuff
         // we need a second projection memory to gather
         size_t mem_free=mem_GPU_global-2*mem_proj;
         splits=mem_image/mem_free+1;// Ceil of the truncation
-        splitImage(splits,geo,geoArray);
+        geoArray=(Geometry*)malloc(splits*sizeof(Geometry));
+        splitImage(splits,geo,geoArray,nangles);
+    }
+    
+    float ** dProjection_accum;
+    size_t num_bytes_proj = geo.nDetecU*geo.nDetecV * sizeof(float);
+    if (!fits_in_memory){
+        dProjection_accum=(float**)malloc(deviceCount*sizeof(float*));
+        for (dev = 0; dev < deviceCount; dev++) {
+            cudaSetDevice(dev);
+            cudaMalloc((void**)&dProjection_accum[dev], num_bytes_proj);
+            cudaMemset(dProjection_accum[dev],0,num_bytes_proj);
+            cudaCheckErrors("cudaMallocauxiliarty projections fail");
+        }
     }
     
     // This is happening regarthless if the image fits on memory
     float** dProjection=(float**)malloc(deviceCount*sizeof(float*));
-    size_t num_bytes = geoArray[0].nDetecU*geoArray[0].nDetecV * sizeof(float);
     for (dev = 0; dev < deviceCount; dev++) {
         cudaSetDevice(dev);
-        cudaMalloc((void**)&dProjection[dev], num_bytes);
-        cudaMemset(dProjection[dev],0,num_bytes);
+        cudaMalloc((void**)&dProjection[dev], num_bytes_proj);
+        cudaMemset(dProjection[dev],0,num_bytes_proj);
         cudaCheckErrors("cudaMalloc projections fail");
     }
     
-    
-    // Create texture objects for all GPUs
-    cudaTextureObject_t *texImg = new cudaTextureObject_t[deviceCount];
-    cudaArray **d_cuArrTex = new cudaArray*[deviceCount];
-    CreateTexture(deviceCount,img,geoArray[0],d_cuArrTex,texImg);
-    cudaCheckErrors("Texture object creation fail");
-    
-    
-    
-    
-    bool timekernel=false; // For debuggin purposes
-    cudaEvent_t start, stop;
-    float elapsedTime;
-    
-    Point3D source, deltaU, deltaV, uvOrigin;
-    
-    // 16x16 gave the best performance empirically
-    // Funnily that makes it compatible with most GPUs.....
-    int divU,divV;
-    divU=16;
-    divV=16;
-    dim3 grid((geoArray[0].nDetecU+divU-1)/divU,(geoArray[0].nDetecV+divV-1)/divV,1);
-    dim3 block(divU,divV,1);
-    
-    for (unsigned int i=0;i<nangles;i+=(unsigned int)deviceCount){
-        for (dev = 0; dev < deviceCount; dev++){
-            geoArray[0].alpha=angles[(i+dev)*3];
-            geoArray[0].theta=angles[(i+dev)*3+1];
-            geoArray[0].psi  =angles[(i+dev)*3+2];
-            //precomute distances for faster execution
-            //Precompute per angle constant stuff for speed
-            computeDeltas_Siddon(geoArray[0],i+dev, &uvOrigin, &deltaU, &deltaV, &source);
-            //Ray tracing!
-            if (timekernel){
-                cudaEventCreate(&start);
-                cudaEventRecord(start,0);
+       
+
+    for (unsigned int sp=0;sp<splits;sp++){
+        
+        // Create texture objects for all GPUs
+        cudaTextureObject_t *texImg = new cudaTextureObject_t[deviceCount];
+        cudaArray **d_cuArrTex = new cudaArray*[deviceCount];
+        
+        size_t linear_idx_start;
+        //First one shoudl always be  the same size as all the rest but the last
+        linear_idx_start= sp*geoArray[0].nVoxelX*geoArray[0].nVoxelY*geoArray[0].nVoxelZ;
+        CreateTexture(deviceCount,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg);
+        cudaCheckErrors("Texture object creation fail");
+        
+        
+        
+        
+        Point3D source, deltaU, deltaV, uvOrigin;
+        
+        // 16x16 gave the best performance empirically
+        // Funnily that makes it compatible with most GPUs.....
+        int divU,divV;
+        divU=16;
+        divV=16;
+        dim3 grid((geoArray[sp].nDetecU+divU-1)/divU,(geoArray[0].nDetecV+divV-1)/divV,1);
+        dim3 block(divU,divV,1);
+        
+        
+        
+        
+        for (unsigned int i=0;i<nangles;i+=(unsigned int)deviceCount){
+            for (dev = 0; dev < deviceCount; dev++){
+                geoArray[sp].alpha=angles[(i+dev)*3];
+                geoArray[sp].theta=angles[(i+dev)*3+1];
+                geoArray[sp].psi  =angles[(i+dev)*3+2];
+                //precomute distances for faster execution
+                //Precompute per angle constant stuff for speed
+                computeDeltas_Siddon(geoArray[sp],i+dev, &uvOrigin, &deltaU, &deltaV, &source);
+                //Ray tracing!
+               
+                cudaSetDevice(dev);
+                kernelPixelDetector<<<grid,block>>>(geoArray[sp],dProjection[dev], source, deltaU, deltaV, uvOrigin,texImg[dev]);
+                //cudaCheckErrors("Kernel fail");
+                
             }
-            cudaSetDevice(dev);
-            kernelPixelDetector<<<grid,block>>>(geoArray[0],dProjection[dev], source, deltaU, deltaV, uvOrigin,texImg[dev]);
-            //cudaCheckErrors("Kernel fail");
             
+            for (dev = 0; dev < deviceCount; dev++){
+                cudaSetDevice(dev);
+                if (!fits_in_memory){
+                    mexPrintf("bipbop %d\n",(int)sp);
+                    cudaMemcpyAsync(dProjection_accum[dev], result[i+dev], num_bytes_proj, cudaMemcpyHostToDevice);
+                    vecAddInPlace<<<(geo.nDetecU*geo.nDetecV+MAXTREADS-1)/MAXTREADS,MAXTREADS>>>(dProjection[dev],dProjection_accum[dev],(unsigned long)geo.nDetecU*geo.nDetecV );
+                }
+            }
+            for (dev = 0; dev < deviceCount; dev++){
+                // copy result to host
+                cudaSetDevice(dev);
+                cudaMemcpyAsync(result[i+dev], dProjection[dev], num_bytes_proj, cudaMemcpyDeviceToHost);
+                
+            }
+            cudaCheckErrors("cudaMemcpy output fail");
         }
-        if (timekernel){
-            cudaEventCreate(&stop);
-            cudaEventRecord(stop,0);
-            cudaEventSynchronize(stop);
-            cudaEventElapsedTime(&elapsedTime, start,stop);
-            mexPrintf("%f\n" ,elapsedTime);
-        }
+        
         for (dev = 0; dev < deviceCount; dev++){
-            // copy result to host
             cudaSetDevice(dev);
-            cudaMemcpyAsync(result[i+dev], dProjection[dev], num_bytes, cudaMemcpyDeviceToHost);
+            cudaDestroyTextureObject(texImg[dev]);
+            cudaFreeArray(d_cuArrTex[dev]);
             
         }
-        cudaCheckErrors("cudaMemcpy output fail");
     }
     
     
-    
-    //cudaUnbindTexture(tex);
-    cudaCheckErrors("Unbind  fail");
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
         cudaFree(dProjection[dev]);
-        cudaDestroyTextureObject(texImg[dev]);
-        cudaFreeArray(d_cuArrTex[dev]);
+        
     }
     free(dProjection);
+    
+    if(!fits_in_memory){
+     for (dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(dev);
+        cudaFree(dProjection_accum[dev]);
+        
+    }
+    free(dProjection_accum);
+    }
     //cudaFreeArray(d_imagedata);
     cudaCheckErrors("cudaFree d_imagedata fail");
     
@@ -385,7 +421,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
 }
 void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage)
 {
-    size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+    //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
     for (unsigned int i = 0; i < num_devices; i++){
         cudaSetDevice(i);
         
@@ -427,13 +463,21 @@ void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray
 /* This code generates the geometries needed to split the image properly in
  * cases where the entire image does not fit in the memory of the GPU
  **/
-void splitImage(unsigned int splits,Geometry geo,Geometry* geoArray){
+void splitImage(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned int nangles){
     
-    geoArray=(Geometry*)malloc(splits*sizeof(Geometry));
     unsigned long splitsize=(geo.nVoxelZ+splits-1)/splits;// ceil if not divisible
     for(unsigned int sp=0;sp<splits;sp++){
         geoArray[sp]=geo;
-        geoArray[sp].nVoxelZ=((sp+1)*splitsize<geo.nVoxelZ)?splitsize:geo.nVoxelZ-splitsize*sp;
+        // All of them are splitsize, but the last one, possible
+        geoArray[sp].nVoxelZ=((sp+1)*splitsize<geo.nVoxelZ)?  splitsize:  geo.nVoxelZ-splitsize*sp;
+        geoArray[sp].sVoxelZ= geoArray[sp].nVoxelZ* geoArray[sp].dVoxelZ;
+        
+        // We need to redefine the offsets, as now each subimage is not aligned in the origin.
+        geoArray[sp].offOrigZ=(float *)malloc(nangles*sizeof(float));
+        for (unsigned int i=0;i<nangles;i++){
+            geoArray[sp].offOrigZ[i]=geo.offOrigZ[i]-geo.sVoxelZ/2+sp*geoArray[0].sVoxelZ+geoArray[sp].sVoxelZ/2;
+        }
+        
     }
     
 }
