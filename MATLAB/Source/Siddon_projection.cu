@@ -146,14 +146,14 @@ __global__ void kernelPixelDetector( Geometry geo,
     float axm,aym,azm;
     float axM,ayM,azM;
     // In the paper Nx= number of X planes-> Nvoxel+1
-    axm=min(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
-    aym=min(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
-    azm=min(-source.z/ray.z,(geo.nVoxelZ-source.z)/ray.z);
-    axM=max(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
-    ayM=max(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
-    azM=max(-source.z/ray.z,(geo.nVoxelZ-source.z)/ray.z);
-    float am=max(max(axm,aym),azm);
-    float aM=min(min(axM,ayM),azM);
+    axm=fminf(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
+    aym=fminf(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
+    azm=fminf(-source.z/ray.z,(geo.nVoxelZ-source.z)/ray.z);
+    axM=fmaxf(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
+    ayM=fmaxf(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
+    azM=fmaxf(-source.z/ray.z,(geo.nVoxelZ-source.z)/ray.z);
+    float am=fmaxf(fmaxf(axm,aym),azm);
+    float aM=fminf(fminf(axM,ayM),azM);
     
     // line intersects voxel space ->   am<aM
     if (am>=aM)
@@ -164,27 +164,27 @@ __global__ void kernelPixelDetector( Geometry geo,
     float imin,imax,jmin,jmax,kmin,kmax;
     // for X
     if( source.x<pixel1D.x){
-        imin=(am==axm)? 1             : ceil (source.x+am*ray.x);
-        imax=(aM==axM)? geo.nVoxelX   : floor(source.x+aM*ray.x);
+        imin=(am==axm)? 1             : ceilf (source.x+am*ray.x);
+        imax=(aM==axM)? geo.nVoxelX   : floorf(source.x+aM*ray.x);
     }else{
-        imax=(am==axm)? geo.nVoxelX-1 : floor(source.x+am*ray.x);
-        imin=(aM==axM)? 0             : ceil (source.x+aM*ray.x);
+        imax=(am==axm)? geo.nVoxelX-1 : floorf(source.x+am*ray.x);
+        imin=(aM==axM)? 0             : ceilf (source.x+aM*ray.x);
     }
     // for Y
     if( source.y<pixel1D.y){
-        jmin=(am==aym)? 1             : ceil (source.y+am*ray.y);
-        jmax=(aM==ayM)? geo.nVoxelY   : floor(source.y+aM*ray.y);
+        jmin=(am==aym)? 1             : ceilf (source.y+am*ray.y);
+        jmax=(aM==ayM)? geo.nVoxelY   : floorf(source.y+aM*ray.y);
     }else{
-        jmax=(am==aym)? geo.nVoxelY-1 : floor(source.y+am*ray.y);
-        jmin=(aM==ayM)? 0             : ceil (source.y+aM*ray.y);
+        jmax=(am==aym)? geo.nVoxelY-1 : floorf(source.y+am*ray.y);
+        jmin=(aM==ayM)? 0             : ceilf (source.y+aM*ray.y);
     }
     // for Z
     if( source.z<pixel1D.z){
-        kmin=(am==azm)? 1             : ceil (source.z+am*ray.z);
-        kmax=(aM==azM)? geo.nVoxelZ   : floor(source.z+aM*ray.z);
+        kmin=(am==azm)? 1             : ceilf (source.z+am*ray.z);
+        kmax=(aM==azM)? geo.nVoxelZ   : floorf(source.z+aM*ray.z);
     }else{
-        kmax=(am==azm)? geo.nVoxelZ-1 : floor(source.z+am*ray.z);
-        kmin=(aM==azM)? 0             : ceil (source.z+aM*ray.z);
+        kmax=(am==azm)? geo.nVoxelZ-1 : floorf(source.z+am*ray.z);
+        kmin=(aM==azM)? 0             : ceilf (source.z+aM*ray.z);
     }
     
     // get intersection point N1. eq(20-21) [(also eq 9-10)]
@@ -197,24 +197,24 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     // get index of first intersection. eq (26) and (19)
     int i,j,k;
-    float aminc=min(min(ax,ay),az);
-    i=(int)floor(source.x+ (aminc+am)/2*ray.x);
-    j=(int)floor(source.y+ (aminc+am)/2*ray.y);
-    k=(int)floor(source.z+ (aminc+am)/2*ray.z);
+    float aminc=fminf(fminf(ax,ay),az);
+    i=(int)floorf(source.x+ (aminc+am)/2*ray.x);
+    j=(int)floorf(source.y+ (aminc+am)/2*ray.y);
+    k=(int)floorf(source.z+ (aminc+am)/2*ray.z);
     // Initialize
     float ac=am;
     //eq (28), unit anlges
     float axu,ayu,azu;
-    axu=1/abs(ray.x);
-    ayu=1/abs(ray.y);
-    azu=1/abs(ray.z);
+    axu=1/fabs(ray.x);
+    ayu=1/fabs(ray.y);
+    azu=1/fabs(ray.z);
     // eq(29), direction of update
     float iu,ju,ku;
     iu=(source.x< pixel1D.x)? 1 : -1;
     ju=(source.y< pixel1D.y)? 1 : -1;
     ku=(source.z< pixel1D.z)? 1 : -1;
     
-    float maxlength=sqrt(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
+    float maxlength=sqrtf(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
     float sum=0;
     unsigned int Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
@@ -236,7 +236,7 @@ __global__ void kernelPixelDetector( Geometry geo,
             ac=az;
             az+=azu;
         }
-        aminc=min(min(ax,ay),az);
+        aminc=fminf(fminf(ax,ay),az);
     }
     detector[idx]=sum*maxlength;
 }
@@ -272,7 +272,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         cudaGetDeviceProperties(&deviceProp, dev);
         if (dev>0){
             if (strcmp(devicenames,deviceProp.name)!=0){
-                mexWarnMsgIdAndTxt("Ax:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 266.");
+                mexWarnMsgIdAndTxt("Ax:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 275.");
                 break;
             }
         }
@@ -293,7 +293,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         geoArray=(Geometry*)malloc(sizeof(Geometry));
         geoArray[0]=geo;
     }
-   else{
+    else{
         fits_in_memory=false; // Oh dear.
         // approx free memory we have. We already have left some extra 10% free for internal stuff
         // we need a second projection memory to gather
@@ -324,8 +324,8 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         cudaCheckErrors("cudaMalloc projections fail");
     }
     
-       
-
+    
+    
     for (unsigned int sp=0;sp<splits;sp++){
         
         // Create texture objects for all GPUs
@@ -356,32 +356,37 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         
         for (unsigned int i=0;i<nangles;i+=(unsigned int)deviceCount){
             for (dev = 0; dev < deviceCount; dev++){
-                geoArray[sp].alpha=angles[(i+dev)*3];
-                geoArray[sp].theta=angles[(i+dev)*3+1];
-                geoArray[sp].psi  =angles[(i+dev)*3+2];
-                //precomute distances for faster execution
-                //Precompute per angle constant stuff for speed
-                computeDeltas_Siddon(geoArray[sp],i+dev, &uvOrigin, &deltaU, &deltaV, &source);
-                //Ray tracing!
-               
-                cudaSetDevice(dev);
-                kernelPixelDetector<<<grid,block>>>(geoArray[sp],dProjection[dev], source, deltaU, deltaV, uvOrigin,texImg[dev]);
-                //cudaCheckErrors("Kernel fail");
+                if(i+dev<nangles){
+                    geoArray[sp].alpha=angles[(i+dev)*3];
+                    geoArray[sp].theta=angles[(i+dev)*3+1];
+                    geoArray[sp].psi  =angles[(i+dev)*3+2];
+                    //precomute distances for faster execution
+                    //Precompute per angle constant stuff for speed
+                    computeDeltas_Siddon(geoArray[sp],i+dev, &uvOrigin, &deltaU, &deltaV, &source);
+                    //Ray tracing!
+                    
+                    cudaSetDevice(dev);
+                    kernelPixelDetector<<<grid,block>>>(geoArray[sp],dProjection[dev], source, deltaU, deltaV, uvOrigin,texImg[dev]);
+                    //cudaCheckErrors("Kernel fail");
+                }
                 
             }
             
             for (dev = 0; dev < deviceCount; dev++){
-                cudaSetDevice(dev);
-                if (!fits_in_memory){
-                    mexPrintf("bipbop %d\n",(int)sp);
-                    cudaMemcpyAsync(dProjection_accum[dev], result[i+dev], num_bytes_proj, cudaMemcpyHostToDevice);
-                    vecAddInPlace<<<(geo.nDetecU*geo.nDetecV+MAXTREADS-1)/MAXTREADS,MAXTREADS>>>(dProjection[dev],dProjection_accum[dev],(unsigned long)geo.nDetecU*geo.nDetecV );
+                if(i+dev<nangles){
+                    cudaSetDevice(dev);
+                    if (!fits_in_memory){
+                        cudaMemcpyAsync(dProjection_accum[dev], result[i+dev], num_bytes_proj, cudaMemcpyHostToDevice);
+                        vecAddInPlace<<<(geo.nDetecU*geo.nDetecV+MAXTREADS-1)/MAXTREADS,MAXTREADS>>>(dProjection[dev],dProjection_accum[dev],(unsigned long)geo.nDetecU*geo.nDetecV );
+                    }
                 }
             }
             for (dev = 0; dev < deviceCount; dev++){
-                // copy result to host
-                cudaSetDevice(dev);
-                cudaMemcpyAsync(result[i+dev], dProjection[dev], num_bytes_proj, cudaMemcpyDeviceToHost);
+                if(i+dev<nangles){
+                    // copy result to host
+                    cudaSetDevice(dev);
+                    cudaMemcpyAsync(result[i+dev], dProjection[dev], num_bytes_proj, cudaMemcpyDeviceToHost);
+                }
                 
             }
             cudaCheckErrors("cudaMemcpy output fail");
@@ -404,17 +409,14 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     free(dProjection);
     
     if(!fits_in_memory){
-     for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
-        cudaFree(dProjection_accum[dev]);
-        
+        for (dev = 0; dev < deviceCount; dev++){
+            cudaSetDevice(dev);
+            cudaFree(dProjection_accum[dev]);
+            
+        }
+        free(dProjection_accum);
     }
-    free(dProjection_accum);
-    }
-    //cudaFreeArray(d_imagedata);
     cudaCheckErrors("cudaFree d_imagedata fail");
-    
-    
     
     cudaDeviceReset();
     return 0;
