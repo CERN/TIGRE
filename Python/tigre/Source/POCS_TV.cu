@@ -54,7 +54,7 @@ Codes  : https://github.com/CERN/TIGRE
 #define MAXTHREADS 1024
 
 #include "POCS_TV.hpp"
-
+#include <stdio.h>
 
 
 
@@ -62,8 +62,8 @@ Codes  : https://github.com/CERN/TIGRE
 do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
-                mexPrintf("ERROR in: %s \n",msg);\
-                mexErrMsgIdAndTxt("err",cudaGetErrorString(__err));\
+                printf("%s \n",msg);\
+                printf("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
         } \
 } while (0)
     

@@ -9,7 +9,15 @@ import numpy
 
 
 # Code from https://github.com/rmcgibbo/npcuda-example/blob/master/cython/setup.py
-
+compute_capability_args = ['-gencode=arch=compute_20,code=sm_20',
+                                                 '-gencode=arch=compute_30,code=sm_30',
+                                                 '-gencode=arch=compute_37,code=sm_37',
+                                                 '-gencode=arch=compute_52,code=sm_52',
+                                                 '-gencode=arch=compute_60,code=sm_60',
+                                                 '-gencode=arch=compute_61,code=sm_61',
+                                                 #'-gencode=arch=compute_70,code=sm_70', #untested
+                                                 '--ptxas-options=-v', '-c',
+                                                 '--compiler-options', "'-fPIC'"]
 
 def find_in_path(name, path):
     "Find a file in a search path"
@@ -113,15 +121,7 @@ Ax_ext = Extension('_Ax',
                    # we're only going to use certain compiler args with nvcc and not with gcc
                    # the implementation of this trick is in customize_compiler() below
                    extra_compile_args={'gcc': [],
-                                        'nvcc': ['-gencode=arch=compute_20,code=sm_20',
-                                                 '-gencode=arch=compute_30,code=sm_30',
-                                                 '-gencode=arch=compute_37,code=sm_37',
-                                                 '-gencode=arch=compute_52,code=sm_52',
-                                                 '-gencode=arch=compute_60,code=sm_60',
-                                                 '-gencode=arch=compute_61,code=sm_61',
-                                                 '-gencode=arch=compute_70,code=sm_70',
-                                                 '--ptxas-options=-v', '-c',
-                                                 '--compiler-options', "'-fPIC'"]},
+                                        'nvcc': compute_capability_args},
                    include_dirs=[numpy_include, CUDA['include'], 'Source'])
 
 Atb_ext = Extension('_Atb',
@@ -141,15 +141,7 @@ Atb_ext = Extension('_Atb',
                     # we're only going to use certain compiler args with nvcc and not with gcc
                     # the implementation of this trick is in customize_compiler() below
                     extra_compile_args={'gcc': [],
-                                         'nvcc': ['-gencode=arch=compute_20,code=sm_20',
-                                                 '-gencode=arch=compute_30,code=sm_30',
-                                                 '-gencode=arch=compute_37,code=sm_37',
-                                                 '-gencode=arch=compute_52,code=sm_52',
-                                                 '-gencode=arch=compute_60,code=sm_60',
-                                                 '-gencode=arch=compute_61,code=sm_61',
-                                                 '-gencode=arch=compute_70,code=sm_70', #untested
-                                                 '--ptxas-options=-v', '-c',
-                                                 '--compiler-options', "'-fPIC'"]},
+                                         'nvcc': compute_capability_args},
                     include_dirs=[numpy_include, CUDA['include'], 'tigre/Source'])
 tvdenoising_ext = Extension('_tvdenoising',
                     sources=(['tigre/Source/voxel_backprojection.cu', 'tigre/Source/tvdenoising.cu',
@@ -163,16 +155,38 @@ tvdenoising_ext = Extension('_tvdenoising',
                     # we're only going to use certain compiler args with nvcc and not with gcc
                     # the implementation of this trick is in customize_compiler() below
                     extra_compile_args={'gcc': [],
-                                         'nvcc':['-gencode=arch=compute_20,code=sm_20',
-                                                 '-gencode=arch=compute_30,code=sm_30',
-                                                 '-gencode=arch=compute_37,code=sm_37',
-                                                 '-gencode=arch=compute_52,code=sm_52',
-                                                 '-gencode=arch=compute_60,code=sm_60',
-                                                 '-gencode=arch=compute_61,code=sm_61',
-                                                 '-gencode=arch=compute_70,code=sm_70',
-                                                 '--ptxas-options=-v', '-c',
-                                                 '--compiler-options', "'-fPIC'"]},
+                                         'nvcc':compute_capability_args},
                     include_dirs=[numpy_include, CUDA['include'], 'Source'])
+minTV_ext = Extension('_minTV',
+                    sources=(['tigre/Source/POCS_TV.cu',
+                              'tigre/Source/_types.pxd',
+                              'tigre/Source/_minTV.pyx']),
+                    library_dirs=[CUDA['lib64']],
+                    libraries=['cudart'],
+                    language='c++',
+                    runtime_library_dirs=[CUDA['lib64']],
+                    # this syntax is specific to this build system
+                    # we're only going to use certain compiler args with nvcc and not with gcc
+                    # the implementation of this trick is in customize_compiler() below
+                    extra_compile_args={'gcc': [],
+                                         'nvcc':compute_capability_args},
+                    include_dirs=[numpy_include, CUDA['include'], 'Source'])
+
+AwminTV_ext = Extension('_AwminTV',
+                    sources=(['tigre/Source/POCS_TV2.cu',
+                              'tigre/Source/_types.pxd',
+                              'tigre/Source/_AwminTV.pyx']),
+                    library_dirs=[CUDA['lib64']],
+                    libraries=['cudart'],
+                    language='c++',
+                    runtime_library_dirs=[CUDA['lib64']],
+                    # this syntax is specific to this build system
+                    # we're only going to use certain compiler args with nvcc and not with gcc
+                    # the implementation of this trick is in customize_compiler() below
+                    extra_compile_args={'gcc': [],
+                                         'nvcc':compute_capability_args},
+                    include_dirs=[numpy_include, CUDA['include'], 'Source'])
+
 
 # run the customize_compiler
 class custom_build_ext(build_ext):
@@ -186,7 +200,7 @@ setup(name='tigre',
       author = 'Reuben Lindroos, Sam loescher',
       packages = find_packages(),
       include_package_data=True,
-      ext_modules=[Ax_ext, Atb_ext,tvdenoising_ext],
+      ext_modules=[Ax_ext, Atb_ext,tvdenoising_ext, minTV_ext, AwminTV_ext],
 
       # inject our custom trigger
       cmdclass={'build_ext': custom_build_ext},

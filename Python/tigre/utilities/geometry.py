@@ -8,11 +8,12 @@ import inspect
 class geometry:
 
     def __init__(self):
-        self.mode = None
-        self.accuracy = 0.5
-        self.n_proj = None
-        self.angles = None
-        self.filter = None
+        if not hasattr(self,'mode'): self.mode = None
+        if not hasattr(self,'accuracy'): self.accuracy = 0.5
+        if not hasattr(self,'n_proj'): self.n_proj = None
+        if not hasattr(self,'angles'): self.angles = None
+        if not hasattr(self,'filter'): self.filter = None
+        if not hasattr(self,'rotDetector'): self.rotDetector = np.array((0, 0, 0))
     def check_geo(self, angles, verbose=False):
         if angles.ndim == 1:
             self.n_proj = angles.shape[0]
