@@ -1,8 +1,8 @@
 from __future__ import division
 import numpy as np
-from tigre.utilities.geometry import geometry
+from tigre.utilities.geometry import Geometry
 
-class TIGREParameters(geometry):
+class TIGREParameters(Geometry):
 
     def __init__(self, high_quality=True):
         if high_quality:
@@ -49,7 +49,7 @@ class TIGREParameters(geometry):
             # Mode
             self.mode='cone'                                    # parallel, cone                ...
             self.filter=None
-        geometry.__init__(self)
+        Geometry.__init__(self)
     def __str__(self):
         parameters = []
         parameters.append("TIGRE parameters")

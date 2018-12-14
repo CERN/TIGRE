@@ -5,15 +5,16 @@ import numpy.matlib as matlib
 import inspect
 
 
-class geometry:
+class Geometry:
 
     def __init__(self):
-        if not hasattr(self,'mode'): self.mode = None
-        if not hasattr(self,'accuracy'): self.accuracy = 0.5
-        if not hasattr(self,'n_proj'): self.n_proj = None
-        if not hasattr(self,'angles'): self.angles = None
-        if not hasattr(self,'filter'): self.filter = None
-        if not hasattr(self,'rotDetector'): self.rotDetector = np.array((0, 0, 0))
+        self.mode = None
+        self.accuray = 0.5
+        self.n_proj = None
+        self.angles = None
+        self.filter = None
+        self.rotDetector = np.array((0, 0, 0))
+
     def check_geo(self, angles, verbose=False):
         if angles.ndim == 1:
             self.n_proj = angles.shape[0]
@@ -176,3 +177,28 @@ class geometry:
         parameters.append("Accuracy of forward projection = " + str(self.accuracy))
 
         return '\n'.join(parameters)
+
+class ParallelGeo(Geometry):
+    def __init__(self):
+        Geometry.__init__(self)
+        self.dVoxel = 1
+        self.dDetector = self.dVoxel
+
+    def __getattr__(self, attribute):
+        if attribute in ['nDetector','DSO', 'sVoxel', 'sDetector']:
+            if hasattr(self,attribute):
+                return self.attribute
+            elif hasattr(self,'nVoxel'):
+                return self.nVoxel
+
+
+
+
+        super(ParallelGeo, self).__getattr__(self, attribute)
+
+
+def geometry(mode = 'cone'):
+    if mode in [None, 'cone']:
+        return Geometry()
+    else:
+        return ParallelGeo()
