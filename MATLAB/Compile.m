@@ -35,7 +35,7 @@ if ispc
     if isempty(cudapath)
         error(sprintf('CUDA Path not found. \nAdd the path by writting in MATLAB:\nsetenv(''CUDA_PATH'',''your path'')\nWhere "your path" is C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v8.0, for example')) ;
     end
-
+end
 
 % Compile for x64 or x32
 disp('Compiling TIGRE source...')
