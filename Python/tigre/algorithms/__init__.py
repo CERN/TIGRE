@@ -8,4 +8,4 @@ from .pocs_algorithms import asd_pocs
 from .pocs_algorithms import awasd_pocs
 from .single_pass_algorithms import fbp
 from .single_pass_algorithms import fdk
-from .congruent_gradient_algorithms import cgls
+from .conjugate_gradient_algorithms import cgls

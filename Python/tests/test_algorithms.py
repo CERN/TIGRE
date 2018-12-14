@@ -1,7 +1,7 @@
 from __future__ import division
 import unittest
 import tigre
-from tigre.Ax import Ax
+from tigre.utilities.Ax import Ax
 import numpy as np
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 import tigre.algorithms as algs

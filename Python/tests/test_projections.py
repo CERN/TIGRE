@@ -1,7 +1,7 @@
 import unittest
 from tigre.utilities.geometry import geometry
-from tigre.Ax import Ax
-from tigre.Atb import Atb
+from tigre.utilities.Ax import Ax
+from tigre.utilities.Atb import Atb
 import numpy as np
 
 class ProjectionTestCase(unittest.TestCase):
