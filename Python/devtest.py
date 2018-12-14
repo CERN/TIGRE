@@ -28,8 +28,7 @@ proj_1 = Ax(source_img, geo, angles, 'interpolated')
 # --------------------BACK PROJECTION ----------------
 #res = algs.awasd_pocs(proj_1,geo,angles,10,**dict(blocksize=20))
 #res = algs.ossart(proj_1,geo,angles,15,**dict(blocksize=12))
-from tigre.demos.__test import test
-test()
+res = algs.awasd_pocs(proj_1,geo,angles,5)
 
 # ---------------PLOTS------------------------------
 """

@@ -7,13 +7,19 @@ import inspect
 
 class geometry:
 
-    def __init__(self):
-        self.mode = None
+    def __init__(self, mode='cone'):
+        self.mode = mode
         self.accuracy = 0.5
         self.n_proj = None
         self.angles = None
         self.filter = None
-    def check_geo(self, angles, verbose=False):
+        self.offOrigin = np.array((0, 0, 0))
+        self.offDetector = np.array((0, 0))
+        self.rotDetector = np.array((0, 0, 0))
+        self.accuracy = 0.5
+        
+
+    def __check_geo(self, angles, verbose=False):
         if angles.ndim == 1:
             self.n_proj = angles.shape[0]
             zeros_array = np.zeros((self.n_proj, 1), dtype=np.float32)
@@ -58,34 +64,34 @@ class geometry:
             'nDetector*dDetecor is not equal to sVoxel. Check fields.')
 
         for attrib in ['DSD', 'DSO']:
-            self._check_and_repmat(attrib, angles)
+            self.__check_and_repmat(attrib, angles)
 
         if hasattr(self, 'offOrigin'):
-            self._check_and_repmat('offOrigin', angles)
+            self.__check_and_repmat('offOrigin', angles)
         else:
             self.offOrigin = np.array([0,0,0])
-            self._check_and_repmat('offOrigin',angles)
+            self.__check_and_repmat('offOrigin', angles)
 
         if hasattr(self, 'offDetector'):
-            self._check_and_repmat('offDetector', angles)
+            self.__check_and_repmat('offDetector', angles)
         else:
             self.offDetector =np.zeros((angles.shape[0],2))
 
 
-        if hasattr(self, 'rotDetector'):
-            self._check_and_repmat('rotDetector', angles)
+        if hasattr(self,'rotDetector'):
+            self.__check_and_repmat('rotDetector', angles)
         else:
             self.rotDetector = np.zeros((angles.shape[0],3))
 
         if hasattr(self, 'COR'):
-            self._check_and_repmat('COR', angles)
+            self.__check_and_repmat('COR', angles)
         else:
             self.COR = np.zeros(angles.shape[0])
         
         if verbose:
             self._verbose_output()
 
-    def _check_and_repmat(self, attrib, angles):
+    def __check_and_repmat(self, attrib, angles):
         """
         Checks whether the attribute is a single value and repeats it into an array if it is
         :param attrib: string
@@ -128,7 +134,7 @@ class geometry:
             else:
                 print(self.mode + ': ' + str(obj))
 
-    def convert_contig_mode(self):
+    def __convert_contig_mode(self):
         dim_attribs = ['nVoxel', 'sVoxel', 'dVoxel',
                        'nDetector', 'sDetector', 'dDetector']
         for attrib in dim_attribs:

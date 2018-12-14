@@ -9,7 +9,7 @@ def Ax(img, geo, angles,  krylov="interpolated"):
     if not np.isreal(img).all():
         raise ValueError("Complex types not compatible for projection.")
     geox = copy.deepcopy(geo)
-    geox.check_geo(angles)
+    geox.__check_geo(angles)
 
 
     if all(img.shape != geox.nVoxel):

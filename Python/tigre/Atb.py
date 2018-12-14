@@ -8,7 +8,7 @@ def Atb(projections, geo, angles,  krylov="matched"):
     if not np.isreal(projections).all():
         raise ValueError("Complex types not compatible for back projection.")
     geox = copy.deepcopy(geo)
-    geox.check_geo(angles)
+    geox.__check_geo(angles)
 
     if projections.shape != (geox.angles.shape[0],geox.nDetector[0],geox.nDetector[1]):
         raise ValueError("Expected data shape: " + str((geox.angles.shape[0], geox.nDetector[0],geox.nDetector[1])) +
