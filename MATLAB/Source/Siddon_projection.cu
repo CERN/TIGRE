@@ -283,23 +283,27 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     cudaSetDevice(0);
     cudaGetDeviceProperties(&deviceProp, 0);
     unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem*0.9);
-    size_t mem_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ*sizeof(float);
-    size_t mem_proj=geo.nDetecU*geo.nDetecV * sizeof(float);
+    size_t mem_image=(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
+    size_t mem_proj =(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV * sizeof(float);
     
     // Does everything fit in the GPUs?
     bool fits_in_memory=false;
     unsigned int splits=1;
     Geometry * geoArray;
-    if (mem_image+mem_proj<mem_GPU_global){
+    
+  
+    if (mem_image+mem_proj<mem_GPU_global){// yes it does
         fits_in_memory=true;
         geoArray=(Geometry*)malloc(sizeof(Geometry));
         geoArray[0]=geo;
     }
-    else{
+    else{// Nope nope.
         fits_in_memory=false; // Oh dear.
         // approx free memory we have. We already have left some extra 10% free for internal stuff
-        // we need a second projection memory to gather
+        // we need a second projection memory to combine multi-GPU stuff.
         size_t mem_free=mem_GPU_global-2*mem_proj;
+        
+
         splits=mem_image/mem_free+1;// Ceil of the truncation
         geoArray=(Geometry*)malloc(splits*sizeof(Geometry));
         splitImage(splits,geo,geoArray,nangles);
