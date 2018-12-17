@@ -155,37 +155,37 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
      ***************************************/
     
     // In the paper Nx= number of X planes-> Nvoxel+1
-    axm=min(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
-    aym=min(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
+    axm=fminf(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
+    aym=fminf(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
 //     azm=min(-source.z/ray.z,(geo.nVoxelZ-source.z)/ray.z);
-    axM=max(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
-    ayM=max(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
+    axM=fmaxf(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
+    ayM=fmaxf(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
 //     azM=max(-source.z/ray.z,(geo.nVoxelZ-source.z)/ray.z);
-    float am=(max(axm,aym));
-    float aM=(min(axM,ayM));
+    float am=(fmaxf(axm,aym));
+    float aM=(fminf(axM,ayM));
     
     // line intersects voxel space ->   am<aM
     if (am>=aM)
-        detector[idx]=0;
+        detector[idx]=0.0f;
     
     // Compute max/min image INDEX for intersection eq(11-19)
     // Discussion about ternary operator in CUDA: https://stackoverflow.com/questions/7104384/in-cuda-why-is-a-b010-more-efficient-than-an-if-else-version
     float imin,imax,jmin,jmax;
     // for X
     if( source.x<pixel1D.x){
-        imin=(am==axm)? 1           : ceil (source.x+am*ray.x);
-        imax=(aM==axM)? geo.nVoxelX : floor(source.x+aM*ray.x);
+        imin=(am==axm)? 1.0f             : ceil (source.x+am*ray.x);
+        imax=(aM==axM)? geo.nVoxelX      : floor(source.x+aM*ray.x);
     }else{
-        imax=(am==axm)? geo.nVoxelX-1 : floor(source.x+am*ray.x);
-        imin=(aM==axM)? 0             : ceil (source.x+aM*ray.x);
+        imax=(am==axm)? geo.nVoxelX-1.0f : floor(source.x+am*ray.x);
+        imin=(aM==axM)? 0.0f             : ceil (source.x+aM*ray.x);
     }
     // for Y
     if( source.y<pixel1D.y){
-        jmin=(am==aym)? 1           : ceil (source.y+am*ray.y);
-        jmax=(aM==ayM)? geo.nVoxelY : floor(source.y+aM*ray.y);
+        jmin=(am==aym)? 1.0f             : ceil (source.y+am*ray.y);
+        jmax=(aM==ayM)? geo.nVoxelY      : floor(source.y+aM*ray.y);
     }else{
-        jmax=(am==aym)? geo.nVoxelY-1 : floor(source.y+am*ray.y);
-        jmin=(aM==ayM)? 0             : ceil (source.y+aM*ray.y);
+        jmax=(am==aym)? geo.nVoxelY-1.0f : floor(source.y+am*ray.y);
+        jmin=(aM==ayM)? 0.0f             : ceil (source.y+aM*ray.y);
     }
 //     // for Z
 //     if( source.z<pixel1D.z){
@@ -198,45 +198,47 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     
     // get intersection point N1. eq(20-21) [(also eq 9-10)]
     float ax,ay;
-    ax=(source.x<pixel1D.x)?  (imin-source.x)/(ray.x+0.000000000001)  :  (imax-source.x)/(ray.x+0.000000000001);
-    ay=(source.y<pixel1D.y)?  (jmin-source.y)/(ray.y+0.000000000001)  :  (jmax-source.y)/(ray.y+0.000000000001);
+    ax=(source.x<pixel1D.x)?  (imin-source.x)/(ray.x+0.000000000001f)  :  (imax-source.x)/(ray.x+0.000000000001f);
+    ay=(source.y<pixel1D.y)?  (jmin-source.y)/(ray.y+0.000000000001f)  :  (jmax-source.y)/(ray.y+0.000000000001f);
 //     az=(source.z<pixel1D.z)?  (kmin-source.z)/ray.z  :  (kmax-source.z)/ray.z;
     
     
     
     // get index of first intersection. eq (26) and (19)
     int i,j,k;
-    float aminc=min(ax,ay);
-    i=(int)floor(source.x+ (aminc+am)/2*ray.x);
-    j=(int)floor(source.y+ (aminc+am)/2*ray.y);
-    k=(int)floor(source.z+ (aminc+am)/2*ray.z);
+    float aminc=fminf(ax,ay);
+    i=(int)floorf(source.x+ (aminc+am)/2*ray.x);
+    j=(int)floorf(source.y+ (aminc+am)/2*ray.y);
+    k=(int)floorf(source.z+ (aminc+am)/2*ray.z);
 //     k=(int)source.z;
     // Initialize
     float ac=am;
     //eq (28), unit angles
     float axu,ayu;
-    axu=1/abs(ray.x);
-    ayu=1/abs(ray.y);
+    axu=1.0f/fabsf(ray.x);
+    ayu=1.0f/fabsf(ray.y);
 //     azu=1/abs(ray.z);
     // eq(29), direction of update
     float iu,ju;
-    iu=(source.x< pixel1D.x)? 1 : -1;
-    ju=(source.y< pixel1D.y)? 1 : -1;
+    iu=(source.x< pixel1D.x)? 1.0f : -1.0f;
+    ju=(source.y< pixel1D.y)? 1.0f : -1.0f;
 //     ku=(source.z< pixel1D.z)? 1 : -1;
     
-    float maxlength=sqrt(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY);//+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
-    float sum=0;
+    float maxlength=sqrtf(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY);//+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
+    float sum=0.0f;
     unsigned int Np=(imax-imin+1)+(jmax-jmin+1);//+(kmax-kmin+1); // Number of intersections
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
-
+    i+=0.5f;
+    j+=0.5f;
+    k+=0.5f;
     for (unsigned int ii=0;ii<Np;ii++){
         if (ax==aminc){
-            sum+=(ax-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);//(ax-ac)*
+            sum+=(ax-ac)*tex3D(tex, i, j, k);//(ax-ac)*
             i=i+iu;
             ac=ax;
             ax+=axu;
         }else if(ay==aminc){
-            sum+=(ay-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);//(ay-ac)*
+            sum+=(ay-ac)*tex3D(tex, i, j, k);//(ay-ac)*
             j=j+ju;
             ac=ay;
             ay+=ayu;
@@ -246,7 +248,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
 //             ac=az;
 //             az+=azu;
         }
-        aminc=min(ay,ax);
+        aminc=fminf(ay,ax);
     }
     detector[idx]=maxlength*sum;
 }

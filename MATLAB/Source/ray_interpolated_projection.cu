@@ -134,9 +134,9 @@ template<bool sphericalrotation>
     P.z=(uvOrigin.z+pixelU*deltaU.z+pixelV*deltaV.z);
     
     // Length is the ray length in normalized space
-    float length=sqrt((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z));
+    float length=sqrtf((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z));
     //now legth is an integer of Nsamples that are required on this line
-    length=ceil(length/geo.accuracy);//Divide the directional vector by an integer
+    length=ceilf(length/geo.accuracy);//Divide the directional vector by an integer
     vectX=(P.x -source.x)/(length);
     vectY=(P.y -source.y)/(length);
     vectZ=(P.z -source.z)/(length);
@@ -153,24 +153,28 @@ template<bool sphericalrotation>
 //  for the 3D case. However it would be bad to lose performance in the 3D case
 //  TODO: can ge really improve this?
     if (sphericalrotation){
-        if ((2*DSO/min(min(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy  <   length)
-            length=ceil((2*DSO/min(min(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy);
+        if ((2*DSO/fminf(fminf(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy  <   length)
+            length=ceilf((2*DSO/fminf(fminf(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)+cropdist_init)/geo.accuracy);
     }
     else{
-        if ((2*DSO/min(geo.dVoxelX,geo.dVoxelY)+cropdist_init)/geo.accuracy  <   length)
-            length=ceil((2*DSO/min(geo.dVoxelX,geo.dVoxelY)+cropdist_init)/geo.accuracy);
+        if ((2*DSO/fminf(geo.dVoxelX,geo.dVoxelY)+cropdist_init)/geo.accuracy  <   length)
+            length=ceilf((2*DSO/fminf(geo.dVoxelX,geo.dVoxelY)+cropdist_init)/geo.accuracy);
     }
 
+    
     //Length is not actually a length, but the amount of memreads with given accuracy ("samples per voxel")
-    for (i=floor(cropdist_init/geo.accuracy); i<=length; i=i+1){
+    for (i=floorf(cropdist_init/geo.accuracy); i<=length; i=i+1){
         tx=vectX*i+source.x;
         ty=vectY*i+source.y;
         tz=vectZ*i+source.z;
         
-        sum += tex3D(tex, tx+0.5, ty+0.5, tz+0.5); // this line is 94% of time.
+        sum += tex3D(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
     }
-    float deltalength=sqrt((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
-            (vectY*geo.dVoxelY)*(vectY*geo.dVoxelY)+(vectZ*geo.dVoxelZ)*(vectZ*geo.dVoxelZ) );
+    
+    float deltalength=sqrtf((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
+                            (vectY*geo.dVoxelY)*(vectY*geo.dVoxelY)+
+                            (vectZ*geo.dVoxelZ)*(vectZ*geo.dVoxelZ) );
+    
     detector[idx]=sum*deltalength;
 }
 

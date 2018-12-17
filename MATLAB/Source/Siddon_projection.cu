@@ -218,20 +218,22 @@ __global__ void kernelPixelDetector( Geometry geo,
     float sum=0.0f;
     unsigned int Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
-    
+    i+=0.5f;
+    j+=0.5f;
+    k+=0.5f;
     for (unsigned int ii=0;ii<Np;ii++){
         if (ax==aminc){
-            sum+=(ax-ac)*tex3D<float>(tex, i+0.5f, j+0.5f, k+0.5f);
+            sum+=(ax-ac)*tex3D<float>(tex, i, j, k);
             i=i+iu;
             ac=ax;
             ax+=axu;
         }else if(ay==aminc){
-            sum+=(ay-ac)*tex3D<float>(tex, i+0.5f, j+0.5f, k+0.5f);
+            sum+=(ay-ac)*tex3D<float>(tex, i, j, k);
             j=j+ju;
             ac=ay;
             ay+=ayu;
         }else if(az==aminc){
-            sum+=(az-ac)*tex3D<float>(tex, i+0.5f, j+0.5f, k+0.5f);
+            sum+=(az-ac)*tex3D<float>(tex, i, j, k);
             k=k+ku;
             ac=az;
             az+=azu;
