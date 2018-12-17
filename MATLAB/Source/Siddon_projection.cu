@@ -59,7 +59,7 @@ do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
                 mexPrintf("%s \n",msg);\
-                mexErrMsgIdAndTxt("TIGRE:CUDA:Ax",cudaGetErrorString(__err));\
+                mexErrMsgIdAndTxt("TIGRE:Ax:Siddon:",cudaGetErrorString(__err));\
         } \
 } while (0)
     
