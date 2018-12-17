@@ -213,17 +213,17 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     for (unsigned int ii=0;ii<Np;ii++){
         if (ax==aminc){
-            sum+=(ax-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(ax-ac)*tex3D(tex, i+0.5f, j+0.5f, k+0.5f);
             i=i+iu;
             ac=ax;
             ax+=axu;
         }else if(ay==aminc){
-            sum+=(ay-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(ay-ac)*tex3D(tex, i+0.5f, j+0.5f, k+0.5f);
             j=j+ju;
             ac=ay;
             ay+=ayu;
         }else if(az==aminc){
-            sum+=(az-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(az-ac)*tex3D(tex, i+0.5f, j+0.5f, k+0.5f);
             k=k+ku;
             ac=az;
             az+=azu;
@@ -245,11 +245,11 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     
     
     // Prepare for MultiGPU
-    int deviceCount = 0;
-    gpuErrchk(cudaGetDeviceCount(&deviceCount));
-    if (deviceCount == 0) {
-        mexErrMsgIdAndTxt("Ax:Siddon_projection:GPUselect","There are no available device(s) that support CUDA\n");
-    }
+    int deviceCount = 01;
+//     cudaCheckErrors(cudaGetDeviceCount(&deviceCount));
+//     if (deviceCount == 0) {
+//         mexErrMsgIdAndTxt("Ax:Siddon_projection:GPUselect","There are no available device(s) that support CUDA\n");
+//     }
     //
     // CODE assumes
     // 1.-All available devices are usable by this code
@@ -381,7 +381,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     cudaDeviceReset();
     return 0;
 }
-void CreateTexture(int num_devices, float* imagedata,Geo geo, cudaTextureObject_t *texImage)
+void CreateTexture(int num_devices, float* imagedata,Geometry geo, cudaTextureObject_t *texImage)
 {
     size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
     for (unsigned int i = 0; i < num_devices; i++){
@@ -402,7 +402,7 @@ void CreateTexture(int num_devices, float* imagedata,Geo geo, cudaTextureObject_
         copyParams.extent   = make_cudaExtent(geo.nVoxelX,geo.nVoxelY,geo.nVoxelZ);
         copyParams.kind     = cudaMemcpyHostToDevice;
         cudaMemcpy3D(&copyParams);
-        checkCudaErrors("Texture memory data copy fail");
+        cudaCheckErrors("Texture memory data copy fail");
         //Array creation End
 
         cudaResourceDesc    texRes;
@@ -418,7 +418,7 @@ void CreateTexture(int num_devices, float* imagedata,Geo geo, cudaTextureObject_
         texDescr.addressMode[2] = cudaAddressModeBorder;
         texDescr.readMode = cudaReadModeElementType;
         cudaCreateTextureObject(&texImage[i], &texRes, &texDescr, NULL);
-        checkCudaErrors("Texture object creation fail");
+        cudaCheckErrors("Texture object creation fail");
     }
 }
 
