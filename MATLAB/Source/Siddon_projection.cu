@@ -59,7 +59,7 @@ do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
                 mexPrintf("%s \n",msg);\
-                mexErrMsgIdAndTxt("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
+                mexErrMsgIdAndTxt("TIGRE:CUDA:Ax",cudaGetErrorString(__err));\
         } \
 } while (0)
     
@@ -164,74 +164,74 @@ __global__ void kernelPixelDetector( Geometry geo,
     float imin,imax,jmin,jmax,kmin,kmax;
     // for X
     if( source.x<pixel1D.x){
-        imin=(am==axm)? 1             : ceilf (source.x+am*ray.x);
-        imax=(aM==axM)? geo.nVoxelX   : floorf(source.x+aM*ray.x);
+        imin=(am==axm)? 1.0f             : ceilf (source.x+am*ray.x);
+        imax=(aM==axM)? geo.nVoxelX      : floorf(source.x+aM*ray.x);
     }else{
-        imax=(am==axm)? geo.nVoxelX-1 : floorf(source.x+am*ray.x);
-        imin=(aM==axM)? 0             : ceilf (source.x+aM*ray.x);
+        imax=(am==axm)? geo.nVoxelX-1.0f : floorf(source.x+am*ray.x);
+        imin=(aM==axM)? 0.0f             : ceilf (source.x+aM*ray.x);
     }
     // for Y
     if( source.y<pixel1D.y){
-        jmin=(am==aym)? 1             : ceilf (source.y+am*ray.y);
-        jmax=(aM==ayM)? geo.nVoxelY   : floorf(source.y+aM*ray.y);
+        jmin=(am==aym)? 1.0f             : ceilf (source.y+am*ray.y);
+        jmax=(aM==ayM)? geo.nVoxelY      : floorf(source.y+aM*ray.y);
     }else{
-        jmax=(am==aym)? geo.nVoxelY-1 : floorf(source.y+am*ray.y);
-        jmin=(aM==ayM)? 0             : ceilf (source.y+aM*ray.y);
+        jmax=(am==aym)? geo.nVoxelY-1.0f : floorf(source.y+am*ray.y);
+        jmin=(aM==ayM)? 0.0f             : ceilf (source.y+aM*ray.y);
     }
     // for Z
     if( source.z<pixel1D.z){
-        kmin=(am==azm)? 1             : ceilf (source.z+am*ray.z);
-        kmax=(aM==azM)? geo.nVoxelZ   : floorf(source.z+aM*ray.z);
+        kmin=(am==azm)? 1.0f             : ceilf (source.z+am*ray.z);
+        kmax=(aM==azM)? geo.nVoxelZ      : floorf(source.z+aM*ray.z);
     }else{
-        kmax=(am==azm)? geo.nVoxelZ-1 : floorf(source.z+am*ray.z);
-        kmin=(aM==azM)? 0             : ceilf (source.z+aM*ray.z);
+        kmax=(am==azm)? geo.nVoxelZ-1.0f : floorf(source.z+am*ray.z);
+        kmin=(aM==azM)? 0.0f             : ceilf (source.z+aM*ray.z);
     }
     
     // get intersection point N1. eq(20-21) [(also eq 9-10)]
     float ax,ay,az;
-    ax=(source.x<pixel1D.x)?  (imin-source.x)/(ray.x+0.000000000001) :  (imax-source.x)/(ray.x+0.000000000001);
-    ay=(source.y<pixel1D.y)?  (jmin-source.y)/(ray.y+0.000000000001) :  (jmax-source.y)/(ray.y+0.000000000001);
-    az=(source.z<pixel1D.z)?  (kmin-source.z)/(ray.z+0.000000000001) :  (kmax-source.z)/(ray.z+0.000000000001);
+    ax=(source.x<pixel1D.x)?  (imin-source.x)/(ray.x+0.000000000001f) :  (imax-source.x)/(ray.x+0.000000000001f);
+    ay=(source.y<pixel1D.y)?  (jmin-source.y)/(ray.y+0.000000000001f) :  (jmax-source.y)/(ray.y+0.000000000001f);
+    az=(source.z<pixel1D.z)?  (kmin-source.z)/(ray.z+0.000000000001f) :  (kmax-source.z)/(ray.z+0.000000000001f);
     
     
     
     // get index of first intersection. eq (26) and (19)
     int i,j,k;
     float aminc=fminf(fminf(ax,ay),az);
-    i=(int)floorf(source.x+ (aminc+am)/2*ray.x);
-    j=(int)floorf(source.y+ (aminc+am)/2*ray.y);
-    k=(int)floorf(source.z+ (aminc+am)/2*ray.z);
+    i=(int)floorf(source.x+ (aminc+am)/2.0f*ray.x);
+    j=(int)floorf(source.y+ (aminc+am)/2.0f*ray.y);
+    k=(int)floorf(source.z+ (aminc+am)/2.0f*ray.z);
     // Initialize
     float ac=am;
     //eq (28), unit anlges
     float axu,ayu,azu;
-    axu=1/fabs(ray.x);
-    ayu=1/fabs(ray.y);
-    azu=1/fabs(ray.z);
+    axu=1.0f/fabsf(ray.x);
+    ayu=1.0f/fabsf(ray.y);
+    azu=1.0f/fabsf(ray.z);
     // eq(29), direction of update
     float iu,ju,ku;
-    iu=(source.x< pixel1D.x)? 1 : -1;
-    ju=(source.y< pixel1D.y)? 1 : -1;
-    ku=(source.z< pixel1D.z)? 1 : -1;
+    iu=(source.x< pixel1D.x)? 1.0f : -1.0f;
+    ju=(source.y< pixel1D.y)? 1.0f : -1.0f;
+    ku=(source.z< pixel1D.z)? 1.0f : -1.0f;
     
     float maxlength=sqrtf(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
-    float sum=0;
+    float sum=0.0f;
     unsigned int Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
     
     for (unsigned int ii=0;ii<Np;ii++){
         if (ax==aminc){
-            sum+=(ax-ac)*tex3D<float>(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(ax-ac)*tex3D<float>(tex, i+0.5f, j+0.5f, k+0.5f);
             i=i+iu;
             ac=ax;
             ax+=axu;
         }else if(ay==aminc){
-            sum+=(ay-ac)*tex3D<float>(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(ay-ac)*tex3D<float>(tex, i+0.5f, j+0.5f, k+0.5f);
             j=j+ju;
             ac=ay;
             ay+=ayu;
         }else if(az==aminc){
-            sum+=(az-ac)*tex3D<float>(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(az-ac)*tex3D<float>(tex, i+0.5f, j+0.5f, k+0.5f);
             k=k+ku;
             ac=az;
             az+=azu;
@@ -371,7 +371,6 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
                 }
                 
             }
-            
             for (dev = 0; dev < deviceCount; dev++){
                 if(i+dev<nangles){
                     cudaSetDevice(dev);
