@@ -89,7 +89,6 @@ do { \
      *
      *
      **/
-    texture<float, cudaTextureType2DLayered , cudaReadModeElementType> tex;
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -285,39 +284,67 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
 
 int voxel_backprojection(float const * const projections, Geometry geo, float* result,float const * const alphas, int nalpha)
 {
+    
+    
+     
+    // Prepare for MultiGPU
+    int deviceCount = 0;
+    cudaGetDeviceCount(&deviceCount);
+    cudaCheckErrors("Device query fail");
+    if (deviceCount == 0) {
+        mexErrMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","There are no available device(s) that support CUDA\n");
+    }
+    //
+    // CODE assumes
+    // 1.-All available devices are usable by this code
+    // 2.-All available devices are equal, they are the same machine (warning trhown)
+    int dev;
+    char * devicenames;
+    cudaDeviceProp deviceProp;
+    
+    for (dev = 0; dev < deviceCount; dev++) {
+        cudaSetDevice(dev);
+        cudaGetDeviceProperties(&deviceProp, dev);
+        if (dev>0){
+            if (strcmp(devicenames,deviceProp.name)!=0){
+                mexWarnMsgIdAndTxt("Atb:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 275.");
+                break;
+            }
+        }
+        devicenames=deviceProp.name;
+    }
+    cudaSetDevice(0);
+    cudaGetDeviceProperties(&deviceProp, 0);
+    unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem*0.9);
+    size_t mem_image=(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
+    size_t mem_image_slice=(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)VOXELS_PER_THREAD*sizeof(float);
+    size_t mem_proj =(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV * sizeof(float);
+    
+    // Does everything fit in the GPUs?
+    bool fits_in_memory=false;
+    bool proj_fit_in_memory=false;
+    unsigned int splits=1;
+    Geometry * geoArray;
+    
+    // Does everything fit in the GPU?
+    if(mem_image+mem_proj*nalpha<mem_GPU_global)
+        // We only need to split if we have extra GPUs
+        fits_in_memory=true;
+    // We know we need to split, but:
+    // Do all projections fit on the GPU (with some slack for the image)??
+    else if(mem_proj*nalpha+mem_image_slice <mem_GPU_global)
+         proj_fit_in_memory=true;
+    // They do not fit in memory. We need to split both projections and images. Its OK, well survive.
+    else 
+    {
+    }
+    
+    
     /*
      * Allocate texture memory on the device
      */
-    
-    
-    
-    // copy data to CUDA memory
-    cudaArray *d_projectiondata = 0;
-    const cudaExtent extent = make_cudaExtent(geo.nDetecV,geo.nDetecU,nalpha);
-    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
-    cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent,cudaArrayLayered);
-    cudaCheckErrors("cudaMalloc3D error 3D tex");
-    
-    cudaMemcpy3DParms copyParams = { 0 };
-    copyParams.srcPtr = make_cudaPitchedPtr((void*)projections, extent.width*sizeof(float), extent.width, extent.height);
-    copyParams.dstArray = d_projectiondata;
-    copyParams.extent = extent;
-    copyParams.kind = cudaMemcpyHostToDevice;
-    cudaMemcpy3D(&copyParams);
-    
-    cudaCheckErrors("cudaMemcpy3D fail");
-    
-    // Configure texture options
-    tex.normalized = false;
-    tex.filterMode = cudaFilterModeLinear;
-    tex.addressMode[0] = cudaAddressModeBorder;
-    tex.addressMode[1] = cudaAddressModeBorder;
-    tex.addressMode[2] = cudaAddressModeBorder;
-    
-    cudaBindTextureToArray(tex, d_projectiondata, channelDesc);
-    
-    cudaCheckErrors("3D texture memory bind fail");
-    
+     CreateTexture(deviceCount,&projections[linear_idx_start],geoArray[sp],d_cuArrTex,nalpham,texImg);
+
     
     // Allocate result image memory
     size_t num_bytes = geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ * sizeof(float);
@@ -327,11 +354,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     cudaCheckErrors("cudaMalloc fail");
     
     // If we are going to time
-    bool timekernel=false;
-    cudaEvent_t start, stop;
-    float elapsedTime;
-    
-    
+
     int divx,divy,divz;
     
     // RB: Use the optimal (in their tests) block size from paper by Zinsser and Keck (16 in x and 32 in y).
@@ -397,22 +420,10 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         // Copy the prepared parameter arrays to constant memory to make it available for the kernel
         cudaMemcpyToSymbol(projSinCosArrayDev, projSinCosArrayHost, sizeof(float)*5*PROJ_PER_KERNEL);
         cudaMemcpyToSymbol(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*6*PROJ_PER_KERNEL);
-        if (timekernel){
-            cudaEventCreate(&start);
-            cudaEventRecord(start,0);
-        }
+
         kernelPixelBackprojectionFDK<<<grid,block>>>(geo,dimage,i,nalpha);
         cudaCheckErrors("Kernel fail");
-        if (timekernel)
-        {
-            cudaEventCreate(&stop);
-            cudaEventRecord(stop,0);
-            cudaEventSynchronize(stop);
-            cudaEventElapsedTime(&elapsedTime, start,stop);
-            mexPrintf("%f\n" ,elapsedTime);
-            cudaCheckErrors("cuda Timing fail");
-            
-        }
+
     }  // END for
     
     //////////////////////////////////////////////////////////////////////////////////////
@@ -435,6 +446,46 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     
 }  // END voxel_backprojection
 
+void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage)
+{
+    //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+    for (unsigned int i = 0; i < num_devices; i++){
+        cudaSetDevice(i);
+        
+        //cudaArray Descriptor
+        const cudaExtent extent = make_cudaExtent(geo.nDetecU, geo.nDetecV, nangles);
+        cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
+        //cuda Array
+        cudaMalloc3DArray(&d_cuArrTex[i], &channelDesc, extent);
+        cudaCheckErrors("Texture memory allocation fail");
+        cudaMemcpy3DParms copyParams = {0};
+        
+        
+        //Array creation
+        copyParams.srcPtr   = make_cudaPitchedPtr((void *)projectiondata, extent.width*sizeof(float), extent.width, extent.height);
+        copyParams.dstArray = d_cuArrTex[i];
+        copyParams.extent   = extent;
+        copyParams.kind     = cudaMemcpyHostToDevice;
+        cudaMemcpy3D(&copyParams);
+        cudaCheckErrors("Texture memory data copy fail");
+        //Array creation End
+        
+        cudaResourceDesc    texRes;
+        memset(&texRes, 0, sizeof(cudaResourceDesc));
+        texRes.resType = cudaResourceTypeArray;
+        texRes.res.array.array  = d_cuArrTex[i];
+        cudaTextureDesc     texDescr;
+        memset(&texDescr, 0, sizeof(cudaTextureDesc));
+        texDescr.normalizedCoords = false;
+        texDescr.filterMode = cudaFilterModeLinear;
+        texDescr.addressMode[0] = cudaAddressModeBorder;
+        texDescr.addressMode[1] = cudaAddressModeBorder;
+        texDescr.addressMode[2] = cudaAddressModeBorder;
+        texDescr.readMode = cudaReadModeElementType;
+        cudaCreateTextureObject(&texImage[i], &texRes, &texDescr, NULL);
+        cudaCheckErrors("Texture object creation fail");
+    }
+}
 
 
 //______________________________________________________________________________
