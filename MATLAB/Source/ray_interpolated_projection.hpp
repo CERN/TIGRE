@@ -58,6 +58,7 @@ void computeDeltas(Geometry geo,unsigned int i, Point3D* uvorigin, Point3D* delt
 void rollPitchYaw(Geometry geo,unsigned int i, Point3D* point);
 float maxdistanceCuboid(Geometry geo,unsigned int i);
 void eulerZYZ(Geometry geo, Point3D* point);
+void splitImageInterp(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned int nangles);
 
 // below, not used
 Geometry nomralizeGeometryImage(Geometry geo);
