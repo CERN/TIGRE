@@ -92,14 +92,14 @@ do { \
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+    
 // The optimal values of two constants obtained by RB on NVIDIA Quadro K2200 (4 GB RAM, 640 CUDA cores) for 512^3 volume and 512^3 projections (512 proj, each 512 x 512) were:
 // PROJ_PER_KERNEL = 32 or 16 (very similar times)
 // VOXELS_PER_THREAD = 8
 // Speedup of the entire FDK backprojection (not only kernel run, also memcpy etc.) was nearly 4x relative to the original (single projection, single voxel per thread) code.
 // (e.g. 16.2 s vs. ~62 s).
-
-const int PROJ_PER_KERNEL = 32;  // Number of 2D projections to be analyzed by a single thread. This can be tweaked to see what works best. 32 was the optimal value in the paper by Zinsser and Keck.
+    
+    const int PROJ_PER_KERNEL = 32;  // Number of 2D projections to be analyzed by a single thread. This can be tweaked to see what works best. 32 was the optimal value in the paper by Zinsser and Keck.
 const int VOXELS_PER_THREAD = 8;  // Number of voxels to be computed by s single thread. Can be tweaked to see what works best. 4 was the optimal value in the paper by Zinsser and Keck.
 
 // We have PROJ_PER_KERNEL projections and we need 6 parameters for each projection:
@@ -129,7 +129,7 @@ float projSinCosArrayHost[5*PROJ_PER_KERNEL];
 //      Description:    Main FDK backprojection kernel
 //______________________________________________________________________________
 
-__global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,const int currProjSetNumber, const int totalNoOfProjections)
+__global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,const int currProjSetNumber, const int totalNoOfProjections, cudaTextureObject_t tex)
 {
     
     // Old kernel call signature:
@@ -245,9 +245,9 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             
-            voxelColumn[colIdx]+=tex2DLayered(tex, v ,
+            voxelColumn[colIdx]+=tex3D<float>(tex, v ,
                     u ,
-                    indAlpha)*weigth;
+                    indAlpha+0.5f)*weigth;
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
@@ -286,7 +286,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
 {
     
     
-     
+    
     // Prepare for MultiGPU
     int deviceCount = 0;
     cudaGetDeviceCount(&deviceCount);
@@ -297,7 +297,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     //
     // CODE assumes
     // 1.-All available devices are usable by this code
-    // 2.-All available devices are equal, they are the same machine (warning trhown)
+    // 2.-All available devices are equal, they are the same machine (warning thrown)
     int dev;
     char * devicenames;
     cudaDeviceProp deviceProp;
@@ -325,36 +325,91 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     bool proj_fit_in_memory=false;
     unsigned int splits=1;
     Geometry * geoArray;
-    
+    unsigned int split_image;
+    unsigned int split_projections;
     // Does everything fit in the GPU?
-    if(mem_image+mem_proj*nalpha<mem_GPU_global)
+    if(mem_image+mem_proj*nalpha<mem_GPU_global){
         // We only need to split if we have extra GPUs
         fits_in_memory=true;
+        split_image=1;
+        split_projections=1;
+    }
     // We know we need to split, but:
     // Do all projections fit on the GPU (with some slack for the image)??
-    else if(mem_proj*nalpha+mem_image_slice <mem_GPU_global)
-         proj_fit_in_memory=true;
-    // They do not fit in memory. We need to split both projections and images. Its OK, well survive.
-    else 
-    {
+    else if(mem_proj*nalpha+mem_image_slice <mem_GPU_global){
+        proj_fit_in_memory=true;
+        // We should then store all the projections in GPU and split the image backprojection in as big chunks as possible
+        split_projections=1;
+        size_t mem_free=mem_GPU_global-nalpha*mem_proj;
+        // How many slices can we fit on the free memory we have? We'd like to keep these slices full as it increases
+        // the kernels performance to run image chuncks that are VOXELS_PER_THREAD in z.
+        unsigned int max_slices_img_gpu=mem_image_slice/mem_free;
+        unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
+        // if we have multi GPU we want to split in a way that ensures both have the same amount of work.
+        if (deviceCount>1){
+            // Do we need an array here to evenly distribute computation?
+            //this is the amount of splits PER GPU!
+            split_img=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)max_slices_img_gpu);
+        }
+        else{
+            // If we only have 1 GPU, just fill it to the max.
+            split_img=(total_slices_img+max_slices_img_gpu-1)/max_slices_img_gpu;
+        }
     }
-    
+    // They do not fit in memory. We need to split both projections and images. Its OK, we'll survive.
+    else
+    {
+        // Because I think memory transfer is the slowest operation if broken apart (TODO test this assumtion) we should minimize the amount
+        // of those that happen. So the target split is that one that requires less copys of projection data to memory.
+        proj_fit_in_memory=false;
+        // lets assume to start with that we only need 1 slice of image in memory, the rest is fo rprojections
+        size_t mem_free=mem_GPU_global-mem_image_slice;
+        split_projections=(mem_proj*nalpha+mem_free-1)/mem_free;
+        // Now knowing how many splits we have for projections, we can recompute how many slices of image actually
+        // fit on the GPU. Must be more than 0 obviously.
+        mem_free=mem_GPU_global-mem_proj*nalpha/split_projections;
+        unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
+        split_img=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
+        
+    }
+    // Now lest allocate all the image memory on the GPU, so we can use it later. If we have made our numbers correctly
+    // in the previous section this should leave enough space for the textures.
+    size_t num_bytes = geo.nVoxelX*geo.nVoxelY*((geo.nVoxelZ+split_img-1)/split_img)* sizeof(float);
+    for (dev = 0; dev < deviceCount; dev++){
+          float* dimage;
+          cudaMalloc((void**)&dimage, num_bytes);
+          cudaMemset(dimage,0,num_bytes);
+          cudaCheckErrors("cudaMalloc fail");
+     }
+    // TODO above: Geometry has not been touched and that is fundamental for the following parts.
+    unsigned long long proj_linear_idx_start;
+    unsigned int current_split_size;
+    for( unsigned int proj=0;proj<split_projections;proj++){
+        proj_linear_idx_start=((nalpha+split_projections-1)/split_projections)*proj*geo.nDetecU*gep.nDetecV;
+        current_split_size=(nalpha+split_projections-1)/split_projections);
+        current_split_size=((proj+1)*current_split_size<nalpha)?  current_split_size:  nalpha-current_split_size*proj;
+        // Now get the projections on memory
+        cudaTextureObject_t *texProj = new cudaTextureObject_t[deviceCount];
+        cudaArray **d_cuArrTex = new cudaArray*[deviceCount];
+        CreateTexture(deviceCount,&projections[proj_linear_idx_start],geo,d_cuArrTex,current_split_size,texProj);
+        
+        
+        for(unsigned int img_slice=0;img_slice<split_img;img_slice++){
+            for (dev = 0; dev < deviceCount; dev++){
+
+            }
+        }
+    }
     
     /*
      * Allocate texture memory on the device
      */
-     CreateTexture(deviceCount,&projections[linear_idx_start],geoArray[sp],d_cuArrTex,nalpham,texImg);
-
+    
     
     // Allocate result image memory
-    size_t num_bytes = geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ * sizeof(float);
-    float* dimage;
-    cudaMalloc((void**)&dimage, num_bytes);
-    cudaMemset(dimage,0,num_bytes);
-    cudaCheckErrors("cudaMalloc fail");
     
-    // If we are going to time
-
+    
+    
     int divx,divy,divz;
     
     // RB: Use the optimal (in their tests) block size from paper by Zinsser and Keck (16 in x and 32 in y).
@@ -420,10 +475,10 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         // Copy the prepared parameter arrays to constant memory to make it available for the kernel
         cudaMemcpyToSymbol(projSinCosArrayDev, projSinCosArrayHost, sizeof(float)*5*PROJ_PER_KERNEL);
         cudaMemcpyToSymbol(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*6*PROJ_PER_KERNEL);
-
+        
         kernelPixelBackprojectionFDK<<<grid,block>>>(geo,dimage,i,nalpha);
         cudaCheckErrors("Kernel fail");
-
+        
     }  // END for
     
     //////////////////////////////////////////////////////////////////////////////////////
