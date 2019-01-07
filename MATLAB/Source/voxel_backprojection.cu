@@ -90,7 +90,7 @@ do { \
      *
      **/
     
-    void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage);
+void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage);
 
     
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -320,9 +320,9 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     cudaSetDevice(0);
     cudaGetDeviceProperties(&deviceProp, 0);
     unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem*0.9);
-    size_t mem_image=(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
-    size_t mem_image_slice=(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)VOXELS_PER_THREAD*sizeof(float);
-    size_t mem_proj =(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV * sizeof(float);
+    size_t mem_image=       (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
+    size_t mem_image_slice= (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)VOXELS_PER_THREAD*sizeof(float);
+    size_t mem_proj=        (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
     
     // Does everything fit in the GPUs?
     bool fits_in_memory=false;
@@ -332,11 +332,18 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     unsigned int split_image;
     unsigned int split_projections;
     // Does everything fit in the GPU?
+//     mexPrintf("Memory requirements:\n");
+//     mexPrintf("mem_image: %zu\n",mem_image );
+//     mexPrintf("mem_image_slice: %zu\n",mem_image_slice );
+//     mexPrintf("mem_proj: %zu\n",mem_proj );
+//     mexPrintf("mem_GPU_global: %zu\n",mem_GPU_global );
+//     mexPrintf("\n");
     if(mem_image+mem_proj*nalpha<mem_GPU_global){
         // We only need to split if we have extra GPUs
         fits_in_memory=true;
         split_image=1;
         split_projections=1;
+        mexPrintf("No splits needed\n");
     }
     // We know we need to split, but:
     // Do all projections fit on the GPU (with some slack for the image)??
@@ -347,8 +354,13 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         size_t mem_free=mem_GPU_global-nalpha*mem_proj;
         // How many slices can we fit on the free memory we have? We'd like to keep these slices full as it increases
         // the kernels performance to run image chuncks that are VOXELS_PER_THREAD in z.
-        unsigned int max_slices_img_gpu=mem_image_slice/mem_free;
+        unsigned int max_slices_img_gpu=mem_free/mem_image_slice;
         unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
+        
+//          mexPrintf("mem_free: %u\n",mem_free );
+//          mexPrintf("max_slices_img_gpu: %u\n",max_slices_img_gpu );
+//          mexPrintf("total_slices_img: %u\n",total_slices_img );
+        
         // if we have multi GPU we want to split in a way that ensures both have the same amount of work.
         if (deviceCount>1){
             // Do we need an array here to evenly distribute computation?
@@ -359,6 +371,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
             // If we only have 1 GPU, just fill it to the max.
             split_image=(total_slices_img+max_slices_img_gpu-1)/max_slices_img_gpu;
         }
+        mexPrintf("Image needs to be split\n");
     }
     // They do not fit in memory. We need to split both projections and images. Its OK, we'll survive.
     else
@@ -374,8 +387,14 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         mem_free=mem_GPU_global-mem_proj*nalpha/split_projections;
         unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
         split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
-        
+        mexPrintf("Image and Projections need to split\n");
     }
+     
+     mexPrintf("Final results:\n");
+     mexPrintf("split_projections: %u \n",split_projections);
+     mexPrintf("split_image: %u \n",split_image);
+     
+     
     // Now lest allocate all the image memory on the GPU, so we can use it later. If we have made our numbers correctly
     // in the previous section this should leave enough space for the textures.
     size_t num_bytes_img = geo.nVoxelX*geo.nVoxelY*((geo.nVoxelZ+split_image-1)/split_image)* sizeof(float);
@@ -390,9 +409,13 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     unsigned long long proj_linear_idx_start;
     unsigned int current_split_size;
     for( unsigned int proj=0;proj<split_projections;proj++){
-        proj_linear_idx_start=((nalpha+split_projections-1)/split_projections)*proj*geo.nDetecU*geo.nDetecV;
+        // Crop the last one, as its likely its not completely divisible.
         current_split_size=(nalpha+split_projections-1)/split_projections;
         current_split_size=((proj+1)*current_split_size<nalpha)?  current_split_size:  nalpha-current_split_size*proj;
+        
+        //Get the linear index where the current memory chunk starts. 
+        proj_linear_idx_start=(unsigned long long)((nalpha+split_projections-1)/split_projections)*(unsigned long long)proj*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
+
         // Now get the projections on memory
         cudaTextureObject_t *texProj = new cudaTextureObject_t[deviceCount];
         cudaArray **d_cuArrTex = new cudaArray*[deviceCount];
@@ -405,7 +428,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
             }
         }
         
-        //Before the next iteration of projection slices, delete the curren textures. 
+        //Before the next iteration of projection slices, delete the current textures. 
         
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
@@ -414,7 +437,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
             
         }
     }
-    
+    return 0;
     
     
     
@@ -484,7 +507,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         cudaMemcpyToSymbol(projSinCosArrayDev, projSinCosArrayHost, sizeof(float)*5*PROJ_PER_KERNEL);
         cudaMemcpyToSymbol(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*6*PROJ_PER_KERNEL);
         
-        kernelPixelBackprojectionFDK<<<grid,block>>>(geo,dimage,i,nalpha);
+        //kernelPixelBackprojectionFDK<<<grid,block>>>(geo,dimage[dev],i,nalpha,texProj[dev]);
         cudaCheckErrors("Kernel fail");
         
     }  // END for
@@ -495,14 +518,14 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     
     
     
-    cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
+    cudaMemcpy(result, dimage, num_bytes_img, cudaMemcpyDeviceToHost);
     cudaCheckErrors("cudaMemcpy result fail");
     
-    cudaUnbindTexture(tex);
-    cudaCheckErrors("Unbind  fail");
+    //cudaUnbindTexture(tex);
+    //cudaCheckErrors("Unbind  fail");
     
     cudaFree(dimage);
-    cudaFreeArray(d_projectiondata);
+    //cudaFreeArray(d_projectiondata);
     cudaCheckErrors("cudaFree d_imagedata fail");
     cudaDeviceReset(); // For the Nvidia Visual Profiler
     return 0;
