@@ -264,7 +264,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     //
     // CODE assumes
     // 1.-All available devices are usable by this code
-    // 2.-All available devices are equal, they are the same machine (warning trhown)
+    // 2.-All available devices are equal, they are the same machine (warning thrown)
     int dev;
     char * devicenames;
     cudaDeviceProp deviceProp;
@@ -283,8 +283,8 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     cudaSetDevice(0);
     cudaGetDeviceProperties(&deviceProp, 0);
     unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem*0.9);
-    size_t mem_image=(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
-    size_t mem_proj =(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV * sizeof(float);
+    size_t mem_image=                 (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
+    size_t mem_proj=                  (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
     
     // Does everything fit in the GPUs?
     bool fits_in_memory=false;

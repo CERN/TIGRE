@@ -317,14 +317,16 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         }
         devicenames=deviceProp.name;
     }
+    // Get memory of GPU. Assuming all of the available GPUs have the same amoutn of memory.
     cudaSetDevice(0);
     cudaGetDeviceProperties(&deviceProp, 0);
-    unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem*0.9);
+    unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem*0.9); // lets leave 10% for the GPU. Too much? maybe, but probably worth saving.
+    // Compute how much memory each of the relevant memory pieces need
     size_t mem_image=       (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
     size_t mem_image_slice= (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)VOXELS_PER_THREAD*sizeof(float);
     size_t mem_proj=        (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
     
-    // Does everything fit in the GPUs?
+    // Initialize variables for spliting procedure choosing algorithm.
     bool fits_in_memory=false;
     bool proj_fit_in_memory=false;
     unsigned int splits=1;
@@ -332,12 +334,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     unsigned int split_image;
     unsigned int split_projections;
     // Does everything fit in the GPU?
-//     mexPrintf("Memory requirements:\n");
-//     mexPrintf("mem_image: %zu\n",mem_image );
-//     mexPrintf("mem_image_slice: %zu\n",mem_image_slice );
-//     mexPrintf("mem_proj: %zu\n",mem_proj );
-//     mexPrintf("mem_GPU_global: %zu\n",mem_GPU_global );
-//     mexPrintf("\n");
+
     if(mem_image+mem_proj*nalpha<mem_GPU_global){
         // We only need to split if we have extra GPUs
         fits_in_memory=true;
@@ -354,23 +351,13 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         size_t mem_free=mem_GPU_global-nalpha*mem_proj;
         // How many slices can we fit on the free memory we have? We'd like to keep these slices full as it increases
         // the kernels performance to run image chuncks that are VOXELS_PER_THREAD in z.
-        unsigned int max_slices_img_gpu=mem_free/mem_image_slice;
         unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
+        // Split:
+        // mem_free/mem_image_slice == how many slices fit in each GPU
+        // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
+        split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
         
-//          mexPrintf("mem_free: %u\n",mem_free );
-//          mexPrintf("max_slices_img_gpu: %u\n",max_slices_img_gpu );
-//          mexPrintf("total_slices_img: %u\n",total_slices_img );
-        
-        // if we have multi GPU we want to split in a way that ensures both have the same amount of work.
-        if (deviceCount>1){
-            // Do we need an array here to evenly distribute computation?
-            //this is the amount of splits PER GPU!
-            split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)max_slices_img_gpu);
-        }
-        else{
-            // If we only have 1 GPU, just fill it to the max.
-            split_image=(total_slices_img+max_slices_img_gpu-1)/max_slices_img_gpu;
-        }
+
         mexPrintf("Image needs to be split\n");
     }
     // They do not fit in memory. We need to split both projections and images. Its OK, we'll survive.
@@ -386,6 +373,9 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         // fit on the GPU. Must be more than 0 obviously.
         mem_free=mem_GPU_global-mem_proj*nalpha/split_projections;
         unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
+        // Split:
+        // mem_free/mem_image_slice == how many slices fit in each GPU
+        // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
         split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
         mexPrintf("Image and Projections need to split\n");
     }
@@ -397,7 +387,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
      
     // Now lest allocate all the image memory on the GPU, so we can use it later. If we have made our numbers correctly
     // in the previous section this should leave enough space for the textures.
-    size_t num_bytes_img = geo.nVoxelX*geo.nVoxelY*((geo.nVoxelZ+split_image-1)/split_image)* sizeof(float);
+    size_t num_bytes_img = geo.nVoxelX*geo.nVoxelY*(size_t)ceil((float)geo.nVoxelZ/(float)deviceCount/(float)split_image)* sizeof(float);
     float** dimage=(float**)malloc(deviceCount*sizeof(float*));
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
@@ -405,7 +395,15 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         cudaMemset(dimage[dev],0,num_bytes_img);
         cudaCheckErrors("cudaMalloc fail");
     }
-    // TODO above: Geometry has not been touched and that is fundamental for the following parts.
+    //Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the 
+    // image slices. The rest of the Geometry is the same
+    Geometry* geoArray;
+    createGeoArray(split_image*deviceCount,geo,geoArray,nalpha);
+
+    // Start with the main loop. The Projection data needs to be allocated and dealocated in the main loop
+    // as due to the nature of cudaArrays, we can not reuse them. This should not be a problem for the fast execution
+    // of the code, as repeated allocation and deallocation only happens when the projection data is very very big, 
+    // and therefore allcoation time should be negligible, fluctuation of other computations should mask the time.
     unsigned long long proj_linear_idx_start;
     unsigned int current_split_size;
     for( unsigned int proj=0;proj<split_projections;proj++){
@@ -573,7 +571,44 @@ void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cuda
     }
 }
 
+//______________________________________________________________________________
+//
+//      Function:       createGeoArray
+//
+//      Description:    This code generates the geometries needed to split the image properly in
+//                      cases where the entire image does not fit in the memory of the GPU
+//______________________________________________________________________________
 
+void createGeoArray(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned int nangles){
+    
+    geoArray=(Geometry*)malloc(splits*sizeof(Geometry));
+    unsigned int  splitsize=(nangles+splits-1)/splits;
+    for(unsigned int sp=0;sp<splits;sp++){
+        geoArray[sp]=geo;
+        // All of them are splitsize, but the last one, possible
+        geoArray[sp].nVoxelZ=((sp+1)*splitsize<geo.nVoxelZ)?  splitsize:  geo.nVoxelZ-splitsize*sp;
+        geoArray[sp].sVoxelZ= geoArray[sp].nVoxelZ* geoArray[sp].dVoxelZ;
+        
+        // We need to redefine the offsets, as now each subimage is not aligned in the origin.
+        geoArray[sp].offOrigZ=(float *)malloc(nangles*sizeof(float));
+        for (unsigned int i=0;i<nangles;i++){
+            geoArray[sp].offOrigZ[i]=geo.offOrigZ[i]-geo.sVoxelZ/2+sp*geoArray[0].sVoxelZ+geoArray[sp].sVoxelZ/2;
+        }        
+    }
+    
+}
+//______________________________________________________________________________
+//
+//      Function:       freeGeoArray
+//
+//      Description:    Frees the memory from the geometry array for multiGPU.
+//______________________________________________________________________________
+void freeGeoArray(unsigned int splits,Geometry* geoArray){
+   for(unsigned int sp=0;sp<splits;sp++){
+       free(geoArray[sp].offOrigZ);
+   }
+   free(geoArray);
+}
 //______________________________________________________________________________
 //
 //      Function:       computeDeltasCube
