@@ -64,52 +64,44 @@ do { \
 } while (0)
     
     
+// Declare the texture reference.
+    texture<float, cudaTextureType3D , cudaReadModeElementType> tex;
 #define MAXTREADS 1024
-    /*GEOMETRY DEFINITION
-     *
-     *                Detector plane, behind
-     *            |-----------------------------|
-     *            |                             |
-     *            |                             |
-     *            |                             |
-     *            |                             |
-     *            |      +--------+             |
-     *            |     /        /|             |
-     *   A Z      |    /        / |*D           |
-     *   |        |   +--------+  |             |
-     *   |        |   |        |  |             |
-     *   |        |   |     *O |  +             |
-     *    --->y   |   |        | /              |
-     *  /         |   |        |/               |
-     * V X        |   +--------+                |
-     *            |-----------------------------|
-     *
-     *           *S
-     *
-     *
-     *
-     *
-     *
-     **/
-    
-    void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage);
+/*GEOMETRY DEFINITION
+ *
+ *                Detector plane, behind
+ *            |-----------------------------|
+ *            |                             |
+ *            |                             |
+ *            |                             |
+ *            |                             |
+ *            |      +--------+             |
+ *            |     /        /|             |
+ *   A Z      |    /        / |*D           |
+ *   |        |   +--------+  |             |
+ *   |        |   |        |  |             |
+ *   |        |   |     *O |  +             |
+ *    --->y   |   |        | /              |
+ *  /         |   |        |/               |
+ * V X        |   +--------+                |
+ *            |-----------------------------|
+ *
+ *           *S
+ *
+ *
+ *
+ *
+ *
+ **/
 
 
-__global__ void vecAddInPlace(float *a, float *b, unsigned long  n)
-{
-    int idx = blockIdx.x*blockDim.x+threadIdx.x;
-    // Make sure we do not go out of bounds
-    if (idx < n)
-        a[idx] = a[idx] + b[idx];
-}
 
 __global__ void kernelPixelDetector( Geometry geo,
         float* detector,
         Point3D source ,
         Point3D deltaU,
         Point3D deltaV,
-        Point3D uvOrigin,
-        cudaTextureObject_t tex){
+        Point3D uvOrigin){
     
 //     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
     
@@ -221,17 +213,17 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     for (unsigned int ii=0;ii<Np;ii++){
         if (ax==aminc){
-            sum+=(ax-ac)*tex3D<float>(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(ax-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
             i=i+iu;
             ac=ax;
             ax+=axu;
         }else if(ay==aminc){
-            sum+=(ay-ac)*tex3D<float>(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(ay-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
             j=j+ju;
             ac=ay;
             ay+=ayu;
         }else if(az==aminc){
-            sum+=(az-ac)*tex3D<float>(tex, i+0.5, j+0.5, k+0.5);
+            sum+=(az-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
             k=k+ku;
             ac=az;
             az+=azu;
@@ -255,7 +247,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     // Prepare for MultiGPU
     int deviceCount = 0;
     cudaGetDeviceCount(&deviceCount);
-    cudaCheckErrors("Device query fail");
+    cudaCheckErrors("Error checking devices");
     if (deviceCount == 0) {
         mexErrMsgIdAndTxt("Ax:Siddon_projection:GPUselect","There are no available device(s) that support CUDA\n");
     }
@@ -286,132 +278,103 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     
     // Does everything fit in the GPUs?
     bool fits_in_memory=false;
-    unsigned int splits=1;
-    Geometry * geoArray;
     if (mem_image+mem_proj<mem_GPU_global){
         fits_in_memory=true;
-        geoArray=(Geometry*)malloc(sizeof(Geometry));
-        geoArray[0]=geo;
     }
-   else{
-        fits_in_memory=false; // Oh dear.
-        // approx free memory we have. We already have left some extra 10% free for internal stuff
-        // we need a second projection memory to gather
-        size_t mem_free=mem_GPU_global-2*mem_proj;
-        splits=mem_image/mem_free+1;// Ceil of the truncation
-        geoArray=(Geometry*)malloc(splits*sizeof(Geometry));
-        splitImage(splits,geo,geoArray,nangles);
-    }
+     else{
+     }
     
-    float ** dProjection_accum;
-    size_t num_bytes_proj = geo.nDetecU*geo.nDetecV * sizeof(float);
-    if (!fits_in_memory){
-        dProjection_accum=(float**)malloc(deviceCount*sizeof(float*));
-        for (dev = 0; dev < deviceCount; dev++) {
-            cudaSetDevice(dev);
-            cudaMalloc((void**)&dProjection_accum[dev], num_bytes_proj);
-            cudaMemset(dProjection_accum[dev],0,num_bytes_proj);
-            cudaCheckErrors("cudaMallocauxiliarty projections fail");
-        }
-    }
-    
-    // This is happening regarthless if the image fits on memory
-    float** dProjection=(float**)malloc(deviceCount*sizeof(float*));
+    cudaArray *d_imagedata = 0;
     for (dev = 0; dev < deviceCount; dev++) {
         cudaSetDevice(dev);
-        cudaMalloc((void**)&dProjection[dev], num_bytes_proj);
-        cudaMemset(dProjection[dev],0,num_bytes_proj);
-        cudaCheckErrors("cudaMalloc projections fail");
+    // copy data to CUDA memory
+    
+    
+    const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
+    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
+    cudaMalloc3DArray(&d_imagedata, &channelDesc, extent);
+    cudaCheckErrors("cudaMalloc3D error 3D tex");
+    
+    cudaMemcpy3DParms copyParams = { 0 };
+    copyParams.srcPtr = make_cudaPitchedPtr((void*)img, extent.width*sizeof(float), extent.width, extent.height);
+    copyParams.dstArray = d_imagedata;
+    copyParams.extent = extent;
+    copyParams.kind = cudaMemcpyHostToDevice;
+    cudaMemcpy3D(&copyParams);
+    
+    cudaCheckErrors("cudaMemcpy3D fail");
+    
+    // Configure texture options
+    tex.normalized = false;
+    tex.filterMode = cudaFilterModePoint; //we dont want interpolation
+    tex.addressMode[0] = cudaAddressModeBorder;
+    tex.addressMode[1] = cudaAddressModeBorder;
+    tex.addressMode[2] = cudaAddressModeBorder;
+    
+    cudaBindTextureToArray(tex, d_imagedata, channelDesc);
+    
+    cudaCheckErrors("3D texture memory bind fail");
     }
     
-       
+    
+    
+    //Done! Image put into texture memory.
+    
+    
+    size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(float);
+    float* dProjection;
+    cudaMalloc((void**)&dProjection, num_bytes);
+    cudaMemset(dProjection,0,num_bytes);
+    cudaCheckErrors("cudaMalloc fail");
+    
+    
+    bool timekernel=false; // For debuggin purposes
+    cudaEvent_t start, stop;
+    float elapsedTime;
 
-    for (unsigned int sp=0;sp<splits;sp++){
-        
-        // Create texture objects for all GPUs
-        cudaTextureObject_t *texImg = new cudaTextureObject_t[deviceCount];
-        cudaArray **d_cuArrTex = new cudaArray*[deviceCount];
-        
-        size_t linear_idx_start;
-        //First one shoudl always be  the same size as all the rest but the last
-        linear_idx_start= sp*geoArray[0].nVoxelX*geoArray[0].nVoxelY*geoArray[0].nVoxelZ;
-        CreateTexture(deviceCount,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg);
-        cudaCheckErrors("Texture object creation fail");
-        
-        
-        
-        
-        Point3D source, deltaU, deltaV, uvOrigin;
-        
-        // 16x16 gave the best performance empirically
-        // Funnily that makes it compatible with most GPUs.....
-        int divU,divV;
-        divU=16;
-        divV=16;
-        dim3 grid((geoArray[sp].nDetecU+divU-1)/divU,(geoArray[0].nDetecV+divV-1)/divV,1);
-        dim3 block(divU,divV,1);
-        
-        
-        
-        
-        for (unsigned int i=0;i<nangles;i+=(unsigned int)deviceCount){
-            for (dev = 0; dev < deviceCount; dev++){
-                geoArray[sp].alpha=angles[(i+dev)*3];
-                geoArray[sp].theta=angles[(i+dev)*3+1];
-                geoArray[sp].psi  =angles[(i+dev)*3+2];
-                //precomute distances for faster execution
-                //Precompute per angle constant stuff for speed
-                computeDeltas_Siddon(geoArray[sp],i+dev, &uvOrigin, &deltaU, &deltaV, &source);
-                //Ray tracing!
-               
-                cudaSetDevice(dev);
-                kernelPixelDetector<<<grid,block>>>(geoArray[sp],dProjection[dev], source, deltaU, deltaV, uvOrigin,texImg[dev]);
-                //cudaCheckErrors("Kernel fail");
-                
-            }
-            
-            for (dev = 0; dev < deviceCount; dev++){
-                cudaSetDevice(dev);
-                if (!fits_in_memory){
-                    mexPrintf("bipbop %d\n",(int)sp);
-                    cudaMemcpyAsync(dProjection_accum[dev], result[i+dev], num_bytes_proj, cudaMemcpyHostToDevice);
-                    vecAddInPlace<<<(geo.nDetecU*geo.nDetecV+MAXTREADS-1)/MAXTREADS,MAXTREADS>>>(dProjection[dev],dProjection_accum[dev],(unsigned long)geo.nDetecU*geo.nDetecV );
-                }
-            }
-            for (dev = 0; dev < deviceCount; dev++){
-                // copy result to host
-                cudaSetDevice(dev);
-                cudaMemcpyAsync(result[i+dev], dProjection[dev], num_bytes_proj, cudaMemcpyDeviceToHost);
-                
-            }
-            cudaCheckErrors("cudaMemcpy output fail");
+    Point3D source, deltaU, deltaV, uvOrigin;
+    
+    // 16x16 gave the best performance empirically
+    // Funnily that makes it compatible with most GPUs.....
+    int divU,divV;
+    divU=16;
+    divV=16;
+    dim3 grid((geo.nDetecU+divU-1)/divU,(geo.nDetecV+divV-1)/divV,1);
+    dim3 block(divU,divV,1);
+    
+    for (unsigned int i=0;i<nangles;i++){
+        geo.alpha=angles[i*3];
+        geo.theta=angles[i*3+1];
+        geo.psi  =angles[i*3+2];
+        //precomute distances for faster execution
+        //Precompute per angle constant stuff for speed
+        computeDeltas_Siddon(geo,i, &uvOrigin, &deltaU, &deltaV, &source);
+        //Ray tracing!
+        if (timekernel){
+            cudaEventCreate(&start);
+            cudaEventRecord(start,0);
         }
-        
-        for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
-            cudaDestroyTextureObject(texImg[dev]);
-            cudaFreeArray(d_cuArrTex[dev]);
-            
+        kernelPixelDetector<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin);
+        cudaCheckErrors("Kernel fail");
+        if (timekernel){
+            cudaEventCreate(&stop);
+            cudaEventRecord(stop,0);
+            cudaEventSynchronize(stop);
+            cudaEventElapsedTime(&elapsedTime, start,stop);
+            mexPrintf("%f\n" ,elapsedTime);
         }
-    }
-    
-    
-    for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
-        cudaFree(dProjection[dev]);
+        // copy result to host
+        cudaMemcpy(result[i], dProjection, num_bytes, cudaMemcpyDeviceToHost);
+        cudaCheckErrors("cudaMemcpy fail");
+        
         
     }
-    free(dProjection);
     
-    if(!fits_in_memory){
-     for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
-        cudaFree(dProjection_accum[dev]);
-        
-    }
-    free(dProjection_accum);
-    }
-    //cudaFreeArray(d_imagedata);
+    
+    cudaUnbindTexture(tex);
+    cudaCheckErrors("Unbind  fail");
+    cudaFree(dProjection);
+    cudaFreeArray(d_imagedata);
     cudaCheckErrors("cudaFree d_imagedata fail");
     
     
@@ -419,39 +382,39 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     cudaDeviceReset();
     return 0;
 }
-void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage)
+void CreateTexture(int num_devices, float* imagedata,Geometry geo, cudaTextureObject_t *texImage)
 {
-    //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+    size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
     for (unsigned int i = 0; i < num_devices; i++){
-        cudaSetDevice(i);
-        
+        cudaSetDevice(i);        
+
         //cudaArray Descriptor
-        const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
         cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
         //cuda Array
-        cudaMalloc3DArray(&d_cuArrTex[i], &channelDesc, extent);
+        cudaArray *d_cuArr;
+        cudaMalloc3DArray(&d_cuArr, &channelDesc, make_cudaExtent(geo.nVoxelX*sizeof(float),geo.nVoxelY,geo.nVoxelZ), 0);
         cudaCheckErrors("Texture memory allocation fail");
         cudaMemcpy3DParms copyParams = {0};
-        
-        
+
+
         //Array creation
-        copyParams.srcPtr   = make_cudaPitchedPtr((void *)imagedata, extent.width*sizeof(float), extent.width, extent.height);
-        copyParams.dstArray = d_cuArrTex[i];
-        copyParams.extent   = extent;
+        copyParams.srcPtr   = make_cudaPitchedPtr((void *)imagedata, geo.nVoxelX*sizeof(float), geo.nVoxelY, geo.nVoxelZ);
+        copyParams.dstArray = d_cuArr;
+        copyParams.extent   = make_cudaExtent(geo.nVoxelX,geo.nVoxelY,geo.nVoxelZ);
         copyParams.kind     = cudaMemcpyHostToDevice;
         cudaMemcpy3D(&copyParams);
         cudaCheckErrors("Texture memory data copy fail");
         //Array creation End
-        
+
         cudaResourceDesc    texRes;
         memset(&texRes, 0, sizeof(cudaResourceDesc));
         texRes.resType = cudaResourceTypeArray;
-        texRes.res.array.array  = d_cuArrTex[i];
+        texRes.res.array.array  = d_cuArr;
         cudaTextureDesc     texDescr;
         memset(&texDescr, 0, sizeof(cudaTextureDesc));
         texDescr.normalizedCoords = false;
         texDescr.filterMode = cudaFilterModePoint;
-        texDescr.addressMode[0] = cudaAddressModeBorder;
+        texDescr.addressMode[0] = cudaAddressModeBorder;  
         texDescr.addressMode[1] = cudaAddressModeBorder;
         texDescr.addressMode[2] = cudaAddressModeBorder;
         texDescr.readMode = cudaReadModeElementType;
@@ -460,27 +423,6 @@ void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray
     }
 }
 
-/* This code generates the geometries needed to split the image properly in
- * cases where the entire image does not fit in the memory of the GPU
- **/
-void splitImage(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned int nangles){
-    
-    unsigned long splitsize=(geo.nVoxelZ+splits-1)/splits;// ceil if not divisible
-    for(unsigned int sp=0;sp<splits;sp++){
-        geoArray[sp]=geo;
-        // All of them are splitsize, but the last one, possible
-        geoArray[sp].nVoxelZ=((sp+1)*splitsize<geo.nVoxelZ)?  splitsize:  geo.nVoxelZ-splitsize*sp;
-        geoArray[sp].sVoxelZ= geoArray[sp].nVoxelZ* geoArray[sp].dVoxelZ;
-        
-        // We need to redefine the offsets, as now each subimage is not aligned in the origin.
-        geoArray[sp].offOrigZ=(float *)malloc(nangles*sizeof(float));
-        for (unsigned int i=0;i<nangles;i++){
-            geoArray[sp].offOrigZ[i]=geo.offOrigZ[i]-geo.sVoxelZ/2+sp*geoArray[0].sVoxelZ+geoArray[sp].sVoxelZ/2;
-        }
-        
-    }
-    
-}
 
 /* This code precomputes The location of the source and the Delta U and delta V (in the warped space)
  * to compute the locations of the x-rays. While it seems verbose and overly-optimized,
@@ -530,7 +472,7 @@ void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU
     
     //1: Offset detector
     
-    
+   
     //S doesnt need to chagne
     
     
@@ -636,18 +578,18 @@ void eulerZYZ(Geometry geo, Point3D* point){
     auxPoint.z=point->z;
     
     point->x=(+cos(geo.alpha)*cos(geo.theta)*cos(geo.psi)-sin(geo.alpha)*sin(geo.psi))*auxPoint.x+
-            (-cos(geo.alpha)*cos(geo.theta)*sin(geo.psi)-sin(geo.alpha)*cos(geo.psi))*auxPoint.y+
-            cos(geo.alpha)*sin(geo.theta)*auxPoint.z;
+             (-cos(geo.alpha)*cos(geo.theta)*sin(geo.psi)-sin(geo.alpha)*cos(geo.psi))*auxPoint.y+
+              cos(geo.alpha)*sin(geo.theta)*auxPoint.z;
     
     point->y=(+sin(geo.alpha)*cos(geo.theta)*cos(geo.psi)+cos(geo.alpha)*sin(geo.psi))*auxPoint.x+
-            (-sin(geo.alpha)*cos(geo.theta)*sin(geo.psi)+cos(geo.alpha)*cos(geo.psi))*auxPoint.y+
-            sin(geo.alpha)*sin(geo.theta)*auxPoint.z;
+             (-sin(geo.alpha)*cos(geo.theta)*sin(geo.psi)+cos(geo.alpha)*cos(geo.psi))*auxPoint.y+
+              sin(geo.alpha)*sin(geo.theta)*auxPoint.z;
     
     point->z=-sin(geo.theta)*cos(geo.psi)*auxPoint.x+
-            sin(geo.theta)*sin(geo.psi)*auxPoint.y+
-            cos(geo.theta)*auxPoint.z;
-    
-    
+              sin(geo.theta)*sin(geo.psi)*auxPoint.y+
+              cos(geo.theta)*auxPoint.z;
+
+
 }
 
 
