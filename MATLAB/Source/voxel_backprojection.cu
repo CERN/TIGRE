@@ -391,7 +391,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     }
     // Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the
     // image slices. The rest of the Geometry is the same
-    Geometry* geoArray;
+    Geometry* geoArray=(Geometry*)malloc(split_image*deviceCount*sizeof(Geometry));
     createGeoArray(split_image*deviceCount,geo,geoArray,nalpha);
     
     // Start with the main loop. The Projection data needs to be allocated and dealocated in the main loop
@@ -594,7 +594,6 @@ void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cuda
 
 void createGeoArray(unsigned int image_splits, Geometry geo,Geometry* geoArray, unsigned int nangles){
     
-    geoArray=(Geometry*)malloc(image_splits*sizeof(Geometry));
     
     unsigned int  splitsize=(geo.nVoxelZ+image_splits-1)/image_splits;
     
