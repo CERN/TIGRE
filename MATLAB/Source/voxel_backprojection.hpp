@@ -51,4 +51,6 @@ Codes  : https://github.com/CERN/TIGRE
 void rollPitchYawT(Geometry geo,int i, Point3D* point);
 int voxel_backprojection(float const * const projections, Geometry geo, float* result,float const * const alphas,int nalpha);
 void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S);
+void createGeoArray(unsigned int image_splits, Geometry geo,Geometry* geoArray, unsigned int nangles);
+void freeGeoArray(unsigned int splits,Geometry* geoArray);
 #endif
