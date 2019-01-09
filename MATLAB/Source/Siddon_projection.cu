@@ -245,12 +245,8 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     
     
     // Prepare for MultiGPU
-    int deviceCount = 01;
-//     cudaCheckErrors(cudaGetDeviceCount(&deviceCount));
-//     if (deviceCount == 0) {
-//         mexErrMsgIdAndTxt("Ax:Siddon_projection:GPUselect","There are no available device(s) that support CUDA\n");
-//     }
-    //
+    int deviceCount = 1;
+
     // CODE assumes
     // 1.-All available devices are usable by this code
     // 2.-All available devices are equal, they are the same machine (warning trhown)
