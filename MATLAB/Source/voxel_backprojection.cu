@@ -90,7 +90,7 @@ do { \
      *
      **/
     
-    void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage);
+void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -336,7 +336,6 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         // We only need to split if we have extra GPUs
         split_image=1;
         split_projections=1;
-        mexPrintf("No splits needed\n");
     }
     // We know we need to split, but:
     // Do all projections fit on the GPU (with some slack for the image)??
@@ -353,7 +352,6 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
         
         
-        mexPrintf("Image needs to be split\n");
     }
     // They do not fit in memory. We need to split both projections and images. Its OK, we'll survive.
     else
@@ -371,13 +369,9 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         // mem_free/mem_image_slice == how many slices fit in each GPU
         // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
         split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
-        mexPrintf("Image and Projections need to split\n");
     }
     
-    mexPrintf("Final results:\n");
-    mexPrintf("split_projections: %u \n",split_projections);
-    mexPrintf("split_image: %u \n",split_image);
-    
+
     
     // Now lest allocate all the image memory on the GPU, so we can use it later. If we have made our numbers correctly
     // in the previous section this should leave enough space for the textures.
@@ -386,7 +380,6 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
         cudaMalloc((void**)&dimage[dev], num_bytes_img);
-        cudaMemset(dimage[dev],0,num_bytes_img);
         cudaCheckErrors("cudaMalloc fail");
     }
     // Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the
@@ -417,6 +410,13 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         
         
         for(unsigned int img_slice=0;img_slice<split_image;img_slice++){
+           if(proj==0){
+               for (dev = 0; dev < deviceCount; dev++){
+                    cudaSetDevice(dev);
+                    cudaMemset(dimage[dev],0,num_bytes_img);
+                    cudaCheckErrors("memset fail");
+                }
+           }
             // If we have more than one chunck of projections, then we need to put back the previous results into the GPU
             // Exception: when each GPU is handling a single image chunk, we can leave it there.
             if(proj>0 && split_image>1) {
@@ -424,14 +424,19 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                     cudaSetDevice(dev);
                     num_bytes_img_curr=geoArray[img_slice*deviceCount+dev].nVoxelX*geoArray[img_slice*deviceCount+dev].nVoxelY*geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
                     img_linear_idx_start=geo.nVoxelX*geo.nVoxelY*geoArray[0].nVoxelZ*(img_slice*deviceCount+dev);
-                    cudaMemcpy(&result[img_linear_idx_start], dimage[dev], num_bytes_img_curr, cudaMemcpyHostToDevice);
-                    cudaCheckErrors("cudaMemcpy result fail");
+                    cudaMemcpy(dimage[dev],&result[img_linear_idx_start], num_bytes_img_curr, cudaMemcpyHostToDevice);
+                    cudaCheckErrors("cudaMemcpy previous result fail");
                 }
 
-            }
+            }            
             
-            
-            for (dev = 0; dev < deviceCount; dev++){           
+            for (dev = 0; dev < deviceCount; dev++){ 
+                //Safety:
+                // Depends on the amount of GPUs, the case where a image slice is zero hight can happen. 
+                // Just break the loop if we reached that point
+                if(geoArray[img_slice*deviceCount+dev].nVoxelZ==0)
+                    break;
+                        
                 cudaSetDevice(dev);
                 int divx,divy,divz;
                 // RB: Use the optimal (in their tests) block size from paper by Zinsser and Keck (16 in x and 32 in y).
@@ -495,10 +500,10 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                     }   // END for (preparing params for kernel call)
                     
                     // Copy the prepared parameter arrays to constant memory to make it available for the kernel
-                    cudaMemcpyToSymbol(projSinCosArrayDev, projSinCosArrayHost, sizeof(float)*5*PROJ_PER_KERNEL);
-                    cudaMemcpyToSymbol(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*6*PROJ_PER_KERNEL);
+                    cudaMemcpyToSymbolAsync(projSinCosArrayDev, projSinCosArrayHost, sizeof(float)*5*PROJ_PER_KERNEL);
+                    cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*6*PROJ_PER_KERNEL);
                     
-                    kernelPixelBackprojectionFDK<<<grid,block>>>(geo,dimage[dev],i,current_proj_split_size,texProj[dev]);
+                    kernelPixelBackprojectionFDK<<<grid,block>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,current_proj_split_size,texProj[dev]);
                     cudaCheckErrors("Kernel fail");
                     
                 }  // END for
@@ -520,6 +525,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                     cudaCheckErrors("cudaMemcpy result fail");
                 }
             }
+            cudaDeviceSynchronize();
         }
         
         //Before the next iteration of projection slices, delete the current textures.
@@ -600,7 +606,7 @@ void createGeoArray(unsigned int image_splits, Geometry geo,Geometry* geoArray, 
     for(unsigned int sp=0;sp<image_splits;sp++){
         geoArray[sp]=geo;
         // All of them are splitsize, but the last one, possible
-        geoArray[sp].nVoxelZ=((sp+1)*splitsize<geo.nVoxelZ)?  splitsize:  geo.nVoxelZ-splitsize*sp;
+        geoArray[sp].nVoxelZ=((sp+1)*splitsize<geo.nVoxelZ)?  splitsize:  max(geo.nVoxelZ-splitsize*sp,0);
         geoArray[sp].sVoxelZ= geoArray[sp].nVoxelZ* geoArray[sp].dVoxelZ;
         
         // We need to redefine the offsets, as now each subimage is not aligned in the origin.
