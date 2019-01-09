@@ -28,10 +28,12 @@ clear all;
 
 mex -setup
 
+
+
 if ispc
+    currentFolder = cd;
+    fileExisting  = (exist(fullfile(currentFolder, 'mex_CUDA_win64.xml'), 'file') == 2);
     cudapath=getenv('CUDA_PATH');
-    
-    
     if isempty(cudapath)
         error(sprintf('CUDA Path not found. \nAdd the path by writting in MATLAB:\nsetenv(''CUDA_PATH'',''your path'')\nWhere "your path" is C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v8.0, for example')) ;
     end
