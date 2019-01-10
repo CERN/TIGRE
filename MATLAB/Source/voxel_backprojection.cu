@@ -320,14 +320,17 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     // Get memory of GPU. Assuming all of the available GPUs have the same amoutn of memory.
     cudaSetDevice(0);
     cudaGetDeviceProperties(&deviceProp, 0);
-    unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem*0.9); // lets leave 10% for the GPU. Too much? maybe, but probably worth saving.
+    unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem); // lets leave 10% for the GPU. Too much? maybe, but probably worth saving.
+    //Lets leave 400Mb or 20% of the memory, whichever is smaller
+    // 400Mb=completely empirical.
+    mem_GPU_global=min(419430400ULL,(unsigned long long)(0.8*(double)mem_GPU_global));
     // Compute how much memory each of the relevant memory pieces need
     size_t mem_image=       (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
     size_t mem_image_slice= (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)VOXELS_PER_THREAD*sizeof(float);
     size_t mem_proj=        (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
     
     // Initialize variables for spliting procedure choosing algorithm.
-   
+  
     unsigned int split_image;
     unsigned int split_projections;
     // Does everything fit in the GPU?
@@ -350,8 +353,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         // mem_free/mem_image_slice == how many slices fit in each GPU
         // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
         split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
-        
-        
+       
     }
     // They do not fit in memory. We need to split both projections and images. Its OK, we'll survive.
     else
@@ -369,23 +371,27 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         // mem_free/mem_image_slice == how many slices fit in each GPU
         // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
         split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
+
     }
     
 
+    // Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the
+    // image slices. The rest of the Geometry is the same
+    Geometry* geoArray=(Geometry*)malloc(split_image*deviceCount*sizeof(Geometry));
+    createGeoArray(split_image*deviceCount,geo,geoArray,nalpha);
     
     // Now lest allocate all the image memory on the GPU, so we can use it later. If we have made our numbers correctly
     // in the previous section this should leave enough space for the textures.
-    size_t num_bytes_img = geo.nVoxelX*geo.nVoxelY*(size_t)ceil((float)geo.nVoxelZ/(float)deviceCount/(float)split_image)* sizeof(float);
+    size_t num_bytes_img = geo.nVoxelX*geo.nVoxelY*geoArray[0].nVoxelZ* sizeof(float);
+    
+     
     float** dimage=(float**)malloc(deviceCount*sizeof(float*));
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
         cudaMalloc((void**)&dimage[dev], num_bytes_img);
         cudaCheckErrors("cudaMalloc fail");
     }
-    // Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the
-    // image slices. The rest of the Geometry is the same
-    Geometry* geoArray=(Geometry*)malloc(split_image*deviceCount*sizeof(Geometry));
-    createGeoArray(split_image*deviceCount,geo,geoArray,nalpha);
+    
     
     // Start with the main loop. The Projection data needs to be allocated and dealocated in the main loop
     // as due to the nature of cudaArrays, we can not reuse them. This should not be a problem for the fast execution
