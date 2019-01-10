@@ -298,82 +298,14 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     if (deviceCount == 0) {
         mexErrMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","There are no available device(s) that support CUDA\n");
     }
-    //
-    // CODE assumes
-    // 1.-All available devices are usable by this code
-    // 2.-All available devices are equal, they are the same machine (warning thrown)
+    
     int dev;
-    char * devicenames;
-    cudaDeviceProp deviceProp;
+    checkDevices();
+
     
-    for (dev = 0; dev < deviceCount; dev++) {
-        cudaSetDevice(dev);
-        cudaGetDeviceProperties(&deviceProp, dev);
-        if (dev>0){
-            if (strcmp(devicenames,deviceProp.name)!=0){
-                mexWarnMsgIdAndTxt("Atb:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 275.");
-                break;
-            }
-        }
-        devicenames=deviceProp.name;
-    }
-    // Get memory of GPU. Assuming all of the available GPUs have the same amoutn of memory.
-    cudaSetDevice(0);
-    cudaGetDeviceProperties(&deviceProp, 0);
-    unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem); // lets leave 10% for the GPU. Too much? maybe, but probably worth saving.
-    //Lets leave 400Mb or 20% of the memory, whichever is smaller
-    // 400Mb=completely empirical.
-    mem_GPU_global=min(419430400ULL,(unsigned long long)(0.8*(double)mem_GPU_global));
-    // Compute how much memory each of the relevant memory pieces need
-    size_t mem_image=       (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
-    size_t mem_image_slice= (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)VOXELS_PER_THREAD*sizeof(float);
-    size_t mem_proj=        (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
-    
-    // Initialize variables for spliting procedure choosing algorithm.
-  
     unsigned int split_image;
     unsigned int split_projections;
-    // Does everything fit in the GPU?
-    
-    if(mem_image+mem_proj*nalpha<mem_GPU_global){
-        // We only need to split if we have extra GPUs
-        split_image=1;
-        split_projections=1;
-    }
-    // We know we need to split, but:
-    // Do all projections fit on the GPU (with some slack for the image)??
-    else if(mem_proj*nalpha+mem_image_slice <mem_GPU_global){
-        // We should then store all the projections in GPU and split the image backprojection in as big chunks as possible
-        split_projections=1;
-        size_t mem_free=mem_GPU_global-nalpha*mem_proj;
-        // How many slices can we fit on the free memory we have? We'd like to keep these slices full as it increases
-        // the kernels performance to run image chuncks that are VOXELS_PER_THREAD in z.
-        unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
-        // Split:
-        // mem_free/mem_image_slice == how many slices fit in each GPU
-        // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
-        split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
-       
-    }
-    // They do not fit in memory. We need to split both projections and images. Its OK, we'll survive.
-    else
-    {
-        // Because I think memory transfer is the slowest operation if broken apart (TODO test this assumtion) we should minimize the amount
-        // of those that happen. So the target split is that one that requires less copys of projection data to memory.
-        // Lets assume to start with that we only need 1 slice of image in memory, the rest is fo rprojections
-        size_t mem_free=mem_GPU_global-mem_image_slice;
-        split_projections=(mem_proj*nalpha+mem_free-1)/mem_free;
-        // Now knowing how many splits we have for projections, we can recompute how many slices of image actually
-        // fit on the GPU. Must be more than 0 obviously.
-        mem_free=mem_GPU_global-mem_proj*nalpha/split_projections;
-        unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
-        // Split:
-        // mem_free/mem_image_slice == how many slices fit in each GPU
-        // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
-        split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
-
-    }
-    
+    splitCTbackprojection(deviceCount,geo,nalpha,&split_image,&split_projections);
 
     // Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the
     // image slices. The rest of the Geometry is the same
@@ -554,6 +486,88 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     return 0;
     
 }  // END voxel_backprojection
+//
+void checkDevices(void){
+    // CODE assumes
+    // 1.-All available devices are usable by this code
+    // 2.-All available devices are equal, they are the same machine (warning thrown)
+    int dev;
+    int deviceCount = 0;
+    cudaGetDeviceCount(&deviceCount);
+    char * devicenames;
+    cudaDeviceProp deviceProp;
+    for (dev = 0; dev < deviceCount; dev++) {
+        cudaSetDevice(dev);
+        cudaGetDeviceProperties(&deviceProp, dev);
+        if (dev>0){
+            if (strcmp(devicenames,deviceProp.name)!=0){
+                mexWarnMsgIdAndTxt("Atb:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 275.");
+                break;
+            }
+        }
+        devicenames=deviceProp.name;
+    }
+}
+void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
+    
+    // Get memory of GPU. Assuming all of the available GPUs have the same amoutn of memory.
+    cudaSetDevice(0);
+    cudaDeviceProp deviceProp;
+    cudaGetDeviceProperties(&deviceProp, 0);
+    unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem); // lets leave 10% for the GPU. Too much? maybe, but probably worth saving.
+    //Lets leave 400Mb or 20% of the memory, whichever is smaller
+    // 400Mb=completely empirical.
+    mem_GPU_global=min(419430400ULL,(unsigned long long)(0.8*(double)mem_GPU_global));
+    // Compute how much memory each of the relevant memory pieces need
+    size_t mem_image=       (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
+    size_t mem_image_slice= (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)VOXELS_PER_THREAD*sizeof(float);
+    size_t mem_proj=        (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
+    
+    // Initialize variables for spliting procedure choosing algorithm.
+  
+    
+    // Does everything fit in the GPU?
+    
+    if(mem_image+mem_proj*nalpha<mem_GPU_global){
+        // We only need to split if we have extra GPUs
+        *split_image=1;
+        *split_projections=1;
+    }
+    // We know we need to split, but:
+    // Do all projections fit on the GPU (with some slack for the image)??
+    else if(mem_proj*nalpha+mem_image_slice <mem_GPU_global){
+        // We should then store all the projections in GPU and split the image backprojection in as big chunks as possible
+        *split_projections=1;
+        size_t mem_free=mem_GPU_global-nalpha*mem_proj;
+        // How many slices can we fit on the free memory we have? We'd like to keep these slices full as it increases
+        // the kernels performance to run image chuncks that are VOXELS_PER_THREAD in z.
+        unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
+        // Split:
+        // mem_free/mem_image_slice == how many slices fit in each GPU
+        // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
+        *split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
+       
+    }
+    // They do not fit in memory. We need to split both projections and images. Its OK, we'll survive.
+    else
+    {
+        // Because I think memory transfer is the slowest operation if broken apart (TODO test this assumtion) we should minimize the amount
+        // of those that happen. So the target split is that one that requires less copys of projection data to memory.
+        // Lets assume to start with that we only need 1 slice of image in memory, the rest is fo rprojections
+        size_t mem_free=mem_GPU_global-mem_image_slice;
+        *split_projections=(mem_proj*nalpha+mem_free-1)/mem_free;
+        // Now knowing how many splits we have for projections, we can recompute how many slices of image actually
+        // fit on the GPU. Must be more than 0 obviously.
+        mem_free=mem_GPU_global-mem_proj*nalpha/(*split_projections);
+        unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
+        // Split:
+        // mem_free/mem_image_slice == how many slices fit in each GPU
+        // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
+       *split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
+
+    }
+}
+
 
 void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage)
 {
