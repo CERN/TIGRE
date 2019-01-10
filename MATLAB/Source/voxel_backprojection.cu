@@ -249,9 +249,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             
-            voxelColumn[colIdx]+=tex3D<float>(tex, v ,
-                    u ,
-                    indAlpha+0.5f)*weigth;
+            voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f)*weigth;
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
