@@ -297,10 +297,12 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         mexErrMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","There are no available device(s) that support CUDA\n");
     }
     
+    
+    // Check the available devices, and if they are the same
     int dev;
     checkDevices();
 
-    
+    // Split the CT problem
     unsigned int split_image;
     unsigned int split_projections;
     splitCTbackprojection(deviceCount,geo,nalpha,&split_image,&split_projections);
