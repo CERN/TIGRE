@@ -22,6 +22,7 @@ Python/tigre/Source/_Atb.cpp
 Python/tigre/Source/_Ax.cpp
 Python/tigre/Source/_minTV.cpp
 Python/tigre/Source/_AwminTV.cpp
+Python/tigre/Source/_tvdenoising.cpp
 .ipynb_checkpoints
 # Object files
 *.o
