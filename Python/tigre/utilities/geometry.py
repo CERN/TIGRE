@@ -5,15 +5,16 @@ import numpy.matlib as matlib
 import inspect
 
 
-class geometry:
+class Geometry(object):
 
     def __init__(self):
-        if not hasattr(self,'mode'): self.mode = None
-        if not hasattr(self,'accuracy'): self.accuracy = 0.5
-        if not hasattr(self,'n_proj'): self.n_proj = None
-        if not hasattr(self,'angles'): self.angles = None
-        if not hasattr(self,'filter'): self.filter = None
-        if not hasattr(self,'rotDetector'): self.rotDetector = np.array((0, 0, 0))
+        self.mode = None
+        self.accuray = 0.5
+        self.n_proj = None
+        self.angles = None
+        self.filter = None
+        self.rotDetector = np.array((0, 0, 0))
+
     def check_geo(self, angles, verbose=False):
         if angles.ndim == 1:
             self.n_proj = angles.shape[0]
@@ -27,10 +28,9 @@ class geometry:
             angles = angles.copy()
             setattr(self, 'angles', angles)
         else:
-            raise BufferError("Unexpected angles shape: "+ str(angles.shape))
+            raise BufferError("Unexpected angles shape: " + str(angles.shape))
         if self.mode == None:
             setattr(self, 'mode', 'cone')
-
 
         manditory_attribs = ['nVoxel', 'sVoxel', 'dVoxel',
                              'nDetector', 'sDetector', 'dDetector',
@@ -42,7 +42,7 @@ class geometry:
                                                                  if not hasattr(self, attrib)])
                                  )
         optional_attribs = ['offOrigin', 'offDetector', 'rotDetector', 'COR',
-                           'mode', 'accuracy']
+                            'mode', 'accuracy']
 
         # image data
         if not self.nVoxel.shape == (3,): raise AttributeError('geo.nVoxel.shape should be (3, )')
@@ -64,25 +64,24 @@ class geometry:
         if hasattr(self, 'offOrigin'):
             self._check_and_repmat('offOrigin', angles)
         else:
-            self.offOrigin = np.array([0,0,0])
-            self._check_and_repmat('offOrigin',angles)
+            self.offOrigin = np.array([0, 0, 0])
+            self._check_and_repmat('offOrigin', angles)
 
         if hasattr(self, 'offDetector'):
             self._check_and_repmat('offDetector', angles)
         else:
-            self.offDetector =np.zeros((angles.shape[0],2))
-
+            self.offDetector = np.zeros((angles.shape[0], 2))
 
         if hasattr(self, 'rotDetector'):
             self._check_and_repmat('rotDetector', angles)
         else:
-            self.rotDetector = np.zeros((angles.shape[0],3))
+            self.rotDetector = np.zeros((angles.shape[0], 3))
 
         if hasattr(self, 'COR'):
             self._check_and_repmat('COR', angles)
         else:
             self.COR = np.zeros(angles.shape[0])
-        
+
         if verbose:
             self._verbose_output()
 
@@ -135,7 +134,7 @@ class geometry:
         for attrib in dim_attribs:
             setattr(self, attrib, getattr(self, attrib)[::-1].copy())
 
-    def issame(self,other_geo_dict):
+    def issame(self, other_geo_dict):
         geo_comp_list = []
         if set(other_geo_dict) == set(self.__dict__):
             for key in self.__dict__.keys():
@@ -151,28 +150,51 @@ class geometry:
         parameters = []
         parameters.append("TIGRE parameters")
         parameters.append("-----")
-        parameters.append("Distance from source to detector = " + str(self.DSD) + "mm")
-        parameters.append("Distance from source to origin = " + str(self.DSO) + "mm")
+        parameters.append("Distance from source to detector = " + str(self.DSD) + " mm")
+        parameters.append("Distance from source to origin = " + str(self.DSO) + " mm")
 
         parameters.append("-----")
         parameters.append("Detector parameters")
         parameters.append("Number of pixels = " + str(self.nDetector))
-        parameters.append("Size of each pixel = " + str(self.dDetector) + "mm")
-        parameters.append("Total size of the detector = " + str(self.sDetector) + "mm")
+        parameters.append("Size of each pixel = " + str(self.dDetector) + " mm")
+        parameters.append("Total size of the detector = " + str(self.sDetector) + " mm")
 
         parameters.append("-----")
         parameters.append("Image parameters")
         parameters.append("Number of voxels = " + str(self.nVoxel))
-        parameters.append("Total size of the image = " + str(self.sVoxel) + "mm")
-        parameters.append("Size of each voxel = " + str(self.dVoxel) + "mm")
+        parameters.append("Total size of the image = " + str(self.sVoxel) + " mm")
+        parameters.append("Size of each voxel = " + str(self.dVoxel) + " mm")
 
         parameters.append("-----")
         parameters.append("Offset correction parameters")
-        parameters.append("Offset of image from origin = " + str(self.offOrigin) + "mm")
-        parameters.append("Offset of detector = " + str(self.offDetector) + "mm")
+        parameters.append("Offset of image from origin = " + str(self.offOrigin) + " mm")
+        parameters.append("Offset of detector = " + str(self.offDetector) + " mm")
 
         parameters.append("-----")
         parameters.append("Auxillary parameters")
         parameters.append("Accuracy of forward projection = " + str(self.accuracy))
 
         return '\n'.join(parameters)
+
+
+class ParallelGeo(Geometry):
+    def __init__(self,nVoxel):
+        if nVoxel is None:
+            raise ValueError('nVoxel needs to be given for initialisation of parallel beam')
+        Geometry.__init__(self)
+        self.nVoxel = nVoxel
+        self.dVoxel = np.array([1,1,1],dtype=np.float32)
+        self.dDetector = np.array([1,1],dtype=np.float32)
+        self.DSO = self.nVoxel[0]
+        self.DSD = self.nVoxel[0]*2
+        self.nDetector = self.nVoxel[:2]
+        self.sVoxel = self.nVoxel
+        self.sDetector = self.nVoxel[:2]
+        self.accuracy = 0.5
+
+
+def geometry(mode='cone',nVoxel=None):
+    if mode in [None, 'cone']:
+        return Geometry()
+    else:
+        return ParallelGeo(nVoxel)

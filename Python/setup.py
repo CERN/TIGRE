@@ -9,12 +9,12 @@ import numpy
 
 
 # Code from https://github.com/rmcgibbo/npcuda-example/blob/master/cython/setup.py
-compute_capability_args = [#'-gencode=arch=compute_20,code=sm_20',
+compute_capability_args = ['-gencode=arch=compute_20,code=sm_20',
                            '-gencode=arch=compute_30,code=sm_30',
                            '-gencode=arch=compute_37,code=sm_37',
-                           '-gencode=arch=compute_52,code=sm_52',
-                           '-gencode=arch=compute_60,code=sm_60',
-                           '-gencode=arch=compute_61,code=sm_61',
+                           #'-gencode=arch=compute_52,code=sm_52',
+                           #'-gencode=arch=compute_60,code=sm_60',
+                           #'-gencode=arch=compute_61,code=sm_61',
                            #'-gencode=arch=compute_70,code=sm_70', #untested
                            '--ptxas-options=-v', '-c',
                            '--compiler-options', "'-fPIC'"]
@@ -201,7 +201,7 @@ setup(name='tigre',
       packages = find_packages(),
       include_package_data=True,
       ext_modules=[Ax_ext, Atb_ext,tvdenoising_ext, minTV_ext, AwminTV_ext],
-
+      py_modules = ['tigre.py'],
       # inject our custom trigger
       cmdclass={'build_ext': custom_build_ext},
 
