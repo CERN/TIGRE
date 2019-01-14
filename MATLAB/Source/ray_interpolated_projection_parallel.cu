@@ -158,7 +158,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
         ty=vectY*i+S.y;
         tz=vectZ*i+S.z;
         
-        sum += tex3D(tex, tx+0.5, ty+0.5, tz+0.5); // this line is 94% of time.
+        sum += tex3D(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
         
     }
     float deltalength=sqrtf((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+

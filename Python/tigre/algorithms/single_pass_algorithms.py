@@ -5,7 +5,7 @@ import os
 import sys
 import numpy as np
 import copy
-from tigre.Atb import Atb
+from tigre.utilities.Atb import Atb
 from tigre.utilities.filtering import filtering
 
 # TODO: this is quite nasty; it would be nice to reorganise file structure later so top level folder is always in path
