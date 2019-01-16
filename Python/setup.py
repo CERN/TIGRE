@@ -123,7 +123,7 @@ def include_headers(filename_list, sdist=False):
                 header[1] = '.hpp'
                 header_list.append(''.join(header))
     if sdist:
-        filename_list+=['tigre/Source/types_TIGRE.hpp','tigre/Source/types.hpp']
+        filename_list += ['tigre/Source/types_TIGRE.hpp','tigre/Source/types.hpp']
     return filename_list + header_list
 
 
@@ -222,12 +222,13 @@ setup(name='pytigre',
       version='0.1.0',
       author='Reuben Lindroos, Sam loescher',
       packages=find_packages(),
-
+      scripts = ['tigre/demos/launch.sh'],
       include_package_data=True,
       ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext],
       py_modules=['tigre.py'],
       # inject our custom trigger
       cmdclass={'build_ext': custom_build_ext},
-
+      license_file = 'LICENSE.txt',
+      license  = 'BSD 3-Clause',
       # since the package has c code, the egg cannot be zipped
       zip_safe=False)

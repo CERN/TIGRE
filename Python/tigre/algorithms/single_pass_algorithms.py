@@ -61,7 +61,7 @@ def FDK(proj, geo, angles, filter=None,verbose=False):
     for ii in range(angles.shape[0]):
         xv = np.arange((-geo.nDetector[1] / 2) + 0.5, 1 + (geo.nDetector[1] / 2) - 0.5) * geo.dDetector[1]
         yv = np.arange((-geo.nDetector[0] / 2) + 0.5, 1 + (geo.nDetector[0] / 2) - 0.5) * geo.dDetector[0]
-        (xx, yy) = np.meshgrid(xv, yv)
+        (yy, xx) = np.meshgrid(xv, yv)
 
         w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx ** 2 + yy ** 2))
         proj_filt[ii] = proj[ii] * w

@@ -1,0 +1,3 @@
+recusrive-include *.txt
+recursive-include tigre/demos *.ipynb
+recursive-include tigre/demos *.mat
