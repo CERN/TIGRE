@@ -17,6 +17,7 @@ Python/tigre.egg-info/
 Python/purge.sh
 Python/.idea/
 Python/devtest.py
+Python/dist/
 Python/tigre/Source/_Atb.cpp
 Python/tigre/Source/_Ax.cpp
 Python/tigre/Source/_minTV.cpp
