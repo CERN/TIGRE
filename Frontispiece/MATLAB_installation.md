@@ -73,18 +73,20 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 6. Check that MALTAB knows where Visual Studio and CUDA are
 
    Run the following commands: 
-   -`getenv('CUDA_PATH')`; 
-   -`getenv(VS120COMNTOOLS);` (MVS2013) `getenv(VS140COMNTOOLS);` (MVS2015 or newer)
-   They should return something similar to:
-   -`'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.2'`
-   -`'C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\'`
    
-   If any of these return empty, your installation of CUDA or Visual Studio did not happen successfully or you did install it in the non-standard way.\
+   - `getenv('CUDA_PATH')`; 
+   - `getenv(VS120COMNTOOLS);` (MVS2013) `getenv(VS140COMNTOOLS);` (MVS2015 or newer)
+   
+   They should return something similar to:
+   
+   - `'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.2'`
+   - `'C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\'`
+   
+   If any of these return empty, your installation of CUDA or Visual Studio did not happen successfully or you did install it in the non-standard way.
    Either reinstall, or configure this variables (use [`setenv()`](https://uk.mathworks.com/help/matlab/ref/setenv.html)) to point to the correct installation locations. 
 	 
 7. Rename either `mex_CUDA_win64_MVS2013.xml` (Visual Studio 2013 or older) or `mex_CUDA_win64_MVS2015.xml`(Visual Studio 2015 or newer) to `mex_CUDA_win64.xml`
     
-   These files are located on `TIGRE/MATLAB`
    
 8. By opening MATLAB on `yourTIGREpath/MATLAB`, execute `Compile.m`
 
@@ -123,7 +125,7 @@ If none of this works, please contact the authors at [tigre.toolbox@gmail.com](m
 2. Install CUDA
 
    Installing CUDA in linux (specially one with a GUI) can be a challenge. Please follow [NVIDIAs instructions](https://developer.download.nvidia.com/compute/cuda/10.0/Prod/docs/sidebar/CUDA_Installation_Guide_Linux.pdf) carefully.\
-   [CUDA download link](https://developer.nvidia.com/cuda-downloads)\
+   [CUDA download link](https://developer.nvidia.com/cuda-downloads)
 
 3. Install gcc 
 
@@ -142,7 +144,8 @@ If none of this works, please contact the authors at [tigre.toolbox@gmail.com](m
    - Append to the file the following lines:
      ```
 	 export LD_LIBRARY_PATH=/usr/local/cuda/lib64
-     export PATH=$PATH:/usr/local/cuda/bin```
+     export PATH=$PATH:/usr/local/cuda/bin
+	 ```
      
    - restart your terminal
    
