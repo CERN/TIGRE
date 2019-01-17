@@ -22,19 +22,19 @@ Both MATLAB and Python builds are fully supported.
 
 ## FAQ
 
-For answers to frequently asked questions [click here][].
+For answers to frequently asked questions [click here](Frontispiece/FAQ.md).
 
 ## Gallery
 
 ## Further Reading
 
-If you want more information, [click here][].
+If you want more formal/academic information on TIGRE and its algorithms, [click here](Frontispiece/Further_reading.md).
 
 ## Contact
 
 Contact the authors directly at
 
-tigre.toolbox@gmail.com or ander.biguri@gmail.com
+[tigre.toolbox@gmail.com](mailto:tigre.toolbox@gmail.com) or [ander.biguri@gmail.com](mailto:ander.biguri@gmail.com)
 
 ## Licensing
 
@@ -49,6 +49,6 @@ If you use TIGRE, please reference the following paper:
 **Biomedical Physics & Engineering Express, Volume 2, Number 5**
 [Read the article (Open Access)][3]
 
-[1]: https://github.com/CERN/TIGRE/blob/master/LICENSE
+[1]: LICENSE.txt
 [2]: http://www.linfo.org/bsdlicense.html
 [3]: http://iopscience.iop.org/article/10.1088/2057-1976/2/5/055010
