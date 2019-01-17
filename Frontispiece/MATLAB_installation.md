@@ -3,14 +3,17 @@ Installation Instructions for MATLAB
 
 ## Table of contents
 
--[Windows](#windows)
-   -[Requirements](#requirements)
-   -[Simple Instructions](#simple-instructions)
-   -[Step by Step Instructions](#step-by-step-instructions)
--[Linux](#linux)
-   -[Requirements](#requirements-1)
-   -[Simple Instructions](#simple-instructions-1)
-   -[Step by Step Instructions](#step-by-step-instructions1)
+- [Windows](#windows)
+   - [Requirements](#requirements)
+   - [Simple Instructions](#simple-instructions)
+   - [Step by Step Instructions](#step-by-step-instructions)
+- [Linux](#linux)
+   - [Requirements](#requirements-1)
+   - [Simple Instructions](#simple-instructions-1)
+   - [Step by Step Instructions](#step-by-step-instructions1)
+   
+   *****
+   
 ## Windows
 
 ### Requirements:
