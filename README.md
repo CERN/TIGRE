@@ -16,7 +16,7 @@ reconstruction, created jointly by University of Bath's Engineering Tomography L
 
 Both MATLAB and Python builds are fully supported.
 
-- [Installation instructions and requirements for MATLAB][].
+- [Installation instructions and requirements for MATLAB](Frontispiece/MATLAB_installation.md).
 
 - [Installation instructions and requirements for Python][].
 
