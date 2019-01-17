@@ -3,21 +3,24 @@ Installation Instructions for MATLAB
 
 ## Windows 
 
-###Requirements:
+### Requirements:
 1. MATLAB
 2. Visual Studio (Community or Profesional)
 3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.0](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
 4. CUDA Toolkit
 
-Tested on\
-**Windows** 7, 8 and 10.\
-**MATLAB** 2014b 2016b 2017a 2018b\
-**CUDA** 7.5 8.0 9.0 9.1 9.2 10\
-**Visual Studio** 2010 2013 2015\
+Tested on
+
+| Software        | Version           | 
+| ------------- |:-------------:|
+|**Windows**| 7, 8, 10.|
+|**MATLAB**| 2014b 2016b 2017a 2018b|
+|**CUDA**| 7.5 8.0 9.0 9.1 9.2 10|
+|**Visual Studio**| 2010 2013 2015|
 
 
 
-###Simple Instructions
+### Simple Instructions
 
 1. Install MATLAB, Visual Studio and CUDA
 2. Rename either `mex_CUDA_win64_MVS2013.xml` (Visual Studio 2013 or older) or `mex_CUDA_win64_MVS2015.xml`(Visual Studio 2015 or newer) to `mex_CUDA_win64.xml`
@@ -27,7 +30,7 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 
 
 
-###Step by Step Instructions:
+###  Step by Step Instructions:
 
 1. Install MATLAB
 
@@ -41,7 +44,7 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 
    **Make sure you install C++**.\
    [Download link for the latest version](https://visualstudio.microsoft.com/downloads/)\
-   [Download link for older versions](https://visualstudio.microsoft.com/vs/older-downloads/)\
+   [Download link for older versions](https://visualstudio.microsoft.com/vs/older-downloads/)
    
 4. Download TIGRE
 
@@ -58,6 +61,7 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 	 ... Looking for file 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64\cl.exe' ...Yes.
 	 ... Looking for folder 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC' ...Yes.
 ```
+
    Note the last 3 **Yes**. If those are not there it means that you do not have installed C++ on step 3 of this tutorial.\
    To fix:\
    -go to `Control panel>Add or remove programs -> Visual studio community 20XX -> modify`\
@@ -93,24 +97,25 @@ If none of this works, please contact the authors at [tigre.toolbox@gmail.com](m
    
 ## Linux
 
-##Requirements:
+## Requirements:
 1. MATLAB
 2. gcc
 3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.0](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
 4. CUDA Toolkit
 
-Tested on\
-**Ubuntu** 16.04 17.10\
-**MATLAB** 2017a 2018b\
-**CUDA** 9.0 9.1 9.2\
-**gcc** 6.4.0 7.2.0\
+| Software       | Version    | 
+| ------------- |:-------------:|
+| **Ubuntu**|  16.04 17.10| 
+| **MATLAB**|  2017a 2018b| 
+| **CUDA**|  9.0 9.1 9.2| 
+| **gcc**|  6.4.0 7.2.0| 
 
-###Simple Instructions
+### Simple Instructions
 
 1. Install MATLAB, gcc and CUDA
 2. Run `Compile.m`
 
-###Step by Step Instructions:<sup>1</sup>
+### Step by Step Instructions:<sup>1</sup>
 
 1. Install MATLAB
 
