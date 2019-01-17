@@ -4,6 +4,7 @@ Installation Instructions for MATLAB
 ## Windows 
 
 ### Requirements:
+
 1. MATLAB
 2. Visual Studio (Community or Profesional)
 3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.0](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
@@ -100,7 +101,7 @@ If none of this works, please contact the authors at [tigre.toolbox@gmail.com](m
    
 ## Linux
 
-## Requirements:
+### Requirements:
 1. MATLAB
 2. gcc
 3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.0](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
@@ -139,7 +140,7 @@ If none of this works, please contact the authors at [tigre.toolbox@gmail.com](m
    
 5. Make sure your terminal knows where CUDA is.
 
-   For Ubuntu:\
+   For Ubuntu:
    - Using your favourite test editor, open ~/.bashrc. e.g. `gedit ~/.bashrc`.
    - Append to the file the following lines:
      ```
