@@ -54,13 +54,14 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 5. Test the correct configuration of Visual Studio 
 
    Open MATLAB and run `mex -setup -v`. Among other things, the output shoudl contain:
-   ```... Looking for compiler 'Microsoft Visual C++ 2015 (C)' ...
-	 ... Looking for registry setting 'HKLM\SOFTWARE\Microsoft\VisualStudio\SxS\VC7' 14.0 ...No.
-	 ... Looking for registry setting 'HKCU\SOFTWARE\Microsoft\VisualStudio\SxS\VC7' 14.0 ...No.
-	 ... Looking for registry setting 'HKLM\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VC7' 14.0 ...Yes ('C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\').
-	 ... Looking for file 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64\cl.exe' ...Yes.
-	 ... Looking for folder 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC' ...Yes.```
-
+   ```
+   ... Looking for compiler 'Microsoft Visual C++ 2015 (C)' ...
+   ... Looking for registry setting 'HKLM\SOFTWARE\Microsoft\VisualStudio\SxS\VC7' 14.0 ...No.
+   ... Looking for registry setting 'HKCU\SOFTWARE\Microsoft\VisualStudio\SxS\VC7' 14.0 ...No.
+   ... Looking for registry setting 'HKLM\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VC7' 14.0 ...Yes ('C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\').
+   ... Looking for file 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64\cl.exe' ...Yes.
+   ... Looking for folder 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC' ...Yes.
+   ```
 
    Note the last 3 **Yes**. If those are not there it means that you do not have installed C++ on step 3 of this tutorial.\
    To fix:\
