@@ -494,7 +494,7 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
     unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem); // lets leave 10% for the GPU. Too much? maybe, but probably worth saving.
     //Lets leave 400Mb or 20% of the memory, whichever is smaller
     // 400Mb=completely empirical.
-    mem_GPU_global=min(419430400ULL,(unsigned long long)(0.8*(double)mem_GPU_global));
+    mem_GPU_global=mem_GPU_global-min(419430400ULL,(unsigned long long)(0.2*(double)mem_GPU_global));
     // Compute how much memory each of the relevant memory pieces need
     size_t mem_image=       (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
     size_t mem_image_slice= (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)VOXELS_PER_THREAD*sizeof(float);

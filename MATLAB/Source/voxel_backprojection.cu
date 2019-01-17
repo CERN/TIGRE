@@ -307,6 +307,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     unsigned int split_projections;
     splitCTbackprojection(deviceCount,geo,nalpha,&split_image,&split_projections);
 
+    
     // Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the
     // image slices. The rest of the Geometry is the same
     Geometry* geoArray=(Geometry*)malloc(split_image*deviceCount*sizeof(Geometry));
@@ -517,12 +518,13 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
     unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem); // lets leave 10% for the GPU. Too much? maybe, but probably worth saving.
     //Lets leave 400Mb or 20% of the memory, whichever is smaller
     // 400Mb=completely empirical.
-    mem_GPU_global=min(419430400ULL,(unsigned long long)(0.8*(double)mem_GPU_global));
+    mem_GPU_global=mem_GPU_global-min(419430400ULL,(unsigned long long)(0.2*(double)mem_GPU_global));
     // Compute how much memory each of the relevant memory pieces need
     size_t mem_image=       (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
     size_t mem_image_slice= (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)VOXELS_PER_THREAD*sizeof(float);
     size_t mem_proj=        (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
     
+
     // Initialize variables for spliting procedure choosing algorithm.
   
     
@@ -558,7 +560,10 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
         *split_projections=(mem_proj*nalpha+mem_free-1)/mem_free;
         // Now knowing how many splits we have for projections, we can recompute how many slices of image actually
         // fit on the GPU. Must be more than 0 obviously.
+      
+
         mem_free=mem_GPU_global-mem_proj*nalpha/(*split_projections);
+
         unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
         // Split:
         // mem_free/mem_image_slice == how many slices fit in each GPU
