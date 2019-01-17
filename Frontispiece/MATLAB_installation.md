@@ -59,8 +59,8 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 	 ... Looking for registry setting 'HKCU\SOFTWARE\Microsoft\VisualStudio\SxS\VC7' 14.0 ...No.
 	 ... Looking for registry setting 'HKLM\SOFTWARE\Wow6432Node\Microsoft\VisualStudio\SxS\VC7' 14.0 ...Yes ('C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\').
 	 ... Looking for file 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\amd64\cl.exe' ...Yes.
-	 ... Looking for folder 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC' ...Yes.
-```
+	 ... Looking for folder 'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC' ...Yes.```
+
 
    Note the last 3 **Yes**. If those are not there it means that you do not have installed C++ on step 3 of this tutorial.\
    To fix:\
@@ -141,8 +141,8 @@ If none of this works, please contact the authors at [tigre.toolbox@gmail.com](m
    - Append to the file the following lines:
      ```
 	 export LD_LIBRARY_PATH=/usr/local/cuda/lib64
-     export PATH=$PATH:/usr/local/cuda/bin
-     ```
+     export PATH=$PATH:/usr/local/cuda/bin```
+     
    - restart your terminal
    
 6. From a terminal, execute MATLAB as `matlab` and run `Compile.m` located on `TIGRE/MATLAB` 
