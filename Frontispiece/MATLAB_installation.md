@@ -1,7 +1,17 @@
 Installation Instructions for MATLAB
 ======
 
-## Windows 
+## Table of contents
+
+-[Windows](#windows)
+   -[Requirements](#requirements)
+   -[Simple Instructions](#simple-instructions)
+   -[Step by Step Instructions](#step-by-step-instructions)
+-[Linux](#linux)
+   -[Requirements](#requirements-1)
+   -[Simple Instructions](#simple-instructions-1)
+   -[Step by Step Instructions](#step-by-step-instructions1)
+## Windows
 
 ### Requirements:
 
@@ -118,6 +128,8 @@ If none of this works, please contact the authors at [tigre.toolbox@gmail.com](m
 
 1. Install MATLAB, gcc and CUDA
 2. Run `Compile.m`
+
+A succesfull installation should be able to execute the script at `TIGRE/MATLAB/Demos/d03_generateData.m` without errors.
 
 ### Step by Step Instructions:<sup>1</sup>
 
