@@ -1,10 +1,7 @@
 Gallery
 =======
 
-This page showcases some images of applications of TIGRE and directs to papers using TIGRE in a variety of CT cases.
-
-
-## Few images of TIGRE algorithms in different CT applications. 
+## TIGRE algorithms in different CT applications. 
 
 ### Conventional medical CBCT
 
