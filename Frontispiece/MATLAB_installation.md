@@ -167,6 +167,8 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
    
 6. From a terminal, execute MATLAB as `matlab` and run `Compile.m` located on `TIGRE/MATLAB` 
 
+7. Run file `TIGRE/MATLAB/Demos/d03_generateData.m`. If it successfully executes, you have installed and compiled TIGRE properly.
+
 
 If none of this works, please contact the authors at [tigre.toolbox@gmail.com](mailto:tigre.toolbox@gmail.com) or [ander.biguri@gmail.com](mailto:ander.biguri@gmail.com)
 
