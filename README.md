@@ -26,6 +26,12 @@ For answers to frequently asked questions [click here](Frontispiece/FAQ.md).
 
 ## Gallery
 
+To see a gallery of images on different CT modalities recosntructed using TIGRE and a small showcase of articles that used TIGRE on their research, [click here](Frontispiece/Gallery.md)
+
+<img src="(https://raw.githubusercontent.com/AnderBiguri/PhDThesis/master/Applications/randofull.png)" width="400" height="400">
+
+
+
 ## Further Reading
 
 If you want more formal/academic information on TIGRE and its algorithms, [click here](Frontispiece/Further_reading.md).

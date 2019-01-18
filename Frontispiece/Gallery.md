@@ -6,7 +6,7 @@ This page showcases some images of applications of TIGRE and directs to papers u
 
 ## Few images of TIGRE algorithms in different CT applications. 
 
-### RANDO Head
+### Conventional medical CBCT
 
 **Source of image:** Ander Biguri's PhD thesis, page 93.
 
@@ -48,3 +48,25 @@ parasitic protozoa that cause dfferent illnesses, such as the sleeping sickness.
 Columns: FBP, OS-SART (20 iterations) and OS-ASD-POCS (20 iterations,
 20 TV iterations each). The red squares in the first row show sthe location of the
 zoomed-in areas from the second and third row.
+
+Special thanks to the Diamond Light Source, specially Michele Darrow and Imanol Luengo for sharing this dataset.
+
+### Conventional micro-CT
+
+**Source of iamge:** Ander Biguri's PhD thesis, page 96.
+
+**Description:** [SophiaBeads Dataset](https://zenodo.org/record/16474) are acquired specifically for testing and comparing reconstruction methods for X-ray computed tomography.\ 
+The sample is a plastic tube with a diameter of 25 mm, filled with uniform Soda-Lime Glass (SiO2-Na2O) beads of diameters 2.5 mm (with standard deviation 0.1 mm). [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16474.svg)](https://doi.org/10.5281/zenodo.16474)\
+The dataset is recosntructed with FDK and CGLS and the image profile shown over an arbitrary path.
+
+![im](https://raw.githubusercontent.com/AnderBiguri/PhDThesis/master/Applications/sophiaFDKCGLS.png)
+
+SophiaBeads dataset with FDK and CGLS (15 iterations), using 256
+projections. The red line shows the profile evaluated. The display window is [0-0.15].
+
+![im](https://raw.githubusercontent.com/AnderBiguri/PhDThesis/master/Applications/spophiaprofile.png)
+
+Image profile on the SophiaBeads dataset with FDK and CGLS (15
+iterations), using 256 projections
+
+
