@@ -55,7 +55,7 @@ Special thanks to the Diamond Light Source, specially Michele Darrow and Imanol 
 
 **Source of iamge:** Ander Biguri's PhD thesis, page 96.
 
-**Description:** [SophiaBeads Dataset](https://zenodo.org/record/16474) are acquired specifically for testing and comparing reconstruction methods for X-ray computed tomography.\ 
+**Description:** [SophiaBeads Dataset](https://zenodo.org/record/16474) are acquired specifically for testing and comparing reconstruction methods for X-ray computed tomography.\
 The sample is a plastic tube with a diameter of 25 mm, filled with uniform Soda-Lime Glass (SiO2-Na2O) beads of diameters 2.5 mm (with standard deviation 0.1 mm). [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16474.svg)](https://doi.org/10.5281/zenodo.16474)\
 The dataset is recosntructed with FDK and CGLS and the image profile shown over an arbitrary path.
 
