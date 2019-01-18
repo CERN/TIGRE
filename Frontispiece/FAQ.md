@@ -62,7 +62,7 @@ this. Hopefully we can find a solution for this without the need of restarting M
 
 **Q: Can I use your code for XXXXXX**
 
-*A: Yes. The BSD license is a fully permisive one. Your onyl requirement is to reference the usage of TIGRE, or that you based your work on TIGRE*
+*A: Yes. The BSD license is a fully permisive one. Your only requirement is to reference the usage of TIGRE, or that you based your work on TIGRE*
 
 **Q: I want to collaborate, how can I do it?**
 
