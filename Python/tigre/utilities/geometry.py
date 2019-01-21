@@ -110,7 +110,7 @@ class Geometry(object):
                     pass
                 else:
                     raise AttributeError(attrib + " with shape: " + str(old_attrib.shape) +
-                                         " not compible with shapes: " + str([(angles.shape[0],),
+                                         " not compatible with shapes: " + str([(angles.shape[0],),
                                                                               (angles.shape[0], old_attrib.shape[1]),
                                                                               (3,), (2,), (1,)]))
 
@@ -186,7 +186,8 @@ class Geometry(object):
 	if hasattr(self,'COR'):
 	    parameters.append("-----")
 	    parameters.append("Centre of rotation correction = " + str(self.COR) + " mm")
-        return '\n'.join(parameters)
+        
+	return '\n'.join(parameters)
 
 
 class ParallelGeo(Geometry):
@@ -198,8 +199,8 @@ class ParallelGeo(Geometry):
         self.dVoxel = np.array([1,1,1])
         self.sVoxel = self.nVoxel
 
-        self.DSO = self.nVoxel[0]
-        self.DSD = self.nVoxel[0]*2
+        self.DSO = self.nVoxel[0].astype(np.float64)
+        self.DSD = self.nVoxel[0].astype(np.float64)*2
 
         self.dDetector = np.array([1,1])
         self.nDetector = self.nVoxel[:2]
