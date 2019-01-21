@@ -181,11 +181,11 @@ class Geometry(object):
 
 	if hasattr(self, 'rotDetector'):
 	    parameters.append("-----")
-	    arameters.append("Rotation of the Detector = " + str(self.rotDetector) + " rad")
+	    parameters.append("Rotation of the Detector = " + str(self.rotDetector) + " rad")
 	
 	if hasattr(self,'COR'):
 	    parameters.append("-----")
-	    arameters.append("Centre of rotation correction = " + str(self.COR) + " mm")
+	    parameters.append("Centre of rotation correction = " + str(self.COR) + " mm")
         return '\n'.join(parameters)
 
 
