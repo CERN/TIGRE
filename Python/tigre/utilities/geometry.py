@@ -195,16 +195,18 @@ class ParallelGeo(Geometry):
         if nVoxel is None:
             raise ValueError('nVoxel needs to be given for initialisation of parallel beam')
         Geometry.__init__(self)
+	self.mode='parallel'
+
         self.nVoxel = nVoxel
         self.dVoxel = np.array([1,1,1])
         self.sVoxel = self.nVoxel
 
-        self.DSO = self.nVoxel[0].astype(np.float64)
-        self.DSD = self.nVoxel[0].astype(np.float64)*2
+        self.DSO = self.nVoxel[0].astype(np.float32)
+        self.DSD = self.nVoxel[0].astype(np.float32)*2
 
         self.dDetector = np.array([1,1])
         self.nDetector = self.nVoxel[:2]
-        self.sDetector = self.nVoxel[:2]
+        self.sDetector = self.nVoxel[:2].astype(np.float32)
 
         self.accuracy = 0.5
 
