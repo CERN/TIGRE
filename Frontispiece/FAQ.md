@@ -4,7 +4,7 @@ FAQ
 If you have any issues that is not addressed in the FAQ, or you found a bug in
 the code, please report it on [the issues page][2].
 
-If it is a specific problem in a specific scenario, please provide a [*Mnimal Complete Verifiable Example*][3] of the problem.
+If it is a specific problem in a specific scenario, please provide a [*Minimal Complete Verifiable Example*][3] of the problem.
 Make it as short as possible. Ensure that your example is self-complete, no other code is needed. Ensure that someone else can execute it and 
 reproduce the error you are having. 
 
