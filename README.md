@@ -18,7 +18,7 @@ Both MATLAB and Python builds are fully supported.
 
 - [Installation instructions and requirements for MATLAB](Frontispiece/MATLAB_installation.md).
 
-- [Installation instructions and requirements for Python][Frontispiece/python_installation.md].
+- [Installation instructions and requirements for Python](Frontispiece/python_installation.md).
 
 ## FAQ
 
