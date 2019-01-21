@@ -179,7 +179,7 @@ class Geometry(object):
         parameters.append("Auxillary parameters")
         parameters.append("Samples per pixel of forward projection = " + str(self.accuracy))
 
-	if hasattr(self, 'rotDetector')
+	if hasattr(self, 'rotDetector'):
 	    parameters.append("-----")
 	    arameters.append("Rotation of the Detector = " + str(self.rotDetector) + " rad")
 	
