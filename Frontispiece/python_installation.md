@@ -64,11 +64,11 @@ For Ubuntu
 Instead, if you rather compile from source, download/clone the repository and then run 
 
  
-	`python setup.py install` 
+`python setup.py install` 
 	
-	if this fails, then try:
+if this fails, then try:
 	
-	`export CUDAHOME=yourcudahome`, e.g. default is `export CUDAHOME=/usr/local/cuda`
-	`sudo --preserve-env python setup.py install`
+`export CUDAHOME=yourcudahome`, e.g. default is `export CUDAHOME=/usr/local/cuda`
+`sudo --preserve-env python setup.py install`
 	
 	

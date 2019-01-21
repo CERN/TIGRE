@@ -20,6 +20,8 @@ TIGRE features:
 
 - State of the art implementations of projection and backprojection operations on GPUs, with easy interface with higher level languages in order to ease delevoping of new methods.
 
+- **Flexible CT geometry:** Cone Beam, Parallel Beam, Digital Tomosynthesis, C-arm CT, an any other geometry. Geometric parameters are defined per projection, not per scan.
+
 - A wide range of recosntruction algorithms for CT
 
 	- Filtered Backprojection (FBP,FDK) and variations (different filters, Parker weights, ...)
@@ -34,15 +36,14 @@ TIGRE features:
 		
 		- Total Variation regularization based algorithms: FISTA-based (SART-TV) and POCS based (ASD-POCS, OS-ASD-POCS, B-ASD-POCS-β, PCSD, AwPCSD, Aw-ASD-POCS)
 		
-		- TV denoising for 3D images
+- TV denoising for 3D images
 		
-		- Basic image loading fucntionality
+- Basic image loading fucntionality
 		
-		- A variety of plotting functions
+- A variety of plotting functions
 		
-		- Image quality metrics.
+- Image quality metrics.
 	
-- **Flexible CT geometry:** Cone Beam, Parallel Beam, Digital Tomosynthesis, C-arm CT, an any other geometry. Geometric parameters are defined per projection, not per scan.
 
 ## Installation
 
