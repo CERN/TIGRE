@@ -251,6 +251,12 @@ do { \
  void pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter){
         
     
+     
+     
+     
+     
+     
+     
         size_t total_pixels = image_size[0] * image_size[1]  * image_size[2] ;
         size_t mem_size = sizeof(float) * total_pixels;
         
