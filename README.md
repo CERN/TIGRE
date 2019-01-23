@@ -1,11 +1,24 @@
 TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
 ======
 
-TIGRE is a GPU toolbox for fast and accurate 3D tomographic 
-reconstruction, created jointly by University of Bath's Engineering Tomography Lab and CERN. 
+IGRE is an open-source toolbox for fast and accurate 3D tomographic 
+reconstruction for any geometry.  Its focus is on iterative algorithms 
+for improved image quality that have all been optimized to run on GPUs 
+(including multi-GPUs) for improved speed.  It combines the higher level 
+abstraction of MATLAB or Python (in two separate branches of the 
+toolbox) with the performance of CUDA at a lower level in order to make 
+it both fast and easy to use.
 
+TIGRE is free to download and distribute: use it, modify it, add to it, 
+share it.  Our aim is to provide a wide range of easy-to-use algorithms 
+for the tomographic community "off the shelf".  We would like to build a 
+stronger bridge between algorithm developers and imaging 
+researchers/clinicians by encouraging and supporting contributions from 
+both sides into TIGRE.
 
-
+TIGRE remains under development as we are still adding new features 
+(e.g., motion compensation).  If you have any request for a specific 
+application, do not hesitate to [contact us](mailto:ander.biguri@gmail)!
 
 
 
