@@ -20,6 +20,17 @@ TIGRE remains under development as we are still adding new features
 (e.g., motion compensation).  If you have any request for a specific 
 application, do not hesitate to [contact us](mailto:ander.biguri@gmail)!
 
+ - [TIGRE features](#features)
+ 
+ - [Installation instructions](#installation)
+ 
+ - [FAQ](#faq)
+  
+ - [Further reading](#further-reading)
+ 
+ - [Contact](#contact) 
+ 
+ - [License](#licensing)
 
 
 
@@ -89,6 +100,9 @@ Contact the authors directly at
 [tigre.toolbox@gmail.com](mailto:tigre.toolbox@gmail.com) or [ander.biguri@gmail.com](mailto:ander.biguri@gmail.com)
 
 ## Licensing
+
+TIGRE has been created jointly by the University of Bath's 
+Engineering Tomography Lab and CERN
 
 The TIGRE toolbox is released under the BSD License, meaning you can use and modify 
 the software freely. However, you **must** cite the original authors.
