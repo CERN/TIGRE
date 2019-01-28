@@ -201,12 +201,12 @@ class ParallelGeo(Geometry):
         self.dVoxel = np.array([1,1,1])
         self.sVoxel = self.nVoxel
 
-        self.DSO = self.nVoxel[0].astype(np.float32)
-        self.DSD = self.nVoxel[0].astype(np.float32)*2
+        self.DSO = np.array([self.nVoxel[0]],dtype=np.float32)
+        self.DSD = np.array([self.nVoxel[0]*2],dtype=np.float32)
 
         self.dDetector = np.array([1,1])
         self.nDetector = self.nVoxel[:2]
-        self.sDetector = self.nVoxel[:2].astype(np.float32)
+        self.sDetector = self.nVoxel[:2]
 
         self.accuracy = 0.5
 

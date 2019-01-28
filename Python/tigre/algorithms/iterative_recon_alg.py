@@ -41,6 +41,7 @@ class DataMinimization(object):
                 angle = np.array([self.angleblocks[j]], dtype=np.float32)
             else:
                 angle = self.angleblocks[j]
+
             if geo.offOrigin.shape[0] ==self.angles.shape[0]:
                geo.offOrigin = self.geo.offOrigin[j]
             if geo.offDetector.shape[0] == self.angles.shape[0]:
@@ -151,7 +152,7 @@ class IterativeReconAlg(Regularisation, DataMinimization):
                        OrderStrategy=None, Quameasopts=None,
                        init=None,verbose=True, noneg=True,
                        computel2=False, dataminimizing='art_data_minimizing',
-                       regularisation='minimizeTV')
+                       regularisation='minimizeTV',name='')
         allowed_keywords = ['V','W','log_parameters','angleblocks','angle_index','delta']
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
@@ -270,7 +271,7 @@ class IterativeReconAlg(Regularisation, DataMinimization):
                 res_prev = copy.deepcopy(self.res)
             if self.verbose:
                 if i == 0:
-                    print("Algorithm in progress.")
+                    print(self.name + ' ' + "algorithm in progress.")
                     toc = time.clock()
                 if i == 1:
                     tic = time.clock()
@@ -307,19 +308,21 @@ def decorator(IterativeReconAlg, name=None, docstring=None):
 
     Examples
     --------
-    import tigre
-    from tigre.demos.Test_data.data_loader import load_head_phantom
-    geo = tigre.geometry_defaut(high_quality=False)
-    src = load_head_phantom(number_of_voxels=geo.nVoxel)
-    proj = Ax(src,geo,angles)
-    angles = np.linspace(0,2*np.pi,100)
-    iterativereconalg = decorator(IterativeReconAlg)
-    output = iterativereconalg(proj,geo,angles, niter=50)
+    >>> import tigre
+    >>> from tigre.demos.Test_data.data_loader import load_head_phantom
+    >>> geo = tigre.geometry_defaut(high_quality=False)
+    >>> src = load_head_phantom(number_of_voxels=geo.nVoxel)
+    >>> proj = Ax(src,geo,angles)
+    >>> angles = np.linspace(0,2*np.pi,100)
+    >>> iterativereconalg = decorator(IterativeReconAlg)
+    >>> output = iterativereconalg(proj,geo,angles, niter=50)
 
     """
 
     def iterativereconalg(proj, geo, angles, niter, **kwargs):
         alg = IterativeReconAlg(proj, geo, angles, niter, **kwargs)
+        if name is not None:
+            alg.name = name
         alg.run_main_iter()
         if alg.computel2:
             return alg.getres(), alg.getl2()
