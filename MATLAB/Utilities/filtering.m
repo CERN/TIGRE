@@ -20,7 +20,6 @@ function [ proj ] = filtering(proj,geo,angles,parker)
 % Coded by:           Kyungsang Kim, modified by Ander Biguri 
 %--------------------------------------------------------------------------
 
-
 if parker
 	proj = permute(ParkerWeight(permute(proj,[2 1 3]),geo,angles,parker),[2 1 3]);
 end 

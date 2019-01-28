@@ -14,8 +14,11 @@ function data=ParkerWeight(data,geo,angles,q)
 %   year={2002},
 %   publisher={American Association of Physicists in Medicine}
 % }
+if unique(geo.DSD)>1
+   warning('Parker weigths not supported for varying geo.DSD, first one used.') 
+end
 
-alpha = atan([-geo.sDetector(1)/2+geo.dDetector(1)/2:geo.dDetector(1):geo.sDetector(1)/2-geo.dDetector(1)/2]/geo.DSD);
+alpha = atan([-geo.sDetector(1)/2+geo.dDetector(1)/2:geo.dDetector(1):geo.sDetector(1)/2-geo.dDetector(1)/2]/geo.DSD(1));
 alpha=-alpha;
 delta = abs(alpha(end)-alpha(1))/2;
 totangles=cumsum(diff(angles));

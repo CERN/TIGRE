@@ -162,12 +162,12 @@ template<bool sphericalrotation>
     }
 
     //Length is not actually a length, but the amount of memreads with given accuracy ("samples per voxel")
-    for (i=floor(cropdist_init/geo.accuracy); i<=length; i=i+1){
+    for (i=floor(cropdist_init/geo.accuracy); i<=length; i=i+1.0f){
         tx=vectX*i+source.x;
         ty=vectY*i+source.y;
         tz=vectZ*i+source.z;
         
-        sum += tex3D(tex, tx+0.5, ty+0.5, tz+0.5); // this line is 94% of time.
+        sum += tex3D(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
     }
     float deltalength=sqrt((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
             (vectY*geo.dVoxelY)*(vectY*geo.dVoxelY)+(vectZ*geo.dVoxelZ)*(vectZ*geo.dVoxelZ) );
