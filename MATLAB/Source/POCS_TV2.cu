@@ -2,47 +2,47 @@
  *
  * CUDA functions for Steepest descend in POCS-type algorithms.
  *
- * This file will iteratively minimize by stepest descend the total variation 
+ * This file will iteratively minimize by stepest descend the total variation
  * of the input image, with the parameters given, using GPUs.
  *
  * CODE by       Ander Biguri
  *
----------------------------------------------------------------------------
----------------------------------------------------------------------------
-Copyright (c) 2015, University of Bath and CERN- European Organization for 
-Nuclear Research
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, 
-this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, 
-this list of conditions and the following disclaimer in the documentation 
-and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors
-may be used to endorse or promote products derived from this software without
-specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
- ---------------------------------------------------------------------------
-
-Contact: tigre.toolbox@gmail.com
-Codes  : https://github.com/CERN/TIGRE
---------------------------------------------------------------------------- 
+ * ---------------------------------------------------------------------------
+ * ---------------------------------------------------------------------------
+ * Copyright (c) 2015, University of Bath and CERN- European Organization for
+ * Nuclear Research
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * ---------------------------------------------------------------------------
+ *
+ * Contact: tigre.toolbox@gmail.com
+ * Codes  : https://github.com/CERN/TIGRE
+ * ---------------------------------------------------------------------------
  */
 
 
@@ -68,7 +68,8 @@ do { \
 } while (0)
     
 // CUDA kernels
-//https://stackoverflow.com/questions/21332040/simple-cuda-kernel-optimization/21340927#21340927
+// https://stackoverflow.com/questions/21332040/simple-cuda-kernel-optimization/21340927#21340927
+    
     __global__ void divideArrayScalar(float* vec,float scalar,const size_t n)
     {
         unsigned long long i = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -150,10 +151,10 @@ do { \
         float wxk=__expf(-(dfk[0]/delta)*(dfk[0]/delta));
         float wyk=__expf(-(dfk[1]/delta)*(dfk[1]/delta));
         float wzk=__expf(-(dfk[2]/delta)*(dfk[2]/delta));
-       // df[0]=wx*df[0];df[1]=wy*df[1];df[2]=wz*df[2];
-       // dfi[0]=wx*dfi[0];dfi[1]=wy*dfi[1];dfi[2]=wz*dfi[2];
-       // dfj[0]=wx*dfj[0];dfj[1]=wy*dfj[1];dfj[2]=wz*dfj[2];
-       // dfk[0]=wx*dfk[0];dfk[1]=wy*dfk[1];dfk[2]=wz*dfk[2];
+        // df[0]=wx*df[0];df[1]=wy*df[1];df[2]=wz*df[2];
+        // dfi[0]=wx*dfi[0];dfi[1]=wy*dfi[1];dfi[2]=wz*dfi[2];
+        // dfj[0]=wx*dfj[0];dfj[1]=wy*dfj[1];dfj[2]=wz*dfj[2];
+        // dfk[0]=wx*dfk[0];dfk[1]=wy*dfk[1];dfk[2]=wz*dfk[2];
         
         // this hsould do the trick I think
         
@@ -229,7 +230,7 @@ do { \
         size_t i = blockIdx.x*blockDim.x + tid;
         size_t gridSize = blockDim.x*gridDim.x;
         float mySum = 0;
-       // float value=0;
+        // float value=0;
         while (i < n) {
             mySum += g_idata[i];
             i += gridSize;
@@ -274,9 +275,9 @@ do { \
     
     
 // main function
- void aw_pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter,const float delta){
+    void aw_pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter,const float delta){
         
-    
+        
         size_t total_pixels = image_size[0] * image_size[1]  * image_size[2] ;
         size_t mem_size = sizeof(float) * total_pixels;
         
@@ -353,7 +354,7 @@ do { \
         cudaFree(d_norm2aux);
         cudaFree(d_dimgTV);
         cudaFree(d_norm2);
-
+        
         cudaCheckErrors("Memory free");
         
     }
