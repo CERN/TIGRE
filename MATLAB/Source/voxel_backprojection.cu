@@ -90,7 +90,7 @@ do { \
      *
      **/
     
-void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage);
+    void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -301,12 +301,12 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     // Check the available devices, and if they are the same
     int dev;
     checkDevices();
-
+    
     // Split the CT problem
     unsigned int split_image;
     unsigned int split_projections;
     splitCTbackprojection(deviceCount,geo,nalpha,&split_image,&split_projections);
-
+    
     
     // Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the
     // image slices. The rest of the Geometry is the same
@@ -317,7 +317,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     // in the previous section this should leave enough space for the textures.
     size_t num_bytes_img = geo.nVoxelX*geo.nVoxelY*geoArray[0].nVoxelZ* sizeof(float);
     
-     
+    
     float** dimage=(float**)malloc(deviceCount*sizeof(float*));
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
@@ -349,33 +349,33 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         
         
         for(unsigned int img_slice=0;img_slice<split_image;img_slice++){
-           if(proj==0){
-               for (dev = 0; dev < deviceCount; dev++){
+            if(proj==0){
+                for (dev = 0; dev < deviceCount; dev++){
                     cudaSetDevice(dev);
                     cudaMemset(dimage[dev],0,num_bytes_img);
                     cudaCheckErrors("memset fail");
                 }
-           }
+            }
             // If we have more than one chunck of projections, then we need to put back the previous results into the GPU
             // Exception: when each GPU is handling a single image chunk, we can leave it there.
             if(proj>0 && split_image>1) {
-               for (dev = 0; dev < deviceCount; dev++){
+                for (dev = 0; dev < deviceCount; dev++){
                     cudaSetDevice(dev);
                     num_bytes_img_curr=geoArray[img_slice*deviceCount+dev].nVoxelX*geoArray[img_slice*deviceCount+dev].nVoxelY*geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
                     img_linear_idx_start=geo.nVoxelX*geo.nVoxelY*geoArray[0].nVoxelZ*(img_slice*deviceCount+dev);
                     cudaMemcpy(dimage[dev],&result[img_linear_idx_start], num_bytes_img_curr, cudaMemcpyHostToDevice);
                     cudaCheckErrors("cudaMemcpy previous result fail");
                 }
-
-            }            
+                
+            }
             
-            for (dev = 0; dev < deviceCount; dev++){ 
+            for (dev = 0; dev < deviceCount; dev++){
                 //Safety:
-                // Depends on the amount of GPUs, the case where a image slice is zero hight can happen. 
+                // Depends on the amount of GPUs, the case where a image slice is zero hight can happen.
                 // Just break the loop if we reached that point
                 if(geoArray[img_slice*deviceCount+dev].nVoxelZ==0)
                     break;
-                        
+                
                 cudaSetDevice(dev);
                 int divx,divy,divz;
                 // RB: Use the optimal (in their tests) block size from paper by Zinsser and Keck (16 in x and 32 in y).
@@ -455,7 +455,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
             // Exception: when each GPU is handlin a single image chunk and we have not finished with the projections
             cudaDeviceSynchronize();
             if(proj==split_projections-1 || split_image>1){
-              
+                
                 for (dev = 0; dev < deviceCount; dev++){
                     cudaSetDevice(dev);
                     num_bytes_img_curr=geoArray[img_slice*deviceCount+dev].nVoxelX*geoArray[img_slice*deviceCount+dev].nVoxelY*geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
@@ -476,7 +476,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
             
         }
     }
-
+    
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
         cudaFree(dimage[dev]);
@@ -511,22 +511,32 @@ void checkDevices(void){
 }
 void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
     
-    // Get memory of GPU. Assuming all of the available GPUs have the same amoutn of memory.
-    cudaSetDevice(0);
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, 0);
-    unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem); // lets leave 10% for the GPU. Too much? maybe, but probably worth saving.
-    //Lets leave 400Mb or 20% of the memory, whichever is smaller
-    // 400Mb=completely empirical.
-    mem_GPU_global=mem_GPU_global-min(419430400ULL,(unsigned long long)(0.2*(double)mem_GPU_global));
+ 
+    // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
+    size_t memfree;
+    size_t memtotal;
+    size_t mem_GPU_global;
+    for (unsigned int dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(dev);
+        cudaMemGetInfo(&memfree,&memtotal);
+        if(dev==0) mem_GPU_global=memfree;
+        if(memfree<memtotal/2){
+            mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+        }
+        cudaCheckErrors("Check mem error");
+        
+        mem_GPU_global=(memfree<mem_GPU_global)?memfree:mem_GPU_global;
+    }
+    mem_GPU_global=(size_t)((double)mem_GPU_global*0.95); // lets leave 10% for the GPU. Too much? maybe, but probably worth saving.
+
     // Compute how much memory each of the relevant memory pieces need
     size_t mem_image=       (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
     size_t mem_image_slice= (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)VOXELS_PER_THREAD*sizeof(float);
     size_t mem_proj=        (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
     
-
+    
     // Initialize variables for spliting procedure choosing algorithm.
-  
+    
     
     // Does everything fit in the GPU?
     
@@ -548,7 +558,7 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
         // mem_free/mem_image_slice == how many slices fit in each GPU
         // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
         *split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
-       
+        
     }
     // They do not fit in memory. We need to split both projections and images. Its OK, we'll survive.
     else
@@ -560,16 +570,16 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
         *split_projections=(mem_proj*nalpha+mem_free-1)/mem_free;
         // Now knowing how many splits we have for projections, we can recompute how many slices of image actually
         // fit on the GPU. Must be more than 0 obviously.
-      
-
+        
+        
         mem_free=mem_GPU_global-mem_proj*nalpha/(*split_projections);
-
+        
         unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
         // Split:
         // mem_free/mem_image_slice == how many slices fit in each GPU
         // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
-       *split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
-
+        *split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
+        
     }
 }
 

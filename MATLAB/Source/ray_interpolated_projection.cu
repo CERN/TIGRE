@@ -228,9 +228,24 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         }
         devicenames=deviceProp.name;
     }
-    cudaSetDevice(0);
-    cudaGetDeviceProperties(&deviceProp, 0);
-    unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem*0.9);
+    
+    // Check free memory
+    size_t memfree;
+    size_t memtotal;
+    size_t mem_GPU_global;
+    for (unsigned int dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(dev);
+        cudaMemGetInfo(&memfree,&memtotal);
+        if(dev==0) mem_GPU_global=memfree;
+        if(memfree<memtotal/2){
+            mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+        }
+        cudaCheckErrors("Check mem error");
+        
+        mem_GPU_global=(memfree<mem_GPU_global)?memfree:mem_GPU_global;
+    }
+    mem_GPU_global=(size_t)((double)mem_GPU_global*0.95); // lets leave 10% for the GPU. Too much? maybe, but probably worth saving.
+
     size_t mem_image=(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
     size_t mem_proj =(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV * sizeof(float);
     

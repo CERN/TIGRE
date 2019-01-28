@@ -602,14 +602,22 @@ void checkDevices(void){
 }
 void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
     
-    // Get memory of GPU. Assuming all of the available GPUs have the same amoutn of memory.
-    cudaSetDevice(0);
-    cudaDeviceProp deviceProp;
-    cudaGetDeviceProperties(&deviceProp, 0);
-    unsigned long long mem_GPU_global=(unsigned long long)(deviceProp.totalGlobalMem); // lets leave 10% for the GPU. Too much? maybe, but probably worth saving.
-    //Lets leave 400Mb or 20% of the memory, whichever is smaller
-    // 400Mb=completely empirical.
-    mem_GPU_global=mem_GPU_global-min(419430400ULL,(unsigned long long)(0.2*(double)mem_GPU_global));
+ 
+    size_t memfree;
+    size_t memtotal;
+    size_t mem_GPU_global;
+    for (unsigned int dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(dev);
+        cudaMemGetInfo(&memfree,&memtotal);
+        if(dev==0) mem_GPU_global=memfree;
+        if(memfree<memtotal/2){
+            mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+        }
+        cudaCheckErrors("Check mem error");
+        
+        mem_GPU_global=(memfree<mem_GPU_global)?memfree:mem_GPU_global;
+    }
+    mem_GPU_global=(size_t)((double)mem_GPU_global*0.95); // lets leave 5% for the GPU. Too much? maybe, but probably worth saving.
     // Compute how much memory each of the relevant memory pieces need
     size_t mem_image=       (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
     size_t mem_image_slice= (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)VOXELS_PER_THREAD*sizeof(float);
