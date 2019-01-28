@@ -43,6 +43,7 @@ class CGLS(IterativeReconAlg):
     def run_main_iter(self):
         self.l2l = np.zeros([self.niter], dtype=np.float32)
         for i in range(self.niter):
+            print(i)
             if i == 0:
                 print("CGLS Algorithm in progress.")
                 toc = time.clock()
@@ -63,7 +64,6 @@ class CGLS(IterativeReconAlg):
                 self.initialise_cgls()
 
             self._r -= alpha * q
-
             s = Atb(self._r, self.geo, self.angles)
             s_norm = np.linalg.norm(s.ravel(), 2)
 

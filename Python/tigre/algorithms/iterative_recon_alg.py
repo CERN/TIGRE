@@ -152,7 +152,7 @@ class IterativeReconAlg(Regularisation, DataMinimization):
                        OrderStrategy=None, Quameasopts=None,
                        init=None,verbose=True, noneg=True,
                        computel2=False, dataminimizing='art_data_minimizing',
-                       regularisation='minimizeTV',name='')
+                       name='')
         allowed_keywords = ['V','W','log_parameters','angleblocks','angle_index','delta']
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)

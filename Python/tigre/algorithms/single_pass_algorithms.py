@@ -64,7 +64,7 @@ def FDK(proj, geo, angles, filter=None,verbose=False,**kwargs):
         (yy, xx) = np.meshgrid(xv, yv)
 
         w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx ** 2 + yy ** 2))
-        proj_filt[ii] = proj[ii] * w
+        proj_filt[ii] = copy.deepcopy(proj[ii]) * w
 
     proj_filt = filtering(proj_filt, geo, angles, parker=False,verbose=verbose)
     # m = {
@@ -85,7 +85,7 @@ def fbp(proj,geo,angles,filter=None,verbose=False,**kwargs):
         raise ValueError("Only use FBP for parallel beam. Check geo.mode.")
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
-    proj_filt = filtering(proj,geox,angles,parker=False,verbose=verbose)
+    proj_filt = filtering(copy.deepcopy(proj),geox,angles,parker=False,verbose=verbose)
 
     res = Atb(proj_filt,geo,angles)*geo.DSO/geo.DSD
 

@@ -440,7 +440,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
 
         cudaCheckErrors("Kernel fail");
     }  // END for
-    matrixConstantMultiply<<<32,32>>>( geo,dimage,geo.dVoxelX*geo.dVoxelY*geo.dVoxelZ/(geo.dDetecU*geo.dDetecV));
+    matrixConstantMultiply<<<60,MAXTREADS>>>( geo,dimage,geo.dVoxelX*geo.dVoxelY*geo.dVoxelZ/(geo.dDetecU*geo.dDetecV));
 
     //////////////////////////////////////////////////////////////////////////////////////
     // END Main reconstruction loop: go through projections (rotation angles) and backproject

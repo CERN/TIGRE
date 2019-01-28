@@ -18,7 +18,7 @@ __doc__ == """
 """
 # ---------------GEOMETRY---------------------------
 
-geo = tigre.geometry(mode=sys.argv[1],nVoxel = np.array([64,64,64],dtype=np.float32))
+geo = tigre.geometry(mode='parallel',nVoxel = np.array([256,256,256]))
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
 
 
@@ -32,7 +32,7 @@ angles = np.vstack((angles_1, angles_3, angles_3)).T
 # --------------------PROJECTION----------------------
 
 proj = Ax(source_img,geo,angles)
-
+print('hello ander')
 # ---------------------PLOT---------------------------
 def plot_algs(alglist, niter = 10, *args):
     l = []
@@ -42,15 +42,15 @@ def plot_algs(alglist, niter = 10, *args):
         v = arg.split("=")[1]
         kwargs.update({k:v})
     for alg in alglist:
-
-            l.append(getattr(algs,alg)(proj,geo,angles,niter,**kwargs)[32])
-    res = l[0]
-    for mat in l[1:]:
-        res= np.vstack((res,mat))
-    plt.matshow(res)
-    plt.title(alglist)
-    if kwargs.has_key('colorbar'):
-        plt.colorbar()
+	    if alg == 'FDK' or alg == 'fbp':
+	        l.append(getattr(algs,alg)(proj,geo,angles,**kwargs)[32])
+            else:
+                l.append(getattr(algs,alg)(proj,geo,angles,niter,**kwargs)[32])
+    for i in range(len(l)):
+    	plt.matshow(l[i])
+    	plt.title(str(alglist[i]) + ' ' + str(geo.mode))
+    	if kwargs.has_key('colorbar'):
+        	plt.colorbar()
     plt.show()
 
 
@@ -58,12 +58,18 @@ def plot_algs(alglist, niter = 10, *args):
 if __name__ == '__main__':
     niter = 10
     args = []
+    plt.matshow(source_img[32])
+    plt.colorbar()
+    plt.title('Source image')
     if len(sys.argv) >= 4:
         niter = int(sys.argv[3])
         args = sys.argv[4:]
     if sys.argv[2] == 'all':
-        if sys.argv[1] is 'cone':
+        if sys.argv[1] == 'cone':
             geo = tigre.geometry_default(high_quality=False)
+	    geo.mode = 'cone'
+	    source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
+            proj = Ax(source_img,geo,angles)
             alglist = ['sart',
                     'sirt',
                     'ossart',
@@ -81,4 +87,8 @@ if __name__ == '__main__':
                     'cgls']
         plot_algs(alglist, niter, *args)
     else:
+        if sys.argv[1] == 'cone':
+            geo = tigre.geometry_default(high_quality=True)
+	    source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
+            proj = Ax(source_img,geo,angles)
         plot_algs(sys.argv[2].split(),niter,*args)
