@@ -62,8 +62,9 @@
 do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
+                cudaDeviceReset();\
                 mexPrintf("ERROR in: %s \n",msg);\
-                mexErrMsgIdAndTxt("err",cudaGetErrorString(__err));\
+                mexErrMsgIdAndTxt("CBCT:CUDA:POCS_TV",cudaGetErrorString(__err));\
         } \
 } while (0)
     

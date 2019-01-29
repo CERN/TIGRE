@@ -57,6 +57,7 @@ Codes  : https://github.com/CERN/TIGRE
 do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
+                cudaDeviceReset();\
                 mexPrintf("%s \n",msg);\
                 mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising",cudaGetErrorString(__err));\
         } \
@@ -171,6 +172,16 @@ void update_p(const float* u, float* pz, float* py, float* px,
 void tvdenoising(const float* src, float* dst, float lambda,
                  const float* spacing, const long* image_size, int maxIter)
 {
+    
+    //
+    
+    
+    
+    
+    
+    
+    
+    
     // Init params
     size_t total_pixels = image_size[0] * image_size[1]  * image_size[2] ;
     size_t mem_size = sizeof(float) * total_pixels;

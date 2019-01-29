@@ -195,13 +195,6 @@ template<bool sphericalrotation>
 int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
     
     
-        
-    
-    
-    
-    
-    
-    
     // Prepare for MultiGPU
     int deviceCount = 0;
     cudaGetDeviceCount(&deviceCount);
