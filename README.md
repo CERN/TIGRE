@@ -18,7 +18,7 @@ both sides into TIGRE.
 
 TIGRE remains under development as we are still adding new features 
 (e.g., motion compensation).  If you have any request for a specific 
-application, do not hesitate to contact us!
+application, do not hesitate to [contact us](#contact)!
 
  - [TIGRE features](#features)
  
@@ -33,37 +33,36 @@ application, do not hesitate to contact us!
  - [Licensing](#licensing)
 
 
-
 ## TIGRE features
 
 TIGRE is a GPU-based CT reconstruction software repository that contains a wide variety of iterative algorithms.
 
-- MATLAB and Python libraries for high-performance x-ray absorption tomographic reconstruction.
+- **MATLAB** and **Python** libraries for high-performance x-ray absorption tomographic reconstruction.
 
-- State-of-the-art implementations of projection and backprojection operations on GPUs (including multi-GPUs), with a simple interface using higher level languages to facilitate the development of new methods.
+- State-of-the-art implementations of projection and backprojection operations on **GPUs** (including **multi-GPUs**), with a simple interface using higher level languages to facilitate the development of new methods.
 
 - **Flexible CT geometry:** Cone Beam, Parallel Beam, Digital Tomosynthesis, C-arm CT, and any other geometry.  Geometric parameters are defined per projection, not per scan.
 
 - A wide range of reconstruction algorithms for CT.
 
     - Filtered backprojection (FBP,FDK) and variations (different filters, Parker weights, ...)
-    
-    - **Iterative algorithms** 
-        
+   
+    - **Iterative algorithms**
+       
         - Gradient-based algorithms (SART, OS-SART, SIRT) with multiple tuning parameters (Nesterov acceleration, initialization, parameter reduction, ...)
-        
+       
         - Krylov subspace algorithms (CGLS)
-        
+       
         - Statistical reconstruction (MLEM)
-        
+       
         - Total variation regularization based algorithms: FISTA-based (SART-TV) and POCS-based (ASD-POCS, OS-ASD-POCS, B-ASD-POCS-β, PCSD, AwPCSD, Aw-ASD-POCS)
-        
+       
 - TV denoising for 3D images.
-        
-- Basic image loading fucntionality.
-        
+       
+- Basic image loading functionality.
+       
 - A variety of plotting functions.
-        
+       
 - Image quality metrics.
     
 
@@ -108,8 +107,7 @@ Contact the authors directly at:
 
 ## Licensing
 
-TIGRE was created jointly by the University of Bath's 
-Engineering Tomography Lab and CERN.  It is released under the BSD License, meaning you can use and modify the software freely.  However, you **must** cite the original authors.
+The creation of TIGRE was supported by the University of Bath and CERN. It is released under the BSD License, meaning you can use and modify the software freely.  However, you **must** cite the original authors.
 For more information read [the licence file][1] or the [BSD License Definition][2].
 
 If you use TIGRE, please reference the following paper:
