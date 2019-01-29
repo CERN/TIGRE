@@ -301,12 +301,12 @@ do { \
         }
         mem_GPU_global=(size_t)((double)mem_GPU_global*0.95);
         
-       
+        
         // %5 of free memory shoudl be enough, we have almsot no variables in these kernels
         size_t total_pixels              = image_size[0] * image_size[1]  * image_size[2] ;
-        size_t mem_slice_image           = image_size[0] * image_size[1]*sizeof(float);
-        size_t mem_size_image            = sizeof(float) * total_pixels;
-        size_t mem_auxiliary             = sizeof(float)*(total_pixels + MAXTHREADS - 1) / MAXTHREADS;
+        size_t mem_slice_image           = sizeof(float)* image_size[0] * image_size[1]  ;
+        size_t mem_size_image            = sizeof(float)* total_pixels;
+        size_t mem_auxiliary             = sizeof(float)* (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
         
         // Decide how are we handling the distribution of computation
         size_t mem_img_each_GPU;
@@ -331,6 +331,7 @@ do { \
             // lets make sure these 2 slices fit, if they do not, add 1 to splits.
             slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits);
             mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
+            
             // if the new stuff does not fit in the GPU, it measn we are in the edge case where adding that extra slice will overflow memory
             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
                 // one more splot shoudl do the job, as its an edge case.
@@ -339,11 +340,19 @@ do { \
                 slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits); // amountf of slices that fit on a GPU. Later we add 2 to these, as we need them for overlap
                 mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
             }
+
             
+            
+            // How many EXTRA buffer slices shoudl be able to fit in here??!?!
+            mem_free=mem_GPU_global-(3*mem_img_each_GPU+mem_auxiliary);
+            unsigned int extra_buff=(mem_free/mem_slice_image); 
+            buffer_length=(extra_buff/2)/3; // we need double whatever this results in, rounded down.
+            mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
+
             // Assert
-             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
-                  mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","Bad assert. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
-             }
+            if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
+                mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","Bad assert. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
+            }
         }
         
         
@@ -382,7 +391,10 @@ do { \
             buffer=(float*)malloc(image_size[0]*image_size[1]*2*sizeof(float));
         }
         
+        
+        
         // For the reduction
+        
         
         double totalsum_prev;
         double totalsum;
@@ -393,12 +405,13 @@ do { \
         unsigned int curr_slices;
         unsigned long long curr_pixels;
         unsigned long long buffer_pixels=buffer_length*image_size[0]*image_size[1];
-       
-        for(unsigned int i=0;i<maxIter;i++){
-           if(splits>1){
+        
+        for(unsigned int i=0;i<maxIter;i+=(buffer_length-1)){
+            if(splits>1){
                 totalsum_prev=0;
             }
             for(unsigned int sp=0;sp<splits;sp++){
+                
                 // For each iteration we need to comptue all the image. The ordering of these loops
                 // need to be like this due to the boudnign layers between slpits. If more than 1 split is needed
                 // for each GPU then there is no other way that taking the entire memory out of GPU and putting it back.
@@ -442,118 +455,118 @@ do { \
                         if((sp*deviceCount+dev)<deviceCount*splits-1){
                             
                             cudaMemcpyAsync(d_image[dev]+curr_pixels+buffer_pixels, &dst[linear_idx_start]+curr_pixels, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
-                        }                        
+                        }
                         // if its not the first, copy also the intersection buffer.
                         if((sp*deviceCount+dev)){
                             cudaMemcpyAsync(d_image[dev], &dst[linear_idx_start]-buffer_pixels,buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
                         }
                         
                     }
-
+                    
                 }
                 cudaDeviceSynchronize();
                 cudaCheckErrors("Memcpy failure on multi split");
-                
-                // For the gradient
-                dim3 blockGrad(10, 10, 10);
-                dim3 gridGrad((image_size[0]+blockGrad.x-1)/blockGrad.x, (image_size[1]+blockGrad.y-1)/blockGrad.y, (curr_slices+buffer_length*2+blockGrad.z-1)/blockGrad.z);
-                
-                for (dev = 0; dev < deviceCount; dev++){
-                    cudaSetDevice(dev);
-                    curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                    // Compute the gradient of the TV norm
+                for(unsigned int ib=0;  (ib<(buffer_length-1)) && ((i+ib)<maxIter);  ib++){
                     
-                    // I Dont understand why I need to store 2 layers to compute correctly with 1 buffer. The bounding checks shoudl
-                    // be enough but they are not.
-                    gradientTV<<<gridGrad, blockGrad>>>(d_image[dev],d_dimgTV[dev],(long)(curr_slices+buffer_length*2-1), image_size[1],image_size[0]);
+                    // For the gradient
+                    dim3 blockGrad(10, 10, 10);
+                    dim3 gridGrad((image_size[0]+blockGrad.x-1)/blockGrad.x, (image_size[1]+blockGrad.y-1)/blockGrad.y, (curr_slices+buffer_length*2+blockGrad.z-1)/blockGrad.z);
                     
-                }
-                
-                cudaDeviceSynchronize();
-                cudaCheckErrors("Gradient");
-//             cudaMemcpy(dst, d_dimgTV, mem_size_image, cudaMemcpyDeviceToHost);
-                
-                for (dev = 0; dev < deviceCount; dev++){
-                    cudaSetDevice(dev);
-                    curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                    // no need to copy the 2 aux slices here
-                    cudaMemcpyAsync(d_norm2[dev], d_dimgTV[dev]+buffer_pixels, image_size[0]*image_size[1]*curr_slices*sizeof(float), cudaMemcpyDeviceToDevice);
-                }
-                cudaDeviceSynchronize();
-                cudaCheckErrors("Copy from gradient call error");
-                
-                
-                // Compute the L2 norm of the gradint. For that, reduction is used.
-                //REDUCE
-                float test;
-                for (dev = 0; dev < deviceCount; dev++){
-                    cudaSetDevice(dev);
-                    curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
+                    for (dev = 0; dev < deviceCount; dev++){
+                        cudaSetDevice(dev);
+                        curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
+                        // Compute the gradient of the TV norm
+                        
+                        // I Dont understand why I need to store 2 layers to compute correctly with 1 buffer. The bounding checks shoudl
+                        // be enough but they are not.
+                        gradientTV<<<gridGrad, blockGrad>>>(d_image[dev],d_dimgTV[dev],(long)(curr_slices+buffer_length*2-1), image_size[1],image_size[0]);
+                        
+                    }
                     
-                    total_pixels=curr_slices*image_size[0]*image_size[1];
+                    cudaDeviceSynchronize();
+                    cudaCheckErrors("Gradient");
                     
-                    size_t dimblockRed = MAXTHREADS;
-                    size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
-                    reduceNorm2 << <dimgridRed, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_norm2[dev], d_norm2aux[dev], total_pixels);
-                    //cudaDeviceSynchronize();
-                    //cudaCheckErrors("reduce1");
-                    if (dimgridRed > 1) {
-                        reduceSum << <1, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_norm2aux[dev], d_norm2[dev], dimgridRed);
-                        //cudaCheckErrors("reduce2");
+                    for (dev = 0; dev < deviceCount; dev++){
+                        cudaSetDevice(dev);
+                        curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
+                        // no need to copy the 2 aux slices here
+                        cudaMemcpyAsync(d_norm2[dev], d_dimgTV[dev]+buffer_pixels, image_size[0]*image_size[1]*curr_slices*sizeof(float), cudaMemcpyDeviceToDevice);
+                    }
+                    cudaDeviceSynchronize();
+                    cudaCheckErrors("Copy from gradient call error");
+                    
+                    
+                    // Compute the L2 norm of the gradint. For that, reduction is used.
+                    //REDUCE
+                    float test;
+                    for (dev = 0; dev < deviceCount; dev++){
+                        cudaSetDevice(dev);
+                        curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
+                        
+                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        
+                        size_t dimblockRed = MAXTHREADS;
+                        size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
+                        reduceNorm2 << <dimgridRed, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_norm2[dev], d_norm2aux[dev], total_pixels);
                         //cudaDeviceSynchronize();
-                        cudaMemcpyAsync(&sumnorm2[dev], d_norm2[dev], sizeof(float), cudaMemcpyDeviceToHost);
-                        //cudaCheckErrors("cudaMemcpy reduce1");
+                        //cudaCheckErrors("reduce1");
+                        if (dimgridRed > 1) {
+                            reduceSum << <1, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_norm2aux[dev], d_norm2[dev], dimgridRed);
+                            //cudaCheckErrors("reduce2");
+                            //cudaDeviceSynchronize();
+                            cudaMemcpyAsync(&sumnorm2[dev], d_norm2[dev], sizeof(float), cudaMemcpyDeviceToHost);
+                            //cudaCheckErrors("cudaMemcpy reduce1");
+                        }
+                        else {
+                            cudaMemcpyAsync(&sumnorm2[dev], d_norm2aux[dev], sizeof(float), cudaMemcpyDeviceToHost);
+                            //cudaCheckErrors("cudaMemcpy reduce2");
+                        }
                     }
-                    else {
-                        cudaMemcpyAsync(&sumnorm2[dev], d_norm2aux[dev], sizeof(float), cudaMemcpyDeviceToHost);
-                        //cudaCheckErrors("cudaMemcpy reduce2");
+                    cudaDeviceSynchronize();
+                    cudaCheckErrors("Reduction error");
+                    
+                    
+                    
+                    sum_curr_spl=0;
+                    // this is CPU code
+                    for (dev = 0; dev < deviceCount; dev++){
+                        sum_curr_spl+=sumnorm2[dev];
                     }
-                }
-                cudaDeviceSynchronize();
-                cudaCheckErrors("Reduction error");
-                
-                
-              
-                sum_curr_spl=0;
-                // this is CPU code
-                for (dev = 0; dev < deviceCount; dev++){
-                    sum_curr_spl+=sumnorm2[dev];
-                }
-                sum_curr_spl+=0.0000001f;
-                
-                if(i>0 && splits>1){
-                    //totalsum=totalsum_prev;
-                }else{
-                    totalsum=sum_curr_spl;
-                }
-                
+                    sum_curr_spl+=0.0000001f;
                     
-                
-                for (dev = 0; dev < deviceCount; dev++){
-                    cudaSetDevice(dev);
-                    curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                    total_pixels=curr_slices*image_size[0]*image_size[1];
-                    //NOMRALIZE
-                    //in a Tesla, maximum blocks =15 SM * 4 blocks/SM
-                    divideArrayScalar  <<<60,MAXTHREADS>>>(d_dimgTV[dev]+buffer_pixels,(float)sqrt(totalsum),total_pixels);
-                    //cudaDeviceSynchronize();
-                    //cudaCheckErrors("Division error");
-                    //MULTIPLY HYPERPARAMETER
-                    multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dimgTV[dev]+buffer_pixels,alpha,   total_pixels);
-                }
-                cudaDeviceSynchronize();
-                cudaCheckErrors("Scalar operations error");
-                
-                //SUBSTRACT GRADIENT
-                //////////////////////////////////////////////
-                for (dev = 0; dev < deviceCount; dev++){
-                    cudaSetDevice(dev);
-                    curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                    total_pixels=curr_slices*image_size[0]*image_size[1];
+                    if(i>0 && splits>1){
+                        //totalsum=totalsum_prev;
+                    }else{
+                        totalsum=sum_curr_spl;
+                    }
                     
-                    substractArrays<<<60,MAXTHREADS>>>(d_image[dev]+buffer_pixels,d_dimgTV[dev]+buffer_pixels, total_pixels);
+                    
+                    for (dev = 0; dev < deviceCount; dev++){
+                        cudaSetDevice(dev);
+                        curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
+                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        //NOMRALIZE
+                        //in a Tesla, maximum blocks =15 SM * 4 blocks/SM
+                        divideArrayScalar  <<<60,MAXTHREADS>>>(d_dimgTV[dev]+buffer_pixels,(float)sqrt(totalsum),total_pixels);
+                        //cudaDeviceSynchronize();
+                        //cudaCheckErrors("Division error");
+                        //MULTIPLY HYPERPARAMETER
+                        multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dimgTV[dev]+buffer_pixels,alpha,   total_pixels);
+                    }
+                    cudaDeviceSynchronize();
+                    cudaCheckErrors("Scalar operations error");
+                    
+                    //SUBSTRACT GRADIENT
+                    //////////////////////////////////////////////
+                    for (dev = 0; dev < deviceCount; dev++){
+                        cudaSetDevice(dev);
+                        curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
+                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        
+                        substractArrays<<<60,MAXTHREADS>>>(d_image[dev]+buffer_pixels,d_dimgTV[dev]+buffer_pixels, total_pixels);
+                    }
+                    
                 }
-                
                 // Syncronize mathematics, make sure bounding pixels are correct
                 cudaDeviceSynchronize();
                 if(splits==1){
@@ -563,7 +576,7 @@ do { \
                             cudaMemcpy(buffer, d_image[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
                             cudaSetDevice(dev);
                             cudaMemcpy(d_image[dev]+slices_per_split+buffer_pixels,buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
-
+                            
                             
                         }
                         if (dev>0){
@@ -584,17 +597,16 @@ do { \
 //                         mexPrintf("curr_slices %u \n",curr_slices);
 //                         mexPrintf("linear_idx_start %llu \n",linear_idx_start);
 //                         mexPrintf("total_pixels %llu \n",total_pixels);
-
+                        
                         cudaMemcpy(&dst[linear_idx_start], d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
                     }
                 }
                 cudaDeviceSynchronize();
                 cudaCheckErrors("Memory gather error");
                 
-                totalsum_prev+=sum_curr_spl;         
+                totalsum_prev+=sum_curr_spl;
             }
             totalsum=totalsum_prev;
-            
         }
         // If there has not been splits, we still have data in memory
         if(splits==1){
