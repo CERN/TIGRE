@@ -12,6 +12,8 @@ class ASD_POCS(IterativeReconAlg):
                " using the projection data PROJ taken over ALPHA angles, corresponding\n"
                " to the geometry descrived in GEO, using NITER iterations.\n") + IterativeReconAlg.__doc__
     def __init__(self,proj,geo,angles,niter, **kwargs):
+        if not kwargs.has_key('blocksize'):
+            kwargs.update(blocksize=1)
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         if not kwargs.has_key('alpha'):
             self.alpha = 0.002

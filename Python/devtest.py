@@ -9,6 +9,10 @@ from tigre.demos.Test_data import data_loader
 from tigre.utilities.Ax import Ax
 import tigre.algorithms as algs
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
+
+#----------------PROFILINGIMPORT-------------------
+
+from line_profiler import LineProfiler
 # ---------------GEOMETRY---------------------------
 
 geo = tigre.geometry(mode='parallel',nVoxel = np.array([64,64,64]))
@@ -27,19 +31,22 @@ angles = np.vstack((angles_1, angles_3, angles_3)).T
 proj = Ax(source_img,geo,angles)
 
 # ---------------------RECONSTRUCTION------------------
-sart = IterativeReconAlg(proj,geo,angles,niter=10,**dict(blocksize=1))
-def print_algs(alg):
-    for item in alg.__dict__:
-        if item == 'geo':
-            print('geo')
-        if hasattr(getattr(alg,item),'shape'):
-            print(item + ' :' + str(getattr(alg,item).shape))
-        else:
-            print(item,getattr(alg,item))
-print_algs(sart)
+
 from tigre.algorithms.pocs_algorithms import ASD_POCS
-asd_pocs = ASD_POCS(proj,geo,angles,niter=10)
-print_algs(asd_pocs)
-res = sart.run_main_iter()
+lp = LineProfiler()
+
+
+#sart = IterativeReconAlg(proj,geo,angles,niter=10, **dict(blocksize =1))
+#lp_wrapper = lp(getattr(sart,sart.dataminimizing))
+#setattr(sart, sart.dataminimizing, lp_wrapper)
+#sart.run_main_iter()
+#lp.print_stats()
+
+lp = LineProfiler()
+asd_pocs = ASD_POCS(proj,geo,angles,10)
+lp_wrapper = lp(getattr(asd_pocs,asd_pocs.dataminimizing))
+setattr(asd_pocs, asd_pocs.dataminimizing, lp_wrapper)
+asd_pocs.run_main_iter()
+lp.print_stats()
 
 # ---------------------PLOT----------------------------

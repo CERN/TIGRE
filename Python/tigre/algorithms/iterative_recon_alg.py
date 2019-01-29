@@ -17,64 +17,9 @@ the single pass type algorithms.
 """
 
 # coding: utf8
-class DataMinimization(object):
-    """
-    Class used to define the methods used in run_main_iter in IterativeReconAlg.
-    """
-    def art_data_minimizing(self):
-        """
-        VERBOSE:
-        for j in range(angleblocks):
-            angle = np.array([alpha[j]], dtype=np.float32)
-            proj_err = proj[angle_index[j]] - Ax(res, geo, angle, 'ray-voxel')
-            weighted_err = W[angle_index[j]] * proj_err
-            backprj = Atb(weighted_err, geo, angle, 'FDK')
-            weighted_backprj = 1 / V[angle_index[j]] * backprj
-            res += weighted_backprj
-            res[res<0]=0
-
-        :return: None
-        """
-        geo = copy.deepcopy(self.geo)
-        for j in range(len(self.angleblocks)):
-            if self.blocksize == 1:
-                angle = np.array([self.angleblocks[j]], dtype=np.float32)
-            else:
-                angle = self.angleblocks[j]
-
-            if geo.offOrigin.shape[0] ==self.angles.shape[0]:
-               geo.offOrigin = self.geo.offOrigin[j]
-            if geo.offDetector.shape[0] == self.angles.shape[0]:
-                geo.offOrin = self.geo.offDetector[j]
-            if geo.rotDetector.shape[0] ==self.angles.shape[0]:
-                geo.rotDetector=self.geo.rotDetector[j]
-            if hasattr(geo.DSD,'shape'):
-                if geo.DSD.shape[0] ==self.angles.shape[0]:
-                    geo.DSD = self.geo.DSD[j]
-            if hasattr(geo.DSO,'shape'):
-                if geo.DSO.shape[0] ==self.angles.shape[0]:
-                    geo.DSO = self.geo.DSO[j]
-            self.res += self.lmbda * 1/self.third_dim_sum(self.V[:,:,self.angle_index[j]]) * Atb(self.W[self.angle_index[j]] * (self.proj[self.angle_index[j]]
-                                     - Ax(self.res, geo, angle, 'interpolated')),geo, angle, 'FDK')
-            if self.noneg:
-                self.res = self.res.clip(min=0)
-
-    def third_dim_sum(self,V):
-        if V.ndim == 3:
-            return np.sum(V, axis=2, dtype=np.float32)
-        else:
-            return V
-
-class Regularisation(object):
-
-    def minimizeTV(self,res_prev,dtvg):
-        return minTV(res_prev,dtvg,self.numiter_tv)
-
-    def minimizeAwTV(self,res_prev,dtvg):
-        return AwminTV(res_prev,dtvg,self.numiter_tv,self.delta)
 
 
-class IterativeReconAlg(Regularisation, DataMinimization):
+class IterativeReconAlg(object):
     """
     Parameters
     ----------
@@ -278,6 +223,56 @@ class IterativeReconAlg(Regularisation, DataMinimization):
                     print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()
             self.error_measurement(res_prev, i)
+
+    def art_data_minimizing(self):
+        """
+        VERBOSE:
+        for j in range(angleblocks):
+            angle = np.array([alpha[j]], dtype=np.float32)
+            proj_err = proj[angle_index[j]] - Ax(res, geo, angle, 'ray-voxel')
+            weighted_err = W[angle_index[j]] * proj_err
+            backprj = Atb(weighted_err, geo, angle, 'FDK')
+            weighted_backprj = 1 / V[angle_index[j]] * backprj
+            res += weighted_backprj
+            res[res<0]=0
+
+        :return: None
+        """
+        geo = copy.deepcopy(self.geo)
+        for j in range(len(self.angleblocks)):
+            if self.blocksize == 1:
+                angle = np.array([self.angleblocks[j]], dtype=np.float32)
+            else:
+                angle = self.angleblocks[j]
+
+            if geo.offOrigin.shape[0] ==self.angles.shape[0]:
+               geo.offOrigin = self.geo.offOrigin[j]
+            if geo.offDetector.shape[0] == self.angles.shape[0]:
+                geo.offOrin = self.geo.offDetector[j]
+            if geo.rotDetector.shape[0] ==self.angles.shape[0]:
+                geo.rotDetector=self.geo.rotDetector[j]
+            if hasattr(geo.DSD,'shape'):
+                if geo.DSD.shape[0] ==self.angles.shape[0]:
+                    geo.DSD = self.geo.DSD[j]
+            if hasattr(geo.DSO,'shape'):
+                if geo.DSO.shape[0] ==self.angles.shape[0]:
+                    geo.DSO = self.geo.DSO[j]
+            self.res += self.lmbda * 1/self.third_dim_sum(self.V[:,:,self.angle_index[j]]) * Atb(self.W[self.angle_index[j]] * (self.proj[self.angle_index[j]]
+                                     - Ax(self.res, geo, angle, 'interpolated')),geo, angle, 'FDK')
+            if self.noneg:
+                self.res = self.res.clip(min=0)
+
+    def third_dim_sum(self,V):
+        if V.ndim == 3:
+            return np.sum(V, axis=2, dtype=np.float32)
+        else:
+            return V
+
+    def minimizeTV(self,res_prev,dtvg):
+        return minTV(res_prev,dtvg,self.numiter_tv)
+
+    def minimizeAwTV(self,res_prev,dtvg):
+        return AwminTV(res_prev,dtvg,self.numiter_tv,self.delta)
 
     def error_measurement(self, res_prev, iter):
         if self.Quameasopts is not None and iter > 0:

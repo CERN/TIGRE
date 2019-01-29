@@ -18,7 +18,7 @@ __doc__ == """
 """
 # ---------------GEOMETRY---------------------------
 
-geo = tigre.geometry(mode='parallel',nVoxel = np.array([256,256,256]))
+geo = tigre.geometry(mode='parallel',nVoxel = np.array([64,64,64]))
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
 
 
