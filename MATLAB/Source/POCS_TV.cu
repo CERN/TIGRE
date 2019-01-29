@@ -315,7 +315,7 @@ do { \
         //Does everything fit in the GPU?
         unsigned int slices_per_split;
         unsigned int splits=1; // if the number does not fit in an uint, you have more serious trouble than this.
-        if(mem_GPU_global> 3*mem_size_image+3*(deviceCount-1)*mem_slice_image+mem_auxiliary){
+        if(mem_GPU_global> 3*mem_size_image+3*(deviceCount-1)*mem_slice_image*buffer_length+mem_auxiliary){
             // We only need to split if we have extra GPUs
             slices_per_split=(image_size[2]+deviceCount-1)/deviceCount;
             mem_img_each_GPU=mem_slice_image*((image_size[2]+buffer_length*2+deviceCount-1)/deviceCount);
@@ -338,8 +338,6 @@ do { \
                 mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
             }
 
-            
-            
             // How many EXTRA buffer slices shoudl be able to fit in here??!?!
             mem_free=mem_GPU_global-(3*mem_img_each_GPU+mem_auxiliary);
             unsigned int extra_buff=(mem_free/mem_slice_image); 
