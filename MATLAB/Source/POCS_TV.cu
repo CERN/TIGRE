@@ -187,7 +187,7 @@ do { \
         {
             mySum = sdata[tid] + sdata[tid + 32];
             for (int offset = warpSize/2; offset > 0; offset /= 2) {
-                mySum += __shfl_down(mySum, offset);
+                mySum += __shfl_down_sync(0xFFFFFFFF, mySum, offset,32);
             }
         }
 #else
@@ -235,7 +235,7 @@ do { \
         {
             mySum = sdata[tid] + sdata[tid + 32];
             for (int offset = warpSize/2; offset > 0; offset /= 2) {
-                mySum += __shfl_down(mySum, offset);
+                mySum += __shfl_down_sync(0xFFFFFFFF, mySum, offset,32);
             }
         }
 #else
@@ -313,16 +313,13 @@ do { \
         
         unsigned int buffer_length=2;
         //Does everything fit in the GPU?
-        bool fits_in_memory=false;
         unsigned int slices_per_split;
         unsigned int splits=1; // if the number does not fit in an uint, you have more serious trouble than this.
         if(mem_GPU_global> 3*mem_size_image+3*(deviceCount-1)*mem_slice_image+mem_auxiliary){
             // We only need to split if we have extra GPUs
-            fits_in_memory=true;
             slices_per_split=(image_size[2]+deviceCount-1)/deviceCount;
             mem_img_each_GPU=mem_slice_image*((image_size[2]+buffer_length*2+deviceCount-1)/deviceCount);
         }else{
-            fits_in_memory=false;
             // As mem_auxiliary is not expected to be a large value (for a 2000^3 image is around 28Mbytes), lets for now assume we need it all
             size_t mem_free=mem_GPU_global-mem_auxiliary;
             
@@ -498,7 +495,6 @@ do { \
                     
                     // Compute the L2 norm of the gradint. For that, reduction is used.
                     //REDUCE
-                    float test;
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(dev);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
