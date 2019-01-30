@@ -9,7 +9,14 @@ from tigre.demos.Test_data import data_loader
 from tigre.utilities.Ax import Ax
 import tigre.algorithms as algs
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
-
+import os
+import sys
+rm_files = ''
+for filename in os.listdir(os.curdir):
+    if filename.endswith('.npy'):
+        rm_files += ' ' + filename
+        print(rm_files)
+os.system('rm' + rm_files)
 nVoxel = np.array([64,64,64])
 
 
@@ -17,9 +24,9 @@ def do_algs(alglist, mode, niter=10, **kwargs):
     for alg in alglist:
         print('Algorithm ' + str(alg).upper() + ' with mode ' + str(geo.mode) + ' and nVoxel ' + str(geo.nVoxel))
         if alg == 'FDK' or alg == 'fbp':
-            np.save(alg + ' ' + mode, getattr(algs, alg)(proj, geo, angles, **kwargs))
+            np.save(alg + '_' + mode, getattr(algs, alg)(proj, geo, angles, **kwargs))
         else:
-            np.save(alg + ' ' + mode, getattr(algs, alg)(proj, geo, angles, niter, **kwargs))
+            np.save(alg + '_' + mode, getattr(algs, alg)(proj, geo, angles, niter, **kwargs))
 
 
 # ---------------PARALLEL GEOMETRY---------------------------
@@ -43,11 +50,11 @@ proj = Ax(source_img, geo, angles)
 
 
 alglist = [ #'sart',
-           'sirt',
-           'ossart',
-           'iterativereconalg',
-           'asd_pocs',
-           'fbp',
+           #'sirt',
+           #'ossart',
+           #'iterativereconalg',
+           #'asd_pocs',
+           #'fbp',
            'cgls']
 
 print(geo.nVoxel)
@@ -72,11 +79,11 @@ proj = Ax(source_img, geo, angles)
 # ---------------------CONE RECONSTRUCTION------------------
 
 alglist = [#'sart',
-           'sirt',
-           'ossart',
-           'iterativereconalg',
-           'asd_pocs',
-           'FDK',
+           #'sirt',
+           #'ossart',
+           #'iterativereconalg',
+           #'asd_pocs',
+           #'FDK',
            'cgls']
 
 do_algs(alglist,mode='cone',niter=20)
