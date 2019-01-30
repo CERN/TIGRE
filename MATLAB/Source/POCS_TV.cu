@@ -592,18 +592,19 @@ do { \
                 cudaDeviceSynchronize();
                 if(splits==1){
                     for(dev=0; dev<deviceCount;dev++){
-                        
+                        curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
+                        total_pixels=curr_slices*image_size[0]*image_size[1];
                         if (dev<deviceCount-1){
                             cudaSetDevice(dev+1);
                             cudaMemcpy(buffer, d_image[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
                             cudaSetDevice(dev);
-                            cudaMemcpy(d_image[dev]+slices_per_split+buffer_pixels,buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
+                            cudaMemcpy(d_image[dev]+total_pixels+buffer_pixels,buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
                             
                             
                         }
                         if (dev>0){
                             cudaSetDevice(dev-1);
-                            cudaMemcpy(buffer, d_image[dev-1]+slices_per_split+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
+                            cudaMemcpy(buffer, d_image[dev-1]+total_pixels+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
                             cudaSetDevice(dev);
                             cudaMemcpy(d_image[dev],buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
                         }
@@ -617,10 +618,6 @@ do { \
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         linear_idx_start=image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
-//                         mexPrintf("curr_slices %u \n",curr_slices);
-//                         mexPrintf("linear_idx_start %llu \n",linear_idx_start);
-//                         mexPrintf("total_pixels %llu \n",total_pixels);
-                        
                         cudaMemcpy(&dst[linear_idx_start], d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
                     }
                 }
