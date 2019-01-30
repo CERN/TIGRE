@@ -117,7 +117,7 @@ while ~stop_criteria %POCS
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;
     
-    for jj=1:size(angles,2);
+    for jj=1:size(angles,2)
         if size(offOrigin,2)==size(angles,2)
             geo.offOrigin=offOrigin(:,index_angles(:,jj));
         end
@@ -199,7 +199,7 @@ while ~stop_criteria %POCS
     c=dot(dg_vec(:),dp_vec(:))/(norm(dg_vec(:),2)*norm(dp_vec(:),2));
     %This c is examined to see if it is close to -1.0
     
-    if (c<-0.99 && dd<=epsilon) || beta<0.005|| iter>maxiter
+    if (c<-0.99 && dd<=epsilon) || beta<0.005|| iter>=maxiter
         if verbose
             disp(['Stopping criteria met']);
             disp(['   c    = ' num2str(c)]);
