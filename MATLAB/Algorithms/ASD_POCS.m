@@ -64,7 +64,7 @@ measurequality=~isempty(QualMeasOpts);
 
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 
-angles=cell2mat(alphablocks);
+angles_reorder=cell2mat(alphablocks);
 index_angles=cell2mat(orig_index);
 
 % does detector rotation exists?
@@ -139,7 +139,7 @@ while ~stop_criteria %POCS
         %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
         %         f=f+beta*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
         % Enforce positivity
-        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles(:,jj))),geo,angles(:,jj)));
+        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles_reorder(:,jj))),geo,angles_reorder(:,jj)));
         % non-negativity constrain
         if nonneg
             f=max(f,0);
@@ -149,7 +149,7 @@ while ~stop_criteria %POCS
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
     geo.DSD=DSD;
-        geo.DSD=DSO;
+    geo.DSO=DSO;
     geo.rotDetector=rotDetector;
     % Save copy of image.
     if measurequality
@@ -202,13 +202,13 @@ while ~stop_criteria %POCS
     if (c<-0.99 && dd<=epsilon) || beta<0.005|| iter>=maxiter
         if verbose
             disp(['Stopping criteria met']);
-            disp(['   c    = ' num2str(c)]);
-            disp(['   beta = ' num2str(beta)]);
-            disp(['   iter = ' num2str(iter)]);
+            disp(['   c    = ' num2str(c),      '(Desired: c<-0.99)']);
+            disp(['   beta = ' num2str(beta),   '(Desired: beta<0.005)']);
+            disp(['   iter = ' num2str(iter), ]);
         end
         stop_criteria=true;
     end
-    if (iter==1 && verbose==1);
+    if (iter==1 && verbose==1)
         expected_time=toc*maxiter;
         disp('ADS-POCS');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
