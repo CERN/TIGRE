@@ -50,15 +50,14 @@ proj = Ax(source_img, geo, angles)
 
 
 alglist = [ #'sart',
-           #'sirt',
-           #'ossart',
-           #'iterativereconalg',
-           #'asd_pocs',
-           #'fbp',
+           'sirt',
+           'ossart',
+           'iterativereconalg',
+           'asd_pocs',
+           'fbp',
            'cgls']
 
-print(geo.nVoxel)
-do_algs(alglist,mode='parallel',niter=20)
+#do_algs(alglist,mode='parallel',niter=20,**dict(blocksize=20))
 
 # ---------------CONE GEOMETRY---------------------------
 
@@ -66,10 +65,10 @@ geo = tigre.geometry_default(high_quality=False)
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
 
 # ---------------------ANGLES-------------------------
-
-angles_1 = np.linspace(0, 2 * np.pi, 100, dtype=np.float32)
-angles_2 = np.ones((100), dtype=np.float32) * np.array(np.pi / 4, dtype=np.float32)
-angles_3 = np.zeros((100), dtype=np.float32)
+nangles=100
+angles_1 = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
+angles_2 = np.ones((nangles), dtype=np.float32) * np.array(np.pi / 4, dtype=np.float32)
+angles_3 = np.zeros((nangles), dtype=np.float32)
 angles = np.vstack((angles_1, angles_3, angles_3)).T
 
 # --------------------CONE PROJECTION----------------------
@@ -79,11 +78,24 @@ proj = Ax(source_img, geo, angles)
 # ---------------------CONE RECONSTRUCTION------------------
 
 alglist = [#'sart',
-           #'sirt',
-           #'ossart',
-           #'iterativereconalg',
-           #'asd_pocs',
-           #'FDK',
+           'sirt',
+           'ossart',
+           'iterativereconalg',
+           'asd_pocs',
+           'FDK',
            'cgls']
 
-do_algs(alglist,mode='cone',niter=20)
+#do_algs(alglist,mode='cone',niter=20,**dict(blocksize=20))
+from tigre.utilities.Atb import Atb
+Atb(proj,geo,angles,'FDK')[32]
+#plt.colorbar()
+#plt.title('FDK')
+mat = Atb(proj,geo,angles,'matched')
+plt.subplot(221)
+plt.imshow(mat[32])
+plt.subplot(222)
+plt.imshow(mat[:,32])
+plt.subplot(223)
+plt.imshow(mat[:,:,32])
+plt.colorbar()
+plt.show()

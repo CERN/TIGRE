@@ -323,15 +323,6 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
     /*
      * Allocate texture memory on the device
      */
-     //printf("geo.nDetect: %d %d \n",geo.nDetecV,geo.nDetecU);
-     //printf("angles: %d \n",nalpha);
-     //printf("geo.nVoxel: %d %d %d\n",geo.nVoxelX,geo.nVoxelY,geo.nVoxelZ);
-     //printf("geo.dVoxel: %f %f %f\n",geo.dVoxelX,geo.dVoxelY,geo.dVoxelZ);
-     //printf("geo.sVoxel: %f %f %f\n",geo.sVoxelX,geo.sVoxelY,geo.sVoxelZ);
-
-     //printf("Central projection pixel %f \n",projections[(long)(geo.nDetecV,geo.nDetecU*nalpha/2)]);
-     //printf("geo.DSD: %f  \n",geo.DSD[0]);
-     //printf("geo.DSO: %f  \n",geo.DSO[0]);
     // copy data to CUDA memory
     cudaArray *d_projectiondata = 0;
     const cudaExtent extent = make_cudaExtent(geo.nDetecV,geo.nDetecU,nalpha);
@@ -365,7 +356,6 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
     float* dimage;
     cudaMalloc((void**)&dimage, num_bytes);
     cudaMemset(dimage,0,num_bytes);
-    cudaDeviceSynchronize();
     cudaCheckErrors("cudaMalloc fail");
     
     // If we are going to time
@@ -418,28 +408,22 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
             geo.alpha=-alphas[currProjNumber*3];
             sinalpha=sin(geo.alpha);
             cosalpha=cos(geo.alpha);
-            //printf("sin %f cos %f\n",sinalpha,cosalpha);
-
+            
             projSinCosArray2Host[5*j]=sinalpha;  // 2*j because we have 2 float (sin or cos angle) values per projection
             projSinCosArray2Host[5*j+1]=cosalpha;
             projSinCosArray2Host[5*j+2]=geo.COR[currProjNumber];
             projSinCosArray2Host[5*j+3]=geo.DSD[currProjNumber];
             projSinCosArray2Host[5*j+4]=geo.DSO[currProjNumber];
-            //printf("COR %f DSD %f DSO %f\n",geo.COR[currProjNumber],geo.DSD[currProjNumber],geo.DSO[currProjNumber]);
 
             computeDeltasCube(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
             
             offOrig.x=geo.offOrigX[currProjNumber];
             offOrig.y=geo.offOrigY[currProjNumber];
-            offOrig.z=geo.offOrigZ[currProjNumber];
-            //printf("offOrig %f  %f  %f\n",offOrig.x,offOrig.y,offOrig.z);
-
+            offOrig.y=geo.offOrigZ[currProjNumber];
 
             offDetec.x=geo.offDetecU[currProjNumber];
             offDetec.y=geo.offDetecV[currProjNumber];
-
-            //printf("offDetec %f %f\n",offDetec.x,offDetec.y);
-
+            
             projParamsArray2Host[7*j]=deltaX;		// 7*j because we have 7 Point3D values per projection
             projParamsArray2Host[7*j+1]=deltaY;
             projParamsArray2Host[7*j+2]=deltaZ;
@@ -455,12 +439,11 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
         cudaMemcpyToSymbol(projParamsArray2Dev, projParamsArray2Host, sizeof(Point3D)*7*PROJ_PER_KERNEL);
         
         kernelPixelBackprojection<<<grid,block>>>(geo,dimage,i,nalpha);
-        cudaDeviceSynchronize();
+
         cudaCheckErrors("Kernel fail");
     }  // END for
     matrixConstantMultiply<<<60,MAXTREADS>>>( geo,dimage,geo.dVoxelX*geo.dVoxelY*geo.dVoxelZ/(geo.dDetecU*geo.dDetecV));
-    cudaDeviceSynchronize();
-    cudaCheckErrors("Multiply fail");
+
     //////////////////////////////////////////////////////////////////////////////////////
     // END Main reconstruction loop: go through projections (rotation angles) and backproject
     //////////////////////////////////////////////////////////////////////////////////////
@@ -472,6 +455,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
         cudaEventRecord(stop,0);
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&elapsedTime, start,stop);
+        printf("%f\n" ,elapsedTime);
         cudaCheckErrors("cuda Timing fail");
         
     }
@@ -485,8 +469,6 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
     cudaFreeArray(d_projectiondata);
     cudaCheckErrors("cudaFree d_imagedata fail");
     cudaDeviceReset();
-
-    printf("Central voxel %f \n",result[(long)(geo.dVoxelX*geo.dVoxelY*geo.dVoxelZ/2)]);
     return 0;
     
 }  // END voxel_backprojection
