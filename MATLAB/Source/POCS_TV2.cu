@@ -64,7 +64,7 @@ do { \
         if (__err != cudaSuccess) { \
                 cudaDeviceReset();\
                 mexPrintf("ERROR in: %s \n",msg);\
-                mexErrMsgIdAndTxt("CBCT:CUDA:POCS_TV",cudaGetErrorString(__err));\
+                        mexErrMsgIdAndTxt("CBCT:CUDA:POCS_TV",cudaGetErrorString(__err));\
         } \
 } while (0)
     
@@ -276,7 +276,7 @@ do { \
     
     
 // main function
-void aw_pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter,const float delta){
+    void aw_pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter,const float delta){
         
         
         
@@ -342,8 +342,8 @@ void aw_pocs_tv(const float* img,float* dst,float alpha,const long* image_size, 
         unsigned int splits=1; // if the number does not fit in an uint, you have more serious trouble than this.
         if(mem_GPU_global> 3*mem_size_image+3*(deviceCount-1)*mem_slice_image+mem_auxiliary){
             // We only need to split if we have extra GPUs
-            slices_per_split=(image_size[2]+deviceCount-1)/deviceCount;
-            mem_img_each_GPU=mem_slice_image*((image_size[2]+buffer_length*2+deviceCount-1)/deviceCount);
+            slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits);
+            mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
         }else{
             // As mem_auxiliary is not expected to be a large value (for a 2000^3 image is around 28Mbytes), lets for now assume we need it all
             size_t mem_free=mem_GPU_global-mem_auxiliary;
@@ -362,15 +362,20 @@ void aw_pocs_tv(const float* img,float* dst,float alpha,const long* image_size, 
                 slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits); // amountf of slices that fit on a GPU. Later we add 2 to these, as we need them for overlap
                 mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
             }
-
+            
+            
             
             
             // How many EXTRA buffer slices shoudl be able to fit in here??!?!
-            mem_free=mem_GPU_global-(3*mem_img_each_GPU+mem_auxiliary);
-            unsigned int extra_buff=(mem_free/mem_slice_image); 
-            buffer_length=(extra_buff/2)/3; // we need double whatever this results in, rounded down.
-            mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
-
+            // Only do it if there are splits needed.
+            if(splits>1){
+                mem_free=mem_GPU_global-(3*mem_img_each_GPU+mem_auxiliary);
+                unsigned int extra_buff=(mem_free/mem_slice_image);
+                buffer_length=(extra_buff/2)/3; // we need double whatever this results in, rounded down.
+                mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
+            }else{
+                buffer_length=2;
+            }
             // Assert
             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
                 mexErrMsgIdAndTxt("minimizeTV:POCS_TV2:GPU","Bad assert. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
@@ -636,7 +641,7 @@ void aw_pocs_tv(const float* img,float* dst,float alpha,const long* image_size, 
                 
                 curr_slices=((dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*dev;
                 total_pixels=curr_slices*image_size[0]*image_size[1];
-                cudaMemcpy(dst+slices_per_split*dev, d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
+                cudaMemcpy(dst+slices_per_split*image_size[0]*image_size[1]*dev, d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
             }
         }
         cudaCheckErrors("Copy result back");
