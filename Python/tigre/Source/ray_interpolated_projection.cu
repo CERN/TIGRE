@@ -59,14 +59,13 @@
 #include <stdio.h>
 #include <math.h>
 
-#define cudaCheckErrors(msg) \
-do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
-                printf("%s \n",msg);\
-                cudaDeviceReset();\
-                printf("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
-        } \
+#define cudaErrchk(ans) { GPUAssert((ans), __FILE__, __LINE__); }
+inline void GPUAssert(cudaError_t code, const char *file, int line, bool abort=true){
+	if (code != cudaSuccess)
+	{
+		fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+		if (abort) exit(code);
+	}\
 } while (0)
     
     
