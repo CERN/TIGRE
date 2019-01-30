@@ -5,6 +5,8 @@ from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.utilities.Ax import Ax
 from tigre.utilities.Atb import Atb
 import time
+import os
+import math
 class CGLS(IterativeReconAlg):
     __doc__ = (" CGLS_CBCT solves the CBCT problem using the conjugate gradient least\n"
                " squares\n"
@@ -16,12 +18,12 @@ class CGLS(IterativeReconAlg):
     def __init__(self,proj,geo,angles,niter,**kwargs):
         # Don't precompute V and W.
         kwargs.update(dict(W=None,V=None))
+        kwargs.update(dict(blocksize=angles.shape[0]))
         self.log_parameters = False
         # Avoid typo checking
         IterativeReconAlg.__init__(self,proj,geo,angles,niter,**kwargs)
 
         self.initialise_cgls()
-
 
         if self.log_parameters:
             parameter_history = {}
@@ -43,7 +45,6 @@ class CGLS(IterativeReconAlg):
     def run_main_iter(self):
         self.l2l = np.zeros([self.niter], dtype=np.float32)
         for i in range(self.niter):
-            print(i)
             if i == 0:
                 print("CGLS Algorithm in progress.")
                 toc = time.clock()
@@ -54,6 +55,14 @@ class CGLS(IterativeReconAlg):
             q_norm = np.linalg.norm(q.ravel(), 2)
             alpha = self._gamma / (q_norm * q_norm)
             self.res += alpha * self._p
+            error = False
+            for item in self.__dict__:
+                if type(getattr(self,item)) == np.ndarray:
+                    if np.isnan(getattr(self,item)).any():
+                        print(item, i)
+                        error = True
+            if error:
+                break
 
             aux = self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel')
             self.l2l[i] = np.linalg.norm(aux.ravel(), 2)
@@ -78,7 +87,6 @@ class CGLS(IterativeReconAlg):
 
             self._gamma = gamma1
             self._p = s + beta * self._p
-
 
 cgls = decorator(CGLS)
 

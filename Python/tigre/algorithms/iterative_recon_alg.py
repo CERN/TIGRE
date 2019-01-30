@@ -97,7 +97,7 @@ class IterativeReconAlg(object):
                        OrderStrategy=None, Quameasopts=None,
                        init=None,verbose=True, noneg=True,
                        computel2=False, dataminimizing='art_data_minimizing',
-                       name='')
+                       name='Iterative Reconstruction')
         allowed_keywords = ['V','W','log_parameters','angleblocks','angle_index','delta']
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
@@ -216,7 +216,7 @@ class IterativeReconAlg(object):
                 res_prev = copy.deepcopy(self.res)
             if self.verbose:
                 if i == 0:
-                    print(self.name + ' ' + "algorithm in progress.")
+                    print(str(self.name).upper() + ' ' + "algorithm in progress.")
                     toc = time.clock()
                 if i == 1:
                     tic = time.clock()

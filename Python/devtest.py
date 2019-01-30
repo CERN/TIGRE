@@ -10,14 +10,22 @@ from tigre.utilities.Ax import Ax
 import tigre.algorithms as algs
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 
-#----------------PROFILINGIMPORT-------------------
+nVoxel = np.array([512, 512, 512])
 
-from line_profiler import LineProfiler
-# ---------------GEOMETRY---------------------------
 
-geo = tigre.geometry(mode='parallel',nVoxel = np.array([64,64,64]))
+def do_algs(alglist, mode, niter=10, **kwargs):
+    for alg in alglist:
+        print('Algorithm ' + str(alg).upper() + ' with mode ' + str(geo.mode) + ' and nVoxel ' + str(geo.nVoxel))
+        if alg == 'FDK' or alg == 'fbp':
+            np.save(alg + ' ' + mode, getattr(algs, alg)(proj, geo, angles, **kwargs))
+        else:
+            np.save(alg + ' ' + mode, getattr(algs, alg)(proj, geo, angles, niter, **kwargs))
+
+
+# ---------------PARALLEL GEOMETRY---------------------------
+
+geo = tigre.geometry(mode='parallel', nVoxel=nVoxel)
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
-
 
 # ---------------------ANGLES-------------------------
 
@@ -26,27 +34,47 @@ angles_2 = np.ones((100), dtype=np.float32) * np.array(np.pi / 4, dtype=np.float
 angles_3 = np.zeros((100), dtype=np.float32)
 angles = np.vstack((angles_1, angles_3, angles_3)).T
 
-# --------------------PROJECTION----------------------
+# --------------------PARALLEL PROJECTION----------------------
 
-proj = Ax(source_img,geo,angles)
+proj = Ax(source_img, geo, angles)
 
-# ---------------------RECONSTRUCTION------------------
+# ---------------------PARALLEL RECONSTRUCTION------------------
 
-from tigre.algorithms.pocs_algorithms import ASD_POCS
-lp = LineProfiler()
+alglist = [ #'sart',
+           'sirt',
+           'ossart',
+           'iterativereconalg',
+           'asd_pocs',
+           'fbp',
+           'cgls']
 
+print(geo.nVoxel)
+do_algs(alglist,mode='parallel',niter=20)
 
-#sart = IterativeReconAlg(proj,geo,angles,niter=10, **dict(blocksize =1))
-#lp_wrapper = lp(getattr(sart,sart.dataminimizing))
-#setattr(sart, sart.dataminimizing, lp_wrapper)
-#sart.run_main_iter()
-#lp.print_stats()
+# ---------------CONE GEOMETRY---------------------------
 
-lp = LineProfiler()
-asd_pocs = ASD_POCS(proj,geo,angles,10)
-lp_wrapper = lp(getattr(asd_pocs,asd_pocs.dataminimizing))
-setattr(asd_pocs, asd_pocs.dataminimizing, lp_wrapper)
-asd_pocs.run_main_iter()
-lp.print_stats()
+geo = tigre.geometry_default(high_quality=True)
+source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
 
-# ---------------------PLOT----------------------------
+# ---------------------ANGLES-------------------------
+
+angles_1 = np.linspace(0, 2 * np.pi, 100, dtype=np.float32)
+angles_2 = np.ones((100), dtype=np.float32) * np.array(np.pi / 4, dtype=np.float32)
+angles_3 = np.zeros((100), dtype=np.float32)
+angles = np.vstack((angles_1, angles_3, angles_3)).T
+
+# --------------------CONE PROJECTION----------------------
+
+proj = Ax(source_img, geo, angles)
+
+# ---------------------CONE RECONSTRUCTION------------------
+
+alglist = [#'sart',
+           'sirt',
+           'ossart',
+           'iterativereconalg',
+           'asd_pocs',
+           'FDK',
+           'cgls']
+
+do_algs(alglist,mode='cone',niter=20)
