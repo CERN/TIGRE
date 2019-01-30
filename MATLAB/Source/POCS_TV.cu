@@ -254,7 +254,7 @@ do { \
     void pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter){
         
         
-        
+       
         
         // Prepare for MultiGPU
         int deviceCount = 0;
@@ -318,7 +318,7 @@ do { \
         if(mem_GPU_global> 3*mem_size_image+3*(deviceCount-1)*mem_slice_image*buffer_length+mem_auxiliary){
             // We only need to split if we have extra GPUs
             slices_per_split=(image_size[2]+deviceCount-1)/deviceCount;
-            mem_img_each_GPU=mem_slice_image*((image_size[2]+buffer_length*2+deviceCount-1)/deviceCount);
+            mem_img_each_GPU=mem_slice_image*((slices_per_split+buffer_length*2));
         }else{
             // As mem_auxiliary is not expected to be a large value (for a 2000^3 image is around 28Mbytes), lets for now assume we need it all
             size_t mem_free=mem_GPU_global-mem_auxiliary;
@@ -338,16 +338,31 @@ do { \
                 mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
             }
 
-            // How many EXTRA buffer slices shoudl be able to fit in here??!?!
-            mem_free=mem_GPU_global-(3*mem_img_each_GPU+mem_auxiliary);
-            unsigned int extra_buff=(mem_free/mem_slice_image); 
-            buffer_length=(extra_buff/2)/3; // we need double whatever this results in, rounded down.
-            mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
+
+            // How many EXTRA buffer slices should be able to fit in here??!?!
+            // Only do it if there are splits needed. 
+            if(splits>1){
+                mem_free=mem_GPU_global-(3*mem_img_each_GPU+mem_auxiliary);
+                unsigned int extra_buff=(mem_free/mem_slice_image); 
+                buffer_length=(extra_buff/2)/3; // we need double whatever this results in, rounded down.
+                buffer_length=max(buffer_length,2);// minimum 2
+                mem_img_each_GPU=mem_slice_image*(slices_per_split+buffer_length*2);
+                
+            }else{
+                buffer_length=2;
+            }
 
             // Assert
             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
-                mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","Bad assert. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
+                mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","Assertion Failed. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
             }
+        }
+        
+        
+         // Assert
+       
+        if ((slices_per_split+buffer_length*2)*image_size[0]*image_size[1]* sizeof(float)!= mem_img_each_GPU){
+            mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","Assertion Failed. Memory needed calculation broken! Please tell: ander.biguri@gmail.com\n");
         }
         
         
@@ -357,20 +372,22 @@ do { \
 //         mexPrintf("slices_per_split*mem_slice_image :%zu\n",(size_t)(slices_per_split*mem_slice_image));
 //         mexPrintf("splits :%u\n",splits);
 //         mexPrintf("deviceCount :%u\n",deviceCount);
+//         mexPrintf("buffer_length :%u\n",buffer_length);
+       
         
 //         return;
         float** d_image=    (float**)malloc(deviceCount*sizeof(float*));
         float** d_dimgTV=   (float**)malloc(deviceCount*sizeof(float*));
         float** d_norm2aux= (float**)malloc(deviceCount*sizeof(float*));
         float** d_norm2=    (float**)malloc(deviceCount*sizeof(float*));
-        
+         
         // allocate memory in each GPU
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
             
             
             cudaMalloc((void**)&d_image[dev]    , mem_img_each_GPU);
-            cudaMemset(d_image[dev],0,mem_img_each_GPU);
+            cudaMemset(d_image[dev],0           , mem_img_each_GPU);
             cudaMalloc((void**)&d_dimgTV[dev]   , mem_img_each_GPU);
             cudaMalloc((void**)&d_norm2[dev]    , slices_per_split*mem_slice_image);
             cudaMalloc((void**)&d_norm2aux[dev] , mem_auxiliary);
@@ -378,12 +395,12 @@ do { \
             
             
         }
-        
+       unsigned long long buffer_pixels=buffer_length*image_size[0]*image_size[1];
         float* buffer;
         if(splits>1){
             mexWarnMsgIdAndTxt("minimizeTV:POCS_TV:Image_split","Your image can not be fully split between the available GPUs. The computation of minTV will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
         }else{
-            buffer=(float*)malloc(image_size[0]*image_size[1]*2*sizeof(float));
+            buffer=(float*)malloc(buffer_pixels*sizeof(float));
         }
         
         
@@ -399,8 +416,8 @@ do { \
         
         unsigned int curr_slices;
         unsigned long long curr_pixels;
-        unsigned long long buffer_pixels=buffer_length*image_size[0]*image_size[1];
         
+      
         for(unsigned int i=0;i<maxIter;i+=(buffer_length-1)){
             if(splits>1){
                 totalsum_prev=0;
@@ -416,12 +433,16 @@ do { \
                 size_t linear_idx_start;
                 if(i==0){
                     for (dev = 0; dev < deviceCount; dev++){
+                        cudaSetDevice(dev);
+
+                        
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         curr_pixels=curr_slices*image_size[0]*image_size[1];
                         linear_idx_start=image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
                         
-                        cudaSetDevice(dev);
+                        
                         cudaMemcpyAsync(d_image[dev]+buffer_pixels, &img[linear_idx_start], curr_pixels*sizeof(float), cudaMemcpyHostToDevice);
+               
                         // if its not the last, copy also the intersection buffer.
                         if((sp*deviceCount+dev)<deviceCount*splits-1){
                             cudaMemcpyAsync(d_image[dev]+curr_pixels+buffer_pixels, &img[linear_idx_start]+curr_pixels, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
@@ -429,6 +450,7 @@ do { \
                         // if its not the first, copy also the intersection buffer.
                         if((sp*deviceCount+dev)){
                             cudaMemcpyAsync(d_image[dev], &img[linear_idx_start]-buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
+   
                         }
                         
                     }
@@ -438,6 +460,7 @@ do { \
                 
                 // if we need to split and its not the first iteration, then we need to copy from Host memory the previosu result.
                 if (splits>1 & i>0){
+                       
                     for (dev = 0; dev < deviceCount; dev++){
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         linear_idx_start=image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
@@ -461,6 +484,7 @@ do { \
                 }
                 cudaDeviceSynchronize();
                 cudaCheckErrors("Memcpy failure on multi split");
+                
                 for(unsigned int ib=0;  (ib<(buffer_length-1)) && ((i+ib)<maxIter);  ib++){
                     
                     // For the gradient
@@ -561,26 +585,31 @@ do { \
                     }
                     
                 }
+//                 mexPrintf("At least I got here\n");
+//                 return;
                 // Syncronize mathematics, make sure bounding pixels are correct
                 cudaDeviceSynchronize();
                 if(splits==1){
                     for(dev=0; dev<deviceCount;dev++){
+                        curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
+                        total_pixels=curr_slices*image_size[0]*image_size[1];
                         if (dev<deviceCount-1){
                             cudaSetDevice(dev+1);
                             cudaMemcpy(buffer, d_image[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
                             cudaSetDevice(dev);
-                            cudaMemcpy(d_image[dev]+slices_per_split+buffer_pixels,buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
+                            cudaMemcpy(d_image[dev]+total_pixels+buffer_pixels,buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
                             
                             
                         }
                         if (dev>0){
                             cudaSetDevice(dev-1);
-                            cudaMemcpy(buffer, d_image[dev-1]+slices_per_split+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
+                            cudaMemcpy(buffer, d_image[dev-1]+total_pixels+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
                             cudaSetDevice(dev);
                             cudaMemcpy(d_image[dev],buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
                         }
                     }
                 }else{
+                    
                     // We need to take it out :(
                     for(dev=0; dev<deviceCount;dev++){
                         cudaSetDevice(dev);
@@ -588,10 +617,6 @@ do { \
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         linear_idx_start=image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
-//                         mexPrintf("curr_slices %u \n",curr_slices);
-//                         mexPrintf("linear_idx_start %llu \n",linear_idx_start);
-//                         mexPrintf("total_pixels %llu \n",total_pixels);
-                        
                         cudaMemcpy(&dst[linear_idx_start], d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
                     }
                 }
@@ -609,7 +634,7 @@ do { \
                 
                 curr_slices=((dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*dev;
                 total_pixels=curr_slices*image_size[0]*image_size[1];
-                cudaMemcpy(dst+slices_per_split*dev, d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
+                cudaMemcpy(dst+slices_per_split*image_size[0]*image_size[1]*dev, d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
             }
         }
         cudaCheckErrors("Copy result back");
