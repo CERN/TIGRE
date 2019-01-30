@@ -10,7 +10,7 @@ from tigre.utilities.Ax import Ax
 import tigre.algorithms as algs
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 
-nVoxel = np.array([512, 512, 512])
+nVoxel = np.array([64,64,64])
 
 
 def do_algs(alglist, mode, niter=10, **kwargs):
@@ -40,6 +40,8 @@ proj = Ax(source_img, geo, angles)
 
 # ---------------------PARALLEL RECONSTRUCTION------------------
 
+
+
 alglist = [ #'sart',
            'sirt',
            'ossart',
@@ -53,7 +55,7 @@ do_algs(alglist,mode='parallel',niter=20)
 
 # ---------------CONE GEOMETRY---------------------------
 
-geo = tigre.geometry_default(high_quality=True)
+geo = tigre.geometry_default(high_quality=False)
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
 
 # ---------------------ANGLES-------------------------

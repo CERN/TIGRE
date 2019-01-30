@@ -62,6 +62,8 @@ do { \
         if (__err != cudaSuccess) { \
                 printf("%s \n",msg);\
                 printf("CBCT:CUDA:Ax_parallel_beam_interpolated",cudaGetErrorString(__err));\
+                cudaDeviceReset();\
+                exit(__err);\
         } \
 } while (0)
     

@@ -64,6 +64,7 @@ do { \
         if (__err != cudaSuccess) { \
                 printf("%s \n",msg);\
                 printf("CBCT:CUDA:POCS_TV2",cudaGetErrorString(__err));\
+                exit(__err);\
         } \
 } while (0)
     
