@@ -229,10 +229,10 @@ do { \
         //Does everything fit in the GPU?
         unsigned int slices_per_split;
         unsigned int splits=1; // if the number does not fit in an uint, you have more serious trouble than this.
-        if(mem_GPU_global> 5*mem_size_image+5*mem_slice_image*2){
+        if(mem_GPU_global> 5*mem_size_image+5*mem_slice_image*buffer_length*2){
             // We only need to split if we have extra GPUs
             slices_per_split=(image_size[2]+deviceCount-1)/deviceCount;
-            mem_img_each_GPU=mem_slice_image*((image_size[2]+buffer_length*2+deviceCount-1)/deviceCount);
+            mem_img_each_GPU=mem_slice_image*(  (image_size[2]+deviceCount-1)/deviceCount  + buffer_length*2);
         }else{
             // As mem_auxiliary is not expected to be a large value (for a 2000^3 image is around 28Mbytes), lets for now assume we need it all
             size_t mem_free=mem_GPU_global;
@@ -352,20 +352,23 @@ do { \
                         cudaSetDevice(dev);
                         cudaMemcpyAsync(d_src[dev]+buffer_pixels, &src[linear_idx_start]  , curr_pixels*sizeof(float), cudaMemcpyHostToDevice  );
                         cudaMemcpyAsync(d_u[dev]  +buffer_pixels, d_src[dev]+buffer_pixels, curr_pixels*sizeof(float), cudaMemcpyDeviceToDevice);
+                        
+                        
                         cudaMemset(d_px[dev], 0, mem_img_each_GPU);
                         cudaMemset(d_py[dev], 0, mem_img_each_GPU);
                         cudaMemset(d_pz[dev], 0, mem_img_each_GPU);
+
                         // if its not the last, copy also the intersection buffer.
                         if((sp*deviceCount+dev)<deviceCount*splits-1){
-                            cudaMemcpyAsync(d_src[dev]+curr_pixels+buffer_pixels, &src[linear_idx_start]+curr_pixels  , buffer_pixels*sizeof(float), cudaMemcpyHostToDevice  );
-                            cudaMemcpyAsync(d_u[dev]+curr_pixels+buffer_pixels  , d_src[dev]+curr_pixels+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToDevice);
-                            
+                            cudaMemcpyAsync(d_src[dev]+curr_pixels+buffer_pixels, src+linear_idx_start+curr_pixels  , buffer_pixels*sizeof(float), cudaMemcpyHostToDevice  );       
+                            cudaMemcpyAsync(d_u[dev]  +curr_pixels+buffer_pixels, d_src[dev]+curr_pixels+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToDevice);
+
                         }
                         // if its not the first, copy also the intersection buffer.
                         if((sp*deviceCount+dev)){
                             cudaMemcpyAsync(d_src[dev], &src[linear_idx_start]-buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice  );
                             cudaMemcpyAsync(d_u[dev]  , d_src[dev]                          , buffer_pixels*sizeof(float), cudaMemcpyDeviceToDevice);
-                            
+
                         }
                         
                     }
