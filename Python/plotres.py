@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 import os
+import tigre.algorithms as algs
 import sys
 
 
@@ -11,3 +12,4 @@ for filename in os.listdir(os.curdir):
         plt.title(filename)
         plt.colorbar()
 plt.show()
+

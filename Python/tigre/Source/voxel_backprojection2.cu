@@ -486,7 +486,7 @@ int voxel_backprojection2(float const * const projections, Geometry geo, float* 
     cudaCheckErrors("cudaFree d_imagedata fail");
     cudaDeviceReset();
 
-    printf("Central voxel %f \n",result[(long)(geo.dVoxelX*geo.dVoxelY*geo.dVoxelZ/2)]);
+    //printf("Central voxel %f \n",result[(long)(geo.dVoxelX*geo.dVoxelY*geo.dVoxelZ/2)]);
     return 0;
     
 }  // END voxel_backprojection

@@ -15,7 +15,7 @@ class TIGREParameters(Geometry):
             self.dDetector = np.array((0.8, 0.8))               # size of each pixel            (mm)
             self.sDetector = self.nDetector * self.dDetector    # total size of the detector    (mm)
             # Image parameters
-            self.nVoxel = np.array((256, 256, 256))             # number of voxels              (vx)
+            self.nVoxel = np.array((512, 512, 512))             # number of voxels              (vx)
             self.sVoxel = np.array((256, 256, 256))             # total size of the image       (mm)
             self.dVoxel = self.sVoxel/self.nVoxel               # size of each voxel            (mm)
             # Offsets
