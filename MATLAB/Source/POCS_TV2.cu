@@ -415,7 +415,8 @@ do { \
         if(splits>1){
             mexWarnMsgIdAndTxt("minimizeTV:POCS_TV2:Image_split","Your image can not be fully split between the available GPUs. The computation of minTV will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
         }else{
-            buffer=(float*)malloc(image_size[0]*image_size[1]*2*sizeof(float));
+            cudaMallocHost((void**)&buffer,image_size[0]*image_size[1]*sizeof(float));
+
         }
         
         

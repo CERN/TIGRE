@@ -56,7 +56,7 @@ class Geometry(object):
         if not self.sDetector.shape == (2,): raise AttributeError('geo.sDetector.shape should be (2, )')
         if not self.dDetector.shape == (2,): raise AttributeError('geo.dDetector.shape should be (2, )')
         if not sum(abs(self.dDetector * self.nDetector - self.sDetector)) < 1e-6: raise AttributeError(
-            'nDetector*dDetecor is not equal to sVoxel. Check fields.')
+            'nDetector*dDetecor is not equal to sDetector. Check fields.')
 
         for attrib in ['DSD', 'DSO']:
             self._check_and_repmat(attrib, angles)
@@ -70,6 +70,7 @@ class Geometry(object):
         if hasattr(self, 'offDetector'):
             self._check_and_repmat('offDetector', angles)
         else:
+	    self.offDetector = np.array([0, 0])
             self.offDetector = np.zeros((angles.shape[0], 2))
 
         if hasattr(self, 'rotDetector'):
@@ -109,7 +110,7 @@ class Geometry(object):
                     pass
                 else:
                     raise AttributeError(attrib + " with shape: " + str(old_attrib.shape) +
-                                         " not compible with shapes: " + str([(angles.shape[0],),
+                                         " not compatible with shapes: " + str([(angles.shape[0],),
                                                                               (angles.shape[0], old_attrib.shape[1]),
                                                                               (3,), (2,), (1,)]))
 
@@ -150,6 +151,7 @@ class Geometry(object):
         parameters = []
         parameters.append("TIGRE parameters")
         parameters.append("-----")
+	parameters.append("Geometry parameters")
         parameters.append("Distance from source to detector = " + str(self.DSD) + " mm")
         parameters.append("Distance from source to origin = " + str(self.DSO) + " mm")
 
@@ -166,15 +168,26 @@ class Geometry(object):
         parameters.append("Size of each voxel = " + str(self.dVoxel) + " mm")
 
         parameters.append("-----")
-        parameters.append("Offset correction parameters")
-        parameters.append("Offset of image from origin = " + str(self.offOrigin) + " mm")
-        parameters.append("Offset of detector = " + str(self.offDetector) + " mm")
+	if hasattr(self, 'offOrigin') and hasattr(self, 'offDetector'):
+            parameters.append("Offset correction parameters")
+	    if hasattr(self, 'offOrigin'):
+                parameters.append("Offset of image from origin = " + str(self.offOrigin) + " mm")
+	    if hasattr(self, 'offDetector'):
+                parameters.append("Offset of detector = " + str(self.offDetector) + " mm")
 
         parameters.append("-----")
         parameters.append("Auxillary parameters")
-        parameters.append("Accuracy of forward projection = " + str(self.accuracy))
+        parameters.append("Samples per pixel of forward projection = " + str(self.accuracy))
 
-        return '\n'.join(parameters)
+	if hasattr(self, 'rotDetector'):
+	    parameters.append("-----")
+	    parameters.append("Rotation of the Detector = " + str(self.rotDetector) + " rad")
+	
+	if hasattr(self,'COR'):
+	    parameters.append("-----")
+	    parameters.append("Centre of rotation correction = " + str(self.COR) + " mm")
+        
+	return '\n'.join(parameters)
 
 
 class ParallelGeo(Geometry):
@@ -182,15 +195,25 @@ class ParallelGeo(Geometry):
         if nVoxel is None:
             raise ValueError('nVoxel needs to be given for initialisation of parallel beam')
         Geometry.__init__(self)
+	self.mode='parallel'
+
         self.nVoxel = nVoxel
-        self.dVoxel = np.array([1,1,1],dtype=np.float32)
-        self.dDetector = np.array([1,1],dtype=np.float32)
-        self.DSO = self.nVoxel[0]
-        self.DSD = self.nVoxel[0]*2
-        self.nDetector = self.nVoxel[:2]
+        self.dVoxel = np.array([1,1,1])
         self.sVoxel = self.nVoxel
-        self.sDetector = self.nVoxel[:2]
+
+        self.DSO = self.nVoxel[0].astype(np.float32)
+        self.DSD = self.nVoxel[0].astype(np.float32)*2
+
+        self.dDetector = np.array([1,1])
+        self.nDetector = self.nVoxel[:2]
+        self.sDetector = self.nVoxel[:2].astype(np.float32)
+
         self.accuracy = 0.5
+
+	self.offOrigin=np.array([0,0,0]);
+	self.offDetector=np.array([0,0]);
+
+
 
 
 def geometry(mode='cone',nVoxel=None):

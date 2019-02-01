@@ -25,6 +25,7 @@ function [res,errorL2]=FBP(proj,geo,angles,varargin)
 if isfield(geo,'mode') && ~strcmpi(geo.mode,'parallel')
      assert(false,'Only use FBP for parallel beam CT')
 end
+geo=checkGeo(geo,angles);
 
 [filter,parker]=parse_inputs(proj,geo,angles,varargin);
 geo.filter=filter;
@@ -50,7 +51,7 @@ proj_filt = filtering(proj,geo,angles,parker); % Not sure if offsets are good in
 geo=rmfield(geo,'filter');
 %% backproject
 
-res=Atb((proj_filt),geo,angles)*geo.DSO/geo.DSD; 
+res=Atb((proj_filt),geo,angles)*geo.DSO(1)/geo.DSD(1); 
 
 
 if nargout>1

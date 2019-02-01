@@ -270,19 +270,14 @@ do { \
         if(splits>1){
             mexWarnMsgIdAndTxt("tvDenoise:tvdenoising:Memory","TV dneoising requires 5 times the image memory. Your GPU(s) do not have the required memory.\n This memory will be attempted to allocate on the CPU, Whic may fail or slow the computation by a very significant amount.\n If you want to kill the execution: CTRL+C");
                         
-            h_px=(float*)malloc(image_size[0]*image_size[1]*image_size[2]*sizeof(float));
-            if (h_px==NULL){
-                mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising","Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");\
-            }
+            cudaMallocHost((void**)&h_px,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+            cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
             
-            h_py=(float*)malloc(image_size[0]*image_size[1]*image_size[2]*sizeof(float));
-            if (h_py==NULL){
-                mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising","Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");\
-            }
-            h_pz=(float*)malloc(image_size[0]*image_size[1]*image_size[2]*sizeof(float));
-            if (h_pz==NULL){
-                mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising","Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");\
-            }
+            cudaMallocHost((void**)&h_py,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+            cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
+            
+            cudaMallocHost((void**)&h_pz,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+            cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
             h_u=dst;
 //             if (h_u==NULL){
 //                 mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising","Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");\
@@ -290,7 +285,7 @@ do { \
 
             
         }else{
-             buffer=(float*)malloc(image_size[0]*image_size[1]*sizeof(float));
+            cudaMallocHost((void**)&buffer,image_size[0]*image_size[1]*sizeof(float));
 
         }
         // We shoudl be good to go memory wise.

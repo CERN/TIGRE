@@ -112,7 +112,7 @@ while ~stop_criteria %POCS
     f0=f;
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;
-    for jj=1:length(alphablocks);
+    for jj=1:length(alphablocks)
         % Get offsets
         if size(offOrigin,2)==size(angles,2)
             geo.offOrigin=offOrigin(:,orig_index{jj});

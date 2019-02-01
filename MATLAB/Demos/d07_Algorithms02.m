@@ -26,24 +26,7 @@ clear;
 close all;
 
 %% Define Geometry
-% 
-% VARIABLE                                   DESCRIPTION                    UNITS
-%-------------------------------------------------------------------------------------
-geo.DSD = 1536;                             % Distance Source Detector      (mm)
-geo.DSO = 1000;                             % Distance Source Origin        (mm)
-% Detector parameters
-geo.nDetector=[512; 512];					% number of pixels              (px)
-geo.dDetector=[0.8; 0.8]; 					% size of each pixel            (mm)
-geo.sDetector=geo.nDetector.*geo.dDetector; % total size of the detector    (mm)
-% Image parameters
-geo.nVoxel=[128;128;128];                   % number of voxels              (vx)
-geo.sVoxel=[256;256;256];                   % total size of the image       (mm)
-geo.dVoxel=geo.sVoxel./geo.nVoxel;          % size of each voxel            (mm)
-% Offsets
-geo.offOrigin =[0;0;0];                     % Offset of image from origin   (mm)              
-geo.offDetector=[0; 0];                     % Offset of Detector            (mm)
-% Auxiliary 
-geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/sample)
+geo=defaultGeometry('nVoxel',[128;128;128]);                     
 
 %% Load data and generate projections 
 % see previous demo for explanation
@@ -118,9 +101,9 @@ qualmeas={'RMSE'};
 
 % SIRT and SART both have no extra input parameters.
 % =========================================================================
-[imgSIRT,errL2SIRT,qualitySIRT]=SIRT(projections,geo,angles,200,...
+[imgSIRT,errL2SIRT,qualitySIRT]=SIRT(projections,geo,angles,20,...
                             'lambda',lambda,'lambda_red',lambdared,'verbose',verbose,'QualMeas',qualmeas);
-[imgSART,errL2SART,qualitySART]=SART(projections,geo,angles,200,...
+[imgSART,errL2SART,qualitySART]=SART(projections,geo,angles,20,...
                             'lambda',lambda,'lambda_red',lambdared,'verbose',verbose,'QualMeas',qualmeas);
 % OS-SART
 % ========================================================================
@@ -138,7 +121,7 @@ blcks=8;
 %                                     biggest angular distance with the
 %                                     ones used.  (default)
 order='angularDistance';
-[imgOSSART,errL2OSSART,qualityOSSART]=OS_SART(projections,geo,angles,200,...
+[imgOSSART,errL2OSSART,qualityOSSART]=OS_SART(projections,geo,angles,20,...
                             'lambda',lambda,'lambda_red',lambdared,'verbose',verbose,'QualMeas',qualmeas,...
                              'BlockSize',blcks,'OrderStrategy',order);
 %% Lets have a brief show of the results
@@ -148,14 +131,14 @@ subplot(211)
 plot(log10([errL2SIRT;[errL2OSSART nan(1,length(errL2SART)-length(errL2OSSART))];errL2SART]'));
 title('Convergence')
 xlabel('Iteration')
-ylabel('$ log_{10}(|Ax-b|) $')
+ylabel('$ log_{10}(|Ax-b|) $','interpreter','latex')
 legend('SIRT','OS-SART','SART')
 subplot(212)
 plot(log10([qualitySIRT;[qualityOSSART nan(1,length(qualitySART)-length(qualityOSSART))];qualitySART]'));
 title('Evolution of RMSE')
 legend('SIRT','OS-SART','SART')
 xlabel('Iteration')
-ylabel('$ log_{10}(RMSE) $')
+ylabel('$ log_{10}(RMSE) $','interpreter','latex')
 
 %% plot the results
 
