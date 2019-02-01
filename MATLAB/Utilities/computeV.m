@@ -10,7 +10,8 @@ if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
         V(:,:,ii)= sum(permute(single((geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2),[2 1 3]),3);
     end
 else
-    %     V=size(angles,2)./Atb(ones([geo.nDetector(1:2).',size(angles,2)],'single'),geo,angles);
-    V=ones([geo.nVoxel(1:2).',size(angles,2)],'single');
+    for ii=1:length(alphablocks)
+        V(:,:,ii)=ones([geo.nVoxel(1:2).'],'single')*length(alphablocks{ii});
+    end
 end
 end
