@@ -97,15 +97,16 @@ class IterativeReconAlg(object):
                        OrderStrategy=None, Quameasopts=None,
                        init=None,verbose=True, noneg=True,
                        computel2=False, dataminimizing='art_data_minimizing',
-                       name='Iterative Reconstruction')
-        allowed_keywords = ['V','W','log_parameters','angleblocks','angle_index','delta']
+                       name='Iterative Reconstruction', sup_kw_warning = False)
+        allowed_keywords = ['V','W','log_parameters','angleblocks','angle_index','delta','regularisation']
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
         for kw in kwargs.keys():
             if not options.has_key(kw) and (kw not in allowed_keywords):
                 if self.verbose:
-                    # Note: might not want this warning (typo checking).
-                    print("Warning: " + kw + " not recognised as default parameter for instance of IterativeReconAlg.")
+                    if not kwargs.get('sup_kw_warning'):
+                        # Note: might not want this warning (typo checking).
+                        print("Warning: " + kw + " not recognised as default parameter for instance of IterativeReconAlg.")
         if self.angles.ndim == 1:
             a1 = self.angles
             a2 = np.zeros(self.angles.shape[0], dtype=np.float32)
@@ -133,7 +134,7 @@ class IterativeReconAlg(object):
         geox.dVoxel = geox.sVoxel / geox.nVoxel
         W = Ax(np.ones(geox.nVoxel, dtype=np.float32), geox, self.angles, "ray-voxel")
         W[W < min(self.geo.dVoxel / 4)] = np.inf
-        W = 1 / W
+        W = 1./W
         setattr(self, 'W', W)
 
     def set_v(self):
@@ -211,6 +212,7 @@ class IterativeReconAlg(object):
         Quameasopts = self.Quameasopts
 
         for i in range(self.niter):
+
             res_prev = None
             if Quameasopts is not None:
                 res_prev = copy.deepcopy(self.res)
@@ -223,18 +225,17 @@ class IterativeReconAlg(object):
                     print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()
             self.error_measurement(res_prev, i)
-
     def art_data_minimizing(self):
         """
         VERBOSE:
-        for j in range(angleblocks):
-            angle = np.array([alpha[j]], dtype=np.float32)
-            proj_err = proj[angle_index[j]] - Ax(res, geo, angle, 'ray-voxel')
-            weighted_err = W[angle_index[j]] * proj_err
-            backprj = Atb(weighted_err, geo, angle, 'FDK')
-            weighted_backprj = 1 / V[angle_index[j]] * backprj
-            res += weighted_backprj
-            res[res<0]=0
+        >>> for j in range(angleblocks):
+        >>>     angle = np.array([alpha[j]], dtype=np.float32)
+        >>>     proj_err = proj[angle_index[j]] - Ax(res, geo, angle, 'ray-voxel')
+        >>>     weighted_err = W[angle_index[j]] * proj_err
+        >>>     backprj = Atb(weighted_err, geo, angle, 'FDK')
+        >>>     weighted_backprj = 1 / V[angle_index[j]] * backprj
+        >>>     res += weighted_backprj
+        >>>     res[res<0]=0
 
         :return: None
         """
@@ -257,11 +258,12 @@ class IterativeReconAlg(object):
             if hasattr(geo.DSO,'shape'):
                 if geo.DSO.shape[0] ==self.angles.shape[0]:
                     geo.DSO = self.geo.DSO[j]
+
+
             self.res += self.lmbda * 1/self.third_dim_sum(self.V[:,:,self.angle_index[j]]) * Atb(self.W[self.angle_index[j]] * (self.proj[self.angle_index[j]]
                                      - Ax(self.res, geo, angle, 'interpolated')),geo, angle, 'FDK')
             if self.noneg:
                 self.res = self.res.clip(min=0)
-
     def third_dim_sum(self,V):
         if V.ndim == 3:
             return np.sum(V, axis=2, dtype=np.float32)
@@ -288,6 +290,21 @@ class IterativeReconAlg(object):
     def getl2(self):
         return self.l2l
 
+    def __str__(self):
+        parameters = []
+        for item in self.__dict__:
+            if item == 'geo':
+                pass
+                #parameters.append('--------------- GEOMETRY ----------------')
+                #parameters.append(self.geo.__str__())
+                #parameters.append('----------------END GEOMETRY ------------')
+            elif hasattr(self.__dict__.get(item), 'shape'):
+                if self.__dict__.get(item).ravel().shape[0] > 100:
+                    parameters.append(item + ' shape: ' + str(self.__dict__.get(item).shape))
+            else:
+                parameters.append(item + ': ' + str(self.__dict__.get(item)))
+
+        return '\n'.join(parameters)
 
 def decorator(IterativeReconAlg, name=None, docstring=None):
     """

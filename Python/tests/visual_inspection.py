@@ -10,85 +10,81 @@ from tigre.utilities.Ax import Ax
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from matplotlib import pyplot as plt
 
-__doc__ == """
- mode: parallel, cone
- algs: list of algs, seperated by space, to be produced. 
- niter: number of iterations 
- kwargs: list of kwargs to pass to algorithms
-"""
-# ---------------GEOMETRY---------------------------
-
-geo = tigre.geometry(mode='parallel',nVoxel = np.array([64,64,64]))
-source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
-
-
-# ---------------------ANGLES-------------------------
-
-angles_1 = np.linspace(0, 2 * np.pi, 100, dtype=np.float32)
-angles_2 = np.ones((100), dtype=np.float32) * np.array(np.pi / 4, dtype=np.float32)
-angles_3 = np.zeros((100), dtype=np.float32)
-angles = np.vstack((angles_1, angles_3, angles_3)).T
-
-# --------------------PROJECTION----------------------
-
-proj = Ax(source_img,geo,angles)
-print('hello ander')
 # ---------------------PLOT---------------------------
-def plot_algs(alglist, niter = 10, *args):
-    l = []
-    kwargs = {}
-    for arg in args:
-        k = arg.split("=")[0]
-        v = arg.split("=")[1]
-        kwargs.update({k:v})
+def plot_algs(alglist, proj, geo, angles, niter=10, **kwargs):
+    l= []
     for alg in alglist:
-	    if alg == 'FDK' or alg == 'fbp':
-	        l.append(getattr(algs,alg)(proj,geo,angles,**kwargs)[32])
-            else:
-                l.append(getattr(algs,alg)(proj,geo,angles,niter,**kwargs)[32])
+        if alg in ['fbp','fdk','FDK']:
+            l.append(getattr(algs, alg)(proj, geo, angles)[geo.nVoxel[0]/2])
+        else:
+            kwargs.update(dict(sup_kw_warning=True))
+            l.append(getattr(algs, alg)(proj, geo, angles, niter, **kwargs)[geo.nVoxel[0]/2])
     for i in range(len(l)):
-    	plt.matshow(l[i])
-    	plt.title(str(alglist[i]) + ' ' + str(geo.mode))
-    	if kwargs.has_key('colorbar'):
-        	plt.colorbar()
+        plt.matshow(l[i])
+        plt.title(str(alglist[i]) + ' ' + str(geo.mode))
+        if kwargs.has_key('colorbar'):
+            plt.colorbar()
     plt.show()
 
 
+def input_parser(sysarglist):
+
+    if len(sysarglist) < 2:
+        raise ValueError('visual test requires at least 2 input parameters, type --help')
+    if sys.argv[1]== '--help':
+        print('arg 1: mode: cone, parallel \n' +
+              'arg 2: alglist, eg: "ossart sirt fdk" \n'
+              'arg 3: kwargs, eg: "blocksize=20, nVoxel=32,64,128')
+        raise SystemExit()
+
+    kwargs = dict(niter=10,
+                  nVoxel=np.array([64, 64, 64]),
+                  colorbar=True,
+                  krylov='interpolated')
+
+    kwargs.update(dict(mode=sysarglist[1],
+                       alglist=sysarglist[2]))
+    if len(sysarglist) > 3:
+        for arg in sysarglist[3].split(' '):
+            k = arg.split("=")[0]
+            v = arg.split("=")[1]
+            if k == 'nVoxel':
+                v = np.array([int(val) for val in v.split(',')])
+            kwargs.update({k: v})
+            print(kwargs)
+
+    return kwargs
+
+
+def setUp(**kwargs):
+    if kwargs.get('mode') == 'cone':
+        geo = tigre.geometry(mode='cone', nVoxel=kwargs.get('nVoxel'), default_geo=True)
+        angles_1 = np.linspace(0, 2 * np.pi, 100, dtype=np.float32)
+        angles_3 = np.zeros((100), dtype=np.float32)
+        angles = np.vstack((angles_1, angles_3, angles_3)).T
+        img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
+        proj = tigre.Ax(img, geo, angles, kwargs.get('krylov'))
+        if kwargs.get('alglist') == 'all':
+            alglist = ['sart', 'sirt', 'ossart', 'asd_pocs', 'FDK', 'cgls']
+        else:
+            alglist = kwargs.pop('alglist').split()
+
+        plot_algs(alglist, proj, geo, angles, niter=int(kwargs.pop('niter')), **kwargs)
+
+    if kwargs.get('mode') == 'parallel':
+        geo = tigre.geometry(mode='parallel', nVoxel=kwargs.get('nVoxel'), default_geo=True)
+        angles_1 = np.linspace(0, 2 * np.pi, 100, dtype=np.float32)
+        angles_3 = np.zeros((100), dtype=np.float32)
+        angles = np.vstack((angles_1, angles_3, angles_3)).T
+        img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
+        proj = tigre.Ax(img, geo, angles, kwargs.get('krylov'))
+        if kwargs.get('alglist') == 'all':
+            alglist = ['sart', 'sirt', 'ossart', 'asd_pocs', 'fbp', 'cgls']
+        else:
+            alglist = kwargs.pop('alglist').split()
+
+        plot_algs(alglist, proj, geo, angles, niter=int(kwargs.pop('niter')), **kwargs)
+
 
 if __name__ == '__main__':
-    niter = 10
-    args = []
-    plt.matshow(source_img[32])
-    plt.colorbar()
-    plt.title('Source image')
-    if len(sys.argv) >= 4:
-        niter = int(sys.argv[3])
-        args = sys.argv[4:]
-    if sys.argv[2] == 'all':
-        if sys.argv[1] == 'cone':
-            geo = tigre.geometry_default(high_quality=False)
-	    geo.mode = 'cone'
-	    source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
-            proj = Ax(source_img,geo,angles)
-            alglist = ['sart',
-                    'sirt',
-                    'ossart',
-                    'iterativereconalg',
-                    'FDK',
-                    'asd_pocs',
-                    'cgls']
-        else:
-            alglist = ['sart',
-                    'sirt',
-                    'ossart',
-                    'iterativereconalg',
-                    'fbp',
-                    'asd_pocs',
-                    'cgls']
-        plot_algs(alglist, niter, *args)
-    else:
-        if sys.argv[1] == 'cone':
-            geo = tigre.geometry_default(high_quality=True)
-	    source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
-            proj = Ax(source_img,geo,angles)
-        plot_algs(sys.argv[2].split(),niter,*args)
+    setUp(**input_parser(sys.argv))

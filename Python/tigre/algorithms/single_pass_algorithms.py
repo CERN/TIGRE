@@ -13,7 +13,7 @@ currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-def FDK(proj, geo, angles, filter=None,verbose=False,**kwargs):
+def FDK(proj, geo, angles, filter=None,verbose=False):
     ('\n'
      'FDK solves Cone Beam CT image reconstruction'
      '\n'
@@ -80,7 +80,7 @@ def FDK(proj, geo, angles, filter=None,verbose=False,**kwargs):
 
 fdk = FDK
 
-def fbp(proj,geo,angles,filter=None,verbose=False,**kwargs):
+def fbp(proj,geo,angles,filter=None,verbose=False):
     if geo.mode != 'parallel':
         raise ValueError("Only use FBP for parallel beam. Check geo.mode.")
     geox = copy.deepcopy(geo)

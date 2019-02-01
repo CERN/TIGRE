@@ -77,7 +77,9 @@ class AwASD_POCS(ASD_POCS):
     __doc__ = ASD_POCS.__doc__
 
     def __init__(self,proj,geo,angles,niter,**kwargs):
+
         kwargs.update(dict(regularisation = 'minimizeAwTV'))
+
         if not kwargs.has_key('delta'):
             self.delta = np.array([-0.005],dtype=np.float32)[0]
         ASD_POCS.__init__(self,proj,geo,angles,niter,**kwargs)

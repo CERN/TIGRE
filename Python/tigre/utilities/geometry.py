@@ -3,6 +3,7 @@ from __future__ import print_function
 import numpy as np
 import numpy.matlib as matlib
 import inspect
+import tigre
 
 
 class Geometry(object):
@@ -70,7 +71,7 @@ class Geometry(object):
         if hasattr(self, 'offDetector'):
             self._check_and_repmat('offDetector', angles)
         else:
-	    self.offDetector = np.array([0, 0])
+            self.offDetector = np.array([0, 0])
             self.offDetector = np.zeros((angles.shape[0], 2))
 
         if hasattr(self, 'rotDetector'):
@@ -111,8 +112,8 @@ class Geometry(object):
                 else:
                     raise AttributeError(attrib + " with shape: " + str(old_attrib.shape) +
                                          " not compatible with shapes: " + str([(angles.shape[0],),
-                                                                              (angles.shape[0], old_attrib.shape[1]),
-                                                                              (3,), (2,), (1,)]))
+                                                                                (angles.shape[0], old_attrib.shape[1]),
+                                                                                (3,), (2,), (1,)]))
 
         else:
             TypeError(
@@ -151,7 +152,7 @@ class Geometry(object):
         parameters = []
         parameters.append("TIGRE parameters")
         parameters.append("-----")
-	parameters.append("Geometry parameters")
+        parameters.append("Geometry parameters")
         parameters.append("Distance from source to detector = " + str(self.DSD) + " mm")
         parameters.append("Distance from source to origin = " + str(self.DSO) + " mm")
 
@@ -168,56 +169,60 @@ class Geometry(object):
         parameters.append("Size of each voxel = " + str(self.dVoxel) + " mm")
 
         parameters.append("-----")
-	if hasattr(self, 'offOrigin') and hasattr(self, 'offDetector'):
+        if hasattr(self, 'offOrigin') and hasattr(self, 'offDetector'):
             parameters.append("Offset correction parameters")
-	    if hasattr(self, 'offOrigin'):
+            if hasattr(self, 'offOrigin'):
                 parameters.append("Offset of image from origin = " + str(self.offOrigin) + " mm")
-	    if hasattr(self, 'offDetector'):
+            if hasattr(self, 'offDetector'):
                 parameters.append("Offset of detector = " + str(self.offDetector) + " mm")
 
         parameters.append("-----")
         parameters.append("Auxillary parameters")
         parameters.append("Samples per pixel of forward projection = " + str(self.accuracy))
 
-	if hasattr(self, 'rotDetector'):
-	    parameters.append("-----")
-	    parameters.append("Rotation of the Detector = " + str(self.rotDetector) + " rad")
-	
-	if hasattr(self,'COR'):
-	    parameters.append("-----")
-	    parameters.append("Centre of rotation correction = " + str(self.COR) + " mm")
-        
-	return '\n'.join(parameters)
+        if hasattr(self, 'rotDetector'):
+            parameters.append("-----")
+            parameters.append("Rotation of the Detector = " + str(self.rotDetector) + " rad")
+
+        if hasattr(self, 'COR'):
+            parameters.append("-----")
+            parameters.append("Centre of rotation correction = " + str(self.COR) + " mm")
+
+        return '\n'.join(parameters)
 
 
 class ParallelGeo(Geometry):
-    def __init__(self,nVoxel):
+    def __init__(self, nVoxel):
         if nVoxel is None:
             raise ValueError('nVoxel needs to be given for initialisation of parallel beam')
         Geometry.__init__(self)
-	self.mode='parallel'
+        self.mode = 'parallel'
 
         self.nVoxel = nVoxel
-        self.dVoxel = np.array([1,1,1])
+        self.dVoxel = np.array([1, 1, 1])
         self.sVoxel = self.nVoxel
 
-        self.DSO = np.array([self.nVoxel[0]],dtype=np.float32)
-        self.DSD = np.array([self.nVoxel[0]*2],dtype=np.float32)
+        self.DSO = np.array([self.nVoxel[0]], dtype=np.float32)
+        self.DSD = np.array([self.nVoxel[0] * 2], dtype=np.float32)
 
-        self.dDetector = np.array([1,1])
+        self.dDetector = np.array([1, 1])
         self.nDetector = self.nVoxel[:2]
         self.sDetector = self.nVoxel[:2]
 
         self.accuracy = 0.5
 
-	self.offOrigin=np.array([0,0,0]);
-	self.offDetector=np.array([0,0]);
+        self.offOrigin = np.array([0, 0, 0]);
+        self.offDetector = np.array([0, 0]);
 
 
+def geometry(mode='cone', nVoxel=None, default_geo=False, high_quality=True):
 
-
-def geometry(mode='cone',nVoxel=None):
-    if mode in [None, 'cone']:
-        return Geometry()
-    else:
+    if mode == 'cone':
+        if default_geo:
+            return tigre.geometry_default(high_quality, nVoxel)
+        else:
+            return Geometry()
+    if mode == 'parallel':
         return ParallelGeo(nVoxel)
+    else:
+        raise ValueError('mode: ' + mode + ' not recognised.')

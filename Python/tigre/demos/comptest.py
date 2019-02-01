@@ -7,7 +7,7 @@ from tigre.utilities.Ax import Ax
 from tigre.utilities.plotproj import ppslice
 from tigre.utilities.plotproj import plotproj
 
-geo = geometry.TIGREParameters(high_quality=False)
+geo = geometry.ConeGeometryDefault(high_quality=False)
 geo.mode = 'cone'
 geo.COR = None
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)

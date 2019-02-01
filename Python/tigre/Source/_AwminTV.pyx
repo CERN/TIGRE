@@ -18,7 +18,6 @@ cimport numpy as np
 import numpy as np
 
 np.import_array()
-
 from libc.stdlib cimport malloc, free 
 
 cdef extern from "numpy/arrayobject.h":
@@ -27,10 +26,7 @@ cdef extern from "numpy/arrayobject.h":
 
 cdef extern from "POCS_TV2.hpp":
     cdef void aw_pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter, float delta)
-
 def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100, float delta=-0.005):
-
-    
     cdef np.npy_intp size_img[3]
     size_img[0]= <np.npy_intp> src.shape[0]
     size_img[1]= <np.npy_intp> src.shape[1]
