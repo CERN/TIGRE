@@ -97,17 +97,7 @@ W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 
 % Back-Projection weigth, V
-if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
-    
-    [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
-        -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-    A = permute(angles(1,:)+pi/2, [1 3 2]);
-    V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
-    V=permute(single(V),[2 1 3]);
-    
-else
-    V=ones([geo.nVoxel(1:2).',size(angles,2)],'single');
-end
+V=computeV(geo,angles,alphablocks);
 
 clear A x y dx dz;
 
@@ -212,14 +202,14 @@ while ~stop_criteria %POCS
     end
     
     if ~mod(iter,bregman_iter)
-        proj=proj+bregman*(proj(:,:,index_angles)-Ax(f,geo,angles));
+        proj=proj+bregman*(proj-Ax(f,geo,angles));
         bregman=bregman*bregman_red;
         
     end
     
     
     
-    if (iter==1 && verbose==1);
+    if (iter==1 && verbose==1)
         expected_time=toc*maxiter;
         disp('B-ADS-POCS-beta');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);

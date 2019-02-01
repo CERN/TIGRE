@@ -74,7 +74,7 @@ errorL2=[];
 blocksize=1;
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 
-angles=cell2mat(alphablocks);
+angles_reorder=cell2mat(alphablocks);
 index_angles=cell2mat(orig_index);
 % does detector rotation exist?
 if ~isfield(geo,'rotDetector')
@@ -92,17 +92,7 @@ W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
-if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
-    [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
-        -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-    A = permute(angles(1,:)+pi/2, [1 3 2]);
-    V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
-    V=permute(single(V),[2 1 3]);
-else
-    V=ones([geo.nVoxel(1:2).',size(angles,2)],'single');
-end
-clear A x y dx dz;
-
+V=computeV(geo,angles,alphablocks);
 %% Iterate
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
@@ -119,7 +109,7 @@ for ii=1:niter
     end
     
     
-    for jj=1:size(angles,2);
+    for jj=1:size(angles,2)
         if size(offOrigin,2)==size(angles,2)
             geo.offOrigin=offOrigin(:,index_angles(:,jj));
         end
@@ -140,7 +130,7 @@ for ii=1:niter
         %         backprj=Atb(weighted_err,geo,angles(:,jj));         %                     At * W^-1 * (b-Ax)
         %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
         %         res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
-        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles(:,jj))),geo,angles(:,jj)));
+        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj))),geo,angles_reorder(:,jj)));
         if nonneg
             res=max(res,0);
         end

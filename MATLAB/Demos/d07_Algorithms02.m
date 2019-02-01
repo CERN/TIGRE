@@ -128,13 +128,13 @@ order='angularDistance';
 % set(0,'DefaultTextInterpreter', 'latex')
 
 subplot(211)
-plot(log10([errL2SIRT;[errL2OSSART nan(1,length(errL2SART)-length(errL2OSSART))];errL2SART]'));
+plot(log10([errL2SIRT;[errL2OSSART nan(1,length(errL2SIRT)-length(errL2OSSART))];[errL2SART nan(1,length(errL2SIRT)-length(errL2SART))]]'));
 title('Convergence')
 xlabel('Iteration')
 ylabel('$ log_{10}(|Ax-b|) $','interpreter','latex')
 legend('SIRT','OS-SART','SART')
 subplot(212)
-plot(log10([qualitySIRT;[qualityOSSART nan(1,length(qualitySART)-length(qualityOSSART))];qualitySART]'));
+plot(log10([qualitySIRT;[qualityOSSART nan(1,length(qualitySIRT)-length(qualityOSSART))];[qualitySART nan(1,length(qualitySIRT)-length(qualitySART))]]'));
 title('Evolution of RMSE')
 legend('SIRT','OS-SART','SART')
 xlabel('Iteration')

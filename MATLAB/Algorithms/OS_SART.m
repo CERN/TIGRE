@@ -95,17 +95,10 @@ geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
 W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
 W(W<min(geo.dVoxel)/2)=Inf;
 W=1./W;
+
+
 % Back-Projection weigth, V
-if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
-    [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
-        -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-    A = permute(angles(1,:)+pi/2, [1 3 2]);
-    V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
-    V=permute(single(V),[2 1 3]);
-else
-    %     V=size(angles,2)./Atb(ones([geo.nDetector(1:2).',size(angles,2)],'single'),geo,angles);
-    V=ones([geo.nVoxel(1:2).',size(angles,2)],'single');
-end
+V=computeV(geo,angles,alphablocks);
 
 clear A x y dx dz;
 
@@ -172,7 +165,7 @@ for ii=1:niter
             ynesterov=res +bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{:,jj},'interpolated')),geo,alphablocks{:,jj}));
             res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
         else
-            res=res+lambda* bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{:,jj},'interpolated')),geo,alphablocks{:,jj}));
+            res=res+lambda* bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{:,jj},'interpolated')),geo,alphablocks{:,jj}));
         end
         
         % Non-negativity constrain
