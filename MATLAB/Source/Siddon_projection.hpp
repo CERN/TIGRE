@@ -55,7 +55,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
 //double computeMaxLength(Geometry geo, double alpha);
 void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 void splitImage(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned int nangles);
-
+void freeGeoArray(unsigned int splits,Geometry* geoArray);
 //double maxDistanceCubeXY(Geometry geo, double alpha,int i);
 
 // below, not used

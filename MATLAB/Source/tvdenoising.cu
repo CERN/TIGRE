@@ -540,5 +540,13 @@ do { \
             cudaFree(d_py[dev]);
             cudaFree(d_px[dev]);
         }
+        if(splits>1){
+           cudaFreeHost(h_px); 
+           cudaFreeHost(h_py); 
+           cudaFreeHost(h_pz); 
+        }else{
+            cudaFreeHost(buffer);
+        }
+            
         cudaDeviceReset();
     }

@@ -436,6 +436,8 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         }
         free(dProjection_accum);
     }
+    free(geoArray);
+    freeGeoArray(splits,geoArray);
     cudaCheckErrors("cudaFree d_imagedata fail");
     
     cudaDeviceReset();
@@ -671,6 +673,17 @@ void eulerZYZ(Geometry geo, Point3D* point){
     
     
 }
-
+//______________________________________________________________________________
+//
+//      Function:       freeGeoArray
+//
+//      Description:    Frees the memory from the geometry array for multiGPU.
+//______________________________________________________________________________
+void freeGeoArray(unsigned int splits,Geometry* geoArray){
+    for(unsigned int sp=0;sp<splits;sp++){
+        free(geoArray[sp].offOrigZ);
+    }
+    free(geoArray);
+}
 
 #endif

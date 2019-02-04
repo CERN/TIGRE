@@ -652,6 +652,9 @@ do { \
             cudaFree(d_dimgTV[dev]);
             cudaFree(d_norm2[dev]);
         }
+        if (splits==1){
+            cudaFreeHost(buffer);
+        }
         cudaCheckErrors("Memory free");
         cudaDeviceReset();
     }
