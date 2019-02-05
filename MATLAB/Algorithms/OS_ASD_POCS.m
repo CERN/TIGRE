@@ -112,7 +112,7 @@ while ~stop_criteria %POCS
     f0=f;
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;
-    for jj=1:length(alphablocks);
+    for jj=1:length(alphablocks)
         % Get offsets
         if size(offOrigin,2)==size(angles,2)
             geo.offOrigin=offOrigin(:,orig_index{jj});
@@ -153,7 +153,7 @@ while ~stop_criteria %POCS
     % Save copy of image.
     fres=f;
     % compute L2 error of actual image. Ax-b
-    dd=im3Dnorm(gAx(f,geo,angles)-proj,'L2');
+    dd=im3Dnorm(Ax(f,geo,angles)-proj,'L2');
     % compute change in the image after last SART iteration
     dp_vec=(f-f0);
     dp=im3Dnorm(dp_vec,'L2');
