@@ -87,7 +87,7 @@ angles_1 = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
 angles_2 = np.ones((nangles), dtype=np.float32) * np.array(np.pi / 4, dtype=np.float32)
 angles_3 = np.zeros((nangles), dtype=np.float32)
 angles = np.vstack((angles_1, angles_3, angles_3)).T
-geo = tigre.geometry(mode='parallel',nVoxel=nVoxel,default_geo=True)
+geo = tigre.geometry(mode='cone',nVoxel=nVoxel,default_geo=True)
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
 proj = tigre.Ax(source_img,geo,angles)
 res = algs.awasd_pocs(proj,geo,angles,niter=10,**dict(blocksize=nangles))

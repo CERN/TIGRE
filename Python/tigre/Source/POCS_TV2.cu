@@ -63,7 +63,7 @@ inline int cudaCheckErrors(const char * msg)
    cudaError_t __err = cudaGetLastError();
    if (__err != cudaSuccess)
    {
-      printf("CUDA:Ax: %s: %s\n",msg, cudaGetErrorString(__err));
+      printf("CUDA:POCS_TV_2: %s: %s\n",msg, cudaGetErrorString(__err));
       cudaDeviceReset();
       return 1;
    }
@@ -292,7 +292,9 @@ inline int cudaCheckErrors(const char * msg)
         }
         // memory for df
         cudaMalloc(&d_dimgTV, mem_size);
-        cudaCheckErrors("Memory Malloc and Memset: TV");
+        if (cudaCheckErrors("Memory Malloc and Memset: TV")) {
+            return 1;
+        }
         
         cudaMalloc(&d_norm2, mem_size);
         cudaCheckErrors("Memory Malloc and Memset: TV");
@@ -316,7 +318,11 @@ inline int cudaCheckErrors(const char * msg)
             
             // Compute the gradient of the TV norm
             gradientTV<<<gridGrad, blockGrad>>>(d_image,d_dimgTV,image_size[2], image_size[1],image_size[0],delta);
-            cudaCheckErrors("Gradient");
+            if (cudaCheckErrors("Gradient")) {
+                return 1;
+            }
+
+
 //             cudaMemcpy(dst, d_dimgTV, mem_size, cudaMemcpyDeviceToHost);
             
             cudaMemcpy(d_norm2, d_dimgTV, mem_size, cudaMemcpyDeviceToDevice);
