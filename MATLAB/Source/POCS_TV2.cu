@@ -415,8 +415,8 @@ do { \
         if(splits>1){
             mexWarnMsgIdAndTxt("minimizeTV:POCS_TV2:Image_split","Your image can not be fully split between the available GPUs. The computation of minTV will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
         }else{
-            cudaMallocHost((void**)&buffer,image_size[0]*image_size[1]*sizeof(float));
-
+            cudaMallocHost((void**)&buffer,buffer_length*image_size[0]*image_size[1]*sizeof(float));
+            cudaCheckErrors("cudaMallocHost  error");
         }
         
         
@@ -596,7 +596,9 @@ do { \
                 }
                 // Syncronize mathematics, make sure bounding pixels are correct
                 cudaDeviceSynchronize();
+                cudaCheckErrors("Main iteration error");
                 if(splits==1){
+                    
                     for(dev=0; dev<deviceCount;dev++){
                         if (dev<deviceCount-1){
                             curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
@@ -605,7 +607,6 @@ do { \
                             cudaMemcpy(buffer, d_image[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
                             cudaSetDevice(dev);
                             cudaMemcpy(d_image[dev]+total_pixels+buffer_pixels,buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
-                            
                             
                         }
                         if (dev>0){
@@ -616,6 +617,7 @@ do { \
                         }
                     }
                 }else{
+                    
                     // We need to take it out :(
                     for(dev=0; dev<deviceCount;dev++){
                         cudaSetDevice(dev);
