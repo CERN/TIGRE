@@ -37,24 +37,24 @@ class ASD_POCS(IterativeReconAlg):
     # Override
     def run_main_iter(self):
         stop_criteria = False
-        iter = 0
+        n_iter = 0
         while not stop_criteria:
             if self.verbose:
-                if iter == 0:
+                if n_iter == 0:
                     print("POCS Algorithm in progress.")
                     toc = time.clock()
-                if iter == 1:
+                if n_iter == 1:
                     tic = time.clock()
                     print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
             res_prev = copy.deepcopy(self.res)
-            iter += 1
+            n_iter += 1
             getattr(self, self.dataminimizing)()
             g = Ax(self.res, self.geo, self.angles)
             dd = im3DNORM(g-self.proj, 2)
             dp_vec = self.res -res_prev
             dp = im3DNORM(dp_vec, 2)
 
-            if iter == 1:
+            if n_iter == 1:
                 dtvg = self.alpha * dp
 
             res_prev = copy.deepcopy(self.res)
@@ -67,13 +67,13 @@ class ASD_POCS(IterativeReconAlg):
 
             self.beta *= self.beta_red
             c = np.dot(dg_vec.reshape(-1,), dp_vec.reshape(-1,))/max(dg*dp, 1e-6)
-            if (c < -0.99 and dd <= self.epsilon) or self.beta < 0.005 or iter > self.niter:
+            if (c < -0.99 and dd <= self.epsilon) or self.beta < 0.005 or n_iter > self.niter:
                 if self.verbose:
                     print("\n"
                           "     Stop criteria met: \n"
                           "     c = " + str(c) + "\n"
                           "     beta = " + str(self.beta) + "\n" 
-                          "     iter = " + str(iter)) + "\n"
+                          "     iter = " + str(n_iter)) + "\n"
                 stop_criteria = True
 
 
