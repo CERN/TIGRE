@@ -9,12 +9,12 @@ import numpy
 import sys
 
 # Code from https://github.com/rmcgibbo/npcuda-example/blob/master/cython/setup.py
-compute_capability_args = ['-gencode=arch=compute_20,code=sm_20',
-                           '-gencode=arch=compute_30,code=sm_30',
-                           #'-gencode=arch=compute_37,code=sm_37',
-                           #'-gencode=arch=compute_52,code=sm_52',
-                           # '-gencode=arch=compute_60,code=sm_60',
-                           # '-gencode=arch=compute_61,code=sm_61',
+compute_capability_args = [#'-gencode=arch=compute_20,code=sm_20',
+                           #'-gencode=arch=compute_30,code=sm_30',
+                            '-gencode=arch=compute_37,code=sm_37',
+                            '-gencode=arch=compute_52,code=sm_52',
+                            '-gencode=arch=compute_60,code=sm_60',
+                            '-gencode=arch=compute_61,code=sm_61',
                            # '-gencode=arch=compute_70,code=sm_70', #untested
                            '--ptxas-options=-v', '-c',
                            '--compiler-options', "'-fPIC'"]
@@ -48,8 +48,11 @@ def locate_cuda():
         # otherwise, search the PATH for NVCC
         nvcc = find_in_path('nvcc', os.environ['PATH'])
         if nvcc is None:
-            print('WARNING: The nvcc binary could not be located in your $PATH. '
+            nvcc_is_in_path = find_in_path('/usr/local/cuda/bin', os.environ['PATH'])
+            if not nvcc_is_in_path:
+                print('WARNING: The nvcc binary could not be located in your $PATH. '
                                    'Either add it to your path, or set $CUDAHOME')
+                raise EnvironmentError('The CUDA  path could not be located in $PATH or $CUDAHOME. Either add it to your path, or set $CUDAHOME')
             home = '/usr/local/cuda'
             nvcc = pjoin(home,'bin','nvcc')
         else:
@@ -60,7 +63,7 @@ def locate_cuda():
                   'lib64': pjoin(home, 'lib64')}
     for k, v in cudaconfig.iteritems():
         if not os.path.exists(v):
-            raise EnvironmentError('The CUDA %s path could not be located in %s' % (k, v))
+            raise EnvironmentError('The CUDA  path could not be located in $PATH or $CUDAHOME. Either add it to your path, or set $CUDAHOME')
 
     return cudaconfig
 

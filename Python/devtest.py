@@ -90,7 +90,7 @@ angles = np.vstack((angles_1, angles_3, angles_3)).T
 geo = tigre.geometry(mode='parallel',nVoxel=nVoxel,default_geo=True)
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
 proj = tigre.Ax(source_img,geo,angles)
-res = algs.awasd_pocs(proj,geo,angles,niter=10,**dict(blocksize=nangles))
+res = algs.awasd_pocs(proj,geo,angles,niter=100,**dict(blocksize=nangles))
 from matplotlib import pyplot as plt
 plt.imshow(res[32])
 plt.show()
