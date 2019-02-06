@@ -78,7 +78,6 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     c_geom.dVoxelX = p_geometry.dVoxel[0]
     c_geom.dVoxelY = p_geometry.dVoxel[1]
     c_geom.dVoxelZ = p_geometry.dVoxel[2]
-
     # TODO: array of constant for each alpha
     c_geom.offOrigX =<float *>malloc(total_projections * sizeof(float))
     c_geom.offOrigY =<float *>malloc(total_projections * sizeof(float))
@@ -90,7 +89,6 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
         c_geom.offOrigZ[i] = p_geometry.offOrigin[i][2]
     for i in range(total_projections):
         c_geom.DSO[i] = p_geometry.DSO[i]
-
     ### Detector ###
     c_geom.nDetecU=p_geometry.nDetector[0]
     c_geom.nDetecV=p_geometry.nDetector[1]
@@ -100,26 +98,23 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
 
     c_geom.dDetecU=p_geometry.dDetector[0]
     c_geom.dDetecV=p_geometry.dDetector[1]
-
     # TODO: array of constant for each alpha
-    c_geom.offDetecU =<float *>malloc(total_projections * sizeof(float))
-    c_geom.offDetecV =<float *>malloc(total_projections * sizeof(float))
-    c_geom.DSD =<float *>malloc(total_projections * sizeof(float))
-    for i in range (total_projections):
+    c_geom.offDetecU = <float *>malloc(total_projections * sizeof(float))
+    c_geom.offDetecV = <float *>malloc(total_projections * sizeof(float))
+    c_geom.DSD =       <float *>malloc(total_projections * sizeof(float))
+    for i in range(total_projections):
         c_geom.offDetecU[i] = p_geometry.offDetector[i][0]
         c_geom.offDetecV[i] = p_geometry.offDetector[i][1]
     for i in range(total_projections):
         c_geom.DSD[i] = p_geometry.DSD[i]
-
     # TODO: array of 0 for each alpha
-    c_geom.dRoll =<float *>malloc(total_projections * sizeof(float))
-    c_geom.dPitch =<float *>malloc(total_projections * sizeof(float))
-    c_geom.dYaw =<float *>malloc(total_projections * sizeof(float))
-    for i in range (total_projections):
-        c_geom.dRoll[i] = 0
-        c_geom.dPitch[i] = 0
-        c_geom.dYaw[i] = 0
-
+    c_geom.dRoll =  <float *>malloc(total_projections * sizeof(float))
+    c_geom.dPitch = <float *>malloc(total_projections * sizeof(float))
+    c_geom.dYaw =   <float *>malloc(total_projections * sizeof(float))
+    for i in range(total_projections):
+        c_geom.dRoll[i] =  p_geometry.rotDetector[i][0]
+        c_geom.dPitch[i] = p_geometry.rotDetector[i][1]
+        c_geom.dYaw[i] =   p_geometry.rotDetector[i][2]
     # The base unit we are working with in mm.
     c_geom.unitX = 1
     c_geom.unitY = 1
@@ -131,13 +126,11 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     # TODO: check this is correct line ~400 Ax.cpp. Seems like it can be omitted? Possibly redundant
     # Centre of Rotation correction.
     c_geom.COR =<float *>malloc(total_projections * sizeof(float))
-    for i in range (total_projections):
-        c_geom.COR[i] = 0
-
+    for i in range(total_projections):
+        c_geom.COR[i] = p_geometry.COR[i]
     #Maximum length of cube
     # float maxLength; #TODO: Check this is redundant
 
     #User option
     c_geom.accuracy = p_geometry.accuracy
-
     return c_geom

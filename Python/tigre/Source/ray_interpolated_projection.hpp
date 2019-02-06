@@ -46,7 +46,12 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 #include "types_TIGRE.hpp"
-
+#include <stdio.h>
+#include <algorithm>
+#include <cuda_runtime_api.h>
+#include <cuda.h>
+#include <math.h>
+#include <stdio.h>
 
 
 #ifndef PROJECTION_HPP
@@ -58,6 +63,8 @@ void computeDeltas(Geometry geo,unsigned int i, Point3D* uvorigin, Point3D* delt
 void rollPitchYaw(Geometry geo,unsigned int i, Point3D* point);
 float maxdistanceCuboid(Geometry geo,unsigned int i);
 void eulerZYZ(Geometry geo, Point3D* point);
+void splitImageInterp(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned int nangles);
+void freeGeoArray(unsigned int splits,Geometry* geoArray);
 
 // below, not used
 Geometry nomralizeGeometryImage(Geometry geo);

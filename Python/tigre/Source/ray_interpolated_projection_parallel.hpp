@@ -47,7 +47,10 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 #include "ray_interpolated_projection.hpp"
-
+#include <algorithm>
+#include <cuda_runtime_api.h>
+#include <cuda.h>
+#include <math.h>
 #include "types_TIGRE.hpp"
 
 

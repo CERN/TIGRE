@@ -43,28 +43,21 @@
  */
 
 #define  PI_2 1.57079632679489661923
-#include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
-#include "voxel_backprojection.hpp"
-#include "voxel_backprojection_parallel.hpp"
-#include "voxel_backprojection_spherical.hpp"
-#include "voxel_backprojection_parallel_spherical.hpp"
-#include <stdio.h>
-#include <math.h>
 
-// https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
-#define cudaCheckErrors(msg) \
-do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
-                printf("%s \n",msg);\
-                printf("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
-                cudaDeviceReset();\
-                exit(__err);\
-        } \
-} while (0)
-    
+#include "voxel_backprojection_parallel_spherical.hpp"
+
+
+inline int cudaCheckErrors(const char * msg)
+{
+   cudaError_t __err = cudaGetLastError();
+   if (__err != cudaSuccess)
+   {
+      printf("CUDA:voxel_backprojection_parallel_spherical:%s:%s\n",msg, cudaGetErrorString(__err));
+      cudaDeviceReset();
+      return 1;
+   }
+   return 0;
+}
     
     
 #define MAXTREADS 1024
@@ -215,16 +208,7 @@ int voxel_backprojection_parallel_spherical(float const * const projections, Geo
     cudaMalloc((void**)&dimage, num_bytes);
     cudaMemset(dimage,0,num_bytes);
     cudaCheckErrors("cudaMalloc fail");
-    
-    // If we are going to time
-    bool timekernel=false;
-    cudaEvent_t start, stop;
-    float elapsedTime;
-    if (timekernel){
-        cudaEventCreate(&start);
-        cudaEventRecord(start,0);
-    }
-    
+
     int divx,divy,divz;
     
     //enpirical
@@ -253,15 +237,7 @@ int voxel_backprojection_parallel_spherical(float const * const projections, Geo
         kernelPixelBackprojection_parallel_spherical<<<grid,block>>>(geo,dimage,i,geo.COR[i],geo.DSD[i],geo.DSO[i],deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,source);
         cudaCheckErrors("Kernel fail");
     }
-    if (timekernel){
-        cudaEventCreate(&stop);
-        cudaEventRecord(stop,0);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&elapsedTime, start,stop);
-        printf("%f\n" ,elapsedTime);
-        cudaCheckErrors("cuda Timing fail");
-        
-    }
+
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
     cudaCheckErrors("cudaMemcpy result fail");
     

@@ -283,6 +283,7 @@ inline int cudaCheckErrors(const char * msg)
                     break;
                 }
             }
+
             devicenames=deviceProp.name;
         }
         

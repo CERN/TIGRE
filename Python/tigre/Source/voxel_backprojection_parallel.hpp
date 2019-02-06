@@ -45,7 +45,12 @@ Codes  : https://github.com/CERN/TIGRE
  */
 #include "types_TIGRE.hpp"
 
-
+#include "voxel_backprojection.hpp"
+#include <algorithm>
+#include <cuda_runtime_api.h>
+#include <cuda.h>
+#include <math.h>
+#include <stdio.h>
 
 #ifndef BACKPROJECTION_PARALLEL_HPP
 #define BACKPROJECTION_PARALLEL_HPP

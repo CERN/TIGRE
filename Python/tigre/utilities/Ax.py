@@ -16,4 +16,4 @@ def Ax(img, geo, angles,  krylov="interpolated"):
         raise ValueError("Input data should be of shape geo.nVoxel: "+ str(geox.nVoxel) +
                          " not:" + str(img.shape))
 
-    return _Ax_ext(img,geox,geox.angles,krylov,geox.mode)
+    return _Ax_ext(img, geox, geox.angles, krylov, geox.mode)

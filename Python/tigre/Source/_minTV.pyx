@@ -28,9 +28,12 @@ cdef extern from "numpy/arrayobject.h":
 cdef extern from "POCS_TV.hpp":
     cdef int pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter)
 
+
 def cuda_raise_errors(error_code):
     if error_code:
         raise ValueError('TIGRE:Call to pocs_tv failed')
+
+
 def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100):
 
     

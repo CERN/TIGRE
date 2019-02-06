@@ -43,25 +43,21 @@
  */
 
 #define  PI_2 1.57079632679489661923
-#include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
-#include "voxel_backprojection.hpp"
-#include "voxel_backprojection_spherical.hpp"
-#include <stdio.h>
-#include <math.h>
 
-// https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
-#define cudaCheckErrors(msg) \
-do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
-                printf("%s \n",msg);\
-                printf("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
-                cudaDeviceReset();\
-                exit(__err);\
-        } \
-} while (0)
+#include "voxel_backprojection_spherical.hpp"
+
+
+inline int cudaCheckErrors(const char * msg)
+{
+   cudaError_t __err = cudaGetLastError();
+   if (__err != cudaSuccess)
+   {
+      printf("CUDA:voxel_backprojection_spherical:%s:%s\n",msg, cudaGetErrorString(__err));
+      cudaDeviceReset();
+      return 1;
+   }
+   return 0;
+}
     
     
     
@@ -75,14 +71,14 @@ do { \
      *            |                             |
      *            |                             |
      *            |      +--------+             |
-              |     /        /|             |
-     A Z      |    /        / |*D           |
-     |        |   +--------+  |             |
-     |        |   |        |  |             |
-     |        |   |     *O |  +             |
+     * |     /        /|             |
+     * A Z      |    /        / |*D           |
+     * |        |   +--------+  |             |
+     * |        |   |        |  |             |
+     * |        |   |     *O |  +             |
      *--->y   |   |        | /              |
-    /         |   |        |/               |
-   V X        |   +--------+                |
+     * /         |   |        |/               |
+     * V X        |   +--------+                |
      *            |-----------------------------|
      *
      *           *S
@@ -92,16 +88,17 @@ do { \
      *
      *
      **/
-    texture<float, cudaTextureType3D , cudaReadModeElementType> tex;
+    const int VOXELS_PER_THREAD = 1;
+void CreateTextureSpherical(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage);
 
-
-__global__ void FDKweigths(const Geometry geo,float* image,float constant){
-    size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
-    for(; idx<geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ; idx+=gridDim.x*blockDim.x) {
-        image[idx]*=constant;
-    }
-    
-}
+// 
+// __global__ void FDKweigths(const Geometry geo,float* image,float constant){
+//     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
+//     for(; idx<geo.nVoxelX* geo.nVoxelY *geo.nVoxelZ; idx+=gridDim.x*blockDim.x) {
+//         image[idx]*=constant;
+//     }
+//     
+// }
 
 __global__ void kernelPixelBackprojectionFDK_spherical(const Geometry geo,
         float* image,
@@ -115,7 +112,8 @@ __global__ void kernelPixelBackprojectionFDK_spherical(const Geometry geo,
         const Point3D xyzOrigin,
         const Point3D xyzOffset,
         const Point3D uv0Offset,
-        const Point3D source){
+        const Point3D source,
+        cudaTextureObject_t tex){
     
     
     unsigned long indY = blockIdx.y * blockDim.y + threadIdx.y;
@@ -131,9 +129,9 @@ __global__ void kernelPixelBackprojectionFDK_spherical(const Geometry geo,
     
     // "XYZ" in the scaled coordinate system of the current point. The iamge is rotated with the projection angles.
     Point3D P;
-
+    
     P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-    P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;  
+    P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
     P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
     
     // This is the vector defining the line from the source to the Voxel
@@ -165,10 +163,7 @@ __global__ void kernelPixelBackprojectionFDK_spherical(const Geometry geo,
     weigth=1/(weigth*weigth);
     
     // Get Value in the computed (U,V) and multiply by the corresponding weigth.
-    image[idx]+=tex3D(tex, v ,
-            u  ,
-            indAlpha+0.5)
-            *weigth;
+    image[idx]+=tex3D<float>(tex, v , u  ,  indAlpha+0.5) *weigth;
 //     image[idx]=v;
     
 }
@@ -176,101 +171,161 @@ __global__ void kernelPixelBackprojectionFDK_spherical(const Geometry geo,
 
 int voxel_backprojection_spherical(float const * const projections, Geometry geo, float* result,float const * const angles,int nalpha){
     
-    
-    /*
-     * Allocate texture memory on the device
-     */
-    
-    // copy data to CUDA memory
-    cudaArray *d_projectiondata = 0;
-    const cudaExtent extent = make_cudaExtent(geo.nDetecU,geo.nDetecV,nalpha);
-    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
-    cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent);
-    cudaCheckErrors("cudaMalloc3D error 3D tex");
-    
-    cudaMemcpy3DParms copyParams = { 0 };
-    copyParams.srcPtr = make_cudaPitchedPtr((void*)projections, extent.width*sizeof(float), extent.width, extent.height);
-    copyParams.dstArray = d_projectiondata;
-    copyParams.extent = extent;
-    copyParams.kind = cudaMemcpyHostToDevice;
-    cudaMemcpy3D(&copyParams);
-    
-    cudaCheckErrors("cudaMemcpy3D fail");
-    
-    // Configure texture options
-    tex.normalized = false;
-    tex.filterMode = cudaFilterModeLinear;
-    tex.addressMode[0] = cudaAddressModeBorder;
-    tex.addressMode[1] = cudaAddressModeBorder;
-    tex.addressMode[2] = cudaAddressModeBorder;
-    
-    cudaBindTextureToArray(tex, d_projectiondata, channelDesc);
-    
-    cudaCheckErrors("3D texture memory bind fail");
-    
-    
-    // Allocate result image memory
-    size_t num_bytes = geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ * sizeof(float);
-    float* dimage;
-    cudaMalloc((void**)&dimage, num_bytes);
-    cudaMemset(dimage,0,num_bytes);
-    cudaCheckErrors("cudaMalloc fail");
-    
-    // If we are going to time
-    bool timekernel=false;
-    cudaEvent_t start, stop;
-    float elapsedTime;
-    if (timekernel){
-        cudaEventCreate(&start);
-        cudaEventRecord(start,0);
+    // Prepare for MultiGPU
+    int deviceCount = 0;
+    cudaGetDeviceCount(&deviceCount);
+    cudaCheckErrors("Device query fail");
+    if (deviceCount == 0) {
+        printf("Atb:Voxel_backprojection_spherical:GPUselect:There are no available device(s) that support CUDA\n");
+        cudaDeviceReset();
+        return 1;
     }
     
-    int divx,divy,divz;
+    // Check the available devices, and if they are the same
+    int dev;
+    checkDevices();
     
-    //enpirical
-    divx=32;
-    divy=32;
-    divz=1;
-    dim3 grid((geo.nVoxelX+divx-1)/divx,
-            (geo.nVoxelY+divy-1)/divy,
-            (geo.nVoxelZ+divz-1)/divz);
-    dim3 block(divx,divy,divz);
-    Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec,source;
-    for (unsigned int i=0;i<nalpha;i++){
-        geo.alpha=-angles[i*3];
-        geo.theta=-angles[i*3+1];
-        geo.psi  =-angles[i*3+2];
-        
-        computeDeltasCubeSpherical(geo,i,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
-        
-        offOrig.x=geo.offOrigX[i];
-        offOrig.y=geo.offOrigY[i];
-        offDetec.x=geo.offDetecU[i];
-        offDetec.y=geo.offDetecV[i];
-        
-        kernelPixelBackprojectionFDK_spherical<<<grid,block>>>(geo,dimage,i,geo.COR[i],geo.DSD[i],geo.DSO[i],deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,source);
-        cudaCheckErrors("Kernel fail");
+    // Split the CT problem
+    unsigned int split_image;
+    unsigned int split_projections;
+    if (splitCTbackprojection(deviceCount,geo,nalpha,&split_image,&split_projections)){
+        return 1;
     }
-    if (timekernel){
-        cudaEventCreate(&stop);
-        cudaEventRecord(stop,0);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&elapsedTime, start,stop);
-        printf("%f\n" ,elapsedTime);
-        cudaCheckErrors("cuda Timing fail");
-        
+    
+    // Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the
+    // image slices. The rest of the Geometry is the same
+    Geometry* geoArray=(Geometry*)malloc(split_image*deviceCount*sizeof(Geometry));
+    createGeoArray(split_image*deviceCount,geo,geoArray,nalpha);
+    
+    // Now lest allocate all the image memory on the GPU, so we can use it later. If we have made our numbers correctly
+    // in the previous section this should leave enough space for the textures.
+    size_t num_bytes_img = geo.nVoxelX*geo.nVoxelY*geoArray[0].nVoxelZ* sizeof(float);
+    
+    
+    float** dimage=(float**)malloc(deviceCount*sizeof(float*));
+    for (dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(dev);
+        cudaMalloc((void**)&dimage[dev], num_bytes_img);
+        cudaCheckErrors("cudaMalloc fail");
     }
-    cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
-    cudaCheckErrors("cudaMemcpy result fail");
     
-    cudaUnbindTexture(tex);
-    cudaCheckErrors("Unbind  fail");
+    // Start with the main loop. The Projection data needs to be allocated and dealocated in the main loop
+    // as due to the nature of cudaArrays, we can not reuse them. This should not be a problem for the fast execution
+    // of the code, as repeated allocation and deallocation only happens when the projection data is very very big,
+    // and therefore allcoation time should be negligible, fluctuation of other computations should mask the time.
+    unsigned long long proj_linear_idx_start;
+    unsigned int current_proj_split_size;
+    size_t num_bytes_img_curr;
+    size_t img_linear_idx_start;
+    for( unsigned int proj=0;proj<split_projections;proj++){
+        // Crop the last one, as its likely its not completely divisible.
+        current_proj_split_size=(nalpha+split_projections-1)/split_projections;
+        current_proj_split_size=((proj+1)*current_proj_split_size<nalpha)?  current_proj_split_size:  nalpha-current_proj_split_size*proj;
+        
+        //Get the linear index where the current memory chunk starts.
+        proj_linear_idx_start=(unsigned long long)((nalpha+split_projections-1)/split_projections)*(unsigned long long)proj*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
+        
+        // Now get the projections on memory
+        cudaTextureObject_t *texProj = new cudaTextureObject_t[deviceCount];
+        cudaArray **d_cuArrTex = new cudaArray*[deviceCount];
+        CreateTextureSpherical(deviceCount,&projections[proj_linear_idx_start],geo,d_cuArrTex,current_proj_split_size,texProj);
+        
+        
+        for(unsigned int img_slice=0;img_slice<split_image;img_slice++){
+            if(proj==0){
+                for (dev = 0; dev < deviceCount; dev++){
+                    cudaSetDevice(dev);
+                    cudaMemset(dimage[dev],0,num_bytes_img);
+                    cudaCheckErrors("memset fail");
+                }
+            }
+            // If we have more than one chunck of projections, then we need to put back the previous results into the GPU
+            // Exception: when each GPU is handling a single image chunk, we can leave it there.
+            if(proj>0 && split_image>1) {
+                for (dev = 0; dev < deviceCount; dev++){
+                    cudaSetDevice(dev);
+                    num_bytes_img_curr=geoArray[img_slice*deviceCount+dev].nVoxelX*geoArray[img_slice*deviceCount+dev].nVoxelY*geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
+                    img_linear_idx_start=geo.nVoxelX*geo.nVoxelY*geoArray[0].nVoxelZ*(img_slice*deviceCount+dev);
+                    cudaMemcpy(dimage[dev],&result[img_linear_idx_start], num_bytes_img_curr, cudaMemcpyHostToDevice);
+                    cudaCheckErrors("cudaMemcpy previous result fail");
+                }
+                
+            }
+            
+            for (dev = 0; dev < deviceCount; dev++){
+                //Safety:
+                // Depends on the amount of GPUs, the case where a image slice is zero hight can happen.
+                // Just break the loop if we reached that point
+                if(geoArray[img_slice*deviceCount+dev].nVoxelZ==0)
+                    break;
+                
+                cudaSetDevice(dev);
+                
+                int divx,divy,divz;
+                
+                //enpirical
+                divx=32;
+                divy=32;
+                divz=1;;
+                dim3 grid((geo.nVoxelX+divx-1)/divx,
+                        (geo.nVoxelY+divy-1)/divy,
+                        (geoArray[img_slice*deviceCount+dev].nVoxelZ+divz-1)/divz);
+                dim3 block(divx,divy,divz);
+                
+                Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec,source;
+                
+                for (unsigned int i=0;i<current_proj_split_size;i++){
+                    unsigned int currProjNumber_global=i+proj*(nalpha+split_projections-1)/split_projections;
+
+                    geo.alpha=-angles[currProjNumber_global*3];
+                    geo.theta=-angles[currProjNumber_global*3+1];
+                    geo.psi  =-angles[currProjNumber_global*3+2];
+                    
+                    computeDeltasCubeSpherical(geoArray[img_slice*deviceCount+dev],currProjNumber_global,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
+                    
+                    offOrig.x=geo.offOrigX[currProjNumber_global];
+                    offOrig.y=geo.offOrigY[currProjNumber_global];
+                    offOrig.z=geoArray[img_slice*deviceCount+dev].offOrigZ[currProjNumber_global];
+                    offDetec.x=geo.offDetecU[currProjNumber_global];
+                    offDetec.y=geo.offDetecV[currProjNumber_global];
+                    
+                    kernelPixelBackprojectionFDK_spherical<<<grid,block>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],currProjNumber_global,geo.COR[currProjNumber_global],geo.DSD[currProjNumber_global],geo.DSO[currProjNumber_global],deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,source,texProj[dev]);
+                    cudaCheckErrors("Kernel fail");
+                }
+            }
+            cudaDeviceSynchronize();
+            if(proj==split_projections-1 || split_image>1){
+                
+                for (dev = 0; dev < deviceCount; dev++){
+                    cudaSetDevice(dev);
+                    num_bytes_img_curr=geoArray[img_slice*deviceCount+dev].nVoxelX*geoArray[img_slice*deviceCount+dev].nVoxelY*geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
+                    img_linear_idx_start=geo.nVoxelX*geo.nVoxelY*geoArray[0].nVoxelZ*(img_slice*deviceCount+dev);
+                    cudaMemcpy(&result[img_linear_idx_start], dimage[dev], num_bytes_img_curr, cudaMemcpyDeviceToHost);
+                    cudaCheckErrors("cudaMemcpy result fail");
+                }
+            }
+            cudaDeviceSynchronize();
+        }
+        
+        //Before the next iteration of projection slices, delete the current textures.
+        
+        for (dev = 0; dev < deviceCount; dev++){
+            cudaSetDevice(dev);
+            cudaDestroyTextureObject(texProj[dev]);
+            cudaFreeArray(d_cuArrTex[dev]);
+            
+        }
+    }
     
-    cudaFree(dimage);
-    cudaFreeArray(d_projectiondata);
+    for (dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(dev);
+        cudaFree(dimage[dev]);
+    }
+    freeGeoArray(split_image*deviceCount,geoArray);
     cudaCheckErrors("cudaFree d_imagedata fail");
-    //cudaDeviceReset();
+    cudaDeviceReset(); // For the Nvidia Visual Profiler
     return 0;
+    
     
 }
 void computeDeltasCubeSpherical(Geometry geo, int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D *S){
@@ -294,7 +349,7 @@ void computeDeltasCubeSpherical(Geometry geo, int i, Point3D* xyzorigin, Point3D
     eulerZYZT(geo,&Px);
     eulerZYZT(geo,&Py);
     eulerZYZT(geo,&Pz);
-
+    
     
     
     //detector offset
@@ -358,13 +413,187 @@ void eulerZYZT(Geometry geo, Point3D* point){
     auxPoint.y=point->y;
     auxPoint.z=point->z;
     
-    point->x = auxPoint.x*(cos(geo.psi)*cos(geo.theta)*cos(geo.alpha)-sin(geo.psi)*sin(geo.alpha)) 
-              +auxPoint.y*(-cos(geo.psi)*cos(geo.theta)*sin(geo.alpha)-sin(geo.psi)*cos(geo.alpha))
-              +auxPoint.z*cos(geo.psi)*sin(geo.theta);
+    point->x = auxPoint.x*(cos(geo.psi)*cos(geo.theta)*cos(geo.alpha)-sin(geo.psi)*sin(geo.alpha))
+    +auxPoint.y*(-cos(geo.psi)*cos(geo.theta)*sin(geo.alpha)-sin(geo.psi)*cos(geo.alpha))
+    +auxPoint.z*cos(geo.psi)*sin(geo.theta);
     point->y = auxPoint.x*(sin(geo.psi)*cos(geo.theta)*cos(geo.alpha)+cos(geo.psi)*sin(geo.alpha))
-              +auxPoint.y*(-sin(geo.psi)*cos(geo.theta)*sin(geo.alpha)+cos(geo.psi)*cos(geo.alpha))
-              +auxPoint.z*sin(geo.psi)*sin(geo.theta);
+    +auxPoint.y*(-sin(geo.psi)*cos(geo.theta)*sin(geo.alpha)+cos(geo.psi)*cos(geo.alpha))
+    +auxPoint.z*sin(geo.psi)*sin(geo.theta);
     point->z =-auxPoint.x*sin(geo.theta)*cos(geo.alpha)
-              +auxPoint.y*sin(geo.theta)*sin(geo.alpha)
-              +auxPoint.z*cos(geo.theta);
+    +auxPoint.y*sin(geo.theta)*sin(geo.alpha)
+    +auxPoint.z*cos(geo.theta);
 }
+
+void CreateTextureSpherical(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage)
+{
+    //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+    for (unsigned int i = 0; i < num_devices; i++){
+        cudaSetDevice(i);
+        
+        //cudaArray Descriptor
+        const cudaExtent extent = make_cudaExtent(geo.nDetecU, geo.nDetecV, nangles);
+        cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
+        //cuda Array
+        cudaMalloc3DArray(&d_cuArrTex[i], &channelDesc, extent);
+        cudaCheckErrors("Texture memory allocation fail");
+        cudaMemcpy3DParms copyParams = {0};
+        
+        
+        //Array creation
+        copyParams.srcPtr   = make_cudaPitchedPtr((void *)projectiondata, extent.width*sizeof(float), extent.width, extent.height);
+        copyParams.dstArray = d_cuArrTex[i];
+        copyParams.extent   = extent;
+        copyParams.kind     = cudaMemcpyHostToDevice;
+        cudaMemcpy3D(&copyParams);
+        cudaCheckErrors("Texture memory data copy fail");
+        //Array creation End
+        
+        cudaResourceDesc    texRes;
+        memset(&texRes, 0, sizeof(cudaResourceDesc));
+        texRes.resType = cudaResourceTypeArray;
+        texRes.res.array.array  = d_cuArrTex[i];
+        cudaTextureDesc     texDescr;
+        memset(&texDescr, 0, sizeof(cudaTextureDesc));
+        texDescr.normalizedCoords = false;
+        texDescr.filterMode = cudaFilterModeLinear;
+        texDescr.addressMode[0] = cudaAddressModeBorder;
+        texDescr.addressMode[1] = cudaAddressModeBorder;
+        texDescr.addressMode[2] = cudaAddressModeBorder;
+        texDescr.readMode = cudaReadModeElementType;
+        cudaCreateTextureObject(&texImage[i], &texRes, &texDescr, NULL);
+        cudaCheckErrors("Texture object creation fail");
+    }
+}
+#ifndef BACKPROJECTION_HPP
+
+void checkDevices(void){
+    // CODE assumes
+    // 1.-All available devices are usable by this code
+    // 2.-All available devices are equal, they are the same machine (warning thrown)
+    int dev;
+    int deviceCount = 0;
+    cudaGetDeviceCount(&deviceCount);
+    char * devicenames;
+    cudaDeviceProp deviceProp;
+    for (dev = 0; dev < deviceCount; dev++) {
+        cudaSetDevice(dev);
+        cudaGetDeviceProperties(&deviceProp, dev);
+        if (dev>0){
+            if (strcmp(devicenames,deviceProp.name)!=0){
+                printf("Atb:GPUselect:Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 275.");
+                break;
+            }
+        }
+        devicenames=deviceProp.name;
+    }
+}
+int splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
+    
+    // Get memory of GPU. Assuming all of the available GPUs have the same amoutn of memory.
+    size_t memfree;
+    size_t memtotal;
+    size_t mem_GPU_global;
+    for (unsigned int dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(dev);
+        cudaMemGetInfo(&memfree,&memtotal);
+        if(dev==0) mem_GPU_global=memfree;
+        if(memfree<memtotal/2){
+            printf("Atb:GPUselect:One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+            cudaDeviceReset();
+            return 1;
+        }
+        cudaCheckErrors("Check mem error");
+        
+        mem_GPU_global=(memfree<mem_GPU_global)?memfree:mem_GPU_global;
+    }
+    mem_GPU_global=(size_t)((double)mem_GPU_global*0.95); // lets leave 10% for the GPU. Too much? maybe, but probably worth saving.
+
+    // Compute how much memory each of the relevant memory pieces need
+    size_t mem_image=       (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
+    size_t mem_image_slice= (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)VOXELS_PER_THREAD*sizeof(float);
+    size_t mem_proj=        (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
+    
+    // Initialize variables for spliting procedure choosing algorithm.
+    
+    
+    // Does everything fit in the GPU?
+    
+    if(mem_image+mem_proj*nalpha<mem_GPU_global){
+        // We only need to split if we have extra GPUs
+        *split_image=1;
+        *split_projections=1;
+    }
+    // We know we need to split, but:
+    // Do all projections fit on the GPU (with some slack for the image)??
+    else if(mem_proj*nalpha+mem_image_slice <mem_GPU_global){
+        // We should then store all the projections in GPU and split the image backprojection in as big chunks as possible
+        *split_projections=1;
+        size_t mem_free=mem_GPU_global-nalpha*mem_proj;
+        // How many slices can we fit on the free memory we have? We'd like to keep these slices full as it increases
+        // the kernels performance to run image chuncks that are VOXELS_PER_THREAD in z.
+        unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
+        // Split:
+        // mem_free/mem_image_slice == how many slices fit in each GPU
+        // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
+        *split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
+        
+    }
+    // They do not fit in memory. We need to split both projections and images. Its OK, we'll survive.
+    else
+    {
+        // Because I think memory transfer is the slowest operation if broken apart (TODO test this assumtion) we should minimize the amount
+        // of those that happen. So the target split is that one that requires less copys of projection data to memory.
+        // Lets assume to start with that we only need 1 slice of image in memory, the rest is fo rprojections
+        size_t mem_free=mem_GPU_global-mem_image_slice;
+        *split_projections=(mem_proj*nalpha+mem_free-1)/mem_free;
+        // Now knowing how many splits we have for projections, we can recompute how many slices of image actually
+        // fit on the GPU. Must be more than 0 obviously.
+        mem_free=mem_GPU_global-mem_proj*nalpha/(*split_projections);
+        unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
+        // Split:
+        // mem_free/mem_image_slice == how many slices fit in each GPU
+        // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
+        *split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
+        
+    }
+}
+//______________________________________________________________________________
+//
+//      Function:       createGeoArray
+//
+//      Description:    This code generates the geometries needed to split the image properly in
+//                      cases where the entire image does not fit in the memory of the GPU
+//______________________________________________________________________________
+
+void createGeoArray(unsigned int image_splits, Geometry geo,Geometry* geoArray, unsigned int nangles){
+    
+    
+    unsigned int  splitsize=(geo.nVoxelZ+image_splits-1)/image_splits;
+    
+    for(unsigned int sp=0;sp<image_splits;sp++){
+        geoArray[sp]=geo;
+        // All of them are splitsize, but the last one, possible
+        geoArray[sp].nVoxelZ=((sp+1)*splitsize<geo.nVoxelZ)?  splitsize:  max(geo.nVoxelZ-splitsize*sp,0);
+        geoArray[sp].sVoxelZ= geoArray[sp].nVoxelZ* geoArray[sp].dVoxelZ;
+        
+        // We need to redefine the offsets, as now each subimage is not aligned in the origin.
+        geoArray[sp].offOrigZ=(float *)malloc(nangles*sizeof(float));
+        for (unsigned int i=0;i<nangles;i++){
+            geoArray[sp].offOrigZ[i]=geo.offOrigZ[i]-geo.sVoxelZ/2+sp*geoArray[0].sVoxelZ+geoArray[sp].sVoxelZ/2;
+        }
+    }
+    
+}
+//______________________________________________________________________________
+//
+//      Function:       freeGeoArray
+//
+//      Description:    Frees the memory from the geometry array for multiGPU.
+//______________________________________________________________________________
+void freeGeoArray(unsigned int splits,Geometry* geoArray){
+    for(unsigned int sp=0;sp<splits;sp++){
+        free(geoArray[sp].offOrigZ);
+    }
+    free(geoArray);
+}
+#endif

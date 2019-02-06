@@ -45,26 +45,22 @@ Codes  : https://github.com/CERN/TIGRE
 
  
 #define  PI_2 1.57079632679489661923
-#include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
-#include "voxel_backprojection.hpp"
+
 #include "voxel_backprojection_parallel.hpp"
 
-#include <stdio.h>
-#include <math.h>
 
-// https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
-#define cudaCheckErrors(msg) \
-do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
-                printf("%s \n",msg);\
-                printf("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
-                cudaDeviceReset();\
-                exit(__err);\
-        } \
-} while (0)
+
+inline int cudaCheckErrors(const char * msg)
+{
+   cudaError_t __err = cudaGetLastError();
+   if (__err != cudaSuccess)
+   {
+      printf("CUDA:voxel_backprojection_parallel:%s:%s\n",msg, cudaGetErrorString(__err));
+      cudaDeviceReset();
+      return 1;
+   }
+   return 0;
+}
     
     
 #define MAXTREADS 1024
@@ -335,15 +331,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
     cudaMemset(dimage,0,num_bytes);
     cudaCheckErrors("cudaMalloc fail");
     
-    // If we are going to time
-    bool timekernel=false;
-    cudaEvent_t start, stop;
-    float elapsedTime;
-    if (timekernel){
-        cudaEventCreate(&start);
-        cudaEventRecord(start,0);
-    }
-    
+
     int divx,divy,divz;
     
     // RB: Use the optimal (in their tests) block size from paper by Zinsser and Keck (16 in x and 32 in y).
@@ -413,17 +401,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
     // END Main reconstruction loop: go through projections (rotation angles) and backproject
     //////////////////////////////////////////////////////////////////////////////////////
     
-    
-    if (timekernel)
-    {
-        cudaEventCreate(&stop);
-        cudaEventRecord(stop,0);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&elapsedTime, start,stop);
-        printf("%f\n" ,elapsedTime);
-        cudaCheckErrors("cuda Timing fail");
-        
-    }
+
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
     cudaCheckErrors("cudaMemcpy result fail");
     
@@ -465,7 +443,7 @@ void computeDeltasCubeParallel(Geometry geo, float alpha,int i, Point3D* xyzorig
     Pz.z =Pz.z-geo.offDetecV[i];          Pz.y =Pz.y-geo.offDetecU[i];
 
     
-//       printf("%f,%f,%f\n",source.x,source.y,source.z);
+//       mexPrintf("%f,%f,%f\n",source.x,source.y,source.z);
     // Scale coords so detector pixels are 1x1
     
     P.z =P.z /geo.dDetecV;                          P.y =P.y/geo.dDetecU;
