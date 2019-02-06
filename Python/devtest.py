@@ -93,13 +93,14 @@ geo = tigre.geometry(mode='parallel',nVoxel=nVoxel,default_geo=True)
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
 t = time.time()
 #proj = tigre.Ax(source_img,geo,angles)
-res=minTV(source_img)
+from _minTV import minTV
+res = minTV(source_img,15.0,100)
 elapsed = time.time() - t
-#print(elapsed)
+print(elapsed)
 #res = algs.awasd_pocs(proj,geo,angles,niter=1,**dict(blocksize=nangles/5))
-#from matplotlib import pyplot as plt
-#plt.imshow(res[32])
-#plt.show()
+from matplotlib import pyplot as plt
+plt.imshow(res[32])
+plt.show()
 """
 from tigre.utilities.Atb import Atb
 Atb(proj,geo,angles,'FDK')[32]

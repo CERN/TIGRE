@@ -416,7 +416,7 @@ inline int cudaCheckErrors(const char * msg)
         if(splits>1){
             printf("minimizeTV:POCS_TV2:Image_split:Your image can not be fully split between the available GPUs. The computation of minTV will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
         }else{
-            cudaMallocHost((void**)&buffer,image_size[0]*image_size[1]*sizeof(float));
+            cudaMallocHost((void**)&buffer,buffer_length*image_size[0]*image_size[1]*sizeof(float));
 
         }
         
