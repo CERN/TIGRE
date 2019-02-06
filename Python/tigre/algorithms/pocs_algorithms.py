@@ -26,7 +26,7 @@ class ASD_POCS(IterativeReconAlg):
         if 'rmax' not in kwargs:
             self.rmax = 0.95
         if 'maxl2err' not in kwargs:
-            self.epsilon = im3DNORM(FDK(proj,geo,angles),2)*0.2
+            self.epsilon = im3DNORM(FDK(proj, geo, angles), 2)*0.2
         if "numiter_tv" not in kwargs:
             self.numiter_tv = 20
         if 'regularisation' not in kwargs:
@@ -51,7 +51,7 @@ class ASD_POCS(IterativeReconAlg):
             getattr(self, self.dataminimizing)()
             g = Ax(self.res, self.geo, self.angles)
             dd = im3DNORM(g-self.proj, 2)
-            dp_vec = self.res -res_prev
+            dp_vec = self.res - res_prev
             dp = im3DNORM(dp_vec, 2)
 
             if n_iter == 1:
