@@ -11,6 +11,7 @@ class ASD_POCS(IterativeReconAlg):
     __doc__ = (" solves the reconstruction problem\n"
                " using the projection data PROJ taken over ALPHA angles, corresponding\n"
                " to the geometry descrived in GEO, using NITER iterations.\n") + IterativeReconAlg.__doc__
+
     def __init__(self,proj,geo,angles,niter, **kwargs):
         if not kwargs.has_key('blocksize'):
             kwargs.update(blocksize=1)
@@ -30,8 +31,7 @@ class ASD_POCS(IterativeReconAlg):
         self.beta =self.lmbda
         self.beta_red = self.lmbda_red
 
-
-    #Overide
+    # Overide
     def run_main_iter(self):
         stop_criteria = False
         iter = 0
@@ -59,8 +59,8 @@ class ASD_POCS(IterativeReconAlg):
             if dg>self.rmax*dp and dd>self.epsilon:
                 dtvg = dtvg*self.alpha_red
             self.beta *= self.beta_red
-            c = np.dot(dg_vec.reshape(-1,),dp_vec.reshape(-1,))/max((im3DNORM(dg_vec,2)*im3DNORM(dp_vec,2)),1e-6)
-            if (c<-0.99 and dd<=self.epsilon) or self.beta<0.005 or iter>self.niter:
+            c = np.dot(dg_vec.reshape(-1,), dp_vec.reshape(-1,))/max(dg*dp, 1e-6)
+            if (c<-0.99 and dd <= self.epsilon) or self.beta < 0.005 or iter > self.niter:
                 if self.verbose:
                     print("\n"
                           "     Stop criteria met: \n"

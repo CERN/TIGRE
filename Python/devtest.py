@@ -6,7 +6,7 @@ from tigre.demos.Test_data import data_loader
 from tigre.utilities.Ax import Ax
 import os
 import sys
-
+import time
 rm_files = ''
 from tests.visual_inspection import plot_algs as do_algs
 
@@ -16,6 +16,8 @@ for filename in os.listdir(os.curdir):
         print(rm_files)
 os.system('rm' + rm_files)
 nVoxel = np.array([64, 64, 64])
+nVoxel = np.array([512, 512, 512])
+
 """
 # ---------------PARALLEL GEOMETRY---------------------------
 
@@ -89,11 +91,15 @@ angles_3 = np.zeros((nangles), dtype=np.float32)
 angles = np.vstack((angles_1, angles_3, angles_3)).T
 geo = tigre.geometry(mode='parallel',nVoxel=nVoxel,default_geo=True)
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
-proj = tigre.Ax(source_img,geo,angles)
-res = algs.awasd_pocs(proj,geo,angles,niter=100,**dict(blocksize=nangles))
-from matplotlib import pyplot as plt
-plt.imshow(res[32])
-plt.show()
+t = time.time()
+#proj = tigre.Ax(source_img,geo,angles)
+res=minTV(source_img)
+elapsed = time.time() - t
+#print(elapsed)
+#res = algs.awasd_pocs(proj,geo,angles,niter=1,**dict(blocksize=nangles/5))
+#from matplotlib import pyplot as plt
+#plt.imshow(res[32])
+#plt.show()
 """
 from tigre.utilities.Atb import Atb
 Atb(proj,geo,angles,'FDK')[32]

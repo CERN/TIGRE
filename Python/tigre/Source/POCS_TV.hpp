@@ -52,7 +52,9 @@ Codes  : https://github.com/CERN/TIGRE
 
 #ifndef POCS_TV_HPP
 #define POCS_TV_HPP
-void pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter);
+#include <stdio.h>
+
+int pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter);
 
 
 #endif
