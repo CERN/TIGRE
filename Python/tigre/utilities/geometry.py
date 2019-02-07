@@ -77,7 +77,8 @@ class Geometry(object):
         if hasattr(self, 'rotDetector'):
             self._check_and_repmat('rotDetector', angles)
         else:
-            self.rotDetector = np.zeros((angles.shape[0], 3))
+            self.rotDetector = np.array([0, 0, 0])
+            self._check_and_repmat('rotDetector', angles)
 
         if hasattr(self, 'COR'):
             self._check_and_repmat('COR', angles)

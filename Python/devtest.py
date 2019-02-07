@@ -17,7 +17,7 @@ for filename in os.listdir(os.curdir):
         print(rm_files)
 os.system('rm' + rm_files)
 nVoxel = np.array([64, 64, 64])
-nVoxel = np.array([256, 256, 256])
+#nVoxel = np.array([256, 256, 256])
 
 """
 # ---------------PARALLEL GEOMETRY---------------------------
@@ -114,7 +114,11 @@ print(np.mean(np.array(elapsed)))
 res=tigre.Atb(proj, geo, angles)
 
 #res = algs.awasd_pocs(proj,geo,angles,niter=1,**dict(blocksize=nangles/5))
-plt.imshow(res[100])
+plt.imshow(res[32])
+plt.show()
+plt.imshow(res[60])
+plt.show()
+plt.imshow(res[4])
 plt.show()
 """
 from tigre.utilities.Atb import Atb

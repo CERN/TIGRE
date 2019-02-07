@@ -66,6 +66,7 @@ cdef inline void free_c_geometry(Geometry* c_geom):
 cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     cdef Geometry* c_geom =<Geometry *>malloc(sizeof(Geometry))
 
+    print("Geo 1")
     ### Image ###
     c_geom.nVoxelX = p_geometry.nVoxel[0]
     c_geom.nVoxelY = p_geometry.nVoxel[1]
@@ -89,6 +90,7 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
         c_geom.offOrigZ[i] = p_geometry.offOrigin[i][2]
     for i in range(total_projections):
         c_geom.DSO[i] = p_geometry.DSO[i]
+    print("Geo 2")
     ### Detector ###
     c_geom.nDetecU=p_geometry.nDetector[0]
     c_geom.nDetecV=p_geometry.nDetector[1]
@@ -107,6 +109,7 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
         c_geom.offDetecV[i] = p_geometry.offDetector[i][1]
     for i in range(total_projections):
         c_geom.DSD[i] = p_geometry.DSD[i]
+    print("Geo 3")
     # TODO: array of 0 for each alpha
     c_geom.dRoll =  <float *>malloc(total_projections * sizeof(float))
     c_geom.dPitch = <float *>malloc(total_projections * sizeof(float))
@@ -119,7 +122,7 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     c_geom.unitX = 1
     c_geom.unitY = 1
     c_geom.unitZ = 1
-
+    print("Geo 4")
     #projection angle
     # float alpha; #TODO: Check this is redundant
 
@@ -133,4 +136,5 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
 
     #User option
     c_geom.accuracy = p_geometry.accuracy
+    print("Geo 5")
     return c_geom
