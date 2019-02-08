@@ -1,20 +1,26 @@
 from __future__ import print_function
 import tigre
+
 import numpy as np
-import tigre.demos.Test_data.data_loader as data_loader
-from tigre.algorithms.conjugate_gradient_algorithms import CGLS
-from tigre.algorithms.pocs_algorithms import ASD_POCS
-from tigre.algorithms.art_family_algorithms import SART
-from matplotlib import pyplot as plt
-import tigre
-import tigre.algorithms as algs
+from tigre.demos.Test_data import data_loader
 from tigre.utilities.Ax import Ax
+import os
+import sys
 
-# ---------------GEOMETRY---------------------------
+rm_files = ''
+from tests.visual_inspection import plot_algs as do_algs
 
-geo = tigre.geometry(mode='parallel',nVoxel = np.array([64,64,64],dtype=np.float32))
-source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
+for filename in os.listdir(os.curdir):
+    if filename.endswith('.npy'):
+        rm_files += ' ' + filename
+        print(rm_files)
+os.system('rm' + rm_files)
+nVoxel = np.array([64, 64, 64])
+"""
+# ---------------PARALLEL GEOMETRY---------------------------
 
+geo_par = tigre.geometry(mode='parallel', nVoxel=nVoxel)
+source_img = data_loader.load_head_phantom(number_of_voxels=geo_par.nVoxel)
 
 # ---------------------ANGLES-------------------------
 
@@ -23,18 +29,83 @@ angles_2 = np.ones((100), dtype=np.float32) * np.array(np.pi / 4, dtype=np.float
 angles_3 = np.zeros((100), dtype=np.float32)
 angles = np.vstack((angles_1, angles_3, angles_3)).T
 
-# --------------------PROJECTION----------------------
-from tigre.demos.__test import test
-test()
+# --------------------PARALLEL PROJECTION----------------------
+
+proj_par = Ax(source_img, geo_par, angles)
+
+# ---------------------PARALLEL RECONSTRUCTION------------------
+
+
+alglist = [  # 'sart',
+    'sirt',
+    #'ossart',
+    # 'iterativereconalg',
+    #'asd_pocs',
+    'fbp',
+    # 'cgls'
+]
+
+do_algs(alglist, proj_par, geo_par, angles, mode='parallel', niter=20, **dict(nVoxel=nVoxel, blocksize=20))
+
+# ---------------CONE GEOMETRY---------------------------
+
+geo_con = tigre.geometry_default(nVoxel=nVoxel)
+source_img = data_loader.load_head_phantom(number_of_voxels=geo_con.nVoxel)
+
+# ---------------------ANGLES-------------------------
+nangles = 100
+angles_1 = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
+angles_2 = np.ones((nangles), dtype=np.float32) * np.array(np.pi / 4, dtype=np.float32)
+angles_3 = np.zeros((nangles), dtype=np.float32)
+angles = np.vstack((angles_1, angles_3, angles_3)).T
+
+# --------------------CONE PROJECTION----------------------
+source_img = data_loader.load_head_phantom(number_of_voxels=geo_con.nVoxel)
+proj_con = Ax(source_img, geo_con, angles)
+
+# ---------------------CONE RECONSTRUCTION------------------
+
+alglist = [  # 'sart',
+    'sirt',
+    #'ossart',
+    # 'iterativereconalg',
+    #'asd_pocs',
+    #'FDK',
+    # 'cgls'
+]
+
+do_algs(alglist, proj_con, geo_con, angles, mode='cone', niter=20, **dict(nVoxel = nVoxel, blocksize=20))
+
+# --------------------------- CGLS for both modes---------------------------------------
+do_algs(['cgls'], proj_par, geo_par, angles, mode='Parallel', **dict(nVoxel = [64 ,64 ,64]))
+do_algs(['cgls'], proj_con, geo_con, angles, mode='Cone', **dict(nVoxel = [64 ,64 ,64]))
 """
-# --------------------BACK PROJECTION ----------------
-#res = algs.awasd_pocs(proj_1,geo,angles,10,**dict(blocksize=20))
-#res = algs.ossart(proj_1,geo,angles,15,**dict(blocksize=12))
-res = algs.awasd_pocs(proj_1,geo,angles,5)
 
-# ---------------PLOTS------------------------------
-
-plt.matshow(abs(new_head[32] - source_img[32]))
+import tigre.algorithms as algs
+nangles = 100
+angles_1 = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
+angles_2 = np.ones((nangles), dtype=np.float32) * np.array(np.pi / 4, dtype=np.float32)
+angles_3 = np.zeros((nangles), dtype=np.float32)
+angles = np.vstack((angles_1, angles_3, angles_3)).T
+geo = tigre.geometry(mode='cone',nVoxel=nVoxel,default_geo=True)
+source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
+proj = tigre.Ax(source_img,geo,angles)
+res = algs.awasd_pocs(proj,geo,angles,niter=10,**dict(blocksize=nangles))
+from matplotlib import pyplot as plt
+plt.imshow(res[32])
+plt.show()
+"""
+from tigre.utilities.Atb import Atb
+Atb(proj,geo,angles,'FDK')[32]
+#plt.colorbar()
+#plt.title('FDK')
+mat = Atb(proj,geo,angles,'matched')
+plt.subplot(221)
+plt.imshow(mat[32])
+plt.subplot(222)
+plt.imshow(mat[:,32])
+plt.subplot(223)
+plt.imshow(mat[:,:,32])
 plt.colorbar()
 plt.show()
 """

@@ -58,14 +58,17 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 
-#define cudaCheckErrors(msg) \
-do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
-                printf("%s \n",msg);\
-                printf("CBCT:CUDA:POCS_TV2",cudaGetErrorString(__err));\
-        } \
-} while (0)
+inline int cudaCheckErrors(const char * msg)
+{
+   cudaError_t __err = cudaGetLastError();
+   if (__err != cudaSuccess)
+   {
+      printf("CUDA:POCS_TV_2: %s: %s\n",msg, cudaGetErrorString(__err));
+      cudaDeviceReset();
+      return 1;
+   }
+   return 0;
+}
     
 // CUDA kernels
 //https://stackoverflow.com/questions/21332040/simple-cuda-kernel-optimization/21340927#21340927
@@ -274,7 +277,7 @@ do { \
     
     
 // main function
- void aw_pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter,const float delta){
+ int aw_pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter,const float delta){
         
     
         size_t total_pixels = image_size[0] * image_size[1]  * image_size[2] ;
@@ -284,10 +287,14 @@ do { \
         // memory for image
         cudaMalloc(&d_image, mem_size);
         cudaMemcpy(d_image, img, mem_size, cudaMemcpyHostToDevice);
-        cudaCheckErrors("Memory Malloc and Memset: SRC");
+        if (cudaCheckErrors("Memory Malloc and Memset: SRC")) {
+            return 1;
+        }
         // memory for df
         cudaMalloc(&d_dimgTV, mem_size);
-        cudaCheckErrors("Memory Malloc and Memset: TV");
+        if (cudaCheckErrors("Memory Malloc and Memset: TV")) {
+            return 1;
+        }
         
         cudaMalloc(&d_norm2, mem_size);
         cudaCheckErrors("Memory Malloc and Memset: TV");
@@ -311,7 +318,11 @@ do { \
             
             // Compute the gradient of the TV norm
             gradientTV<<<gridGrad, blockGrad>>>(d_image,d_dimgTV,image_size[2], image_size[1],image_size[0],delta);
-            cudaCheckErrors("Gradient");
+            if (cudaCheckErrors("Gradient")) {
+                return 1;
+            }
+
+
 //             cudaMemcpy(dst, d_dimgTV, mem_size, cudaMemcpyDeviceToHost);
             
             cudaMemcpy(d_norm2, d_dimgTV, mem_size, cudaMemcpyDeviceToDevice);
@@ -355,6 +366,7 @@ do { \
         cudaFree(d_norm2);
 
         cudaCheckErrors("Memory free");
+        return 0;
         
     }
     

@@ -66,6 +66,7 @@ do { \
                 printf("%s \n",msg);\
                 cudaDeviceReset();\
                 printf("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
+                exit(__err);\
         } \
 } while (0)
     

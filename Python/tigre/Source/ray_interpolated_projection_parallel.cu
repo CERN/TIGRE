@@ -61,7 +61,9 @@ do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
                 printf("%s \n",msg);\
-                printf("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
+                printf("CBCT:CUDA:Ax_parallel_beam_interpolated",cudaGetErrorString(__err));\
+                cudaDeviceReset();\
+                exit(__err);\
         } \
 } while (0)
     
@@ -169,12 +171,10 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
 
 
 int interpolation_projection_parallel(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
-    
- 
+
     // copy data to CUDA memory
 
     cudaArray *d_imagedata = 0;
-    
     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
     cudaMalloc3DArray(&d_imagedata, &channelDesc, extent);

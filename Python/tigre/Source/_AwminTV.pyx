@@ -18,7 +18,6 @@ cimport numpy as np
 import numpy as np
 
 np.import_array()
-
 from libc.stdlib cimport malloc, free 
 
 cdef extern from "numpy/arrayobject.h":
@@ -26,11 +25,8 @@ cdef extern from "numpy/arrayobject.h":
     void PyArray_CLEARFLAGS(np.ndarray arr, int flags)
 
 cdef extern from "POCS_TV2.hpp":
-    cdef void aw_pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter, float delta)
-
+    cdef int aw_pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter, float delta)
 def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100, float delta=-0.005):
-
-    
     cdef np.npy_intp size_img[3]
     size_img[0]= <np.npy_intp> src.shape[0]
     size_img[1]= <np.npy_intp> src.shape[1]
@@ -45,7 +41,10 @@ def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter 
 
     cdef float* c_src = <float*> src.data
     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
-    aw_pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter, delta)
+    check_error = aw_pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter, delta)
+    print(check_error)
+    if check_error == 1:
+        raise ValueError('CUDA extension failed.')
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
     PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)
 
