@@ -105,7 +105,16 @@ geo.rotDetector=[0;0;0];                    % Rotation of the detector, by
                                             % This can also be defined per
                                             % angle        
                                             
-geo.mode='cone';                            % Or 'parallel'. Geometry type.                                             
+geo.mode='cone';                            % Or 'parallel'. Geometry type.  
+
+%% Alternatively, you can generate default geometries as:
+
+geoCone=defaultGeometry();
+geoCone=defaultGeometry('mode','cone');
+geoCone=defaultGeometry('nVoxel',[64;64;128]);
+geoCone=defaultGeometry('nDetector',[512;128]);
+geoParallel=defaultGeometry('mode','parallel');
+% etc
 %% Plot the geometry
                                             
 plotgeometry(geo,-pi/6);                   
