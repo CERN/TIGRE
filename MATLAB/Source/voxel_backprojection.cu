@@ -453,9 +453,8 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
             // Now that we have backprojected all the image chunk (for the current projection chunk)
             // we need to take it out of the GPU
             // Exception: when each GPU is handlin a single image chunk and we have not finished with the projections
-            cudaDeviceSynchronize();
             if(proj==split_projections-1 || split_image>1){
-                
+                cudaDeviceSynchronize();
                 for (dev = 0; dev < deviceCount; dev++){
                     cudaSetDevice(dev);
                     num_bytes_img_curr=geoArray[img_slice*deviceCount+dev].nVoxelX*geoArray[img_slice*deviceCount+dev].nVoxelY*geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
@@ -481,7 +480,9 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         cudaSetDevice(dev);
         cudaFree(dimage[dev]);
     }
+    
     freeGeoArray(split_image*deviceCount,geoArray);
+    
     cudaCheckErrors("cudaFree d_imagedata fail");
     cudaDeviceReset(); // For the Nvidia Visual Profiler
     return 0;
@@ -535,7 +536,6 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
     size_t mem_proj=        (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
     
     
-    // Initialize variables for spliting procedure choosing algorithm.
     
     
     // Does everything fit in the GPU?

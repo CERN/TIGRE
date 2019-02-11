@@ -346,7 +346,6 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     }
     
     
-    
     for (unsigned int sp=0;sp<splits;sp++){
         
         // Create texture objects for all GPUs
@@ -435,9 +434,9 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
             
         }
         free(dProjection_accum);
-    }
-    free(geoArray);
+    }    
     freeGeoArray(splits,geoArray);
+    free(geoArray);
     cudaCheckErrors("cudaFree d_imagedata fail");
     
     cudaDeviceReset();
