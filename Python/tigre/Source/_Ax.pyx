@@ -24,7 +24,7 @@ cdef extern from "ray_interpolated_projection_parallel.hpp":
 
 def cuda_raise_errors(error_code):
     if error_code:
-        raise ValueError('TIGRE:Call to Ax failed')
+        raise ValueError('TIGRE: Call to Ax failed')
 
 def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=2] angles, projection_type="ray-voxel", mode="cone"):
 

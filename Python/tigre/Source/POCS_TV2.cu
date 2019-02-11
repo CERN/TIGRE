@@ -286,7 +286,7 @@ inline int cudaCheckErrors(const char * msg)
         // Prepare for MultiGPU
         int deviceCount = 0;
         cudaGetDeviceCount(&deviceCount);
-        cudaCheckErrors("Device query fail");
+        if(cudaCheckErrors("Device query fail")) {return 1;}
         if (deviceCount == 0) {
             printf("minimizeTV:POCS_TV2:GPUselect:There are no available device(s) that support CUDA\n");
             cudaDeviceReset();
@@ -326,7 +326,7 @@ inline int cudaCheckErrors(const char * msg)
                 cudaDeviceReset();
                 return 1;
             }
-            cudaCheckErrors("Check mem error");
+            if(cudaCheckErrors("Check mem error")){return 1;}
             
             mem_GPU_global=(memfree<mem_GPU_global)?memfree:mem_GPU_global;
         }
@@ -407,7 +407,7 @@ inline int cudaCheckErrors(const char * msg)
             cudaMalloc((void**)&d_dimgTV[dev]   , mem_img_each_GPU);
             cudaMalloc((void**)&d_norm2[dev]    , slices_per_split*mem_slice_image);
             cudaMalloc((void**)&d_norm2aux[dev] , mem_auxiliary);
-            cudaCheckErrors("Malloc  error");
+            if(cudaCheckErrors("Malloc  error")){return 1;}
             
             
         }
@@ -468,7 +468,7 @@ inline int cudaCheckErrors(const char * msg)
                     }
                 }
                 cudaDeviceSynchronize();
-                cudaCheckErrors("Memcpy failure");
+                if(cudaCheckErrors("Memcpy failure")){return 1;}
                 
                 // if we need to split and its not the first iteration, then we need to copy from Host memory the previosu result.
                 if (splits>1 & i>0){
@@ -494,7 +494,7 @@ inline int cudaCheckErrors(const char * msg)
                     
                 }
                 cudaDeviceSynchronize();
-                cudaCheckErrors("Memcpy failure on multi split");
+                if(cudaCheckErrors("Memcpy failure on multi split")){return 1;}
                 for(unsigned int ib=0;  (ib<(buffer_length-1)) && ((i+ib)<maxIter);  ib++){
                     
                     // For the gradient
@@ -513,7 +513,7 @@ inline int cudaCheckErrors(const char * msg)
                     }
                     
                     cudaDeviceSynchronize();
-                    cudaCheckErrors("Gradient");
+                    if(cudaCheckErrors("Gradient")){return 1;}
                     
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(dev);
@@ -522,7 +522,7 @@ inline int cudaCheckErrors(const char * msg)
                         cudaMemcpyAsync(d_norm2[dev], d_dimgTV[dev]+buffer_pixels, image_size[0]*image_size[1]*curr_slices*sizeof(float), cudaMemcpyDeviceToDevice);
                     }
                     cudaDeviceSynchronize();
-                    cudaCheckErrors("Copy from gradient call error");
+                    if(cudaCheckErrors("Copy from gradient call error")){return 1;}
                     
                     
                     // Compute the L2 norm of the gradint. For that, reduction is used.
@@ -551,7 +551,7 @@ inline int cudaCheckErrors(const char * msg)
                         }
                     }
                     cudaDeviceSynchronize();
-                    cudaCheckErrors("Reduction error");
+                    if(cudaCheckErrors("Reduction error")){return 1;}
                     
                     
                     
@@ -582,7 +582,7 @@ inline int cudaCheckErrors(const char * msg)
                         multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dimgTV[dev]+buffer_pixels,alpha,   total_pixels);
                     }
                     cudaDeviceSynchronize();
-                    cudaCheckErrors("Scalar operations error");
+                    if(cudaCheckErrors("Scalar operations error")){return 1;}
                     
                     //SUBSTRACT GRADIENT
                     //////////////////////////////////////////////
@@ -628,7 +628,7 @@ inline int cudaCheckErrors(const char * msg)
                     }
                 }
                 cudaDeviceSynchronize();
-                cudaCheckErrors("Memory gather error");
+                if(cudaCheckErrors("Memory gather error")){return 1;}
                 
                 totalsum_prev+=sum_curr_spl;
             }
@@ -644,7 +644,7 @@ inline int cudaCheckErrors(const char * msg)
                 cudaMemcpy(dst+slices_per_split*image_size[0]*image_size[1]*dev, d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
             }
         }
-        cudaCheckErrors("Copy result back");
+        if(cudaCheckErrors("Copy result back")){return 1;}
         
         for(dev=0; dev<deviceCount;dev++){
             cudaSetDevice(dev);
@@ -656,7 +656,7 @@ inline int cudaCheckErrors(const char * msg)
         if (splits==1){
             cudaFreeHost(buffer);
         }
-        cudaCheckErrors("Memory free");
+        if(cudaCheckErrors("Memory free")){return 1;}
         cudaDeviceReset();
         return 0;
     }

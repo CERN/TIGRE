@@ -29,7 +29,7 @@ cdef extern from "voxel_backprojection_parallel_spherical.hpp":
 
 def cuda_raise_errors(error_code):
     if error_code:
-        raise ValueError('TIGRE:Call to ATb failed')
+        raise ValueError('TIGRE: Call to ATb failed')
 
 
 

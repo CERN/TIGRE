@@ -174,7 +174,7 @@ int voxel_backprojection_spherical(float const * const projections, Geometry geo
     // Prepare for MultiGPU
     int deviceCount = 0;
     cudaGetDeviceCount(&deviceCount);
-    cudaCheckErrors("Device query fail");
+    if(cudaCheckErrors("Device query fail")){return 1;}
     if (deviceCount == 0) {
         printf("Atb:Voxel_backprojection_spherical:GPUselect:There are no available device(s) that support CUDA\n");
         cudaDeviceReset();
@@ -206,7 +206,7 @@ int voxel_backprojection_spherical(float const * const projections, Geometry geo
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
         cudaMalloc((void**)&dimage[dev], num_bytes_img);
-        cudaCheckErrors("cudaMalloc fail");
+        if(cudaCheckErrors("cudaMalloc fail")){return 1;}
     }
     
     // Start with the main loop. The Projection data needs to be allocated and dealocated in the main loop
@@ -236,7 +236,7 @@ int voxel_backprojection_spherical(float const * const projections, Geometry geo
                 for (dev = 0; dev < deviceCount; dev++){
                     cudaSetDevice(dev);
                     cudaMemset(dimage[dev],0,num_bytes_img);
-                    cudaCheckErrors("memset fail");
+                    if(cudaCheckErrors("memset fail")){return 1;}
                 }
             }
             // If we have more than one chunck of projections, then we need to put back the previous results into the GPU
@@ -247,7 +247,7 @@ int voxel_backprojection_spherical(float const * const projections, Geometry geo
                     num_bytes_img_curr=geoArray[img_slice*deviceCount+dev].nVoxelX*geoArray[img_slice*deviceCount+dev].nVoxelY*geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
                     img_linear_idx_start=geo.nVoxelX*geo.nVoxelY*geoArray[0].nVoxelZ*(img_slice*deviceCount+dev);
                     cudaMemcpy(dimage[dev],&result[img_linear_idx_start], num_bytes_img_curr, cudaMemcpyHostToDevice);
-                    cudaCheckErrors("cudaMemcpy previous result fail");
+                    if(cudaCheckErrors("cudaMemcpy previous result fail")){return 1;}
                 }
                 
             }
@@ -290,7 +290,7 @@ int voxel_backprojection_spherical(float const * const projections, Geometry geo
                     offDetec.y=geo.offDetecV[currProjNumber_global];
                     
                     kernelPixelBackprojectionFDK_spherical<<<grid,block>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],currProjNumber_global,geo.COR[currProjNumber_global],geo.DSD[currProjNumber_global],geo.DSO[currProjNumber_global],deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,source,texProj[dev]);
-                    cudaCheckErrors("Kernel fail");
+                    if(cudaCheckErrors("Kernel fail")){return 1;}
                 }
             }
             cudaDeviceSynchronize();
@@ -301,7 +301,7 @@ int voxel_backprojection_spherical(float const * const projections, Geometry geo
                     num_bytes_img_curr=geoArray[img_slice*deviceCount+dev].nVoxelX*geoArray[img_slice*deviceCount+dev].nVoxelY*geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
                     img_linear_idx_start=geo.nVoxelX*geo.nVoxelY*geoArray[0].nVoxelZ*(img_slice*deviceCount+dev);
                     cudaMemcpy(&result[img_linear_idx_start], dimage[dev], num_bytes_img_curr, cudaMemcpyDeviceToHost);
-                    cudaCheckErrors("cudaMemcpy result fail");
+                    if(cudaCheckErrors("cudaMemcpy result fail")){return 1;}
                 }
             }
             cudaDeviceSynchronize();
@@ -322,7 +322,7 @@ int voxel_backprojection_spherical(float const * const projections, Geometry geo
         cudaFree(dimage[dev]);
     }
     freeGeoArray(split_image*deviceCount,geoArray);
-    cudaCheckErrors("cudaFree d_imagedata fail");
+    if(cudaCheckErrors("cudaFree d_imagedata fail")){return 1;}
     cudaDeviceReset(); // For the Nvidia Visual Profiler
     return 0;
     

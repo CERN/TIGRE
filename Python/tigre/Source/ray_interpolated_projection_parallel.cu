@@ -179,7 +179,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
     cudaMalloc3DArray(&d_imagedata, &channelDesc, extent);
-    cudaCheckErrors("cudaMalloc3D error 3D tex");
+    if(cudaCheckErrors("cudaMalloc3D error 3D tex")){return 1;}
     
     cudaMemcpy3DParms copyParams = { 0 };
     copyParams.srcPtr = make_cudaPitchedPtr((void*)img, extent.width*sizeof(float), extent.width, extent.height);
@@ -188,7 +188,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     copyParams.kind = cudaMemcpyHostToDevice;
     cudaMemcpy3D(&copyParams);
     
-    cudaCheckErrors("cudaMemcpy3D fail");
+    if(cudaCheckErrors("cudaMemcpy3D fail")){return 1;}
     
     // Configure texture options
     tex.normalized = false;
@@ -199,7 +199,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     
     cudaBindTextureToArray(tex, d_imagedata, channelDesc);
     
-    cudaCheckErrors("3D texture memory bind fail");
+    if(cudaCheckErrors("3D texture memory bind fail")){return 1;}
     
     
     //Done! Image put into texture memory.
@@ -208,7 +208,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(float);
     float* dProjection;
     cudaMalloc((void**)&dProjection, num_bytes);
-    cudaCheckErrors("cudaMalloc fail");
+    if(cudaCheckErrors("cudaMalloc fail")){return 1;}
 
     
 
@@ -231,21 +231,21 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
         //Interpolation!!
         
         kernelPixelDetector_parallel<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,geo.DSO[i],floor(maxdist));
-        cudaCheckErrors("Kernel fail");
+        if(cudaCheckErrors("Kernel fail")){return 1;}
         // copy result to host
         cudaMemcpy(result[i], dProjection, num_bytes, cudaMemcpyDeviceToHost);
-        cudaCheckErrors("cudaMemcpy fail");
+        if(cudaCheckErrors("cudaMemcpy fail")){return 1;}
         
            
 
     }
 
     cudaUnbindTexture(tex);
-    cudaCheckErrors("Unbind  fail");
+    if(cudaCheckErrors("Unbind  fail")){return 1;}
     
     cudaFree(dProjection);
     cudaFreeArray(d_imagedata);
-    cudaCheckErrors("cudaFree d_imagedata fail");
+    if(cudaCheckErrors("cudaFree d_imagedata fail")){return 1;}
     
     
     

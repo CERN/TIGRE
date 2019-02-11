@@ -256,7 +256,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     // Prepare for MultiGPU
     int deviceCount = 0;
     cudaGetDeviceCount(&deviceCount);
-    cudaCheckErrors("Device query fail");
+    if(cudaCheckErrors("Device query fail")){return 1;}
     if (deviceCount == 0) {
         printf("Ax:Siddon_projection:GPUselect:There are no available device(s) that support CUDA\n");
         cudaDeviceReset();
@@ -295,7 +295,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
             cudaDeviceReset();
             return 1;
         }
-        cudaCheckErrors("Check mem error");
+        if(cudaCheckErrors("Check mem error")){return 1;}
         
         mem_GPU_global=(memfree<mem_GPU_global)?memfree:mem_GPU_global;
     }
@@ -335,7 +335,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
             cudaSetDevice(dev);
             cudaMalloc((void**)&dProjection_accum[dev], num_bytes_proj);
             cudaMemset(dProjection_accum[dev],0,num_bytes_proj);
-            cudaCheckErrors("cudaMallocauxiliarty projections fail");
+            if(cudaCheckErrors("cudaMallocauxiliarty projections fail")){return 1;}
         }
     }
     
@@ -345,7 +345,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         cudaSetDevice(dev);
         cudaMalloc((void**)&dProjection[dev], num_bytes_proj);
         cudaMemset(dProjection[dev],0,num_bytes_proj);
-        cudaCheckErrors("cudaMalloc projections fail");
+        if(cudaCheckErrors("cudaMalloc projections fail")){return 1;}
     }
     
     
@@ -360,7 +360,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         //First one shoudl always be  the same size as all the rest but the last
         linear_idx_start= sp*geoArray[0].nVoxelX*geoArray[0].nVoxelY*geoArray[0].nVoxelZ;
         CreateTexture(deviceCount,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg);
-        cudaCheckErrors("Texture object creation fail");
+        if(cudaCheckErrors("Texture object creation fail")){return 1;}
         
         
         
@@ -412,7 +412,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
                 }
                 
             }
-            cudaCheckErrors("cudaMemcpy output fail");
+            if(cudaCheckErrors("cudaMemcpy output fail")){return 1;}
         }
         
         for (dev = 0; dev < deviceCount; dev++){
@@ -441,7 +441,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     }
     free(geoArray);
     freeGeoArray(splits,geoArray);
-    cudaCheckErrors("cudaFree d_imagedata fail");
+    if(cudaCheckErrors("cudaFree d_imagedata fail")){return 1;}
     
     cudaDeviceReset();
     return 0;

@@ -290,7 +290,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     // Prepare for MultiGPU
     int deviceCount = 0;
     cudaGetDeviceCount(&deviceCount);
-    cudaCheckErrors("Device query fail");
+    if(cudaCheckErrors("Device query fail")){return 1;}
     if (deviceCount == 0) {
         printf("Atb:Voxel_backprojection:GPUselect:There are no available device(s) that support CUDA\n");
         cudaDeviceReset();
@@ -325,7 +325,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
         cudaMalloc((void**)&dimage[dev], num_bytes_img);
-        cudaCheckErrors("cudaMalloc fail");
+        if(cudaCheckErrors("cudaMalloc fail")){return 1;}
     }
     
     
@@ -356,7 +356,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                 for (dev = 0; dev < deviceCount; dev++){
                     cudaSetDevice(dev);
                     cudaMemset(dimage[dev],0,num_bytes_img);
-                    cudaCheckErrors("memset fail");
+                    if(cudaCheckErrors("memset fail")){return 1;}
                 }
             }
             // If we have more than one chunck of projections, then we need to put back the previous results into the GPU
@@ -367,7 +367,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                     num_bytes_img_curr=geoArray[img_slice*deviceCount+dev].nVoxelX*geoArray[img_slice*deviceCount+dev].nVoxelY*geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
                     img_linear_idx_start=geo.nVoxelX*geo.nVoxelY*geoArray[0].nVoxelZ*(img_slice*deviceCount+dev);
                     cudaMemcpy(dimage[dev],&result[img_linear_idx_start], num_bytes_img_curr, cudaMemcpyHostToDevice);
-                    cudaCheckErrors("cudaMemcpy previous result fail");
+                    if(cudaCheckErrors("cudaMemcpy previous result fail")){return 1;}
                 }
                 
             }
@@ -446,7 +446,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                     cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*6*PROJ_PER_KERNEL);
                     
                     kernelPixelBackprojectionFDK<<<grid,block>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,current_proj_split_size,texProj[dev]);
-                    cudaCheckErrors("Kernel fail");
+                    if(cudaCheckErrors("Kernel fail")){return 1;}
                     
                 }  // END for
                 //////////////////////////////////////////////////////////////////////////////////////
@@ -464,7 +464,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                     num_bytes_img_curr=geoArray[img_slice*deviceCount+dev].nVoxelX*geoArray[img_slice*deviceCount+dev].nVoxelY*geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
                     img_linear_idx_start=geo.nVoxelX*geo.nVoxelY*geoArray[0].nVoxelZ*(img_slice*deviceCount+dev);
                     cudaMemcpy(&result[img_linear_idx_start], dimage[dev], num_bytes_img_curr, cudaMemcpyDeviceToHost);
-                    cudaCheckErrors("cudaMemcpy result fail");
+                    if(cudaCheckErrors("cudaMemcpy result fail")){return 1;}
                 }
             }
             cudaDeviceSynchronize();
@@ -485,7 +485,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         cudaFree(dimage[dev]);
     }
     freeGeoArray(split_image*deviceCount,geoArray);
-    cudaCheckErrors("cudaFree d_imagedata fail");
+    if(cudaCheckErrors("cudaFree d_imagedata fail")){return 1;}
     cudaDeviceReset(); // For the Nvidia Visual Profiler
     return 0;
     
@@ -528,7 +528,7 @@ int splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int*
             cudaDeviceReset();
             return 1;
         }
-        cudaCheckErrors("Check mem error");
+        if(cudaCheckErrors("Check mem error")){return 1;}
         
         mem_GPU_global=(memfree<mem_GPU_global)?memfree:mem_GPU_global;
     }

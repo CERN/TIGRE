@@ -301,7 +301,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
     const cudaExtent extent = make_cudaExtent(geo.nDetecV,geo.nDetecU,nalpha);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
     cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent);
-    cudaCheckErrors("cudaMalloc3D error 3D tex");
+    if(cudaCheckErrors("cudaMalloc3D error 3D tex")){return 1;}
     
     cudaMemcpy3DParms copyParams = { 0 };
     copyParams.srcPtr = make_cudaPitchedPtr((void*)projections, extent.width*sizeof(float), extent.width, extent.height);
@@ -310,7 +310,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
     copyParams.kind = cudaMemcpyHostToDevice;
     cudaMemcpy3D(&copyParams);
     
-    cudaCheckErrors("cudaMemcpy3D fail");
+    if(cudaCheckErrors("cudaMemcpy3D fail")){return 1;}
     
     // Configure texture options
     tex.normalized = false;
@@ -321,7 +321,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
     
     cudaBindTextureToArray(tex, d_projectiondata, channelDesc);
     
-    cudaCheckErrors("3D texture memory bind fail");
+    if(cudaCheckErrors("3D texture memory bind fail")){return 1;}
     
     
     // Allocate result image memory
@@ -329,7 +329,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
     float* dimage;
     cudaMalloc((void**)&dimage, num_bytes);
     cudaMemset(dimage,0,num_bytes);
-    cudaCheckErrors("cudaMalloc fail");
+    if(cudaCheckErrors("cudaMalloc fail")){return 1;}
     
 
     int divx,divy,divz;
@@ -394,7 +394,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
         cudaMemcpyToSymbol(projParamsArrayDevParallel, projParamsArrayHostParallel, sizeof(Point3D)*6*PROJ_PER_KERNEL);
         
         kernelPixelBackprojection_parallel<<<grid,block>>>(geo,dimage,i,nalpha);
-        cudaCheckErrors("Kernel fail");
+        if(cudaCheckErrors("Kernel fail")){return 1;}
     }  // END for
     
     //////////////////////////////////////////////////////////////////////////////////////
@@ -403,14 +403,14 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
     
 
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
-    cudaCheckErrors("cudaMemcpy result fail");
+    if(cudaCheckErrors("cudaMemcpy result fail")){return 1;}
     
     cudaUnbindTexture(tex);
-    cudaCheckErrors("Unbind  fail");
+    if(cudaCheckErrors("Unbind  fail")){return 1;}
     
     cudaFree(dimage);
     cudaFreeArray(d_projectiondata);
-    cudaCheckErrors("cudaFree d_imagedata fail");
+    if(cudaCheckErrors("cudaFree d_imagedata fail")){return 1;}
     cudaDeviceReset();
     return 0;
     

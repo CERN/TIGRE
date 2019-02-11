@@ -179,7 +179,7 @@ inline int cudaCheckErrors(const char * msg)
         // Prepare for MultiGPU
         int deviceCount = 0;
         cudaGetDeviceCount(&deviceCount);
-        cudaCheckErrors("Device query fail");
+        if(cudaCheckErrors("Device query fail")){return 1;}
         if (deviceCount == 0) {
             printf("tvDenoise:tvdenoising:GPUselect:There are no available device(s) that support CUDA\n");
             cudaDeviceReset();
@@ -218,7 +218,7 @@ inline int cudaCheckErrors(const char * msg)
                 cudaDeviceReset();
                 return 1;
             }
-            cudaCheckErrors("Check mem error");
+            if(cudaCheckErrors("Check mem error")){return 1;}
             
             mem_GPU_global=(memfree<mem_GPU_global)?memfree:mem_GPU_global;
         }
@@ -281,13 +281,13 @@ inline int cudaCheckErrors(const char * msg)
             printf("tvDenoise:tvdenoising:Memory:TV dneoising requires 5 times the image memory. Your GPU(s) do not have the required memory.\n This memory will be attempted to allocate on the CPU, which may fail or slow the computation by a very significant amount.\n If you want to kill the execution: CTRL+C");
                         
             cudaMallocHost((void**)&h_px,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
-            cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
+            if(cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine")){return 1;}
             
             cudaMallocHost((void**)&h_py,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
-            cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
+            if(cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine")){return 1 ;}
             
             cudaMallocHost((void**)&h_pz,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
-            cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
+            if(cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine")){return 1;}
             h_u=dst;
 //             if (h_u==NULL){
 //                 mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising","Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");\
@@ -322,7 +322,7 @@ inline int cudaCheckErrors(const char * msg)
             cudaMalloc((void**)&d_pz[dev],  mem_img_each_GPU);
         }
         cudaDeviceSynchronize();
-        cudaCheckErrors("Malloc  error");
+        if(cudaCheckErrors("Malloc  error")){return 1;}
         
 
         
@@ -379,7 +379,7 @@ inline int cudaCheckErrors(const char * msg)
                     }
                 }
                 cudaDeviceSynchronize();
-                cudaCheckErrors("Memcpy failure");
+                if(cudaCheckErrors("Memcpy failure")){return 1;}
                 // if we need to split and its not the first iteration, then we need to copy from Host memory.
                 // d_src is the original image, with no change.
                 if (splits>1 & i>0){
@@ -418,7 +418,7 @@ inline int cudaCheckErrors(const char * msg)
                     
                 }
                 cudaDeviceSynchronize();
-                cudaCheckErrors("Memcpy failure on multi split");
+                if(cudaCheckErrors("Memcpy failure on multi split")){return 1;}
                 
                 for(unsigned int ib=0;  (ib<(buffer_length)) && ((i+ib)<maxIter);  ib++){
                     
@@ -522,14 +522,14 @@ inline int cudaCheckErrors(const char * msg)
                     }
                 }
                 cudaDeviceSynchronize();
-                cudaCheckErrors("Memory gather error");
+                if(cudaCheckErrors("Memory gather error")){return 1;}
                 
             }//END splits
         }//END main iter
         
         
         cudaDeviceSynchronize();
-        cudaCheckErrors("TV minimization");
+        if(cudaCheckErrors("TV minimization")){return 1;}
         
         if(splits==1){
             for(dev=0; dev<deviceCount;dev++){
@@ -540,7 +540,7 @@ inline int cudaCheckErrors(const char * msg)
             }
         }
         cudaDeviceSynchronize();
-        cudaCheckErrors("Copy result back");
+        if(cudaCheckErrors("Copy result back")){return 1;}
         
         for(dev=0; dev<deviceCount;dev++){
             
