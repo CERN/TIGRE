@@ -81,9 +81,17 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     c_geom.dVoxelZ = p_geometry.dVoxel[2]
     # TODO: array of constant for each alpha
     c_geom.offOrigX =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.offOrigX:
+        raise MemoryError()
     c_geom.offOrigY =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.offOrigX:
+        raise MemoryError()
     c_geom.offOrigZ =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.offOrigZ:
+        raise MemoryError()
     c_geom.DSO =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.DSO:
+        raise MemoryError()
     for i in range (total_projections):
         c_geom.offOrigX[i] = p_geometry.offOrigin[i][0]
         c_geom.offOrigY[i] = p_geometry.offOrigin[i][1]
@@ -91,6 +99,8 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     for i in range(total_projections):
         c_geom.DSO[i] = p_geometry.DSO[i]
     print("Geo 2")
+    print('Break point 1')
+    import os, signal; os.kill(os.getpid(), signal.SIGTRAP)
     ### Detector ###
     c_geom.nDetecU=p_geometry.nDetector[0]
     c_geom.nDetecV=p_geometry.nDetector[1]
@@ -102,18 +112,40 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     c_geom.dDetecV=p_geometry.dDetector[1]
     # TODO: array of constant for each alpha
     c_geom.offDetecU = <float *>malloc(total_projections * sizeof(float))
+    if c_geom.offDetecU:
+        print('c_geom not equal to zero')
+    if not c_geom.offDetecU:
+        raise MemoryError()
     c_geom.offDetecV = <float *>malloc(total_projections * sizeof(float))
+    if not c_geom.offDetecV:
+        raise MemoryError()
     c_geom.DSD =       <float *>malloc(total_projections * sizeof(float))
+    if not c_geom.DSD:
+        raise MemoryError()
+
+    print('Break point 2')
+    import os, signal; os.kill(os.getpid(), signal.SIGTRAP)
+
     for i in range(total_projections):
         c_geom.offDetecU[i] = p_geometry.offDetector[i][0]
         c_geom.offDetecV[i] = p_geometry.offDetector[i][1]
     for i in range(total_projections):
         c_geom.DSD[i] = p_geometry.DSD[i]
     print("Geo 3")
+    print('Break point 3')
+    import os, signal; os.kill(os.getpid(), signal.SIGTRAP)
     # TODO: array of 0 for each alpha
     c_geom.dRoll =  <float *>malloc(total_projections * sizeof(float))
+    if not c_geom.dRoll:
+        raise MemoryError()
     c_geom.dPitch = <float *>malloc(total_projections * sizeof(float))
+    if not c_geom.dPitch:
+        raise MemoryError()
     c_geom.dYaw =   <float *>malloc(total_projections * sizeof(float))
+    if not c_geom.dYaw:
+        raise MemoryError()
+    print('Break point 4')
+    import os, signal; os.kill(os.getpid(), signal.SIGTRAP)
     for i in range(total_projections):
         c_geom.dRoll[i] =  p_geometry.rotDetector[i][0]
         c_geom.dPitch[i] = p_geometry.rotDetector[i][1]
@@ -129,6 +161,8 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     # TODO: check this is correct line ~400 Ax.cpp. Seems like it can be omitted? Possibly redundant
     # Centre of Rotation correction.
     c_geom.COR =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.COR:
+        raise MemoryError()
     for i in range(total_projections):
         c_geom.COR[i] = p_geometry.COR[i]
     #Maximum length of cube

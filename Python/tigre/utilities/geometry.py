@@ -14,7 +14,6 @@ class Geometry(object):
         self.n_proj = None
         self.angles = None
         self.filter = None
-        self.rotDetector = np.array((0, 0, 0))
 
     def check_geo(self, angles, verbose=False):
         if angles.ndim == 1:

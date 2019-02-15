@@ -10,11 +10,11 @@ import sys
 
 # Code from https://github.com/rmcgibbo/npcuda-example/blob/master/cython/setup.py
 compute_capability_args = [#'-gencode=arch=compute_20,code=sm_20',
-                           #'-gencode=arch=compute_30,code=sm_30',
-                            '-gencode=arch=compute_37,code=sm_37',
-                            '-gencode=arch=compute_52,code=sm_52',
-                            '-gencode=arch=compute_60,code=sm_60',
-                            '-gencode=arch=compute_61,code=sm_61',
+                           '-gencode=arch=compute_30,code=sm_30',
+                            #'-gencode=arch=compute_37,code=sm_37',
+                            #'-gencode=arch=compute_52,code=sm_52',
+                            #'-gencode=arch=compute_60,code=sm_60',
+                            #'-gencode=arch=compute_61,code=sm_61',
                            # '-gencode=arch=compute_70,code=sm_70', #untested
                            '--ptxas-options=-v', '-c',
                            '--compiler-options', "'-fPIC'"]
@@ -126,13 +126,12 @@ def include_headers(filename_list, sdist=False):
                 header[1] = '.hpp'
                 header_list.append(''.join(header))
     if sdist:
-        filename_list += ['tigre/Source/types_TIGRE.hpp','tigre/Source/types.hpp']
+        filename_list += ['tigre/Source/types_TIGRE.hpp']
     return filename_list + header_list
 
 
 Ax_ext = Extension('_Ax',
-                   sources=(include_headers(['tigre/Source/projection.cpp',
-                                             'tigre/Source/Siddon_projection.cu',
+                   sources=(include_headers(['tigre/Source/Siddon_projection.cu',
                                              'tigre/Source/Siddon_projection_parallel.cu',
                                              'tigre/Source/ray_interpolated_projection.cu',
                                              'tigre/Source/ray_interpolated_projection_parallel.cu',
@@ -145,7 +144,7 @@ Ax_ext = Extension('_Ax',
                    # this syntax is specific to this build system
                    # we're only going to use certain compiler args with nvcc and not with gcc
                    # the implementation of this trick is in customize_compiler() below
-                   extra_compile_args={'gcc': [],
+                   extra_compile_args={'gcc': ['-O2'],
                                        'nvcc': compute_capability_args},
                    include_dirs=[numpy_include, CUDA['include'], 'Source'])
 
@@ -200,7 +199,7 @@ minTV_ext = Extension('_minTV',
 
 AwminTV_ext = Extension('_AwminTV',
                         sources=(include_headers(['tigre/Source/POCS_TV2.cu',
-                                                     'tigre/Source/_types.pxd',
+                                                     #'tigre/Source/_types.pxd',
                                                      'tigre/Source/_AwminTV.pyx'], sdist=(sys.argv[1] == "sdist"))),
                         library_dirs=[CUDA['lib64']],
                         libraries=['cudart'],
