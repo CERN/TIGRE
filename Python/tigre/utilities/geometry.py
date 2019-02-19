@@ -10,7 +10,6 @@ class Geometry(object):
 
     def __init__(self):
         self.mode = None
-        self.accuray = 0.5
         self.n_proj = None
         self.angles = None
         self.filter = None
@@ -153,40 +152,40 @@ class Geometry(object):
         parameters.append("TIGRE parameters")
         parameters.append("-----")
         parameters.append("Geometry parameters")
-        parameters.append("Distance from source to detector = " + str(self.DSD) + " mm")
-        parameters.append("Distance from source to origin = " + str(self.DSO) + " mm")
+        parameters.append("Distance from source to detector (DSD) = " + str(self.DSD) + " mm")
+        parameters.append("Distance from source to origin (DSO)= " + str(self.DSO) + " mm")
 
         parameters.append("-----")
         parameters.append("Detector parameters")
-        parameters.append("Number of pixels = " + str(self.nDetector))
-        parameters.append("Size of each pixel = " + str(self.dDetector) + " mm")
-        parameters.append("Total size of the detector = " + str(self.sDetector) + " mm")
+        parameters.append("Number of pixels (nDetector) = " + str(self.nDetector))
+        parameters.append("Size of each pixel (dDetector) = " + str(self.dDetector) + " mm")
+        parameters.append("Total size of the detector (sDetector) = " + str(self.sDetector) + " mm")
 
         parameters.append("-----")
         parameters.append("Image parameters")
-        parameters.append("Number of voxels = " + str(self.nVoxel))
-        parameters.append("Total size of the image = " + str(self.sVoxel) + " mm")
-        parameters.append("Size of each voxel = " + str(self.dVoxel) + " mm")
+        parameters.append("Number of voxels (nVoxel) = " + str(self.nVoxel))
+        parameters.append("Total size of the image (sVoxel) = " + str(self.sVoxel) + " mm")
+        parameters.append("Size of each voxel (dVoxel) = " + str(self.dVoxel) + " mm")
 
         parameters.append("-----")
         if hasattr(self, 'offOrigin') and hasattr(self, 'offDetector'):
             parameters.append("Offset correction parameters")
             if hasattr(self, 'offOrigin'):
-                parameters.append("Offset of image from origin = " + str(self.offOrigin) + " mm")
+                parameters.append("Offset of image from origin (offOrigin) = " + str(self.offOrigin) + " mm")
             if hasattr(self, 'offDetector'):
-                parameters.append("Offset of detector = " + str(self.offDetector) + " mm")
+                parameters.append("Offset of detector (offDetector) = " + str(self.offDetector) + " mm")
 
         parameters.append("-----")
         parameters.append("Auxillary parameters")
-        parameters.append("Samples per pixel of forward projection = " + str(self.accuracy))
+        parameters.append("Samples per pixel of forward projection (accuracy) = " + str(self.accuracy))
 
         if hasattr(self, 'rotDetector'):
             parameters.append("-----")
-            parameters.append("Rotation of the Detector = " + str(self.rotDetector) + " rad")
+            parameters.append("Rotation of the Detector (rotDetector) = " + str(self.rotDetector) + " rad")
 
         if hasattr(self, 'COR'):
             parameters.append("-----")
-            parameters.append("Centre of rotation correction = " + str(self.COR) + " mm")
+            parameters.append("Centre of rotation correction (COR) = " + str(self.COR) + " mm")
 
         return '\n'.join(parameters)
 
@@ -202,8 +201,8 @@ class ParallelGeo(Geometry):
         self.dVoxel = np.array([1, 1, 1])
         self.sVoxel = self.nVoxel
 
-        self.DSO = np.array([self.nVoxel[0]], dtype=np.float32)
-        self.DSD = np.array([self.nVoxel[0] * 2], dtype=np.float32)
+        self.DSO = np.array(self.nVoxel[0], dtype=np.float32)
+        self.DSD = np.array(self.nVoxel[0], dtype=np.float32)
 
         self.dDetector = np.array([1, 1])
         self.nDetector = self.nVoxel[:2]

@@ -20,10 +20,7 @@ class CGLS(IterativeReconAlg):
         kwargs.update(dict(W=None,V=None))
         kwargs.update(dict(blocksize=angles.shape[0]))
         self.log_parameters = False
-        # Avoid typo checking
         IterativeReconAlg.__init__(self,proj,geo,angles,niter,**kwargs)
-
-        self.reinitialise_cgls()
 
         if self.log_parameters:
             parameter_history = {}
@@ -39,6 +36,7 @@ class CGLS(IterativeReconAlg):
         self.__p__ = Atb(self.__r__, self.geo, self.angles)
         p_norm = np.linalg.norm(self.__p__.ravel(), 2)
         self.__gamma__ = p_norm * p_norm
+        np.save('vals',{'r':self.__r__, 'p':self.__p__,'gamma':self.__gamma__,'angles':angles,'geo':geo.__dict__})
 
     def reinitialise_cgls(self):
         self.__r__ = self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel')
@@ -93,5 +91,5 @@ class CGLS(IterativeReconAlg):
             self.__gamma__ = gamma1
             self.__p__ = s + beta * self.__p__
 
-cgls = decorator(CGLS)
+cgls = decorator(CGLS,name='cgls')
 

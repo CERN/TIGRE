@@ -16,5 +16,6 @@ __all__ = ['sart',
            'iterativereconalg',
            'FDK',
            'asd_pocs',
+           'awasd_pocs',
            'fbp',
            'cgls']
