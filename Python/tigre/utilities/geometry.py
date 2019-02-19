@@ -202,7 +202,7 @@ class ParallelGeo(Geometry):
         self.sVoxel = self.nVoxel
 
         self.DSO = np.array(self.nVoxel[0], dtype=np.float32)
-        self.DSD = np.array(self.nVoxel[0], dtype=np.float32)
+        self.DSD = np.array(self.nVoxel[0] *2, dtype=np.float32)
 
         self.dDetector = np.array([1, 1])
         self.nDetector = self.nVoxel[:2]
