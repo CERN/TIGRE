@@ -3,7 +3,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 
-class plotImg:
+class plotimg:
     # NOTE: type help(plotImg) after importing in order to get a readable manual.
     ('\n'
      'plotImg(cube, dim) \n'

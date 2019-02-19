@@ -214,6 +214,8 @@ class ParallelGeo(Geometry):
         self.offOrigin = np.array([0, 0, 0]);
         self.offDetector = np.array([0, 0]);
 
+        self.rotDetector = np.array([0, 0, 0])
+
 
 def geometry(mode='cone', nVoxel=None, default_geo=False, high_quality=True):
 

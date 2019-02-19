@@ -131,7 +131,8 @@ def include_headers(filename_list, sdist=False):
 
 
 Ax_ext = Extension('_Ax',
-                   sources=(include_headers(['tigre/Source/Siddon_projection.cu',
+                   sources=(include_headers(['tigre/Source/projection.cpp',
+                                             'tigre/Source/Siddon_projection.cu',
                                              'tigre/Source/Siddon_projection_parallel.cu',
                                              'tigre/Source/ray_interpolated_projection.cu',
                                              'tigre/Source/ray_interpolated_projection_parallel.cu',

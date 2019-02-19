@@ -42,14 +42,6 @@ Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
 #include "types_TIGRE.hpp"
-#include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
-#include "voxel_backprojection.hpp"
-#include "voxel_backprojection_parallel.hpp"
-#include "voxel_backprojection_spherical.hpp"
-#include <math.h>
-#include <stdio.h>
 
 
 int voxel_backprojection_parallel_spherical(float const * const projections, Geometry geo, float* result,float const * const angles,int nangles);

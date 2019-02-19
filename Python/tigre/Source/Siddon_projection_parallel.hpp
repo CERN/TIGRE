@@ -50,12 +50,6 @@ Codes  : https://github.com/CERN/TIGRE
 #include "ray_interpolated_projection.hpp"
 #include "types_TIGRE.hpp"
 
-#include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
-#include <math.h>
-#include <stdio.h>
-
 
 #ifndef PROJECTION_PARALLEL_HPP_SIDDON
 #define PROJECTION_PARALLEL_HPP_SIDDON

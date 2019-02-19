@@ -80,8 +80,20 @@ class IterativeReconAlg(object):
                  "random"         : orders them randomply
                  "angularDistance": chooses the next subset with the
                                     biggest angular distance with the ones used
-    Examples
+    Usage
     --------
+    >>> import numpy as np
+    >>> import tigre
+    >>> import tigre.algorithms as algs
+    >>> from tigre.demos.Test_data import data_loader
+    >>> geo = tigre.geometry(mode='cone',default_geo=True,
+    >>>                         nVoxel=np.array([64,64,64]))
+    >>> angles = np.linspace(0,2*np.pi,100)
+    >>> src_img = data_loader.load_head_phantom(geo.nVoxel)
+    >>> proj = tigre.Ax(src_img,geo,angles)
+    >>> output = algs.iterativereconalg(proj,geo,angles,niter=50
+    >>>                                 blocksize=20)
+
     tigre.demos.run() to launch ipython notebook file with examples.
 
      """

@@ -49,8 +49,12 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 
-
+#include <algorithm>
+#include <cuda_runtime_api.h>
+#include <cuda.h>
 #include "ray_interpolated_projection_parallel.hpp"
+#include <stdio.h>
+#include <math.h>
 
 
 inline int cudaCheckErrors(const char * msg)
@@ -58,7 +62,7 @@ inline int cudaCheckErrors(const char * msg)
    cudaError_t __err = cudaGetLastError();
    if (__err != cudaSuccess)
    {
-      printf("CUDA:ray_interpolated_projection_parallel:%s:%s\n",msg, cudaGetErrorString(__err));
+      printf("CUDA:Siddon_projection:%s:%s\n",msg, cudaGetErrorString(__err));
       cudaDeviceReset();
       return 1;
    }
@@ -134,9 +138,9 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     S.z=(source.z+pixelU*deltaU.z+pixelV*deltaV.z);
     
     // Length is the ray length in normalized space
-    double length=sqrtf((S.x-P.x)*(S.x-P.x)+(S.y-P.y)*(S.y-P.y)+(S.z-P.z)*(S.z-P.z));
+    double length=sqrt((S.x-P.x)*(S.x-P.x)+(S.y-P.y)*(S.y-P.y)+(S.z-P.z)*(S.z-P.z));
     //now legth is an integer of Nsamples that are required on this line
-    length=ceilf(length/geo.accuracy);//Divide the directional vector by an integer
+    length=ceil(length/geo.accuracy);//Divide the directional vector by an integer
     vectX=(P.x -S.x)/(length);
     vectY=(P.y -S.y)/(length);
     vectZ=(P.z -S.z)/(length);
@@ -150,32 +154,29 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     
     // limit the amount of mem access after the cube, but before the detector.
     if ((2*DSO/geo.dVoxelX+maxdist)/geo.accuracy  <   length)
-        length=ceilf((2*DSO/geo.dVoxelX+maxdist)/geo.accuracy);  
+        length=ceil((2*DSO/geo.dVoxelX+maxdist)/geo.accuracy);  
     //Length is not actually a length, but the amount of memreads with given accuracy ("samples per voxel")
     
-    for (i=floorf(maxdist/geo.accuracy); i<=length; i=i+1){
+    for (i=floor(maxdist/geo.accuracy); i<=length; i=i+1){
         tx=vectX*i+S.x;
         ty=vectY*i+S.y;
         tz=vectZ*i+S.z;
         
-        sum += tex3D(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
+        sum += tex3D(tex, tx+0.5, ty+0.5, tz+0.5); // this line is 94% of time.
         
     }
-    float deltalength=sqrtf((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
-                            (vectY*geo.dVoxelY)*(vectY*geo.dVoxelY)+
-                            (vectZ*geo.dVoxelZ)*(vectZ*geo.dVoxelZ) );
+    float deltalength=sqrt((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
+            (vectY*geo.dVoxelY)*(vectY*geo.dVoxelY)+(vectZ*geo.dVoxelZ)*(vectZ*geo.dVoxelZ) );
     detector[idx]=sum*deltalength;
 }
 
 
 
 int interpolation_projection_parallel(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
-    
- 
+
     // copy data to CUDA memory
 
     cudaArray *d_imagedata = 0;
-    
     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
     cudaMalloc3DArray(&d_imagedata, &channelDesc, extent);
@@ -211,7 +212,14 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     if(cudaCheckErrors("cudaMalloc fail")){return 1;}
 
     
-
+//     If we are going to time
+    bool timekernel=false;
+    cudaEvent_t start, stop;
+    float elapsedTime;
+    if (timekernel){
+        cudaEventCreate(&start);
+        cudaEventRecord(start,0);
+    } 
     
     // 16x16 gave the best performance empirically
     // Funnily that makes it compatible with most GPUs.....
@@ -238,6 +246,13 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
         
            
 
+    }
+    if (timekernel){
+        cudaEventCreate(&stop);
+        cudaEventRecord(stop,0);
+        cudaEventSynchronize(stop);
+        cudaEventElapsedTime(&elapsedTime, start,stop);
+        printf("%f\n" ,elapsedTime);
     }
 
     cudaUnbindTexture(tex);

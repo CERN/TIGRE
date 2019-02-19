@@ -35,17 +35,12 @@ def cuda_raise_errors(error_code):
 
 def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[np.float32_t, ndim=2] angles, krylov="FDK", mode="cone"):
 
-    print("Step 0")
     cdef int total_projections = angles.shape[0]
 
-    print("Step 0.1")
     geometry.convert_contig_mode()
 
-    print("Step 0.2")
-    print(total_projections)
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
 
-    print("Step 1")
 
     cdef float* c_model = <float*> malloc(geometry.nVoxel[0] * geometry.nVoxel[1] * geometry.nVoxel[2] * sizeof(float))
     cdef float* c_angles = <float*> angles.data
@@ -85,7 +80,7 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
         standard_rotation=True
     else:
         standard_rotation=False
-    print("Step 2")
+
     if cone_beam:
         if krylov_proj:
             if standard_rotation:
@@ -111,7 +106,6 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
             #print("voxel_backprojection_parallel_spherical being called")
             cuda_raise_errors(voxel_backprojection_parallel_spherical(c_projections, c_geometry[0], c_model, c_angles, total_projections))
 
-    print("Step 3")
 
     projections = projections.swapaxes(0,2).swapaxes(1,2).copy(order='C')
 
@@ -127,5 +121,5 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
     free_c_geometry(c_geometry)
     geometry.convert_contig_mode()
 
-    print("Step 4")
+
     return model
