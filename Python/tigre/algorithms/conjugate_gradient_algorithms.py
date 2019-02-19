@@ -36,7 +36,7 @@ class CGLS(IterativeReconAlg):
         self.__p__ = Atb(self.__r__, self.geo, self.angles)
         p_norm = np.linalg.norm(self.__p__.ravel(), 2)
         self.__gamma__ = p_norm * p_norm
-        np.save('vals',{'r':self.__r__, 'p':self.__p__,'gamma':self.__gamma__,'angles':angles,'geo':geo.__dict__})
+        
 
     def reinitialise_cgls(self):
         self.__r__ = self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel')
