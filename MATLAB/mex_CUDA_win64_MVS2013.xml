@@ -35,7 +35,7 @@
           CMDLINE300="del $OBJ $EXP $LIB $MANIFEST $ILK"
           
           COMPILER="nvcc"
-          COMPFLAGS="-gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=&#92;&quot;sm_50,compute_50&#92;&quot; -gencode arch=compute_52,code=sm_52 --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"
+          COMPFLAGS="-gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=&#92;&quot;sm_50,compute_50&#92;&quot; -gencode arch=compute_52,code=sm_52 --default-stream per-thread  --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"
           COMPDEFINES="--compiler-options=/D_CRT_SECURE_NO_DEPRECATE,/D_SCL_SECURE_NO_DEPRECATE,/D_SECURE_SCL=0,$MATLABMEX"
           MATLABMEX="/DMATLAB_MEX_FILE"
           OPTIMFLAGS="--compiler-options=/O2,/Oy-,/DNDEBUG"

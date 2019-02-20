@@ -386,7 +386,6 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     }
     
     freeGeoArray(splits,geoArray);
-    free(geoArray);
     cudaCheckErrors("cudaFree d_imagedata fail");
     
     cudaDeviceReset();
