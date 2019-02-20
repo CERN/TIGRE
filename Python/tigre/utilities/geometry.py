@@ -28,7 +28,7 @@ class Geometry(object):
             setattr(self, 'angles', angles)
         else:
             raise BufferError("Unexpected angles shape: " + str(angles.shape))
-        if self.mode == None:
+        if self.mode is None:
             setattr(self, 'mode', 'cone')
 
         manditory_attribs = ['nVoxel', 'sVoxel', 'dVoxel',
@@ -58,37 +58,51 @@ class Geometry(object):
             'nDetector*dDetecor is not equal to sDetector. Check fields.')
 
         for attrib in ['DSD', 'DSO']:
-            self._check_and_repmat(attrib, angles)
+            self.__check_and_repmat__(attrib, angles)
 
         if hasattr(self, 'offOrigin'):
-            self._check_and_repmat('offOrigin', angles)
+            self.__check_and_repmat__('offOrigin', angles)
         else:
             self.offOrigin = np.array([0, 0, 0])
-            self._check_and_repmat('offOrigin', angles)
+            self.__check_and_repmat__('offOrigin', angles)
 
         if hasattr(self, 'offDetector'):
-            self._check_and_repmat('offDetector', angles)
+            self.__check_and_repmat__('offDetector', angles)
         else:
             self.offDetector = np.array([0, 0])
             self.offDetector = np.zeros((angles.shape[0], 2))
 
         if hasattr(self, 'rotDetector'):
-            self._check_and_repmat('rotDetector', angles)
+            self.__check_and_repmat__('rotDetector', angles)
         else:
             self.rotDetector = np.array([0, 0, 0])
-            self._check_and_repmat('rotDetector', angles)
+            self.__check_and_repmat__('rotDetector', angles)
 
         if hasattr(self, 'COR'):
-            self._check_and_repmat('COR', angles)
+            self.__check_and_repmat__('COR', angles)
         else:
             self.COR = np.zeros(angles.shape[0])
-
+        # IMPORTANT: cast all numbers to float32
+        self.cast_to_single()
         if verbose:
             self._verbose_output()
 
-    def _check_and_repmat(self, attrib, angles):
+    def cast_to_single(self):
+        """
+        Casts all number values in current instance to
+        single prevision floating point types.
+        :return: None
+        """
+        for attrib in self.__dict__:
+            try:
+                setattr(self, attrib, np.float32(getattr(self, attrib)))
+            except ValueError:
+                pass
+
+    def __check_and_repmat__(self, attrib, angles):
         """
         Checks whether the attribute is a single value and repeats it into an array if it is
+        :rtype: None
         :param attrib: string
         :param angles: np.ndarray
         """
@@ -115,7 +129,7 @@ class Geometry(object):
                                                                                 (3,), (2,), (1,)]))
 
         else:
-            TypeError(
+            raise TypeError(
                 "Data type not understood for: geo." + attrib + " with type = " + str(type(getattr(self, attrib))))
 
     def _verbose_output(self):
@@ -135,32 +149,17 @@ class Geometry(object):
         for attrib in dim_attribs:
             setattr(self, attrib, getattr(self, attrib)[::-1].copy())
 
-    def issame(self, other_geo_dict):
-        geo_comp_list = []
-        if set(other_geo_dict) == set(self.__dict__):
-            for key in self.__dict__.keys():
-                if type(self.__dict__[key]) == np.ndarray:
-                    geo_comp_list.append(all(self.__dict__[key] == other_geo_dict[key]))
-                else:
-                    geo_comp_list.append(self.__dict__[key] == other_geo_dict[key])
-            return all(geo_comp_list)
-        else:
-            return False
-
-    def __str__(self):
         parameters = []
         parameters.append("TIGRE parameters")
         parameters.append("-----")
         parameters.append("Geometry parameters")
         parameters.append("Distance from source to detector (DSD) = " + str(self.DSD) + " mm")
         parameters.append("Distance from source to origin (DSO)= " + str(self.DSO) + " mm")
-
         parameters.append("-----")
         parameters.append("Detector parameters")
         parameters.append("Number of pixels (nDetector) = " + str(self.nDetector))
         parameters.append("Size of each pixel (dDetector) = " + str(self.dDetector) + " mm")
         parameters.append("Total size of the detector (sDetector) = " + str(self.sDetector) + " mm")
-
         parameters.append("-----")
         parameters.append("Image parameters")
         parameters.append("Number of voxels (nVoxel) = " + str(self.nVoxel))
@@ -201,8 +200,8 @@ class ParallelGeo(Geometry):
         self.dVoxel = np.array([1, 1, 1])
         self.sVoxel = self.nVoxel
 
-        self.DSO = np.array(self.nVoxel[0], dtype=np.float32)
-        self.DSD = np.array(self.nVoxel[0] *2, dtype=np.float32)
+        self.DSO = np.float32(self.nVoxel[0])
+        self.DSD = np.float32(self.nVoxel[0] *2)
 
         self.dDetector = np.array([1, 1])
         self.nDetector = self.nVoxel[:2]
