@@ -290,7 +290,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         cudaMemGetInfo(&memfree,&memtotal);
         if(dev==0) mem_GPU_global=memfree;
         if(memfree<memtotal/2){
-            mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+            mexErrMsgIdAndTxt("Ax:GPUselect","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
         }
         cudaCheckErrors("Check mem error");
         
@@ -469,7 +469,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
             }
             
         }
-        
+        // Free memory for the next piece of image
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
             cudaDestroyTextureObject(texImg[dev]);

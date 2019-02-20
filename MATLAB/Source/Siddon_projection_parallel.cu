@@ -2,50 +2,50 @@
  *
  * CUDA functions for ray-voxel intersection based projection
  *
- * This file has the necesary fucntiosn to perform X-ray parallel projection 
+ * This file has the necesary fucntiosn to perform X-ray parallel projection
  * operation given a geaometry, angles and image. It usesthe so-called
- * Jacobs algorithm to compute efficiently the length of the x-rays over 
+ * Jacobs algorithm to compute efficiently the length of the x-rays over
  * voxel space. Its called Siddon because Jacobs algorithm its just a small
  * improvement over the traditional Siddons method.
  *
  * CODE by       Ander Biguri
  *
----------------------------------------------------------------------------
----------------------------------------------------------------------------
-Copyright (c) 2015, University of Bath and CERN- European Organization for 
-Nuclear Research
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, 
-this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, 
-this list of conditions and the following disclaimer in the documentation 
-and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors
-may be used to endorse or promote products derived from this software without
-specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
- ---------------------------------------------------------------------------
-
-Contact: tigre.toolbox@gmail.com
-Codes  : https://github.com/CERN/TIGRE
---------------------------------------------------------------------------- 
+ * ---------------------------------------------------------------------------
+ * ---------------------------------------------------------------------------
+ * Copyright (c) 2015, University of Bath and CERN- European Organization for
+ * Nuclear Research
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * ---------------------------------------------------------------------------
+ *
+ * Contact: tigre.toolbox@gmail.com
+ * Codes  : https://github.com/CERN/TIGRE
+ * ---------------------------------------------------------------------------
  */
 
 
@@ -106,16 +106,16 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
         Point3D uvOrigin){
     
 //     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
-
+    
     unsigned long y = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long x = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned long idx =  x  * geo.nDetecV + y;
-
+    
     if ((x>= geo.nDetecU) | (y>= geo.nDetecV))
         return;
     
     
-
+    
     
     /////// Get coordinates XYZ of pixel UV
     int pixelV = geo.nDetecV-y-1;
@@ -149,7 +149,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
      *
      * Problem. In paralel beam, often ray.y or ray.x=0;
      * This leads to infinities progpagating and breaking everything.
-     * 
+     *
      * We need to fix it.
      *
      ***************************************/
@@ -257,7 +257,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
 int siddon_ray_projection_parallel(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
     
     
-  
+    
     // copy data to CUDA memory
     cudaArray *d_imagedata = 0;
     
@@ -293,17 +293,19 @@ int siddon_ray_projection_parallel(float const * const img, Geometry geo, float*
     
     
     size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(float);
-    float* dProjection;
-    cudaMalloc((void**)&dProjection, num_bytes);
-    cudaCheckErrors("cudaMalloc fail");
-    
-    bool timekernel=false;
-    cudaEvent_t start, stop;
-    float elapsedTime;
-    if (timekernel){
-        cudaEventCreate(&start);
-        cudaEventRecord(start,0);
+    float** dProjection=(float **)malloc(2*sizeof(float *));
+    for (int i = 0; i < 2; ++i){
+        cudaMalloc((void**)&dProjection[i],   num_bytes);
+        cudaCheckErrors("cudaMalloc projections fail");
     }
+    int nStreams=2;
+    cudaStream_t stream[nStreams];
+    
+    for (int i = 0; i < 2; ++i){
+        cudaStreamCreate(&stream[i]);
+    }
+    
+    
     Point3D source, deltaU, deltaV, uvOrigin;
     
     // 16x16 gave the best performance empirically
@@ -312,7 +314,7 @@ int siddon_ray_projection_parallel(float const * const img, Geometry geo, float*
     divU=16;
     divV=16;
     dim3 grid((geo.nDetecU+divU-1)/divU,(geo.nDetecV+divV-1)/divV,1);
-    dim3 block(divU,divV,1); 
+    dim3 block(divU,divV,1);
     for (int i=0;i<nangles;i++){
         
         geo.alpha=angles[i*3];
@@ -325,30 +327,33 @@ int siddon_ray_projection_parallel(float const * const img, Geometry geo, float*
         //Precompute per angle constant stuff for speed
         computeDeltas_Siddon_parallel(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Ray tracing!
-        kernelPixelDetector_parallel<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin);
-        cudaCheckErrors("Kernel fail");
+        cudaStreamSynchronize(stream[0]);
+        kernelPixelDetector_parallel<<<grid,block,0,stream[0]>>>(geo,dProjection[(int)i%2==0], source, deltaU, deltaV, uvOrigin);
+        //cudaCheckErrors("Kernel fail");
         // copy result to host
-        cudaMemcpy(result[i], dProjection, num_bytes, cudaMemcpyDeviceToHost);
-        cudaCheckErrors("cudaMemcpy fail");
+        if (i>0)
+            cudaMemcpyAsync(result[i-1],dProjection[(int)i%2!=0], num_bytes, cudaMemcpyDeviceToHost,stream[1]);
+        //cudaCheckErrors("cudaMemcpy fail");
         
         
     }
-    if (timekernel){
-        cudaEventCreate(&stop);
-        cudaEventRecord(stop,0);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&elapsedTime, start,stop);
-        mexPrintf("%f\n" ,elapsedTime);
-    }
+    cudaDeviceSynchronize();
+    int i=nangles-1;
+    cudaMemcpyAsync(result[i],dProjection[(int)i%2==0], num_bytes, cudaMemcpyDeviceToHost,stream[1]);
+
     
     cudaUnbindTexture(tex);
     cudaCheckErrors("Unbind  fail");
-    cudaFree(dProjection);
+    cudaFree(dProjection[0]);
+    cudaFree(dProjection[1]);
+    free(dProjection);
     cudaFreeArray(d_imagedata);
     cudaCheckErrors("cudaFree d_imagedata fail");
     
     
-    
+    for (int i = 0; i < 2; ++i){
+      cudaStreamDestroy(stream[i]);
+    }
     cudaDeviceReset();
     return 0;
 }
@@ -361,9 +366,9 @@ int siddon_ray_projection_parallel(float const * const img, Geometry geo, float*
  **/
 void computeDeltas_Siddon_parallel(Geometry geo, float angles,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
     Point3D S;
-
+    
     S.x  =geo.DSO[i];   S.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       S.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
-
+    
     //End point
     Point3D P,Pu0,Pv0;
     
@@ -413,7 +418,7 @@ void computeDeltas_Siddon_parallel(Geometry geo, float angles,int i, Point3D* uv
     S2.x      =S2.x/geo.dVoxelX;          S2.y      =S2.y/geo.dVoxelY;            S2.z      =S2.z/geo.dVoxelZ;
     
     
-      
+    
     //5. apply COR. Wherever everything was, now its offesetd by a bit
     float CORx, CORy;
     CORx=-geo.COR[i]*sin(geo.alpha)/geo.dVoxelX;

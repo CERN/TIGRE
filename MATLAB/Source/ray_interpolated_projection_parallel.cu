@@ -206,24 +206,23 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     
     
     size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(float);
-    float* dProjection;
-    cudaMalloc((void**)&dProjection, num_bytes);
-    cudaCheckErrors("cudaMalloc fail");
-
+    float** dProjection=(float **)malloc(2*sizeof(float *));
+    for (int i = 0; i < 2; ++i){
+        cudaMalloc((void**)&dProjection[i],   num_bytes);
+        cudaCheckErrors("cudaMalloc projections fail");
+    }
+    int nStreams=2;
+    cudaStream_t stream[nStreams];
     
-//     If we are going to time
-    bool timekernel=false;
-    cudaEvent_t start, stop;
-    float elapsedTime;
-    if (timekernel){
-        cudaEventCreate(&start);
-        cudaEventRecord(start,0);
-    } 
+    for (int i = 0; i < 2; ++i){
+      cudaStreamCreate(&stream[i]);
+    }
+ 
     
     // 16x16 gave the best performance empirically
     // Funnily that makes it compatible with most GPUs.....
-    dim3 grid(ceil((float)geo.nDetecU/32),ceil((float)geo.nDetecV/32),1);
-    dim3 block(32,32,1); 
+    dim3 grid(ceil((float)geo.nDetecU/8),ceil((float)geo.nDetecV/8),1);
+    dim3 block(8,8,1); 
     Point3D source, deltaU, deltaV, uvOrigin;
     float maxdist;
     for (unsigned int i=0;i<nangles;i++){
@@ -236,32 +235,36 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
         //Precompute per angle constant stuff for speed
         computeDeltas_parallel(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
         //Interpolation!!
-        
-        kernelPixelDetector_parallel<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,geo.DSO[i],floor(maxdist));
+        cudaStreamSynchronize(stream[0]);
+        kernelPixelDetector_parallel<<<grid,block,0,stream[0]>>>(geo,dProjection[(int)i%2==0], source, deltaU, deltaV, uvOrigin,geo.DSO[i],floor(maxdist));
         cudaCheckErrors("Kernel fail");
         // copy result to host
-        cudaMemcpy(result[i], dProjection, num_bytes, cudaMemcpyDeviceToHost);
+        if (i>0)
+            cudaMemcpyAsync(result[i-1],dProjection[(int)i%2!=0], num_bytes, cudaMemcpyDeviceToHost,stream[1]);
+        
+
         cudaCheckErrors("cudaMemcpy fail");
         
            
 
     }
-    if (timekernel){
-        cudaEventCreate(&stop);
-        cudaEventRecord(stop,0);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&elapsedTime, start,stop);
-        mexPrintf("%f\n" ,elapsedTime);
-    }
-
+    cudaDeviceSynchronize();
+    int i=nangles-1;
+    cudaMemcpyAsync(result[i],dProjection[(int)i%2==0], num_bytes, cudaMemcpyDeviceToHost,stream[1]);
     cudaUnbindTexture(tex);
     cudaCheckErrors("Unbind  fail");
     
-    cudaFree(dProjection);
+    cudaFree(dProjection[0]);
+    cudaFree(dProjection[1]);
+    free(dProjection);
+    
     cudaFreeArray(d_imagedata);
     cudaCheckErrors("cudaFree d_imagedata fail");
     
     
+    for (int i = 0; i < 2; ++i){
+      cudaStreamDestroy(stream[i]);
+    }
     
     cudaDeviceReset();
     

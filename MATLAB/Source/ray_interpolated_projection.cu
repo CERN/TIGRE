@@ -65,7 +65,7 @@ do { \
         if (__err != cudaSuccess) { \
                 mexPrintf("%s \n",msg);\
                 cudaDeviceReset();\
-                mexErrMsgIdAndTxt("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
+                mexErrMsgIdAndTxt("TIGRE:Ax:interpolated",cudaGetErrorString(__err));\
         } \
 } while (0)
     
@@ -231,7 +231,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         cudaMemGetInfo(&memfree,&memtotal);
         if(dev==0) mem_GPU_global=memfree;
         if(memfree<memtotal/2){
-            mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+            mexErrMsgIdAndTxt("Ax:GPUselect","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
         }
         cudaCheckErrors("Check mem error");
         
@@ -248,7 +248,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     Geometry * geoArray;
     
   
-    if (mem_image+mem_proj<mem_GPU_global){// yes it does
+    if (mem_image+2*mem_proj<mem_GPU_global){// yes it does
         fits_in_memory=true;
         geoArray=(Geometry*)malloc(sizeof(Geometry));
         geoArray[0]=geo;
@@ -257,7 +257,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         fits_in_memory=false; // Oh dear.
         // approx free memory we have. We already have left some extra 10% free for internal stuff
         // we need a second projection memory to combine multi-GPU stuff.
-        size_t mem_free=mem_GPU_global-2*mem_proj;
+        size_t mem_free=mem_GPU_global-4*mem_proj;
         
 
         splits=mem_image/mem_free+1;// Ceil of the truncation
@@ -265,25 +265,43 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         splitImageInterp(splits,geo,geoArray,nangles);
     }
     
+    // Allocate auiliary memory for projections on the GPU to accumulate partial resutsl
     float ** dProjection_accum;
     size_t num_bytes_proj = geo.nDetecU*geo.nDetecV * sizeof(float);
     if (!fits_in_memory){
-        dProjection_accum=(float**)malloc(deviceCount*sizeof(float*));
+        dProjection_accum=(float**)malloc(2*deviceCount*sizeof(float*));
         for (dev = 0; dev < deviceCount; dev++) {
             cudaSetDevice(dev);
-            cudaMalloc((void**)&dProjection_accum[dev], num_bytes_proj);
-            cudaMemset(dProjection_accum[dev],0,num_bytes_proj);
-            cudaCheckErrors("cudaMallocauxiliarty projections fail");
+            for (int i = 0; i < 2; ++i){
+                cudaMalloc((void**)&dProjection_accum[dev*deviceCount+i], num_bytes_proj);
+                cudaMemset(dProjection_accum[dev*deviceCount+i],0,num_bytes_proj);
+                cudaCheckErrors("cudaMallocauxiliarty projections fail");
+            }
         }
     }
     
     // This is happening regarthless if the image fits on memory
-    float** dProjection=(float**)malloc(deviceCount*sizeof(float*));
-    for (dev = 0; dev < deviceCount; dev++) {
+    float** dProjection=(float**)malloc(2*deviceCount*sizeof(float*));
+    for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
-        cudaMalloc((void**)&dProjection[dev], num_bytes_proj);
-        cudaMemset(dProjection[dev],0,num_bytes_proj);
-        cudaCheckErrors("cudaMalloc projections fail");
+        
+        for (int i = 0; i < 2; ++i){
+            cudaMalloc((void**)&dProjection[dev*deviceCount+i],   num_bytes_proj);
+            cudaMemset(dProjection[dev*deviceCount+i]  ,0,num_bytes_proj);
+            cudaCheckErrors("cudaMalloc projections fail");
+        }
+    }
+    
+     // Create Streams for overlapping memcopy and compute
+    int nStreams=deviceCount*2;
+    cudaStream_t stream[nStreams];
+    
+    for (int i = 0; i < 2; ++i){
+        for (dev = 0; dev < deviceCount; dev++){
+            cudaSetDevice(dev);
+            cudaStreamCreate(&stream[i*2+dev]);
+            
+        }
     }
     
     
@@ -296,7 +314,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         
         size_t linear_idx_start;
         //First one shoudl always be  the same size as all the rest but the last
-        linear_idx_start= sp*geoArray[0].nVoxelX*geoArray[0].nVoxelY*geoArray[0].nVoxelZ;
+        linear_idx_start= (size_t)sp*(size_t)geoArray[0].nVoxelX*(size_t)geoArray[0].nVoxelY*(size_t)geoArray[0].nVoxelZ;
         CreateTextureInterp(deviceCount,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg);
         cudaCheckErrors("Texture object creation fail");
         
@@ -314,8 +332,12 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
         
         
         
-        
+        // Now that we have prepared the image (piece of image) and parameters for kernels
+        // we project for all angles.
         for (unsigned int i=0;i<nangles;i+=(unsigned int)deviceCount){
+            
+            // First, we launch all the kernels for this angle
+
             for (dev = 0; dev < deviceCount; dev++){
                 if(i+dev<nangles){
                     geoArray[sp].alpha=angles[(i+dev)*3];
@@ -329,37 +351,73 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
                     cropdist_init=maxdistanceCuboid(geo,i+dev); // TODO: this needs reworking for 3D
 
                     cudaSetDevice(dev);
+                   
                    //TODO: we could do this around X and Y axis too, but we would need to compute the new axis of rotation (not possible to know from jsut the angles)
                     if (geo.theta==0.0f & geo.psi==0.0f){
-                        kernelPixelDetector<false><<<grid,block>>>(geoArray[sp],dProjection[dev], source, deltaU, deltaV, uvOrigin,geo.DSO[i+dev],floor(cropdist_init),texImg[dev]);
+                        kernelPixelDetector<false><<<grid,block,0,stream[dev]>>>(geoArray[sp],dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], source, deltaU, deltaV, uvOrigin,geo.DSO[i+dev],floor(cropdist_init),texImg[dev]);
                     }
                     else{
-                        kernelPixelDetector<true><<<grid,block>>>(geoArray[sp],dProjection[dev], source, deltaU, deltaV, uvOrigin,geo.DSO[i+dev],floor(cropdist_init),texImg[dev]);
+                        kernelPixelDetector<true> <<<grid,block,0,stream[dev]>>>(geoArray[sp],dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], source, deltaU, deltaV, uvOrigin,geo.DSO[i+dev],floor(cropdist_init),texImg[dev]);
                     }
-                            //cudaCheckErrors("Kernel fail");
                 }
                 
             }
-            for (dev = 0; dev < deviceCount; dev++){
-                if(i+dev<nangles){
+            // Now that the computation is happening, we need to either prepare the memory for
+            // combining of the projections (splits>1) or start removing previous results.
+            
+            
+            // If our image does not fit in memory then we need to make sure we accumulate previous results too.
+            // First, grab previous results and put them in the auxiliary variable
+            if( !fits_in_memory && sp>0){
+                for (dev = 0; dev < deviceCount; dev++){
                     cudaSetDevice(dev);
-                    if (!fits_in_memory){
-                        cudaMemcpyAsync(dProjection_accum[dev], result[i+dev], num_bytes_proj, cudaMemcpyHostToDevice);
-                        vecAddInPlaceInterp<<<(geo.nDetecU*geo.nDetecV+MAXTREADS-1)/MAXTREADS,MAXTREADS>>>(dProjection[dev],dProjection_accum[dev],(unsigned long)geo.nDetecU*geo.nDetecV );
-                    }
+                    cudaMemcpyAsync(dProjection_accum[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], result[i+dev], num_bytes_proj, cudaMemcpyHostToDevice,stream[dev+deviceCount]);                    
                 }
             }
-            for (dev = 0; dev < deviceCount; dev++){
-                if(i+dev<nangles){
+            // Second, take the results from previous compute call and add it to the code in execution.  
+            if( !fits_in_memory && sp>0){
+                for (dev = 0; dev < deviceCount; dev++){
+                    cudaSetDevice(dev);
+                    cudaStreamSynchronize(stream[dev+deviceCount]);
+                    vecAddInPlaceInterp<<<(geo.nDetecU*geo.nDetecV+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev]>>>(dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount],dProjection_accum[(int)(i%(2*deviceCount)!=0)+dev*deviceCount],(unsigned long)geo.nDetecU*geo.nDetecV );
+                    
+                }
+            }
+            
+ 
+            // Now, lets get out the projections from the previous execution of the kernels.
+            if (i>0){
+                for (dev = 0; dev < deviceCount; dev++){
+                    
                     // copy result to host
                     cudaSetDevice(dev);
-                    cudaMemcpyAsync(result[i+dev], dProjection[dev], num_bytes_proj, cudaMemcpyDeviceToHost);
+                    cudaMemcpyAsync(result[(i-deviceCount)+dev], dProjection[(int)(i%(2*deviceCount)==0)+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev+deviceCount]);
                 }
-                
             }
-            cudaCheckErrors("cudaMemcpy output fail");
+            
+            // Make sure Computation on kernels has finished before we launch the next batch.
+            for (dev = 0; dev < deviceCount; dev++){
+                cudaSetDevice(dev);
+                cudaStreamSynchronize(stream[dev]);
+            }
+            
         }
         
+                // We still have the last one to get out, do that one
+        
+        int i = nangles-deviceCount+nangles%deviceCount;
+
+        for (dev = 0; dev < deviceCount; dev++){
+            if(i+dev<nangles){
+                // copy result to host
+                cudaSetDevice(dev);
+                cudaDeviceSynchronize();
+                cudaMemcpyAsync(result[i+dev], dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev+deviceCount]);
+            }
+            
+        }
+        // Free memory for the next piece of image
+
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
             cudaDestroyTextureObject(texImg[dev]);
@@ -371,7 +429,8 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
-        cudaFree(dProjection[dev]);
+        cudaFree(dProjection[dev*deviceCount]);
+        cudaFree(dProjection[dev*deviceCount+1]);
         
     }
     free(dProjection);
@@ -379,15 +438,19 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     if(!fits_in_memory){
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
-            cudaFree(dProjection_accum[dev]);
+            cudaFree(dProjection_accum[dev*deviceCount]);
+            cudaFree(dProjection_accum[dev*deviceCount+1]);
             
         }
         free(dProjection_accum);
     }
-    
     freeGeoArray(splits,geoArray);
+
     cudaCheckErrors("cudaFree d_imagedata fail");
     
+   for (int i = 0; i < nStreams; ++i)
+        cudaStreamDestroy(stream[i]) ;
+
     cudaDeviceReset();
     return 0;
 }
