@@ -324,7 +324,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         splitImage(splits,geo,geoArray,nangles);
     }
     
-    // Allocate auiliary memory for projections on the GPU to accumulate partial resutsl
+    // Allocate axuiliary memory for projections on the GPU to accumulate partial resutsl
     float ** dProjection_accum;
     size_t num_bytes_proj = geo.nDetecU*geo.nDetecV * sizeof(float);
     if (!fits_in_memory){
