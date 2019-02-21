@@ -13,7 +13,9 @@ currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
-def FDK(proj, geo, angles, filter=None,verbose=False):
+
+
+def FDK(proj, geo, angles, filter=None, verbose=False,**kwargs):
     ('\n'
      'FDK solves Cone Beam CT image reconstruction'
      '\n'
@@ -52,8 +54,13 @@ def FDK(proj, geo, angles, filter=None,verbose=False):
       --------------------------------------------------------------------------
         Coded by:          MATLAB (original code): Ander Biguri
                            PYTHON : Reuben Lindroos,Sam Loescher, """)
+
+    if 'niter' in kwargs:
+        kwargs.pop('niter')
+
     geo = copy.deepcopy(geo)
     geo.check_geo(angles)
+    geo.checknans()
     if filter is not None:
         geo.filter = filter
     # Weight
@@ -66,7 +73,7 @@ def FDK(proj, geo, angles, filter=None,verbose=False):
         w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx ** 2 + yy ** 2))
         proj_filt[ii] = copy.deepcopy(proj[ii]) * w
 
-    proj_filt = filtering(proj_filt, geo, angles, parker=False,verbose=verbose)
+    proj_filt = filtering(proj_filt, geo, angles, parker=False, verbose=verbose)
     # m = {
     #     'py_projfilt': proj_filt,
     #
@@ -77,16 +84,17 @@ def FDK(proj, geo, angles, filter=None,verbose=False):
     # res = Atb(proj,geo,angles,'FDK')
     return res
 
-
 fdk = FDK
 
-def fbp(proj,geo,angles,filter=None,verbose=False):
+
+
+def fbp(proj, geo, angles, filter=None, verbose=False,**kwargs):
     if geo.mode != 'parallel':
         raise ValueError("Only use FBP for parallel beam. Check geo.mode.")
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
-    proj_filt = filtering(copy.deepcopy(proj),geox,angles,parker=False,verbose=verbose)
+    proj_filt = filtering(copy.deepcopy(proj), geox, angles, parker=False, verbose=verbose)
 
-    res = Atb(proj_filt,geo,angles)*geo.DSO/geo.DSD
+    res = Atb(proj_filt, geo, angles) * geo.DSO / geo.DSD
 
     return res

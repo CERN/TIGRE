@@ -15,7 +15,7 @@ def filtering(proj,geo,angles,parker,verbose=False):
 
     d=1
     filt=filter(geo.filter,ramp_kernel[0],filt_len,d,verbose=verbose)
-    filt=np.kron(np.ones((geo.nDetector[0],1)),filt)
+    filt=np.kron(np.ones((np.int64(geo.nDetector[0]),1)),filt)
     for i in range(angles.shape[0]):
         fproj=np.zeros((geo.nDetector[0],filt_len),dtype=np.float32)
         y_dim = geo.nDetector[1]
@@ -45,7 +45,7 @@ def filter(filter,kernel,order,d,verbose=False):
     filt=f_kernel[:int((order/2)+1)]
     w=2*np.pi*np.arange(len(filt))/order
     if filter not in ['ram_lak','shepp_logan','cosine','hamming','hann',None]:
-        raise ValueError('filter not recognised: '+filter)
+        raise ValueError('filter not recognised: '+str(filter))
 
     if filter in {'ram_lak', None}:
         if filter is None:

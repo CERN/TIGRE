@@ -10,7 +10,8 @@ def Ax(img, geo, angles,  krylov="interpolated"):
         raise ValueError("Complex types not compatible for projection.")
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
-
+    geox.cast_to_single()
+    geox.checknans()
 
     if all(img.shape != geox.nVoxel):
         raise ValueError("Input data should be of shape geo.nVoxel: "+ str(geox.nVoxel) +

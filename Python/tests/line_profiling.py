@@ -10,14 +10,14 @@ from tigre.utilities.Ax import Ax
 import tigre.algorithms as algs
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 
-#----------------PROFILINGIMPORT-------------------
+# ----------------PROFILINGIMPORT-------------------
 
 from line_profiler import LineProfiler
+
 # ---------------GEOMETRY---------------------------
 
-geo = tigre.geometry(mode='parallel',nVoxel = np.array([64,64,64]))
+geo = tigre.geometry(mode='parallel', nVoxel=np.array([64, 64, 64]))
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
-
 
 # ---------------------ANGLES-------------------------
 
@@ -28,34 +28,44 @@ angles = np.vstack((angles_1, angles_3, angles_3)).T
 
 # --------------------PROJECTION----------------------
 
-proj = Ax(source_img,geo,angles)
+proj = Ax(source_img, geo, angles)
+
 
 # ---------------------RECONSTRUCTION------------------
 
 class lineprofileroveride(IterativeReconAlg):
-    def __init__(self,proj,geo,angles,niter,**kwargs):
+    def __init__(self, proj, geo, angles, niter, **kwargs):
         lp = LineProfiler()
-        lp_wrapper = lp(super(lineprofileroveride,self).__init__)
-        lp_wrapper(proj,geo,angles,niter,**kwargs)
+        lp_wrapper = lp(super(lineprofileroveride, self).__init__)
+        lp_wrapper(proj, geo, angles, niter, **kwargs)
         lp.print_stats()
 
-alg = lineprofileroveride(proj,geo,angles,10,**dict(blocksize = 10))
 
+alg = lineprofileroveride(proj, geo, angles, 10, **dict(blocksize=10))
 
+# sart = IterativeReconAlg(proj,geo,angles,niter=10, **dict(blocksize =20))
+# lp_wrapper = lp(getattr(sart,sart.dataminimizing))
+# setattr(sart, sart.dataminimizing, lp_wrapper)
+# sart.run_main_iter()
+# lp.print_stats()
 
-
-#sart = IterativeReconAlg(proj,geo,angles,niter=10, **dict(blocksize =20))
-#lp_wrapper = lp(getattr(sart,sart.dataminimizing))
-#setattr(sart, sart.dataminimizing, lp_wrapper)
-#sart.run_main_iter()
-#lp.print_stats()
 from tigre.algorithms.pocs_algorithms import ASD_POCS
+
 lp = LineProfiler()
-asd_pocs = ASD_POCS(proj,geo,angles,2, **dict(blocksize=20))
-lp_wrapper_data_minimizing = lp(getattr(asd_pocs,asd_pocs.dataminimizing))
+asd_pocs = ASD_POCS(proj, geo, angles, 2, **dict(blocksize=20))
+lp_wrapper_data_minimizing = lp(getattr(asd_pocs, asd_pocs.dataminimizing))
 setattr(asd_pocs, asd_pocs.dataminimizing, lp_wrapper_data_minimizing)
 lp_wrapper_main_iter = lp(asd_pocs.run_main_iter)
 lp_wrapper_main_iter()
 lp.print_stats()
 
-# ---------------------PLOT----------------------------
+# -------------Line profile GGLS------------------
+
+from tigre.algorithms.conjugate_gradient_algorithms import CGLS
+from line_profiler import LineProfiler
+
+cglsAlg = CGLS(proj, geo, angles, niter=20)
+lp = LineProfiler()
+lp_run_main_iter = lp(cglsAlg.run_main_iter)
+lp_run_main_iter()
+lp.print_stats()

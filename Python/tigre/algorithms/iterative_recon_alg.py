@@ -1,3 +1,5 @@
+from __future__ import division
+
 import numpy as np
 from tigre.utilities.Ax import Ax
 from tigre.utilities.Atb import Atb
@@ -145,7 +147,7 @@ class IterativeReconAlg(object):
         geox.nVoxel = np.array([2, 2, 2])
         geox.dVoxel = geox.sVoxel / geox.nVoxel
         W = Ax(np.ones(geox.nVoxel, dtype=np.float32), geox, self.angles, "ray-voxel")
-        W[W < min(self.geo.dVoxel / 4)] = np.inf
+        W[W <= min(self.geo.dVoxel / 4)] = np.inf
         W = 1./W
         setattr(self, 'W', W)
 
@@ -264,10 +266,10 @@ class IterativeReconAlg(object):
                 geo.offOrin = self.geo.offDetector[j]
             if geo.rotDetector.shape[0] ==self.angles.shape[0]:
                 geo.rotDetector=self.geo.rotDetector[j]
-            if hasattr(geo.DSD,'shape'):
+            if hasattr(geo.DSD,'shape') and len((geo.DSD.shape)):
                 if geo.DSD.shape[0] ==self.angles.shape[0]:
                     geo.DSD = self.geo.DSD[j]
-            if hasattr(geo.DSO,'shape'):
+            if hasattr(geo.DSO,'shape') and len((geo.DSD.shape)):
                 if geo.DSO.shape[0] ==self.angles.shape[0]:
                     geo.DSO = self.geo.DSO[j]
 

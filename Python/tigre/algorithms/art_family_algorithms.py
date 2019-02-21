@@ -11,8 +11,7 @@ class SART(IterativeReconAlg):
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
         kwargs.update(dict(blocksize=1))
-        IterativeReconAlg.__init__(self,proj, geo, angles, niter, **kwargs)
-
+        IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
 
 sart = decorator(SART, name='sart')
@@ -28,8 +27,7 @@ class SIRT(IterativeReconAlg):
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
         kwargs.update(dict(blocksize=angles.shape[0]))
-        IterativeReconAlg.__init__(self,proj, geo, angles, niter, **kwargs)
-
+        IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
 
 sirt = decorator(SIRT, name='sirt')
@@ -44,7 +42,7 @@ class OS_SART(IterativeReconAlg):
                "to the geometry descrived in GEO, using NITER iterations.\n") + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
-        IterativeReconAlg.__init__(self,proj, geo, angles, niter, **kwargs)
+        IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
 
 ossart = decorator(OS_SART, name='ossart')

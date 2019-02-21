@@ -9,15 +9,15 @@ import numpy
 import sys
 
 # Code from https://github.com/rmcgibbo/npcuda-example/blob/master/cython/setup.py
-compute_capability_args = [#'-gencode=arch=compute_20,code=sm_20',
-                           '-gencode=arch=compute_30,code=sm_30',
-                            #'-gencode=arch=compute_37,code=sm_37',
-                            #'-gencode=arch=compute_52,code=sm_52',
-                            #'-gencode=arch=compute_60,code=sm_60',
-                            #'-gencode=arch=compute_61,code=sm_61',
-                           # '-gencode=arch=compute_70,code=sm_70', #untested
-                           '--ptxas-options=-v', '-c',
-                           '--compiler-options', "'-fPIC'"]
+compute_capability_args = [  # '-gencode=arch=compute_20,code=sm_20',
+    '-gencode=arch=compute_30,code=sm_30',
+    # '-gencode=arch=compute_37,code=sm_37',
+    # '-gencode=arch=compute_52,code=sm_52',
+    # '-gencode=arch=compute_60,code=sm_60',
+    # '-gencode=arch=compute_61,code=sm_61',
+    # '-gencode=arch=compute_70,code=sm_70', #untested
+    '--ptxas-options=-v', '-c',
+    '--compiler-options', "'-fPIC'"]
 
 
 def find_in_path(name, path):
@@ -51,10 +51,11 @@ def locate_cuda():
             nvcc_is_in_path = find_in_path('/usr/local/cuda/bin', os.environ['PATH'])
             if not nvcc_is_in_path:
                 print('WARNING: The nvcc binary could not be located in your $PATH. '
-                                   'Either add it to your path, or set $CUDAHOME')
-                raise EnvironmentError('The CUDA  path could not be located in $PATH or $CUDAHOME. Either add it to your path, or set $CUDAHOME')
+                      'Either add it to your path, or set $CUDAHOME')
+                raise EnvironmentError(
+                    'The CUDA  path could not be located in $PATH or $CUDAHOME. Either add it to your path, or set $CUDAHOME')
             home = '/usr/local/cuda'
-            nvcc = pjoin(home,'bin','nvcc')
+            nvcc = pjoin(home, 'bin', 'nvcc')
         else:
             home = os.path.dirname(os.path.dirname(nvcc))
 
@@ -63,7 +64,8 @@ def locate_cuda():
                   'lib64': pjoin(home, 'lib64')}
     for k, v in cudaconfig.iteritems():
         if not os.path.exists(v):
-            raise EnvironmentError('The CUDA  path could not be located in $PATH or $CUDAHOME. Either add it to your path, or set $CUDAHOME')
+            raise EnvironmentError(
+                'The CUDA  path could not be located in $PATH or $CUDAHOME. Either add it to your path, or set $CUDAHOME')
 
     return cudaconfig
 
@@ -200,8 +202,8 @@ minTV_ext = Extension('_minTV',
 
 AwminTV_ext = Extension('_AwminTV',
                         sources=(include_headers(['tigre/Source/POCS_TV2.cu',
-                                                     #'tigre/Source/_types.pxd',
-                                                     'tigre/Source/_AwminTV.pyx'], sdist=(sys.argv[1] == "sdist"))),
+                                                  # 'tigre/Source/_types.pxd',
+                                                  'tigre/Source/_AwminTV.pyx'], sdist=(sys.argv[1] == "sdist"))),
                         library_dirs=[CUDA['lib64']],
                         libraries=['cudart'],
                         language='c++',
@@ -225,13 +227,13 @@ setup(name='pytigre',
       version='0.1.0',
       author='Reuben Lindroos, Sam loescher',
       packages=find_packages(),
-      scripts = ['tigre/demos/launch.sh'],
+      scripts=['tigre/demos/launch.sh'],
       include_package_data=True,
       ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext],
       py_modules=['tigre.py'],
       # inject our custom trigger
       cmdclass={'build_ext': custom_build_ext},
-      license_file = 'LICENSE.txt',
-      license  = 'BSD 3-Clause',
+      license_file='LICENSE.txt',
+      license='BSD 3-Clause',
       # since the package has c code, the egg cannot be zipped
       zip_safe=False)

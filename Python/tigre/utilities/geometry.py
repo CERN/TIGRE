@@ -4,7 +4,7 @@ import numpy as np
 import numpy.matlib as matlib
 import inspect
 import tigre
-
+import math
 
 class Geometry(object):
 
@@ -83,9 +83,16 @@ class Geometry(object):
         else:
             self.COR = np.zeros(angles.shape[0])
         # IMPORTANT: cast all numbers to float32
-        self.cast_to_single()
         if verbose:
             self._verbose_output()
+    def checknans(self):
+        for attrib in self.__dict__:
+            if str(getattr(self,attrib)) == 'nan':
+                raise ValueError('nan found for Geometry abbtribute:' + attrib)
+            elif type(getattr(self,attrib)) ==np.ndarray:
+                if np.isnan(getattr(self,attrib)).all():
+                    raise ValueError('Nan found in Geometry abbtribute:' + attrib)
+
 
     def cast_to_single(self):
         """
@@ -94,11 +101,11 @@ class Geometry(object):
         :return: None
         """
         for attrib in self.__dict__:
-            try:
-                setattr(self, attrib, np.float32(getattr(self, attrib)))
-            except ValueError:
-                pass
-
+            if getattr(self,attrib) is not None:
+                try:
+                    setattr(self, attrib, np.float32(getattr(self, attrib)))
+                except ValueError:
+                    pass
     def __check_and_repmat__(self, attrib, angles):
         """
         Checks whether the attribute is a single value and repeats it into an array if it is
