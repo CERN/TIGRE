@@ -294,15 +294,16 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     
      // Create Streams for overlapping memcopy and compute
     int nStreams=deviceCount*2;
-    cudaStream_t stream[nStreams];
+    cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
     
-    for (int i = 0; i < 2; ++i){
-        for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
-            cudaStreamCreate(&stream[i*2+dev]);
+    for (dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(dev);
+        for (int i = 0; i < 2; ++i){
+            cudaStreamCreate(&stream[i+dev*2]);
             
         }
     }
+    cudaCheckErrors("Stream creation fail");
     
     
     float cropdist_init;
@@ -354,10 +355,10 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
                    
                    //TODO: we could do this around X and Y axis too, but we would need to compute the new axis of rotation (not possible to know from jsut the angles)
                     if (geo.theta==0.0f & geo.psi==0.0f){
-                        kernelPixelDetector<false><<<grid,block,0,stream[dev]>>>(geoArray[sp],dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], source, deltaU, deltaV, uvOrigin,geo.DSO[i+dev],floor(cropdist_init),texImg[dev]);
+                        kernelPixelDetector<false><<<grid,block,0,stream[dev*2]>>>(geoArray[sp],dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], source, deltaU, deltaV, uvOrigin,geo.DSO[i+dev],floor(cropdist_init),texImg[dev]);
                     }
                     else{
-                        kernelPixelDetector<true> <<<grid,block,0,stream[dev]>>>(geoArray[sp],dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], source, deltaU, deltaV, uvOrigin,geo.DSO[i+dev],floor(cropdist_init),texImg[dev]);
+                        kernelPixelDetector<true> <<<grid,block,0,stream[dev*2]>>>(geoArray[sp],dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], source, deltaU, deltaV, uvOrigin,geo.DSO[i+dev],floor(cropdist_init),texImg[dev]);
                     }
                 }
                 
@@ -371,15 +372,16 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
             if( !fits_in_memory && sp>0){
                 for (dev = 0; dev < deviceCount; dev++){
                     cudaSetDevice(dev);
-                    cudaMemcpyAsync(dProjection_accum[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], result[i+dev], num_bytes_proj, cudaMemcpyHostToDevice,stream[dev+deviceCount]);                    
+                    cudaMemcpyAsync(dProjection_accum[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], result[i+dev], num_bytes_proj, cudaMemcpyHostToDevice,stream[dev*2+1]);                    
                 }
             }
+          
             // Second, take the results from previous compute call and add it to the code in execution.  
             if( !fits_in_memory && sp>0){
                 for (dev = 0; dev < deviceCount; dev++){
                     cudaSetDevice(dev);
-                    cudaStreamSynchronize(stream[dev+deviceCount]);
-                    vecAddInPlaceInterp<<<(geo.nDetecU*geo.nDetecV+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev]>>>(dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount],dProjection_accum[(int)(i%(2*deviceCount)!=0)+dev*deviceCount],(unsigned long)geo.nDetecU*geo.nDetecV );
+                    cudaStreamSynchronize(stream[dev*2+1]);
+                    vecAddInPlaceInterp<<<(geo.nDetecU*geo.nDetecV+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev*2]>>>(dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount],dProjection_accum[(int)(i%(2*deviceCount)!=0)+dev*deviceCount],(unsigned long)geo.nDetecU*geo.nDetecV );
                     
                 }
             }
@@ -391,7 +393,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
                     
                     // copy result to host
                     cudaSetDevice(dev);
-                    cudaMemcpyAsync(result[(i-deviceCount)+dev], dProjection[(int)(i%(2*deviceCount)==0)+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev+deviceCount]);
+                    cudaMemcpyAsync(result[(i-deviceCount)+dev], dProjection[(int)(i%(2*deviceCount)==0)+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*2+1]);
                 }
             }
             
@@ -402,7 +404,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
             }
             
         }
-        
+         
                 // We still have the last one to get out, do that one
         
         int i = nangles-deviceCount+nangles%deviceCount;
@@ -412,7 +414,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
                 // copy result to host
                 cudaSetDevice(dev);
                 cudaDeviceSynchronize();
-                cudaMemcpyAsync(result[i+dev], dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev+deviceCount]);
+                cudaMemcpyAsync(result[i+dev], dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*2+1]);
             }
             
         }
@@ -447,7 +449,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     freeGeoArray(splits,geoArray);
 
     cudaCheckErrors("cudaFree d_imagedata fail");
-    
+  
    for (int i = 0; i < nStreams; ++i)
         cudaStreamDestroy(stream[i]) ;
 

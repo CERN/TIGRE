@@ -212,7 +212,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
         cudaCheckErrors("cudaMalloc projections fail");
     }
     int nStreams=2;
-    cudaStream_t stream[nStreams];
+    cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));;
     
     for (int i = 0; i < 2; ++i){
       cudaStreamCreate(&stream[i]);

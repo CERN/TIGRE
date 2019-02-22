@@ -90,7 +90,7 @@ do { \
      *
      **/
     
-    void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage);
+    void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream);
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -114,10 +114,12 @@ const int VOXELS_PER_THREAD = 8;  // Number of voxels to be computed by s single
 __constant__ Point3D projParamsArrayDev[6*PROJ_PER_KERNEL];  // Dev means it is on device
 
 // We also need a corresponding array on the host side to be filled before each kernel call, then copied to the device (array in constant memory above)
-Point3D projParamsArrayHost[6*PROJ_PER_KERNEL];   // Host means it is host memory
+// Point3D projParamsArrayHost[6*PROJ_PER_KERNEL];   // Host means it is host memory
 
 // Now we also need to store sinAlpha and cosAlpha for each projection (two floats per projection)
 __constant__ float projSinCosArrayDev[5*PROJ_PER_KERNEL];
+
+Point3D projParamsArrayHost[6*PROJ_PER_KERNEL];   // Host means it is host memory
 
 float projSinCosArrayHost[5*PROJ_PER_KERNEL];
 
@@ -326,70 +328,103 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     }
     
     //If it is the first time, lets make sure our image is zeroed.
-    int nStreams=deviceCount*1;
-    cudaStream_t stream[nStreams];
+    int nStreamDevice=2;
+    int nStreams=deviceCount*nStreamDevice;
+    cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));;
     
-    for (int i = 0; i < 1; ++i){
-        for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
-            cudaStreamCreate(&stream[i*1+dev]);
+    for (dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(dev);
+        for (int i = 0; i < nStreamDevice; ++i){
+            cudaStreamCreate(&stream[i+dev*nStreamDevice]);
             
         }
     }
     
+    Point3D* projParamsArrayHost;
+    cudaMallocHost((void**)&projParamsArrayHost,6*PROJ_PER_KERNEL*sizeof(Point3D));
+    float* projSinCosArrayHost;
+    cudaMallocHost((void**)&projSinCosArrayHost,5*PROJ_PER_KERNEL*sizeof(float));
+    
+    
+//     Point3D projParamsArrayHost[6*PROJ_PER_KERNEL];   // Host means it is host memory
+//
+// float projSinCosArrayHost[5*PROJ_PER_KERNEL];
+    
+    
+    
     cudaTextureObject_t *texProj;
     cudaArray **d_cuArrTex;
-    unsigned int proj_split_overlap_number=8;
+    
+    
+    unsigned int proj_split_overlap_number;
     // Start with the main loop. The Projection data needs to be allocated and dealocated in the main loop
     // as due to the nature of cudaArrays, we can not reuse them. This should not be a problem for the fast execution
     // of the code, as repeated allocation and deallocation only happens when the projection data is very very big,
     // and therefore allcoation time should be negligible, fluctuation of other computations should mask the time.
     unsigned long long proj_linear_idx_start;
-    unsigned int current_proj_split_size;
+    unsigned int current_proj_split_size,current_proj_overlap_split_size;
     size_t num_bytes_img_curr;
     size_t img_linear_idx_start;
-    for( unsigned int proj=0;proj<split_projections;proj++){
-        texProj = new cudaTextureObject_t[deviceCount*proj_split_overlap_number];
-        d_cuArrTex = new cudaArray*[deviceCount*proj_split_overlap_number];
-        for(unsigned int img_slice=0;img_slice<split_image;img_slice++){
-            if (proj==0){
-                for (dev = 0; dev < deviceCount; dev++){
-                    cudaSetDevice(dev);
-                    cudaMemset(dimage[dev],0,num_bytes_img);
-                    cudaCheckErrors("memset fail");
-                }
-            }
-
+    
+//     mexPrintf("split_projections: %u, split_image: %u ",split_projections,split_image);
+//     return 1;
+    
+    for(unsigned int img_slice=0;img_slice<split_image;img_slice++){
+//         
+        // Initialize the memory if its the first time.
+        for (dev = 0; dev < deviceCount; dev++){
+            cudaSetDevice(dev);
+            cudaMemset(dimage[dev],0,num_bytes_img);
+            cudaCheckErrors("memset fail");
+        }
+        
+        for( unsigned int proj=0;proj<split_projections;proj++){
+            
+            
+            // What is the size of the current chunk of proejctions we need in?
+            current_proj_split_size=(nalpha+split_projections-1)/split_projections;
+            // if its the last one its probably less
+            current_proj_split_size=((proj+1)*current_proj_split_size<nalpha)?  current_proj_split_size:  nalpha-current_proj_split_size*proj;
+            
+            // We are going to split it in the same amount of kernels we need to execute.
+            proj_split_overlap_number=(current_proj_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;
+            
+            
+            texProj =(cudaTextureObject_t*)malloc(deviceCount*proj_split_overlap_number*sizeof(cudaTextureObject_t));
+            d_cuArrTex =(cudaArray**)malloc(deviceCount*proj_split_overlap_number*sizeof(cudaArray*));
+            
             for(unsigned int proj_block_split=0; proj_block_split<proj_split_overlap_number;proj_block_split++){
                 
-                if (img_slice==0){
+                // Crop the last one, as its likely its not completely divisible.
+                // now lets split this for simultanoeus memcopy and compute.
+                // We want to make sure that if we can, we run PROJ_PER_KERNEL projections, to maximize kernel acceleration
+                current_proj_overlap_split_size=max((current_proj_split_size+proj_split_overlap_number-1)/proj_split_overlap_number,PROJ_PER_KERNEL);
+                current_proj_overlap_split_size=(proj_block_split<proj_split_overlap_number-1)?current_proj_overlap_split_size:current_proj_split_size-(proj_split_overlap_number-1)*current_proj_overlap_split_size;
+                
                     
-                    // Crop the last one, as its likely its not completely divisible.
-                    current_proj_split_size=(nalpha+split_projections-1)/split_projections;
-                    current_proj_split_size=((proj+1)*current_proj_split_size<nalpha)?  current_proj_split_size:  nalpha-current_proj_split_size*proj;
-                    // now lets split this for simultanoeus memcopy and compute.
-                    current_proj_split_size=(proj_block_split<proj_split_overlap_number-1)?current_proj_split_size/proj_split_overlap_number:current_proj_split_size-(proj_split_overlap_number-1)*(current_proj_split_size/proj_split_overlap_number);
                     //Get the linear index where the current memory chunk starts.
                     proj_linear_idx_start=(unsigned long long)((nalpha+split_projections-1)/split_projections)*(unsigned long long)proj*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
-                    proj_linear_idx_start+=proj_block_split*current_proj_split_size*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
+                    proj_linear_idx_start+=proj_block_split*max((current_proj_split_size+proj_split_overlap_number-1)/proj_split_overlap_number,PROJ_PER_KERNEL)*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
                     // Now get the projections on memory
-                    CreateTexture(deviceCount,&projections[proj_linear_idx_start],geo,&d_cuArrTex[proj_block_split*deviceCount],current_proj_split_size,&texProj[proj_block_split*deviceCount]);
-                }
+                    CreateTexture(deviceCount,&projections[proj_linear_idx_start],geo,&d_cuArrTex[proj_block_split*deviceCount],current_proj_overlap_split_size,&texProj[proj_block_split*deviceCount],stream);
                 
                 
+//                 return 1;
                 
-                // If we have more than one chunck of projections, then we need to put back the previous results into the GPU
-                // Exception: when each GPU is handling a single image chunk, we can leave it there.
-                if(proj>0 && split_image>1) {
-                    for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
-                        num_bytes_img_curr=geoArray[img_slice*deviceCount+dev].nVoxelX*geoArray[img_slice*deviceCount+dev].nVoxelY*geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
-                        img_linear_idx_start=(size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geoArray[0].nVoxelZ*(size_t)(img_slice*deviceCount+dev);
-                        cudaMemcpy(dimage[dev],&result[img_linear_idx_start], num_bytes_img_curr, cudaMemcpyHostToDevice);
-                        cudaCheckErrors("cudaMemcpy previous result fail");
-                    }
-                    
-                }
+//                 // If we have more than one chunck of projections, then we need to put back the previous results into the GPU
+//                 // Exception: when each GPU is handling a single image chunk, we can leave it there.
+//                 if(proj>0 && split_image>1) {
+//                     for (dev = 0; dev < deviceCount; dev++){
+//                         cudaSetDevice(dev);
+//
+//                         num_bytes_img_curr=geoArray[img_slice*deviceCount+dev].nVoxelX*geoArray[img_slice*deviceCount+dev].nVoxelY*geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
+//                         img_linear_idx_start=(size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geoArray[0].nVoxelZ*(size_t)(img_slice*deviceCount+dev);
+//
+//                         cudaMemcpyAsync(dimage[dev],&result[img_linear_idx_start], num_bytes_img_curr, cudaMemcpyHostToDevice,stream[dev*deviceCount+1]);
+//                         cudaCheckErrors("cudaMemcpy previous result fail");
+//                     }
+//
+//                 }
                 
                 for (dev = 0; dev < deviceCount; dev++){
                     //Safety:
@@ -399,6 +434,9 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                         break;
                     
                     cudaSetDevice(dev);
+                    
+                    
+                    
                     int divx,divy,divz;
                     // RB: Use the optimal (in their tests) block size from paper by Zinsser and Keck (16 in x and 32 in y).
                     // I tried different sizes and shapes of blocks (tiles), but it does not appear to significantly affect trhoughput, so
@@ -419,8 +457,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                     
                     // Since we'll have multiple projections processed by a SINGLE kernel call, compute how many
                     // kernel calls we'll need altogether.
-                    unsigned int noOfKernelCalls = (current_proj_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_KERNEL
-
+                    unsigned int noOfKernelCalls = (current_proj_overlap_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_KERNEL
                     for (unsigned int i=0; i<noOfKernelCalls; i++){
                         
                         // Now we need to generate and copy all data for PROJ_PER_KERNEL projections to constant memory so that our kernel can use it
@@ -428,9 +465,12 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                         for(j=0; j<PROJ_PER_KERNEL; j++){
                             
                             unsigned int currProjNumber_slice=i*PROJ_PER_KERNEL+j;
-                            unsigned int currProjNumber_global=i*PROJ_PER_KERNEL+j+proj*(nalpha+split_projections-1)/split_projections+proj_block_split*((nalpha+split_projections-1)/split_projections)/proj_split_overlap_number;
-
-                            if(currProjNumber_slice>=current_proj_split_size)
+                            unsigned int currProjNumber_global=i*PROJ_PER_KERNEL+j                                                                          // index within kernel
+                                    +proj*(nalpha+split_projections-1)/split_projections                                          // index of the global projection split
+                                    +proj_block_split*max(current_proj_split_size/proj_split_overlap_number,PROJ_PER_KERNEL); // indexof overlap current split
+                            if(currProjNumber_slice>=current_proj_overlap_split_size)
+                                break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
+                            if(currProjNumber_global>=nalpha)
                                 break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
                             
                             Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, /*offDetec,*/source;
@@ -461,63 +501,62 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                         }   // END for (preparing params for kernel call)
                         
                         // Copy the prepared parameter arrays to constant memory to make it available for the kernel
-                        cudaMemcpyToSymbolAsync(projSinCosArrayDev, projSinCosArrayHost, sizeof(float)*5*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev]);
-                        cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*6*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev]);
+                        cudaMemcpyToSymbolAsync(projSinCosArrayDev, projSinCosArrayHost, sizeof(float)*5*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev*nStreamDevice]);
+                        cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*6*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev*nStreamDevice]);
+                        cudaStreamSynchronize(stream[dev*nStreamDevice]);
                         
-                        kernelPixelBackprojectionFDK<<<grid,block,0,stream[dev]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,current_proj_split_size,texProj[proj_block_split*deviceCount+dev]);
-                        cudaCheckErrors("Kernel fail");
+                        kernelPixelBackprojectionFDK<<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,current_proj_overlap_split_size,texProj[proj_block_split*deviceCount+dev]);
+//                         cudaCheckErrors("Kernel fail");
                         
                     }  // END for
                     //////////////////////////////////////////////////////////////////////////////////////
                     // END RB code, Main reconstruction loop: go through projections (rotation angles) and backproject
                     //////////////////////////////////////////////////////////////////////////////////////
                 }
-            }
+            } // END sub-split of current projection chunk
             
-            
-            
-            // Now that we have backprojected all the image chunk (for the current projection chunk)
-            // we need to take it out of the GPU
-            // Exception: when each GPU is handlin a single image chunk and we have not finished with the projections
-            if(proj==split_projections-1 || split_image>1){
-                
+            //Before the next iteration of projection slices, delete the current textures. This also syncronizes the Host.
+            for(unsigned int proj_block_split=0; proj_block_split<proj_split_overlap_number;proj_block_split++){
                 for (dev = 0; dev < deviceCount; dev++){
                     cudaSetDevice(dev);
-                    cudaDeviceSynchronize();
-                    num_bytes_img_curr=(size_t)geoArray[img_slice*deviceCount+dev].nVoxelX*(size_t)geoArray[img_slice*deviceCount+dev].nVoxelY*(size_t)geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
-                    img_linear_idx_start=(size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geoArray[0].nVoxelZ*(size_t)(img_slice*deviceCount+dev);
-                    cudaMemcpyAsync(&result[img_linear_idx_start], dimage[dev], num_bytes_img_curr, cudaMemcpyDeviceToHost,stream[dev]);
-                    cudaCheckErrors("cudaMemcpy result fail");
+                    cudaStreamSynchronize(stream[dev*nStreamDevice]);
+                    cudaDestroyTextureObject(texProj[proj_block_split*deviceCount+dev]);
+                    cudaFreeArray(d_cuArrTex[proj_block_split*deviceCount+dev]);
                 }
             }
-            for (dev = 0; dev < deviceCount; dev++){
-                cudaSetDevice(dev);
-                cudaDeviceSynchronize();
-            }
+            cudaCheckErrors("cudadestroy textures result fail");
+            
+        } // END projection splits
+        
+        
+        // Now we need to take the image out of the GPU
+        // Exception: when each GPU is handlin a single image chunk and we have not finished with the projections
+        for (dev = 0; dev < deviceCount; dev++){
+            cudaSetDevice(dev);
+            // We do not need to sycnronize because the array dealocators already do.
+//                     cudaStreamSynchronize(stream[dev*nStreamDevice]);
+            num_bytes_img_curr=(size_t)geoArray[img_slice*deviceCount+dev].nVoxelX*(size_t)geoArray[img_slice*deviceCount+dev].nVoxelY*(size_t)geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
+            img_linear_idx_start=(size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geoArray[0].nVoxelZ*(size_t)(img_slice*deviceCount+dev);
+            cudaMemcpyAsync(&result[img_linear_idx_start], dimage[dev], num_bytes_img_curr, cudaMemcpyDeviceToHost,stream[dev*nStreamDevice+1]);
+            cudaCheckErrors("cudaMemcpy result fail");
         }
-
-        
-        //Before the next iteration of projection slices, delete the current textures.
-        
-        
-        for(unsigned int proj_block_split=0; proj_block_split<proj_split_overlap_number;proj_block_split++){
-            for (dev = 0; dev < deviceCount; dev++){
-                cudaSetDevice(dev);
-                cudaDestroyTextureObject(texProj[proj_block_split*deviceCount+dev]);
-                cudaFreeArray(d_cuArrTex[proj_block_split*deviceCount+dev]);
-            }
-        }
-         cudaCheckErrors("cudadestroy textures result fail");
-    }
+    } // end image splits
     
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
         cudaFree(dimage[dev]);
     }
+    cudaFreeHost(projSinCosArrayHost);
+    cudaFreeHost(projParamsArrayHost);
     
     freeGeoArray(split_image*deviceCount,geoArray);
     
+    
+    for (int i = 0; i < nStreams; ++i)
+        cudaStreamDestroy(stream[i]);
+    
     cudaCheckErrors("cudaFree d_imagedata fail");
+    
     cudaDeviceReset(); // For the Nvidia Visual Profiler
     return 0;
     
@@ -574,51 +613,67 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
     
     // Does everything fit in the GPU?
     
-    if(mem_image+mem_proj*nalpha<mem_GPU_global){
+    if(mem_image/deviceCount+mem_proj*nalpha<mem_GPU_global){
         // We only need to split if we have extra GPUs
         *split_image=1;
         *split_projections=1;
     }
     // We know we need to split, but:
-    // Do all projections fit on the GPU (with some slack for the image)??
-    else if(mem_proj*nalpha+mem_image_slice <mem_GPU_global){
-        // We should then store all the projections in GPU and split the image backprojection in as big chunks as possible
-        *split_projections=1;
-        size_t mem_free=mem_GPU_global-nalpha*mem_proj;
-        // How many slices can we fit on the free memory we have? We'd like to keep these slices full as it increases
-        // the kernels performance to run image chuncks that are VOXELS_PER_THREAD in z.
-        unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
-        // Split:
-        // mem_free/mem_image_slice == how many slices fit in each GPU
-        // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
-        *split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
+    // Does all the image fit in the GPU, with some slack for a stack of projections??
+    else if(mem_proj*PROJ_PER_KERNEL+mem_image/deviceCount <mem_GPU_global){
+        // We should then store all the image in GPU and split the projections in as big chunks as possible
+        *split_image=1;
+        size_t mem_free=mem_GPU_global-mem_image/deviceCount;
+        // How many projections can we fit on the free memory we have?
+//         unsigned int total_num_proj_slice=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
         
+        *split_projections=(mem_proj*nalpha+mem_free-1)/mem_free;
     }
+    
+//     // We know we need to split, but:
+//     // Do all projections fit on the GPU (with some slack for the image)??
+//     else if(mem_proj*nalpha+mem_image_slice <mem_GPU_global){
+//         // We should then store all the projections in GPU and split the image backprojection in as big chunks as possible
+//         *split_projections=1;
+//         size_t mem_free=mem_GPU_global-nalpha*mem_proj;
+//         // How many slices can we fit on the free memory we have? We'd like to keep these slices full as it increases
+//         // the kernels performance to run image chuncks that are VOXELS_PER_THREAD in z.
+//         unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
+//         // Split:
+//         // mem_free/mem_image_slice == how many slices fit in each GPU
+//         // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
+//         *split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
+//
+//     }
     // They do not fit in memory. We need to split both projections and images. Its OK, we'll survive.
     else
     {
-        // Because I think memory transfer is the slowest operation if broken apart (TODO test this assumtion) we should minimize the amount
-        // of those that happen. So the target split is that one that requires less copys of projection data to memory.
-        // Lets assume to start with that we only need 1 slice of image in memory, the rest is fo rprojections
-        size_t mem_free=mem_GPU_global-mem_image_slice;
-        *split_projections=(mem_proj*nalpha+mem_free-1)/mem_free;
-        // Now knowing how many splits we have for projections, we can recompute how many slices of image actually
+        // As we can overlap memcpys from H2D of the projections, we should then minimize the amount ofimage splits.
+        // Lets assume to start with that we only need 1 stack of PROJ_PER_KERNEL projections. The rest is for the image.
+        size_t mem_free=mem_GPU_global-mem_proj*PROJ_PER_KERNEL;
+        
+        *split_image=(mem_image/deviceCount+mem_free-1)/mem_free;
+        // Now knowing how many splits we have for images, we can recompute how many slices of projections actually
         // fit on the GPU. Must be more than 0 obviously.
         
+        mem_free=mem_GPU_global-(mem_image/deviceCount)/(*split_image); // NOTE: There is some rounding error, but its in the order of bytes, and we have 5% of GPU free jsut in case. We are safe
         
-        mem_free=mem_GPU_global-mem_proj*nalpha/(*split_projections);
+        *split_projections=(mem_proj*nalpha+mem_free-1)/mem_free;
         
-        unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
-        // Split:
-        // mem_free/mem_image_slice == how many slices fit in each GPU
-        // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
-        *split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
-        
+// //         unsigned int total_slices_proj=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
+//         // Split:
+//         // mem_free/mem_image_slice == how many slices fit in each GPU
+//         // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
+//
+//
+//
+//         *split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
+//
     }
 }
 
 
-void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage)
+void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream)
 {
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
     for (unsigned int i = 0; i < num_devices; i++){
@@ -638,7 +693,7 @@ void CreateTexture(int num_devices,const float* projectiondata,Geometry geo,cuda
         copyParams.dstArray = d_cuArrTex[i];
         copyParams.extent   = extent;
         copyParams.kind     = cudaMemcpyHostToDevice;
-        cudaMemcpy3DAsync(&copyParams);
+        cudaMemcpy3DAsync(&copyParams,stream[i*num_devices+1]);
         cudaCheckErrors("Texture memory data copy fail");
         //Array creation End
         
@@ -760,7 +815,6 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     
     source.x=source.x-(geo.DSD[i]-geo.DSO[i]);//   source.y=source.y-auxOff.y;    source.z=source.z-auxOff.z;
     
-//       mexPrintf("%f,%f,%f\n",source.x,source.y,source.z);
     // Scale coords so detector pixels are 1x1
     
     P.z =P.z /geo.dDetecV;                          P.y =P.y/geo.dDetecU;
