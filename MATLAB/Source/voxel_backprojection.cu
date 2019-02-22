@@ -317,8 +317,17 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     
     // Now lest allocate all the image memory on the GPU, so we can use it later. If we have made our numbers correctly
     // in the previous section this should leave enough space for the textures.
-    size_t num_bytes_img = geo.nVoxelX*geo.nVoxelY*geoArray[0].nVoxelZ* sizeof(float);
+    size_t num_bytes_img = (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geoArray[0].nVoxelZ* sizeof(float);
     
+    
+        
+//     mexPrintf("num_bytes_img: %zu \n ",num_bytes_img);
+//     mexPrintf("geo.nVoxelX: %zu \n ", (size_t)geo.nVoxelX);
+//     mexPrintf("geo.nVoxelY: %zu \n ", (size_t)geo.nVoxelY);
+//     mexPrintf("geo.nVoxelz: %zu \n ", (size_t)geoArray[0].nVoxelZ);
+//     mexPrintf("split_image: %u \n ",split_image);
+//     
+//     return 1 ;
     
     float** dimage=(float**)malloc(deviceCount*sizeof(float*));
     for (dev = 0; dev < deviceCount; dev++){
@@ -629,22 +638,6 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
         
         *split_projections=(mem_proj*nalpha+mem_free-1)/mem_free;
     }
-    
-//     // We know we need to split, but:
-//     // Do all projections fit on the GPU (with some slack for the image)??
-//     else if(mem_proj*nalpha+mem_image_slice <mem_GPU_global){
-//         // We should then store all the projections in GPU and split the image backprojection in as big chunks as possible
-//         *split_projections=1;
-//         size_t mem_free=mem_GPU_global-nalpha*mem_proj;
-//         // How many slices can we fit on the free memory we have? We'd like to keep these slices full as it increases
-//         // the kernels performance to run image chuncks that are VOXELS_PER_THREAD in z.
-//         unsigned int total_slices_img=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
-//         // Split:
-//         // mem_free/mem_image_slice == how many slices fit in each GPU
-//         // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
-//         *split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
-//
-//     }
     // They do not fit in memory. We need to split both projections and images. Its OK, we'll survive.
     else
     {
@@ -658,6 +651,9 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
         
         mem_free=mem_GPU_global-(mem_image/deviceCount)/(*split_image); // NOTE: There is some rounding error, but its in the order of bytes, and we have 5% of GPU free jsut in case. We are safe
         
+            
+//         mexPrintf("mem_GPU_global: %zu\n ",mem_GPU_global);
+    
         *split_projections=(mem_proj*nalpha+mem_free-1)/mem_free;
         
 // //         unsigned int total_slices_proj=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
