@@ -183,7 +183,7 @@ int voxel_backprojection_parallel_spherical(float const * const projections, Geo
     
     // copy data to CUDA memory
     cudaArray *d_projectiondata = 0;
-    const cudaExtent extent = make_cudaExtent(geo.nDetecU,geo.nDetecV,nangles);
+    const cudaExtent extent = make_cudaExtent(geo.nDetecV,geo.nDetecU,nangles);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
     cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent);
     if(cudaCheckErrors("cudaMalloc3D error 3D tex")){return 1;}
@@ -246,9 +246,10 @@ int voxel_backprojection_parallel_spherical(float const * const projections, Geo
         
         offOrig.x=geo.offOrigX[i];
         offOrig.y=geo.offOrigY[i];
+        offOrig.z=geo.offOrigZ[i];
         offDetec.x=geo.offDetecU[i];
         offDetec.y=geo.offDetecV[i];
-   
+        offDetec.z=0;
 
         kernelPixelBackprojection_parallel_spherical<<<grid,block>>>(geo,dimage,i,geo.COR[i],geo.DSD[i],geo.DSO[i],deltaX,deltaY,deltaZ,xyzOrigin,offOrig,offDetec,source);
         if(cudaCheckErrors("Kernel fail")){return 1;}

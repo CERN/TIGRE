@@ -1,0 +1,42 @@
+------------------------------------------------
+Repo description: Unnamed repository; edit this file 'description' to name the repository.
+Repo active branch is pydev
+Remote named "origin" with URL "https://github.com/CERN/TIGRE.git"
+Last commit for repo is 745a97988798ebef15ff2bb2347c026bd6bc5842.745a97988798ebef15ff2bb2347c026bd6bc5842
+"log generator now adds git branch, repo and commit and saves files under new date" by reuben (rllindroos@gmail.com)
+2019-02-25 13:51:47+00:00
+count: 455 and size: 288
+------------------------------------------------
+GEOMETRY used for instance of testandlog: 
+nVoxel: [ 32  64 128]
+angles: None
+rotDetector: [0 0 0]
+sDetector: [32 64]
+offOrigin: [0 0 0]
+nDetector: [32 64]
+filter: None
+DSO: 32.0
+mode: parallel
+dVoxel: [1 1 1]
+sVoxel: [ 32  64 128]
+n_proj: None
+accuracy: 0.5
+DSD: 64.0
+offDetector: [0 0]
+dDetector: [1 1]
+------------------------------------------------
+SIRT Mon Feb 25 14:40:01 2019
+nproj: 100 niter: 10
+spherical projection: False
+total time taken: 1.37211
+------------------------------------------------
+CGLS Mon Feb 25 14:40:03 2019
+nproj: 100 niter: 10
+spherical projection: False
+total time taken: 2.284215
+------------------------------------------------
+FBP Mon Feb 25 14:40:05 2019
+nproj: 100 niter: 10
+spherical projection: False
+total time taken: 0.147697
+------------------------------------------------

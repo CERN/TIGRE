@@ -11,7 +11,7 @@ import warnings
 from matplotlib import pyplot as plt
 warnings.filterwarnings("error")
 from git import Repo
-def testandlog(alglist, geo, angles, niter, logfilename=None, saveresult=False, newsubdirectory=True):
+def testandlog(alglist, geo, angles, niter, logfilename=None, saveresult=False, newsubdirectory=True,**kwargs):
     nangles = angles.shape[0]
     # createlogfile
 
@@ -23,7 +23,8 @@ def testandlog(alglist, geo, angles, niter, logfilename=None, saveresult=False, 
         os.system('mkdir ' + 'logs')
     logdirectory = os.path.join(dirname, 'logs')
     logdate = time.strftime("%a_%d_%Y")
-    os.system('mkdir ' + os.path.join(logdirectory,logdate))
+    if logdate not in os.listdir(logdirectory):
+        os.system('mkdir ' + os.path.join(logdirectory,logdate))
     subdirectory = os.path.join(logdirectory,logdate)
     subdirectoryname = 'test' + str(len(os.listdir(subdirectory))-1)
 
@@ -57,7 +58,9 @@ def testandlog(alglist, geo, angles, niter, logfilename=None, saveresult=False, 
 
 
     source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
+
     proj = tigre.Ax(source_img, geo, angles)
+
     logf.write('GEOMETRY used for instance of testandlog: \n')
     for item in geo.__dict__:
         logf.write(item + ': ' + str(getattr(geo, item)) + '\n')
@@ -73,7 +76,7 @@ def testandlog(alglist, geo, angles, niter, logfilename=None, saveresult=False, 
         algpassed = False
         try:
             tic = time.clock()
-            res = getattr(algs, alg)(proj, geo, angles, niter=niter)
+            res = getattr(algs, alg)(proj, geo, angles, niter=niter,**kwargs)
             algpassed = True
         except Exception:
             formatedlines = traceback.format_exc()
@@ -88,6 +91,7 @@ def testandlog(alglist, geo, angles, niter, logfilename=None, saveresult=False, 
 
         if saveresult and algpassed:
             warnings.filterwarnings("ignore")
+            plt.figure()
             plt.subplot(3, 1, 1)
             plt.imshow(res[geo.nVoxel[0]/2])
             plt.title('results for '+alg)
@@ -95,7 +99,6 @@ def testandlog(alglist, geo, angles, niter, logfilename=None, saveresult=False, 
 
             plt.subplot(3, 1, 2)
             plt.imshow(res[:,geo.nVoxel[1]/2])
-            plt.xlabel('time (s)')
             plt.ylabel('dim 1')
 
             plt.subplot(3, 1, 3)

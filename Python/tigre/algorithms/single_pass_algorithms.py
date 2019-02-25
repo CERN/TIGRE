@@ -94,7 +94,6 @@ def fbp(proj, geo, angles, filter=None, verbose=False,**kwargs):
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
     proj_filt = filtering(copy.deepcopy(proj), geox, angles, parker=False, verbose=verbose)
-
     res = Atb(proj_filt, geo, angles) * geo.DSO / geo.DSD
 
     return res

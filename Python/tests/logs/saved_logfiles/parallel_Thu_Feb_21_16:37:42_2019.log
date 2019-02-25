@@ -1,0 +1,58 @@
+GEOMETRY used for instance of testandlog: 
+nVoxel: [ 32  64 128]
+angles: None
+rotDetector: [0 0 0]
+sDetector: [32 64]
+offOrigin: [0 0 0]
+nDetector: [32 64]
+filter: None
+DSO: 32.0
+mode: parallel
+dVoxel: [1 1 1]
+sVoxel: [ 32  64 128]
+n_proj: None
+accuracy: 0.5
+DSD: 64.0
+offDetector: [0 0]
+dDetector: [1 1]
+------------------------------------------------
+SIRT Thu Feb 21 16:37:42 2019
+nproj 100 niter 10
+total time taken: 1.310036
+------------------------------------------------
+OSSART Thu Feb 21 16:37:44 2019
+nproj 100 niter 10
+total time taken: 2.673776
+------------------------------------------------
+ITERATIVERECONALG Thu Feb 21 16:37:46 2019
+nproj 100 niter 10
+total time taken: 2.671814
+------------------------------------------------
+FDK Thu Feb 21 16:37:49 2019
+nproj 100 niter 10
+total time taken: 0.083495
+------------------------------------------------
+ASD_POCS Thu Feb 21 16:37:49 2019
+nproj 100 niter 10
+total time taken: 39.624048
+------------------------------------------------
+AWASD_POCS Thu Feb 21 16:38:29 2019
+nproj 100 niter 10
+total time taken: 39.59717
+------------------------------------------------
+FBP Thu Feb 21 16:39:09 2019
+nproj 100 niter 10
+total time taken: 0.065866
+------------------------------------------------
+CGLS Thu Feb 21 16:39:09 2019
+nproj 100 niter 10
+Traceback (most recent call last):
+  File "tests/testforlog.py", line 43, in testandlog
+    res = getattr(algs, alg)(proj, geo, angles, niter=niter)
+  File "/home/reuben/TIGRE/Python/tigre/algorithms/iterative_recon_alg.py", line 354, in iterativereconalg
+    alg.run_main_iter()
+  File "/home/reuben/TIGRE/Python/tigre/algorithms/conjugate_gradient_algorithms.py", line 90, in run_main_iter
+    self.__p__ = s + beta * self.__p__
+RuntimeWarning: invalid value encountered in multiply
+
+------------------------------------------------
