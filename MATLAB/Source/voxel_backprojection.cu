@@ -119,9 +119,7 @@ __constant__ Point3D projParamsArrayDev[6*PROJ_PER_KERNEL];  // Dev means it is 
 // Now we also need to store sinAlpha and cosAlpha for each projection (two floats per projection)
 __constant__ float projSinCosArrayDev[5*PROJ_PER_KERNEL];
 
-Point3D projParamsArrayHost[6*PROJ_PER_KERNEL];   // Host means it is host memory
 
-float projSinCosArrayHost[5*PROJ_PER_KERNEL];
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // END RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
@@ -237,13 +235,13 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             y=vectY*t+S.y;
             z=vectZ*t+S.z;
             float u,v;
-            u=y+geo.nDetecU/2;
-            v=z+geo.nDetecV/2;
+            u=y+geo.nDetecU/2.0f;
+            v=z+geo.nDetecV/2.0f;
             
             float weigth;
             float realx,realy;
-            realx=-geo.sVoxelX/2+geo.dVoxelX/2    +indX*geo.dVoxelX   +xyzOffset.x;
-            realy=-geo.sVoxelY/2+geo.dVoxelY/2    +indY*geo.dVoxelY   +xyzOffset.y+COR;
+            realx=-geo.sVoxelX/2.0f+geo.dVoxelX/2.0f    +indX*geo.dVoxelX   +xyzOffset.x;
+            realy=-geo.sVoxelY/2.0f+geo.dVoxelY/2.0f    +indY*geo.dVoxelY   +xyzOffset.y+COR;
             
             weigth=(DSO+realy*sinalpha-realx*cosalpha)/DSO;
             weigth=1/(weigth*weigth);
@@ -320,14 +318,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     size_t num_bytes_img = (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geoArray[0].nVoxelZ* sizeof(float);
     
     
-        
-//     mexPrintf("num_bytes_img: %zu \n ",num_bytes_img);
-//     mexPrintf("geo.nVoxelX: %zu \n ", (size_t)geo.nVoxelX);
-//     mexPrintf("geo.nVoxelY: %zu \n ", (size_t)geo.nVoxelY);
-//     mexPrintf("geo.nVoxelz: %zu \n ", (size_t)geoArray[0].nVoxelZ);
-//     mexPrintf("split_image: %u \n ",split_image);
-//     
-//     return 1 ;
+    
     
     float** dimage=(float**)malloc(deviceCount*sizeof(float*));
     for (dev = 0; dev < deviceCount; dev++){
@@ -355,11 +346,6 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     cudaMallocHost((void**)&projSinCosArrayHost,5*PROJ_PER_KERNEL*sizeof(float));
     
     
-//     Point3D projParamsArrayHost[6*PROJ_PER_KERNEL];   // Host means it is host memory
-//
-// float projSinCosArrayHost[5*PROJ_PER_KERNEL];
-    
-    
     
     cudaTextureObject_t *texProj;
     cudaArray **d_cuArrTex;
@@ -375,11 +361,10 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
     size_t num_bytes_img_curr;
     size_t img_linear_idx_start;
     
-//     mexPrintf("split_projections: %u, split_image: %u ",split_projections,split_image);
-//     return 1;
+    
     
     for(unsigned int img_slice=0;img_slice<split_image;img_slice++){
-//         
+//
         // Initialize the memory if its the first time.
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
@@ -410,30 +395,13 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                 current_proj_overlap_split_size=max((current_proj_split_size+proj_split_overlap_number-1)/proj_split_overlap_number,PROJ_PER_KERNEL);
                 current_proj_overlap_split_size=(proj_block_split<proj_split_overlap_number-1)?current_proj_overlap_split_size:current_proj_split_size-(proj_split_overlap_number-1)*current_proj_overlap_split_size;
                 
-                    
-                    //Get the linear index where the current memory chunk starts.
-                    proj_linear_idx_start=(unsigned long long)((nalpha+split_projections-1)/split_projections)*(unsigned long long)proj*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
-                    proj_linear_idx_start+=proj_block_split*max((current_proj_split_size+proj_split_overlap_number-1)/proj_split_overlap_number,PROJ_PER_KERNEL)*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
-                    // Now get the projections on memory
-                    CreateTexture(deviceCount,&projections[proj_linear_idx_start],geo,&d_cuArrTex[proj_block_split*deviceCount],current_proj_overlap_split_size,&texProj[proj_block_split*deviceCount],stream);
                 
+                //Get the linear index where the current memory chunk starts.
+                proj_linear_idx_start=(unsigned long long)((nalpha+split_projections-1)/split_projections)*(unsigned long long)proj*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
+                proj_linear_idx_start+=proj_block_split*max((current_proj_split_size+proj_split_overlap_number-1)/proj_split_overlap_number,PROJ_PER_KERNEL)*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
+                // Now get the projections on memory
+                CreateTexture(deviceCount,&projections[proj_linear_idx_start],geo,&d_cuArrTex[proj_block_split*deviceCount],current_proj_overlap_split_size,&texProj[proj_block_split*deviceCount],stream);
                 
-//                 return 1;
-                
-//                 // If we have more than one chunck of projections, then we need to put back the previous results into the GPU
-//                 // Exception: when each GPU is handling a single image chunk, we can leave it there.
-//                 if(proj>0 && split_image>1) {
-//                     for (dev = 0; dev < deviceCount; dev++){
-//                         cudaSetDevice(dev);
-//
-//                         num_bytes_img_curr=geoArray[img_slice*deviceCount+dev].nVoxelX*geoArray[img_slice*deviceCount+dev].nVoxelY*geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
-//                         img_linear_idx_start=(size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geoArray[0].nVoxelZ*(size_t)(img_slice*deviceCount+dev);
-//
-//                         cudaMemcpyAsync(dimage[dev],&result[img_linear_idx_start], num_bytes_img_curr, cudaMemcpyHostToDevice,stream[dev*deviceCount+1]);
-//                         cudaCheckErrors("cudaMemcpy previous result fail");
-//                     }
-//
-//                 }
                 
                 for (dev = 0; dev < deviceCount; dev++){
                     //Safety:
@@ -485,9 +453,12 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                             Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, /*offDetec,*/source;
                             float sinalpha,cosalpha;
                             
-                            geo.alpha=-alphas[currProjNumber_global*3];//we got 3 angles now.
-                            sinalpha=sin(geo.alpha);
-                            cosalpha=cos(geo.alpha);
+                            geoArray[img_slice*deviceCount+dev].alpha=-alphas[currProjNumber_global*3];//we got 3 angles now.
+                            geoArray[img_slice*deviceCount+dev].theta=-alphas[currProjNumber_global*3+1];
+                            geoArray[img_slice*deviceCount+dev].psi  =-alphas[currProjNumber_global*3+2];
+                            
+                            sinalpha=sin(geoArray[img_slice*deviceCount+dev].alpha);
+                            cosalpha=cos(geoArray[img_slice*deviceCount+dev].alpha);
                             
                             projSinCosArrayHost[5*j]=sinalpha;  // 2*j because we have 2 float (sin or cos angle) values per projection
                             projSinCosArrayHost[5*j+1]=cosalpha;
@@ -495,7 +466,7 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                             projSinCosArrayHost[5*j+3]=geo.DSD[currProjNumber_global];
                             projSinCosArrayHost[5*j+4]=geo.DSO[currProjNumber_global];
                             
-                            computeDeltasCube(geoArray[img_slice*deviceCount+dev],geo.alpha,currProjNumber_global,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
+                            computeDeltasCube(geoArray[img_slice*deviceCount+dev],currProjNumber_global,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
                             
                             offOrig.x=geo.offOrigX[currProjNumber_global];
                             offOrig.y=geo.offOrigY[currProjNumber_global];
@@ -515,7 +486,6 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
                         cudaStreamSynchronize(stream[dev*nStreamDevice]);
                         
                         kernelPixelBackprojectionFDK<<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,current_proj_overlap_split_size,texProj[proj_block_split*deviceCount+dev]);
-//                         cudaCheckErrors("Kernel fail");
                         
                     }  // END for
                     //////////////////////////////////////////////////////////////////////////////////////
@@ -539,7 +509,6 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
         
         
         // Now we need to take the image out of the GPU
-        // Exception: when each GPU is handlin a single image chunk and we have not finished with the projections
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
             // We do not need to sycnronize because the array dealocators already do.
@@ -547,9 +516,13 @@ int voxel_backprojection(float const * const projections, Geometry geo, float* r
             num_bytes_img_curr=(size_t)geoArray[img_slice*deviceCount+dev].nVoxelX*(size_t)geoArray[img_slice*deviceCount+dev].nVoxelY*(size_t)geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
             img_linear_idx_start=(size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geoArray[0].nVoxelZ*(size_t)(img_slice*deviceCount+dev);
             cudaMemcpyAsync(&result[img_linear_idx_start], dimage[dev], num_bytes_img_curr, cudaMemcpyDeviceToHost,stream[dev*nStreamDevice+1]);
-            cudaCheckErrors("cudaMemcpy result fail");
+//             cudaCheckErrors("cudaMemcpy result fail");
         }
     } // end image splits
+    for (dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(dev);
+        cudaDeviceSynchronize();
+    }
     
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
@@ -614,7 +587,6 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
     
     // Compute how much memory each of the relevant memory pieces need
     size_t mem_image=       (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
-    size_t mem_image_slice= (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)VOXELS_PER_THREAD*sizeof(float);
     size_t mem_proj=        (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
     
     
@@ -634,7 +606,6 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
         *split_image=1;
         size_t mem_free=mem_GPU_global-mem_image/deviceCount;
         // How many projections can we fit on the free memory we have?
-//         unsigned int total_num_proj_slice=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
         
         *split_projections=(mem_proj*nalpha+mem_free-1)/mem_free;
     }
@@ -651,20 +622,9 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
         
         mem_free=mem_GPU_global-(mem_image/deviceCount)/(*split_image); // NOTE: There is some rounding error, but its in the order of bytes, and we have 5% of GPU free jsut in case. We are safe
         
-            
-//         mexPrintf("mem_GPU_global: %zu\n ",mem_GPU_global);
-    
+        
         *split_projections=(mem_proj*nalpha+mem_free-1)/mem_free;
         
-// //         unsigned int total_slices_proj=(geo.nVoxelZ+VOXELS_PER_THREAD-1)/VOXELS_PER_THREAD;
-//         // Split:
-//         // mem_free/mem_image_slice == how many slices fit in each GPU
-//         // total_slices_img/deviceCount == How many slices we need each GPU to evaluate.
-//
-//
-//
-//         *split_image=(unsigned int)ceil((float)total_slices_img/(float)deviceCount/(float)(mem_free/mem_image_slice));
-//
     }
 }
 
@@ -757,25 +717,30 @@ void freeGeoArray(unsigned int splits,Geometry* geoArray){
 //						Increments get passed to the backprojection kernel.
 //______________________________________________________________________________
 
-void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S)
+void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S)
 {
-    Point3D P0, Px0,Py0,Pz0, source;
+    
+    Point3D P, Px,Py,Pz;
     // Get coords of Img(0,0,0)
-    P0.x=-(geo.sVoxelX/2-geo.dVoxelX/2)+geo.offOrigX[i];
-    P0.y=-(geo.sVoxelY/2-geo.dVoxelY/2)+geo.offOrigY[i];
-    P0.z=-(geo.sVoxelZ/2-geo.dVoxelZ/2)+geo.offOrigZ[i];
+    P.x=-(geo.sVoxelX/2-geo.dVoxelX/2)+geo.offOrigX[i];
+    P.y=-(geo.sVoxelY/2-geo.dVoxelY/2)+geo.offOrigY[i];
+    P.z=-(geo.sVoxelZ/2-geo.dVoxelZ/2)+geo.offOrigZ[i];
     
     // Get coors from next voxel in each direction
-    Px0.x=P0.x+geo.dVoxelX;       Py0.x=P0.x;                Pz0.x=P0.x;
-    Px0.y=P0.y;                   Py0.y=P0.y+geo.dVoxelY;    Pz0.y=P0.y;
-    Px0.z=P0.z;                   Py0.z=P0.z;                Pz0.z=P0.z+geo.dVoxelZ;
+    Px.x=P.x+geo.dVoxelX;      Py.x=P.x;                Pz.x=P.x;
+    Px.y=P.y;                   Py.y=P.y+geo.dVoxelY;    Pz.y=P.y;
+    Px.z=P.z;                   Py.z=P.z;                Pz.z=P.z+geo.dVoxelZ;
     
-    // Rotate image (this is equivalent of rotating the source and detector)
-    Point3D P, Px,Py,Pz; // We need other auxiliar variables to be able to perform the rotation, or we would overwrite values!
-    P.x =P0.x *cos(alpha)-P0.y *sin(alpha);       P.y =P0.x *sin(alpha)+P0.y *cos(alpha);      P.z =P0.z;
-    Px.x=Px0.x*cos(alpha)-Px0.y*sin(alpha);       Px.y=Px0.x*sin(alpha)+Px0.y*cos(alpha);      Px.z=Px0.z;
-    Py.x=Py0.x*cos(alpha)-Py0.y*sin(alpha);       Py.y=Py0.x*sin(alpha)+Py0.y*cos(alpha);      Py.z=Py0.z;
-    Pz.x=Pz0.x*cos(alpha)-Pz0.y*sin(alpha);       Pz.y=Pz0.x*sin(alpha)+Pz0.y*cos(alpha);      Pz.z=Pz0.z;
+    
+    
+// Rotate image around X axis (this is equivalent of rotating the source and detector) RZ RY RZ
+    
+    eulerZYZT(geo,&P);
+    eulerZYZT(geo,&Px);
+    eulerZYZT(geo,&Py);
+    eulerZYZT(geo,&Pz);
+    
+    
     
     //detector offset
     P.z =P.z-geo.offDetecV[i];            P.y =P.y-geo.offDetecU[i];
@@ -802,7 +767,7 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     Py.x=Py.x-(geo.DSD[i]-geo.DSO[i]);
     Pz.x=Pz.x-(geo.DSD[i]-geo.DSO[i]);
     //Done for P, now source
-    
+    Point3D source;
     source.x=geo.DSD[i]; //allready offseted for rotation
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
@@ -811,6 +776,7 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     
     source.x=source.x-(geo.DSD[i]-geo.DSO[i]);//   source.y=source.y-auxOff.y;    source.z=source.z-auxOff.z;
     
+//       mexPrintf("%f,%f,%f\n",source.x,source.y,source.z);
     // Scale coords so detector pixels are 1x1
     
     P.z =P.z /geo.dDetecV;                          P.y =P.y/geo.dDetecU;
@@ -828,9 +794,25 @@ void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Poin
     
     *xyzorigin=P;
     *S=source;
-    
-}  // END computeDeltasCube
+}
 
+void eulerZYZT(Geometry geo, Point3D* point){
+    
+    Point3D auxPoint;
+    auxPoint.x=point->x;
+    auxPoint.y=point->y;
+    auxPoint.z=point->z;
+    
+    point->x = auxPoint.x*(cos(geo.psi)*cos(geo.theta)*cos(geo.alpha)-sin(geo.psi)*sin(geo.alpha))
+    +auxPoint.y*(-cos(geo.psi)*cos(geo.theta)*sin(geo.alpha)-sin(geo.psi)*cos(geo.alpha))
+    +auxPoint.z*cos(geo.psi)*sin(geo.theta);
+    point->y = auxPoint.x*(sin(geo.psi)*cos(geo.theta)*cos(geo.alpha)+cos(geo.psi)*sin(geo.alpha))
+    +auxPoint.y*(-sin(geo.psi)*cos(geo.theta)*sin(geo.alpha)+cos(geo.psi)*cos(geo.alpha))
+    +auxPoint.z*sin(geo.psi)*sin(geo.theta);
+    point->z =-auxPoint.x*sin(geo.theta)*cos(geo.alpha)
+    +auxPoint.y*sin(geo.theta)*sin(geo.alpha)
+    +auxPoint.z*cos(geo.theta);
+}
 void rollPitchYawT(Geometry geo,int i, Point3D* point){
     Point3D auxPoint;
     auxPoint.x=point->x;
