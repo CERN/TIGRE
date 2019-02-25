@@ -5,45 +5,45 @@
  *
  * CODE by  Ander Biguri
  *          Optimized and modified by RB
----------------------------------------------------------------------------
----------------------------------------------------------------------------
-Copyright (c) 2015, University of Bath and CERN- European Organization for 
-Nuclear Research
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, 
-this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice, 
-this list of conditions and the following disclaimer in the documentation 
-and/or other materials provided with the distribution.
-
-3. Neither the name of the copyright holder nor the names of its contributors
-may be used to endorse or promote products derived from this software without
-specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE 
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
- ---------------------------------------------------------------------------
-
-Contact: tigre.toolbox@gmail.com
-Codes  : https://github.com/CERN/TIGRE
---------------------------------------------------------------------------- 
+ * ---------------------------------------------------------------------------
+ * ---------------------------------------------------------------------------
+ * Copyright (c) 2015, University of Bath and CERN- European Organization for
+ * Nuclear Research
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * ---------------------------------------------------------------------------
+ *
+ * Contact: tigre.toolbox@gmail.com
+ * Codes  : https://github.com/CERN/TIGRE
+ * ---------------------------------------------------------------------------
  */
 
- 
+
 #define  PI_2 1.57079632679489661923
 #include <algorithm>
 #include <cuda_runtime_api.h>
@@ -92,7 +92,7 @@ do { \
      *
      *
      **/
-    texture<float, cudaTextureType3D , cudaReadModeElementType> tex;
+    void CreateTextureParallel(const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
@@ -115,12 +115,12 @@ const int VOXELS_PER_THREAD = 8;  // Number of voxels to be computed by s single
 __constant__ Point3D projParamsArrayDevParallel[6*PROJ_PER_KERNEL];  // Dev means it is on device
 
 // We also need a corresponding array on the host side to be filled before each kernel call, then copied to the device (array in constant memory above)
-Point3D projParamsArrayHostParallel[6*PROJ_PER_KERNEL];   // Host means it is host memory
+// Point3D projParamsArrayHostParallel[6*PROJ_PER_KERNEL];   // Host means it is host memory
 
 // Now we also need to store sinAlpha and cosAlpha for each projection (two floats per projection)
 __constant__ float projSinCosArrayDevParallel[3*PROJ_PER_KERNEL];
 
-float projSinCosArrayHostParallel[3*PROJ_PER_KERNEL];
+// float projSinCosArrayHostParallel[3*PROJ_PER_KERNEL];
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // END RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
@@ -146,7 +146,7 @@ float projSinCosArrayHostParallel[3*PROJ_PER_KERNEL];
 //      Description:    Main FDK backprojection kernel
 //______________________________________________________________________________
 
-__global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* image,const int currProjSetNumber, const int totalNoOfProjections)
+__global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* image,const int currProjSetNumber, const int totalNoOfProjections,cudaTextureObject_t tex)
 {
     
     // Old kernel call signature:
@@ -214,7 +214,7 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
         float DSD = projSinCosArrayDevParallel[3*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
         float DSO = projSinCosArrayDevParallel[3*projNumber+1];
         float COR = projSinCosArrayDevParallel[3*projNumber+2];
-
+        
         // Geometric trasnformations:
         //Source, scaled XYZ coordinates
         
@@ -235,7 +235,7 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
             P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
             S.y=P.y;S.z=P.z;
-
+            
             // This is the vector defining the line from the source to the Voxel
             float vectX,vectY,vectZ;
             vectX=(P.x -S.x);
@@ -248,17 +248,15 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             y=vectY*t+S.y;
             z=vectZ*t+S.z;
             float u,v;
-            u=y+geo.nDetecU/2-0.5;
-            v=z+geo.nDetecV/2-0.5;
+            u=y+geo.nDetecU/2-0.5f;
+            v=z+geo.nDetecV/2-0.5f;
             
             
             
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
-            voxelColumn[colIdx]+=tex3D(tex, v +0.5 ,
-                    u +0.5 ,
-                    indAlpha+0.5);
-
+            voxelColumn[colIdx]+=tex3D<float>(tex, v+0.5f, u+0.5f ,indAlpha+0.5f);
+            
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
@@ -299,31 +297,16 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
      * Allocate texture memory on the device
      */
     // copy data to CUDA memory
-    cudaArray *d_projectiondata = 0;
-    const cudaExtent extent = make_cudaExtent(geo.nDetecV,geo.nDetecU,nalpha);
-    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
-    cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent);
-    cudaCheckErrors("cudaMalloc3D error 3D tex");
+    //If it is the first time, lets make sure our image is zeroed.
+    int nStreamDevice=2;
+    int nStreams=nStreamDevice;
+    cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));;
     
-    cudaMemcpy3DParms copyParams = { 0 };
-    copyParams.srcPtr = make_cudaPitchedPtr((void*)projections, extent.width*sizeof(float), extent.width, extent.height);
-    copyParams.dstArray = d_projectiondata;
-    copyParams.extent = extent;
-    copyParams.kind = cudaMemcpyHostToDevice;
-    cudaMemcpy3D(&copyParams);
-    
-    cudaCheckErrors("cudaMemcpy3D fail");
-    
-    // Configure texture options
-    tex.normalized = false;
-    tex.filterMode = cudaFilterModeLinear;
-    tex.addressMode[0] = cudaAddressModeBorder;
-    tex.addressMode[1] = cudaAddressModeBorder;
-    tex.addressMode[2] = cudaAddressModeBorder;
-    
-    cudaBindTextureToArray(tex, d_projectiondata, channelDesc);
-    
-    cudaCheckErrors("3D texture memory bind fail");
+    for (int i = 0; i < nStreamDevice; ++i){
+        cudaStreamCreate(&stream[i]);
+        
+        
+    }
     
     
     // Allocate result image memory
@@ -333,108 +316,156 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
     cudaMemset(dimage,0,num_bytes);
     cudaCheckErrors("cudaMalloc fail");
     
-    // If we are going to time
-    bool timekernel=false;
-    cudaEvent_t start, stop;
-    float elapsedTime;
-    if (timekernel){
-        cudaEventCreate(&start);
-        cudaEventRecord(start,0);
-    }
     
-    int divx,divy,divz;
+    Point3D* projParamsArrayHostParallel;
+    cudaMallocHost((void**)&projParamsArrayHostParallel,6*PROJ_PER_KERNEL*sizeof(Point3D));
+    float* projSinCosArrayHostParallel;
+    cudaMallocHost((void**)&projSinCosArrayHostParallel,3*PROJ_PER_KERNEL*sizeof(float));
     
-    // RB: Use the optimal (in their tests) block size from paper by Zinsser and Keck (16 in x and 32 in y).
-    // I tried different sizes and shapes of blocks (tiles), but it does not appear to significantly affect trhoughput, so
-    // let's stick with the values from Zinsser and Keck.
-    divx=16;
-    divy=32;
-    divz=VOXELS_PER_THREAD;      // We now only have 32 x 16 threads per block (flat tile, see below), BUT each thread works on a Z column of VOXELS_PER_THREAD voxels, so we effectively need fewer blocks!
-    dim3 grid((geo.nVoxelX+divx-1)/divx,
-            (geo.nVoxelY+divy-1)/divy,
-            (geo.nVoxelZ+divz-1)/divz);
+    cudaTextureObject_t *texProj;
+    cudaArray **d_cuArrTex;
     
-    dim3 block(divx,divy,1);    // Note that we have 1 in the Z size, not divz, since each thread works on a vertical set of VOXELS_PER_THREAD voxels (so we only need a "flat" tile of threads, with depth of 1)
     
-    //////////////////////////////////////////////////////////////////////////////////////
-    // Main reconstruction loop: go through projections (rotation angles) and backproject
-    //////////////////////////////////////////////////////////////////////////////////////
     
-    // Since we'll have multiple projections processed by a SINGLE kernel call, compute how many
-    // kernel calls we'll need altogether.
-    int noOfKernelCalls = (nalpha+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_KERNEL
-    for (unsigned int i=0; i<noOfKernelCalls; i++)
-    {
-        // Now we need to generate and copy all data for PROJ_PER_KERNEL projections to constant memory so that our kernel can use it
-        int j;
-        for(j=0; j<PROJ_PER_KERNEL; j++)
+    unsigned int proj_split_overlap_number;
+    unsigned int split_projections=1;
+    // Start with the main loop. The Projection data needs to be allocated and dealocated in the main loop
+    // as due to the nature of cudaArrays, we can not reuse them. This should not be a problem for the fast execution
+    // of the code, as repeated allocation and deallocation only happens when the projection data is very very big,
+    // and therefore allcoation time should be negligible, fluctuation of other computations should mask the time.
+    unsigned long long proj_linear_idx_start;
+    unsigned int current_proj_split_size,current_proj_overlap_split_size;
+    size_t num_bytes_img_curr;
+    size_t img_linear_idx_start;
+    
+    
+    current_proj_split_size=nalpha;
+    // We are going to split it in the same amount of kernels we need to execute.
+    proj_split_overlap_number=(current_proj_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;
+    
+    
+    texProj =(cudaTextureObject_t*)malloc(proj_split_overlap_number*sizeof(cudaTextureObject_t));
+    d_cuArrTex =(cudaArray**)malloc(proj_split_overlap_number*sizeof(cudaArray*));
+    
+    for(unsigned int proj_block_split=0; proj_block_split<proj_split_overlap_number;proj_block_split++){
+        
+        // Crop the last one, as its likely its not completely divisible.
+        // now lets split this for simultanoeus memcopy and compute.
+        // We want to make sure that if we can, we run PROJ_PER_KERNEL projections, to maximize kernel acceleration
+        current_proj_overlap_split_size=max((current_proj_split_size+proj_split_overlap_number-1)/proj_split_overlap_number,PROJ_PER_KERNEL);
+        current_proj_overlap_split_size=(proj_block_split<proj_split_overlap_number-1)?current_proj_overlap_split_size:current_proj_split_size-(proj_split_overlap_number-1)*current_proj_overlap_split_size;
+        
+        
+        //Get the linear index where the current memory chunk starts.
+        proj_linear_idx_start=proj_block_split*max((current_proj_split_size+proj_split_overlap_number-1)/proj_split_overlap_number,PROJ_PER_KERNEL)*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
+        // Now get the projections on memory
+        CreateTextureParallel(&projections[proj_linear_idx_start],geo,&d_cuArrTex[proj_block_split],current_proj_overlap_split_size,&texProj[proj_block_split],stream);
+        
+        
+        
+        
+        int divx,divy,divz;
+        
+        // RB: Use the optimal (in their tests) block size from paper by Zinsser and Keck (16 in x and 32 in y).
+        // I tried different sizes and shapes of blocks (tiles), but it does not appear to significantly affect trhoughput, so
+        // let's stick with the values from Zinsser and Keck.
+        divx=16;
+        divy=32;
+        divz=VOXELS_PER_THREAD;      // We now only have 32 x 16 threads per block (flat tile, see below), BUT each thread works on a Z column of VOXELS_PER_THREAD voxels, so we effectively need fewer blocks!
+        dim3 grid((geo.nVoxelX+divx-1)/divx,
+                (geo.nVoxelY+divy-1)/divy,
+                (geo.nVoxelZ+divz-1)/divz);
+        
+        dim3 block(divx,divy,1);    // Note that we have 1 in the Z size, not divz, since each thread works on a vertical set of VOXELS_PER_THREAD voxels (so we only need a "flat" tile of threads, with depth of 1)
+        
+        
+        
+        
+        //////////////////////////////////////////////////////////////////////////////////////
+        // Main reconstruction loop: go through projections (rotation angles) and backproject
+        //////////////////////////////////////////////////////////////////////////////////////
+        
+        // Since we'll have multiple projections processed by a SINGLE kernel call, compute how many
+        // kernel calls we'll need altogether.
+        int noOfKernelCalls = (current_proj_overlap_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_KERNEL
+        for (unsigned int i=0; i<noOfKernelCalls; i++)
         {
-            int currProjNumber=i*PROJ_PER_KERNEL+j;
-            
-            if(currProjNumber>=nalpha)
-                break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
-            
-            Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, /*offDetec,*/source;
-            float sinalpha,cosalpha;
-            
-            geo.alpha=-alphas[currProjNumber*3];
-            geo.theta=-alphas[currProjNumber*3+1];
-            geo.psi  =-alphas[currProjNumber*3+2];
-
-            //sinalpha=sin(geo.alpha);
+            // Now we need to generate and copy all data for PROJ_PER_KERNEL projections to constant memory so that our kernel can use it
+            int j;
+            for(j=0; j<PROJ_PER_KERNEL; j++)
+            {
+                int currProjNumber=i*PROJ_PER_KERNEL+j;
+                unsigned int currProjNumber_slice=i*PROJ_PER_KERNEL+j;
+                unsigned int currProjNumber_global=i*PROJ_PER_KERNEL+j                                                                          // index within kernel
+                        +proj_block_split*max(current_proj_split_size/proj_split_overlap_number,PROJ_PER_KERNEL); // indexof overlap current split
+                if(currProjNumber_slice>=current_proj_overlap_split_size)
+                    break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
+                
+                if(currProjNumber_global>=nalpha)
+                    break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
+                
+                Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, /*offDetec,*/source;
+                float sinalpha,cosalpha;
+                
+                geo.alpha=-alphas[currProjNumber_global*3];
+                geo.theta=-alphas[currProjNumber_global*3+1];
+                geo.psi  =-alphas[currProjNumber_global*3+2];
+                
+                //sinalpha=sin(geo.alpha);
 //            cosalpha=cos(geo.alpha);
+                
+                projSinCosArrayHostParallel[3*j]=geo.DSD[currProjNumber_global];  // 3*j because we have 3 float (sin or cos angle) values per projection
+                projSinCosArrayHostParallel[3*j+1]=geo.DSO[currProjNumber_global];
+                projSinCosArrayHostParallel[3*j+2]=geo.COR[currProjNumber_global];
+                
+                //computeDeltasCubeParallel(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
+                computeDeltasCubeParallel(geo,currProjNumber_global,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
+                
+                offOrig.x=geo.offOrigX[currProjNumber_global];
+                offOrig.y=geo.offOrigY[currProjNumber_global];
+                
+                
+                projParamsArrayHostParallel[6*j]=deltaX;		// 6*j because we have 6 Point3D values per projection
+                projParamsArrayHostParallel[6*j+1]=deltaY;
+                projParamsArrayHostParallel[6*j+2]=deltaZ;
+                projParamsArrayHostParallel[6*j+3]=xyzOrigin;
+                projParamsArrayHostParallel[6*j+4]=offOrig;
+                projParamsArrayHostParallel[6*j+5]=source;
+            }   // END for (preparing params for kernel call)
             
-            projSinCosArrayHostParallel[3*j]=geo.DSD[currProjNumber];  // 3*j because we have 3 float (sin or cos angle) values per projection
-            projSinCosArrayHostParallel[3*j+1]=geo.DSO[currProjNumber];
-            projSinCosArrayHostParallel[3*j+2]=geo.COR[currProjNumber];
-            
-            //computeDeltasCubeParallel(geo,geo.alpha,currProjNumber,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
-            computeDeltasCubeParallel(geo,i,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
+            // Copy the prepared parameter arrays to constant memory to make it available for the kernel
+            cudaMemcpyToSymbolAsync(projSinCosArrayDevParallel, projSinCosArrayHostParallel, sizeof(float)*3*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[0]);
+            cudaMemcpyToSymbolAsync(projParamsArrayDevParallel, projParamsArrayHostParallel, sizeof(Point3D)*6*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[0]);
+            cudaStreamSynchronize(stream[0]);
 
-            offOrig.x=geo.offOrigX[currProjNumber];
-            offOrig.y=geo.offOrigY[currProjNumber];
-            
-            
-            projParamsArrayHostParallel[6*j]=deltaX;		// 6*j because we have 6 Point3D values per projection
-            projParamsArrayHostParallel[6*j+1]=deltaY;
-            projParamsArrayHostParallel[6*j+2]=deltaZ;
-            projParamsArrayHostParallel[6*j+3]=xyzOrigin;
-            projParamsArrayHostParallel[6*j+4]=offOrig;
-            projParamsArrayHostParallel[6*j+5]=source;
-        }   // END for (preparing params for kernel call)
+            kernelPixelBackprojection_parallel<<<grid,block,0,stream[0]>>>(geo,dimage,i,current_proj_overlap_split_size,texProj[proj_block_split]);
+        }  // END for
         
-        // Copy the prepared parameter arrays to constant memory to make it available for the kernel
-        cudaMemcpyToSymbol(projSinCosArrayDevParallel, projSinCosArrayHostParallel, sizeof(float)*3*PROJ_PER_KERNEL);
-        cudaMemcpyToSymbol(projParamsArrayDevParallel, projParamsArrayHostParallel, sizeof(Point3D)*6*PROJ_PER_KERNEL);
+        //////////////////////////////////////////////////////////////////////////////////////
+        // END Main reconstruction loop: go through projections (rotation angles) and backproject
+        //////////////////////////////////////////////////////////////////////////////////////
         
-        kernelPixelBackprojection_parallel<<<grid,block>>>(geo,dimage,i,nalpha);
-        cudaCheckErrors("Kernel fail");
-    }  // END for
-    
-    //////////////////////////////////////////////////////////////////////////////////////
-    // END Main reconstruction loop: go through projections (rotation angles) and backproject
-    //////////////////////////////////////////////////////////////////////////////////////
-    
-    
-    if (timekernel)
-    {
-        cudaEventCreate(&stop);
-        cudaEventRecord(stop,0);
-        cudaEventSynchronize(stop);
-        cudaEventElapsedTime(&elapsedTime, start,stop);
-        mexPrintf("%f\n" ,elapsedTime);
-        cudaCheckErrors("cuda Timing fail");
         
     }
+    for(unsigned int proj_block_split=0; proj_block_split<proj_split_overlap_number;proj_block_split++){
+
+            cudaStreamSynchronize(stream[0]);
+            cudaDestroyTextureObject(texProj[proj_block_split]);
+            cudaFreeArray(d_cuArrTex[proj_block_split]);
+        
+    }
+    cudaCheckErrors("cudadestroy textures result fail");
+
+    
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
     cudaCheckErrors("cudaMemcpy result fail");
     
-    cudaUnbindTexture(tex);
-    cudaCheckErrors("Unbind  fail");
+    cudaFreeHost(projSinCosArrayHostParallel);
+    cudaFreeHost(projParamsArrayHostParallel);
     
     cudaFree(dimage);
-    cudaFreeArray(d_projectiondata);
-    cudaCheckErrors("cudaFree d_imagedata fail");
+    
+    
     cudaDeviceReset();
     return 0;
     
@@ -442,7 +473,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
 
 void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D *S)
 {
-   
+    
     Point3D P, Px,Py,Pz;
     // Get coords of Img(0,0,0)
     P.x=-(geo.sVoxelX/2-geo.dVoxelX/2)+geo.offOrigX[i];
@@ -457,12 +488,12 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
     
     
 // Rotate image around X axis (this is equivalent of rotating the source and detector) RZ RY RZ
-     
+    
     eulerZYZT(geo,&P);
     eulerZYZT(geo,&Px);
     eulerZYZT(geo,&Py);
     eulerZYZT(geo,&Pz);
-
+    
     
     
     //detector offset
@@ -472,8 +503,8 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
     Pz.z =Pz.z-geo.offDetecV[i];          Pz.y =Pz.y-geo.offDetecU[i];
     
     //Detector Roll pitch Yaw
-
-
+    
+    
     Point3D source;
     source.x=geo.DSO[i]; //allready offseted for rotation
     source.y=-geo.offDetecU[i];
@@ -494,5 +525,43 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
     
     *xyzorigin=P;
     *S=source;
-
+    
 }  // END computeDeltasCube
+void CreateTextureParallel(const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream)
+{
+    //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+        
+        //cudaArray Descriptor
+        const cudaExtent extent = make_cudaExtent(geo.nDetecV, geo.nDetecU, nangles);
+        cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
+        //cuda Array
+        cudaMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent);
+        cudaCheckErrors("Texture memory allocation fail");
+        cudaMemcpy3DParms copyParams = {0};
+        
+        
+        //Array creation
+        copyParams.srcPtr   = make_cudaPitchedPtr((void *)projectiondata, extent.width*sizeof(float), extent.width, extent.height);
+        copyParams.dstArray = d_cuArrTex[0];
+        copyParams.extent   = extent;
+        copyParams.kind     = cudaMemcpyHostToDevice;
+        cudaMemcpy3DAsync(&copyParams,stream[0+1]);
+        cudaCheckErrors("Texture memory data copy fail");
+        //Array creation End
+        
+        cudaResourceDesc    texRes;
+        memset(&texRes, 0, sizeof(cudaResourceDesc));
+        texRes.resType = cudaResourceTypeArray;
+        texRes.res.array.array  = d_cuArrTex[0];
+        cudaTextureDesc     texDescr;
+        memset(&texDescr, 0, sizeof(cudaTextureDesc));
+        texDescr.normalizedCoords = false;
+        texDescr.filterMode = cudaFilterModeLinear;
+        texDescr.addressMode[0] = cudaAddressModeBorder;
+        texDescr.addressMode[1] = cudaAddressModeBorder;
+        texDescr.addressMode[2] = cudaAddressModeBorder;
+        texDescr.readMode = cudaReadModeElementType;
+        cudaCreateTextureObject(&texImage[0], &texRes, &texDescr, NULL);
+        cudaCheckErrors("Texture object creation fail");
+    
+}
