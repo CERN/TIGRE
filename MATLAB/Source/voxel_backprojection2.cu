@@ -594,7 +594,7 @@ void CreateTexture2(int num_devices,const float* projectiondata,Geometry geo,cud
         cudaSetDevice(i);
         
         //cudaArray Descriptor
-        const cudaExtent extent = make_cudaExtent(geo.nDetecU, geo.nDetecV, nangles);
+        const cudaExtent extent = make_cudaExtent(geo.nDetecV, geo.nDetecU, nangles);
         cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
         //cuda Array
         cudaMalloc3DArray(&d_cuArrTex[i], &channelDesc, extent);
