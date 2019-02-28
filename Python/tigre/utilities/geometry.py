@@ -6,6 +6,7 @@ import inspect
 import tigre
 import math
 
+
 class Geometry(object):
 
     def __init__(self):
@@ -85,14 +86,14 @@ class Geometry(object):
         # IMPORTANT: cast all numbers to float32
         if verbose:
             self._verbose_output()
+
     def checknans(self):
         for attrib in self.__dict__:
-            if str(getattr(self,attrib)) == 'nan':
+            if str(getattr(self, attrib)) == 'nan':
                 raise ValueError('nan found for Geometry abbtribute:' + attrib)
-            elif type(getattr(self,attrib)) ==np.ndarray:
-                if np.isnan(getattr(self,attrib)).all():
+            elif type(getattr(self, attrib)) == np.ndarray:
+                if np.isnan(getattr(self, attrib)).all():
                     raise ValueError('Nan found in Geometry abbtribute:' + attrib)
-
 
     def cast_to_single(self):
         """
@@ -101,11 +102,12 @@ class Geometry(object):
         :return: None
         """
         for attrib in self.__dict__:
-            if getattr(self,attrib) is not None:
+            if getattr(self, attrib) is not None:
                 try:
                     setattr(self, attrib, np.float32(getattr(self, attrib)))
                 except ValueError:
                     pass
+
     def __check_and_repmat__(self, attrib, angles):
         """
         Checks whether the attribute is a single value and repeats it into an array if it is
@@ -156,6 +158,7 @@ class Geometry(object):
         for attrib in dim_attribs:
             setattr(self, attrib, getattr(self, attrib)[::-1].copy())
 
+    def __str__(self):
         parameters = []
         parameters.append("TIGRE parameters")
         parameters.append("-----")
@@ -195,6 +198,23 @@ class Geometry(object):
 
         return '\n'.join(parameters)
 
+    def __cmp__(self, other):
+        resultofnumpiesanallyretentiveattemptatbeingphilosophical = []
+        for attrib in self.__dict__:
+            result = (getattr(self, attrib) == getattr(other, attrib))
+            try:
+                resultofnumpiesanallyretentiveattemptatbeingphilosophical.append(result.all())
+            except Exception:
+                try:
+                    resultofnumpiesanallyretentiveattemptatbeingphilosophical.extend(result)
+                except Exception:
+                    resultofnumpiesanallyretentiveattemptatbeingphilosophical.append(result)
+
+        # why is this boolean reversed when returned?
+        # because for some reason its reversed when i return it from this function. Who knows.
+
+        return not all(resultofnumpiesanallyretentiveattemptatbeingphilosophical)
+
 
 class ParallelGeo(Geometry):
     def __init__(self, nVoxel):
@@ -208,7 +228,7 @@ class ParallelGeo(Geometry):
         self.sVoxel = self.nVoxel
 
         self.DSO = np.float32(self.nVoxel[0])
-        self.DSD = np.float32(self.nVoxel[0] *2)
+        self.DSD = np.float32(self.nVoxel[0] * 2)
 
         self.dDetector = np.array([1, 1])
         self.nDetector = self.nVoxel[:2]
@@ -223,7 +243,6 @@ class ParallelGeo(Geometry):
 
 
 def geometry(mode='cone', nVoxel=None, default_geo=False, high_quality=True):
-
     if mode == 'cone':
         if default_geo:
             return tigre.geometry_default(high_quality, nVoxel)
