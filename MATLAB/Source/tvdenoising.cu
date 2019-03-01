@@ -256,6 +256,9 @@ do { \
             mem_free=mem_GPU_global-(5*mem_img_each_GPU);
             unsigned int extra_buff=(mem_free/mem_slice_image);
             buffer_length=(extra_buff/2)/5; // we need double whatever this results in, rounded down.
+            
+//             buffer_length=min(20,buffer_length);
+            
             mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
             
             // Assert

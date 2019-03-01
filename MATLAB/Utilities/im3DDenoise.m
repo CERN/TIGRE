@@ -30,10 +30,10 @@ end
 if strcmp(type,'TV')
     immin=min(img(:));
     img=(img-immin);
-    immax=prctile(img(:),99);
-    img=img./immax;
+%     immax=prctile(img(:),99);
+    immax=max(img(:));
 
-%     imgO=(permute(,[3 2 1]));
+    img=img./immax;
     imgO=tvDenoise(img,hyper,iter);
     clear img;
     
