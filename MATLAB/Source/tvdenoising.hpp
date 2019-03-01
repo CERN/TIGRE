@@ -50,5 +50,6 @@ Codes  : https://github.com/CERN/TIGRE
 #include "tmwtypes.h"
 void tvdenoising(float* src, float* dst, float lambda,
                  const float* spacing,const long* image_size, int maxIter);
+void checkFreeMemory(int deviceCount,size_t *mem_GPU_global);
 
 #endif
