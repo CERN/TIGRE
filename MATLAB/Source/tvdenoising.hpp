@@ -48,7 +48,7 @@ Codes  : https://github.com/CERN/TIGRE
 #define TVDENOISE
 #include "mex.h"
 #include "tmwtypes.h"
-void tvdenoising(const float* src, float* dst, float lambda,
+void tvdenoising(float* src, float* dst, float lambda,
                  const float* spacing,const long* image_size, int maxIter);
 
 #endif

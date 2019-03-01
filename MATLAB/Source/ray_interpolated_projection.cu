@@ -293,13 +293,14 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     }
     
      // Create Streams for overlapping memcopy and compute
-    int nStreams=deviceCount*2;
+    int nStream_device=2;
+    int nStreams=deviceCount*nStream_device;
     cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
     
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
-        for (int i = 0; i < 2; ++i){
-            cudaStreamCreate(&stream[i+dev*2]);
+        for (int i = 0; i < nStream_device; ++i){
+            cudaStreamCreate(&stream[i+dev*nStream_device]);
             
         }
     }
@@ -355,10 +356,10 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
                    
                    //TODO: we could do this around X and Y axis too, but we would need to compute the new axis of rotation (not possible to know from jsut the angles)
                     if (geo.theta==0.0f & geo.psi==0.0f){
-                        kernelPixelDetector<false><<<grid,block,0,stream[dev*2]>>>(geoArray[sp],dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], source, deltaU, deltaV, uvOrigin,geo.DSO[i+dev],floor(cropdist_init),texImg[dev]);
+                        kernelPixelDetector<false><<<grid,block,0,stream[dev*nStream_device]>>>(geoArray[sp],dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], source, deltaU, deltaV, uvOrigin,geo.DSO[i+dev],floor(cropdist_init),texImg[dev]);
                     }
                     else{
-                        kernelPixelDetector<true> <<<grid,block,0,stream[dev*2]>>>(geoArray[sp],dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], source, deltaU, deltaV, uvOrigin,geo.DSO[i+dev],floor(cropdist_init),texImg[dev]);
+                        kernelPixelDetector<true> <<<grid,block,0,stream[dev*nStream_device]>>>(geoArray[sp],dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], source, deltaU, deltaV, uvOrigin,geo.DSO[i+dev],floor(cropdist_init),texImg[dev]);
                     }
                 }
                 
@@ -372,7 +373,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
             if( !fits_in_memory && sp>0){
                 for (dev = 0; dev < deviceCount; dev++){
                     cudaSetDevice(dev);
-                    cudaMemcpyAsync(dProjection_accum[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], result[i+dev], num_bytes_proj, cudaMemcpyHostToDevice,stream[dev*2+1]);                    
+                    cudaMemcpyAsync(dProjection_accum[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], result[i+dev], num_bytes_proj, cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);                    
                 }
             }
           
@@ -380,8 +381,8 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
             if( !fits_in_memory && sp>0){
                 for (dev = 0; dev < deviceCount; dev++){
                     cudaSetDevice(dev);
-                    cudaStreamSynchronize(stream[dev*2+1]);
-                    vecAddInPlaceInterp<<<(geo.nDetecU*geo.nDetecV+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev*2]>>>(dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount],dProjection_accum[(int)(i%(2*deviceCount)!=0)+dev*deviceCount],(unsigned long)geo.nDetecU*geo.nDetecV );
+                    cudaStreamSynchronize(stream[dev*nStream_device+1]);
+                    vecAddInPlaceInterp<<<(geo.nDetecU*geo.nDetecV+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev*nStream_device]>>>(dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount],dProjection_accum[(int)(i%(2*deviceCount)!=0)+dev*deviceCount],(unsigned long)geo.nDetecU*geo.nDetecV );
                     
                 }
             }
@@ -393,14 +394,14 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
                     
                     // copy result to host
                     cudaSetDevice(dev);
-                    cudaMemcpyAsync(result[(i-deviceCount)+dev], dProjection[(int)(i%(2*deviceCount)==0)+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*2+1]);
+                    cudaMemcpyAsync(result[(i-deviceCount)+dev], dProjection[(int)(i%(2*deviceCount)==0)+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
                 }
             }
             
             // Make sure Computation on kernels has finished before we launch the next batch.
             for (dev = 0; dev < deviceCount; dev++){
                 cudaSetDevice(dev);
-                cudaStreamSynchronize(stream[dev]);
+                cudaStreamSynchronize(stream[dev*nStream_device]);
             }
             
         }
@@ -414,7 +415,7 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
                 // copy result to host
                 cudaSetDevice(dev);
                 cudaDeviceSynchronize();
-                cudaMemcpyAsync(result[i+dev], dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*2+1]);
+                cudaMemcpyAsync(result[i+dev], dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
             }
             
         }
@@ -459,27 +460,33 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
 void CreateTextureInterp(int num_devices,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage)
 {
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
     for (unsigned int i = 0; i < num_devices; i++){
         cudaSetDevice(i);
         
         //cudaArray Descriptor
-        const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
+       
         cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
         //cuda Array
         cudaMalloc3DArray(&d_cuArrTex[i], &channelDesc, extent);
         cudaCheckErrors("Texture memory allocation fail");
+        
+        
+    }
+    for (unsigned int i = 0; i < num_devices; i++){
         cudaMemcpy3DParms copyParams = {0};
-        
-        
+        cudaSetDevice(i);        
         //Array creation
         copyParams.srcPtr   = make_cudaPitchedPtr((void *)imagedata, extent.width*sizeof(float), extent.width, extent.height);
         copyParams.dstArray = d_cuArrTex[i];
         copyParams.extent   = extent;
         copyParams.kind     = cudaMemcpyHostToDevice;
-        cudaMemcpy3D(&copyParams);
-        cudaCheckErrors("Texture memory data copy fail");
+        cudaMemcpy3DAsync(&copyParams);
+        //cudaCheckErrors("Texture memory data copy fail");
         //Array creation End
-        
+    }
+    for (unsigned int i = 0; i < num_devices; i++){
+        cudaSetDevice(i);        
         cudaResourceDesc    texRes;
         memset(&texRes, 0, sizeof(cudaResourceDesc));
         texRes.resType = cudaResourceTypeArray;

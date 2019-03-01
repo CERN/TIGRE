@@ -434,6 +434,7 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
             }   // END for (preparing params for kernel call)
             
             // Copy the prepared parameter arrays to constant memory to make it available for the kernel
+            
             cudaMemcpyToSymbolAsync(projSinCosArrayDevParallel, projSinCosArrayHostParallel, sizeof(float)*3*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[0]);
             cudaMemcpyToSymbolAsync(projParamsArrayDevParallel, projParamsArrayHostParallel, sizeof(Point3D)*6*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[0]);
             cudaStreamSynchronize(stream[0]);

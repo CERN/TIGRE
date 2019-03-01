@@ -96,7 +96,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising", "Image is not 3D");
     }
     // Now that input is ok, parse it to C data types.
-    float const * const img = static_cast<float const *>(mxGetData(image));
+    float  *  img = static_cast<float  *>(mxGetData(image));
     // We need a float image, and, unfortunatedly, the only way of casting it is by value
     const mwSize *size_img= mxGetDimensions(image); //get size of image
     
