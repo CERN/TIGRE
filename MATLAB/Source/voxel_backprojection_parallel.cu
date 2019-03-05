@@ -468,7 +468,8 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
     cudaCheckErrors("cudaMemcpy result fail");
     
-    
+    free(partial_projection);
+    free(proj_split_size);
         
     for(unsigned int i=0; i<2;i++){ // 2 buffers
             cudaDestroyTextureObject(texProj[i]);

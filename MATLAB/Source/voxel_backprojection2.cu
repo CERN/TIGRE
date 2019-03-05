@@ -605,6 +605,8 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     
     cudaFreeHost(projSinCosArray2Host);
     cudaFreeHost(projParamsArray2Host);
+    free(partial_projection);
+    free(proj_split_size);
     
     freeGeoArray(split_image*deviceCount,geoArray);
         
