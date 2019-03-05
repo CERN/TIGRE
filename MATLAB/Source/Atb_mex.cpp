@@ -136,7 +136,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 //         size_proj2=size_proj[2];
     
     
-    float const * const projections= static_cast<float const *>(mxGetData(image));
+    float  *  projections= static_cast<float *>(mxGetData(image));
     
     
     

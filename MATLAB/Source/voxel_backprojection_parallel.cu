@@ -92,7 +92,7 @@ do { \
      *
      *
      **/
-    void CreateTextureParallel(const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream);
+void CreateTextureParallel( float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool allocate);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
@@ -125,17 +125,6 @@ __constant__ float projSinCosArrayDevParallel[3*PROJ_PER_KERNEL];
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // END RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
-//______________________________________________________________________________
-//
-//      Function:       rollPitchYaw
-//
-//      Description:    Main FDK backprojection kernel
-//______________________________________________________________________________
 
 
 
@@ -290,7 +279,7 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
 //      Description:    Main host function for FDK backprojection (invokes the kernel)
 //______________________________________________________________________________
 
-int voxel_backprojection_parallel(float const * const projections, Geometry geo, float* result,float const * const alphas, int nalpha)
+int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* result,float const * const alphas, int nalpha)
 {
     
     /*
@@ -307,6 +296,15 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
         
         
     }
+    //Pagelock memory for syncronous copy.
+    // Lets try to make the host memory pinned:
+    // We laredy queried the GPU and assuemd they are the same, thus shoudl have the same attributes.
+    int isHostRegisterSupported;
+    cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
+    if (isHostRegisterSupported){
+        cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
+    }
+    cudaCheckErrors("Error pinning memory");
     
     
     // Allocate result image memory
@@ -322,9 +320,13 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
     float* projSinCosArrayHostParallel;
     cudaMallocHost((void**)&projSinCosArrayHostParallel,3*PROJ_PER_KERNEL*sizeof(float));
     
+    
+    // Texture buffer objects
     cudaTextureObject_t *texProj;
     cudaArray **d_cuArrTex;
-    
+    texProj =(cudaTextureObject_t*)malloc(2*sizeof(cudaTextureObject_t));
+    d_cuArrTex =(cudaArray**)malloc(2*sizeof(cudaArray*));
+
     
     
     unsigned int proj_split_overlap_number;
@@ -344,26 +346,42 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
     proj_split_overlap_number=(current_proj_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;
     
     
-    texProj =(cudaTextureObject_t*)malloc(proj_split_overlap_number*sizeof(cudaTextureObject_t));
-    d_cuArrTex =(cudaArray**)malloc(proj_split_overlap_number*sizeof(cudaArray*));
+    // Create pointer to pointers of projections and precompute their location and size.
+    
+    float ** partial_projection=(float**)malloc(current_proj_split_size*sizeof(float*));
+    size_t * proj_split_size=(size_t*)malloc(current_proj_split_size*sizeof(size_t*));
     
     for(unsigned int proj_block_split=0; proj_block_split<proj_split_overlap_number;proj_block_split++){
-        
         // Crop the last one, as its likely its not completely divisible.
         // now lets split this for simultanoeus memcopy and compute.
         // We want to make sure that if we can, we run PROJ_PER_KERNEL projections, to maximize kernel acceleration
+        // current_proj_overlap_split_size units = angles
         current_proj_overlap_split_size=max((current_proj_split_size+proj_split_overlap_number-1)/proj_split_overlap_number,PROJ_PER_KERNEL);
         current_proj_overlap_split_size=(proj_block_split<proj_split_overlap_number-1)?current_proj_overlap_split_size:current_proj_split_size-(proj_split_overlap_number-1)*current_proj_overlap_split_size;
-        
-        
         //Get the linear index where the current memory chunk starts.
+        
         proj_linear_idx_start=proj_block_split*max((current_proj_split_size+proj_split_overlap_number-1)/proj_split_overlap_number,PROJ_PER_KERNEL)*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
+        //Store resutl
+        proj_split_size[proj_block_split]=current_proj_overlap_split_size;
+        partial_projection[proj_block_split]=&projections[proj_linear_idx_start];
+        
+    }
+    for(unsigned int proj_block_split=0; proj_block_split<proj_split_overlap_number;proj_block_split++){
+        
         // Now get the projections on memory
-        CreateTextureParallel(&projections[proj_linear_idx_start],geo,&d_cuArrTex[proj_block_split],current_proj_overlap_split_size,&texProj[proj_block_split],stream);
+        
+        CreateTextureParallel(partial_projection[proj_block_split],geo,
+                &d_cuArrTex[(proj_block_split%2)],
+                proj_split_size[proj_block_split],
+                &texProj   [(proj_block_split%2)],
+                stream,
+                (proj_block_split<2));// Only allocate if its the first 2 calls
+        
+  
+        cudaStreamSynchronize(stream[0+1]);
         
         
-        
-        
+
         int divx,divy,divz;
         
         // RB: Use the optimal (in their tests) block size from paper by Zinsser and Keck (16 in x and 32 in y).
@@ -439,34 +457,33 @@ int voxel_backprojection_parallel(float const * const projections, Geometry geo,
             cudaMemcpyToSymbolAsync(projParamsArrayDevParallel, projParamsArrayHostParallel, sizeof(Point3D)*6*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[0]);
             cudaStreamSynchronize(stream[0]);
 
-            kernelPixelBackprojection_parallel<<<grid,block,0,stream[0]>>>(geo,dimage,i,current_proj_overlap_split_size,texProj[proj_block_split]);
+            kernelPixelBackprojection_parallel<<<grid,block,0,stream[0]>>>(geo,dimage,i,current_proj_overlap_split_size,texProj[(proj_block_split%2)]);
         }  // END for
         
         //////////////////////////////////////////////////////////////////////////////////////
         // END Main reconstruction loop: go through projections (rotation angles) and backproject
         //////////////////////////////////////////////////////////////////////////////////////
-        
-        
     }
-    for(unsigned int proj_block_split=0; proj_block_split<proj_split_overlap_number;proj_block_split++){
-
-            cudaStreamSynchronize(stream[0]);
-            cudaDestroyTextureObject(texProj[proj_block_split]);
-            cudaFreeArray(d_cuArrTex[proj_block_split]);
-        
-    }
-    cudaCheckErrors("cudadestroy textures result fail");
-
-    
+    cudaDeviceSynchronize();
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
     cudaCheckErrors("cudaMemcpy result fail");
     
+    
+        
+    for(unsigned int i=0; i<2;i++){ // 2 buffers
+            cudaDestroyTextureObject(texProj[i]);
+            cudaFreeArray(d_cuArrTex[i]);
+    }
     cudaFreeHost(projSinCosArrayHostParallel);
     cudaFreeHost(projParamsArrayHostParallel);
     
     cudaFree(dimage);
-    
-    
+     if (isHostRegisterSupported){
+        cudaHostUnregister(projections);
+    }
+    for (int i = 0; i < nStreams; ++i)
+        cudaStreamDestroy(stream[i]);
+
     cudaDeviceReset();
     return 0;
     
@@ -528,7 +545,7 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
     *S=source;
     
 }  // END computeDeltasCube
-void CreateTextureParallel(const float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream)
+void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool alloc)
 {
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
         
@@ -536,8 +553,10 @@ void CreateTextureParallel(const float* projectiondata,Geometry geo,cudaArray** 
         const cudaExtent extent = make_cudaExtent(geo.nDetecV, geo.nDetecU, nangles);
         cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
         //cuda Array
+        if (alloc){
         cudaMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent);
         cudaCheckErrors("Texture memory allocation fail");
+        }
         cudaMemcpy3DParms copyParams = {0};
         
         
