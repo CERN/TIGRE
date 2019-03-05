@@ -14,8 +14,9 @@ warnings.filterwarnings("error")
 from git import Repo
 
 
-def testandlog(alglist, geo, angles, niter, saveresult=False, **kwargs):
+def testandlog(alglist, geo, angles, niter, saveresult=False, newsubdirectory=False, **kwargs):
     nangles = angles.shape[0]
+    # createlogfile
 
     dirname = os.path.dirname(__file__)
 
@@ -31,7 +32,10 @@ def testandlog(alglist, geo, angles, niter, saveresult=False, **kwargs):
     if 'subdirectoryname' in kwargs:
         subdirectoryname = kwargs['subdirectoryname']
     else:
-        subdirectoryname = 'configuration' + str(len(os.listdir(subdirectory)) - 1)
+        subdirectoryname = 'test' + str(len(os.listdir(subdirectory)) - 1)
+
+    if newsubdirectory:
+        subdirectoryname = 'test' + str(len(os.listdir(subdirectory)))
 
     # create subdirectory for test if this does not exist
 
@@ -40,8 +44,7 @@ def testandlog(alglist, geo, angles, niter, saveresult=False, **kwargs):
     subdirectory = os.path.join(logdirectory, logdate, subdirectoryname)
     timestamp = str(time.asctime()).replace(' ', '_')
 
-    # create log file or append to an existing logfile in subdirectory
-    # (logs/logdate/subdirectory)
+    # create/append to log file
 
     logfilename = None
     for filename in os.listdir(subdirectory):
@@ -51,7 +54,7 @@ def testandlog(alglist, geo, angles, niter, saveresult=False, **kwargs):
     if logfilename is not None:
         logflist.extend(open(os.path.join(subdirectory, logfilename), 'r').readlines())
     else:
-        logfilename = logdate + '.log'
+        logfilename = timestamp + '.log'
     try:
         algsuccess = np.load(os.path.join(subdirectory, os.path.splitext(logfilename)[0]) + '.npy').item()
     except Exception:
@@ -63,18 +66,18 @@ def testandlog(alglist, geo, angles, niter, saveresult=False, **kwargs):
     uname = str(os.uname())
     current_config = dict(uname=uname, commithash=commit.hexsha)
     try:
-        prev_config = np.load(os.path.join(subdirectory, os.path.splitext(logfilename)[0]) + '_config' + '.npy').item()
+        prev_config = open(os.path.join(subdirectory, os.path.splitext(logfilename)[0] + '_config') + '.npy').item()
     except Exception:
         prev_config = dict()
         prev_config.update(current_config)
 
     for item in current_config:
         if prev_config[item] != current_config[item]:
-
-            logflist.append('Configuration changed for ' + item + ':\n')
-            logflist.append('From: ' + str(prev_config[item]) +'\n')
-            logflist.append('To  : ' + str(current_config[item]) +'\n')
             logflist.append('------------------------------------------------\n')
+            logflist.append('Configuration changed for' + item + ':\n')
+            logflist.append('From: ' + str(prev_config[item]))
+            logflist.append('To  : ' + str(current_config[item]))
+
     if len(logflist) == 0:  # If file is empty
         # MACHINE
 

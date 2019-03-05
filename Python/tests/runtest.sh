@@ -3,11 +3,11 @@ function runAlgs() {
    arr=("$@")
    for i in "${arr[@]}";
       do
-          python ~/TIGRE/Python/tests/configurations.py configuration1 "$i"
-          python ~/TIGRE/Python/tests/configurations.py configuration2 "$i"
-          python ~/TIGRE/Python/tests/configurations.py configuration3 "$i"
-          python ~/TIGRE/Python/tests/configurations.py configuration4 "$i"
-          python ~/TIGRE/Python/tests/configurations.py configuration5 "$i"
+          python ~/TIGRE/Python/tests/runscript1.py configuration1 "$i"
+          python ~/TIGRE/Python/tests/runscript1.py configuration2 "$i"
+          python ~/TIGRE/Python/tests/runscript1.py configuration3 "$i"
+          python ~/TIGRE/Python/tests/runscript1.py configuration4 "$i"
+          python ~/TIGRE/Python/tests/runscript1.py configuration5 "$i"
       done
 
 }
