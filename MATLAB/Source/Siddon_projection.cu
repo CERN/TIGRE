@@ -65,6 +65,8 @@ do { \
     
     
 #define MAXTREADS 1024
+#define PROJ_PER_BLOCK 9
+#define PIXEL_SIZE_BLOCK 9
     /*GEOMETRY DEFINITION
      *
      *                Detector plane, behind
@@ -94,6 +96,8 @@ do { \
     
     void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage);
 
+__constant__ Point3D projParamsArrayDev[4*PROJ_PER_BLOCK];  // Dev means it is on device
+
 
 __global__ void vecAddInPlace(float *a, float *b, unsigned long  n)
 {
@@ -105,23 +109,29 @@ __global__ void vecAddInPlace(float *a, float *b, unsigned long  n)
 
 __global__ void kernelPixelDetector( Geometry geo,
         float* detector,
-        Point3D source ,
-        Point3D deltaU,
-        Point3D deltaV,
-        Point3D uvOrigin,
+        const int currProjSetNumber,
+        const int totalNoOfProjections,
         cudaTextureObject_t tex){
     
-//     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
     
     unsigned long y = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long x = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned long idx =  x  * geo.nDetecV + y;
+    unsigned long projNumber=threadIdx.z;
     
-    if ((x>= geo.nDetecU) | (y>= geo.nDetecV))
+    
+    if ((x>= geo.nDetecU) | (y>= geo.nDetecV)|  (projNumber>=PROJ_PER_BLOCK))
         return;
     
+    size_t idx =  (size_t)(x  * geo.nDetecV + y)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+    int indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array
+
+    if(indAlpha>=totalNoOfProjections)
+        return;
     
-    
+    Point3D uvOrigin = projParamsArrayDev[4*projNumber];  // 6*projNumber because we have 6 Point3D values per projection
+    Point3D deltaU = projParamsArrayDev[4*projNumber+1];
+    Point3D deltaV = projParamsArrayDev[4*projNumber+2];
+    Point3D source = projParamsArrayDev[4*projNumber+3];
     
     /////// Get coordinates XYZ of pixel UV
     int pixelV = geo.nDetecV-y-1;
@@ -244,7 +254,7 @@ __global__ void kernelPixelDetector( Geometry geo,
 }
 
 
-int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
+int siddon_ray_projection(float  *  img, Geometry geo, float** result,float const * const angles,int nangles){
     
     
     
@@ -280,6 +290,9 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         }
         devicenames=deviceProp.name;
     }
+    
+    
+    
     
     // Check free memory
     size_t memfree;
@@ -326,7 +339,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     
     // Allocate axuiliary memory for projections on the GPU to accumulate partial resutsl
     float ** dProjection_accum;
-    size_t num_bytes_proj = geo.nDetecU*geo.nDetecV * sizeof(float);
+    size_t num_bytes_proj = PROJ_PER_BLOCK*geo.nDetecU*geo.nDetecV * sizeof(float);
     if (!fits_in_memory){
         dProjection_accum=(float**)malloc(2*deviceCount*sizeof(float*));
         for (dev = 0; dev < deviceCount; dev++) {
@@ -351,13 +364,31 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         }
     }
     
-   
+    
+    //Pagelock memory for syncronous copy.
+    // Lets try to make the host memory pinned:
+    // We laredy queried the GPU and assuemd they are the same, thus shoudl have the same attributes.
+    int isHostRegisterSupported;
+    cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
+    // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to
+    // pin the memory is greater than the lost time in Syncronously launching the memcpys. This is only worth it when the image is too big.
+    if (isHostRegisterSupported & splits>1){
+        cudaHostRegister(img, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float),cudaHostRegisterPortable);
+    }
+
+    
+    
+    // auxiliary variables
+    Point3D source, deltaU, deltaV, uvOrigin;
+    Point3D* projParamsArrayHost;
+    cudaMallocHost((void**)&projParamsArrayHost,4*PROJ_PER_BLOCK*sizeof(Point3D));
+    
     
     // Create Streams for overlapping memcopy and compute
     int nStreams=deviceCount*2;
     cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));;
     
-   
+    
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
         for (int i = 0; i < 2; ++i){
@@ -365,8 +396,9 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
             
         }
     }
-    
+    int nangles_device=(nangles+deviceCount-1)/deviceCount;
     cudaCheckErrors("Stream creation fail");
+    
     for (unsigned int sp=0;sp<splits;sp++){
         
         // Create texture objects for all GPUs
@@ -376,112 +408,119 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         size_t linear_idx_start;
         //First one shoudl always be  the same size as all the rest but the last
         linear_idx_start= (size_t)sp*(size_t)geoArray[0].nVoxelX*(size_t)geoArray[0].nVoxelY*(size_t)geoArray[0].nVoxelZ;
-       
-
+        
+        
         CreateTexture(deviceCount,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg);
         cudaCheckErrors("Texture object creation fail");
         
         
+        // Prepare kernel lauch variables
         
-        
-        Point3D source, deltaU, deltaV, uvOrigin;
-        
-        // 16x16 gave the best performance empirically
-        // Funnily that makes it compatible with most GPUs.....
         int divU,divV;
-        divU=16;
-        divV=16;
+        divU=PIXEL_SIZE_BLOCK;
+        divV=PIXEL_SIZE_BLOCK;
         dim3 grid((geoArray[sp].nDetecU+divU-1)/divU,(geoArray[0].nDetecV+divV-1)/divV,1);
-        dim3 block(divU,divV,1);
+        dim3 block(divU,divV,PROJ_PER_BLOCK);
         
-        
-        
+        unsigned int proj_global;
+        unsigned int noOfKernelCalls = (nangles_device+PROJ_PER_BLOCK-1)/PROJ_PER_BLOCK;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_BLOCK
+        unsigned int i;
         // Now that we have prepared the image (piece of image) and parameters for kernels
         // we project for all angles.
-        for (unsigned int i=0;i<nangles;i+=(unsigned int)deviceCount){
-            
-            // First, we launch all the kernels for this angle
-            
-            for (dev = 0; dev < deviceCount; dev++){
-                if(i+dev<nangles){
-                    geoArray[sp].alpha=angles[(i+dev)*3];
-                    geoArray[sp].theta=angles[(i+dev)*3+1];
-                    geoArray[sp].psi  =angles[(i+dev)*3+2];
+        for ( i=0; i<noOfKernelCalls; i++){
+            for (dev=0;dev<deviceCount;dev++){
+                cudaSetDevice(dev);
+                
+                for(unsigned int j=0; j<PROJ_PER_BLOCK; j++){
+                    proj_global=(i*PROJ_PER_BLOCK+j)+dev*nangles_device;
+                    if (proj_global>nangles)
+                        break;
+                    geoArray[sp].alpha=angles[proj_global*3];
+                    geoArray[sp].theta=angles[proj_global*3+1];
+                    geoArray[sp].psi  =angles[proj_global*3+2];
+                    
+                    
                     //precomute distances for faster execution
                     //Precompute per angle constant stuff for speed
-                    computeDeltas_Siddon(geoArray[sp],i+dev, &uvOrigin, &deltaU, &deltaV, &source);
+                    computeDeltas_Siddon(geoArray[sp],proj_global, &uvOrigin, &deltaU, &deltaV, &source);
                     //Ray tracing!
-                    cudaSetDevice(dev);
-                    kernelPixelDetector<<<grid,block,0,stream[dev*2]>>>(geoArray[sp],dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], source, deltaU, deltaV, uvOrigin,texImg[dev]);
+                    projParamsArrayHost[4*j]=uvOrigin;		// 6*j because we have 6 Point3D values per projection
+                    projParamsArrayHost[4*j+1]=deltaU;
+                    projParamsArrayHost[4*j+2]=deltaV;
+                    projParamsArrayHost[4*j+3]=source;
                     
                 }
-                
+                cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*4*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[dev*2]);
+                cudaStreamSynchronize(stream[dev*2]);
+                cudaCheckErrors("kernel fail");
+                kernelPixelDetector<<<grid,block,0,stream[dev*2]>>>(geoArray[sp],dProjection[(i%2)+dev*deviceCount],i,nangles,texImg[dev]);
             }
             // Now that the computation is happening, we need to either prepare the memory for
             // combining of the projections (splits>1) or start removing previous results.
-            
-            
+
             // If our image does not fit in memory then we need to make sure we accumulate previous results too.
-            // First, grab previous results and put them in the auxiliary variable
-            if( !fits_in_memory && sp>0){
-                for (dev = 0; dev < deviceCount; dev++){
-                    cudaSetDevice(dev);
-                    cudaMemcpyAsync(dProjection_accum[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], result[i+dev], num_bytes_proj, cudaMemcpyHostToDevice,stream[dev*2+1]);                    
+            if( !fits_in_memory){
+                if(sp>0){
+                    // First, grab previous results and put them in the auxiliary variable
+                    for (dev = 0; dev < deviceCount; dev++){
+                        cudaSetDevice(dev);
+                        cudaMemcpyAsync(dProjection_accum[(i%2)+dev*deviceCount], result[i*PROJ_PER_BLOCK+dev*nangles_device], num_bytes_proj, cudaMemcpyHostToDevice,stream[dev*2+1]);
+                    }            
+                    // Second, take the results from current compute call and add it to the code in execution.
+                    for (dev = 0; dev < deviceCount; dev++){
+                        cudaSetDevice(dev);
+                        cudaStreamSynchronize(stream[dev*2+1]); // wait until copy is finished
+                        vecAddInPlace<<<(geo.nDetecU*geo.nDetecV*PROJ_PER_BLOCK+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev*2]>>>(dProjection[(i%2)+dev*deviceCount],dProjection_accum[(i%2)+dev*deviceCount],(unsigned long)geo.nDetecU*geo.nDetecV*PROJ_PER_BLOCK);
+                    }
                 }
             }
-            // Second, take the results from previous compute call and add it to the code in execution.  
-            if( !fits_in_memory && sp>0){
-                for (dev = 0; dev < deviceCount; dev++){
-                    cudaSetDevice(dev);
-                    cudaStreamSynchronize(stream[dev*2+1]);
-                    vecAddInPlace<<<(geo.nDetecU*geo.nDetecV+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev*2]>>>(dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount],dProjection_accum[(int)(i%(2*deviceCount)!=0)+dev*deviceCount],(unsigned long)geo.nDetecU*geo.nDetecV );
-                    
-                }
-            }
+
             
-    
             // Now, lets get out the projections from the previous execution of the kernels.
             if (i>0){
                 for (dev = 0; dev < deviceCount; dev++){
-                    
                     // copy result to host
                     cudaSetDevice(dev);
-                    cudaMemcpyAsync(result[(i-deviceCount)+dev], dProjection[(int)(i%(2*deviceCount)==0)+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*2+1]);
+                    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(!(i%2))+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*2+1]);
                 }
             }
-            
             // Make sure Computation on kernels has finished before we launch the next batch.
             for (dev = 0; dev < deviceCount; dev++){
                 cudaSetDevice(dev);
                 cudaStreamSynchronize(stream[dev*2]);
-            }
-        } // END angles loop
+            }   
+        }// END angles loop
+        
         
         // We still have the last one to get out, do that one
+        int angles_last_device=(nangles-(deviceCount-1)*nangles_device);
+        int size_last_block=nangles_device-(i-1)*PROJ_PER_BLOCK;
         
-        int i = nangles-deviceCount+nangles%deviceCount;
-
         for (dev = 0; dev < deviceCount; dev++){
-            if(i+dev<nangles){
-                // copy result to host
-                cudaSetDevice(dev);
-                cudaDeviceSynchronize();
-                cudaMemcpyAsync(result[i+dev], dProjection[(int)(i%(2*deviceCount)!=0)+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*2+1]);
+            if(dev+1==deviceCount){
+                size_last_block=angles_last_device-(i-1)*PROJ_PER_BLOCK;
             }
-            
+            // copy result to host
+            cudaSetDevice(dev);
+            cudaDeviceSynchronize();
+            cudaCheckErrors("Fail memcopy fail");
+            cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(((i-1)%2))+dev*deviceCount], size_last_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
         }
         // Free memory for the next piece of image
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
             cudaDestroyTextureObject(texImg[dev]);
             cudaFreeArray(d_cuArrTex[dev]);
-            
         }
         cudaDeviceSynchronize();
-    }
+    }//END image splits loop
     
     
+    cudaCheckErrors("Main loop  fail");
+    ///////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////////
     
+    // Freeing Stage
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
         cudaFree(dProjection[dev*deviceCount]);
@@ -500,18 +539,29 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         free(dProjection_accum);
     }
     freeGeoArray(splits,geoArray);
-    cudaCheckErrors("cudaFree  fail");
+    cudaFreeHost(projParamsArrayHost);
+   
     
     for (int i = 0; i < nStreams; ++i)
         cudaStreamDestroy(stream[i]) ;
+    
+        if (isHostRegisterSupported & splits>1){
+            cudaHostUnregister(img);
+    }
+    cudaCheckErrors("cudaFree  fail");
+    
     cudaDeviceReset();
     return 0;
 }
+
+
+
+
 void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage)
 {
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
-
+    
     for (unsigned int i = 0; i < num_devices; i++){
         cudaSetDevice(i);
         
@@ -530,7 +580,7 @@ void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray
         copyParams.kind     = cudaMemcpyHostToDevice;
         cudaMemcpy3DAsync(&copyParams);
     }
-      for (unsigned int i = 0; i < num_devices; i++){  
+    for (unsigned int i = 0; i < num_devices; i++){
         cudaSetDevice(i);
         cudaResourceDesc    texRes;
         memset(&texRes, 0, sizeof(cudaResourceDesc));

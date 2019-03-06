@@ -50,7 +50,7 @@ Codes  : https://github.com/CERN/TIGRE
 
 #ifndef PROJECTION_HPP_SIDDON
 #define PROJECTION_HPP_SIDDON
-int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const angles,int nangle);
+int siddon_ray_projection(float  *  img, Geometry geo, float** result,float const * const angles,int nangle);
 
 //double computeMaxLength(Geometry geo, double alpha);
 void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);

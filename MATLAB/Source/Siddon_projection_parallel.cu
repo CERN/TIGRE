@@ -111,8 +111,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     
     unsigned long y = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long x = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned long projNumber= blockIdx.z * blockDim.z + threadIdx.z;
-    projNumber=threadIdx.z;
+    unsigned long projNumber=threadIdx.z;
             
     if ((x>= geo.nDetecU) | (y>= geo.nDetecV)|  (projNumber>=PROJ_PER_BLOCK))
         return;
@@ -364,6 +363,7 @@ int siddon_ray_projection_parallel(float  *  img, Geometry geo, float** result,f
     cudaFree(dProjection[0]);
     cudaFree(dProjection[1]);
     free(dProjection);
+    cudaFreeHost(projParamsArrayHost);
     cudaCheckErrors("cudaFree d_imagedata fail");
     
     

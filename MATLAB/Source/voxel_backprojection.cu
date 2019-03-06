@@ -529,7 +529,7 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
                     //////////////////////////////////////////////////////////////////////////////////////
                     // END RB code, Main reconstruction loop: go through projections (rotation angles) and backproject
                     //////////////////////////////////////////////////////////////////////////////////////
-                }
+                }// END for deviceCount
             } // END sub-split of current projection chunk
             
             for (dev = 0; dev < deviceCount; dev++){
