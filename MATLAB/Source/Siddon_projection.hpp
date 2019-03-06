@@ -58,6 +58,8 @@ void splitImage(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned in
 void freeGeoArray(unsigned int splits,Geometry* geoArray);
 //double maxDistanceCubeXY(Geometry geo, double alpha,int i);
 
-// below, not used
-//Geometry nomralizeGeometryImage(Geometry geo);
+
+#endif
+#ifndef PROJECTION_HPP
+void checkFreeMemory(int deviceCount,size_t *mem_GPU_global);
 #endif

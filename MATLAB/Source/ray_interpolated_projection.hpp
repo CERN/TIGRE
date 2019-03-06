@@ -60,7 +60,7 @@ float maxdistanceCuboid(Geometry geo,unsigned int i);
 void eulerZYZ(Geometry geo, Point3D* point);
 void splitImageInterp(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned int nangles);
 void freeGeoArray(unsigned int splits,Geometry* geoArray);
-
+void checkFreeMemory(int deviceCount,size_t *mem_GPU_global);
 // below, not used
 Geometry nomralizeGeometryImage(Geometry geo);
 #endif

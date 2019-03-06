@@ -295,22 +295,9 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
     
     
     // Check free memory
-    size_t memfree;
-    size_t memtotal;
     size_t mem_GPU_global;
-    for (unsigned int dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
-        cudaMemGetInfo(&memfree,&memtotal);
-        if(dev==0) mem_GPU_global=memfree;
-        if(memfree<memtotal/2){
-            mexErrMsgIdAndTxt("Ax:GPUselect","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
-        }
-        cudaCheckErrors("Check mem error");
-        
-        mem_GPU_global=(memfree<mem_GPU_global)?memfree:mem_GPU_global;
-    }
-    mem_GPU_global=(size_t)((double)mem_GPU_global*0.95); // lets leave 10% for the GPU. Too much? maybe, but probably worth saving.
-    
+    checkFreeMemory(deviceCount,&mem_GPU_global);
+
     size_t mem_image=                 (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
     size_t mem_proj=                  (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
     
@@ -320,7 +307,7 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
     Geometry * geoArray;
     
     
-    if (mem_image+2*mem_proj<mem_GPU_global){// yes it does
+    if (mem_image+2*PROJ_PER_BLOCK*mem_proj<mem_GPU_global){// yes it does
         fits_in_memory=true;
         geoArray=(Geometry*)malloc(sizeof(Geometry));
         geoArray[0]=geo;
@@ -329,7 +316,7 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
         fits_in_memory=false; // Oh dear.
         // approx free memory we have. We already have left some extra 5% free for internal stuff
         // we need a second projection memory to combine multi-GPU stuff.
-        size_t mem_free=mem_GPU_global-4*mem_proj;
+        size_t mem_free=mem_GPU_global-4*PROJ_PER_BLOCK*mem_proj;
         
         
         splits=mem_image/mem_free+1;// Ceil of the truncation
@@ -337,7 +324,7 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
         splitImage(splits,geo,geoArray,nangles);
     }
     
-    // Allocate axuiliary memory for projections on the GPU to accumulate partial resutsl
+    // Allocate axuiliary memory for projections on the GPU to accumulate partial results
     float ** dProjection_accum;
     size_t num_bytes_proj = PROJ_PER_BLOCK*geo.nDetecU*geo.nDetecV * sizeof(float);
     if (!fits_in_memory){
@@ -805,5 +792,29 @@ void freeGeoArray(unsigned int splits,Geometry* geoArray){
     }
     free(geoArray);
 }
-
+//______________________________________________________________________________
+//
+//      Function:       checkFreeMemory
+//
+//      Description:    check available memory on devices
+//______________________________________________________________________________
+void checkFreeMemory(int deviceCount,size_t *mem_GPU_global){
+    size_t memfree;
+    size_t memtotal;
+    
+    for (int dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(dev);
+        cudaMemGetInfo(&memfree,&memtotal);
+        if(dev==0) *mem_GPU_global=memfree;
+        if(memfree<memtotal/2){
+            mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+        }
+        cudaCheckErrors("Check mem error");
+        
+        *mem_GPU_global=(memfree<*mem_GPU_global)?memfree:*mem_GPU_global;
+    }
+    *mem_GPU_global=(size_t)((double)*mem_GPU_global*0.95);
+    
+    //*mem_GPU_global= insert your known number here, in bytes.
+}
 #endif
