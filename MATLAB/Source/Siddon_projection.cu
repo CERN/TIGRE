@@ -94,7 +94,7 @@ do { \
      *
      **/
     
-    void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage);
+    void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool alloc);
 
 __constant__ Point3D projParamsArrayDev[4*PROJ_PER_BLOCK];  // Dev means it is on device
 
@@ -386,18 +386,20 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
     int nangles_device=(nangles+deviceCount-1)/deviceCount;
     cudaCheckErrors("Stream creation fail");
     
+    cudaTextureObject_t *texImg = new cudaTextureObject_t[deviceCount];
+    cudaArray **d_cuArrTex = new cudaArray*[deviceCount];
+    
     for (unsigned int sp=0;sp<splits;sp++){
         
         // Create texture objects for all GPUs
-        cudaTextureObject_t *texImg = new cudaTextureObject_t[deviceCount];
-        cudaArray **d_cuArrTex = new cudaArray*[deviceCount];
+        
         
         size_t linear_idx_start;
         //First one shoudl always be  the same size as all the rest but the last
         linear_idx_start= (size_t)sp*(size_t)geoArray[0].nVoxelX*(size_t)geoArray[0].nVoxelY*(size_t)geoArray[0].nVoxelZ;
         
         
-        CreateTexture(deviceCount,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg);
+        CreateTexture(deviceCount,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg,!sp);
         cudaCheckErrors("Texture object creation fail");
         
         
@@ -494,19 +496,19 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
             cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(((i-1)%2))+dev*deviceCount], size_last_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
         }
         // Free memory for the next piece of image
-        for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
-            cudaDestroyTextureObject(texImg[dev]);
-            cudaFreeArray(d_cuArrTex[dev]);
-        }
+       
         cudaDeviceSynchronize();
     }//END image splits loop
-    
+     
     
     cudaCheckErrors("Main loop  fail");
     ///////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////
-    
+    for (dev = 0; dev < deviceCount; dev++){
+            cudaSetDevice(dev);
+            cudaDestroyTextureObject(texImg[dev]);
+            cudaFreeArray(d_cuArrTex[dev]);
+    }
     // Freeing Stage
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
@@ -544,11 +546,11 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
 
 
 
-void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage)
+void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool alloc)
 {
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
-    
+    if(alloc){
     for (unsigned int i = 0; i < num_devices; i++){
         cudaSetDevice(i);
         
@@ -556,6 +558,7 @@ void CreateTexture(int num_devices,const float* imagedata,Geometry geo,cudaArray
         cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
         //cuda Array
         cudaMalloc3DArray(&d_cuArrTex[i], &channelDesc, extent);
+    }
     }
     for (unsigned int i = 0; i < num_devices; i++){
         cudaSetDevice(i);
