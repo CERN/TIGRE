@@ -1,0 +1,51 @@
+('Linux', 'reuben-DQ77MK', '4.15.0-45-generic', '#48-Ubuntu SMP Tue Jan 29 16:28:13 UTC 2019', 'x86_64')
+------------------------------------------------
+------------------------------------------------
+Repo description: Unnamed repository; edit this file 'description' to name the repository.
+Repo active branch is pydev
+Remote named "origin" with URL "https://github.com/CERN/TIGRE.git"
+Last commit for repo is c1232600d36e9af51d0807835d7ae9cc73acc8b3.c1232600d36e9af51d0807835d7ae9cc73acc8b3
+"Revert "minor changes to runfiles for tests, purged logfiles"" by reuben (rllindroos@gmail.com)
+2019-03-05 13:19:13+00:00
+count: 459 and size: 331
+------------------------------------------------
+summary carried out on Wed Mar  6 13:48:42 2019
+
+------------------------------------------------
+configuration2: 
+      awasd_pocs : PASSED
+      asd_pocs : PASSED
+commithash: c1232600d36e9af51d0807835d7ae9cc73acc8b3
+uname: ('Linux', 'reuben-DQ77MK', '4.15.0-45-generic', '#48-Ubuntu SMP Tue Jan 29 16:28:13 UTC 2019', 'x86_64')
+
+------------------------------------------------
+configuration4: 
+      awasd_pocs : ERROR - distortion in output, possibly due to point previously discussed with Ander.
+      asd_pocs : ERROR
+commithash: c1232600d36e9af51d0807835d7ae9cc73acc8b3
+uname: ('Linux', 'reuben-DQ77MK', '4.15.0-45-generic', '#48-Ubuntu SMP Tue Jan 29 16:28:13 UTC 2019', 'x86_64')
+
+------------------------------------------------
+configuration3: 
+      awasd_pocs : PASSED
+      asd_pocs : PASSED
+commithash: c1232600d36e9af51d0807835d7ae9cc73acc8b3
+uname: ('Linux', 'reuben-DQ77MK', '4.15.0-45-generic', '#48-Ubuntu SMP Tue Jan 29 16:28:13 UTC 2019', 'x86_64')
+
+------------------------------------------------
+configuration1: 
+      awasd_pocs : PASSED
+      asd_pocs : PASSED
+commithash: c1232600d36e9af51d0807835d7ae9cc73acc8b3
+uname: ('Linux', 'reuben-DQ77MK', '4.15.0-45-generic', '#48-Ubuntu SMP Tue Jan 29 16:28:13 UTC 2019', 'x86_64')
+
+------------------------------------------------
+configuration5: 
+      awasd_pocs : PASSED
+      asd_pocs : PASSED
+commithash: c1232600d36e9af51d0807835d7ae9cc73acc8b3
+uname: ('Linux', 'reuben-DQ77MK', '4.15.0-45-generic', '#48-Ubuntu SMP Tue Jan 29 16:28:13 UTC 2019', 'x86_64')
+
+ All tests passed:False
+
+------------------------------------------------

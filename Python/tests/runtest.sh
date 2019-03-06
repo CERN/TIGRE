@@ -12,8 +12,8 @@ function runAlgs() {
 
 }
 
-array=("sirt" "ossart" "FDK" "fbp")
+array=("awasd_pocs" "asd_pocs")
 
 runAlgs "${array[@]}"
 
-python ~/TIGRE/Python/tests/testforlog.py log_summary Thu_Feb_28
+python ~/TIGRE/Python/tests/testforlog.py log_summary Wed_Mar_06

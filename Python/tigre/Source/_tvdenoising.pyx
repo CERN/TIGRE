@@ -16,7 +16,7 @@
 
 cimport numpy as np 
 import numpy as np
-
+from tigre.utilities.errors import TigreCudaCallError
 np.import_array()
 
 from libc.stdlib cimport malloc, free 
@@ -31,7 +31,7 @@ cdef extern from "tvdenoising.hpp":
 
 def cuda_raise_errors(error_code):
     if error_code:
-        raise ValueError('TIGRE:Call to tvdenoising failed')
+        raise TigreCudaCallError('tvdenoising:',error_code)
 
 
 def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lamda = 15.0):

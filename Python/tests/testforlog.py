@@ -19,7 +19,7 @@ def testandlog(alglist, geo, angles, niter, saveresult=False, newsubdirectory=Fa
     # createlogfile
 
     dirname = os.path.dirname(__file__)
-
+    kwargs.update(dict(blocksize=20))
     # create top level folder if this does not exist
 
     if 'logs' not in os.listdir(dirname):

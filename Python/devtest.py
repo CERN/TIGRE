@@ -18,13 +18,6 @@ geo1 = tigre.geometry(nVoxel=nVoxel,mode='parallel',default_geo=True)
 geo2 = tigre.geometry(nVoxel=nVoxel,mode='cone',default_geo=True)
 geo3 = copy.deepcopy(geo1)
 geo3.accuracy = 0.712
-
-print(str(geo1 == geo2))
-print(geo1.accuracy)
-print(geo3.accuracy)
-print(geo1.accuracy ==geo3.accuracy)
-print(geo1 == geo1)
-print(geo1 == geo3)
 """
 src_img = data_loader.load_head_phantom(nVoxel)
 proj=tigre.Ax(src_img,geo,angles)
@@ -32,3 +25,6 @@ res = tigre.algorithms.fbp(proj,geo,angles)
 plt.imshow(res[nVoxel[0]/2])
 plt.show()
 """
+
+from tigre.utilities.errors import TigreError
+raise TigreError(2)

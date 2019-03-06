@@ -16,7 +16,7 @@
 
 cimport numpy as np 
 import numpy as np
-
+from tigre.utilities.errors import TigreCudaCallError
 np.import_array()
 
 from libc.stdlib cimport malloc, free 
@@ -31,7 +31,7 @@ cdef extern from "POCS_TV.hpp":
 
 def cuda_raise_errors(error_code):
     if error_code:
-        raise ValueError('TIGRE: Call to pocs_tv failed')
+        raise TigreCudaCallError('minimizeTV:POCS_TV:', error_code)
 
 
 def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100):
