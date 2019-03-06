@@ -67,8 +67,12 @@ do { \
     
     
 // Declare the texture reference.
-    texture<float, cudaTextureType3D , cudaReadModeElementType> tex;
+void CreateTextureParallel(float* image,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,cudaStream_t* stream);
+
+
 #define MAXTREADS 1024
+#define PROJ_PER_BLOCK 9
+#define PIXEL_SIZE_BLOCK 9
 /*GEOMETRY DEFINITION
  *
  *                Detector plane, behind
@@ -97,26 +101,36 @@ do { \
  **/
 
 
+__constant__ Point3D projParamsArrayDev[4*PROJ_PER_BLOCK];  // Dev means it is on device
+
 
 __global__ void kernelPixelDetector_parallel( Geometry geo,
-        float* detector,
-        Point3D source ,
-        Point3D deltaU,
-        Point3D deltaV,
-        Point3D uvOrigin){
+        float* detector, const int currProjSetNumber, const int totalNoOfProjections, cudaTextureObject_t tex){
     
 //     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
     
     unsigned long y = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long x = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned long idx =  x  * geo.nDetecV + y;
-    
-    if ((x>= geo.nDetecU) | (y>= geo.nDetecV))
+    unsigned long projNumber= blockIdx.z * blockDim.z + threadIdx.z;
+    projNumber=threadIdx.z;
+            
+    if ((x>= geo.nDetecU) | (y>= geo.nDetecV)|  (projNumber>=PROJ_PER_BLOCK))
         return;
     
+    int indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array
     
     
+    size_t idx =  (size_t)(x  * geo.nDetecV + y)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;    
     
+    if(indAlpha>=totalNoOfProjections)
+        return;
+    
+    Point3D uvOrigin = projParamsArrayDev[4*projNumber];  // 6*projNumber because we have 6 Point3D values per projection
+    Point3D deltaU = projParamsArrayDev[4*projNumber+1];
+    Point3D deltaV = projParamsArrayDev[4*projNumber+2];
+    Point3D source = projParamsArrayDev[4*projNumber+3];
+    
+
     /////// Get coordinates XYZ of pixel UV
     int pixelV = geo.nDetecV-y-1;
     int pixelU = x;
@@ -233,17 +247,17 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     k+=0.5f;
     for (unsigned int ii=0;ii<Np;ii++){
         if (ax==aminc){
-            sum+=(ax-ac)*tex3D(tex, i, j, k);//(ax-ac)*
+            sum+=(ax-ac)*tex3D<float>(tex, i, j, k);//(ax-ac)*
             i=i+iu;
             ac=ax;
             ax+=axu;
         }else if(ay==aminc){
-            sum+=(ay-ac)*tex3D(tex, i, j, k);//(ay-ac)*
+            sum+=(ay-ac)*tex3D<float>(tex, i, j, k);//(ay-ac)*
             j=j+ju;
             ac=ay;
             ay+=ayu;
 //         }else if(az==aminc){
-//             sum+=(az-ac)*tex3D(tex, i+0.5, j+0.5, k+0.5);
+//             sum+=(az-ac)*tex3D<float>(tex, i+0.5, j+0.5, k+0.5);
 //             k=k+ku;
 //             ac=az;
 //             az+=azu;
@@ -254,100 +268,102 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
 }
 
 
-int siddon_ray_projection_parallel(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
+int siddon_ray_projection_parallel(float  *  img, Geometry geo, float** result,float const * const angles,int nangles){
     
     
-    
-    // copy data to CUDA memory
-    cudaArray *d_imagedata = 0;
-    
-    const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
-    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
-    cudaMalloc3DArray(&d_imagedata, &channelDesc, extent);
-    cudaCheckErrors("cudaMalloc3D error 3D tex");
-    
-    cudaMemcpy3DParms copyParams = { 0 };
-    copyParams.srcPtr = make_cudaPitchedPtr((void*)img, extent.width*sizeof(float), extent.width, extent.height);
-    copyParams.dstArray = d_imagedata;
-    copyParams.extent = extent;
-    copyParams.kind = cudaMemcpyHostToDevice;
-    cudaMemcpy3D(&copyParams);
-    
-    cudaCheckErrors("cudaMemcpy3D fail");
-    
-    // Configure texture options
-    tex.normalized = false;
-    tex.filterMode = cudaFilterModePoint; //we dotn want itnerpolation
-    tex.addressMode[0] = cudaAddressModeBorder;
-    tex.addressMode[1] = cudaAddressModeBorder;
-    tex.addressMode[2] = cudaAddressModeBorder;
-    
-    cudaBindTextureToArray(tex, d_imagedata, channelDesc);
-    
-    cudaCheckErrors("3D texture memory bind fail");
+
     
     
-    
-    
-    //Done! Image put into texture memory.
-    
-    
-    size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(float);
+    size_t num_bytes = (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)PROJ_PER_BLOCK* (size_t)sizeof(float);
     float** dProjection=(float **)malloc(2*sizeof(float *));
     for (int i = 0; i < 2; ++i){
         cudaMalloc((void**)&dProjection[i],   num_bytes);
         cudaCheckErrors("cudaMalloc projections fail");
     }
     int nStreams=2;
-    cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));;
+    cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
     
     for (int i = 0; i < 2; ++i){
         cudaStreamCreate(&stream[i]);
     }
     
     
-    Point3D source, deltaU, deltaV, uvOrigin;
+        
+    // Texture object variables
+    cudaTextureObject_t *texImg;
+    cudaArray **d_cuArrTex;
+    texImg =(cudaTextureObject_t*)malloc(1*sizeof(cudaTextureObject_t));
+    d_cuArrTex =(cudaArray**)malloc(1*sizeof(cudaArray*));
     
-    // 16x16 gave the best performance empirically
-    // Funnily that makes it compatible with most GPUs.....
-    int divU,divV;
-    divU=16;
-    divV=16;
-    dim3 grid((geo.nDetecU+divU-1)/divU,(geo.nDetecV+divV-1)/divV,1);
-    dim3 block(divU,divV,1);
-    for (int i=0;i<nangles;i++){
-        
-        geo.alpha=angles[i*3];
-        geo.theta=angles[i*3+1];
-        geo.psi  =angles[i*3+2];
-        if(geo.alpha==0.0 || abs(geo.alpha-1.5707963267949)<0.0000001){
-            geo.alpha=geo.alpha+1.1920929e-07;
-        }
-        //precomute distances for faster execution
-        //Precompute per angle constant stuff for speed
-        computeDeltas_Siddon_parallel(geo,geo.alpha,i, &uvOrigin, &deltaU, &deltaV, &source);
-        //Ray tracing!
-        cudaStreamSynchronize(stream[0]);
-        kernelPixelDetector_parallel<<<grid,block,0,stream[0]>>>(geo,dProjection[(int)i%2==0], source, deltaU, deltaV, uvOrigin);
-        //cudaCheckErrors("Kernel fail");
-        // copy result to host
-        if (i>0)
-            cudaMemcpyAsync(result[i-1],dProjection[(int)i%2!=0], num_bytes, cudaMemcpyDeviceToHost,stream[1]);
-        //cudaCheckErrors("cudaMemcpy fail");
-        
-        
-    }
-    cudaDeviceSynchronize();
-    int i=nangles-1;
-    cudaMemcpyAsync(result[i],dProjection[(int)i%2==0], num_bytes, cudaMemcpyDeviceToHost,stream[1]);
+    CreateTextureParallel(img,geo,&d_cuArrTex[0], &texImg   [0],stream);
+    cudaCheckErrors("Texture allocation fail");
+    //Done! Image put into texture memory.
 
     
-    cudaUnbindTexture(tex);
+    
+    Point3D source, deltaU, deltaV, uvOrigin;
+    
+    
+    Point3D* projParamsArrayHost;
+    cudaMallocHost((void**)&projParamsArrayHost,4*PROJ_PER_BLOCK*sizeof(Point3D));
+
+    // 16x16 gave the best performance empirically
+    // Funnily that makes it compatible with most GPUs.....
+    int divU,divV,divangle;
+    divU=PIXEL_SIZE_BLOCK;
+    divV=PIXEL_SIZE_BLOCK;
+    
+    dim3 numBlocks((geo.nDetecU+divU-1)/divU,(geo.nDetecV+divV-1)/divV,1);
+    
+    dim3 threadsPerBlock(divU,divV,PROJ_PER_BLOCK);
+    
+    unsigned int proj_global;
+    unsigned int noOfKernelCalls = (nangles+PROJ_PER_BLOCK-1)/PROJ_PER_BLOCK;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_BLOCK
+    unsigned int i;
+    for ( i=0; i<noOfKernelCalls; i++){
+        
+         for(unsigned int j=0; j<PROJ_PER_BLOCK; j++){
+            proj_global=i*PROJ_PER_BLOCK+j;
+            if (proj_global>nangles)
+               break;
+            geo.alpha=angles[proj_global*3];
+            geo.theta=angles[proj_global*3+1];
+            geo.psi  =angles[proj_global*3+2];
+            if(geo.alpha==0.0 || abs(geo.alpha-1.5707963267949)<0.0000001){
+                geo.alpha=geo.alpha+1.1920929e-07;
+            }
+            
+            //precomute distances for faster execution
+            //Precompute per angle constant stuff for speed
+            computeDeltas_Siddon_parallel(geo,geo.alpha,proj_global, &uvOrigin, &deltaU, &deltaV, &source);
+            //Ray tracing!
+            projParamsArrayHost[4*j]=uvOrigin;		// 6*j because we have 6 Point3D values per projection
+            projParamsArrayHost[4*j+1]=deltaU;
+            projParamsArrayHost[4*j+2]=deltaV;
+            projParamsArrayHost[4*j+3]=source;
+
+         }
+         
+         cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*4*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[0]);
+         cudaStreamSynchronize(stream[0]);
+         kernelPixelDetector_parallel<<<numBlocks,threadsPerBlock,0,stream[0]>>>(geo,dProjection[(int)i%2==0],i,nangles,texImg[0]);
+         // copy result to host
+         if (i>0)
+             cudaMemcpyAsync(result[i*PROJ_PER_BLOCK-PROJ_PER_BLOCK],dProjection[(int)i%2!=0], num_bytes, cudaMemcpyDeviceToHost,stream[1]);
+    }
+    cudaDeviceSynchronize();
+    
+    int lastangles=nangles-(i-1)*PROJ_PER_BLOCK;
+    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK],dProjection[(int)(i-1)%2==0], lastangles*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[1]);
+
+    
+
+    cudaDestroyTextureObject(texImg[0]);
+    cudaFreeArray(d_cuArrTex[0]);
     cudaCheckErrors("Unbind  fail");
     cudaFree(dProjection[0]);
     cudaFree(dProjection[1]);
     free(dProjection);
-    cudaFreeArray(d_imagedata);
     cudaCheckErrors("cudaFree d_imagedata fail");
     
     
@@ -442,6 +458,44 @@ void computeDeltas_Siddon_parallel(Geometry geo, float angles,int i, Point3D* uv
     
     *source=S2;
 }
+void CreateTextureParallel(float* image,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,cudaStream_t* stream){    //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+    
+    
+    const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
+  
+    //cudaArray Descriptor
+    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
+    //cuda Array
+    cudaMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent);
+
+
+        cudaMemcpy3DParms copyParams = {0};
+        //Array creation
+        copyParams.srcPtr   = make_cudaPitchedPtr((void *)image, extent.width*sizeof(float), extent.width, extent.height);
+        copyParams.dstArray = d_cuArrTex[0];
+        copyParams.extent   = extent;
+        copyParams.kind     = cudaMemcpyHostToDevice;
+        cudaMemcpy3DAsync(&copyParams,stream[1]);
+    
+
+    //Array creation End
+
+        cudaResourceDesc    texRes;
+        memset(&texRes, 0, sizeof(cudaResourceDesc));
+        texRes.resType = cudaResourceTypeArray;
+        texRes.res.array.array  = d_cuArrTex[0];
+        cudaTextureDesc     texDescr;
+        memset(&texDescr, 0, sizeof(cudaTextureDesc));
+        texDescr.normalizedCoords = false;
+        texDescr.filterMode = cudaFilterModePoint;
+        texDescr.addressMode[0] = cudaAddressModeBorder;
+        texDescr.addressMode[1] = cudaAddressModeBorder;
+        texDescr.addressMode[2] = cudaAddressModeBorder;
+        texDescr.readMode = cudaReadModeElementType;
+        cudaCreateTextureObject(&texImage[0], &texRes, &texDescr, NULL);
+    
+}
+
 #ifndef PROJECTION_HPP
 
 float maxDistanceCubeXY(Geometry geo, float angles,int i){
