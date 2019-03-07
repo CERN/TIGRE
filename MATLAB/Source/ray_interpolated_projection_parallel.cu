@@ -246,7 +246,7 @@ int interpolation_projection_parallel(float  *  img, Geometry geo, float** resul
     for ( i=0; i<noOfKernelCalls; i++){
         for(unsigned int j=0; j<PROJ_PER_BLOCK; j++){
             proj_global=i*PROJ_PER_BLOCK+j;
-            if (proj_global>nangles)
+            if (proj_global>=nangles)
                 break;
             
             geo.alpha=angles[proj_global*3];

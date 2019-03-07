@@ -255,14 +255,7 @@ __global__ void kernelPixelDetector( Geometry geo,
 
 
 int siddon_ray_projection(float  *  img, Geometry geo, float** result,float const * const angles,int nangles){
-    
-    
-    
-    
-    
-    
-    
-    
+
     
     // Prepare for MultiGPU
     int deviceCount = 0;
@@ -422,7 +415,7 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
                 
                 for(unsigned int j=0; j<PROJ_PER_BLOCK; j++){
                     proj_global=(i*PROJ_PER_BLOCK+j)+dev*nangles_device;
-                    if (proj_global>nangles)
+                    if (proj_global>=nangles)
                         break;
                     geoArray[sp].alpha=angles[proj_global*3];
                     geoArray[sp].theta=angles[proj_global*3+1];
