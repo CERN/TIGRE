@@ -401,11 +401,10 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
             // We are going to split it in the same amount of kernels we need to execute.
             proj_split_overlap_number=(current_proj_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;
             
-            
             // Create pointer to pointers of projections and precompute their location and size.
             if(!proj && !img_slice){
-                partial_projection=(float**)malloc(current_proj_split_size*sizeof(float*));
-                proj_split_size=(size_t*)malloc(current_proj_split_size*sizeof(size_t*));
+                partial_projection=(float**)malloc(proj_split_overlap_number*sizeof(float*));
+                proj_split_size=(size_t*)malloc(proj_split_overlap_number*sizeof(size_t*));
             }
             for(unsigned int proj_block_split=0; proj_block_split<proj_split_overlap_number;proj_block_split++){
                 // Crop the last one, as its likely its not completely divisible.
@@ -481,8 +480,8 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
                             
                             unsigned int currProjNumber_slice=i*PROJ_PER_KERNEL+j;
                             unsigned int currProjNumber_global=i*PROJ_PER_KERNEL+j                                                                          // index within kernel
-                                    +proj*(nalpha+split_projections-1)/split_projections                                          // index of the global projection split
-                                    +proj_block_split*max(current_proj_split_size/proj_split_overlap_number,PROJ_PER_KERNEL); // indexof overlap current split
+                                                               +proj*(nalpha+split_projections-1)/split_projections                                          // index of the global projection split
+                                                               +proj_block_split*max(current_proj_split_size/proj_split_overlap_number,PROJ_PER_KERNEL); // indexof overlap current split
                             if(currProjNumber_slice>=current_proj_overlap_split_size)
                                 break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
                             if(currProjNumber_global>=nalpha)
@@ -524,7 +523,6 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
                         cudaStreamSynchronize(stream[dev*nStreamDevice]);
                         
                         kernelPixelBackprojectionFDK<<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,current_proj_overlap_split_size,texProj[(proj_block_split%2)*deviceCount+dev]);
-                        
                     }  // END for
                     //////////////////////////////////////////////////////////////////////////////////////
                     // END RB code, Main reconstruction loop: go through projections (rotation angles) and backproject
@@ -539,7 +537,7 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
             
         } // END projection splits
         
-        
+       
         // Now we need to take the image out of the GPU
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
@@ -554,12 +552,15 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
         }
         
     } // end image splits
-    
-    
+    cudaCheckErrors("Main loop fail");
+
     ///////// Cleaning:
     
     
-    for(unsigned int i=0; i<2;i++){ // 2 buffers
+    bool two_buffers_used=((((nalpha+split_projections-1)/split_projections)+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL)>1;
+    for(unsigned int i=0; i<2;i++){ // 2 buffers (if needed, maybe only 1)
+        if (!two_buffers_used && i==1)
+            break;
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
             cudaDestroyTextureObject(texProj[i*deviceCount+dev]);
