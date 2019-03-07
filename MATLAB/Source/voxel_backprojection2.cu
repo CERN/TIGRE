@@ -589,8 +589,10 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     
     
     // Clean the GPU
-    for(unsigned int i=0; i<2;i++){ // 2 buffers
-        for (dev = 0; dev < deviceCount; dev++){
+    bool two_buffers_used=((((nalpha+split_projections-1)/split_projections)+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL)>1;
+    for(unsigned int i=0; i<2;i++){ // 2 buffers (if needed, maybe only 1)
+        if (!two_buffers_used && i==1)
+            break;        for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
             cudaDestroyTextureObject(texProj[i*deviceCount+dev]);
             cudaFreeArray(d_cuArrTex[i*deviceCount+dev]);
