@@ -512,4 +512,5 @@ float maxDistanceCubeXY(Geometry geo, float angles,int i){
     return geo.DSO[i]/geo.dVoxelX-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
     
 }
+
 #endif

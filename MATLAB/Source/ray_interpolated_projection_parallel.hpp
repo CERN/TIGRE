@@ -54,7 +54,7 @@ Codes  : https://github.com/CERN/TIGRE
 #ifndef PROJECTION_PARALLEL_HPP
 #define PROJECTION_PARALLEL_HPP
 
-int interpolation_projection_parallel(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
+int interpolation_projection_parallel(float  *  img, Geometry geo, float** result,float const * const alphas,int nalpha);
 // float computeMaxLength(Geometry geo, float alpha);
 void computeDeltas_parallel(Geometry geo, float alpha,unsigned int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 
