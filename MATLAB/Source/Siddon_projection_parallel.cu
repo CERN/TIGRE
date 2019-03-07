@@ -370,7 +370,7 @@ int siddon_ray_projection_parallel(float  *  img, Geometry geo, float** result,f
     for (int i = 0; i < 2; ++i){
       cudaStreamDestroy(stream[i]);
     }
-    cudaDeviceReset();
+//     cudaDeviceReset();
     return 0;
 }
 

@@ -296,7 +296,7 @@ int interpolation_projection_parallel(float  *  img, Geometry geo, float** resul
     for (int i = 0; i < 2; ++i){
       cudaStreamDestroy(stream[i]);
     }
-    cudaDeviceReset();
+//     cudaDeviceReset();
     
     return 0;
 }

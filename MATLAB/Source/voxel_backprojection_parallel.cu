@@ -488,7 +488,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     for (int i = 0; i < nStreams; ++i)
         cudaStreamDestroy(stream[i]);
 
-    cudaDeviceReset();
+//     cudaDeviceReset();
     return 0;
     
 }  // END voxel_backprojection

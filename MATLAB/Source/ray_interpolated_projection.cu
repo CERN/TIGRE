@@ -498,7 +498,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     }
     cudaCheckErrors("cudaFree  fail");
     
-    cudaDeviceReset();
+//     cudaDeviceReset();
     return 0;
 }
 void CreateTextureInterp(int num_devices,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage)

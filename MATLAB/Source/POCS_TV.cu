@@ -675,7 +675,7 @@ do { \
         for (int i = 0; i < nStreams; ++i)
            cudaStreamDestroy(stream[i]) ;
         cudaCheckErrors("Memory free");
-        cudaDeviceReset();
+//         cudaDeviceReset();
     }
         
 void checkFreeMemory(int deviceCount,size_t *mem_GPU_global){
