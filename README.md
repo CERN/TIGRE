@@ -5,7 +5,7 @@ TIGRE is a MATLAB and Python/CUDA toolbox for fast and accurate 3D tomographic
 reconstruction (any geometry), created jointly by University of Bath's Engineering Tomography Lab and CERN. 
 
 The aim of TIGRE is to provide a wide range of easy-to-use iterative algorithms to the tomographic research community. 
-We would like to build an stronger bridge between algorithm researchers and
+We would like to build a stronger bridge between algorithm researchers and
 imaging researchers, by encouraging and supporting contributions from both sides into
 TIGRE. 
 
@@ -13,7 +13,7 @@ TIGRE is free to use and distribute, use it, modify it, break it, share it;
 the only requirement is proper referencing to the authors.
 
 
-If you wissh to be added to the mailing list of TIGRE, please send an email to tigre.toolbox@gmail.com. 
+If you wish to be added to the mailing list of TIGRE, please send an email to tigre.toolbox@gmail.com. 
 We will only contact you whenever a new version of TIGRE is released or with important news.
 
 TIGRE is still being developed and we are still adding new features to it. If you have any request for your specific application, do not hesitate to contact us!
@@ -29,7 +29,7 @@ Donwload: [https://github.com/CERN/TIGRE/releases][7]
 ## **NEWS**
 
 There is a somehow working version of Python that still needs a bit of work regarding setup.
-If you are interested in controbuting, please contact us. 
+If you are interested in contributing, please contact us. 
 
 
 ## **TIGRE features**:
@@ -132,7 +132,7 @@ If you have any issues with compiling/running TIGRE, or you found a bug in
 the code, please report it on [the issues page][2]<sup>&#8727;</sup>.
 
 Please, be as clear as  possible with the description of the problem.
-If it is a specific problem in an specific scenario, provide a *Minimum 
+If it is a specific problem in a specific scenario, provide a *Minimum 
 Complete Verifiable Example* of the problem (see [Stackoverflow.com's definition][3]);
 
 <sup>&#8727;</sup> **Protip** you can [label the Issues by topic][4]
@@ -175,8 +175,8 @@ this. Hopefully we can find a solution for this without the need of restarting M
 
 **Q: Does it work in MATLAB XXXX with Compiler XXXX in OS XXXX**
 
-*A: In general, it should, as long as you are following both CUDAs and MATLABs s upportedcompilers.
-The truth is that there is few compilers that fit the eeligibility criteria for both. MATLAB version and OS 
+*A: In general, it should, as long as you are following both CUDAs and MATLABs supportedcompilers.
+The truth is that there are few compilers that fit the eligibility criteria for both. MATLAB version and OS 
 should not be a problem.*
 
 **Q: I get a fair amount of warnings when I compile the code, what is happening?**
