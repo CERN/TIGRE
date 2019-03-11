@@ -75,12 +75,14 @@ MATLAB and Python builds are both fully supported.
 
 - [Installation instructions and requirements for Python](Frontispiece/python_installation.md).
 
+*Advanced, not required to run TIGRE*, will change the source code. Only do if performance is critical.
+
+- [Tune TIGRE for machine. Tricks to speed up the code](Frontispiece/Tune_TIGRE.md)
 
 
 ## FAQ
 
 For answers to frequently asked questions [click here](Frontispiece/FAQ.md).
-
 
 
 ## Gallery
@@ -90,11 +92,9 @@ To see a gallery of images of different CT modalities reconstructed using TIGRE 
 <img src="https://raw.githubusercontent.com/AnderBiguri/PhDThesis/master/Applications/randofull.png" height="400">
 
 
-
 ## Further Reading
 
 If you want more information on TIGRE and its algorithms, [click here](Frontispiece/Further_reading.md).
-
 
 
 ## Contact
@@ -102,7 +102,6 @@ If you want more information on TIGRE and its algorithms, [click here](Frontispi
 Contact the authors directly at:
 
 [tigre.toolbox@gmail.com](mailto:tigre.toolbox@gmail.com) or [ander.biguri@gmail.com](mailto:ander.biguri@gmail.com)
-
 
 
 ## Licensing

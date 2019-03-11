@@ -11,7 +11,7 @@ Gallery
 dataset was acquired in The Christie Hospital in Manchester, and consists of 360 equiangular
 projections over a full rotation.\
  The dataset has mechanical offsets and high noise,
-with scan parameters set up for head CBCT i.e. low intensity X-rays (exact parameter sunknown).
+with scan parameters set up for head CBCT i.e. low intensity X-rays (exact parameters unknown).
 
 In this test, the sample has been reconstructed using FDK, CGLS, OS-SART and OS-ASD-POCS with 360 projections 
 and 90 projections.
@@ -31,10 +31,10 @@ Special thanks to The Christie Hospital (Manchester) for sharing this dataset.
 **Source of image** Ander Biguri's PhD thesis, page 101.
 
 **Description:** This dataset contains a section of an image containing a few Trypanosoma, a unicellular
-parasitic protozoa that cause dfferent illnesses, such as the sleeping sickness.\
- Using soft X-ray on cryogenically frozen samples in syncrotron light sources, nanometer scale images can be achieved.\
+parasitic protozoa that cause different illnesses, such as the sleeping sickness.\
+ Using soft X-ray on cryogenically frozen samples in synchrotron light sources, nanometre scale images can be achieved.\
  However due to the nature of the X-rays, the scans are very noisy and have very limited scan angle (less than 120 degrees).\
- This dataset has been adquired at the b24 beamline of the Diamond Light Source.
+ This dataset has been acquired at the b24 beamline of the Diamond Light Source.
  
  In this experiment, the sample has been reconstructed using FDK, OS-SART and OS-ASD-POCS.
  
@@ -43,18 +43,18 @@ parasitic protozoa that cause dfferent illnesses, such as the sleeping sickness.
  ![im](https://raw.githubusercontent.com/AnderBiguri/PhDThesis/master/Applications/FBP_OSSART_TVz2.png)
 
 Columns: FBP, OS-SART (20 iterations) and OS-ASD-POCS (20 iterations,
-20 TV iterations each). The red squares in the first row show sthe location of the
+20 TV iterations each). The red squares in the first row shows the location of the
 zoomed-in areas from the second and third row.
 
 Special thanks to the Diamond Light Source, specially Michele Darrow and Imanol Luengo for sharing this dataset.
 
 ### Conventional micro-CT
 
-**Source of iamge:** Ander Biguri's PhD thesis, page 96.
+**Source of image:** Ander Biguri's PhD thesis, page 96.
 
 **Description:** [SophiaBeads Dataset](https://zenodo.org/record/16474) are acquired specifically for testing and comparing reconstruction methods for X-ray computed tomography.\
 The sample is a plastic tube with a diameter of 25 mm, filled with uniform Soda-Lime Glass (SiO2-Na2O) beads of diameters 2.5 mm (with standard deviation 0.1 mm). [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16474.svg)](https://doi.org/10.5281/zenodo.16474)\
-The dataset is recosntructed with FDK and CGLS and the image profile shown over an arbitrary path.
+The dataset is reconstructed with FDK and CGLS and the image profile shown over an arbitrary path.
 
 ![im](https://raw.githubusercontent.com/AnderBiguri/PhDThesis/master/Applications/sophiaFDKCGLS.png)
 
