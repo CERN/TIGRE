@@ -236,13 +236,13 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             vectZ=(P.z -S.z);
             
             // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-            float t=(DSO-DSD /*-DOD*/ - S.x)/vectX;
+            float t=__fdividef(DSO-DSD-S.x,vectX);
             float y,z;
             y=vectY*t+S.y;
             z=vectZ*t+S.z;
             float u,v;
-            u=y+geo.nDetecU/2.0f;
-            v=z+geo.nDetecV/2.0f;
+            u=y+(float)geo.nDetecU*0.5f;
+            v=z+(float)geo.nDetecV*0.5f;
             float sample=tex3D<float>(tex, v, u ,indAlpha+0.5f);
             float weigth=0;
             //
@@ -259,18 +259,19 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             
             
             
-            realDaux.y=-geo.sDetecU/2.0f+geo.dDetecU/2.0f + u*geo.dDetecU +uv0Offset.x;
-            realD.z   =-geo.sDetecV/2.0f+geo.dDetecV/2.0f + v*geo.dDetecV +uv0Offset.y;
+            realDaux.y=(-geo.sDetecU+geo.dDetecU)*0.5f + u*geo.dDetecU +uv0Offset.x;
+            realD.z   =(-geo.sDetecV+geo.dDetecV)*0.5f + v*geo.dDetecV +uv0Offset.y;
             //rotate the detector
             realD.x= realDaux.x*cosalpha  + realDaux.y*sinalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
             realD.y=-realDaux.x*sinalpha  + realDaux.y*cosalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
             float L,lsq;
             
-            L = sqrt( (realS.x-realD.x)*(realS.x-realD.x)+ (realS.y-realD.y)*(realS.y-realD.y)+ (realD.z)*(realD.z)); // Sz=0 always.
+            L = __fsqrt_rd( (realS.x-realD.x)*(realS.x-realD.x)+ (realS.y-realD.y)*(realS.y-realD.y)+ (realD.z)*(realD.z)); // Sz=0 always.
             lsq =  (realS.x-realvoxel.x)*(realS.x-realvoxel.x)
             + (realS.y-realvoxel.y)*(realS.y-realvoxel.y)
             + (realS.z-realvoxel.z)*(realS.z-realvoxel.z);
-            weigth=L*L*L/(DSD*lsq);
+            
+            weigth=__fdividef(L*L*L,(DSD*lsq));
 //             weigth=1;
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)

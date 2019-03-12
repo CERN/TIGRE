@@ -159,12 +159,12 @@ template<bool sphericalrotation>
     P.z=(uvOrigin.z+pixelU*deltaU.z+pixelV*deltaV.z);
     
     // Length is the ray length in normalized space
-    float length=sqrtf((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z));
+    float length=__fsqrt_rd((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z));
     //now legth is an integer of Nsamples that are required on this line
-    length=ceilf(length/geo.accuracy);//Divide the directional vector by an integer
-    vectX=(P.x -source.x)/(length);
-    vectY=(P.y -source.y)/(length);
-    vectZ=(P.z -source.z)/(length);
+    length=ceilf(__fdividef(length,geo.accuracy));//Divide the directional vector by an integer
+    vectX=__fdividef(P.x -source.x,length);
+    vectY=__fdividef(P.y -source.y,length);
+    vectZ=__fdividef(P.z -source.z,length);
     
     
 //     //Integrate over the line

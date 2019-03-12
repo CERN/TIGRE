@@ -156,12 +156,14 @@ __global__ void kernelPixelDetector( Geometry geo,
     float axm,aym,azm;
     float axM,ayM,azM;
     // In the paper Nx= number of X planes-> Nvoxel+1
-    axm=fminf(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
-    aym=fminf(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
-    azm=fminf(-source.z/ray.z,(geo.nVoxelZ-source.z)/ray.z);
-    axM=fmaxf(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
-    ayM=fmaxf(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
-    azM=fmaxf(-source.z/ray.z,(geo.nVoxelZ-source.z)/ray.z);
+   
+    axm=fminf(__fdividef(-source.x,ray.x),__fdividef(geo.nVoxelX-source.x,ray.x));
+    aym=fminf(__fdividef(-source.y,ray.y),__fdividef(geo.nVoxelY-source.y,ray.y));
+    azm=fminf(__fdividef(-source.z,ray.z),__fdividef(geo.nVoxelZ-source.z,ray.z));
+    axM=fmaxf(__fdividef(-source.x,ray.x),__fdividef(geo.nVoxelX-source.x,ray.x));
+    ayM=fmaxf(__fdividef(-source.y,ray.y),__fdividef(geo.nVoxelY-source.y,ray.y));
+    azM=fmaxf(__fdividef(-source.z,ray.z),__fdividef(geo.nVoxelZ-source.z,ray.z));
+    
     float am=fmaxf(fmaxf(axm,aym),azm);
     float aM=fminf(fminf(axM,ayM),azM);
     
@@ -199,32 +201,32 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     // get intersection point N1. eq(20-21) [(also eq 9-10)]
     float ax,ay,az;
-    ax=(source.x<pixel1D.x)?  (imin-source.x)/(ray.x+0.000000000001f) :  (imax-source.x)/(ray.x+0.000000000001f);
-    ay=(source.y<pixel1D.y)?  (jmin-source.y)/(ray.y+0.000000000001f) :  (jmax-source.y)/(ray.y+0.000000000001f);
-    az=(source.z<pixel1D.z)?  (kmin-source.z)/(ray.z+0.000000000001f) :  (kmax-source.z)/(ray.z+0.000000000001f);
+    ax=(source.x<pixel1D.x)?  __fdividef(imin-source.x,ray.x+0.000000000001f) :  __fdividef(imax-source.x,ray.x+0.000000000001f);
+    ay=(source.y<pixel1D.y)?  __fdividef(jmin-source.y,ray.y+0.000000000001f) :  __fdividef(jmax-source.y,ray.y+0.000000000001f);
+    az=(source.z<pixel1D.z)?  __fdividef(kmin-source.z,ray.z+0.000000000001f) :  __fdividef(kmax-source.z,ray.z+0.000000000001f);
     
     
     
     // get index of first intersection. eq (26) and (19)
     int i,j,k;
     float aminc=fminf(fminf(ax,ay),az);
-    i=(int)floorf(source.x+ (aminc+am)/2.0f*ray.x);
-    j=(int)floorf(source.y+ (aminc+am)/2.0f*ray.y);
-    k=(int)floorf(source.z+ (aminc+am)/2.0f*ray.z);
+    i=(int)floorf(source.x+ (aminc+am)*0.5f*ray.x);
+    j=(int)floorf(source.y+ (aminc+am)*0.5f*ray.y);
+    k=(int)floorf(source.z+ (aminc+am)*0.5f*ray.z);
     // Initialize
     float ac=am;
     //eq (28), unit anlges
     float axu,ayu,azu;
-    axu=1.0f/fabsf(ray.x);
-    ayu=1.0f/fabsf(ray.y);
-    azu=1.0f/fabsf(ray.z);
+    axu=__frcp_rd(fabsf(ray.x));
+    ayu=__frcp_rd(fabsf(ray.y));
+    azu=__frcp_rd(fabsf(ray.z));
     // eq(29), direction of update
     float iu,ju,ku;
     iu=(source.x< pixel1D.x)? 1.0f : -1.0f;
     ju=(source.y< pixel1D.y)? 1.0f : -1.0f;
     ku=(source.z< pixel1D.z)? 1.0f : -1.0f;
     
-    float maxlength=sqrtf(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
+    float maxlength=__fsqrt_rd(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
     float sum=0.0f;
     unsigned int Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed

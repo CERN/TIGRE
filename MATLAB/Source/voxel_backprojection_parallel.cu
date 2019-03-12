@@ -237,8 +237,8 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             y=vectY*t+S.y;
             z=vectZ*t+S.z;
             float u,v;
-            u=y+geo.nDetecU/2-0.5f;
-            v=z+geo.nDetecV/2-0.5f;
+            u=y+geo.nDetecU/2.0f-0.5f;
+            v=z+geo.nDetecV/2.0f-0.5f;
             
             
             
