@@ -205,7 +205,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         float DSD = projSinCosArrayDev[5*projNumber+3];
         float DSO = projSinCosArrayDev[5*projNumber+4];
         
-        
+        float auxCOR=COR/geo.dDetecU;
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
 #pragma unroll
         for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
@@ -220,7 +220,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
             Point3D P;
             P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
+            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-auxCOR;
             P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
             
             // This is the vector defining the line from the source to the Voxel
@@ -230,21 +230,22 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             vectZ=(P.z -S.z);
             
             // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-            float t=(DSO-DSD /*-DOD*/ - S.x)/vectX;
+            float t=__fdividef(DSO-DSD-S.x,vectX);
             float y,z;
             y=vectY*t+S.y;
             z=vectZ*t+S.z;
             float u,v;
-            u=y+geo.nDetecU/2.0f;
-            v=z+geo.nDetecV/2.0f;
+            u=y+(float)geo.nDetecU*0.5f;
+            v=z+(float)geo.nDetecV*0.5f;
             
             float weigth;
             float realx,realy;
-            realx=-geo.sVoxelX/2.0f+geo.dVoxelX/2.0f    +indX*geo.dVoxelX   +xyzOffset.x;
-            realy=-geo.sVoxelY/2.0f+geo.dVoxelY/2.0f    +indY*geo.dVoxelY   +xyzOffset.y+COR;
+            realx=-(geo.sVoxelX+geo.dVoxelX)*0.5f  +indX*geo.dVoxelX   +xyzOffset.x;
+            realy=-(geo.sVoxelY+geo.dVoxelY)*0.5f  +indY*geo.dVoxelY   +xyzOffset.y+COR;
             
-            weigth=(DSO+realy*sinalpha-realx*cosalpha)/DSO;
-            weigth=1/(weigth*weigth);
+            weigth=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
+            
+            weigth=__frcp_rd(weigth*weigth);
             
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
