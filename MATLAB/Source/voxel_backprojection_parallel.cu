@@ -405,7 +405,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
         
         // Since we'll have multiple projections processed by a SINGLE kernel call, compute how many
         // kernel calls we'll need altogether.
-        int noOfKernelCalls = (current_proj_overlap_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_KERNEL
+        int noOfKernelCalls = (proj_split_size[proj_block_split]+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_KERNEL
         for (unsigned int i=0; i<noOfKernelCalls; i++)
         {
             // Now we need to generate and copy all data for PROJ_PER_KERNEL projections to constant memory so that our kernel can use it
@@ -416,7 +416,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
                 unsigned int currProjNumber_slice=i*PROJ_PER_KERNEL+j;
                 unsigned int currProjNumber_global=i*PROJ_PER_KERNEL+j                                                                          // index within kernel
                         +proj_block_split*max(current_proj_split_size/proj_split_overlap_number,PROJ_PER_KERNEL); // indexof overlap current split
-                if(currProjNumber_slice>=current_proj_overlap_split_size)
+                if(currProjNumber_slice>=proj_split_size[proj_block_split])
                     break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
                 
                 if(currProjNumber_global>=nalpha)
@@ -457,7 +457,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
             cudaMemcpyToSymbolAsync(projParamsArrayDevParallel, projParamsArrayHostParallel, sizeof(Point3D)*6*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[0]);
             cudaStreamSynchronize(stream[0]);
 
-            kernelPixelBackprojection_parallel<<<grid,block,0,stream[0]>>>(geo,dimage,i,current_proj_overlap_split_size,texProj[(proj_block_split%2)]);
+            kernelPixelBackprojection_parallel<<<grid,block,0,stream[0]>>>(geo,dimage,i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)]);
         }  // END for
         
         //////////////////////////////////////////////////////////////////////////////////////
