@@ -16,4 +16,4 @@ array=("FDK" "fbp" "sirt" "ossart" "cgls" "asd_pocs" "awasd_pocs")
 
 runAlgs "${array[@]}"
 
-python ~/TIGRE/Python/tests/testforlog.py log_summary Wed_Mar_06
+python ~/TIGRE/Python/tests/testforlog.py log_summary Wed_Mar_13

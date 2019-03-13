@@ -50,9 +50,8 @@
 #include <cuda.h>
 #include "voxel_backprojection.hpp"
 #include "voxel_backprojection_parallel.hpp"
-
-#include "errors.hpp"
 #include <stdio.h>
+#include "errors.hpp"
 #include <math.h>
 
 // https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
@@ -61,12 +60,14 @@ inline int cudaCheckErrors(const char * msg)
    cudaError_t __err = cudaGetLastError();
    if (__err != cudaSuccess)
    {
-      printf("CUDA:Voxel_backprojection_par:%s:%s\n",msg, cudaGetErrorString(__err));
+      printf("CUDA:voxel_backprojection_parallel:%s:%s\n",msg, cudaGetErrorString(__err));
       cudaDeviceReset();
       return 1;
    }
    return 0;
 }
+
+    
     
 #define MAXTREADS 1024
     /*GEOMETRY DEFINITION
@@ -95,7 +96,7 @@ inline int cudaCheckErrors(const char * msg)
      *
      *
      **/
-void CreateTextureParallel( float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool allocate);
+int CreateTextureParallel( float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool allocate);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
@@ -240,8 +241,8 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             y=vectY*t+S.y;
             z=vectZ*t+S.z;
             float u,v;
-            u=y+geo.nDetecU/2-0.5f;
-            v=z+geo.nDetecV/2-0.5f;
+            u=y+geo.nDetecU/2.0f-0.5f;
+            v=z+geo.nDetecV/2.0f-0.5f;
             
             
             
@@ -474,10 +475,13 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     free(partial_projection);
     free(proj_split_size);
         
-    for(unsigned int i=0; i<2;i++){ // 2 buffers
-            cudaDestroyTextureObject(texProj[i]);
-            cudaFreeArray(d_cuArrTex[i]);
-    }
+  bool two_buffers_used=((((nalpha+split_projections-1)/split_projections)+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL)>1;
+  for(unsigned int i=0; i<2;i++){ // 2 buffers (if needed, maybe only 1)
+      if (!two_buffers_used && i==1)
+          break;            
+          cudaDestroyTextureObject(texProj[i]);
+          cudaFreeArray(d_cuArrTex[i]);
+  }
     cudaFreeHost(projSinCosArrayHostParallel);
     cudaFreeHost(projParamsArrayHostParallel);
     
@@ -488,7 +492,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     for (int i = 0; i < nStreams; ++i)
         cudaStreamDestroy(stream[i]);
 
-    cudaDeviceReset();
+//     cudaDeviceReset();
     return 0;
     
 }  // END voxel_backprojection
@@ -549,7 +553,7 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
     *S=source;
     
 }  // END computeDeltasCube
-void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool alloc)
+int CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool alloc)
 {
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
         
@@ -559,7 +563,7 @@ void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuAr
         //cuda Array
         if (alloc){
         cudaMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent);
-        cudaCheckErrors("Texture memory allocation fail");
+        if(cudaCheckErrors("Texture memory allocation fail")){return 1;}
         }
         cudaMemcpy3DParms copyParams = {0};
         
@@ -570,7 +574,7 @@ void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuAr
         copyParams.extent   = extent;
         copyParams.kind     = cudaMemcpyHostToDevice;
         cudaMemcpy3DAsync(&copyParams,stream[0+1]);
-        cudaCheckErrors("Texture memory data copy fail");
+        if(cudaCheckErrors("Texture memory data copy fail")){return 1;}
         //Array creation End
         
         cudaResourceDesc    texRes;
@@ -586,6 +590,7 @@ void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuAr
         texDescr.addressMode[2] = cudaAddressModeBorder;
         texDescr.readMode = cudaReadModeElementType;
         cudaCreateTextureObject(&texImage[0], &texRes, &texDescr, NULL);
-        cudaCheckErrors("Texture object creation fail");
+        if(cudaCheckErrors("Texture object creation fail")){return 1;}
+        return 0;
     
 }

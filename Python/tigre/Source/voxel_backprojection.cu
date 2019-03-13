@@ -48,17 +48,15 @@
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #include "voxel_backprojection.hpp"
+#include <math.h>
 #include <stdio.h>
 #include "errors.hpp"
-#include <math.h>
-
-// https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
 inline int cudaCheckErrors(const char * msg)
 {
    cudaError_t __err = cudaGetLastError();
    if (__err != cudaSuccess)
    {
-      printf("CUDA:Voxel_backprojection:%s:%s\n",msg, cudaGetErrorString(__err));
+      printf("CUDA:voxel_backprojection:%s:%s\n",msg, cudaGetErrorString(__err));
       cudaDeviceReset();
       return 1;
    }
@@ -209,7 +207,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         float DSD = projSinCosArrayDev[5*projNumber+3];
         float DSO = projSinCosArrayDev[5*projNumber+4];
         
-        
+        float auxCOR=COR/geo.dDetecU;
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
 #pragma unroll
         for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
@@ -224,7 +222,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
             Point3D P;
             P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
+            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-auxCOR;
             P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
             
             // This is the vector defining the line from the source to the Voxel
@@ -234,21 +232,22 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             vectZ=(P.z -S.z);
             
             // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-            float t=(DSO-DSD /*-DOD*/ - S.x)/vectX;
+            float t=__fdividef(DSO-DSD-S.x,vectX);
             float y,z;
             y=vectY*t+S.y;
             z=vectZ*t+S.z;
             float u,v;
-            u=y+geo.nDetecU/2.0f;
-            v=z+geo.nDetecV/2.0f;
+            u=y+(float)geo.nDetecU*0.5f;
+            v=z+(float)geo.nDetecV*0.5f;
             
             float weigth;
             float realx,realy;
-            realx=-geo.sVoxelX/2.0f+geo.dVoxelX/2.0f    +indX*geo.dVoxelX   +xyzOffset.x;
-            realy=-geo.sVoxelY/2.0f+geo.dVoxelY/2.0f    +indY*geo.dVoxelY   +xyzOffset.y+COR;
+            realx=-(geo.sVoxelX+geo.dVoxelX)*0.5f  +indX*geo.dVoxelX   +xyzOffset.x;
+            realy=-(geo.sVoxelY+geo.dVoxelY)*0.5f  +indY*geo.dVoxelY   +xyzOffset.y+COR;
             
-            weigth=(DSO+realy*sinalpha-realx*cosalpha)/DSO;
-            weigth=1/(weigth*weigth);
+            weigth=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
+            
+            weigth=__frcp_rd(weigth*weigth);
             
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
@@ -298,9 +297,8 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     cudaGetDeviceCount(&deviceCount);
     if(cudaCheckErrors("Device query fail")){return 1;}
     if (deviceCount == 0) {
-        //mexErrMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","There are no available device(s) that support CUDA\n");
         return ERR_NO_CAPABLE_DEVICES;
-    }
+        }
     
     
     // Check the available devices, and if they are the same
@@ -406,11 +404,10 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
             // We are going to split it in the same amount of kernels we need to execute.
             proj_split_overlap_number=(current_proj_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;
             
-            
             // Create pointer to pointers of projections and precompute their location and size.
             if(!proj && !img_slice){
-                partial_projection=(float**)malloc(current_proj_split_size*sizeof(float*));
-                proj_split_size=(size_t*)malloc(current_proj_split_size*sizeof(size_t*));
+                partial_projection=(float**)malloc(proj_split_overlap_number*sizeof(float*));
+                proj_split_size=(size_t*)malloc(proj_split_overlap_number*sizeof(size_t*));
             }
             for(unsigned int proj_block_split=0; proj_block_split<proj_split_overlap_number;proj_block_split++){
                 // Crop the last one, as its likely its not completely divisible.
@@ -486,8 +483,8 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
                             
                             unsigned int currProjNumber_slice=i*PROJ_PER_KERNEL+j;
                             unsigned int currProjNumber_global=i*PROJ_PER_KERNEL+j                                                                          // index within kernel
-                                    +proj*(nalpha+split_projections-1)/split_projections                                          // index of the global projection split
-                                    +proj_block_split*max(current_proj_split_size/proj_split_overlap_number,PROJ_PER_KERNEL); // indexof overlap current split
+                                                               +proj*(nalpha+split_projections-1)/split_projections                                          // index of the global projection split
+                                                               +proj_block_split*max(current_proj_split_size/proj_split_overlap_number,PROJ_PER_KERNEL); // indexof overlap current split
                             if(currProjNumber_slice>=current_proj_overlap_split_size)
                                 break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
                             if(currProjNumber_global>=nalpha)
@@ -529,12 +526,11 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
                         cudaStreamSynchronize(stream[dev*nStreamDevice]);
                         
                         kernelPixelBackprojectionFDK<<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,current_proj_overlap_split_size,texProj[(proj_block_split%2)*deviceCount+dev]);
-                        
                     }  // END for
                     //////////////////////////////////////////////////////////////////////////////////////
                     // END RB code, Main reconstruction loop: go through projections (rotation angles) and backproject
                     //////////////////////////////////////////////////////////////////////////////////////
-                }
+                }// END for deviceCount
             } // END sub-split of current projection chunk
             
             for (dev = 0; dev < deviceCount; dev++){
@@ -544,7 +540,7 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
             
         } // END projection splits
         
-        
+       
         // Now we need to take the image out of the GPU
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
@@ -559,12 +555,15 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
         }
         
     } // end image splits
-    
-    
+    if(cudaCheckErrors("Main loop fail")){return 1;}
+
     ///////// Cleaning:
     
     
-    for(unsigned int i=0; i<2;i++){ // 2 buffers
+    bool two_buffers_used=((((nalpha+split_projections-1)/split_projections)+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL)>1;
+    for(unsigned int i=0; i<2;i++){ // 2 buffers (if needed, maybe only 1)
+        if (!two_buffers_used && i==1)
+            break;
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
             cudaDestroyTextureObject(texProj[i*deviceCount+dev]);
@@ -597,7 +596,7 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     
     if(cudaCheckErrors("cudaFree fail")){return 1;}
     
-    cudaDeviceReset(); // For the Nvidia Visual Profiler
+//     cudaDeviceReset(); // For the Nvidia Visual Profiler
     return 0;
     
 }  // END voxel_backprojection
