@@ -18,7 +18,7 @@ All .cu files have a function called `checkFreeMemory` defined in the bottom of 
 This function checks each available GPU and queries how much free memory there is available.
 The function is fundamental for the correct splitting without errors of the problem. 
 
-*However*, if you know how much memory (in bytes) your GPUs have, you can replace this function by just a constant number, in bytes, of the amount of free memory your GPU has. Consider giving it only 95% of the actual free memory, and consider that other processes (such as your desktop, internet browser) may be using the GPU too. Adding a number greater than the available memory will cause the code to error. 
+**However**, if you know how much memory (in bytes) your GPUs have, you can replace this function by just a constant number, in bytes, of the amount of free memory your GPU has. Consider giving it only 95% of the actual free memory, and consider that other processes (such as your desktop, internet browser) may be using the GPU too. Adding a number greater than the available memory will cause the code to error. 
 
 Just comment all the lines inside the function and add
 `*mem_GPU_global= your number in bytes;` 
@@ -29,7 +29,7 @@ Compile again, and you save up to 0.3s per GPU, per CUDA call. This can be signi
 
 ## TV-minimization (SART-TV, im3Ddenoise)
 
-*Expected acceleration is not more than 5%*, likely 0%. So change it if time is really critical to you. 
+**Expected acceleration is not more than 5%**, likely 0%. So change it if time is really critical to you. 
 
 
  1. Define your expected geometry. 
@@ -46,7 +46,7 @@ Compile again, and you save up to 0.3s per GPU, per CUDA call. This can be signi
  
 ## All algorithms (Atb)
 
-*Expected acceleration is not more than 10%*, likely 0%. So change it if time is really critical to you. The steps show how to improve FDK backprojection, similar steps are needed for matched backprojector.
+**Expected acceleration is not more than 10%**, likely 0%. So change it if time is really critical to you. The steps show how to improve FDK backprojection, similar steps are needed for matched backprojector.
 
 
  1. Define your expected geometry. 
@@ -63,7 +63,7 @@ Compile again, and you save up to 0.3s per GPU, per CUDA call. This can be signi
  
 ## All algoritms (Ax)
 
-*Expected acceleration is not more than 10%*, likely 0%. So change it if time is really critical to you. The steps show how to improve FDK backprojection, similar steps are needed for matched backprojector.
+**Expected acceleration is not more than 10%**, likely 0%. So change it if time is really critical to you. The steps show how to improve FDK backprojection, similar steps are needed for matched backprojector.
 
  1. Define your expected geometry. 
  
