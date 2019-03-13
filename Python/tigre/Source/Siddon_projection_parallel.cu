@@ -61,7 +61,7 @@ inline int cudaCheckErrors(const char * msg)
    cudaError_t __err = cudaGetLastError();
    if (__err != cudaSuccess)
    {
-      printf("CUDA:Siddon_projection:%s:%s\n",msg, cudaGetErrorString(__err));
+      printf("CUDA:Siddon_projection_par:%s:%s\n",msg, cudaGetErrorString(__err));
       cudaDeviceReset();
       return 1;
    }

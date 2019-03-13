@@ -62,7 +62,7 @@ inline int cudaCheckErrors(const char * msg)
    cudaError_t __err = cudaGetLastError();
    if (__err != cudaSuccess)
    {
-      printf("CUDA:Siddon_projection:%s:%s\n",msg, cudaGetErrorString(__err));
+      printf("CUDA:ray_interpolated_parallel:%s:%s\n",msg, cudaGetErrorString(__err));
       cudaDeviceReset();
       return 1;
    }

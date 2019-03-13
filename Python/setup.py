@@ -17,6 +17,7 @@ compute_capability_args = [  # '-gencode=arch=compute_20,code=sm_20',
     # '-gencode=arch=compute_61,code=sm_61',
     # '-gencode=arch=compute_70,code=sm_70', #untested
     '--ptxas-options=-v', '-c',
+    '--default-stream=per-thread',
     '--compiler-options', "'-fPIC'"]
 
 
@@ -128,7 +129,7 @@ def include_headers(filename_list, sdist=False):
                 header[1] = '.hpp'
                 header_list.append(''.join(header))
     if sdist:
-        filename_list += ['tigre/Source/types_TIGRE.hpp']
+        filename_list += ['tigre/Source/types_TIGRE.hpp','tigre/Source/errors.hpp']
     return filename_list + header_list
 
 
@@ -153,11 +154,8 @@ Ax_ext = Extension('_Ax',
 
 Atb_ext = Extension('_Atb',
                     sources=(include_headers(['tigre/Source/voxel_backprojection.cu',
-                                              'tigre/Source/voxel_backprojection_spherical.cu',
                                               'tigre/Source/voxel_backprojection2.cu',
-                                              'tigre/Source/voxel_backprojection2_spherical.cu',
                                               'tigre/Source/voxel_backprojection_parallel.cu',
-                                              'tigre/Source/voxel_backprojection_parallel_spherical.cu',
                                               'tigre/Source/_types.pxd',
                                               'tigre/Source/_Atb.pyx'], sdist=(sys.argv[1] == "sdist"))),
                     library_dirs=[CUDA['lib64']],
@@ -172,7 +170,7 @@ Atb_ext = Extension('_Atb',
                     include_dirs=[numpy_include, CUDA['include'], 'tigre/Source'])
 tvdenoising_ext = Extension('_tvdenoising',
                             sources=(
-                                include_headers(['tigre/Source/voxel_backprojection.cu', 'tigre/Source/tvdenoising.cu',
+                                include_headers(['tigre/Source/tvdenoising.cu',
                                                  'tigre/Source/_types.pxd',
                                                  'tigre/Source/_tvdenoising.pyx'], sdist=(sys.argv[1] == "sdist"))),
                             library_dirs=[CUDA['lib64']],
