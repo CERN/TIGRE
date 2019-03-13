@@ -75,9 +75,9 @@ MATLAB and Python builds are both fully supported.
 
 - [Installation instructions and requirements for Python](Frontispiece/python_installation.md).
 
-*Advanced, not required to run TIGRE*, will change the source code. Only do if performance is critical.
+**Advanced, not required to run TIGRE**, will change the source code. Only do if performance is critical.
 
-- [Tune TIGRE for machine. Tricks to speed up the code](Frontispiece/Tune_TIGRE.md)
+- [Tune TIGRE for machine. Tricks to slightly speed up the code](Frontispiece/Tune_TIGRE.md)
 
 
 ## FAQ
