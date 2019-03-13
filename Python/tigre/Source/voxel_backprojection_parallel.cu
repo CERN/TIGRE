@@ -60,13 +60,12 @@ inline int cudaCheckErrors(const char * msg)
    cudaError_t __err = cudaGetLastError();
    if (__err != cudaSuccess)
    {
-      printf("CUDA:voxel_backprojection_parallel:%s:%s\n",msg, cudaGetErrorString(__err));
+      printf("CUDA:tv_denoising:%s:%s\n",msg, cudaGetErrorString(__err));
       cudaDeviceReset();
       return 1;
    }
    return 0;
 }
-
     
     
 #define MAXTREADS 1024
@@ -96,7 +95,7 @@ inline int cudaCheckErrors(const char * msg)
      *
      *
      **/
-int CreateTextureParallel( float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool allocate);
+void CreateTextureParallel( float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool allocate);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
@@ -409,7 +408,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
         
         // Since we'll have multiple projections processed by a SINGLE kernel call, compute how many
         // kernel calls we'll need altogether.
-        int noOfKernelCalls = (current_proj_overlap_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_KERNEL
+        int noOfKernelCalls = (proj_split_size[proj_block_split]+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_KERNEL
         for (unsigned int i=0; i<noOfKernelCalls; i++)
         {
             // Now we need to generate and copy all data for PROJ_PER_KERNEL projections to constant memory so that our kernel can use it
@@ -420,7 +419,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
                 unsigned int currProjNumber_slice=i*PROJ_PER_KERNEL+j;
                 unsigned int currProjNumber_global=i*PROJ_PER_KERNEL+j                                                                          // index within kernel
                         +proj_block_split*max(current_proj_split_size/proj_split_overlap_number,PROJ_PER_KERNEL); // indexof overlap current split
-                if(currProjNumber_slice>=current_proj_overlap_split_size)
+                if(currProjNumber_slice>=proj_split_size[proj_block_split])
                     break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
                 
                 if(currProjNumber_global>=nalpha)
@@ -461,7 +460,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
             cudaMemcpyToSymbolAsync(projParamsArrayDevParallel, projParamsArrayHostParallel, sizeof(Point3D)*6*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[0]);
             cudaStreamSynchronize(stream[0]);
 
-            kernelPixelBackprojection_parallel<<<grid,block,0,stream[0]>>>(geo,dimage,i,current_proj_overlap_split_size,texProj[(proj_block_split%2)]);
+            kernelPixelBackprojection_parallel<<<grid,block,0,stream[0]>>>(geo,dimage,i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)]);
         }  // END for
         
         //////////////////////////////////////////////////////////////////////////////////////
@@ -553,7 +552,7 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
     *S=source;
     
 }  // END computeDeltasCube
-int CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool alloc)
+void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool alloc)
 {
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
         
@@ -563,7 +562,7 @@ int CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuArr
         //cuda Array
         if (alloc){
         cudaMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent);
-        if(cudaCheckErrors("Texture memory allocation fail")){return 1;}
+        cudaCheckErrors("Texture memory allocation fail");
         }
         cudaMemcpy3DParms copyParams = {0};
         
@@ -574,7 +573,7 @@ int CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuArr
         copyParams.extent   = extent;
         copyParams.kind     = cudaMemcpyHostToDevice;
         cudaMemcpy3DAsync(&copyParams,stream[0+1]);
-        if(cudaCheckErrors("Texture memory data copy fail")){return 1;}
+        cudaCheckErrors("Texture memory data copy fail");
         //Array creation End
         
         cudaResourceDesc    texRes;
@@ -590,7 +589,6 @@ int CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuArr
         texDescr.addressMode[2] = cudaAddressModeBorder;
         texDescr.readMode = cudaReadModeElementType;
         cudaCreateTextureObject(&texImage[0], &texRes, &texDescr, NULL);
-        if(cudaCheckErrors("Texture object creation fail")){return 1;}
-        return 0;
+        cudaCheckErrors("Texture object creation fail");
     
 }

@@ -7,14 +7,19 @@ import tigre.algorithms as algs
 from tigre.demos.Test_data import data_loader
 from matplotlib import pyplot as plt
 
-geo = tigre.geometry(mode='parallel', nVoxel=np.array([32, 64, 128]), default_geo=True)
+geo = tigre.geometry(mode='cone', nVoxel=np.array([64, 64, 64]), default_geo=True)
 niter = 10
 nangles = 100
-angles_1 = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
-angles_2 = np.zeros((nangles), dtype=np.float32)
-angles = np.vstack((angles_1, angles_2, angles_2)).T
+angles = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
+#angles_2 = np.zeros((nangles, ), dtype=np.float32)
+#angles_3 = np.ones((nangles, ), dtype=np.float32)
+#angles = np.vstack((angles_1, angles_2, angles_3)).T
 head = data_loader.load_head_phantom(geo.nVoxel)
 proj = tigre.Ax(head,geo,angles)
-output = algs.awasd_pocs(proj,geo,angles,niter=10,blocksize=20)
+output = tigre.Atb(proj,geo,angles,'FDK')
 plt.imshow(output[geo.nVoxel[0]/2])
+plt.figure()
+plt.imshow(output[:,geo.nVoxel[1]/2])
+plt.figure()
+plt.imshow(output[:,:,geo.nVoxel[2]/2])
 plt.show()

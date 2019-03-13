@@ -59,22 +59,6 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
     projections = projections.swapaxes(1,2).swapaxes(0,2).copy(order='F')
     cdef float* c_projections = <float*> projections.data
 
-    cdef float theta,psi;
-    theta=0;
-    psi=0;
-
-
-    for i in range(total_projections):
-        theta+=abs(c_angles[i*3+1])
-        psi  +=abs(c_angles[i*3+2])
-    
-    standard_rotation = True;
-    
-    if psi == 0.0 and theta == 0.0:
-        standard_rotation=True
-    else:
-        standard_rotation=False
-
     if cone_beam:
         if krylov_proj:
             cuda_raise_errors(voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections))

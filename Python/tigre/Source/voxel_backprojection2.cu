@@ -324,8 +324,9 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     cudaGetDeviceCount(&deviceCount);
     if(cudaCheckErrors("Device query fail")){return 1;}
     if (deviceCount == 0) {
+        //mexErrMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","There are no available device(s) that support CUDA\n");
         return ERR_NO_CAPABLE_DEVICES;
-        }
+    }
     
     
     // Check the available devices, and if they are the same
@@ -504,7 +505,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                     
                     // Since we'll have multiple projections processed by a SINGLE kernel call, compute how many
                     // kernel calls we'll need altogether.
-                    unsigned int noOfKernelCalls = (current_proj_overlap_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_KERNEL
+                    unsigned int noOfKernelCalls = (proj_split_size[proj_block_split]+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_KERNEL
                     for (unsigned int i=0; i<noOfKernelCalls; i++){
                         
                         // Now we need to generate and copy all data for PROJ_PER_KERNEL projections to constant memory so that our kernel can use it
@@ -515,7 +516,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                             unsigned int currProjNumber_global=i*PROJ_PER_KERNEL+j                                                                          // index within kernel
                                     +proj*(nalpha+split_projections-1)/split_projections                                          // index of the global projection split
                                     +proj_block_split*max(current_proj_split_size/proj_split_overlap_number,PROJ_PER_KERNEL); // indexof overlap current split
-                            if(currProjNumber_slice>=current_proj_overlap_split_size)
+                            if(currProjNumber_slice>=proj_split_size[proj_block_split])
                                 break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
                             if(currProjNumber_global>=nalpha)
                                 break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
@@ -560,7 +561,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                         cudaMemcpyToSymbolAsync(projSinCosArray2Dev, projSinCosArray2Host, sizeof(float)*5*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev*nStreamDevice]);
                         cudaMemcpyToSymbolAsync(projParamsArray2Dev, projParamsArray2Host, sizeof(Point3D)*7*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev*nStreamDevice]);
                         cudaStreamSynchronize(stream[dev*nStreamDevice]);
-                        kernelPixelBackprojection<<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,current_proj_overlap_split_size,texProj[(proj_block_split%2)*deviceCount+dev]);
+                        kernelPixelBackprojection<<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]);
                         
                     }  // END for
                     //////////////////////////////////////////////////////////////////////////////////////
