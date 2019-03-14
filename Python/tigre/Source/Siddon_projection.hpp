@@ -50,13 +50,16 @@ Codes  : https://github.com/CERN/TIGRE
 
 #ifndef PROJECTION_HPP_SIDDON
 #define PROJECTION_HPP_SIDDON
-int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const angles,int nangle);
+int siddon_ray_projection(float  *  img, Geometry geo, float** result,float const * const angles,int nangle);
 
 //double computeMaxLength(Geometry geo, double alpha);
 void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
-
+void splitImage(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned int nangles);
+void freeGeoArray(unsigned int splits,Geometry* geoArray);
 //double maxDistanceCubeXY(Geometry geo, double alpha,int i);
 
-// below, not used
-//Geometry nomralizeGeometryImage(Geometry geo);
+
+#endif
+#ifndef PROJECTION_HPP
+void checkFreeMemory(int deviceCount,size_t *mem_GPU_global);
 #endif
