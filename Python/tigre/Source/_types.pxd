@@ -81,9 +81,17 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
 
     # TODO: array of constant for each alpha
     c_geom.offOrigX =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.offOrigX:
+        raise MemoryError()
     c_geom.offOrigY =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.offOrigY:
+        raise MemoryError()
     c_geom.offOrigZ =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.offOrigZ:
+        raise MemoryError()
     c_geom.DSO =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.DSO:
+        raise MemoryError()
     for i in range (total_projections):
         c_geom.offOrigX[i] = p_geometry.offOrigin[i][0]
         c_geom.offOrigY[i] = p_geometry.offOrigin[i][1]
@@ -103,8 +111,14 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
 
     # TODO: array of constant for each alpha
     c_geom.offDetecU =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.offDetecU:
+        raise MemoryError()
     c_geom.offDetecV =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.offDetecV:
+        raise MemoryError()
     c_geom.DSD =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.DSD:
+        raise MemoryError()
     for i in range (total_projections):
         c_geom.offDetecU[i] = p_geometry.offDetector[i][0]
         c_geom.offDetecV[i] = p_geometry.offDetector[i][1]
@@ -113,8 +127,14 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
 
     # TODO: array of 0 for each alpha
     c_geom.dRoll =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.dRoll:
+        raise MemoryError()
     c_geom.dPitch =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.dPitch:
+        raise MemoryError()
     c_geom.dYaw =<float *>malloc(total_projections * sizeof(float))
+    if not c_geom.dYaw:
+        raise MemoryError()
     for i in range (total_projections):
         c_geom.dRoll[i] = 0
         c_geom.dPitch[i] = 0
