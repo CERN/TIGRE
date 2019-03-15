@@ -1,4 +1,12 @@
 #!/bin/bash
+
+control_c() {
+    exit
+}
+
+trap control_c SIGINT
+
+while true; do
 function runAlgs() {
    arr=("$@")
    for i in "${arr[@]}";
@@ -17,3 +25,5 @@ array=("FDK" "fbp" "sirt" "ossart" "cgls" "asd_pocs" "awasd_pocs")
 runAlgs "${array[@]}"
 
 python ~/TIGRE/Python/tests/testforlog.py log_summary Wed_Mar_13
+
+done

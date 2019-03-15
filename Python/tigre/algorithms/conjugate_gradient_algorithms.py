@@ -38,11 +38,13 @@ class CGLS(IterativeReconAlg):
         self.__p__ = Atb(self.__r__, self.geo, self.angles)
         p_norm = np.linalg.norm(self.__p__.ravel(), 2)
         self.__gamma__ = p_norm * p_norm
+
     def reinitialise_cgls(self):
         self.__r__ = self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel')
         self.__p__ = Atb(self.__r__, self.geo, self.angles)
         p_norm = np.linalg.norm(self.__p__.ravel(), 2)
         self.__gamma__ = p_norm * p_norm
+
     # Overide
     def run_main_iter(self):
         self.l2l = np.zeros([self.niter], dtype=np.float32)
@@ -61,8 +63,7 @@ class CGLS(IterativeReconAlg):
             for item in self.__dict__:
                 if type(getattr(self, item)) == np.ndarray:
                     if np.isnan(getattr(self, item)).any():
-                        raise ValueError('nan found for '+item+' at iteraton ' +str(i) )
-
+                        raise ValueError('nan found for ' + item + ' at iteraton ' + str(i))
 
             aux = self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel')
             self.l2l[i] = np.linalg.norm(aux.ravel(), 2)
@@ -86,4 +87,6 @@ class CGLS(IterativeReconAlg):
 
             self.__gamma__ = gamma1
             self.__p__ = s + beta * self.__p__
+
+
 cgls = decorator(CGLS, name='cgls')

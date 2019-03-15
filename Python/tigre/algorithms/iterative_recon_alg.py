@@ -12,11 +12,13 @@ from _minTV import minTV
 from _AwminTV import AwminTV
 import time
 import copy
+
 """
 This module is where the umbrella class IterativeReconAlg is located
 which is the umbrella class to all the other algorithms apart from 
 the single pass type algorithms. 
 """
+
 
 # coding: utf8
 
@@ -78,10 +80,12 @@ class IterativeReconAlg(object):
 
     :keyword OrderStrategy : (str)
         Chooses the subset ordering strategy. Options are:
-                 "ordered"        : uses them in the input order, but divided
+                 "ordered"        : uses them in the input order, but
+                                    divided
                  "random"         : orders them randomply
                  "angularDistance": chooses the next subset with the
-                                    biggest angular distance with the ones used
+                                    biggest angular distance with the
+                                    ones used
     Usage
     --------
     >>> import numpy as np
@@ -109,18 +113,19 @@ class IterativeReconAlg(object):
 
         options = dict(blocksize=20, lmbda=1, lmbda_red=0.99,
                        OrderStrategy=None, Quameasopts=None,
-                       init=None,verbose=True, noneg=True,
+                       init=None, verbose=True, noneg=True,
                        computel2=False, dataminimizing='art_data_minimizing',
-                       name='Iterative Reconstruction', sup_kw_warning = False)
-        allowed_keywords = ['V','W','log_parameters','angleblocks','angle_index','delta','regularisation']
+                       name='Iterative Reconstruction', sup_kw_warning=False)
+        allowed_keywords = ['V', 'W', 'log_parameters', 'angleblocks', 'angle_index', 'delta', 'regularisation']
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
         for kw in kwargs.keys():
-            if not options.has_key(kw) and (kw not in allowed_keywords):
+            if not (kw in options) and (kw not in allowed_keywords):
                 if self.verbose:
                     if not kwargs.get('sup_kw_warning'):
                         # Note: might not want this warning (typo checking).
-                        print("Warning: " + kw + " not recognised as default parameter for instance of IterativeReconAlg.")
+                        print(
+                            "Warning: " + kw + " not recognised as default parameter for instance of IterativeReconAlg.")
         if self.angles.ndim == 1:
             a1 = self.angles
             a2 = np.zeros(self.angles.shape[0], dtype=np.float32)
@@ -148,7 +153,7 @@ class IterativeReconAlg(object):
         geox.dVoxel = geox.sVoxel / geox.nVoxel
         W = Ax(np.ones(geox.nVoxel, dtype=np.float32), geox, self.angles, "ray-voxel")
         W[W <= min(self.geo.dVoxel / 4)] = np.inf
-        W = 1./W
+        W = 1. / W
         setattr(self, 'W', W)
 
     def set_v(self):
@@ -180,7 +185,7 @@ class IterativeReconAlg(object):
             setattr(self, 'V', V)
 
         else:
-            V = np.ones([ geo.nVoxel[1], geo.nVoxel[2], self.angles.shape[0]], dtype=np.float32)
+            V = np.ones([geo.nVoxel[1], geo.nVoxel[2], self.angles.shape[0]], dtype=np.float32)
             setattr(self, 'V', V)
 
     def set_res(self):
@@ -239,6 +244,7 @@ class IterativeReconAlg(object):
                     print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()
             self.error_measurement(res_prev, i)
+
     def art_data_minimizing(self):
         """
         VERBOSE:
@@ -260,35 +266,30 @@ class IterativeReconAlg(object):
             else:
                 angle = self.angleblocks[j]
 
-            if geo.offOrigin.shape[0] ==self.angles.shape[0]:
-               geo.offOrigin = self.geo.offOrigin[j]
+            if geo.offOrigin.shape[0] == self.angles.shape[0]:
+                geo.offOrigin = self.geo.offOrigin[j]
             if geo.offDetector.shape[0] == self.angles.shape[0]:
                 geo.offOrin = self.geo.offDetector[j]
-            if geo.rotDetector.shape[0] ==self.angles.shape[0]:
-                geo.rotDetector=self.geo.rotDetector[j]
-            if hasattr(geo.DSD,'shape') and len((geo.DSD.shape)):
-                if geo.DSD.shape[0] ==self.angles.shape[0]:
+            if geo.rotDetector.shape[0] == self.angles.shape[0]:
+                geo.rotDetector = self.geo.rotDetector[j]
+            if hasattr(geo.DSD, 'shape') and len((geo.DSD.shape)):
+                if geo.DSD.shape[0] == self.angles.shape[0]:
                     geo.DSD = self.geo.DSD[j]
-            if hasattr(geo.DSO,'shape') and len((geo.DSD.shape)):
-                if geo.DSO.shape[0] ==self.angles.shape[0]:
+            if hasattr(geo.DSO, 'shape') and len((geo.DSD.shape)):
+                if geo.DSO.shape[0] == self.angles.shape[0]:
                     geo.DSO = self.geo.DSO[j]
 
-
-            self.res += self.lmbda * 1/self.third_dim_sum(self.V[:,:,self.angle_index[j]]) * Atb(self.W[self.angle_index[j]] * (self.proj[self.angle_index[j]]
-                                     - Ax(self.res, geo, angle, 'interpolated')),geo, angle, 'FDK')
+            self.res += self.lmbda * 1 / self.third_dim_sum(self.V[:, :, self.angle_index[j]]) * Atb(
+                self.W[self.angle_index[j]] * (self.proj[self.angle_index[j]]
+                                               - Ax(self.res, geo, angle, 'interpolated')), geo, angle, 'FDK')
             if self.noneg:
                 self.res = self.res.clip(min=0)
-    def third_dim_sum(self,V):
-        if V.ndim == 3:
-            return np.sum(V, axis=2, dtype=np.float32)
-        else:
-            return V
 
-    def minimizeTV(self,res_prev,dtvg):
-        return minTV(res_prev,dtvg,self.numiter_tv)
+    def minimizeTV(self, res_prev, dtvg):
+        return minTV(res_prev, dtvg, self.numiter_tv)
 
-    def minimizeAwTV(self,res_prev,dtvg):
-        return AwminTV(res_prev,dtvg,self.numiter_tv,self.delta)
+    def minimizeAwTV(self, res_prev, dtvg):
+        return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta)
 
     def error_measurement(self, res_prev, iter):
         if self.Quameasopts is not None and iter > 0:
@@ -309,27 +310,26 @@ class IterativeReconAlg(object):
         for item in self.__dict__:
             if item == 'geo':
                 pass
-                #parameters.append('--------------- GEOMETRY ----------------')
-                #parameters.append(self.geo.__str__())
-                #parameters.append('----------------END GEOMETRY ------------')
-            elif hasattr(self.__dict__.get(item), 'shape'):
-                if self.__dict__.get(item).ravel().shape[0] > 100:
+            elif hasattr(getattr(self,item), 'shape'):
+                if getattr(self,item).ravel().shape[0] > 100:
                     parameters.append(item + ' shape: ' + str(self.__dict__.get(item).shape))
             else:
                 parameters.append(item + ': ' + str(self.__dict__.get(item)))
 
         return '\n'.join(parameters)
 
+
 def decorator(IterativeReconAlg, name=None, docstring=None):
     """
     Calls run_main_iter when parameters are given to it.
 
     :param IterativeReconAlg: obj, class
-        instance of IterativeReconAlg
+        IterativeReconAlg class to be decorated
     :param name: str
         for name of func
     :param docstring: str
-        other documentation that may need to be included from external source.
+        other documentation that may need to be included from external
+        source.
     :return: func
 
     Examples
