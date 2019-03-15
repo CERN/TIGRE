@@ -31,17 +31,20 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     cdef int total_projections = angles.shape[0]
 
     #PERMUTE INPUT: convert_contig_mode(C_CONTIG) -> F_CONTIG
-    # (N, V, U) -> (U, V, N) 
+    # (N, V, U) -> (U, V, N)
     geometry.convert_contig_mode()
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
     if not c_geometry:
         raise MemoryError()
-    cdef float** c_projections = <float**> malloc(total_projections * sizeof(float*))
-    if not c_projections:
-        raise MemoryError()
+    cdef float** c_projections =  <float**> malloc(total_projections * sizeof(float*))
+    cdef float*  c_projections_data=<float*>malloc(total_projections*geometry.nDetector[0].astype('uint32') * geometry.nDetector[1].astype('uint32') * sizeof(float))
+    if not c_projections_data:
+          raise MemoryError()
+
     cdef int i = 0
     for i in range(total_projections):
-       c_projections[i] = <float*> malloc(geometry.nDetector[0] * geometry.nDetector[1] * sizeof(float))
+       c_projections[i] = &c_projections_data[i*geometry.nDetector[0].astype('uint32')*geometry.nDetector[1].astype('uint32')]
+
 
     cdef float* c_angles = <float*> angles.data
     if not c_angles:
@@ -64,6 +67,7 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     #PERMUTE INPUT: (Z, Y, X) -> (X ,Y ,Z)
     img = img.transpose().copy(order='F')
 
+
     cdef float* c_img = <float*> img.data
     if cone_beam:
         if not interpolated:
@@ -72,18 +76,19 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
             cuda_raise_errors(interpolation_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections))
     else:
         if not interpolated:
+
             cuda_raise_errors(siddon_ray_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections))
         else:
             cuda_raise_errors(interpolation_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections))
     img = img.copy(order='C')
 
-    cdef np.npy_intp shape[2]
+    cdef np.npy_intp shape[3]
     shape[0] = <np.npy_intp> geometry.nDetector[0]
     shape[1] = <np.npy_intp> geometry.nDetector[1]
-    projections = [None] * total_projections
-    for i in range(total_projections):
-        projections[i] = np.PyArray_SimpleNewFromData(2, shape, np.NPY_FLOAT32, c_projections[i])
-        PyArray_ENABLEFLAGS(projections[i], np.NPY_OWNDATA)  # Attribute new memory owner
+    shape[2] = <np.npy_intp> total_projections
+
+    projections= np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_projections_data)
+    PyArray_ENABLEFLAGS(projections, np.NPY_OWNDATA)  # Attribute new memory owner
 
 
     free(c_projections)  # Free pointer array, not actual data
@@ -91,4 +96,5 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     geometry.convert_contig_mode()
 
     # PERMUTE OUTPUT: (U, V, N) -> (N, V, U)
-    return np.stack(projections,0).swapaxes(1,2).copy(order='C')
+    return projections.swapaxes(0,2).copy(order='C')
+    #return

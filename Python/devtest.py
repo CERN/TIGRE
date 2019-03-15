@@ -17,6 +17,8 @@ angles = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
 head = data_loader.load_head_phantom(geo.nVoxel)
 print(type(head[0][0][0]))
 proj = tigre.Ax(head,geo,angles)
+print(proj.shape)
+tigre.plotproj(proj)
 """
 output = tigre.Atb(proj,geo,angles,'FDK')
 plt.imshow(output[geo.nVoxel[0]/2])
