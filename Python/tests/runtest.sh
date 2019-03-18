@@ -3,12 +3,8 @@ function runAlgs() {
    arr=("$@")
    for i in "${arr[@]}";
       do
-          python ~/TIGRE/Python/tests/configurations.py configuration1 "$i"
-          python ~/TIGRE/Python/tests/configurations.py configuration2 "$i"
-          python ~/TIGRE/Python/tests/configurations.py configuration3 "$i"
-          python ~/TIGRE/Python/tests/configurations.py configuration4 "$i"
-          python ~/TIGRE/Python/tests/configurations.py configuration5 "$i"
-      done
+          python ./tests/configurations.py configuration1 "$i"
+   done
 
 }
 
@@ -16,4 +12,4 @@ array=("FDK" "fbp" "sirt" "ossart" "cgls" "asd_pocs" "awasd_pocs")
 
 runAlgs "${array[@]}"
 
-python ~/TIGRE/Python/tests/testforlog.py log_summary Wed_Mar_13
+python ./tests/testforlog.py log_summary Wed_Mar_13

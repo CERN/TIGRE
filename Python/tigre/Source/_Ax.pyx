@@ -1,12 +1,11 @@
-cimport numpy as np
 import numpy as np
+cimport numpy as np
 from tigre.Source._types cimport Geometry as c_Geometry, convert_to_c_geometry, free_c_geometry
-
-# Numpy must be initialized. When using numpy from C or Cython you must
-# _always_ do that, or you will have segfaults
-np.import_array()
-
 from libc.stdlib cimport malloc, free
+    # Numpy must be initialized. When using numpy from C or Cython you must
+    # _always_ do that, or you will have segfaults
+
+np.import_array()
 
 cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
@@ -37,15 +36,17 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     if not c_geometry:
         raise MemoryError()
     cdef float** c_projections =  <float**> malloc(total_projections * sizeof(float*))
-    cdef float*  c_projections_data=<float*>malloc(total_projections*geometry.nDetector[0].astype('uint32') * geometry.nDetector[1].astype('uint32') * sizeof(float))
+    cdef float*  c_projections_data=<float*>malloc(total_projections*geometry.nDetector[0].astype('int32') * geometry.nDetector[1].astype('int32') * sizeof(float))
     if not c_projections_data:
+          raise MemoryError()
+    if not c_projections:
           raise MemoryError()
 
     cdef int i = 0
     for i in range(total_projections):
        c_projections[i] = &c_projections_data[i*geometry.nDetector[0].astype('uint32')*geometry.nDetector[1].astype('uint32')]
 
-
+    
     cdef float* c_angles = <float*> angles.data
     if not c_angles:
         raise MemoryError()
@@ -81,13 +82,13 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
         else:
             cuda_raise_errors(interpolation_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections))
     img = img.copy(order='C')
-
+    
     cdef np.npy_intp shape[3]
-    shape[0] = <np.npy_intp> geometry.nDetector[0]
-    shape[1] = <np.npy_intp> geometry.nDetector[1]
-    shape[2] = <np.npy_intp> total_projections
+    shape[2] = <np.npy_intp> geometry.nDetector[1]
+    shape[1] = <np.npy_intp> geometry.nDetector[0]
+    shape[0] = <np.npy_intp> total_projections
 
-    projections= np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_projections_data)
+    cdef np.ndarray[np.float32_t, ndim=3] projections= np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_projections_data)
     PyArray_ENABLEFLAGS(projections, np.NPY_OWNDATA)  # Attribute new memory owner
 
 
@@ -96,5 +97,5 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     geometry.convert_contig_mode()
 
     # PERMUTE OUTPUT: (U, V, N) -> (N, V, U)
-    return projections.swapaxes(0,2).copy(order='C')
+    return projections.swapaxes(1,2).copy(order='C')
     #return

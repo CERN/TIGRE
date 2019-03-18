@@ -499,7 +499,7 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
         cudaDeviceSynchronize();
     }//END image splits loop
      
-    return 0;
+
     if(cudaCheckErrors("Main loop  fail")){return 1;}
     ///////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////

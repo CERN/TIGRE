@@ -6,7 +6,7 @@ import numpy as np
 
 # Numpy must be initialized. When using numpy from C or Cython you must
 # _always_ do that, or you will have segfaults
-np.import_array()
+
 
 from libc.stdlib cimport malloc, free
 from tigre.utilities.errors import TigreCudaCallError
@@ -28,7 +28,7 @@ def cuda_raise_errors(error_code):
 
 
 def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[np.float32_t, ndim=2] angles, krylov="FDK", mode="cone"):
-
+    np.import_array()
     cdef int total_projections = angles.shape[0]
 
     geometry.convert_contig_mode()

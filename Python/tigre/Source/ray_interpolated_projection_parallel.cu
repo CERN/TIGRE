@@ -282,7 +282,7 @@ int interpolation_projection_parallel(float  *  img, Geometry geo, float** resul
     
     int lastangles=nangles-(i-1)*PROJ_PER_BLOCK;
     cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK],dProjection[(int)(i-1)%2==0], lastangles*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[1]);
-
+    if(cudaCheckErrors(" cudaMemcpyAsync fail")){return 1;}
     
     cudaDestroyTextureObject(texImg[0]);
     cudaFreeArray(d_cuArrTex[0]);
