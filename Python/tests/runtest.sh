@@ -19,7 +19,6 @@ function runAlgs() {
       done
 
 }
-
 array=("FDK" "fbp" "sirt" "ossart" "cgls" "asd_pocs" "awasd_pocs")
 
 runAlgs "${array[@]}"

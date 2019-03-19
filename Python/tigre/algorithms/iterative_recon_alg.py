@@ -127,14 +127,14 @@ class IterativeReconAlg(object):
             a1 = self.angles
             a2 = np.zeros(self.angles.shape[0], dtype=np.float32)
             setattr(self, 'angles', np.vstack((a1, a2, a2)).T)
+        if not all([hasattr(self, 'angleindex'), hasattr(self, 'angleblocks')]):
+            self.set_angle_index()
         if not hasattr(self, 'W'):
             self.set_w()
         if not hasattr(self, 'V'):
             self.set_v()
         if not hasattr(self, 'res'):
             self.set_res()
-        if not all([hasattr(self, 'angleindex'), hasattr(self, 'angleblocks')]):
-            self.set_angle_index()
         setattr(self, 'lq', [])  # quameasoptslist
         setattr(self, 'l2l', [])  # l2list
 
@@ -174,16 +174,26 @@ class IterativeReconAlg(object):
             yv = -1 * np.arange(start, stop + step, step)
 
             (yy, xx) = np.meshgrid(yv, xv)
-            xx = np.expand_dims(xx, axis=2)
-            yy = np.expand_dims(yy, axis=2)
             A = (self.angles[:, 0] + np.pi / 2)
-            V = (geo.DSO / (geo.DSO + (yy * np.sin(-A)) - (xx * np.cos(-A)))) ** 2
-            V = np.array(V, dtype=np.float32)
-            setattr(self, 'V', V)
+
+            V = np.empty((self.angles.shape[0],geo.nVoxel[1], geo.nVoxel[2]))
+            for i in range(self.angles.shape[0]):
+                if hasattr(geo.DSO,'shape') and len(geo.DSO.shape)>=1:
+                    DSO = geo.DSO[i]
+                else:
+                    DSO = geo.DSO
+                V[i] = (DSO / (DSO + (yy * np.sin(-A[i])) - (xx * np.cos(-A[i])))) ** 2
 
         else:
-            V = np.ones([ geo.nVoxel[1], geo.nVoxel[2], self.angles.shape[0]], dtype=np.float32)
-            setattr(self, 'V', V)
+            V = np.ones((self.angles.shape[0]), dtype=np.float32)
+        if self.blocksize>1:
+            v_list = [np.sum(V[self.angle_index[i]],axis=0) for i in range(len(self.angleblocks))]
+            V = np.stack(v_list,0)
+
+
+
+        V = np.array(V,dtype=np.float32)
+        setattr(self, 'V', V)
 
     def set_res(self):
         """
@@ -275,9 +285,8 @@ class IterativeReconAlg(object):
                 if geo.DSO.shape[0] ==self.angles.shape[0]:
                     geo.DSO = self.geo.DSO[j]
 
+            self.gradient_descent(geo,angle,j)
 
-            self.res += self.lmbda * 1/self.third_dim_sum(self.V[:,:,self.angle_index[j]]) * Atb(self.W[self.angle_index[j]] * (self.proj[self.angle_index[j]]
-                                     - Ax(self.res, geo, angle, 'interpolated')),geo, angle, 'FDK')
             if self.noneg:
                 self.res = self.res.clip(min=0)
     def third_dim_sum(self,V):
@@ -300,6 +309,10 @@ class IterativeReconAlg(object):
             errornow = im3DNORM(self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel'), 2)
             self.l2l.append(errornow)
 
+    def gradient_descent(self, geo, angle, iteration):
+        self.res += self.lmbda * 1. / self.V[iteration] * Atb(self.W[self.angle_index[iteration]] * (self.proj[self.angle_index[iteration]]
+                                                                                                     - Ax(self.res, geo, angle, 'interpolated')), geo, angle, 'FDK')
+
     def getres(self):
         return self.res
 
@@ -311,9 +324,6 @@ class IterativeReconAlg(object):
         for item in self.__dict__:
             if item == 'geo':
                 pass
-                #parameters.append('--------------- GEOMETRY ----------------')
-                #parameters.append(self.geo.__str__())
-                #parameters.append('----------------END GEOMETRY ------------')
             elif hasattr(self.__dict__.get(item), 'shape'):
                 if self.__dict__.get(item).ravel().shape[0] > 100:
                     parameters.append(item + ' shape: ' + str(self.__dict__.get(item).shape))
