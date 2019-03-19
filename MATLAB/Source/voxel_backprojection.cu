@@ -298,7 +298,6 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
         mexErrMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","There are no available device(s) that support CUDA\n");
     }
     
-    
     // Check the available devices, and if they are the same
     int dev;
     checkDevices();
@@ -384,8 +383,9 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     float** partial_projection;
     size_t* proj_split_size;
     
+    
+    
     for(unsigned int img_slice=0;img_slice<split_image;img_slice++){
-        
         // Initialize the memory if its the first time.
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
@@ -556,10 +556,10 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
             cudaDeviceSynchronize();
+            cudaCheckErrors("Main loop fail");
         }
         
     } // end image splits
-    cudaCheckErrors("Main loop fail");
 
     ///////// Cleaning:
     
@@ -655,7 +655,7 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
     {
         // As we can overlap memcpys from H2D of the projections, we should then minimize the amount of image splits.
         // Lets assume to start with that we only need 1 stack of PROJ_PER_KERNEL projections. The rest is for the image.
-        size_t mem_free=mem_GPU_global-mem_proj*PROJ_PER_KERNEL;
+        size_t mem_free=mem_GPU_global-2*mem_proj*PROJ_PER_KERNEL;
         
         *split_image=(mem_image/deviceCount+mem_free-1)/mem_free;
         // Now knowing how many splits we have for images, we can recompute how many slices of projections actually
