@@ -274,8 +274,8 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         for (dev = 0; dev < deviceCount; dev++) {
             cudaSetDevice(dev);
             for (int i = 0; i < 2; ++i){
-                cudaMalloc((void**)&dProjection_accum[dev*deviceCount+i], num_bytes_proj);
-                cudaMemset(dProjection_accum[dev*deviceCount+i],0,num_bytes_proj);
+                cudaMalloc((void**)&dProjection_accum[dev*2+i], num_bytes_proj);
+                cudaMemset(dProjection_accum[dev*2+i],0,num_bytes_proj);
                 cudaCheckErrors("cudaMallocauxiliarty projections fail");
             }
         }
@@ -287,8 +287,8 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         cudaSetDevice(dev);
         
         for (int i = 0; i < 2; ++i){
-            cudaMalloc((void**)&dProjection[dev*deviceCount+i],   num_bytes_proj);
-            cudaMemset(dProjection[dev*deviceCount+i]  ,0,num_bytes_proj);
+            cudaMalloc((void**)&dProjection[dev*2+i],   num_bytes_proj);
+            cudaMemset(dProjection[dev*2+i]  ,0,num_bytes_proj);
             cudaCheckErrors("cudaMalloc projections fail");
         }
     }
@@ -396,10 +396,10 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                 
                 //TODO: we could do this around X and Y axis too, but we would need to compute the new axis of rotation (not possible to know from jsut the angles)
                 if (!is_spherical){
-                    kernelPixelDetector<false><<<grid,block,0,stream[dev*nStream_device]>>>(geoArray[sp],dProjection[(i%2)+dev*deviceCount],i,nangles,texImg[dev]);
+                    kernelPixelDetector<false><<<grid,block,0,stream[dev*nStream_device]>>>(geoArray[sp],dProjection[(i%2)+dev*2],i,nangles,texImg[dev]);
                 }
                 else{
-                    kernelPixelDetector<true> <<<grid,block,0,stream[dev*nStream_device]>>>(geoArray[sp],dProjection[(i%2)+dev*deviceCount],i,nangles,texImg[dev]);
+                    kernelPixelDetector<true> <<<grid,block,0,stream[dev*nStream_device]>>>(geoArray[sp],dProjection[(i%2)+dev*2],i,nangles,texImg[dev]);
                 }
             }
             
@@ -415,13 +415,13 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                     // First, grab previous results and put them in the auxiliary variable
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(dev);
-                        cudaMemcpyAsync(dProjection_accum[(i%2)+dev*deviceCount], result[i*PROJ_PER_BLOCK+dev*nangles_device], num_bytes_proj, cudaMemcpyHostToDevice,stream[dev*2+1]);
+                        cudaMemcpyAsync(dProjection_accum[(i%2)+dev*2], result[i*PROJ_PER_BLOCK+dev*nangles_device], num_bytes_proj, cudaMemcpyHostToDevice,stream[dev*2+1]);
                     }
                     // Second, take the results from current compute call and add it to the code in execution.
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(dev);
                         cudaStreamSynchronize(stream[dev*2+1]); // wait until copy is finished
-                        vecAddInPlaceInterp<<<(geo.nDetecU*geo.nDetecV*PROJ_PER_BLOCK+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev*2]>>>(dProjection[(i%2)+dev*deviceCount],dProjection_accum[(i%2)+dev*deviceCount],(unsigned long)geo.nDetecU*geo.nDetecV*PROJ_PER_BLOCK);
+                        vecAddInPlaceInterp<<<(geo.nDetecU*geo.nDetecV*PROJ_PER_BLOCK+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev*2]>>>(dProjection[(i%2)+dev*2],dProjection_accum[(i%2)+dev*2],(unsigned long)geo.nDetecU*geo.nDetecV*PROJ_PER_BLOCK);
                     }
                 }
             }
@@ -430,7 +430,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                 for (dev = 0; dev < deviceCount; dev++){
                     // copy result to host
                     cudaSetDevice(dev);
-                    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(!(i%2))+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*2+1]);
+                    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(!(i%2))+dev*2], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*2+1]);
                 }
             }
             // Make sure Computation on kernels has finished before we launch the next batch.
@@ -452,7 +452,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
             cudaSetDevice(dev);
             cudaDeviceSynchronize();
             cudaCheckErrors("Fail memcopy fail");
-            cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(((i-1)%2))+dev*deviceCount], size_last_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
+            cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(((i-1)%2))+dev*2], size_last_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
         }
         // Free memory for the next piece of image
         
@@ -471,8 +471,8 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     // Freeing Stage
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
-        cudaFree(dProjection[dev*deviceCount]);
-        cudaFree(dProjection[dev*deviceCount+1]);
+        cudaFree(dProjection[dev*2]);
+        cudaFree(dProjection[dev*2+1]);
         
     }
     free(dProjection);
@@ -480,8 +480,8 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     if(!fits_in_memory){
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
-            cudaFree(dProjection_accum[dev*deviceCount]);
-            cudaFree(dProjection_accum[dev*deviceCount+1]);
+            cudaFree(dProjection_accum[dev*2]);
+            cudaFree(dProjection_accum[dev*2+1]);
             
         }
         free(dProjection_accum);

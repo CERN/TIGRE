@@ -327,8 +327,8 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
         for (dev = 0; dev < deviceCount; dev++) {
             cudaSetDevice(dev);
             for (int i = 0; i < 2; ++i){
-                cudaMalloc((void**)&dProjection_accum[dev*deviceCount+i], num_bytes_proj);
-                cudaMemset(dProjection_accum[dev*deviceCount+i],0,num_bytes_proj);
+                cudaMalloc((void**)&dProjection_accum[dev*2+i], num_bytes_proj);
+                cudaMemset(dProjection_accum[dev*2+i],0,num_bytes_proj);
                 cudaCheckErrors("cudaMallocauxiliarty projections fail");
             }
         }
@@ -340,8 +340,8 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
         cudaSetDevice(dev);
         
         for (int i = 0; i < 2; ++i){
-            cudaMalloc((void**)&dProjection[dev*deviceCount+i],   num_bytes_proj);
-            cudaMemset(dProjection[dev*deviceCount+i]  ,0,num_bytes_proj);
+            cudaMalloc((void**)&dProjection[dev*2+i],   num_bytes_proj);
+            cudaMemset(dProjection[dev*2+i]  ,0,num_bytes_proj);
             cudaCheckErrors("cudaMalloc projections fail");
         }
     }
@@ -437,7 +437,7 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
                 cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*4*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[dev*2]);
                 cudaStreamSynchronize(stream[dev*2]);
                 cudaCheckErrors("kernel fail");
-                kernelPixelDetector<<<grid,block,0,stream[dev*2]>>>(geoArray[sp],dProjection[(i%2)+dev*deviceCount],i,nangles,texImg[dev]);
+                kernelPixelDetector<<<grid,block,0,stream[dev*2]>>>(geoArray[sp],dProjection[(i%2)+dev*2],i,nangles,texImg[dev]);
             }
             // Now that the computation is happening, we need to either prepare the memory for
             // combining of the projections (splits>1) or start removing previous results.
@@ -448,13 +448,13 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
                     // First, grab previous results and put them in the auxiliary variable
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(dev);
-                        cudaMemcpyAsync(dProjection_accum[(i%2)+dev*deviceCount], result[i*PROJ_PER_BLOCK+dev*nangles_device], num_bytes_proj, cudaMemcpyHostToDevice,stream[dev*2+1]);
+                        cudaMemcpyAsync(dProjection_accum[(i%2)+dev*2], result[i*PROJ_PER_BLOCK+dev*nangles_device], num_bytes_proj, cudaMemcpyHostToDevice,stream[dev*2+1]);
                     }            
                     // Second, take the results from current compute call and add it to the code in execution.
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(dev);
                         cudaStreamSynchronize(stream[dev*2+1]); // wait until copy is finished
-                        vecAddInPlace<<<(geo.nDetecU*geo.nDetecV*PROJ_PER_BLOCK+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev*2]>>>(dProjection[(i%2)+dev*deviceCount],dProjection_accum[(i%2)+dev*deviceCount],(unsigned long)geo.nDetecU*geo.nDetecV*PROJ_PER_BLOCK);
+                        vecAddInPlace<<<(geo.nDetecU*geo.nDetecV*PROJ_PER_BLOCK+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev*2]>>>(dProjection[(i%2)+dev*2],dProjection_accum[(i%2)+dev*2],(unsigned long)geo.nDetecU*geo.nDetecV*PROJ_PER_BLOCK);
                     }
                 }
             }
@@ -465,7 +465,7 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
                 for (dev = 0; dev < deviceCount; dev++){
                     // copy result to host
                     cudaSetDevice(dev);
-                    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(!(i%2))+dev*deviceCount], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*2+1]);
+                    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(!(i%2))+dev*2], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*2+1]);
                 }
             }
             // Make sure Computation on kernels has finished before we launch the next batch.
@@ -488,7 +488,7 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
             cudaSetDevice(dev);
             cudaDeviceSynchronize();
             cudaCheckErrors("Fail memcopy fail");
-            cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(((i-1)%2))+dev*deviceCount], size_last_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
+            cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(((i-1)%2))+dev*2], size_last_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
         }
         // Free memory for the next piece of image
        
@@ -507,8 +507,8 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
     // Freeing Stage
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
-        cudaFree(dProjection[dev*deviceCount]);
-        cudaFree(dProjection[dev*deviceCount+1]);
+        cudaFree(dProjection[dev*2]);
+        cudaFree(dProjection[dev*2+1]);
         
     }
     free(dProjection);
@@ -516,8 +516,8 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
     if(!fits_in_memory){
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
-            cudaFree(dProjection_accum[dev*deviceCount]);
-            cudaFree(dProjection_accum[dev*deviceCount+1]);
+            cudaFree(dProjection_accum[dev*2]);
+            cudaFree(dProjection_accum[dev*2+1]);
             
         }
         free(dProjection_accum);
