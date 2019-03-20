@@ -252,19 +252,7 @@ class IterativeReconAlg(object):
             getattr(self, self.dataminimizing)()
             self.error_measurement(res_prev, i)
     def art_data_minimizing(self):
-        """
-        VERBOSE:
-        >>> for j in range(angleblocks):
-        >>>     angle = np.array([alpha[j]], dtype=np.float32)
-        >>>     proj_err = proj[angle_index[j]] - Ax(res, geo, angle, 'ray-voxel')
-        >>>     weighted_err = W[angle_index[j]] * proj_err
-        >>>     backprj = Atb(weighted_err, geo, angle, 'FDK')
-        >>>     weighted_backprj = 1 / V[angle_index[j]] * backprj
-        >>>     res += weighted_backprj
-        >>>     res[res<0]=0
 
-        :return: None
-        """
         geo = copy.deepcopy(self.geo)
         for j in range(len(self.angleblocks)):
             if self.blocksize == 1:
@@ -310,6 +298,19 @@ class IterativeReconAlg(object):
             self.l2l.append(errornow)
 
     def gradient_descent(self, geo, angle, iteration):
+        """
+        VERBOSE:
+         for j in range(angleblocks):
+             angle = np.array([alpha[j]], dtype=np.float32)
+             proj_err = proj[angle_index[j]] - Ax(res, geo, angle, 'ray-voxel')
+             weighted_err = W[angle_index[j]] * proj_err
+             backprj = Atb(weighted_err, geo, angle, 'FDK')
+             weighted_backprj = 1 / V[angle_index[j]] * backprj
+             res += weighted_backprj
+             res[res<0]=0
+
+        :return: None
+        """
         self.res += self.lmbda * 1. / self.V[iteration] * Atb(self.W[self.angle_index[iteration]] * (self.proj[self.angle_index[iteration]]
                                                                                                      - Ax(self.res, geo, angle, 'interpolated')), geo, angle, 'FDK')
 

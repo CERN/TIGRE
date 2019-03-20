@@ -16,7 +16,7 @@ angles = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
 #angles = np.vstack((angles_1, angles_2, angles_3)).T
 head = data_loader.load_head_phantom(geo.nVoxel)
 proj = tigre.Ax(head,geo,angles)
-output = algs.sart(proj,geo,angles,niter=5)
+output = algs.fista(proj,geo,angles,niter=5)
 plt.imshow(output[geo.nVoxel[0]/2])
 plt.colorbar()
 plt.show()
