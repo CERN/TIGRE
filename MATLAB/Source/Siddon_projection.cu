@@ -123,7 +123,7 @@ __global__ void kernelPixelDetector( Geometry geo,
         return;
     
     size_t idx =  (size_t)(x  * geo.nDetecV + y)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
-    int indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array
+    int indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array (for a given GPU)
 
     if(indAlpha>=totalNoOfProjections)
         return;
@@ -378,9 +378,13 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
             
         }
     }
-    int nangles_device=(nangles+deviceCount-1)/deviceCount;
     cudaCheckErrors("Stream creation fail");
-    
+
+    int nangles_device=(nangles+deviceCount-1)/deviceCount;
+    int nangles_last_device=(nangles-(deviceCount-1)*nangles_device);
+    unsigned int noOfKernelCalls = (nangles_device+PROJ_PER_BLOCK-1)/PROJ_PER_BLOCK;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_BLOCK
+    unsigned int last_device_blocks= (nangles_last_device+PROJ_PER_BLOCK-1)/PROJ_PER_BLOCK; // we will use this in the memory management.
+    int projection_this_block;
     cudaTextureObject_t *texImg = new cudaTextureObject_t[deviceCount];
     cudaArray **d_cuArrTex = new cudaArray*[deviceCount];
     
@@ -407,7 +411,6 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
         dim3 block(divU,divV,PROJ_PER_BLOCK);
         
         unsigned int proj_global;
-        unsigned int noOfKernelCalls = (nangles_device+PROJ_PER_BLOCK-1)/PROJ_PER_BLOCK;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_BLOCK
         unsigned int i;
         // Now that we have prepared the image (piece of image) and parameters for kernels
         // we project for all angles.
@@ -418,6 +421,8 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
                 for(unsigned int j=0; j<PROJ_PER_BLOCK; j++){
                     proj_global=(i*PROJ_PER_BLOCK+j)+dev*nangles_device;
                     if (proj_global>=nangles)
+                        break;
+                    if ((i*PROJ_PER_BLOCK+j)>=nangles_device)
                         break;
                     geoArray[sp].alpha=angles[proj_global*3];
                     geoArray[sp].theta=angles[proj_global*3+1];
@@ -437,35 +442,61 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
                 cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*4*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[dev*2]);
                 cudaStreamSynchronize(stream[dev*2]);
                 cudaCheckErrors("kernel fail");
-                kernelPixelDetector<<<grid,block,0,stream[dev*2]>>>(geoArray[sp],dProjection[(i%2)+dev*2],i,nangles,texImg[dev]);
+                kernelPixelDetector<<<grid,block,0,stream[dev*2]>>>(geoArray[sp],dProjection[(i%2)+dev*2],i,nangles_device,texImg[dev]);
             }
             // Now that the computation is happening, we need to either prepare the memory for
             // combining of the projections (splits>1) or start removing previous results.
-
+            
+            // How many projections are we dealing with in the current block??
+            
+            
             // If our image does not fit in memory then we need to make sure we accumulate previous results too.
-            if( !fits_in_memory){
-                if(sp>0){
-                    // First, grab previous results and put them in the auxiliary variable
-                    for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
-                        cudaMemcpyAsync(dProjection_accum[(i%2)+dev*2], result[i*PROJ_PER_BLOCK+dev*nangles_device], num_bytes_proj, cudaMemcpyHostToDevice,stream[dev*2+1]);
-                    }            
-                    // Second, take the results from current compute call and add it to the code in execution.
-                    for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
-                        cudaStreamSynchronize(stream[dev*2+1]); // wait until copy is finished
-                        vecAddInPlace<<<(geo.nDetecU*geo.nDetecV*PROJ_PER_BLOCK+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev*2]>>>(dProjection[(i%2)+dev*2],dProjection_accum[(i%2)+dev*2],(unsigned long)geo.nDetecU*geo.nDetecV*PROJ_PER_BLOCK);
+            if( !fits_in_memory && sp>0 ){
+                // First, grab previous results and put them in the auxiliary variable
+                for (dev = 0; dev < deviceCount; dev++){
+                    projection_this_block=PROJ_PER_BLOCK;
+                    cudaSetDevice(dev);
+                    // this werid code makes sure we dont access bad memory. Its necesary for deviceCount>2
+                    if (dev+1==deviceCount){ // if its the last device
+                        if(i+1==last_device_blocks) // If we are in the last block of the last device, how many projections?
+                            projection_this_block=nangles_last_device-(last_device_blocks-1)*PROJ_PER_BLOCK;
+                        if(i+1>last_device_blocks) // As the last device can have less blocs, i may be over it.
+                            break;
+                    }else{
+                        if(i+1==noOfKernelCalls) // if its not the last device, it can still be the lat block
+                            projection_this_block=nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK;
                     }
+                    cudaMemcpyAsync(dProjection_accum[(i%2)+dev*2], result[i*PROJ_PER_BLOCK+dev*nangles_device], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyHostToDevice,stream[dev*2+1]);
+                }
+                // Second, take the results from current compute call and add it to the code in execution.
+                for (dev = 0; dev < deviceCount; dev++){
+                    
+                    projection_this_block=PROJ_PER_BLOCK;
+                    cudaSetDevice(dev);
+                    // this werid code makes sure we dont access bad memory. Its necesary for deviceCount>2
+                    if (dev+1==deviceCount){ // if its the last device
+                        if(i+1==last_device_blocks) // If we are in the last block of the last device, how many projections?
+                            projection_this_block=nangles_last_device-(last_device_blocks-1)*PROJ_PER_BLOCK;
+                        if(i+1>last_device_blocks) // As the last device can have less blocs, i may be over it.
+                            break;
+                    }else{
+                        if(i+1==noOfKernelCalls) // if its not the last device, it can still be the lat block
+                            projection_this_block=nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK;
+                    }
+                    cudaStreamSynchronize(stream[dev*2+1]); // wait until copy is finished
+                    vecAddInPlace<<<(geo.nDetecU*geo.nDetecV*projection_this_block+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev*2]>>>(dProjection[(i%2)+dev*2],dProjection_accum[(i%2)+dev*2],(unsigned long)geo.nDetecU*geo.nDetecV*projection_this_block);
                 }
             }
-
             
             // Now, lets get out the projections from the previous execution of the kernels.
             if (i>0){
                 for (dev = 0; dev < deviceCount; dev++){
-                    // copy result to host
+                    projection_this_block=PROJ_PER_BLOCK;
                     cudaSetDevice(dev);
-                    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(!(i%2))+dev*2], num_bytes_proj, cudaMemcpyDeviceToHost,stream[dev*2+1]);
+                    if (dev+1==deviceCount && i+1==noOfKernelCalls && last_device_blocks!=noOfKernelCalls){ 
+                            projection_this_block=nangles_last_device-(last_device_blocks-1)*PROJ_PER_BLOCK;
+                    }
+                    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(!(i%2))+dev*2],  projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
                 }
             }
             // Make sure Computation on kernels has finished before we launch the next batch.
@@ -473,22 +504,26 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
                 cudaSetDevice(dev);
                 cudaStreamSynchronize(stream[dev*2]);
             }   
-        }// END angles loop
+        }// END angles loop (i)
         
         
         // We still have the last one to get out, do that one
-        int angles_last_device=(nangles-(deviceCount-1)*nangles_device);
-        int size_last_block=nangles_device-(i-1)*PROJ_PER_BLOCK;
         
+        int projection_this_block;
         for (dev = 0; dev < deviceCount; dev++){
-            if(dev+1==deviceCount){
-                size_last_block=angles_last_device-(i-1)*PROJ_PER_BLOCK;
-            }
-            // copy result to host
+            projection_this_block=PROJ_PER_BLOCK;
             cudaSetDevice(dev);
+            // this werid code makes sure we dont access bad memory. Its necesary for deviceCount>2
+            if (dev+1==deviceCount){ // if its the last device
+                projection_this_block=nangles_last_device-(last_device_blocks-1)*PROJ_PER_BLOCK;
+                if(i>last_device_blocks) // As the last device can have less blocs, i may be over it.
+                    break;
+            }else{
+               projection_this_block=nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK;
+            }
             cudaDeviceSynchronize();
             cudaCheckErrors("Fail memcopy fail");
-            cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(((i-1)%2))+dev*2], size_last_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
+            cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(!(i%2))+dev*2], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
         }
         // Free memory for the next piece of image
        
