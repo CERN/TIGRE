@@ -21,7 +21,7 @@ Installation Instructions for MATLAB
 1. MATLAB
 2. Visual Studio (Community or Profesional)
 3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.0](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
-4. CUDA Toolkit
+4. CUDA Toolkit (9.2 or newer)
 
 Tested on
 
@@ -29,7 +29,7 @@ Tested on
 | ------------- |:-------------:|
 |**Windows**| 7, 8, 10.|
 |**MATLAB**| 2014b 2016b 2017a 2018b|
-|**CUDA**| 7.5 8.0 9.0 9.1 9.2 10|
+|**CUDA**| 9.2 10|
 |**Visual Studio**| 2010 2013 2015|
 
 
@@ -118,13 +118,16 @@ If none of this works, please contact the authors at [tigre.toolbox@gmail.com](m
 1. MATLAB
 2. gcc
 3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.0](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
-4. CUDA Toolkit
+4. CUDA Toolkit (9.2 or newer)
+
+Tested on
+
 
 | Software       | Version    | 
 | ------------- |:-------------:|
 | **Ubuntu**|  16.04 17.10| 
 | **MATLAB**|  2017a 2018b| 
-| **CUDA**|  9.0 9.1 9.2| 
+| **CUDA**| 9.2 10.0| 
 | **gcc**|  6.4.0 7.2.0| 
 
 ### Simple Instructions
