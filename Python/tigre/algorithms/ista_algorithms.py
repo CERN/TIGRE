@@ -3,6 +3,7 @@ import numpy as np
 import tigre
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
+import time
 from tigre.utilities.im3Dnorm import im3DNORM
 from tigre.algorithms.single_pass_algorithms import FDK
 import copy
@@ -19,18 +20,19 @@ class FISTA(IterativeReconAlg):
         :param kwargs:
         """
 
-        # Dont precompute W, set V = ones.
+        # Dont precompute W and V
         kwargs.update(dict(W=None,
-                           V=np.ones((angles.shape[0]), dtype=np.float32)
+                           V=None,
                            ))
         kwargs.update(dict(blocksize=angles.shape[0]))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         self.lmbda = 0.1
-        self.bigl = 2.e5
+
+        self.bigl = 2.e8
         self.bm = 1./self.bigl
 
-    # overide gradient descent from iterative recon alg to remove W.
-    def gradient_descent(self, geo, angle, iteration):
+    # overide update_image from iterative recon alg to remove W.
+    def update_image(self, geo, angle, iteration):
         """
         VERBOSE:
          for j in range(angleblocks):
@@ -42,14 +44,32 @@ class FISTA(IterativeReconAlg):
 
         :return: None
         """
-        self.res += self.lmbda * 1. / self.V[iteration] * tigre.Atb((self.proj[self.angle_index[iteration]]
+        self.res += self.bm * 2 * tigre.Atb((self.proj[self.angle_index[iteration]]
                                                                      - tigre.Ax(self.res, geo, angle, 'interpolated')),
-                                                                    geo, angle, 'FDK')
+                                                                    geo, angle, 'matched')
     def run_main_iter(self):
-        for i in range(self.niter):
-            y_rec = copy.deepcopy(self.res)
-            self.art_data_minimizing()
-            y_rec += self.bm*2*self.res
+        def run_main_iter(self):
+            """
+            Goes through the main iteration for the given configuration.
+            :return: None
+            """
+            Quameasopts = self.Quameasopts
+
+            for i in range(self.niter):
+
+                res_prev = None
+                if Quameasopts is not None:
+                    res_prev = copy.deepcopy(self.res)
+                if self.verbose:
+                    if i == 0:
+                        print(str(self.name).upper() + ' ' + "algorithm in progress.")
+                        toc = time.clock()
+                    if i == 1:
+                        tic = time.clock()
+                        print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
+                getattr(self, self.dataminimizing)()
+
+                self.error_measurement(res_prev, i)
 
 
 fista = decorator(FISTA)

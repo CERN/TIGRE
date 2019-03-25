@@ -7,5 +7,9 @@ def im3ddenoise(img,iter=50,lmbda=15.0):
     imgmax = max(img.ravel())
     img = img/imgmax
 
-    return tvdenoise(img,iter,lmbda)
+    img = tvdenoise(img,iter,lmbda)
 
+    img*=imgmax
+    img+=imgmin
+
+    return img

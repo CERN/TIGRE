@@ -1,6 +1,8 @@
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
-
+from tigre.utilities.im_3d_denoise import im3ddenoise
+import time
+import copy
 
 class SART(IterativeReconAlg):
     __doc__ = ("SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
@@ -34,7 +36,7 @@ sirt = decorator(SIRT, name='sirt')
 
 
 class OS_SART(IterativeReconAlg):
-    __doc__ = ("SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
+    __doc__ = ("OS_SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
                "Simultaneous Algebraic Reconxtruction Techique algorithm\n"
 
                "OS_SART(PROJ,GEO,ALPHA,NITER,BLOCKSIZE=20) solves the reconstruction problem\n"
@@ -46,3 +48,45 @@ class OS_SART(IterativeReconAlg):
 
 
 ossart = decorator(OS_SART, name='ossart')
+
+
+class OS_SART_TV(IterativeReconAlg):
+    __doc__ = ("OS_SART_TV_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
+               "Simultaneous Algebraic Reconxtruction Techique algorithm\n"
+
+               "OS_SART(PROJ,GEO,ALPHA,NITER,BLOCKSIZE=20) solves the reconstruction problem\n"
+               "using the projection data PROJ taken over ALPHA angles, corresponding\n"
+               "to the geometry descrived in GEO, using NITER iterations.\n") + IterativeReconAlg.__doc__
+    def __init__(self,proj,geo,angles,niter,**kwargs):
+        if 'tvlambda' not in kwargs:
+            kwargs.update(dict(tvlambda=50))
+        if 'tviter' not in kwargs:
+            kwargs.update(dict(tviter=50))
+        # these two settings work well for nVoxel=[254,254,254]
+
+        IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+
+    def run_main_iter(self):
+        """
+        Goes through the main iteration for the given configuration.
+        :return: None
+        """
+        Quameasopts = self.Quameasopts
+
+        for i in range(self.niter):
+
+            res_prev = None
+            if Quameasopts is not None:
+                res_prev = copy.deepcopy(self.res)
+            if self.verbose:
+                if i == 0:
+                    print(str(self.name).upper() + ' ' + "algorithm in progress.")
+                    toc = time.clock()
+                if i == 1:
+                    tic = time.clock()
+                    print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
+            getattr(self, self.dataminimizing)()
+            self.res = im3ddenoise(self.res,self.tviter,self.tvlambda)
+            self.error_measurement(res_prev, i)
+
+ossart_tv = decorator(OS_SART_TV, name='ossart_tv')

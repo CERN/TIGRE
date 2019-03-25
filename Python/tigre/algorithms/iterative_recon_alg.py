@@ -114,7 +114,7 @@ class IterativeReconAlg(object):
                        init=None,verbose=True, noneg=True,
                        computel2=False, dataminimizing='art_data_minimizing',
                        name='Iterative Reconstruction', sup_kw_warning = False)
-        allowed_keywords = ['V','W','log_parameters','angleblocks','angle_index','delta','regularisation']
+        allowed_keywords = ['V','W','log_parameters','angleblocks','angle_index','delta','regularisation','tviter','tvlambda']
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
         for kw in kwargs.keys():
@@ -273,7 +273,7 @@ class IterativeReconAlg(object):
                 if geo.DSO.shape[0] ==self.angles.shape[0]:
                     geo.DSO = self.geo.DSO[j]
 
-            self.gradient_descent(geo,angle,j)
+            self.update_image(geo, angle, j)
 
             if self.noneg:
                 self.res = self.res.clip(min=0)
@@ -297,7 +297,7 @@ class IterativeReconAlg(object):
             errornow = im3DNORM(self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel'), 2)
             self.l2l.append(errornow)
 
-    def gradient_descent(self, geo, angle, iteration):
+    def update_image(self, geo, angle, iteration):
         """
         VERBOSE:
          for j in range(angleblocks):
