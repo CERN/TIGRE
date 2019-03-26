@@ -86,7 +86,7 @@ def find_nan(img,line,iteration):
 angles = np.linspace(0,2*np.pi,200)
 
 
-geo = tigre.geometry(mode='cone', nVoxel=np.array([256, 256, 256]), default_geo=True)
+geo = tigre.geometry(mode='cone', nVoxel=np.array([512, 512, 512]), default_geo=True)
 
 src_img = data_loader.load_head_phantom(geo.nVoxel)
 proj = tigre.Ax(src_img,geo,angles)
@@ -125,10 +125,11 @@ class CGLS_relativeerror(CGLS):
 
             aux = self.proj - tigre.Ax(self.res, self.geo, self.angles, 'ray-voxel')
             self.l2l[i] = np.linalg.norm(aux.ravel(), 2)
+            relativeError.append(np.linalg.norm((self.res - trueimg).ravel(), 2) / np.linalg.norm(trueimg.ravel(), 2))
             if i > 0 and self.l2l[i] > self.l2l[i - 1]:
-                print('re-initialization was called at iter:' + str(i))
-                self.res -= alpha * self.__p__
-                self.reinitialise_cgls()
+                print('algorithm stopped at iteration:' +str(i))
+                return self.res, relativeError
+
 
             self.__r__ -= alpha * q
             s = tigre.Atb(self.__r__, self.geo, self.angles)
@@ -146,14 +147,13 @@ class CGLS_relativeerror(CGLS):
             self.__gamma__ = gamma1
             self.__p__ = s + beta * self.__p__
 
-            relativeError.append(np.linalg.norm((self.res - trueimg).ravel(), 2) / np.linalg.norm(trueimg.ravel(), 2))
         print('Average time taken for each iteration for CGLS:' + str(sum(avgtime) / len(avgtime)) + '(s)')
         return self.__r__, relativeError
 
 from tigre.algorithms.art_family_algorithms import SIRT
 class SIRT_relativeerror(SIRT):
     def __init__(self,proj,geo,angles,niter,**kwargs):
-        SIRT.__init__(proj,geo,angles,niter,**kwargs)
+        SIRT.__init__(self,proj,geo,angles,niter,**kwargs)
 
     def run_main_iter(self,trueimg):
         """
@@ -183,22 +183,23 @@ class SIRT_relativeerror(SIRT):
             relativeError.append(np.linalg.norm((self.res - trueimg).ravel(), 2) / np.linalg.norm(trueimg.ravel(), 2))
         print('Average time taken for each iteration for SIRT:' + str(sum(avgtime) / len(avgtime)) + '(s)')
         return self.res, relativeError
-
+results = dict()
 output_ista,relativeError_ista = ista(proj,geo,angles,numit,src_img)
+results.update(dict(output_ista=output_ista,
+                    relativeError_ista=relativeError_ista))
+np.save('resultsforconvergence.npy',results)
 output_fista,relativeError_fista = fista(proj,geo,angles,numit,src_img)
+results.update(dict(output_fista = output_fista,
+                    relativeError_fista = relativeError_fista))
+np.save('resultsforconvergence.npy',results)
 output_cgls,relativeError_cgls = CGLS_relativeerror(proj,geo,angles,numit).run_main_iter(src_img)
+results.update(dict(output_cgls=output_cgls,
+                    relativeError_cgls = relativeError_cgls))
+np.save('resultsforconvergence.npy',results)
 output_sirt,relativeError_sirt = SIRT_relativeerror(proj,geo,angles,numit).run_main_iter(src_img)
-
-np.save(time.asctime()+'.npy', dict(output_fista= output_fista,
-                                    relativeError_fista = relativeError_fista,
-                                    output_ista = output_ista,
-                                    relativeError_ista = relativeError_ista,
-                                    output_cgls=output_cgls,
-                                    relativeError_cgls=relativeError_cgls,
-                                    output_sirt = output_sirt,
-                                    relativeError_sirt = relativeError_sirt,
-                                    ))
-
+results.update(output_sirt=output_sirt,
+               relativeError_sirt = relativeError_sirt)
+np.save('resultsforconvergence.npy',results)
 """
 from matplotlib import pyplot as plt
 plt.plot(relativeError_fista,label='FISTA')
