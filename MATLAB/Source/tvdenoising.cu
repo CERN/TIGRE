@@ -581,20 +581,24 @@ do { \
             cudaFreeHost(h_px);
             cudaFreeHost(h_py);
             cudaFreeHost(h_pz);
-        }else{
+        }else if(splits==1){
             cudaFreeHost(buffer_u);
             cudaFreeHost(buffer_px);
             cudaFreeHost(buffer_py);
             cudaFreeHost(buffer_pz);
         }
+        
         for (int i = 0; i < nStreams; ++i)
            cudaStreamDestroy(stream[i]) ;
-        
+
         if (isHostRegisterSupported & splits>1){
             cudaHostUnregister(src);
             cudaHostUnregister(dst);
         }
-//         cudaDeviceReset(); // for the profiler
+         cudaDeviceSynchronize();
+        cudaCheckErrors("Copy free ");
+
+        
     }
     
     

@@ -674,6 +674,11 @@ do { \
         }
         for (int i = 0; i < nStreams; ++i)
            cudaStreamDestroy(stream[i]) ;
+        
+        for (dev = 0; dev < deviceCount; dev++){
+            cudaSetDevice(dev);
+            cudaDeviceSynchronize();
+        }
         cudaCheckErrors("Memory free");
 //         cudaDeviceReset();
     }
