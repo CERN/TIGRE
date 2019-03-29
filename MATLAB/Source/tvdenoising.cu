@@ -474,7 +474,6 @@ do { \
                                 (long)(curr_slices+buffer_length*2), image_size[1], image_size[0],
                                 spacing[2], spacing[1], spacing[0]);
                     }
-                    
                 }// END internal iter
                 
                 // Syncronize mathematics, make sure bounding pixels are correct
@@ -554,8 +553,10 @@ do { \
             }//END splits
         }//END main iter
         
-        
-        cudaDeviceSynchronize();
+        for(dev=0; dev<deviceCount;dev++){
+            cudaSetDevice(dev);
+            cudaDeviceSynchronize();
+        }
         cudaCheckErrors("TV minimization");
         
         if(splits==1){
@@ -566,9 +567,11 @@ do { \
                 cudaMemcpyAsync(dst+slices_per_split*image_size[0]*image_size[1]*dev, d_u[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
             }
         }
-        cudaDeviceSynchronize();
+        for(dev=0; dev<deviceCount;dev++){
+            cudaSetDevice(dev);
+            cudaDeviceSynchronize();
+        }
         cudaCheckErrors("Copy result back");
-        
         for(dev=0; dev<deviceCount;dev++){
             
             cudaFree(d_src[dev]);
@@ -595,9 +598,11 @@ do { \
             cudaHostUnregister(src);
             cudaHostUnregister(dst);
         }
-         cudaDeviceSynchronize();
+        for(dev=0; dev<deviceCount;dev++){
+            cudaSetDevice(dev);
+            cudaDeviceSynchronize();
+        }
         cudaCheckErrors("Copy free ");
-
         
     }
     

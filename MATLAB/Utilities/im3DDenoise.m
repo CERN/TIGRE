@@ -33,7 +33,7 @@ if strcmp(type,'TV')
 %     immax=prctile(img(:),99);
     immax=max(img(:));
 
-    img=img./immax;
+    img=img./(immax+2*eps);
     imgO=tvDenoise(img,hyper,iter);
     clear img;
     
