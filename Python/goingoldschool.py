@@ -5,6 +5,7 @@ import copy
 from tigre.utilities.im_3d_denoise import im3ddenoise
 from tigre.demos.Test_data import data_loader
 import time
+from matplotlib import pyplot as plt
 
 def fista(y, geo, angles, niter, trueimg, L):
     lmbda = 0.1
@@ -17,7 +18,7 @@ def fista(y, geo, angles, niter, trueimg, L):
     avgtime = []
     for i in range(niter):
         avgtic = time.clock()
-        y_rec += bm * 2 * (tigre.Atb((y - tigre.Ax(y_rec, geo, angles, 'interpolated')),
+        y_rec += bm * 2 * (tigre.Atb((y - tigre.Ax(y_rec, geo, angles)),
                                      geo, angles, 'matched'))
         if i ==0:
             print('FISTA algorithm in progress.')
@@ -41,7 +42,7 @@ def fista(y, geo, angles, niter, trueimg, L):
 
         avgtoc = time.clock()
         avgtime.append(abs(avgtic-avgtoc))
-        relativeError.append(np.linalg.norm((y_rec-trueimg).ravel(),2)/np.linalg.norm(trueimg.ravel(),2))
+        relativeError.append(np.linalg.norm((y_rec-trueimg))/np.linalg.norm(trueimg))
         #if (find_nan(y_rec, 41, i)):
          #   return y_rec, relativeError
             #check_convergence(relativeError)
@@ -60,7 +61,7 @@ def ista(y, geo, angles, niter, trueimg):
     avgtime = []
     for i in range(niter):
         avgtic = time.clock()
-        y_rec += bm * 2 * (tigre.Atb((y - tigre.Ax(y_rec, geo, angles, 'interpolated')),
+        y_rec += bm * 2 * (tigre.Atb((y - tigre.Ax(y_rec, geo, angles)),
                                      geo, angles, 'matched'))
         if i ==0:
             print('ISTA algorithm in progress.')
@@ -74,7 +75,7 @@ def ista(y, geo, angles, niter, trueimg):
         y_rec = im3ddenoise(y_rec, 20, 1./lambdaForTv)
         avgtoc = time.clock()
         avgtime.append(abs(avgtic-avgtoc))
-        relativeError.append(np.linalg.norm((y_rec - trueimg).ravel(), 2) / np.linalg.norm(trueimg.ravel(), 2))
+        relativeError.append(np.linalg.norm((y_rec - trueimg)) / np.linalg.norm(trueimg))
         #check_convergence(relativeError)
     print('Average time taken for each iteration for ISTA:' + str(sum(avgtime)/len(avgtime)) + '(s)')
     return y_rec ,relativeError
@@ -97,9 +98,10 @@ def check_convergence(l2list):
 angles = np.linspace(0,2*np.pi,100)
 
 
-geo = tigre.geometry(mode='cone', nVoxel=np.array([256, 256, 256]), default_geo=True)
+geo = tigre.geometry(mode='cone', nVoxel=np.array([512, 512, 512]), default_geo=True)
 
-src_img = data_loader.load_head_phantom(geo.nVoxel)
+#src_img = data_loader.load_head_phantom(geo.nVoxel)
+src_img = np.load('src_img_cubic_512.npy')
 proj = tigre.Ax(src_img,geo,angles)
 numit = 100
 
@@ -124,7 +126,7 @@ class CGLS_relativeerror(CGLS):
                 print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
             avgtic = time.clock()
             q = tigre.Ax(self.__p__, self.geo, self.angles, 'ray-voxel')
-            q_norm = np.linalg.norm(q.ravel(), 2)
+            q_norm = np.linalg.norm(q)
             alpha = self.__gamma__ / (q_norm * q_norm)
             self.res += alpha * self.__p__
             avgtoc = time.clock()
@@ -135,8 +137,8 @@ class CGLS_relativeerror(CGLS):
                         raise ValueError('nan found for ' + item + ' at iteraton ' + str(i))
 
             aux = self.proj - tigre.Ax(self.res, self.geo, self.angles, 'ray-voxel')
-            self.l2l[i] = np.linalg.norm(aux.ravel(), 2)
-            relativeError.append(np.linalg.norm((self.res - trueimg).ravel(), 2) / np.linalg.norm(trueimg.ravel(), 2))
+            self.l2l[i] = np.linalg.norm(aux)
+            relativeError.append(np.linalg.norm((self.res - trueimg)) / np.linalg.norm(trueimg))
             if i > 0 and self.l2l[i] > self.l2l[i - 1]:
                 print('re-initilization of CGLS called at iteration:' + str(i))
                 if self.re_init_at_iteration+1 ==i:
@@ -149,7 +151,7 @@ class CGLS_relativeerror(CGLS):
 
             self.__r__ -= alpha * q
             s = tigre.Atb(self.__r__, self.geo, self.angles)
-            s_norm = np.linalg.norm(s.ravel(), 2)
+            s_norm = np.linalg.norm(s)
 
             gamma1 = s_norm * s_norm
             beta = gamma1 / self.__gamma__
@@ -164,7 +166,7 @@ class CGLS_relativeerror(CGLS):
             self.__p__ = s + beta * self.__p__
 
         print('Average time taken for each iteration for CGLS:' + str(sum(avgtime) / len(avgtime)) + '(s)')
-        return self.__r__, relativeError
+        return self.res, relativeError
 
 from tigre.algorithms.art_family_algorithms import SIRT
 class SIRT_relativeerror(SIRT):
@@ -196,41 +198,68 @@ class SIRT_relativeerror(SIRT):
             avgtoc = time.clock()
             avgtime.append(abs(avgtic-avgtoc))
             self.error_measurement(res_prev, i)
-            relativeError.append(np.linalg.norm((self.res - trueimg).ravel(), 2) / np.linalg.norm(trueimg.ravel(), 2))
+            relativeError.append(np.linalg.norm((self.res - trueimg)) / np.linalg.norm(trueimg))
         print('Average time taken for each iteration for SIRT:' + str(sum(avgtime) / len(avgtime)) + '(s)')
         return self.res, relativeError
 
-#---------------save results---------------------
 
 
-results = dict()
-# output_ista,relativeError_ista = ista(proj,geo,angles,numit,src_img)
-# results.update(dict(output_ista=output_ista,
-#                      relativeError_ista=relativeError_ista))
-# np.save('resultsforconvergence2.npy',results)
-lambdas = np.logspace(1,16,15)
-relativeError_list = []
-output_fista,relativeError_fista = fista(proj,geo,angles,numit,src_img,L = 2.e8)
+
+import tigre.algorithms as algs
+
+output_fista = algs.fista(proj,geo,angles,10)
+output_ista = algs.ista(proj,geo,angles,10)
+np.save('resultsofmodulation.npy',[output_fista,output_ista])
+plt.subplot(211)
+plt.imshow(output_ista[256])
+plt.subplot(212)
+plt.imshow(output_fista[256])
+plt.show()
+
+
+# proj_2 = tigre.Ax(src_img,geo,angles,'ray-voxel')
+# lmbda = (np.linalg.norm(src_img)**2)/(np.linalg.norm(proj_2))
+# print(lmbda)
+
+# output_fista,relativeError_fista = fista(proj,geo,angles,10,src_img,L=lmbda)
+# print(relativeError_fista)
+# plt.plot(relativeError_fista)
+# plt.show()
+
+#------Fri-29-march--------------------------
+# lambdas = reversed(np.logspace(0.1,5,5))
+# relativeErrorLists = []
 # for val in lambdas:
-#     output_fista,relativeError_fista = fista(proj,geo,angles,numit,src_img,2*val)
-#     relativeError_list.append(relativeError_fista)
-#     np.save('relativeErrorlist.npy',relativeError_list)
+#     output_fista_1,relativeError_fista_1 = fista(proj,geo,angles,10,src_img,2*val)
+#     relativeErrorLists.append(relativeError_fista_1)
 
-# np.save('resultsforconvergence2.npy',results)
-# output_cgls,relativeError_cgls = CGLS_relativeerror(proj,geo,angles,numit).run_main_iter(src_img)
-# results.update(dict(output_cgls=output_cgls,
-#                     relativeError_cgls = relativeError_cgls))
-# np.save('resultsforconvergence.npy',results)
+# output_fista1,relativeError_fista1 = fista(proj,geo,angles,10,src_img,L=2.e4)
+# from matplotlib import pyplot as plt
+# print(relativeError_fista1)
+# plt.plot(relativeError_fista1)
+# plt.show()
+
+# results = dict()
+#output_ista,relativeError_ista = ista(proj,geo,angles,numit,src_img)
+# results.update(dict(output_ista=output_ista,
+#                     relativeError_ista=relativeError_ista))
+#
+# output_fista,relativeError_fista = fista(proj,geo,angles,numit,src_img,2.e5)
+# results.update(dict(output_fista=output_fista,
+#                     relativeError_fista=relativeError_fista))
+#
+#
+#
+#
+#results = dict()
+#output_cgls,relativeError_cgls = CGLS_relativeerror(proj,geo,angles,numit).run_main_iter(src_img)
+#results.update(dict(output_cgls=output_cgls,
+                    # relativeError_cgls = relativeError_cgls))
+#np.save('resultsforconvergence_cgls.npy',results)
+#
+#
 # output_sirt,relativeError_sirt = SIRT_relativeerror(proj,geo,angles,numit).run_main_iter(src_img)
 # results.update(output_sirt=output_sirt,
 #                relativeError_sirt = relativeError_sirt)
-# np.save('resultsforconvergence.npy',results)
 
 
-# ------- PLOTS --------------
-
-from matplotlib import pyplot as plt
-plt.plot(relativeError_fista,label='FISTA')
-plt.plot(relativeError_ista,label='ISTA')
-plt.legend()
-plt.show()

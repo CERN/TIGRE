@@ -279,7 +279,7 @@ inline int cudaCheckErrors(const char * msg)
             
             //These take A LOT of memory and A LOT of time to use. If we can avoid using them, better.
             if (buffer_length<maxIter){ // if we do only 1 big iter, they are not needed.
-                printf("tvDenoise:tvdenoising:Memory","TV dneoising requires 5 times the image memory. Your GPU(s) do not have the required memory.\n This memory will be attempted to allocate on the CPU, Whic may fail or slow the computation by a very significant amount.\n If you want to kill the execution: CTRL+C");
+                printf("tvDenoise:tvdenoising:Memory: TV dneoising requires 5 times the image memory. Your GPU(s) do not have the required memory.\n This memory will be attempted to allocate on the CPU, Whic may fail or slow the computation by a very significant amount.\n If you want to kill the execution: CTRL+C");
                 
                 cudaMallocHost((void**)&h_px,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
                 if(cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine")){return 1;}
@@ -579,11 +579,11 @@ inline int cudaCheckErrors(const char * msg)
             cudaFree(d_py[dev]);
             cudaFree(d_px[dev]);
         }
-        if(splits>1 && buffer_length<maxIter){
+       if(splits>1 && buffer_length<maxIter){
             cudaFreeHost(h_px);
             cudaFreeHost(h_py);
             cudaFreeHost(h_pz);
-        }else{
+        }else if(splits==1){
             cudaFreeHost(buffer_u);
             cudaFreeHost(buffer_px);
             cudaFreeHost(buffer_py);

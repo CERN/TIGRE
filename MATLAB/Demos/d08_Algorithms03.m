@@ -30,7 +30,7 @@ clear;
 close all;
 
 %% Define Geometry
-geo=defaultGeometry();                     
+geo=defaultGeometry('nVoxel',[512,512,512]','nDetector',[512,512]);                     
 
 %% Load data and generate projections 
 % see previous demo for explanation
@@ -51,18 +51,18 @@ noise_projections=addCTnoise(projections);
 % lead to divergence.
 % The options are:
 %  'Init'    Describes diferent initialization techniques.
-%             •  'none'     : Initializes the image to zeros (default)
-%             •  'FDK'      : intializes image to FDK reconstrucition
-%             •  'multigrid': Initializes image by solving the problem in
+%             ï¿½  'none'     : Initializes the image to zeros (default)
+%             ï¿½  'FDK'      : intializes image to FDK reconstrucition
+%             ï¿½  'multigrid': Initializes image by solving the problem in
 %                            small scale and increasing it when relative
 %                            convergence is reached.
-%             •  'image'    : Initialization using a user specified
+%             ï¿½  'image'    : Initialization using a user specified
 %                            image. Not recomended unless you really
 %                            know what you are doing.
 %  'InitImg'    an image for the 'image' initialization. Avoid.
  
 % use CGLS
-[imgCGLS, errL2CGLS]=CGLS(noise_projections,geo,angles,10);
+[imgCGLS, errL2CGLS]=CGLS(noise_projections,geo,angles,100);
 % SIRT for comparison.
 [imgSIRT,errL2SIRT]=SIRT(noise_projections,geo,angles,60);
 

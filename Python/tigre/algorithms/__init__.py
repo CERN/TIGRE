@@ -11,6 +11,7 @@ from .single_pass_algorithms import fbp
 from .single_pass_algorithms import fdk
 from .conjugate_gradient_algorithms import cgls
 from .ista_algorithms import fista
+from .ista_algorithms import ista
 
 __all__ = ['sart',
            'sirt',
@@ -22,4 +23,5 @@ __all__ = ['sart',
            'awasd_pocs',
            'fbp',
            'cgls',
-           'fista']
+           'fista',
+           'ista']
