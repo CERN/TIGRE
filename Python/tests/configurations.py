@@ -4,7 +4,7 @@ import numpy as np
 from testforlog import testandlog
 import sys
 import traceback
-nVoxel = np.array([64, 64, 64])
+nVoxel = np.array([256, 256, 256])
 
 
 def configuration1(alg):
