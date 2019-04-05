@@ -53,7 +53,6 @@
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #include "Siddon_projection_parallel.hpp"
-#include "errors.hpp"
 #include <stdio.h>
 #include <math.h>
 
@@ -62,13 +61,12 @@ inline int cudaCheckErrors(const char * msg)
    cudaError_t __err = cudaGetLastError();
    if (__err != cudaSuccess)
    {
-      printf("CUDA:siddo_projection_parallel:%s:%s\n",msg, cudaGetErrorString(__err));
+      printf("Siddon_projection_par:%s:%s\n",msg, cudaGetErrorString(__err));
       cudaDeviceReset();
       return 1;
    }
    return 0;
 }
-
     
     
 // Declare the texture reference.

@@ -9,7 +9,7 @@ import sys
 from tigre.demos.Test_data import data_loader
 from matplotlib import pyplot as plt
 
-geo = tigre.geometry(mode='cone', nVoxel=np.array([64, 64, 64]), default_geo=True)
+geo = tigre.geometry(mode='cone', nVoxel=np.array([512, 512, 512]), default_geo=True)
 
 
 niter = 10
