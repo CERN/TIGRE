@@ -180,7 +180,19 @@ imgBASDPOCSbeta=B_ASD_POCS_beta(noise_projections,geo,angles,50,...
                   
 imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',50);           
 
+% FISTA
+%==========================================================================
+%==========================================================================
+% FISTA is a quadratically converging algorithm that relies on the hyper
+% parameter named 'hyper'. This parameter should approximate the largest 
+% eigenvalue in the A matrix in the equation Ax-b and Atb. Empirical tests
+% show that for, the headphantom object:
+%           geo.nVoxel = [64,64,64]'    ,      hyper (approx=) 2.e8
+%           geo.nVoxel = [512,512,512]' ,      hyper (approx=) 2.e4
+% for geo.nVoxel = [128,128,128]' therefore, hyper should be set to
+% somewhere in between these two values. 
 
+imgFISTA = FISTA(noise_projections,geo,angles,100,2.e6);
  %% Lets visualize the results
 % Notice the smoother images due to TV regularization.
 %
