@@ -50,7 +50,7 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 
 2. Install CUDA
 
-   Any version avobe 7.0 has been tested, however its recommended to get the latests version as possible, for performance and support.\
+   Any version avobe 9.2 has been tested, however its recommended to get the latests version as possible, for performance and support.\
    [CUDA download link](https://developer.nvidia.com/cuda-downloads)\
    [Detailed installation guide](https://developer.download.nvidia.com/compute/cuda/10.0/Prod/docs/sidebar/CUDA_Installation_Guide_Windows.pdf)
    
