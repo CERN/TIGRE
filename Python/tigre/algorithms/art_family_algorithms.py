@@ -20,7 +20,7 @@ sart = decorator(SART, name='sart')
 
 
 class SIRT(IterativeReconAlg):
-    __doc__ = ("SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
+    __doc__ = ("SIRT_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
                "Simultaneous Algebraic Reconxtruction Techique algorithm\n"
 
                "SIRT(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem\n"
@@ -54,7 +54,7 @@ class OS_SART_TV(IterativeReconAlg):
     __doc__ = ("OS_SART_TV_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
                "Simultaneous Algebraic Reconxtruction Techique algorithm\n"
 
-               "OS_SART(PROJ,GEO,ALPHA,NITER,BLOCKSIZE=20) solves the reconstruction problem\n"
+               "OS_SART_TV(PROJ,GEO,ALPHA,NITER,BLOCKSIZE=20) solves the reconstruction problem\n"
                "using the projection data PROJ taken over ALPHA angles, corresponding\n"
                "to the geometry descrived in GEO, using NITER iterations.\n") + IterativeReconAlg.__doc__
     def __init__(self,proj,geo,angles,niter,**kwargs):

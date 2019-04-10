@@ -1,5 +1,6 @@
 from __future__ import division
 import numpy as np
+import tigre
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.utilities.Ax import Ax
@@ -22,6 +23,7 @@ class CGLS(IterativeReconAlg):
         kwargs.update(dict(W=None, V=None))
         kwargs.update(dict(blocksize=angles.shape[0]))
         self.log_parameters = False
+        self.re_init_at_iteration = 0
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
         if self.log_parameters:
@@ -46,8 +48,10 @@ class CGLS(IterativeReconAlg):
         self.__gamma__ = p_norm * p_norm
 
     # Overide
-    def run_main_iter(self):
+    def run_main_iter(self, trueimg):
         self.l2l = np.zeros([self.niter], dtype=np.float32)
+        relativeError = []
+        avgtime = []
         for i in range(self.niter):
             if i == 0:
                 print("CGLS Algorithm in progress.")
@@ -55,26 +59,33 @@ class CGLS(IterativeReconAlg):
             if i == 1:
                 tic = time.clock()
                 print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
-            q = Ax(self.__p__, self.geo, self.angles, 'ray-voxel')
-            q_norm = np.linalg.norm(q.ravel(), 2)
+            avgtic = time.clock()
+            q = tigre.Ax(self.__p__, self.geo, self.angles, 'ray-voxel')
+            q_norm = np.linalg.norm(q)
             alpha = self.__gamma__ / (q_norm * q_norm)
             self.res += alpha * self.__p__
-
+            avgtoc = time.clock()
+            avgtime.append(abs(avgtic - avgtoc))
             for item in self.__dict__:
                 if type(getattr(self, item)) == np.ndarray:
                     if np.isnan(getattr(self, item)).any():
                         raise ValueError('nan found for ' + item + ' at iteraton ' + str(i))
 
-            aux = self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel')
-            self.l2l[i] = np.linalg.norm(aux.ravel(), 2)
+            aux = self.proj - tigre.Ax(self.res, self.geo, self.angles, 'ray-voxel')
+            self.l2l[i] = np.linalg.norm(aux)
+            relativeError.append(np.linalg.norm((self.res - trueimg)) / np.linalg.norm(trueimg))
             if i > 0 and self.l2l[i] > self.l2l[i - 1]:
-                print('re-initialization was called at iter:' + str(i))
+                print('re-initilization of CGLS called at iteration:' + str(i))
+                if self.re_init_at_iteration + 1 == i:
+                    print('Algorithm exited with two consecutive reinitializations.')
+                    return self.res, relativeError
                 self.res -= alpha * self.__p__
                 self.reinitialise_cgls()
+                self.re_init_at_iteration = i
 
             self.__r__ -= alpha * q
-            s = Atb(self.__r__, self.geo, self.angles)
-            s_norm = np.linalg.norm(s.ravel(), 2)
+            s = tigre.Atb(self.__r__, self.geo, self.angles)
+            s_norm = np.linalg.norm(s)
 
             gamma1 = s_norm * s_norm
             beta = gamma1 / self.__gamma__
@@ -88,5 +99,6 @@ class CGLS(IterativeReconAlg):
             self.__gamma__ = gamma1
             self.__p__ = s + beta * self.__p__
 
+        print('Average time taken for each iteration for CGLS:' + str(sum(avgtime) / len(avgtime)) + '(s)')
 
 cgls = decorator(CGLS, name='cgls')

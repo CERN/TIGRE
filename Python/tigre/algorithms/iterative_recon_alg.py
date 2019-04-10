@@ -20,7 +20,6 @@ the single pass type algorithms.
 
 # coding: utf8
 
-
 class IterativeReconAlg(object):
     """
     Parameters
@@ -84,6 +83,11 @@ class IterativeReconAlg(object):
                  "angularDistance": chooses the next subset with the
                                     biggest angular distance with the
                                     ones used
+
+    :keyword tviter: (int)
+        For algorithms that make use of a tvdenoising step in their
+        iterations.
+
     Usage
     --------
     >>> import numpy as np
@@ -99,6 +103,24 @@ class IterativeReconAlg(object):
     >>>                                 blocksize=20)
 
     tigre.demos.run() to launch ipython notebook file with examples.
+
+
+    --------------------------------------------------------------------
+    This file is part of the TIGRE Toolbox
+
+    Copyright (c) 2015, University of Bath and
+                        CERN-European Organization for Nuclear Research
+                        All rights reserved.
+
+    License:            Open Source under BSD.
+                        See the full license at
+                        https://github.com/CERN/TIGRE/license.txt
+
+    Contact:            tigre.toolbox@gmail.com
+    Codes:              https://github.com/CERN/TIGRE/
+    --------------------------------------------------------------------
+    Coded by:          MATLAB (original code): Ander Biguri
+                       PYTHON : Reuben Lindroos
 
      """
 

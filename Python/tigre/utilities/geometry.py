@@ -245,9 +245,44 @@ class ParallelGeo(Geometry):
         self.rotDetector = np.array([0, 0, 0])
 
 
-def geometry(mode='cone', nVoxel=None, default_geo=False, high_quality=True):
+def geometry(mode='cone', nVoxel=None, default=False, high_quality=True):
+    """
+    Constructor for geometry used in reconstruction of images in TIGRE
+
+    Parameters
+    ----------
+    :param mode: (str)
+        'cone' or 'parallel'
+    :param nVoxel: (np.ndarray)
+        number of voxels the reconstruction is composed of
+    :param default: (bool)
+        calculates other parameters in geometry. is by default true for
+        parallel geometry
+    :param high_quality: (bool)
+        preset values for geometry in mode=cone. WARNING: for smaller
+        tests it is better to use this rather than setting nVoxel
+        manually.
+        if true: nVoxel = np.array([512,512,512])
+        if false: nVoxel = np.array([64,64,64])
+    :return: (tigre.geometry.Geometry)
+
+    Usage
+    -----
+    >>> import tigre
+    >>> #Cone beam with no preset parameters
+    >>> geo_cone = tigre.geometry(mode='cone')
+    >>> # Cone beam default, low quality
+    >>> geo_cone_default = tigre.geometry(mode='cone',high_quality=False)
+    >>> # Cone beam with specific nVoxel requirements
+    >>> geo_cone__default2 = tigre.geometry(nVoxel=np.array([64,64,64]),
+    >>>                                     mode='cone'
+    >>>                                     default=True)
+    >>> # Parallel beam
+    >>> geo_par = tigre.geometry(mode='parallel',
+    >>>                          nVoxel=np.array([64,64,64]))
+    """
     if mode == 'cone':
-        if default_geo:
+        if default:
             return tigre.geometry_default(high_quality, nVoxel)
         else:
             return Geometry()

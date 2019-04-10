@@ -58,7 +58,7 @@ def input_parser(sysarglist):
 
 def setUp(**kwargs):
     if kwargs.get('mode') == 'cone':
-        geo = tigre.geometry(mode='cone', nVoxel=kwargs.get('nVoxel'), default_geo=True)
+        geo = tigre.geometry(mode='cone', nVoxel=kwargs.get('nVoxel'), default=True)
         angles_1 = np.linspace(0, 2 * np.pi, 100, dtype=np.float32)
         angles_3 = np.zeros((100), dtype=np.float32)
         angles = np.vstack((angles_1, angles_3, angles_3)).T
@@ -72,7 +72,7 @@ def setUp(**kwargs):
         plot_algs(alglist, proj, geo, angles, niter=int(kwargs.pop('niter')), **kwargs)
 
     if kwargs.get('mode') == 'parallel':
-        geo = tigre.geometry(mode='parallel', nVoxel=kwargs.get('nVoxel'), default_geo=True)
+        geo = tigre.geometry(mode='parallel', nVoxel=kwargs.get('nVoxel'), default=True)
         angles_1 = np.linspace(0, 2 * np.pi, 100, dtype=np.float32)
         angles_3 = np.zeros((100), dtype=np.float32)
         angles = np.vstack((angles_1, angles_3, angles_3)).T

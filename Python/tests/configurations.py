@@ -10,7 +10,7 @@ nVoxel = np.array([256, 256, 256])
 def configuration1(alg):
     try:
 
-        geo = tigre.geometry(mode='cone', nVoxel=nVoxel, default_geo=True)
+        geo = tigre.geometry(mode='cone', nVoxel=nVoxel, default=True)
         niter = 10
         nangles = 100
         angles_1 = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
@@ -26,7 +26,7 @@ def configuration1(alg):
 
 def configuration2(alg):
     try:
-        geo = tigre.geometry(mode='parallel', nVoxel=nVoxel, default_geo=True)
+        geo = tigre.geometry(mode='parallel', nVoxel=nVoxel, default=True)
         niter = 10
         nangles = 100
         angles_1 = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
@@ -40,7 +40,7 @@ def configuration2(alg):
 
 def configuration3(alg):
     try:
-        geo = tigre.geometry(mode='cone', nVoxel=np.array([32, 64, 128]), default_geo=True)
+        geo = tigre.geometry(mode='cone', nVoxel=np.array([32, 64, 128]), default=True)
         niter = 10
         nangles = 100
         angles_1 = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
@@ -54,7 +54,7 @@ def configuration3(alg):
 
 def configuration4(alg):
     try:
-        geo = tigre.geometry(mode='parallel', nVoxel=np.array([32, 64, 128]), default_geo=True)
+        geo = tigre.geometry(mode='parallel', nVoxel=np.array([32, 64, 128]), default=True)
         niter = 10
         nangles = 100
         angles_1 = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
@@ -68,7 +68,7 @@ def configuration4(alg):
 
 def configuration5(alg):
     try:
-        geo = tigre.geometry(mode='cone', nVoxel=np.array([32, 64, 128]), default_geo=True)
+        geo = tigre.geometry(mode='cone', nVoxel=np.array([32, 64, 128]), default=True)
         niter = 10
         nangles = 100
         angles_1 = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)

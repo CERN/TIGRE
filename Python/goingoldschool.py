@@ -98,7 +98,7 @@ def check_convergence(l2list):
 angles = np.linspace(0,2*np.pi,100)
 
 
-geo = tigre.geometry(mode='cone', nVoxel=np.array([512, 512, 512]), default_geo=True)
+geo = tigre.geometry(mode='cone', nVoxel=np.array([512, 512, 512]), default=True)
 
 #src_img = data_loader.load_head_phantom(geo.nVoxel)
 src_img = np.load('src_img_cubic_512.npy')

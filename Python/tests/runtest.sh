@@ -6,13 +6,15 @@ control_c() {
 
 trap control_c SIGINT
 
-while true; do
+
 function runAlgs() {
    arr=("$@")
    for i in "${arr[@]}";
       do
           python ~/TIGRE/Python/tests/configurations.py configuration1 "$i"
           python ~/TIGRE/Python/tests/configurations.py configuration2 "$i"
+          python ~/TIGRE/Python/tests/configurations.py configuration3 "$i"
+          python ~/TIGRE/Python/tests/configurations.py configuration4 "$i"
       done
 
 }
