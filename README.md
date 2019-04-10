@@ -31,7 +31,7 @@ application, do not hesitate to [contact us](#contact)!
  
  - [Licensing](#licensing)
 
-<sup>1</sup> Semi-stable code available in branches, soon to be available completely.
+<sup>1</sup> Semi-stable code available in branches, soon to be available in the main code. Use at your own risk.
 
 ## TIGRE features
 
