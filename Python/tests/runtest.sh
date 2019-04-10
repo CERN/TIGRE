@@ -6,7 +6,6 @@ control_c() {
 
 trap control_c SIGINT
 
-while true; do
 function runAlgs() {
    arr=("$@")
    for i in "${arr[@]}";
