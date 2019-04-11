@@ -339,8 +339,8 @@ class IterativeReconAlg(object):
     def getres(self):
         return self.res
 
-    def getl2(self):
-        return self.l2l
+    def geterrors(self):
+        return self.l2l, self.lq
 
     def __str__(self):
         parameters = []
@@ -386,7 +386,7 @@ def decorator(IterativeReconAlg, name=None, docstring=None):
             alg.name = name
         alg.run_main_iter()
         if alg.computel2:
-            return alg.getres(), alg.getl2()
+            return alg.getres(), alg.geterrors()
         else:
             return alg.getres()
 

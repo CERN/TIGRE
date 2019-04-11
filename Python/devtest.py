@@ -17,8 +17,7 @@ nangles = 100
 angles = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
 #head = np.load('src_img_cubic_256.npy') #data_loader.load_head_phantom(geo.nVoxel)
 head = data_loader.load_head_phantom(geo.nVoxel)
-proj = tigre.Ax(head,geo,angles)
-output = algs.sirt(proj,geo,angles,niter)
+
 
 # print(proj.shape)
 # plt.imshow(proj[50])
