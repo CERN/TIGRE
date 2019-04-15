@@ -5,7 +5,7 @@ import numpy as np
 dirname = os.path.dirname(__file__)
 targetdir = str(np.load(os.path.join(dirname,'targetdir.npy')))
 
-class config1TestCase(unittest.TestCase):
+class config3TestCase(unittest.TestCase):
     def setUp(self):
 
         self.results = np.load(os.path.join(targetdir,'configuration3.npy')).item()
