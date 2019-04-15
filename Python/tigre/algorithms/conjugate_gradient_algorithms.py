@@ -48,9 +48,8 @@ class CGLS(IterativeReconAlg):
         self.__gamma__ = p_norm * p_norm
 
     # Overide
-    def run_main_iter(self, trueimg):
+    def run_main_iter(self):
         self.l2l = np.zeros([self.niter], dtype=np.float32)
-        relativeError = []
         avgtime = []
         for i in range(self.niter):
             if i == 0:
@@ -73,12 +72,11 @@ class CGLS(IterativeReconAlg):
 
             aux = self.proj - tigre.Ax(self.res, self.geo, self.angles, 'ray-voxel')
             self.l2l[i] = np.linalg.norm(aux)
-            relativeError.append(np.linalg.norm((self.res - trueimg)) / np.linalg.norm(trueimg))
             if i > 0 and self.l2l[i] > self.l2l[i - 1]:
                 print('re-initilization of CGLS called at iteration:' + str(i))
                 if self.re_init_at_iteration + 1 == i:
                     print('Algorithm exited with two consecutive reinitializations.')
-                    return self.res, relativeError
+                    return self.res
                 self.res -= alpha * self.__p__
                 self.reinitialise_cgls()
                 self.re_init_at_iteration = i

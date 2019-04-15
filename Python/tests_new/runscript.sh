@@ -1,7 +1,16 @@
 #!/bin/bash
+
+control_c() {
+    python $DIR/test_config1.py
+    rm $DIR/*.npy
+    exit
+}
+
+trap control_c SIGINT
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-# MAKE new test file and save what test we are on (currdir)
+# MAKE new test file and save what test we are on (targetdir)
 
 python $DIR/make_output_directory.py
 
@@ -10,10 +19,12 @@ python $DIR/make_output_directory.py
 python $DIR/generate_configurations.py
 
 # DECIDE what tests to run
-# (TODO: for now this is hardcoded but it should check the gitrepo for changes and run tests accordingly)
+# TODO: for now this is hardcoded but it should check the gitrepo for changes and run tests accordingly
 
-algs=("FDK" "fbp" "sirt" "ossart" "cgls" "asd_pocs" "awasd_pocs" "fista")
-tests=("configuration1.npy" "configuration2.npy" "configuration3.npy" "configuration4.npy")
+algs=("FDK" "fbp")
+tests=("configuration1.npy" "configuration2.npy")
+#algs=("FDK" "fbp" "sirt" "ossart" "cgls" "asd_pocs" "awasd_pocs" "fista")
+#tests=("configuration1.npy" "configuration2.npy" "configuration3.npy" "configuration4.npy")
 
 # RUN algorithm tests
 
@@ -40,8 +51,9 @@ for i in "${algs[@]}";
 
 
 # assert true or false for output of test files and publish to xml
+python $DIR/test_config1.py
 # https://stackoverflow.com/questions/11241781/python-unittests-in-jenkins
 
 
 # clean
-rm *.npy
+rm $DIR/*.npy

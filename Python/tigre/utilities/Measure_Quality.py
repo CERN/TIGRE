@@ -21,17 +21,30 @@ from __future__ import division
 import numpy as np
 
 def Measure_Quality(res_prev, res, QualMeasOpts):
+    """
+
+    :param res_prev: (np.ndarray)
+        object being compared to
+    :param res: (np.ndarray)
+        true image
+    :param QualMeasOpts: (str or listof(str))
+        any of: 'RMSE', 'nRMSE' , 'CC', 'MSSIM', 'UQI', 'SSD'
+    :return:
+    """
     values = []
     if 'RMSE' in QualMeasOpts:
         N = reduce(lambda x,y: x*y, res_prev.shape)
         diff = res_prev - res
-        values.append(np.sqrt(sum(diff ** 2) / N))
-
+        values.append(np.sqrt(np.sum(diff ** 2) / N))
+    if 'nRMSE' in QualMeasOpts:
+        N = reduce(lambda x, y: x * y, res_prev.shape)
+        diff = res_prev - res
+        values.append((np.sqrt(np.sum(diff ** 2) / N)/(np.sqrt(np.sum(res ** 2) / N))))
     if 'CC' in QualMeasOpts:
         values.append(np.corrcoef(res_prev, res))
 
     if 'MSSIM' in QualMeasOpts:
-        N = len(res_prev)
+        N = reduce(lambda x,y: x*y, res_prev.shape)
 
         # Compute the mean pixel values of the two images
 
@@ -42,15 +55,15 @@ def Measure_Quality(res_prev, res, QualMeasOpts):
         # Luminance Comparison
 
         K1 = 0.01  # K1 is a small constant <<1
-        d = max(res_prev) - min(res_prev)  # dynamic range of the pixel values
+        d = np.max(res_prev) - np.min(res_prev)  # dynamic range of the pixel values
         l = ((2 * mean_res * mean_res_p) + (K1 * d) ** 2) / ((mean_res_p ** 2)
                                                              + (mean_res ** 2) + K1 * d ** 2)
 
         # Contrast comparison
 
         K2 = 0.02
-        sres_p = res_prev.std(axis=0)
-        sres = res.std(axis=0)
+        sres_p = res_prev.std()
+        sres = res.std()
 
         c = ((2 * sres_p * sres) + (K2 * d) ** 2) / ((sres_p ** 2) + (sres ** 2) + K2 * d ** 2)
 
@@ -80,6 +93,8 @@ def Measure_Quality(res_prev, res, QualMeasOpts):
 
         values.append(sum(front * back))
     if 'SSD' in QualMeasOpts:
-        values.append(np.sum((res_prev[:,:,0:res_prev.shape[2]]-res[:,:,0:res.shape[2]])**2))
-
-    return values
+        values.append(np.sum((res_prev-res)**2))
+    if len(values) ==1:
+        return values[0]
+    else:
+        return values
