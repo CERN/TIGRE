@@ -1,3 +1,5 @@
+[![pip](https://img.shields.io/pypi/v/pytigre.svg?label=pip%20install%20pytigre)]()
+
 TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
 ======
 TIGRE is a MATLAB and Python/CUDA toolbox for fast and accurate 3D tomographic 
