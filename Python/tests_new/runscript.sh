@@ -21,10 +21,9 @@ python $DIR/generate_configurations.py
 # DECIDE what tests to run
 # TODO: for now this is hardcoded but it should check the gitrepo for changes and run tests accordingly
 
-algs=("FDK" "fbp")
-tests=("configuration1.npy" "configuration2.npy")
-#algs=("FDK" "fbp" "sirt" "ossart" "cgls" "asd_pocs" "awasd_pocs" "fista")
-#tests=("configuration1.npy" "configuration2.npy" "configuration3.npy" "configuration4.npy")
+
+algs=("FDK" "fbp" "sirt" "ossart" "cgls" "asd_pocs" "awasd_pocs" "fista")
+tests=("configuration1.npy" "configuration2.npy" "configuration3.npy" "configuration4.npy")
 
 # RUN algorithm tests
 
