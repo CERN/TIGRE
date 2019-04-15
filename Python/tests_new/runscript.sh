@@ -51,6 +51,9 @@ for i in "${algs[@]}";
 
 # assert true or false for output of test files and publish to xml
 python $DIR/test_config1.py
+python $DIR/test_config2.py
+python $DIR/test_config3.py
+python $DIR/test_config4.py
 # https://stackoverflow.com/questions/11241781/python-unittests-in-jenkins
 
 
