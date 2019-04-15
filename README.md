@@ -1,7 +1,5 @@
 TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
 ======
-https://img.shields.io/pypi/v/pytigre.svg
-
 TIGRE is a MATLAB and Python/CUDA toolbox for fast and accurate 3D tomographic 
 reconstruction (any geometry), created jointly by University of Bath's Engineering Tomography Lab and CERN. 
 
