@@ -319,9 +319,9 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     if (isHostRegisterSupported & split_image>1){
         cudaHostRegister(result, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float),cudaHostRegisterPortable);
     }
-    if (isHostRegisterSupported ){
-        cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
-    }
+//     if (isHostRegisterSupported ){
+//         cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
+//     }
     cudaCheckErrors("Error pinning memory");
     
     
