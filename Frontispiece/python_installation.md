@@ -27,10 +27,10 @@ Tested on
 ### Simple Instructions
 
 1. Install python, gcc, pip and CUDA
-2. run `pip install pytigre`
-3. Run `python setup.py install`. 
+2. run `pip install pytigre --user`
+3. or download from repo and run `python setup.py install --user`. 
 
-A succesfull installation should be able to execute the script at  XXX
+A succesfull installation should be able to execute the script at TIGRE/Python/example.py
 
 
 ###  Step by Step Instructions:
@@ -57,18 +57,22 @@ For Ubuntu
    
 4. Get TIGRE
     
-	`pip install pytigre` 
+	`pip install pytigre --user` 
 	
-6. Try demo 3. If it runs succesfully then you are good to go.
+6. Try demo 3. If it runs succesfully then you are good to go. 
 
 Instead, if you rather compile from source, download/clone the repository and then run 
 
- 
-`python setup.py install` 
+`cd TIGRE/Python/` 
+`python setup.py install --user`
+
+Install in this case will make a copy of pytigre to your python distribution. Therefore the `develop` command is more useful when modifying the source files and developing the software. 
+
+`python setup.py develop --user`
 	
 if this fails, then try:
 	
 `export CUDAHOME=yourcudahome`, e.g. default is `export CUDAHOME=/usr/local/cuda`
-`sudo --preserve-env python setup.py install`
+`python setup.py install --user`
 	
 	
