@@ -8,7 +8,7 @@ targetdir = str(np.load(os.path.join(dirname,'targetdir.npy')))
 class config2TestCase(unittest.TestCase):
     def setUp(self):
 
-        self.results = np.load(os.path.join(targetdir,'configuration2.npy')).item()
+        self.results = np.load(os.path.join(targetdir,'configuration2.npy'),allow_pickle=True).item()
     def testFDK(self):
         self.assertTrue(self.results['FDK'])
 

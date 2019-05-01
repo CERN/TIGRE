@@ -21,8 +21,8 @@ class AlgorithmTest(object):
 
         """
         self.dirname = os.path.dirname(__file__)
-        self.targetdir = str(np.load(os.path.join(self.dirname,'targetdir.npy')))
-        configdict = np.load(os.path.join(self.dirname,configuration)).item()
+        self.targetdir = str(np.load(os.path.join(self.dirname,'targetdir.npy'), allow_pickle=True))
+        configdict = np.load(os.path.join(self.dirname,configuration), allow_pickle=True).item()
         for key in configdict:
             """contains: [nproj,geo,angles,niter,kwargs]"""
             setattr(self,key,configdict[key])
@@ -53,13 +53,16 @@ class AlgorithmTest(object):
         self.algorithm_finished = True
         self.rmse = Measure_Quality(self.output,head,['nRMSE'])
 
+    def unit_test_call(self):
+        self.test()
+        return all(self.algorithm_finished,self.rmse)
 
-    def compound_results(self):
-
+    def compound_results(self,verbose=True):
         if self.algorithm_finished and self.rmse<0.2:
-            print('------------------------------------------------\n')
-            print('TEST PASSED')
-            print('------------------------------------------------\n')
+            if verbose:
+                print('------------------------------------------------\n')
+                print('TEST PASSED')
+                print('------------------------------------------------\n')
             self.testpassed = True
         else:
             print('------------------------------------------------\n')
@@ -71,7 +74,7 @@ class AlgorithmTest(object):
     def save_output(self):
         resultfilename = self.confignumber + '.npy'
         try:
-            resultsdata = np.load(os.path.join(self.targetdir, resultfilename)).item()
+            resultsdata = np.load(os.path.join(self.targetdir, resultfilename),allow_pickle=True).item()
 
         except Exception:
             resultsdata = dict()
