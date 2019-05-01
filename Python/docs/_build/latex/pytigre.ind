@@ -1,0 +1,15 @@
+\begin{sphinxtheindex}
+\let\bigletter\sphinxstyleindexlettergroup
+\let\spxpagem \sphinxstyleindexpagemain
+\let\spxentry \sphinxstyleindexentry
+\let\spxextra \sphinxstyleindexextra
+
+  \bigletter S
+  \item \spxentry{sart()}\spxextra{in module tigre.algorithms}, \hyperpage{4}
+  \item \spxentry{sirt()}\spxextra{in module tigre.algorithms}, \hyperpage{3}
+
+  \indexspace
+  \bigletter T
+  \item \spxentry{tigre.algorithms}\spxextra{module}, \hyperpage{3}
+
+\end{sphinxtheindex}

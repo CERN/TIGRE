@@ -12,7 +12,7 @@ import numpy as np
 class ASD_POCS(IterativeReconAlg):
     __doc__ = (" solves the reconstruction problem\n"
                " using the projection data PROJ taken over ALPHA angles, corresponding\n"
-               " to the geometry descrived in GEO, using NITER iterations.\n") + IterativeReconAlg.__doc__
+               " to the geometry described in GEO, using NITER iterations.\n")
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 

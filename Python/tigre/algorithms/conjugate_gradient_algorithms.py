@@ -15,7 +15,7 @@ class CGLS(IterativeReconAlg):
                " \n"
                "  CGLS_CBCT(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
                "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
-               "  to the geometry descrived in GEO, using NITER iterations.") + IterativeReconAlg.__doc__
+               "  to the geometry descrived in GEO, using NITER iterations.")
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
         # Don't precompute V and W.
