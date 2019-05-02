@@ -10,15 +10,15 @@ trap control_c SIGINT
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-# MAKE new test file and save what test we are on (targetdir)
+# make new test file and save what test we are on (targetdir)
 
 python $DIR/make_output_directory.py
 
-# MAKE configurations
+# make configurations
 
 python $DIR/generate_configurations.py
 
-# DECIDE what tests to run
+# decide what tests to run
 # TODO: for now this is hardcoded but it should check the gitrepo for changes and run tests accordingly
 
 

@@ -58,7 +58,8 @@ class ConeGeometryDefault(Geometry):
             self.DSO = 1000                                     # Distance Source Origin        (mm)
                                                                 # Detector parameters
             self.nDetector = np.array((nVoxel[1],
-                                       nVoxel[2]))              # (V,U) number of pixels        (px)
+                                       nVoxel[2])
+                                                                ) # (V,U) number of pixels        (px)
             self.dDetector = np.array([0.8, 0.8])               # size of each pixel            (mm)
             self.sDetector = self.dDetector * self.nDetector    # total size of the detector    (mm)
                                                                 # Image parameters

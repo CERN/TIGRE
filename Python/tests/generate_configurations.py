@@ -2,7 +2,6 @@ import numpy as np
 import tigre
 import os
 
-nVoxel = np.array([256, 256, 256])
 niter = 20
 dirname = os.path.dirname(__file__)
 keywords = dict(blocksize=20)
@@ -19,7 +18,7 @@ if __name__ == '__main__':
     save_config(dict(
         nproj=100,
         niter = 20,
-        geo=tigre.geometry(mode='cone', default=True, nVoxel=nVoxel),
+        geo=tigre.geometry(mode='cone', default=True, high_quality=True),
         angles=np.linspace(0, 2 * np.pi, 100),
         kwargs=keywords
     ),
@@ -28,7 +27,7 @@ if __name__ == '__main__':
     save_config(dict(
         nproj=100,
         niter = 20,
-        geo=tigre.geometry(mode='parallel', default=True, nVoxel=nVoxel),
+        geo=tigre.geometry(mode='parallel', default=True, high_quality=True),
         angles=np.linspace(0, 2 * np.pi, 100),
         kwargs=keywords
     ),
@@ -38,7 +37,7 @@ if __name__ == '__main__':
         nproj=100,
         niter=20,
         geo=tigre.geometry(mode='cone', default=True,
-                           nVoxel=np.array([64,128,256])),
+                           nVoxel=np.array([480,480,512])),
         angles=np.linspace(0, 2 * np.pi, 100),
         kwargs=keywords
     ),
@@ -48,7 +47,7 @@ if __name__ == '__main__':
         nproj=100,
         niter=20,
         geo=tigre.geometry(mode='parallel', default=True,
-                           nVoxel=np.array([64, 128, 256])),
+                           nVoxel=np.array([480, 480, 512])),
         angles=np.linspace(0, 2 * np.pi, 100),
         kwargs=keywords
     ),
