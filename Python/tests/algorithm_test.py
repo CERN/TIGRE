@@ -68,7 +68,8 @@ class AlgorithmTest(object):
             print('------------------------------------------------\n')
             print('TEST FAILED')
             print('Algorithm: ' + self.algorithm)
-            print('Algorithm ran:' + str(self.algorithm_finished))
+            print('Algorithm ran: ' + str(self.algorithm_finished))
+            print('configuration number: ' + str(self.confignumber))
             print('RMSE:' + str(self.rmse))
             print('------------------------------------------------\n')
     def save_output(self):
@@ -81,8 +82,6 @@ class AlgorithmTest(object):
         resultsdata.update({self.algorithm : self.testpassed})
         np.save(os.path.join(self.targetdir,resultfilename),resultsdata)
         if not self.testpassed:
-            if self.algorithm_finished:
-                self.save_fig()
             self.write_to_log()
 
     def save_fig(self):

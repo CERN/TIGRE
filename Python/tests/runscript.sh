@@ -1,7 +1,6 @@
 #!/bin/bash
 
 control_c() {
-    python $DIR/test_config1.py
     rm $DIR/*.npy
     exit
 }
