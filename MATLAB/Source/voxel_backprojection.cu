@@ -316,12 +316,12 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
     // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to
     // pin the memory is greater than the lost time in Syncronously launching the memcpys. This is only worth it when the image is too big.
-    if (isHostRegisterSupported & split_image>1){
+    if (isHostRegisterSupported & (split_image>1 |deviceCount>1)){
         cudaHostRegister(result, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float),cudaHostRegisterPortable);
     }
-    if (isHostRegisterSupported ){
-        cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
-    }
+//     if (isHostRegisterSupported ){
+//         cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
+//     }
     cudaCheckErrors("Error pinning memory");
     
     
@@ -587,13 +587,13 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     
     freeGeoArray(split_image*deviceCount,geoArray);
     
-    if (isHostRegisterSupported & split_image>1){
+    if (isHostRegisterSupported & (split_image>1 |deviceCount>1)){
         cudaHostUnregister(result);
     }
-    if (isHostRegisterSupported){
-        cudaHostUnregister(projections);
-    }
-    
+//     if (isHostRegisterSupported){
+//         cudaHostUnregister(projections);
+//     }
+//     
     
     for (int i = 0; i < nStreams; ++i)
         cudaStreamDestroy(stream[i]);
