@@ -109,12 +109,19 @@ Contact the authors directly at:
 The creation of TIGRE was supported by the University of Bath and CERN. It is released under the BSD License, meaning you can use and modify the software freely.  However, you **must** cite the original authors.
 For more information read [the licence file][1] or the [BSD License Definition][2].
 
-If you use TIGRE, please reference the following paper:
+If you use TIGRE, please reference the following papers:
 
 **TIGRE: A MATLAB-GPU toolbox for CBCT image reconstruction**
 *Ander Biguri, Manjit Dosanjh, Steven Hancock and Manuchehr Soleimani*
 **Biomedical Physics & Engineering Express, Volume 2, Number 5**
 [Read the article (open access)][3]
+
+And
+
+**Arbitrarily large iterative tomographic reconstruction on multiple GPUs using the TIGRE toolbox**
+*Ander Biguri, Reuben Lindroos, Robert Bryll, Hossein Towsyfyan, Hans Deyhle, Richard
+Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*
+**Submitted for publication**
 
 [1]: LICENSE.txt
 [2]: http://www.linfo.org/bsdlicense.html
