@@ -2,8 +2,8 @@ from __future__ import division
 import numpy as np
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
-from tigre.utilities.Ax import Ax
-from tigre.utilities.Atb import Atb
+from tigre.Ax import Ax
+from tigre.Atb import Atb
 import time
 import os
 import math

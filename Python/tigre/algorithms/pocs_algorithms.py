@@ -3,7 +3,7 @@ from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.utilities.im3Dnorm import im3DNORM
 from tigre.algorithms.single_pass_algorithms import FDK
-from tigre.utilities.Ax import Ax
+from tigre.Ax import Ax
 import time
 import copy
 import numpy as np
