@@ -63,10 +63,12 @@ geo.mode='cone';
 numProjs = 100;
 
 anglesY=linspace(0,2*pi,numProjs);
-anglesZ2=anglesY;
-anglesZ2(1,1:numProjs)=0;
-anglesZ1=pi*sin(linspace(0,2*pi,numProjs));
-angles=[anglesZ1;anglesY;anglesZ2];
+%anglesZ2=anglesY;
+anglesZ1 = ones(1,numProjs)*0.0001;
+
+%anglesZ2(1,1:numProjs)=0;
+%anglesZ1=pi*sin(linspace(0,2*pi,numProjs));
+angles=[anglesY,anglesZ1,anglesZ1];
 %% Get Image
 
 head=headPhantom(geo.nVoxel);

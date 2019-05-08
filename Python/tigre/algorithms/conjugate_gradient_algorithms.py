@@ -5,23 +5,24 @@ from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.Ax import Ax
 from tigre.Atb import Atb
 import time
+import os
+import math
+
+
 class CGLS(IterativeReconAlg):
     __doc__ = (" CGLS_CBCT solves the CBCT problem using the conjugate gradient least\n"
                " squares\n"
                " \n"
                "  CGLS_CBCT(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
                "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
-               "  to the geometry descrived in GEO, using NITER iterations.") +IterativeReconAlg.__doc__
+               "  to the geometry descrived in GEO, using NITER iterations.")
 
-    def __init__(self,proj,geo,angles,niter,**kwargs):
+    def __init__(self, proj, geo, angles, niter, **kwargs):
         # Don't precompute V and W.
-        kwargs.update(dict(W=None,V=None))
+        kwargs.update(dict(W=None, V=None))
+        kwargs.update(dict(blocksize=angles.shape[0]))
         self.log_parameters = False
-        # Avoid typo checking
-        IterativeReconAlg.__init__(self,proj,geo,angles,niter,**kwargs)
-
-        self.initialise_cgls()
-
+        IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
         if self.log_parameters:
             parameter_history = {}
@@ -33,11 +34,16 @@ class CGLS(IterativeReconAlg):
             parameter_history['s_norm'] = np.zeros([iterations], dtype=np.float32)
             self.parameter_history = parameter_history
 
-    def initialise_cgls(self):
-        self._r = self.proj - Ax(self.res,self.geo,self.angles,'ray-voxel')
-        self._p = Atb(self._r,self.geo,self.angles)
-        p_norm = np.linalg.norm(self._p.ravel(), 2)
-        self._gamma = p_norm * p_norm
+        self.__r__ = self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel')
+        self.__p__ = Atb(self.__r__, self.geo, self.angles)
+        p_norm = np.linalg.norm(self.__p__.ravel(), 2)
+        self.__gamma__ = p_norm * p_norm
+
+    def reinitialise_cgls(self):
+        self.__r__ = self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel')
+        self.__p__ = Atb(self.__r__, self.geo, self.angles)
+        p_norm = np.linalg.norm(self.__p__.ravel(), 2)
+        self.__gamma__ = p_norm * p_norm
 
     # Overide
     def run_main_iter(self):
@@ -49,36 +55,38 @@ class CGLS(IterativeReconAlg):
             if i == 1:
                 tic = time.clock()
                 print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
-            q = Ax(self._p, self.geo, self.angles, 'ray-voxel')
+            q = Ax(self.__p__, self.geo, self.angles, 'ray-voxel')
             q_norm = np.linalg.norm(q.ravel(), 2)
-            alpha = self._gamma / (q_norm * q_norm)
-            self.res += alpha * self._p
+            alpha = self.__gamma__ / (q_norm * q_norm)
+            self.res += alpha * self.__p__
+
+            for item in self.__dict__:
+                if type(getattr(self, item)) == np.ndarray:
+                    if np.isnan(getattr(self, item)).any():
+                        raise ValueError('nan found for ' + item + ' at iteraton ' + str(i))
 
             aux = self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel')
             self.l2l[i] = np.linalg.norm(aux.ravel(), 2)
-
             if i > 0 and self.l2l[i] > self.l2l[i - 1]:
                 print('re-initialization was called at iter:' + str(i))
-                self.res -= alpha * self._p
-                self.initialise_cgls()
+                self.res -= alpha * self.__p__
+                self.reinitialise_cgls()
 
-            self._r -= alpha * q
-
-            s = Atb(self._r, self.geo, self.angles)
+            self.__r__ -= alpha * q
+            s = Atb(self.__r__, self.geo, self.angles)
             s_norm = np.linalg.norm(s.ravel(), 2)
 
             gamma1 = s_norm * s_norm
-            beta = gamma1 / self._gamma
+            beta = gamma1 / self.__gamma__
             if self.log_parameters:
                 self.parameter_history['alpha'][i] = alpha
                 self.parameter_history['beta'][i] = beta
-                self.parameter_history['gamma'][i] = self._gamma
+                self.parameter_history['gamma'][i] = self.__gamma__
                 self.parameter_history['q_norm'][i] = q_norm
                 self.parameter_history['s_norm'][i] = s_norm
 
-            self._gamma = gamma1
-            self._p = s + beta * self._p
+            self.__gamma__ = gamma1
+            self.__p__ = s + beta * self.__p__
 
 
-cgls = decorator(CGLS)
-
+cgls = decorator(CGLS, name='cgls')

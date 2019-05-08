@@ -1,0 +1,58 @@
+
+so.*
+*.png
+*.jpg
+*.bmp
+*.tiff
+## Matlab ignore
+
+*.asv
+*.pdb
+
+## C ignore
+*.pyc
+## python build files
+Python/build
+Python/tigre.egg-info/
+Python/purge.sh
+Python/.idea/
+Python/devtest.py
+Python/dist/
+Python/tigre/Source/_Atb.cpp
+Python/tigre/Source/_Ax.cpp
+Python/tigre/Source/_minTV.cpp
+Python/tigre/Source/_AwminTV.cpp
+Python/tigre/Source/_tvdenoising.cpp
+.ipynb_checkpoints
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/

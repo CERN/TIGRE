@@ -3,17 +3,17 @@ from __future__ import print_function
 import numpy as np
 import numpy.matlib as matlib
 import inspect
+import tigre
+import math
 
 
 class Geometry(object):
 
     def __init__(self):
         self.mode = None
-        self.accuray = 0.5
         self.n_proj = None
         self.angles = None
         self.filter = None
-        self.rotDetector = np.array((0, 0, 0))
 
     def check_geo(self, angles, verbose=False):
         if angles.ndim == 1:
@@ -29,7 +29,7 @@ class Geometry(object):
             setattr(self, 'angles', angles)
         else:
             raise BufferError("Unexpected angles shape: " + str(angles.shape))
-        if self.mode == None:
+        if self.mode is None:
             setattr(self, 'mode', 'cone')
 
         manditory_attribs = ['nVoxel', 'sVoxel', 'dVoxel',
@@ -59,36 +59,59 @@ class Geometry(object):
             'nDetector*dDetecor is not equal to sDetector. Check fields.')
 
         for attrib in ['DSD', 'DSO']:
-            self._check_and_repmat(attrib, angles)
+            self.__check_and_repmat__(attrib, angles)
 
         if hasattr(self, 'offOrigin'):
-            self._check_and_repmat('offOrigin', angles)
+            self.__check_and_repmat__('offOrigin', angles)
         else:
             self.offOrigin = np.array([0, 0, 0])
-            self._check_and_repmat('offOrigin', angles)
+            self.__check_and_repmat__('offOrigin', angles)
 
         if hasattr(self, 'offDetector'):
-            self._check_and_repmat('offDetector', angles)
+            self.__check_and_repmat__('offDetector', angles)
         else:
-	    self.offDetector = np.array([0, 0])
+            self.offDetector = np.array([0, 0])
             self.offDetector = np.zeros((angles.shape[0], 2))
 
         if hasattr(self, 'rotDetector'):
-            self._check_and_repmat('rotDetector', angles)
+            self.__check_and_repmat__('rotDetector', angles)
         else:
-            self.rotDetector = np.zeros((angles.shape[0], 3))
+            self.rotDetector = np.array([0, 0, 0])
+            self.__check_and_repmat__('rotDetector', angles)
 
         if hasattr(self, 'COR'):
-            self._check_and_repmat('COR', angles)
+            self.__check_and_repmat__('COR', angles)
         else:
             self.COR = np.zeros(angles.shape[0])
-
+        # IMPORTANT: cast all numbers to float32
         if verbose:
             self._verbose_output()
 
-    def _check_and_repmat(self, attrib, angles):
+    def checknans(self):
+        for attrib in self.__dict__:
+            if str(getattr(self, attrib)) == 'nan':
+                raise ValueError('nan found for Geometry abbtribute:' + attrib)
+            elif type(getattr(self, attrib)) == np.ndarray:
+                if np.isnan(getattr(self, attrib)).all():
+                    raise ValueError('Nan found in Geometry abbtribute:' + attrib)
+
+    def cast_to_single(self):
+        """
+        Casts all number values in current instance to
+        single prevision floating point types.
+        :return: None
+        """
+        for attrib in self.__dict__:
+            if getattr(self, attrib) is not None:
+                try:
+                    setattr(self, attrib, np.float32(getattr(self, attrib)))
+                except ValueError:
+                    pass
+
+    def __check_and_repmat__(self, attrib, angles):
         """
         Checks whether the attribute is a single value and repeats it into an array if it is
+        :rtype: None
         :param attrib: string
         :param angles: np.ndarray
         """
@@ -111,11 +134,11 @@ class Geometry(object):
                 else:
                     raise AttributeError(attrib + " with shape: " + str(old_attrib.shape) +
                                          " not compatible with shapes: " + str([(angles.shape[0],),
-                                                                              (angles.shape[0], old_attrib.shape[1]),
-                                                                              (3,), (2,), (1,)]))
+                                                                                (angles.shape[0], old_attrib.shape[1]),
+                                                                                (3,), (2,), (1,)]))
 
         else:
-            TypeError(
+            raise TypeError(
                 "Data type not understood for: geo." + attrib + " with type = " + str(type(getattr(self, attrib))))
 
     def _verbose_output(self):
@@ -135,89 +158,135 @@ class Geometry(object):
         for attrib in dim_attribs:
             setattr(self, attrib, getattr(self, attrib)[::-1].copy())
 
-    def issame(self, other_geo_dict):
-        geo_comp_list = []
-        if set(other_geo_dict) == set(self.__dict__):
-            for key in self.__dict__.keys():
-                if type(self.__dict__[key]) == np.ndarray:
-                    geo_comp_list.append(all(self.__dict__[key] == other_geo_dict[key]))
-                else:
-                    geo_comp_list.append(self.__dict__[key] == other_geo_dict[key])
-            return all(geo_comp_list)
-        else:
-            return False
-
     def __str__(self):
         parameters = []
         parameters.append("TIGRE parameters")
         parameters.append("-----")
-	parameters.append("Geometry parameters")
-        parameters.append("Distance from source to detector = " + str(self.DSD) + " mm")
-        parameters.append("Distance from source to origin = " + str(self.DSO) + " mm")
-
+        parameters.append("Geometry parameters")
+        parameters.append("Distance from source to detector (DSD) = " + str(self.DSD) + " mm")
+        parameters.append("Distance from source to origin (DSO)= " + str(self.DSO) + " mm")
         parameters.append("-----")
         parameters.append("Detector parameters")
-        parameters.append("Number of pixels = " + str(self.nDetector))
-        parameters.append("Size of each pixel = " + str(self.dDetector) + " mm")
-        parameters.append("Total size of the detector = " + str(self.sDetector) + " mm")
-
+        parameters.append("Number of pixels (nDetector) = " + str(self.nDetector))
+        parameters.append("Size of each pixel (dDetector) = " + str(self.dDetector) + " mm")
+        parameters.append("Total size of the detector (sDetector) = " + str(self.sDetector) + " mm")
         parameters.append("-----")
         parameters.append("Image parameters")
-        parameters.append("Number of voxels = " + str(self.nVoxel))
-        parameters.append("Total size of the image = " + str(self.sVoxel) + " mm")
-        parameters.append("Size of each voxel = " + str(self.dVoxel) + " mm")
+        parameters.append("Number of voxels (nVoxel) = " + str(self.nVoxel))
+        parameters.append("Total size of the image (sVoxel) = " + str(self.sVoxel) + " mm")
+        parameters.append("Size of each voxel (dVoxel) = " + str(self.dVoxel) + " mm")
 
         parameters.append("-----")
-	if hasattr(self, 'offOrigin') and hasattr(self, 'offDetector'):
+        if hasattr(self, 'offOrigin') and hasattr(self, 'offDetector'):
             parameters.append("Offset correction parameters")
-	    if hasattr(self, 'offOrigin'):
-                parameters.append("Offset of image from origin = " + str(self.offOrigin) + " mm")
-	    if hasattr(self, 'offDetector'):
-                parameters.append("Offset of detector = " + str(self.offDetector) + " mm")
+            if hasattr(self, 'offOrigin'):
+                parameters.append("Offset of image from origin (offOrigin) = " + str(self.offOrigin) + " mm")
+            if hasattr(self, 'offDetector'):
+                parameters.append("Offset of detector (offDetector) = " + str(self.offDetector) + " mm")
 
         parameters.append("-----")
         parameters.append("Auxillary parameters")
-        parameters.append("Samples per pixel of forward projection = " + str(self.accuracy))
+        parameters.append("Samples per pixel of forward projection (accuracy) = " + str(self.accuracy))
 
-	if hasattr(self, 'rotDetector'):
-	    parameters.append("-----")
-	    parameters.append("Rotation of the Detector = " + str(self.rotDetector) + " rad")
-	
-	if hasattr(self,'COR'):
-	    parameters.append("-----")
-	    parameters.append("Centre of rotation correction = " + str(self.COR) + " mm")
-        
-	return '\n'.join(parameters)
+        if hasattr(self, 'rotDetector'):
+            parameters.append("-----")
+            parameters.append("Rotation of the Detector (rotDetector) = " + str(self.rotDetector) + " rad")
+
+        if hasattr(self, 'COR'):
+            parameters.append("-----")
+            parameters.append("Centre of rotation correction (COR) = " + str(self.COR) + " mm")
+
+        return '\n'.join(parameters)
+
+    def __cmp__(self, other):
+        resultofnumpiesanallyretentiveattemptatbeingphilosophical = []
+        for attrib in self.__dict__:
+            result = (getattr(self, attrib) == getattr(other, attrib))
+            try:
+                resultofnumpiesanallyretentiveattemptatbeingphilosophical.append(result.all())
+            except Exception:
+                try:
+                    resultofnumpiesanallyretentiveattemptatbeingphilosophical.extend(result)
+                except Exception:
+                    resultofnumpiesanallyretentiveattemptatbeingphilosophical.append(result)
+
+        # why is this boolean reversed when returned?
+        # because for some reason its reversed when i return it from this function. Who knows.
+
+        return not all(resultofnumpiesanallyretentiveattemptatbeingphilosophical)
 
 
 class ParallelGeo(Geometry):
-    def __init__(self,nVoxel):
+    def __init__(self, nVoxel):
         if nVoxel is None:
             raise ValueError('nVoxel needs to be given for initialisation of parallel beam')
         Geometry.__init__(self)
-	self.mode='parallel'
+        self.mode = 'parallel'
 
         self.nVoxel = nVoxel
-        self.dVoxel = np.array([1,1,1])
+        self.dVoxel = np.array([1, 1, 1])
         self.sVoxel = self.nVoxel
 
-        self.DSO = self.nVoxel[0].astype(np.float32)
-        self.DSD = self.nVoxel[0].astype(np.float32)*2
+        self.DSO = np.float32(self.nVoxel[0])
+        self.DSD = np.float32(self.nVoxel[0] * 2)
 
-        self.dDetector = np.array([1,1])
-        self.nDetector = self.nVoxel[:2]
-        self.sDetector = self.nVoxel[:2].astype(np.float32)
+        self.dDetector = np.array([1, 1])
+        self.nDetector = np.zeros((2,),dtype = np.int64)
+        self.nDetector[0] = self.nVoxel[0]
+        self.nDetector[1] = max(self.nVoxel[1],self.nVoxel[2])
+        #self.nDetector = self.nVoxel[:2]
+        self.sDetector = self.nDetector
 
         self.accuracy = 0.5
 
-	self.offOrigin=np.array([0,0,0]);
-	self.offDetector=np.array([0,0]);
+        self.offOrigin = np.array([0, 0, 0]);
+        self.offDetector = np.array([0, 0]);
+
+        self.rotDetector = np.array([0, 0, 0])
 
 
+def geometry(mode='cone', nVoxel=None, default=False, high_quality=True):
+    """
+    Constructor for geometry used in reconstruction of images in TIGRE
 
+    Parameters
+    ----------
+    :param mode: (str)
+        'cone' or 'parallel'
+    :param nVoxel: (np.ndarray)
+        number of voxels the reconstruction is composed of
+    :param default: (bool)
+        calculates other parameters in geometry. is by default true for
+        parallel geometry
+    :param high_quality: (bool)
+        preset values for geometry in mode=cone. WARNING: for smaller
+        tests it is better to use this rather than setting nVoxel
+        manually.
+        if true: nVoxel = np.array([512,512,512])
+        if false: nVoxel = np.array([64,64,64])
+    :return: (tigre.geometry.Geometry)
 
-def geometry(mode='cone',nVoxel=None):
-    if mode in [None, 'cone']:
-        return Geometry()
-    else:
+    Usage
+    -----
+    >>> import tigre
+    >>> #Cone beam with no preset parameters
+    >>> geo_cone = tigre.geometry(mode='cone')
+    >>> # Cone beam default, low quality
+    >>> geo_cone_default = tigre.geometry(mode='cone',high_quality=False)
+    >>> # Cone beam with specific nVoxel requirements
+    >>> geo_cone__default2 = tigre.geometry(nVoxel=np.array([64,64,64]),
+    >>>                                     mode='cone'
+    >>>                                     default=True)
+    >>> # Parallel beam
+    >>> geo_par = tigre.geometry(mode='parallel',
+    >>>                          nVoxel=np.array([64,64,64]))
+    """
+    if mode == 'cone':
+        if default:
+            return tigre.geometry_default(high_quality, nVoxel)
+        else:
+            return Geometry()
+    if mode == 'parallel':
         return ParallelGeo(nVoxel)
+    else:
+        raise ValueError('mode: ' + mode + ' not recognised.')

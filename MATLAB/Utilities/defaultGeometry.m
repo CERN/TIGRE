@@ -43,7 +43,7 @@ else
     % Detector parameters
     geo.nDetector=nDetector;					% number of pixels              (px)
     geo.dDetector=[1; 1]; 					% size of each pixel            (mm)
-    geo.sDetector=geo.dDetector; % total size of the detector    (mm)
+    geo.sDetector=geo.nDetector; % total size of the detector    (mm)
     % Image parameters
     geo.nVoxel=[nDetector(1);nDetector(1);nDetector(2)];                   % number of voxels              (vx)
     geo.sVoxel=geo.nVoxel;                   % total size of the image       (mm)

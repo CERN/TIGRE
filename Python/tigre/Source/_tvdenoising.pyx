@@ -16,7 +16,7 @@
 
 cimport numpy as np 
 import numpy as np
-
+from tigre.utilities.errors import TigreCudaCallError
 np.import_array()
 
 from libc.stdlib cimport malloc, free 
@@ -27,6 +27,12 @@ cdef extern from "numpy/arrayobject.h":
 
 cdef extern from "tvdenoising.hpp":
     cdef void tvdenoising(float* src, float* dst, float lamda, float* spacing, long* image_size, int maxiter)
+
+
+def cuda_raise_errors(error_code):
+    if error_code:
+        raise TigreCudaCallError('tvdenoising:',error_code)
+
 
 def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lamda = 15.0):
 
@@ -50,7 +56,7 @@ def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lam
 
     cdef float* c_src = <float*> src.data
     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
-    tvdenoising(c_src, c_imgout, lamda, spacing, imgsize, c_maxiter)
+    cuda_raise_errors(tvdenoising(c_src, c_imgout, lamda, spacing, imgsize, c_maxiter))
 
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
     PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)

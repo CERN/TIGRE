@@ -1,4 +1,4 @@
-function [res,errorL2]=FDK(proj,geo,angles,varargin)
+function [res]=FDK(proj,geo,angles,varargin)
 %TODO docs FDK
 % 
 %
@@ -56,11 +56,6 @@ geo=rmfield(geo,'filter');
 %% backproject
 res=Atb((proj),geo,angles); % Weighting is inside
 
-
-if nargout>1
-     error=proj-Ax(res,geo,angles);
-     errorL2=norm(error(:));
-end
 
 end
 

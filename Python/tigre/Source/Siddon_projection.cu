@@ -55,14 +55,17 @@
 #include <stdio.h>
 #include "projection.hpp"
 
-#define cudaCheckErrors(msg) \
-do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
-                printf("%s \n",msg);\
-                printf("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
-        } \
-} while (0)
+inline int cudaCheckErrors(const char * msg)
+{
+   cudaError_t __err = cudaGetLastError();
+   if (__err != cudaSuccess)
+   {
+      printf("CUDA:Siddon_projection:%s:%s\n",msg, cudaGetErrorString(__err));
+      cudaDeviceReset();
+      return 1;
+   }
+   return 0;
+}
     
     
 // Declare the texture reference.
@@ -247,7 +250,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
     cudaMalloc3DArray(&d_imagedata, &channelDesc, extent);
-    cudaCheckErrors("cudaMalloc3D error 3D tex");
+    if(cudaCheckErrors("cudaMalloc3D error 3D tex")){return 1;}
     
     cudaMemcpy3DParms copyParams = { 0 };
     copyParams.srcPtr = make_cudaPitchedPtr((void*)img, extent.width*sizeof(float), extent.width, extent.height);
@@ -256,7 +259,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     copyParams.kind = cudaMemcpyHostToDevice;
     cudaMemcpy3D(&copyParams);
     
-    cudaCheckErrors("cudaMemcpy3D fail");
+    if(cudaCheckErrors("cudaMemcpy3D fail")){return 1;}
     
     // Configure texture options
     tex.normalized = false;
@@ -267,7 +270,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     
     cudaBindTextureToArray(tex, d_imagedata, channelDesc);
     
-    cudaCheckErrors("3D texture memory bind fail");
+    if(cudaCheckErrors("3D texture memory bind fail")){return 1;}
     
     
     
@@ -279,7 +282,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
     float* dProjection;
     cudaMalloc((void**)&dProjection, num_bytes);
     cudaMemset(dProjection,0,num_bytes);
-    cudaCheckErrors("cudaMalloc fail");
+    if(cudaCheckErrors("cudaMalloc fail")){return 1;}
     
     
     bool timekernel=false; // For debuggin purposes
@@ -309,7 +312,7 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
             cudaEventRecord(start,0);
         }
         kernelPixelDetector<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin);
-        cudaCheckErrors("Kernel fail");
+        if(cudaCheckErrors("Kernel fail")){return 1;}
         if (timekernel){
             cudaEventCreate(&stop);
             cudaEventRecord(stop,0);
@@ -319,17 +322,17 @@ int siddon_ray_projection(float const * const img, Geometry geo, float** result,
         }
         // copy result to host
         cudaMemcpy(result[i], dProjection, num_bytes, cudaMemcpyDeviceToHost);
-        cudaCheckErrors("cudaMemcpy fail");
+        if(cudaCheckErrors("cudaMemcpy fail")){return 1;}
         
         
     }
     
     
     cudaUnbindTexture(tex);
-    cudaCheckErrors("Unbind  fail");
+    if(cudaCheckErrors("Unbind  fail")){return 1;}
     cudaFree(dProjection);
     cudaFreeArray(d_imagedata);
-    cudaCheckErrors("cudaFree d_imagedata fail");
+    if(cudaCheckErrors("cudaFree d_imagedata fail")){return 1;}
     
     
     
