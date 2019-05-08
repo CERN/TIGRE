@@ -56,14 +56,18 @@ Codes  : https://github.com/CERN/TIGRE
 #include <stdio.h>
 #include <math.h>
 
-#define cudaCheckErrors(msg) \
-do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
-                printf("%s \n",msg);\
-                printf("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
-        } \
-} while (0)
+
+inline int cudaCheckErrors(const char * msg)
+{
+   cudaError_t __err = cudaGetLastError();
+   if (__err != cudaSuccess)
+   {
+      printf("CUDA:ray_interpolated_parallel:%s:%s\n",msg, cudaGetErrorString(__err));
+      cudaDeviceReset();
+      return 1;
+   }
+   return 0;
+}
     
     
 // Declare the texture reference.
@@ -169,16 +173,14 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
 
 
 int interpolation_projection_parallel(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
-    
- 
+
     // copy data to CUDA memory
 
     cudaArray *d_imagedata = 0;
-    
     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
     cudaMalloc3DArray(&d_imagedata, &channelDesc, extent);
-    cudaCheckErrors("cudaMalloc3D error 3D tex");
+    if(cudaCheckErrors("cudaMalloc3D error 3D tex")){return 1;}
     
     cudaMemcpy3DParms copyParams = { 0 };
     copyParams.srcPtr = make_cudaPitchedPtr((void*)img, extent.width*sizeof(float), extent.width, extent.height);
@@ -187,7 +189,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     copyParams.kind = cudaMemcpyHostToDevice;
     cudaMemcpy3D(&copyParams);
     
-    cudaCheckErrors("cudaMemcpy3D fail");
+    if(cudaCheckErrors("cudaMemcpy3D fail")){return 1;}
     
     // Configure texture options
     tex.normalized = false;
@@ -198,7 +200,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     
     cudaBindTextureToArray(tex, d_imagedata, channelDesc);
     
-    cudaCheckErrors("3D texture memory bind fail");
+    if(cudaCheckErrors("3D texture memory bind fail")){return 1;}
     
     
     //Done! Image put into texture memory.
@@ -207,7 +209,7 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     size_t num_bytes = geo.nDetecU*geo.nDetecV * sizeof(float);
     float* dProjection;
     cudaMalloc((void**)&dProjection, num_bytes);
-    cudaCheckErrors("cudaMalloc fail");
+    if(cudaCheckErrors("cudaMalloc fail")){return 1;}
 
     
 //     If we are going to time
@@ -237,10 +239,10 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
         //Interpolation!!
         
         kernelPixelDetector_parallel<<<grid,block>>>(geo,dProjection, source, deltaU, deltaV, uvOrigin,geo.DSO[i],floor(maxdist));
-        cudaCheckErrors("Kernel fail");
+        if(cudaCheckErrors("Kernel fail")){return 1;}
         // copy result to host
         cudaMemcpy(result[i], dProjection, num_bytes, cudaMemcpyDeviceToHost);
-        cudaCheckErrors("cudaMemcpy fail");
+        if(cudaCheckErrors("cudaMemcpy fail")){return 1;}
         
            
 
@@ -254,11 +256,11 @@ int interpolation_projection_parallel(float const * const img, Geometry geo, flo
     }
 
     cudaUnbindTexture(tex);
-    cudaCheckErrors("Unbind  fail");
+    if(cudaCheckErrors("Unbind  fail")){return 1;}
     
     cudaFree(dProjection);
     cudaFreeArray(d_imagedata);
-    cudaCheckErrors("cudaFree d_imagedata fail");
+    if(cudaCheckErrors("cudaFree d_imagedata fail")){return 1;}
     
     
     

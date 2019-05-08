@@ -181,7 +181,7 @@ int voxel_backprojection_spherical(float const * const projections, Geometry geo
     
     // copy data to CUDA memory
     cudaArray *d_projectiondata = 0;
-    const cudaExtent extent = make_cudaExtent(geo.nDetecU,geo.nDetecV,nalpha);
+    const cudaExtent extent = make_cudaExtent(geo.nDetecV,geo.nDetecU,nalpha);
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
     cudaMalloc3DArray(&d_projectiondata, &channelDesc, extent);
     cudaCheckErrors("cudaMalloc3D error 3D tex");
@@ -280,7 +280,7 @@ void computeDeltasCubeSpherical(Geometry geo, int i, Point3D* xyzorigin, Point3D
     P.z=-(geo.sVoxelZ/2-geo.dVoxelZ/2)+geo.offOrigZ[i];
     
     // Get coors from next voxel in each direction
-    Px.x=P.x+geo.dVoxelX;      Py.x=P.x;                Pz.x=P.x;
+    Px.x=P.x+geo.dVoxelX;       Py.x=P.x;                Pz.x=P.x;
     Px.y=P.y;                   Py.y=P.y+geo.dVoxelY;    Pz.y=P.y;
     Px.z=P.z;                   Py.z=P.z;                Pz.z=P.z+geo.dVoxelZ;
     

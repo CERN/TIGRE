@@ -73,7 +73,7 @@ blocksize=1;
 [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,bregman,bregman_red,bregman_iter,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 
-angles=cell2mat(alphablocks);
+angles_reorder=cell2mat(alphablocks);
 index_angles=cell2mat(orig_index);
 
 
@@ -127,7 +127,7 @@ while ~stop_criteria %POCS
     f0=f;
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;
-    for jj=1:size(angles,2);
+    for jj=1:size(angles,2)
         if size(offOrigin,2)==size(angles,2)
             geo.offOrigin=offOrigin(:,index_angles(:,jj));
         end
@@ -148,7 +148,7 @@ while ~stop_criteria %POCS
         %         backprj=Atb(weighted_err,geo,angles(:,jj));            %                     At * W^-1 * (b-Ax)
         %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
         %         f=f+beta*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
-        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles(:,jj))),geo,angles(:,jj)));
+        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles_reorder(:,jj))),geo,angles_reorder(:,jj)));
         
         % Enforce positivity
         if nonneg

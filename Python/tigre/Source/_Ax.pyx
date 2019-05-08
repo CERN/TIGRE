@@ -22,8 +22,11 @@ cdef extern from "ray_interpolated_projection.hpp":
 cdef extern from "ray_interpolated_projection_parallel.hpp":
     cdef int interpolation_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha)
 
+def cuda_raise_errors(error_code):
+    if error_code:
+        raise ValueError('TIGRE: Call to Ax failed')
 
-def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=2] angles, krylov="interpolated", mode="cone"):
+def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=2] angles, projection_type="ray-voxel", mode="cone"):
 
     cdef int total_projections = angles.shape[0]
 
@@ -43,13 +46,12 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
 
     cdef float* c_angles = <float*> angles.data
 
-    # TODO: Error if krylov isn't interpolated or ray-voxel
-    if krylov == "ray-voxel":
+    if projection_type == "ray-voxel":
         interpolated = False
-    elif krylov == "interpolated":
+    elif projection_type == "interpolated":
         interpolated = True
     else:
-        print("Error: Unknown krylov, using default ray-voxel")
+        print("Warning: Unknown projection_type, using default ray-voxel")
         interpolated = False
 
     if mode == "parallel":
@@ -57,7 +59,7 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     elif mode == "cone":
         cone_beam = True
     else:
-        print("Error: Unknown mode, using default cone beam")
+        print("Warning: Unknown mode, using default cone beam")
         cone_beam = True
     #PERMUTE INPUT: (Z, Y, X) -> (X ,Y ,Z)
     img = img.transpose().copy(order='F')
@@ -65,14 +67,14 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     cdef float* c_img = <float*> img.data
     if cone_beam:
         if not interpolated:
-            siddon_ray_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections)
+            cuda_raise_errors(siddon_ray_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections))
         else:
-            interpolation_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections)
+            cuda_raise_errors(interpolation_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections))
     else:
         if not interpolated:
-            siddon_ray_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections)
+            cuda_raise_errors(siddon_ray_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections))
         else:
-            interpolation_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections)
+            cuda_raise_errors(interpolation_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections))
     cdef float theta,psi;
     theta=0;
     psi=0;

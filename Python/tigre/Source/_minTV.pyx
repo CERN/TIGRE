@@ -16,7 +16,7 @@
 
 cimport numpy as np 
 import numpy as np
-
+from tigre.utilities.errors import TigreCudaCallError
 np.import_array()
 
 from libc.stdlib cimport malloc, free 
@@ -26,7 +26,13 @@ cdef extern from "numpy/arrayobject.h":
     void PyArray_CLEARFLAGS(np.ndarray arr, int flags)
 
 cdef extern from "POCS_TV.hpp":
-    cdef void pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter)
+    cdef int pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter)
+
+
+def cuda_raise_errors(error_code):
+    if error_code:
+        raise TigreCudaCallError('minimizeTV:POCS_TV:', error_code)
+
 
 def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100):
 
@@ -45,7 +51,7 @@ def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 
 
     cdef float* c_src = <float*> src.data
     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
-    pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter)
+    cuda_raise_errors(pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter))
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
     PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)
 

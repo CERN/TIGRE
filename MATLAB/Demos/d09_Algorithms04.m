@@ -32,24 +32,7 @@ clear;
 close all;
 
 %% Define Geometry
-% 
-% VARIABLE                                   DESCRIPTION                    UNITS
-%-------------------------------------------------------------------------------------
-geo.DSD = 1536;                             % Distance Source Detector      (mm)
-geo.DSO = 1000;                             % Distance Source Origin        (mm)
-% Detector parameters
-geo.nDetector=[512; 512];					% number of pixels              (px)
-geo.dDetector=[0.8; 0.8]; 					% size of each pixel            (mm)
-geo.sDetector=geo.nDetector.*geo.dDetector; % total size of the detector    (mm)
-% Image parameters
-geo.nVoxel=[128;128;128];                   % number of voxels              (vx)
-geo.sVoxel=[256;256;256];                   % total size of the image       (mm)
-geo.dVoxel=geo.sVoxel./geo.nVoxel;          % size of each voxel            (mm)
-% Offsets
-geo.offOrigin =[0;0;0];                     % Offset of image from origin   (mm)              
-geo.offDetector=[0; 0];                     % Offset of Detector            (mm)
-% Auxiliary 
-geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/sample)
+geo=defaultGeometry('nVoxel',[128;128;128]);                     
 
 %% Load data and generate projections 
 % see previous demo for explanation
@@ -104,7 +87,7 @@ ng=25;
 %                  lambda=lambdared*lambda. Default is 0.99
 %
 lambda=1;
-lambdared=0.98;
+lambdared=0.9999;
 
 
 %   'alpha_red':   Defines the reduction rate of the TV hyperparameter
@@ -197,7 +180,19 @@ imgBASDPOCSbeta=B_ASD_POCS_beta(noise_projections,geo,angles,50,...
                   
 imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',50);           
 
+% FISTA
+%==========================================================================
+%==========================================================================
+% FISTA is a quadratically converging algorithm that relies on the hyper
+% parameter named 'hyper'. This parameter should approximate the largest 
+% eigenvalue in the A matrix in the equation Ax-b and Atb. Empirical tests
+% show that for, the headphantom object:
+%           geo.nVoxel = [64,64,64]'    ,      hyper (approx=) 2.e8
+%           geo.nVoxel = [512,512,512]' ,      hyper (approx=) 2.e4
+% for geo.nVoxel = [128,128,128]' therefore, hyper should be set to
+% somewhere in between these two values. 
 
+imgFISTA = FISTA(noise_projections,geo,angles,100,2.e6);
  %% Lets visualize the results
 % Notice the smoother images due to TV regularization.
 %
@@ -205,7 +200,7 @@ imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',50);
 %    
 %     OSC-TV             B-ASD-POCS-beta   SART-TV
 
-plotImg([ imgOSASDPOCS imgBASDPOCSbeta imgSARTTV; head imgOSSART  imgASDPOCS ] ,'Dim','Z','Step',2)
+plotImg([ imgOSASDPOCS imgBASDPOCSbeta imgSARTTV; head imgOSSART  imgASDPOCS ] ,'Dim','Z','Step',2,'clims',[0 1])
  % error
 
 plotImg(abs([ head-imgOSASDPOCS head-imgBASDPOCSbeta head-imgSARTTV;head-head head-imgOSSART  head-imgASDPOCS ]) ,'Dim','Z','Slice',64)

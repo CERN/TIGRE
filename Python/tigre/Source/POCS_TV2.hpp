@@ -52,7 +52,10 @@ Codes  : https://github.com/CERN/TIGRE
 
 #ifndef POCS_TV_HPP
 #define POCS_TV_HPP
-void aw_pocs_tv(const float* img,float* dst,float alpha,const long* image_size, int maxIter,const float delta);
+#include <stdio.h>
+#include "errors.hpp"
+int aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int maxIter,const float delta);
+void checkFreeMemory(int deviceCount,size_t *mem_GPU_global);
 
 
 #endif

@@ -66,7 +66,6 @@ TIGRE is a GPU-based CT reconstruction software repository that contains a wide 
 - Image quality metrics.
     
 
-
 ## Installation
 
 MATLAB and Python builds are both fully supported.
