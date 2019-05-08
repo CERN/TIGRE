@@ -10,7 +10,7 @@ We highly suggest you start with the first suggestion. It means 0.3s per operati
 
 The other suggestions may not improve your performance, or improve it very slightly. 
 
-Current values in the source code are for GTX 1080 Ti. If you have this GPU, only th efirst suggestion in this page will accelerate your code.
+Current values in the source code are for GTX 1080 Ti.
 
 ## All CUDA calls, ~0.3s per GPU saved
 
