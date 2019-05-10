@@ -115,12 +115,12 @@ If you use TIGRE, please reference the following papers:
 **Biomedical Physics & Engineering Express, Volume 2, Number 5**
 [Read the article (open access)][3]
 
-And
+And especially if you use images bigger than 512<sup>3</sup> or multiple GPUs
 
 **Arbitrarily large iterative tomographic reconstruction on multiple GPUs using the TIGRE toolbox**
 *Ander Biguri, Reuben Lindroos, Robert Bryll, Hossein Towsyfyan, Hans Deyhle, Richard
 Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*
-**Submitted for publication**
+**Submitted for publication** https://arxiv.org/abs/1905.03748
 
 [1]: LICENSE.txt
 [2]: http://www.linfo.org/bsdlicense.html
