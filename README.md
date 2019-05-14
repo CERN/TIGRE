@@ -72,7 +72,7 @@ MATLAB and Python builds are both fully supported.
 
 - [Installation instructions and requirements for MATLAB](Frontispiece/MATLAB_installation.md).
 
-- [Installation instructions and requirements for Python](Frontispiece/python_installation.md).
+- [Installation instructions and requirements for Python](Frontispiece/python_installation.md). **NOTE: python code works, but its subomtimal. We are working on fixing this currently [14/05/2019]**
 
 **Advanced, not required to run TIGRE**, will change the source code. Only do if performance is critical.
 
