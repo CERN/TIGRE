@@ -72,7 +72,7 @@ iterations), using 256 projections
 
 **Images are too large for GitHub, clock on the images to dowloand them**
 
-![im](https://raw.githubusercontent.com/CERN/TIGRE/blob/master/Frontispiece/coffee.png)
+![im](https://raw.githubusercontent.com/CERN/TIGRE/master/Frontispiece/coffee.png)
 
 (Right) Coffee bean with [FDK](https://github.com/CERN/TIGRE/blob/master/Frontispiece/fdk.png?raw=true), (left) [CGLS](https://github.com/CERN/TIGRE/blob/master/Frontispiece/cgls.png?raw=true) 15 iterations, 2134 projections. *Image shown in very compressed format, please dowload originals for accurate representation.*
 
