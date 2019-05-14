@@ -1,9 +1,7 @@
-Gallery
+Gallery: TIGRE algorithms in different CT applications. 
 =======
 
-## TIGRE algorithms in different CT applications. 
-
-### Conventional medical CBCT
+## Conventional medical CBCT
 
 **Source of image:** Ander Biguri's PhD thesis, page 93.
 
@@ -26,7 +24,7 @@ RANDO head using 90 equiangular projections, with 4 different algorithms. From l
 
 Special thanks to The Christie Hospital (Manchester) for sharing this dataset.
 
-### Cryo soft X-rays
+## Cryo soft X-rays
 
 **Source of image** Ander Biguri's PhD thesis, page 101.
 
@@ -48,7 +46,7 @@ zoomed-in areas from the second and third row.
 
 Special thanks to the Diamond Light Source, specially Michele Darrow and Imanol Luengo for sharing this dataset.
 
-### Conventional micro-CT
+## Conventional micro-CT
 
 **Source of image:** Ander Biguri's PhD thesis, page 96.
 
@@ -65,5 +63,21 @@ projections. The red line shows the profile evaluated. The display window is [0-
 
 Image profile on the SophiaBeads dataset with FDK and CGLS (15
 iterations), using 256 projections
+
+## Conventional micro-CT
+
+**Source of image:** Arbitrarily large iterative tomographic reconstruction on multiple GPUs using the TIGRE toolbox [https://arxiv.org/abs/1905.03748](https://arxiv.org/abs/1905.03748) Fig 10.
+
+**Description** Recosntruction of a panel shift micro-CT scan of a coffee bean. The recosntructed images are 3340 x 3340 x 900 voxels, with 2134 projection of size 3780 x 900. This recosntruction is to showcase possibility of very large reconstruction using TIGRE. Reconstruction using FDK and GCLS (a very memory heavy algorithm) are shown. 
+
+![im](https://raw.githubusercontent.com/CERN/TIGRE/blob/master/Frontispiece/fdk.png)
+
+Coffee bean with FDK, 2134 projections
+
+![im](https://raw.githubusercontent.com/CERN/TIGRE/blob/master/Frontispiece/cgls.png)
+
+Coffee bean with CGLS 15 iterations, 2134 projections
+
+
 
 
