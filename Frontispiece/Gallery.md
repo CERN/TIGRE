@@ -70,7 +70,7 @@ iterations), using 256 projections
 
 **Description** Recosntruction of a panel shift micro-CT scan of a coffee bean. The recosntructed images are 3340 x 3340 x 900 voxels, with 2134 projection of size 3780 x 900. This recosntruction is to showcase possibility of very large reconstruction using TIGRE. Reconstruction using FDK and GCLS (a very memory heavy algorithm) are shown. 
 
-**Images are too large for GitHub, clock on the images to dowloand them**
+**Images are too large for GitHub, clock on the image description links to dowloand them**
 
 ![im](https://raw.githubusercontent.com/CERN/TIGRE/master/Frontispiece/coffee.png)
 
