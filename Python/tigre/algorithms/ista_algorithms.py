@@ -139,9 +139,8 @@ class FISTA(IterativeReconAlg):
 
         :return: None
         """
-        self.res += self.__bm__ * 2 * tigre.Atb((self.proj[self.angle_index[iteration]]
-                                                 - tigre.Ax(self.res, geo, angle, 'interpolated')),
-                                                geo, angle, 'matched')
+        self.res += self.__bm__ * 2 * tigre.Atb((self.proj[self.angle_index[iteration]] - tigre.Ax(
+            self.res, geo, angle, 'interpolated')), geo, angle, 'matched')
 
     def run_main_iter(self):
         """
@@ -159,11 +158,13 @@ class FISTA(IterativeReconAlg):
                 res_prev = copy.deepcopy(self.res)
             if self.verbose:
                 if i == 0:
-                    print(str(self.name).upper() + ' ' + "algorithm in progress.")
+                    print(str(self.name).upper() +
+                          ' ' + "algorithm in progress.")
                     toc = time.clock()
                 if i == 1:
                     tic = time.clock()
-                    print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
+                    print('Esitmated time until completetion (s): ' +
+                          str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()
 
             x_rec_old = copy.deepcopy(x_rec)
@@ -175,7 +176,7 @@ class FISTA(IterativeReconAlg):
             self.error_measurement(res_prev, i)
 
 
-fista = decorator(FISTA,name='FISTA')
+fista = decorator(FISTA, name='FISTA')
 
 
 class ISTA(FISTA):
@@ -185,7 +186,6 @@ class ISTA(FISTA):
         FISTA.__init__(self, proj, geo, angles, niter, **kwargs)
 
     def run_main_iter(self):
-
         """
         Goes through the main iteration for the given configuration.
         :return: None
@@ -199,15 +199,18 @@ class ISTA(FISTA):
                 res_prev = copy.deepcopy(self.res)
             if self.verbose:
                 if i == 0:
-                    print(str(self.name).upper() + ' ' + "algorithm in progress.")
+                    print(str(self.name).upper() +
+                          ' ' + "algorithm in progress.")
                     toc = time.clock()
                 if i == 1:
                     tic = time.clock()
-                    print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
+                    print('Esitmated time until completetion (s): ' +
+                          str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()
 
             self.res = im3ddenoise(self.res, 20, 1. / lambdaForTv)
 
             self.error_measurement(res_prev, i)
 
-ista = decorator(ISTA,name='ISTA')
+
+ista = decorator(ISTA, name='ISTA')

@@ -11,12 +11,13 @@ import math
 
 
 class CGLS(IterativeReconAlg):
-    __doc__ = (" CGLS_CBCT solves the CBCT problem using the conjugate gradient least\n"
-               " squares\n"
-               " \n"
-               "  CGLS_CBCT(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
-               "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
-               "  to the geometry descrived in GEO, using NITER iterations.") + IterativeReconAlg.__doc__
+    __doc__ = (
+        " CGLS_CBCT solves the CBCT problem using the conjugate gradient least\n"
+        " squares\n"
+        " \n"
+        "  CGLS_CBCT(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
+        "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
+        "  to the geometry descrived in GEO, using NITER iterations.") + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
         # Don't precompute V and W.
@@ -29,20 +30,27 @@ class CGLS(IterativeReconAlg):
         if self.log_parameters:
             parameter_history = {}
             iterations = self.niter
-            parameter_history['alpha'] = np.zeros([iterations], dtype=np.float32)
-            parameter_history['beta'] = np.zeros([iterations], dtype=np.float32)
-            parameter_history['gamma'] = np.zeros([iterations], dtype=np.float32)
-            parameter_history['q_norm'] = np.zeros([iterations], dtype=np.float32)
-            parameter_history['s_norm'] = np.zeros([iterations], dtype=np.float32)
+            parameter_history['alpha'] = np.zeros(
+                [iterations], dtype=np.float32)
+            parameter_history['beta'] = np.zeros(
+                [iterations], dtype=np.float32)
+            parameter_history['gamma'] = np.zeros(
+                [iterations], dtype=np.float32)
+            parameter_history['q_norm'] = np.zeros(
+                [iterations], dtype=np.float32)
+            parameter_history['s_norm'] = np.zeros(
+                [iterations], dtype=np.float32)
             self.parameter_history = parameter_history
 
-        self.__r__ = self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel')
+        self.__r__ = self.proj - \
+            Ax(self.res, self.geo, self.angles, 'ray-voxel')
         self.__p__ = Atb(self.__r__, self.geo, self.angles)
         p_norm = np.linalg.norm(self.__p__.ravel(), 2)
         self.__gamma__ = p_norm * p_norm
 
     def reinitialise_cgls(self):
-        self.__r__ = self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel')
+        self.__r__ = self.proj - \
+            Ax(self.res, self.geo, self.angles, 'ray-voxel')
         self.__p__ = Atb(self.__r__, self.geo, self.angles)
         p_norm = np.linalg.norm(self.__p__.ravel(), 2)
         self.__gamma__ = p_norm * p_norm
@@ -57,7 +65,8 @@ class CGLS(IterativeReconAlg):
                 toc = time.clock()
             if i == 1:
                 tic = time.clock()
-                print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
+                print('Esitmated time until completetion (s): ' +
+                      str((self.niter - 1) * (tic - toc)))
             avgtic = time.clock()
             q = tigre.Ax(self.__p__, self.geo, self.angles, 'ray-voxel')
             q_norm = np.linalg.norm(q)
@@ -66,11 +75,13 @@ class CGLS(IterativeReconAlg):
             avgtoc = time.clock()
             avgtime.append(abs(avgtic - avgtoc))
             for item in self.__dict__:
-                if type(getattr(self, item)) == np.ndarray:
+                if isinstance(getattr(self, item), np.ndarray):
                     if np.isnan(getattr(self, item)).any():
-                        raise ValueError('nan found for ' + item + ' at iteraton ' + str(i))
+                        raise ValueError(
+                            'nan found for ' + item + ' at iteraton ' + str(i))
 
-            aux = self.proj - tigre.Ax(self.res, self.geo, self.angles, 'ray-voxel')
+            aux = self.proj - \
+                tigre.Ax(self.res, self.geo, self.angles, 'ray-voxel')
             self.l2l[i] = np.linalg.norm(aux)
             if i > 0 and self.l2l[i] > self.l2l[i - 1]:
                 print('re-initilization of CGLS called at iteration:' + str(i))
@@ -97,6 +108,8 @@ class CGLS(IterativeReconAlg):
             self.__gamma__ = gamma1
             self.__p__ = s + beta * self.__p__
 
-        print('Average time taken for each iteration for CGLS:' + str(sum(avgtime) / len(avgtime)) + '(s)')
+        print('Average time taken for each iteration for CGLS:' +
+              str(sum(avgtime) / len(avgtime)) + '(s)')
+
 
 cgls = decorator(CGLS, name='cgls')
