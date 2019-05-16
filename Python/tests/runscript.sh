@@ -22,27 +22,16 @@ python $DIR/generate_configurations.py
 
 
 algs=("FDK" "fbp" "sirt" "ossart" "cgls" "asd_pocs" "awasd_pocs" "fista")
-tests=("configuration1.npy" "configuration2.npy" "configuration3.npy" "configuration4.npy")
 
 # RUN algorithm tests
+for testnr in {1..4}; do
+	for alg in "${algs[@]}"; do
 
-for i in "${algs[@]}";
-	do
-		for j in "${tests[@]}"
-			do
-				python $DIR/algorithm_test.py $j $i
-			done
+			python $DIR/test_config_gen.py TestSequence.test_${testnr}_${alg}
+
+		done
 	done
 
 # run other tests
-
-# assert true or false for output of test files and publish to xml
- python $DIR/test_config1.py
- python $DIR/test_config2.py
- python $DIR/test_config3.py
- python $DIR/test_config4.py
-# https://stackoverflow.com/questions/11241781/python-unittests-in-jenkins
-
-
 # clean
 rm $DIR/*.npy

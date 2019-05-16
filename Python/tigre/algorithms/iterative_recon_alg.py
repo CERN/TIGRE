@@ -146,7 +146,8 @@ class IterativeReconAlg(object):
             'delta',
             'regularisation',
             'tviter',
-            'tvlambda']
+            'tvlambda',
+            'hyper']
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
         for kw in kwargs.keys():

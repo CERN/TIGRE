@@ -4,7 +4,8 @@ import os
 nVoxel = np.array([256, 256, 256])
 niter = 20
 dirname = os.path.dirname(__file__)
-keywords = dict(blocksize=20)
+keywords = dict(blocksize=20,
+                hyper = 2.e6)
 
 
 def save_config(dict, name):
@@ -20,7 +21,7 @@ if __name__ == '__main__':
     # (V,U) number of pixels        (px)
     geo.nDetector = np.array((256, 256))
     # size of each pixel            (mm)
-    geo.dDetector = np.array((0.8, 0.8)) * 2
+    geo.dDetector = np.array((0.8, 0.8))*2
     geo.sDetector = geo.nDetector * geo.dDetector
 
     save_config(dict(
@@ -43,7 +44,7 @@ if __name__ == '__main__':
     geo = tigre.geometry(mode='cone', nVoxel=np.array(
         [240, 248, 256]), default=True)
     geo.nDetector = np.array((248, 256))
-    geo.dDetector = np.array((0.8, 0.8)) * 2
+    geo.dDetector = np.array((0.8, 0.8)) *2
     geo.sDetector = geo.nDetector * geo.dDetector
     save_config(dict(
         nproj=100,
