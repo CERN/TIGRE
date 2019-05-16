@@ -8,6 +8,14 @@ If you want more information on the TIGRE toolbox, read scientific article:
 **Biomedical Physics & Engineering Express, Volume 2, Number 5**\
 [Read the article (Open Access)][1]
 
+And more detailed information on Multi-GPU and current performance can be found on:
+
+**Arbitrarily large iterative tomographic reconstruction on multiple GPUs using the TIGRE toolbox**\
+*Ander Biguri, Reuben Lindroos, Robert Bryll, Hossein Towsyfyan, Hans Deyhle, Richard Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*\ 
+**Submitted for publication**\ 
+https://arxiv.org/abs/1905.03748
+
+
 ***
 
 If you want even more detailed description of TIGRE, iterative algorithms and GPU computing, read the PhD Thesis of Ander Biguri:
