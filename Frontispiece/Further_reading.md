@@ -11,8 +11,8 @@ If you want more information on the TIGRE toolbox, read scientific article:
 And more detailed information on Multi-GPU and current performance can be found on:
 
 **Arbitrarily large iterative tomographic reconstruction on multiple GPUs using the TIGRE toolbox**\
-*Ander Biguri, Reuben Lindroos, Robert Bryll, Hossein Towsyfyan, Hans Deyhle, Richard Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*\ 
-**Submitted for publication**\ 
+*Ander Biguri, Reuben Lindroos, Robert Bryll, Hossein Towsyfyan, Hans Deyhle, Richard Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*\
+**Submitted for publication**\
 https://arxiv.org/abs/1905.03748
 
 
