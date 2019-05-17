@@ -61,6 +61,8 @@ class AlgorithmTest(object):
     def compound_results(self,verbose=True):
         if self.algorithm_finished and self.rmse<0.2:
             self.testpassed = True
+        elif self.algorithm == 'sirt' and self.algorithm_finished and self.rmse <0.3:
+            self.testpassed = True
         else:
             print('===================================================')
             print('TEST FAILED')
