@@ -21,7 +21,8 @@ python $DIR/generate_configurations.py
 # TODO: for now this is hardcoded but it should check the gitrepo for changes and run tests accordingly
 
 
-algs=("FDK" "fbp" "sirt" "ossart" "cgls" "asd_pocs" "awasd_pocs" "fista")
+algs=("FDK" "fbp" "sirt" "ossart" "cgls" "asd_pocs" "awasd_pocs")
+
 
 # RUN algorithm tests
 for testnr in {1..4}; do

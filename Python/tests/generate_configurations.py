@@ -5,7 +5,7 @@ nVoxel = np.array([256, 256, 256])
 niter = 20
 dirname = os.path.dirname(__file__)
 keywords = dict(blocksize=20,
-                hyper = 2.e6)
+                hyper = 9.391252e+06)
 
 
 def save_config(dict, name):
