@@ -77,7 +77,7 @@ class ASD_POCS(IterativeReconAlg):
                           "     Stop criteria met: \n"
                           "     c = " + str(c) + "\n"
                           "     beta = " + str(self.beta) + "\n"
-                          "     iter = " + str(n_iter)) + "\n"
+                          "     iter = " + str(n_iter) + "\n")
                 stop_criteria = True
 
 
