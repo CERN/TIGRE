@@ -19,6 +19,7 @@
 
 from __future__ import division
 import numpy as np
+from functools import reduce
 
 def Measure_Quality(res_prev, res, QualMeasOpts):
     """

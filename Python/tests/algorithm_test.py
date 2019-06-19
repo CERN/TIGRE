@@ -21,8 +21,8 @@ class AlgorithmTest(object):
 
         """
         self.dirname = os.path.dirname(__file__)
-        self.targetdir = str(np.load(os.path.join(self.dirname,'targetdir.npy')))
-        configdict = np.load(os.path.join(self.dirname,configuration)).item()
+        self.targetdir = str(np.load(os.path.join(self.dirname,'targetdir.npy'), allow_pickle=True))
+        configdict = np.load(os.path.join(self.dirname,configuration), allow_pickle=True).item()
         for key in configdict:
             """contains: [nproj,geo,angles,niter,kwargs]"""
             setattr(self,key,configdict[key])
@@ -35,11 +35,6 @@ class AlgorithmTest(object):
         self.timestarted = time.asctime()
         self.timeended = time.asctime()
     def test(self):
-        if self.algorithm == 'fbp' and self.geo.mode != 'parallel':
-            print('WARNING: fbp was implemented in cone beam.')
-            print('Test ignored.\n')
-            raise SystemExit()
-
         head = load_head_phantom(self.geo.nVoxel)
         proj = tigre.Ax(head,self.geo,self.angles)
         if self.algorithm in ['FDK','fbp']:
@@ -53,33 +48,34 @@ class AlgorithmTest(object):
         self.algorithm_finished = True
         self.rmse = Measure_Quality(self.output,head,['nRMSE'])
 
+    def unit_test_call(self):
+        self.test()
+        self.compound_results()
+        return self.testpassed
 
-    def compound_results(self):
-
+    def compound_results(self,verbose=True):
         if self.algorithm_finished and self.rmse<0.2:
-            print('------------------------------------------------\n')
-            print('TEST PASSED')
-            print('------------------------------------------------\n')
+            self.testpassed = True
+        elif self.algorithm == 'sirt' and self.algorithm_finished and self.rmse <0.3:
             self.testpassed = True
         else:
-            print('------------------------------------------------\n')
+            print('===================================================')
             print('TEST FAILED')
             print('Algorithm: ' + self.algorithm)
-            print('Algorithm ran:' + str(self.algorithm_finished))
+            print('Algorithm ran: ' + str(self.algorithm_finished))
+            print('configuration number: ' + str(self.confignumber))
             print('RMSE:' + str(self.rmse))
-            print('------------------------------------------------\n')
+            print('===================================================')
     def save_output(self):
         resultfilename = self.confignumber + '.npy'
         try:
-            resultsdata = np.load(os.path.join(self.targetdir, resultfilename)).item()
+            resultsdata = np.load(os.path.join(self.targetdir, resultfilename),allow_pickle=True).item()
 
         except Exception:
             resultsdata = dict()
         resultsdata.update({self.algorithm : self.testpassed})
         np.save(os.path.join(self.targetdir,resultfilename),resultsdata)
         if not self.testpassed:
-            if self.algorithm_finished:
-                self.save_fig()
             self.write_to_log()
 
     def save_fig(self):

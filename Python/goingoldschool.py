@@ -98,10 +98,11 @@ def check_convergence(l2list):
 angles = np.linspace(0,2*np.pi,100)
 
 
-geo = tigre.geometry(mode='cone', nVoxel=np.array([512, 512, 512]), default=True)
+geo = tigre.geometry(mode='cone', nVoxel= np.array([512,512,512]) ,default=True)
+print(geo)
 
-#src_img = data_loader.load_head_phantom(geo.nVoxel)
-src_img = np.load('src_img_cubic_512.npy')
+src_img = data_loader.load_head_phantom(geo.nVoxel)
+#src_img = np.load('src_img_cubic_512.npy')
 proj = tigre.Ax(src_img,geo,angles)
 numit = 100
 
@@ -205,17 +206,6 @@ class SIRT_relativeerror(SIRT):
 
 
 
-import tigre.algorithms as algs
-
-output_fista = algs.fista(proj,geo,angles,10)
-output_ista = algs.ista(proj,geo,angles,10)
-np.save('resultsofmodulation.npy',[output_fista,output_ista])
-plt.subplot(211)
-plt.imshow(output_ista[256])
-plt.subplot(212)
-plt.imshow(output_fista[256])
-plt.show()
-
 
 # proj_2 = tigre.Ax(src_img,geo,angles,'ray-voxel')
 # lmbda = (np.linalg.norm(src_img)**2)/(np.linalg.norm(proj_2))
@@ -227,6 +217,7 @@ plt.show()
 # plt.show()
 
 #------Fri-29-march--------------------------
+
 # lambdas = reversed(np.logspace(0.1,5,5))
 # relativeErrorLists = []
 # for val in lambdas:
@@ -239,27 +230,29 @@ plt.show()
 # plt.plot(relativeError_fista1)
 # plt.show()
 
-# results = dict()
-#output_ista,relativeError_ista = ista(proj,geo,angles,numit,src_img)
-# results.update(dict(output_ista=output_ista,
-#                     relativeError_ista=relativeError_ista))
-#
-# output_fista,relativeError_fista = fista(proj,geo,angles,numit,src_img,2.e5)
-# results.update(dict(output_fista=output_fista,
-#                     relativeError_fista=relativeError_fista))
-#
-#
-#
-#
-#results = dict()
-#output_cgls,relativeError_cgls = CGLS_relativeerror(proj,geo,angles,numit).run_main_iter(src_img)
-#results.update(dict(output_cgls=output_cgls,
-                    # relativeError_cgls = relativeError_cgls))
-#np.save('resultsforconvergence_cgls.npy',results)
-#
-#
-# output_sirt,relativeError_sirt = SIRT_relativeerror(proj,geo,angles,numit).run_main_iter(src_img)
-# results.update(output_sirt=output_sirt,
-#                relativeError_sirt = relativeError_sirt)
+results = dict()
+output_ista,relativeError_ista = ista(proj,geo,angles,numit,src_img)
+results.update(dict(output_ista=output_ista,
+                    relativeError_ista=relativeError_ista))
+
+np.save('resultsforconvergence.npy',results)
+
+output_fista,relativeError_fista = fista(proj,geo,angles,numit,src_img,2.e5)
+results.update(dict(output_fista=output_fista,
+                    relativeError_fista=relativeError_fista))
 
 
+np.save('resultsforconvergence.npy',results)
+
+
+output_cgls,relativeError_cgls = CGLS_relativeerror(proj,geo,angles,numit).run_main_iter(src_img)
+results.update(dict(output_cgls=output_cgls,
+                    relativeError_cgls = relativeError_cgls))
+
+np.save('resultsforconvergence.npy',results)
+
+output_sirt,relativeError_sirt = SIRT_relativeerror(proj,geo,angles,numit).run_main_iter(src_img)
+results.update(output_sirt=output_sirt,
+               relativeError_sirt = relativeError_sirt)
+
+np.save('resultsforconvergence.npy',results)
