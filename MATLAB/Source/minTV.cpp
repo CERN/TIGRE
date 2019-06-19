@@ -96,7 +96,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         mexErrMsgIdAndTxt("err", "Image is not 3D");
     }
     // Now that input is ok, parse it to C data types.
-    float const * const img = static_cast<float const *>(mxGetData(image));
+    float  *  img = static_cast<float  *>(mxGetData(image));
     const mwSize *size_img= mxGetDimensions(image); //get size of image
     
 

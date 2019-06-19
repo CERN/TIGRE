@@ -27,13 +27,14 @@ else
     hyper=15;
 end
 
-if strcmp(type,'TV');
+if strcmp(type,'TV')
     immin=min(img(:));
     img=(img-immin);
-    immax=prctile(img(:),99);
-    img=img./immax;
+%     immax=prctile(img(:),99);
+    immax=max(img(:));
 
-    imgO=(permute(tvDenoise(permute(img,[3 2 1]),hyper,iter),[3 2 1]));
+    img=img./(immax+2*eps);
+    imgO=tvDenoise(img,hyper,iter);
     clear img;
     
     imgO=imgO*immax;

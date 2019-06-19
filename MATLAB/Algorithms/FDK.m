@@ -1,4 +1,4 @@
-function [res,errorL2]=FDK(proj,geo,angles,varargin)
+function [res]=FDK(proj,geo,angles,varargin)
 %TODO docs FDK
 % 
 %
@@ -50,17 +50,12 @@ for ii=1:size(angles,2)
     proj(:,:,ii) = proj(:,:,ii).*w';
 end
 %% filter
-proj_filt = filtering(proj,geo,angles,parker); % Not sure if offsets are good in here
+proj = filtering(proj,geo,angles,parker); % Not sure if offsets are good in here
 %RMFIELD Remove fields from a structure array.
 geo=rmfield(geo,'filter');
 %% backproject
-res=Atb((proj_filt),geo,angles); % Weighting is inside
+res=Atb((proj),geo,angles); % Weighting is inside
 
-
-if nargout>1
-     error=proj-Ax(res,geo,angles);
-     errorL2=norm(error(:));
-end
 
 end
 
