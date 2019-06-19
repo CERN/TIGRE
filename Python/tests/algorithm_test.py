@@ -35,11 +35,6 @@ class AlgorithmTest(object):
         self.timestarted = time.asctime()
         self.timeended = time.asctime()
     def test(self):
-        if self.algorithm == 'fbp' and self.geo.mode != 'parallel':
-            print('WARNING: fbp was implemented in cone beam.')
-            print('Test ignored.\n')
-            raise SystemExit()
-
         head = load_head_phantom(self.geo.nVoxel)
         proj = tigre.Ax(head,self.geo,self.angles)
         if self.algorithm in ['FDK','fbp']:
