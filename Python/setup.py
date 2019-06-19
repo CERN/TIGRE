@@ -53,8 +53,8 @@ def locate_cuda():
             if not nvcc_is_in_path:
                 print('WARNING: The nvcc binary could not be located in your $PATH. '
                       'Either add it to your path, or set $CUDAHOME')
-                raise EnvironmentError(
-                    'The CUDA  path could not be located in $PATH or $CUDAHOME. Either add it to your path, or set $CUDAHOME')
+                # raise EnvironmentError(
+                #     'The CUDA  path could not be located in $PATH or $CUDAHOME. Either add it to your path, or set $CUDAHOME')
             home = '/usr/local/cuda'
             nvcc = pjoin(home, 'bin', 'nvcc')
         else:
