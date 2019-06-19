@@ -93,9 +93,9 @@ rngz =  ( (0:nz-1)-(nz-1)/2 ) / ((nz-1)/2);
 % PJB: Note the swap of the x and y with meshgrid parameters. 
 %[x,y,z] = meshgrid(rngx,rngy,rngz);
 [x,y,z] = meshgrid(rngy,rngx,rngz);
-
-coord = [flatten(x); flatten(y); flatten(z)];
-
+x=single(x);y=single(y);z=single(z);
+coord = [flatten(single(x)); flatten(single(y)); flatten(single(z))];
+clear x y z;
 p = flatten(p);
 
 for k = 1:size(ellipse,1)    

@@ -1,8 +1,8 @@
 from __future__ import division
 
 import numpy as np
-from tigre.utilities.Ax import Ax
-from tigre.utilities.Atb import Atb
+from tigre.Ax import Ax
+from tigre.Atb import Atb
 from tigre.utilities.order_subsets import order_subsets
 from tigre.utilities.init_multigrid import init_multigrid
 from tigre.utilities.Measure_Quality import Measure_Quality as MQ

@@ -50,13 +50,13 @@ if ispc
 
     if ~isempty(strfind(computer('arch'),'64'))
         mex -largeArrayDims ./Source/Ax_mex.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/win64
-        mex -largeArrayDims ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu ./Source/voxel_backprojection_spherical.cu ./Source/voxel_backprojection2_spherical.cu ./Source/voxel_backprojection_parallel.cu ./Source/voxel_backprojection_parallel_spherical.cu -outdir ./Mex_files/win64
+        mex -largeArrayDims ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu  ./Source/voxel_backprojection_parallel.cu -outdir ./Mex_files/win64
         mex -largeArrayDims ./Source/minTV.cpp ./Source/POCS_TV.cu  -outdir ./Mex_files/win64
         mex -largeArrayDims ./Source/AwminTV.cpp ./Source/POCS_TV2.cu  -outdir ./Mex_files/win64
         mex -largeArrayDims ./Source/tvDenoise.cpp ./Source/tvdenoising.cu  -outdir ./Mex_files/win64
     else
         mex  ./Source/Ax_mex.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/win64
-        mex  ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu ./Source/voxel_backprojection_spherical.cu ./Source/voxel_backprojection2_spherical.cu ./Source/voxel_backprojection_parallel.cu ./Source/voxel_backprojection_parallel_spherical.cu -outdir ./Mex_files/win64
+        mex  ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu  ./Source/voxel_backprojection_parallel.cu -outdir ./Mex_files/win64
         mex  ./Source/minTV.cpp ./Source/POCS_TV.cu  -outdir ./Mex_files/win32
         mex  ./Source/AwminTV.cpp ./Source/POCS_TV2.cu  -outdir ./Mex_files/win32
         mex  ./Source/tvDenoise.cpp ./Source/tvdenoising.cu  -outdir ./Mex_files/win32
@@ -66,13 +66,13 @@ elseif ismac
     if ~isempty(strfind(computer('arch'),'64'))
         disp('compiling for mac 64')
         mex -largeArrayDims ./Source/Ax_mex.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/mac64
-        mex -largeArrayDims ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu ./Source/voxel_backprojection_spherical.cu ./Source/voxel_backprojection2_spherical.cu ./Source/voxel_backprojection_parallel.cu ./Source/voxel_backprojection_parallel_spherical.cu -outdir ./Mex_files/mac64
+        mex -largeArrayDims ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu  ./Source/voxel_backprojection_parallel.cu  -outdir ./Mex_files/mac64
         mex -largeArrayDims ./Source/minTV.cpp ./Source/POCS_TV.cu  -outdir ./Mex_files/mac64
         mex -largeArrayDims ./Source/AwminTV.cpp ./Source/POCS_TV2.cu  -outdir ./Mex_files/mac64
         mex -largeArrayDims ./Source/tvDenoise.cpp ./Source/tvdenoising.cu  -outdir ./Mex_files/mac64
     else
         mex  ./Source/Ax_mex.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/mac32
-        mex  ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu ./Source/voxel_backprojection_spherical.cu ./Source/voxel_backprojection2_spherical.cu ./Source/voxel_backprojection_parallel.cu ./Source/voxel_backprojection_parallel_spherical.cu -outdir ./Mex_files/mac32
+        mex  ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu ./Source/voxel_backprojection_parallel.cu  -outdir ./Mex_files/mac32
         mex  ./Source/minTV.cpp ./Source/POCS_TV.cu  -outdir ./Mex_files/mac32
         mex  ./Source/AwminTV.cpp ./Source/POCS_TV2.cu  -outdir ./Mex_files/mac32
         mex  ./Source/tvDenoise.cpp ./Source/tvdenoising.cu  -outdir ./Mex_files/mac32
@@ -81,13 +81,13 @@ elseif ismac
 elseif isunix
     if ~isempty(strfind(computer('arch'),'64'))
         mex -largeArrayDims ./Source/Ax_mex.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/linux64
-        mex -largeArrayDims ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu ./Source/voxel_backprojection_spherical.cu ./Source/voxel_backprojection2_spherical.cu ./Source/voxel_backprojection_parallel.cu ./Source/voxel_backprojection_parallel_spherical.cu -outdir ./Mex_files/linux64
+        mex -largeArrayDims ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu  ./Source/voxel_backprojection_parallel.cu  -outdir ./Mex_files/linux64
         mex -largeArrayDims ./Source/minTV.cpp ./Source/POCS_TV.cu  -outdir ./Mex_files/linux64
         mex -largeArrayDims ./Source/AwminTV.cpp ./Source/POCS_TV2.cu  -outdir ./Mex_files/linux64
         mex -largeArrayDims ./Source/tvDenoise.cpp ./Source/tvdenoising.cu  -outdir ./Mex_files/linux64
     else
         mex  ./Source/Ax_mex.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/linux32
-        mex  ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu ./Source/voxel_backprojection_spherical.cu ./Source/voxel_backprojection2_spherical.cu ./Source/voxel_backprojection_parallel.cu ./Source/voxel_backprojection_parallel_spherical.cu -outdir ./Mex_files/linux32
+        mex  ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu ./Source/voxel_backprojection_parallel.cu  -outdir ./Mex_files/linux32
         mex  ./Source/minTV.cpp ./Source/POCS_TV.cu  -outdir ./Mex_files/linux32
         mex  ./Source/AwminTV.cpp ./Source/POCS_TV2.cu  -outdir ./Mex_files/linux32
         mex  ./Source/tvDenoise.cpp ./Source/tvdenoising.cu  -outdir ./Mex_files/linux32

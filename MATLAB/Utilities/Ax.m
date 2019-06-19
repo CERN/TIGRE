@@ -19,7 +19,7 @@ function [ projections ] = Ax(img, geo, angles, varargin )
 % Lets make 100% sure that data is correct
 %% OPtionals
 
-ptype='interpolated';
+ptype='ray-voxel';
 if nargin > 3
    assert(any(strcmpi(varargin{1},{'ray-voxel','interpolated'})),'TIGRE:Ax:InvalidInput','Projection type not understood (4th input).');
    ptype=varargin{1};

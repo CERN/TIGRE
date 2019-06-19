@@ -1,0 +1,225 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>tigre.algorithms.single_pass_algorithms &#8212; pytigre  documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for tigre.algorithms.single_pass_algorithms</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">absolute_import</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">from</span> <span class="nn">tigre.utilities.Atb</span> <span class="k">import</span> <span class="n">Atb</span>
+<span class="kn">from</span> <span class="nn">tigre.utilities.filtering</span> <span class="k">import</span> <span class="n">filtering</span>
+
+<span class="c1"># TODO: this is quite nasty; it would be nice to reorganise file structure later so top level folder is always in path</span>
+<span class="n">currDir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span>
+<span class="n">rootDir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">currDir</span><span class="p">,</span> <span class="s1">&#39;..&#39;</span><span class="p">))</span>
+<span class="k">if</span> <span class="n">rootDir</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>  <span class="c1"># add parent dir to paths</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rootDir</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="FDK"><a class="viewcode-back" href="../../../index.html#tigre.algorithms.FDK">[docs]</a><span class="k">def</span> <span class="nf">FDK</span><span class="p">(</span><span class="n">proj</span><span class="p">,</span> <span class="n">geo</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="s1">&#39;ram_lak&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    solves CT image reconstruction.</span>
+
+<span class="sd">    :param proj: np.array(dtype=float32),</span>
+<span class="sd">     Data input in the form of 3d</span>
+
+<span class="sd">    :param geo: tigre.utilities.geometry.Geometry</span>
+<span class="sd">     Geometry of detector and image (see examples/Demo code)</span>
+
+<span class="sd">    :param angles: np.array(dtype=float32)</span>
+<span class="sd">     Angles of projection, shape = (nangles,3) or (nangles,)</span>
+
+<span class="sd">    :param filter: str</span>
+<span class="sd">     Type of filter used for backprojection</span>
+<span class="sd">     opts: &quot;shep_logan&quot;</span>
+<span class="sd">           &quot;cosine&quot;</span>
+<span class="sd">           &quot;hamming&quot;</span>
+<span class="sd">           &quot;hann&quot;</span>
+
+<span class="sd">    :param verbose: bool</span>
+<span class="sd">     Feedback print statements for algorithm progress</span>
+
+<span class="sd">    :param kwargs: dict</span>
+<span class="sd">     keyword arguments</span>
+
+<span class="sd">    :return: np.array(dtype=float32)</span>
+
+<span class="sd">    Usage:</span>
+<span class="sd">    -------</span>
+<span class="sd">    &gt;&gt;&gt; import tigre</span>
+<span class="sd">    &gt;&gt;&gt; import tigre.algorithms as algs</span>
+<span class="sd">    &gt;&gt;&gt; import numpy</span>
+<span class="sd">    &gt;&gt;&gt; from tigre.demos.Test_data import data_loader</span>
+<span class="sd">    &gt;&gt;&gt; geo = tigre.geometry(mode=&#39;cone&#39;,default_geo=True,</span>
+<span class="sd">    &gt;&gt;&gt;                         nVoxel=np.array([64,64,64]))</span>
+<span class="sd">    &gt;&gt;&gt; angles = np.linspace(0,2*np.pi,100)</span>
+<span class="sd">    &gt;&gt;&gt; src_img = data_loader.load_head_phantom(geo.nVoxel)</span>
+<span class="sd">    &gt;&gt;&gt; proj = tigre.Ax(src_img,geo,angles)</span>
+<span class="sd">    &gt;&gt;&gt; output = algs.FDK(proj,geo,angles)</span>
+
+<span class="sd">    tigre.demos.run() to launch ipython notebook file with examples.</span>
+
+
+<span class="sd">    --------------------------------------------------------------------</span>
+<span class="sd">    This file is part of the TIGRE Toolbox</span>
+
+<span class="sd">    Copyright (c) 2015, University of Bath and</span>
+<span class="sd">                        CERN-European Organization for Nuclear Research</span>
+<span class="sd">                        All rights reserved.</span>
+
+<span class="sd">    License:            Open Source under BSD.</span>
+<span class="sd">                        See the full license at</span>
+<span class="sd">                        https://github.com/CERN/TIGRE/license.txt</span>
+
+<span class="sd">    Contact:            tigre.toolbox@gmail.com</span>
+<span class="sd">    Codes:              https://github.com/CERN/TIGRE/</span>
+<span class="sd">  ----------------------------------------------------------------------</span>
+<span class="sd">    Coded by:          MATLAB (original code): Ander Biguri</span>
+<span class="sd">                       PYTHON : Reuben Lindroos</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="s1">&#39;niter&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;niter&#39;</span><span class="p">)</span>
+
+    <span class="n">geo</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">geo</span><span class="p">)</span>
+    <span class="n">geo</span><span class="o">.</span><span class="n">check_geo</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>
+    <span class="n">geo</span><span class="o">.</span><span class="n">checknans</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">filter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">geo</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="nb">filter</span>
+    <span class="c1"># Weight</span>
+    <span class="n">proj_filt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">proj</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">angles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">xv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">((</span><span class="o">-</span><span class="n">geo</span><span class="o">.</span><span class="n">nDetector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">nDetector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">geo</span><span class="o">.</span><span class="n">dDetector</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">yv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">((</span><span class="o">-</span><span class="n">geo</span><span class="o">.</span><span class="n">nDetector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">nDetector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">*</span> <span class="n">geo</span><span class="o">.</span><span class="n">dDetector</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="p">(</span><span class="n">yy</span><span class="p">,</span> <span class="n">xx</span><span class="p">)</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">xv</span><span class="p">,</span> <span class="n">yv</span><span class="p">)</span>
+
+        <span class="n">w</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">DSD</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">geo</span><span class="o">.</span><span class="n">DSD</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">xx</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">yy</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">proj_filt</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">proj</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span> <span class="o">*</span> <span class="n">w</span>
+
+    <span class="n">proj_filt</span> <span class="o">=</span> <span class="n">filtering</span><span class="p">(</span><span class="n">proj_filt</span><span class="p">,</span> <span class="n">geo</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">parker</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+    <span class="c1"># m = {</span>
+    <span class="c1">#     &#39;py_projfilt&#39;: proj_filt,</span>
+    <span class="c1">#</span>
+    <span class="c1"># }</span>
+    <span class="c1"># scipy.io.savemat(&#39;Tests/Filter_data&#39;, m)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">Atb</span><span class="p">(</span><span class="n">proj_filt</span><span class="p">,</span> <span class="n">geo</span><span class="p">,</span> <span class="n">geo</span><span class="o">.</span><span class="n">angles</span><span class="p">,</span> <span class="s1">&#39;FDK&#39;</span><span class="p">)</span>
+    <span class="c1"># res = 0</span>
+    <span class="c1"># res = Atb(proj,geo,angles,&#39;FDK&#39;)</span>
+    <span class="k">return</span> <span class="n">res</span></div>
+
+
+<span class="n">fdk</span> <span class="o">=</span> <span class="n">FDK</span>
+
+
+<span class="k">def</span> <span class="nf">fbp</span><span class="p">(</span><span class="n">proj</span><span class="p">,</span> <span class="n">geo</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="nb">filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="vm">__doc__</span> <span class="o">=</span> <span class="n">FDK</span><span class="o">.</span><span class="vm">__doc__</span>
+    <span class="k">if</span> <span class="n">geo</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s1">&#39;parallel&#39;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only use FBP for parallel beam. Check geo.mode.&quot;</span><span class="p">)</span>
+    <span class="n">geox</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">geo</span><span class="p">)</span>
+    <span class="n">geox</span><span class="o">.</span><span class="n">check_geo</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>
+    <span class="n">proj_filt</span> <span class="o">=</span> <span class="n">filtering</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">proj</span><span class="p">),</span> <span class="n">geox</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">parker</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">Atb</span><span class="p">(</span><span class="n">proj_filt</span><span class="p">,</span> <span class="n">geo</span><span class="p">,</span> <span class="n">angles</span><span class="p">)</span> <span class="o">*</span> <span class="n">geo</span><span class="o">.</span><span class="n">DSO</span> <span class="o">/</span> <span class="n">geo</span><span class="o">.</span><span class="n">DSD</span>
+
+    <span class="k">return</span> <span class="n">res</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">pytigre</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Reuben Lindroos, Ander Biguri.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

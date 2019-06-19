@@ -53,11 +53,8 @@
 #include "matrix.h"
 #include "voxel_backprojection.hpp"
 #include "voxel_backprojection2.hpp"
-#include "voxel_backprojection_spherical.hpp"
-#include "voxel_backprojection2_spherical.hpp"
 #include <string.h>
 #include "voxel_backprojection_parallel.hpp"
-#include "voxel_backprojection_parallel_spherical.hpp"
 #include <math.h>
 // #include <time.h>
 
@@ -139,7 +136,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 //         size_proj2=size_proj[2];
     
     
-    float const * const projections= static_cast<float const *>(mxGetData(image));
+    float  *  projections= static_cast<float *>(mxGetData(image));
     
     
     
@@ -335,52 +332,19 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // with the worng assumptions will just result in a speed like the non-accelerated code,
     // without sacrificing speedup in the standard case.
     
-    // test if we have standard rotation
-    float theta,psi;
-    theta=0;
-    psi=0;
-    for (int i=0;i<nangles;i++){
-        theta+=fabs(angles[i*3+1]);
-        psi  +=fabs(angles[i*3+2]);
-    }
-    bool standard_rotation;
-    if ((theta==0.0f) & (psi== 0.0f))
-        standard_rotation=true;
-    else
-        standard_rotation=false;
-    
-    
+   
     // Run the CUDA code.
     if (coneBeam){
-        
         if (pseudo_matched){
-            if (standard_rotation){
-                voxel_backprojection2(projections,geo,result,angles,nangles);
-            }
-            else{
-                voxel_backprojection2_spherical(projections,geo,result,angles,nangles);
-            }
-            
-        }
-        
-        else{
-            if (standard_rotation)
-                voxel_backprojection(projections,geo,result,angles,nangles);
-            else
-                voxel_backprojection_spherical(projections,geo,result,angles,nangles);
+            voxel_backprojection2(projections,geo,result,angles,nangles);
+        }else{
+            voxel_backprojection(projections,geo,result,angles,nangles);
         }
     }else{
-        if (standard_rotation){
-            voxel_backprojection_parallel(projections,geo,result,angles,nangles);
-        }else{
-//             mexPrintf("Out fucntion COR %p \n",geo.COR);
-//             mexPrintf("Out fucntion offOrig %p \n",geo.offOrigX);
-            voxel_backprojection_parallel_spherical(projections,geo,result,angles,nangles);
-        }
-        
-        
+        voxel_backprojection_parallel(projections,geo,result,angles,nangles);
     }
-    
+
+
     
     return;
 }

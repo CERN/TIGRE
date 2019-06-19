@@ -1,0 +1,437 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Welcome to pytigre’s documentation! &#8212; pytigre  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="welcome-to-pytigre-s-documentation">
+<h1>Welcome to pytigre’s documentation!<a class="headerlink" href="#welcome-to-pytigre-s-documentation" title="Permalink to this headline">¶</a></h1>
+<div class="toctree-wrapper compound">
+</div>
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></li>
+<li><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></li>
+<li><span class="xref std std-ref">jenkins</span></li>
+</ul>
+</div>
+<div class="section" id="module-tigre.algorithms">
+<span id="algorithms"></span><h1>Algorithms<a class="headerlink" href="#module-tigre.algorithms" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="tigre.algorithms.sart">
+<code class="descclassname">tigre.algorithms.</code><code class="descname">sart</code><span class="sig-paren">(</span><em>proj</em>, <em>geo</em>, <em>angles</em>, <em>niter</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#tigre.algorithms.sart" title="Permalink to this definition">¶</a></dt>
+<dd><p>solves the reconstruction problem
+using the projection data PROJ taken over ALPHA angles, corresponding
+to the geometry described in GEO, using NITER iterations.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tigre.algorithms.sirt">
+<code class="descclassname">tigre.algorithms.</code><code class="descname">sirt</code><span class="sig-paren">(</span><em>proj</em>, <em>geo</em>, <em>angles</em>, <em>niter</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#tigre.algorithms.sirt" title="Permalink to this definition">¶</a></dt>
+<dd><p>solves the reconstruction problem
+using the projection data PROJ taken over ALPHA angles, corresponding
+to the geometry descrived in GEO, using NITER iterations.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tigre.algorithms.ossart">
+<code class="descclassname">tigre.algorithms.</code><code class="descname">ossart</code><span class="sig-paren">(</span><em>proj</em>, <em>geo</em>, <em>angles</em>, <em>niter</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#tigre.algorithms.ossart" title="Permalink to this definition">¶</a></dt>
+<dd><p>solves the reconstruction problem
+using the projection data PROJ taken over ALPHA angles, corresponding
+to the geometry descrived in GEO, using NITER iterations.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tigre.algorithms.iterativereconalg">
+<code class="descclassname">tigre.algorithms.</code><code class="descname">iterativereconalg</code><span class="sig-paren">(</span><em>proj</em>, <em>geo</em>, <em>angles</em>, <em>niter</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#tigre.algorithms.iterativereconalg" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>proj</strong> – (np.ndarray, dtype=np.float32)</td>
+</tr>
+</tbody>
+</table>
+<p>Input data, shape = (geo.nDector, nangles)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>geo</strong> – (tigre.geometry)</td>
+</tr>
+</tbody>
+</table>
+<p>Geometry of detector and image (see examples/Demo code)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>angles</strong> – (np.ndarray , dtype=np.float32)</td>
+</tr>
+</tbody>
+</table>
+<p>angles of projection, shape = (nangles,3)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>niter</strong> – (int)</td>
+</tr>
+</tbody>
+</table>
+<p>number of iterations for reconstruction algorithm</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>kwargs</strong> – (dict)</td>
+</tr>
+</tbody>
+</table>
+<p>optional parameters</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>blocksize</strong> – (int)
+number of angles to be included in each iteration
+of proj and backproj for OS_SART</li>
+<li><strong>lmbda</strong> – (np.float64)
+Sets the value of the hyperparameter.</li>
+<li><strong>lmbda_red</strong> – (np.float64)
+Reduction of lambda every iteration
+lambda=lambdared*lambda. Default is 0.99</li>
+<li><strong>init</strong> – <p>(str)
+Describes different initialization techniques.</p>
+<blockquote>
+<div>”none”     : Initializes the image to zeros (default)
+“FDK”      : intializes image to FDK reconstrucition
+“multigrid”: Initializes image by solving the problem in<blockquote>
+<div>small scale and increasing it when relative
+convergence is reached.</div></blockquote>
+<dl class="docutils">
+<dt>”image” <span class="classifier-delimiter">:</span> <span class="classifier">Initialization using a user specified</span></dt>
+<dd>image. Not recommended unless you really
+know what you are doing.</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><strong>InitImg</strong> – (np.ndarray)
+Not yet implemented. Image for the “image” initialization.</li>
+<li><strong>verbose</strong> – (Boolean)
+Feedback print statements for algorithm progress
+default=True</li>
+<li><strong>Quameasopts</strong> – <p>(list)
+Asks the algorithm for a set of quality measurement
+parameters. Input should contain a list or tuple of strings of
+quality measurement names. Examples:</p>
+<blockquote>
+<div>RMSE, CC, UQI, MSSIM</div></blockquote>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>:keyword OrderStrategy <span class="classifier-delimiter">:</span> <span class="classifier">(str)</span></dt>
+<dd><dl class="first last docutils">
+<dt>Chooses the subset ordering strategy. Options are:</dt>
+<dd><dl class="first docutils">
+<dt>“ordered” <span class="classifier-delimiter">:</span> <span class="classifier">uses them in the input order, but</span></dt>
+<dd>divided</dd>
+</dl>
+<p>“random”         : orders them randomply
+“angularDistance”: chooses the next subset with the</p>
+<blockquote class="last">
+<div>biggest angular distance with the
+ones used</div></blockquote>
+</dd>
+</dl>
+</dd>
+</dl>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">tigre</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">tigre.algorithms</span> <span class="k">as</span> <span class="nn">algs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tigre.demos.Test_data</span> <span class="k">import</span> <span class="n">data_loader</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">geo</span> <span class="o">=</span> <span class="n">tigre</span><span class="o">.</span><span class="n">geometry</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;cone&#39;</span><span class="p">,</span><span class="n">default_geo</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>                        <span class="n">nVoxel</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">src_img</span> <span class="o">=</span> <span class="n">data_loader</span><span class="o">.</span><span class="n">load_head_phantom</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">nVoxel</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">proj</span> <span class="o">=</span> <span class="n">tigre</span><span class="o">.</span><span class="n">Ax</span><span class="p">(</span><span class="n">src_img</span><span class="p">,</span><span class="n">geo</span><span class="p">,</span><span class="n">angles</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span> <span class="o">=</span> <span class="n">algs</span><span class="o">.</span><span class="n">iterativereconalg</span><span class="p">(</span><span class="n">proj</span><span class="p">,</span><span class="n">geo</span><span class="p">,</span><span class="n">angles</span><span class="p">,</span><span class="n">niter</span><span class="o">=</span><span class="mi">50</span>
+<span class="gp">&gt;&gt;&gt; </span>                                <span class="n">blocksize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>tigre.demos.run() to launch ipython notebook file with examples.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tigre.algorithms.FDK">
+<code class="descclassname">tigre.algorithms.</code><code class="descname">FDK</code><span class="sig-paren">(</span><em>proj</em>, <em>geo</em>, <em>angles</em>, <em>filter='ram_lak'</em>, <em>verbose=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tigre/algorithms/single_pass_algorithms.html#FDK"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tigre.algorithms.FDK" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>solves CT image reconstruction.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">param proj:</th><td class="field-body"><p class="first">np.array(dtype=float32),
+Data input in the form of 3d</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">param geo:</th><td class="field-body"><p class="first">tigre.utilities.geometry.Geometry
+Geometry of detector and image (see examples/Demo code)</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">param angles:</th><td class="field-body"><p class="first">np.array(dtype=float32)
+Angles of projection, shape = (nangles,3) or (nangles,)</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">param filter:</th><td class="field-body"><p class="first">str
+Type of filter used for backprojection
+opts: “shep_logan”</p>
+<blockquote>
+<div><p>“cosine”
+“hamming”
+“hann”</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">param verbose:</th><td class="field-body"><p class="first">bool
+Feedback print statements for algorithm progress</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">param kwargs:</th><td class="field-body"><p class="first">dict
+keyword arguments</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">return:</th><td class="field-body"><p class="first last">np.array(dtype=float32)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">tigre</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">tigre.algorithms</span> <span class="k">as</span> <span class="nn">algs</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">tigre.demos.Test_data</span> <span class="k">import</span> <span class="n">data_loader</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">geo</span> <span class="o">=</span> <span class="n">tigre</span><span class="o">.</span><span class="n">geometry</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;cone&#39;</span><span class="p">,</span><span class="n">default_geo</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>                        <span class="n">nVoxel</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span><span class="mi">100</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">src_img</span> <span class="o">=</span> <span class="n">data_loader</span><span class="o">.</span><span class="n">load_head_phantom</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">nVoxel</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">proj</span> <span class="o">=</span> <span class="n">tigre</span><span class="o">.</span><span class="n">Ax</span><span class="p">(</span><span class="n">src_img</span><span class="p">,</span><span class="n">geo</span><span class="p">,</span><span class="n">angles</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">output</span> <span class="o">=</span> <span class="n">algs</span><span class="o">.</span><span class="n">FDK</span><span class="p">(</span><span class="n">proj</span><span class="p">,</span><span class="n">geo</span><span class="p">,</span><span class="n">angles</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>tigre.demos.run() to launch ipython notebook file with examples.</p>
+<p>This file is part of the TIGRE Toolbox</p>
+<dl class="docutils">
+<dt>Copyright (c) 2015, University of Bath and</dt>
+<dd>CERN-European Organization for Nuclear Research
+All rights reserved.</dd>
+<dt>License:            Open Source under BSD.</dt>
+<dd>See the full license at
+<a class="reference external" href="https://github.com/CERN/TIGRE/license.txt">https://github.com/CERN/TIGRE/license.txt</a></dd>
+</dl>
+<p>Contact:            <a class="reference external" href="mailto:tigre&#46;toolbox&#37;&#52;&#48;gmail&#46;com">tigre<span>&#46;</span>toolbox<span>&#64;</span>gmail<span>&#46;</span>com</a>
+Codes:              <a class="reference external" href="https://github.com/CERN/TIGRE/">https://github.com/CERN/TIGRE/</a></p>
+</div></blockquote>
+<blockquote>
+<div><dl class="docutils">
+<dt>Coded by:          MATLAB (original code): Ander Biguri</dt>
+<dd>PYTHON : Reuben Lindroos</dd>
+</dl>
+</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="tigre.algorithms.asd_pocs">
+<code class="descclassname">tigre.algorithms.</code><code class="descname">asd_pocs</code><span class="sig-paren">(</span><em>proj</em>, <em>geo</em>, <em>angles</em>, <em>niter</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#tigre.algorithms.asd_pocs" title="Permalink to this definition">¶</a></dt>
+<dd><p>solves the reconstruction problem
+using the projection data PROJ taken over ALPHA angles, corresponding
+to the geometry described in GEO, using NITER iterations.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="tigre.algorithms.cgls">
+<code class="descclassname">tigre.algorithms.</code><code class="descname">cgls</code><span class="sig-paren">(</span><em>proj</em>, <em>geo</em>, <em>angles</em>, <em>niter</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#tigre.algorithms.cgls" title="Permalink to this definition">¶</a></dt>
+<dd><p>CGLS_CBCT solves the CBCT problem using the conjugate gradient least
+squares</p>
+<blockquote>
+<div>CGLS_CBCT(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
+using the projection data PROJ taken over ALPHA angles, corresponding
+to the geometry descrived in GEO, using NITER iterations.</div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="module-tigre">
+<span id="utilities"></span><h1>Utilities<a class="headerlink" href="#module-tigre" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="tigre.geometry">
+<code class="descclassname">tigre.</code><code class="descname">geometry</code><span class="sig-paren">(</span><em>mode='cone'</em>, <em>nVoxel=None</em>, <em>default=False</em>, <em>high_quality=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tigre/utilities/geometry.html#geometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tigre.geometry" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor for geometry used in reconstruction of images in TIGRE</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mode</strong> – (str)
+‘cone’ or ‘parallel’</li>
+<li><strong>nVoxel</strong> – (np.ndarray)
+number of voxels the reconstruction is composed of</li>
+<li><strong>default</strong> – (bool)
+calculates other parameters in geometry. is by default true for
+parallel geometry</li>
+<li><strong>high_quality</strong> – (bool)
+preset values for geometry in mode=cone. WARNING: for smaller
+tests it is better to use this rather than setting nVoxel
+manually.
+if true: nVoxel = np.array([512,512,512])
+if false: nVoxel = np.array([64,64,64])</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(tigre.geometry.Geometry)</p>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">tigre</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#Cone beam with no preset parameters</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">geo_cone</span> <span class="o">=</span> <span class="n">tigre</span><span class="o">.</span><span class="n">geometry</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;cone&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Cone beam default, low quality</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">geo_cone_default</span> <span class="o">=</span> <span class="n">tigre</span><span class="o">.</span><span class="n">geometry</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;cone&#39;</span><span class="p">,</span><span class="n">high_quality</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Cone beam with specific nVoxel requirements</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">geo_cone__default2</span> <span class="o">=</span> <span class="n">tigre</span><span class="o">.</span><span class="n">geometry</span><span class="p">(</span><span class="n">nVoxel</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">]),</span>
+<span class="gp">&gt;&gt;&gt; </span>                                    <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;cone&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span>                                    <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Parallel beam</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">geo_par</span> <span class="o">=</span> <span class="n">tigre</span><span class="o">.</span><span class="n">geometry</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;parallel&#39;</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>                         <span class="n">nVoxel</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">]))</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="class">
+<dt id="tigre.plotimg">
+<em class="property">class </em><code class="descclassname">tigre.</code><code class="descname">plotimg</code><span class="sig-paren">(</span><em>cube</em>, <em>dim=None</em>, <em>slice=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tigre/utilities/plotimg.html#plotimg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tigre.plotimg" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>plotImg(cube, dim) </dt>
+<dd>plots figure</dd>
+<dt>default: progressive in slices following</dt>
+<dd>axis (dim)</dd>
+</dl>
+<p>cube : Any 3D numpy array</p>
+<dl class="docutils">
+<dt>dim <span class="classifier-delimiter">:</span> <span class="classifier">(“X”,”Y”,”Z”,”x”,”y”,”z”), optional </span></dt>
+<dd>default is “Z”
+NOTE: string arguments!</dd>
+<dt>slice: int, optional</dt>
+<dd>returns page of matrix according to index</dd>
+</dl>
+<p>a=np.ones([3,3,3])
+plotImg(a)
+&gt;&gt;&gt;returns plot along dim Z
+plotImg(a,dim=”X”)
+&gt;&gt;&gt;returns plot along dim X</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">pytigre</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Reuben Lindroos, Ander Biguri.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

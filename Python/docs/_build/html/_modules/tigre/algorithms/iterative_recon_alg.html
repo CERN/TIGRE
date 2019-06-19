@@ -1,0 +1,480 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>tigre.algorithms.iterative_recon_alg &#8212; pytigre  documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for tigre.algorithms.iterative_recon_alg</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">__future__</span> <span class="k">import</span> <span class="n">division</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">tigre.utilities.Ax</span> <span class="k">import</span> <span class="n">Ax</span>
+<span class="kn">from</span> <span class="nn">tigre.utilities.Atb</span> <span class="k">import</span> <span class="n">Atb</span>
+<span class="kn">from</span> <span class="nn">tigre.utilities.order_subsets</span> <span class="k">import</span> <span class="n">order_subsets</span>
+<span class="kn">from</span> <span class="nn">tigre.utilities.init_multigrid</span> <span class="k">import</span> <span class="n">init_multigrid</span>
+<span class="kn">from</span> <span class="nn">tigre.utilities.Measure_Quality</span> <span class="k">import</span> <span class="n">Measure_Quality</span> <span class="k">as</span> <span class="n">MQ</span>
+<span class="kn">from</span> <span class="nn">tigre.utilities.im3Dnorm</span> <span class="k">import</span> <span class="n">im3DNORM</span>
+<span class="kn">from</span> <span class="nn">tigre.algorithms.single_pass_algorithms</span> <span class="k">import</span> <span class="n">FDK</span>
+<span class="kn">from</span> <span class="nn">_minTV</span> <span class="k">import</span> <span class="n">minTV</span>
+<span class="kn">from</span> <span class="nn">_AwminTV</span> <span class="k">import</span> <span class="n">AwminTV</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module is where the umbrella class IterativeReconAlg is located</span>
+<span class="sd">which is the umbrella class to all the other algorithms apart from </span>
+<span class="sd">the single pass type algorithms. </span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># coding: utf8</span>
+
+
+<span class="k">class</span> <span class="nc">IterativeReconAlg</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    :param proj: (np.ndarray, dtype=np.float32)</span>
+<span class="sd">    Input data, shape = (geo.nDector, nangles)</span>
+
+<span class="sd">    :param geo: (tigre.geometry)</span>
+<span class="sd">    Geometry of detector and image (see examples/Demo code)</span>
+
+<span class="sd">    :param angles: (np.ndarray , dtype=np.float32)</span>
+<span class="sd">    angles of projection, shape = (nangles,3)</span>
+
+<span class="sd">    :param niter: (int)</span>
+<span class="sd">    number of iterations for reconstruction algorithm</span>
+
+<span class="sd">    :param kwargs: (dict)</span>
+<span class="sd">    optional parameters</span>
+
+<span class="sd">    Keyword Arguments</span>
+<span class="sd">    -----------------</span>
+<span class="sd">    :keyword blocksize: (int)</span>
+<span class="sd">        number of angles to be included in each iteration</span>
+<span class="sd">        of proj and backproj for OS_SART</span>
+<span class="sd">    :keyword lmbda: (np.float64)</span>
+<span class="sd">        Sets the value of the hyperparameter.</span>
+
+<span class="sd">    :keyword lmbda_red: (np.float64)</span>
+<span class="sd">        Reduction of lambda every iteration</span>
+<span class="sd">        lambda=lambdared*lambda. Default is 0.99</span>
+
+<span class="sd">    :keyword init: (str)</span>
+<span class="sd">        Describes different initialization techniques.</span>
+<span class="sd">              &quot;none&quot;     : Initializes the image to zeros (default)</span>
+<span class="sd">              &quot;FDK&quot;      : intializes image to FDK reconstrucition</span>
+<span class="sd">              &quot;multigrid&quot;: Initializes image by solving the problem in</span>
+<span class="sd">                           small scale and increasing it when relative</span>
+<span class="sd">                           convergence is reached.</span>
+<span class="sd">              &quot;image&quot;    : Initialization using a user specified</span>
+<span class="sd">                           image. Not recommended unless you really</span>
+<span class="sd">                           know what you are doing.</span>
+
+<span class="sd">    :keyword InitImg: (np.ndarray)</span>
+<span class="sd">        Not yet implemented. Image for the &quot;image&quot; initialization.</span>
+
+<span class="sd">    :keyword verbose:  (Boolean)</span>
+<span class="sd">        Feedback print statements for algorithm progress</span>
+<span class="sd">        default=True</span>
+
+<span class="sd">    :keyword Quameasopts: (list)</span>
+<span class="sd">        Asks the algorithm for a set of quality measurement</span>
+<span class="sd">        parameters. Input should contain a list or tuple of strings of</span>
+<span class="sd">        quality measurement names. Examples:</span>
+<span class="sd">            RMSE, CC, UQI, MSSIM</span>
+
+<span class="sd">    :keyword OrderStrategy : (str)</span>
+<span class="sd">        Chooses the subset ordering strategy. Options are:</span>
+<span class="sd">                 &quot;ordered&quot;        : uses them in the input order, but</span>
+<span class="sd">                                    divided</span>
+<span class="sd">                 &quot;random&quot;         : orders them randomply</span>
+<span class="sd">                 &quot;angularDistance&quot;: chooses the next subset with the</span>
+<span class="sd">                                    biggest angular distance with the</span>
+<span class="sd">                                    ones used</span>
+<span class="sd">    Usage</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; import tigre</span>
+<span class="sd">    &gt;&gt;&gt; import tigre.algorithms as algs</span>
+<span class="sd">    &gt;&gt;&gt; from tigre.demos.Test_data import data_loader</span>
+<span class="sd">    &gt;&gt;&gt; geo = tigre.geometry(mode=&#39;cone&#39;,default_geo=True,</span>
+<span class="sd">    &gt;&gt;&gt;                         nVoxel=np.array([64,64,64]))</span>
+<span class="sd">    &gt;&gt;&gt; angles = np.linspace(0,2*np.pi,100)</span>
+<span class="sd">    &gt;&gt;&gt; src_img = data_loader.load_head_phantom(geo.nVoxel)</span>
+<span class="sd">    &gt;&gt;&gt; proj = tigre.Ax(src_img,geo,angles)</span>
+<span class="sd">    &gt;&gt;&gt; output = algs.iterativereconalg(proj,geo,angles,niter=50</span>
+<span class="sd">    &gt;&gt;&gt;                                 blocksize=20)</span>
+
+<span class="sd">    tigre.demos.run() to launch ipython notebook file with examples.</span>
+
+<span class="sd">     &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proj</span><span class="p">,</span> <span class="n">geo</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">niter</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">proj</span> <span class="o">=</span> <span class="n">proj</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">angles</span> <span class="o">=</span> <span class="n">angles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">geo</span> <span class="o">=</span> <span class="n">geo</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">niter</span> <span class="o">=</span> <span class="n">niter</span>
+
+        <span class="n">options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">blocksize</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">lmbda</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">lmbda_red</span><span class="o">=</span><span class="mf">0.99</span><span class="p">,</span>
+                       <span class="n">OrderStrategy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">Quameasopts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">init</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">noneg</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                       <span class="n">computel2</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dataminimizing</span><span class="o">=</span><span class="s1">&#39;art_data_minimizing&#39;</span><span class="p">,</span>
+                       <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Iterative Reconstruction&#39;</span><span class="p">,</span> <span class="n">sup_kw_warning</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">allowed_keywords</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;V&#39;</span><span class="p">,</span><span class="s1">&#39;W&#39;</span><span class="p">,</span><span class="s1">&#39;log_parameters&#39;</span><span class="p">,</span><span class="s1">&#39;angleblocks&#39;</span><span class="p">,</span><span class="s1">&#39;angle_index&#39;</span><span class="p">,</span><span class="s1">&#39;delta&#39;</span><span class="p">,</span><span class="s1">&#39;regularisation&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">kw</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">options</span><span class="o">.</span><span class="n">has_key</span><span class="p">(</span><span class="n">kw</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">kw</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_keywords</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;sup_kw_warning&#39;</span><span class="p">):</span>
+                        <span class="c1"># Note: might not want this warning (typo checking).</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Warning: &quot;</span> <span class="o">+</span> <span class="n">kw</span> <span class="o">+</span> <span class="s2">&quot; not recognised as default parameter for instance of IterativeReconAlg.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">a1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">angles</span>
+            <span class="n">a2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;angles&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">a2</span><span class="p">))</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;angleindex&#39;</span><span class="p">),</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;angleblocks&#39;</span><span class="p">)]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_angle_index</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;W&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_w</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;V&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_v</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;res&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_res</span><span class="p">()</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;lq&#39;</span><span class="p">,</span> <span class="p">[])</span>  <span class="c1"># quameasoptslist</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;l2l&#39;</span><span class="p">,</span> <span class="p">[])</span>  <span class="c1"># l2list</span>
+
+    <span class="k">def</span> <span class="nf">set_w</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates value of W if this is not given.</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">geox</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="p">)</span>
+        <span class="n">geox</span><span class="o">.</span><span class="n">sVoxel</span><span class="p">[</span><span class="mi">0</span><span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">DSD</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">DSO</span>
+        <span class="n">geox</span><span class="o">.</span><span class="n">sVoxel</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">geox</span><span class="o">.</span><span class="n">sDetector</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">geox</span><span class="o">.</span><span class="n">sVoxel</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">geox</span><span class="o">.</span><span class="n">nVoxel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="n">geox</span><span class="o">.</span><span class="n">dVoxel</span> <span class="o">=</span> <span class="n">geox</span><span class="o">.</span><span class="n">sVoxel</span> <span class="o">/</span> <span class="n">geox</span><span class="o">.</span><span class="n">nVoxel</span>
+        <span class="n">W</span> <span class="o">=</span> <span class="n">Ax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">geox</span><span class="o">.</span><span class="n">nVoxel</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span> <span class="n">geox</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="p">,</span> <span class="s2">&quot;ray-voxel&quot;</span><span class="p">)</span>
+        <span class="n">W</span><span class="p">[</span><span class="n">W</span> <span class="o">&lt;=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">dVoxel</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="n">W</span> <span class="o">=</span> <span class="mf">1.</span><span class="o">/</span><span class="n">W</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;W&#39;</span><span class="p">,</span> <span class="n">W</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set_v</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes value of V parameter if this is not given.</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">geo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geo</span>
+        <span class="k">if</span> <span class="n">geo</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s1">&#39;parallel&#39;</span><span class="p">:</span>
+
+            <span class="n">start</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">sVoxel</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">geo</span><span class="o">.</span><span class="n">dVoxel</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">geo</span><span class="o">.</span><span class="n">offOrigin</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">stop</span> <span class="o">=</span> <span class="o">-</span><span class="n">geo</span><span class="o">.</span><span class="n">sVoxel</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">geo</span><span class="o">.</span><span class="n">dVoxel</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">geo</span><span class="o">.</span><span class="n">offOrigin</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="o">-</span><span class="n">geo</span><span class="o">.</span><span class="n">dVoxel</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">xv</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="o">+</span> <span class="n">step</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+
+            <span class="n">start</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">sVoxel</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">geo</span><span class="o">.</span><span class="n">dVoxel</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">geo</span><span class="o">.</span><span class="n">offOrigin</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">stop</span> <span class="o">=</span> <span class="o">-</span><span class="n">geo</span><span class="o">.</span><span class="n">sVoxel</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">geo</span><span class="o">.</span><span class="n">dVoxel</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">geo</span><span class="o">.</span><span class="n">offOrigin</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="o">-</span><span class="n">geo</span><span class="o">.</span><span class="n">dVoxel</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+            <span class="n">yv</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span> <span class="o">+</span> <span class="n">step</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+
+            <span class="p">(</span><span class="n">yy</span><span class="p">,</span> <span class="n">xx</span><span class="p">)</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">yv</span><span class="p">,</span> <span class="n">xv</span><span class="p">)</span>
+            <span class="n">A</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+            <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">geo</span><span class="o">.</span><span class="n">nVoxel</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">geo</span><span class="o">.</span><span class="n">nVoxel</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">DSO</span><span class="p">,</span><span class="s1">&#39;shape&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">DSO</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">DSO</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">DSO</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">DSO</span> <span class="o">=</span> <span class="n">geo</span><span class="o">.</span><span class="n">DSO</span>
+                <span class="n">V</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">DSO</span> <span class="o">/</span> <span class="p">(</span><span class="n">DSO</span> <span class="o">+</span> <span class="p">(</span><span class="n">yy</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="o">-</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span> <span class="o">-</span> <span class="p">(</span><span class="n">xx</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="o">-</span><span class="n">A</span><span class="p">[</span><span class="n">i</span><span class="p">]))))</span> <span class="o">**</span> <span class="mi">2</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span><span class="o">&gt;</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">v_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">V</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">angle_index</span><span class="p">[</span><span class="n">i</span><span class="p">]],</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">angleblocks</span><span class="p">))]</span>
+            <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">v_list</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+
+
+
+        <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">V</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;V&#39;</span><span class="p">,</span> <span class="n">V</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set_res</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calulates initial value for res if this is not given.</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;res&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">nVoxel</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+        <span class="n">init</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">init</span>
+        <span class="n">verbose</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span>
+        <span class="k">if</span> <span class="n">init</span> <span class="o">==</span> <span class="s1">&#39;multigrid&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;init multigrid in progress...&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;default blocksize=1 for init_multigrid(OS_SART)&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">res</span> <span class="o">=</span> <span class="n">init_multigrid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="p">,</span> <span class="n">alg</span><span class="o">=</span><span class="s1">&#39;SART&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;init multigrid complete.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">init</span> <span class="o">==</span> <span class="s1">&#39;FDK&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">res</span> <span class="o">=</span> <span class="n">FDK</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">init</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">nVoxel</span> <span class="o">==</span> <span class="n">init</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">res</span> <span class="o">=</span> <span class="n">init</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;wrong dimension of array for initialisation&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">set_angle_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        sets angle_index and angleblock if this is not given.</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">angleblocks</span><span class="p">,</span> <span class="n">angle_index</span> <span class="o">=</span> <span class="n">order_subsets</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">OrderStrategy</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;angleblocks&#39;</span><span class="p">,</span> <span class="n">angleblocks</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;angle_index&#39;</span><span class="p">,</span> <span class="n">angle_index</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">run_main_iter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Goes through the main iteration for the given configuration.</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Quameasopts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Quameasopts</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">niter</span><span class="p">):</span>
+
+            <span class="n">res_prev</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">Quameasopts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">res_prev</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="s2">&quot;algorithm in progress.&quot;</span><span class="p">)</span>
+                    <span class="n">toc</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">tic</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Esitmated time until completetion (s): &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">niter</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">tic</span> <span class="o">-</span> <span class="n">toc</span><span class="p">)))</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataminimizing</span><span class="p">)()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error_measurement</span><span class="p">(</span><span class="n">res_prev</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">art_data_minimizing</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        VERBOSE:</span>
+<span class="sd">        &gt;&gt;&gt; for j in range(angleblocks):</span>
+<span class="sd">        &gt;&gt;&gt;     angle = np.array([alpha[j]], dtype=np.float32)</span>
+<span class="sd">        &gt;&gt;&gt;     proj_err = proj[angle_index[j]] - Ax(res, geo, angle, &#39;ray-voxel&#39;)</span>
+<span class="sd">        &gt;&gt;&gt;     weighted_err = W[angle_index[j]] * proj_err</span>
+<span class="sd">        &gt;&gt;&gt;     backprj = Atb(weighted_err, geo, angle, &#39;FDK&#39;)</span>
+<span class="sd">        &gt;&gt;&gt;     weighted_backprj = 1 / V[angle_index[j]] * backprj</span>
+<span class="sd">        &gt;&gt;&gt;     res += weighted_backprj</span>
+<span class="sd">        &gt;&gt;&gt;     res[res&lt;0]=0</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">geo</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">angleblocks</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocksize</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">angleblocks</span><span class="p">[</span><span class="n">j</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">angle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">angleblocks</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">geo</span><span class="o">.</span><span class="n">offOrigin</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+               <span class="n">geo</span><span class="o">.</span><span class="n">offOrigin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">offOrigin</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">geo</span><span class="o">.</span><span class="n">offDetector</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">geo</span><span class="o">.</span><span class="n">offOrin</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">offDetector</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">geo</span><span class="o">.</span><span class="n">rotDetector</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">geo</span><span class="o">.</span><span class="n">rotDetector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">rotDetector</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">DSD</span><span class="p">,</span><span class="s1">&#39;shape&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">((</span><span class="n">geo</span><span class="o">.</span><span class="n">DSD</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">geo</span><span class="o">.</span><span class="n">DSD</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">geo</span><span class="o">.</span><span class="n">DSD</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">DSD</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">geo</span><span class="o">.</span><span class="n">DSO</span><span class="p">,</span><span class="s1">&#39;shape&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">((</span><span class="n">geo</span><span class="o">.</span><span class="n">DSD</span><span class="o">.</span><span class="n">shape</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">geo</span><span class="o">.</span><span class="n">DSO</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                    <span class="n">geo</span><span class="o">.</span><span class="n">DSO</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="o">.</span><span class="n">DSO</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">gradient_descent</span><span class="p">(</span><span class="n">geo</span><span class="p">,</span><span class="n">angle</span><span class="p">,</span><span class="n">j</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">noneg</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">third_dim_sum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">V</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">V</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">V</span>
+
+    <span class="k">def</span> <span class="nf">minimizeTV</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">res_prev</span><span class="p">,</span><span class="n">dtvg</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">minTV</span><span class="p">(</span><span class="n">res_prev</span><span class="p">,</span><span class="n">dtvg</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">numiter_tv</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">minimizeAwTV</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">res_prev</span><span class="p">,</span><span class="n">dtvg</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">AwminTV</span><span class="p">(</span><span class="n">res_prev</span><span class="p">,</span><span class="n">dtvg</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">numiter_tv</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">delta</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">error_measurement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_prev</span><span class="p">,</span> <span class="nb">iter</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Quameasopts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">iter</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">MQ</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span> <span class="n">res_prev</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Quameasopts</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">computel2</span><span class="p">:</span>
+            <span class="c1"># compute l2 borm for b-Ax</span>
+            <span class="n">errornow</span> <span class="o">=</span> <span class="n">im3DNORM</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proj</span> <span class="o">-</span> <span class="n">Ax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">geo</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">angles</span><span class="p">,</span> <span class="s1">&#39;ray-voxel&#39;</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">l2l</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">errornow</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">gradient_descent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">geo</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">iteration</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">res</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lmbda</span> <span class="o">*</span> <span class="mf">1.</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">V</span><span class="p">[</span><span class="n">iteration</span><span class="p">]</span> <span class="o">*</span> <span class="n">Atb</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">W</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">angle_index</span><span class="p">[</span><span class="n">iteration</span><span class="p">]]</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proj</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">angle_index</span><span class="p">[</span><span class="n">iteration</span><span class="p">]]</span>
+                                                                                                     <span class="o">-</span> <span class="n">Ax</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">res</span><span class="p">,</span> <span class="n">geo</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="s1">&#39;interpolated&#39;</span><span class="p">)),</span> <span class="n">geo</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="s1">&#39;FDK&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">getres</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">res</span>
+
+    <span class="k">def</span> <span class="nf">getl2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">l2l</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">item</span> <span class="o">==</span> <span class="s1">&#39;geo&#39;</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="p">),</span> <span class="s1">&#39;shape&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+                    <span class="n">parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span> <span class="o">+</span> <span class="s1">&#39; shape: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">parameters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span> <span class="o">+</span> <span class="s1">&#39;: &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">item</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">decorator</span><span class="p">(</span><span class="n">IterativeReconAlg</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">docstring</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calls run_main_iter when parameters are given to it.</span>
+
+<span class="sd">    :param IterativeReconAlg: obj, class</span>
+<span class="sd">        instance of IterativeReconAlg</span>
+<span class="sd">    :param name: str</span>
+<span class="sd">        for name of func</span>
+<span class="sd">    :param docstring: str</span>
+<span class="sd">        other documentation that may need to be included from external source.</span>
+<span class="sd">    :return: func</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import tigre</span>
+<span class="sd">    &gt;&gt;&gt; from tigre.demos.Test_data.data_loader import load_head_phantom</span>
+<span class="sd">    &gt;&gt;&gt; geo = tigre.geometry_defaut(high_quality=False)</span>
+<span class="sd">    &gt;&gt;&gt; src = load_head_phantom(number_of_voxels=geo.nVoxel)</span>
+<span class="sd">    &gt;&gt;&gt; proj = Ax(src,geo,angles)</span>
+<span class="sd">    &gt;&gt;&gt; angles = np.linspace(0,2*np.pi,100)</span>
+<span class="sd">    &gt;&gt;&gt; iterativereconalg = decorator(IterativeReconAlg)</span>
+<span class="sd">    &gt;&gt;&gt; output = iterativereconalg(proj,geo,angles, niter=50)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">iterativereconalg</span><span class="p">(</span><span class="n">proj</span><span class="p">,</span> <span class="n">geo</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">niter</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">alg</span> <span class="o">=</span> <span class="n">IterativeReconAlg</span><span class="p">(</span><span class="n">proj</span><span class="p">,</span> <span class="n">geo</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">niter</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">alg</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="n">alg</span><span class="o">.</span><span class="n">run_main_iter</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">alg</span><span class="o">.</span><span class="n">computel2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">alg</span><span class="o">.</span><span class="n">getres</span><span class="p">(),</span> <span class="n">alg</span><span class="o">.</span><span class="n">getl2</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">alg</span><span class="o">.</span><span class="n">getres</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">docstring</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">iterativereconalg</span><span class="p">,</span> <span class="s1">&#39;__doc__&#39;</span><span class="p">,</span> <span class="n">docstring</span> <span class="o">+</span> <span class="n">IterativeReconAlg</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">iterativereconalg</span><span class="p">,</span> <span class="s1">&#39;__doc__&#39;</span><span class="p">,</span> <span class="n">IterativeReconAlg</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">iterativereconalg</span><span class="p">,</span> <span class="s1">&#39;__name__&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">iterativereconalg</span>
+
+
+<span class="n">iterativereconalg</span> <span class="o">=</span> <span class="n">decorator</span><span class="p">(</span><span class="n">IterativeReconAlg</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">pytigre</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Reuben Lindroos, Ander Biguri.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.5</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -66,8 +66,9 @@ else
 end
 errorL2=[];
 
-[~,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
+[alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 index_angles=cell2mat(orig_index);
+angles_reorder=cell2mat(alphablocks);
 
 % does detector rotation exists?
 if ~isfield(geo,'rotDetector')
@@ -87,15 +88,8 @@ W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 
 % Back-Projection weigth, V
-if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
-    [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
-        -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
-    A = permute(angles(1,:)+pi/2, [1 3 2]);
-    V = (geo.DSO ./ (geo.DSO + bsxfun(@times, y, sin(-A)) - bsxfun(@times, x, cos(-A)))).^2;
-    V=permute(single(V),[2 1 3]);
-else
-    V=ones([geo.nVoxel(1:2).',size(angles,2)],'single');
-end
+V=computeV(geo,angles,alphablocks);
+
 clear A x y dx dz;
 %% hyperparameter stuff
 nesterov=false;
@@ -123,7 +117,7 @@ for ii=1:niter
     
     % reorder angles
     
-    for jj=index_angles;
+    for jj=index_angles
         if size(offOrigin,2)==size(angles,2)
             geo.offOrigin=offOrigin(:,jj);
         end
@@ -151,10 +145,10 @@ for ii=1:niter
         if nesterov
             % The nesterov update is quite similar to the normal update, it
             % just uses this update, plus part of the last one.
-            ynesterov=res +  bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(:,jj))),geo,angles(:,jj)));
+            ynesterov=res+ bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj))),geo,angles_reorder(:,jj)));
             res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
         else
-            res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(res,geo,angles(:,jj))),geo,angles(:,jj)));
+             res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj))),geo,angles_reorder(:,jj)));
         end
         if nonneg
             res=max(res,0);
