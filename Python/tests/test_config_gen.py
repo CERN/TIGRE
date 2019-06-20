@@ -16,7 +16,7 @@ def test_generator(configuration,algorithm):
     def test(self):
         if algorithm == 'fbp' and (configuration in ['configuration1.npy', 'configuration3.npy']):
             unittest.skip('FBP skipped for conebeam')
-        if algorithm == 'FDK' and (configuration in ['configuration2.npy','configuration4.npy']):
+        elif algorithm == 'FDK' and (configuration in ['configuration2.npy','configuration4.npy']):
             unittest.skip('FDK skipped for parallel beam. ')
         else:
             self.assertTrue(AlgorithmTest(configuration,algorithm).unit_test_call())
