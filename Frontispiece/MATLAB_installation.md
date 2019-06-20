@@ -89,7 +89,7 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
    Run the following commands: 
    
    - `getenv('CUDA_PATH')`; 
-   - `getenv(VS120COMNTOOLS);` (MVS2013) `getenv(VS140COMNTOOLS);` (MVS2015 or newer)
+   - `getenv('VS120COMNTOOLS');` (MVS2013) `getenv('VS140COMNTOOLS');` (MVS2015 or newer)
    
    They should return something similar to:
    
