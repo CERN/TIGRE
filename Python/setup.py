@@ -222,7 +222,7 @@ class custom_build_ext(build_ext):
 
 
 setup(name='pytigre',
-      version='0.1.3',
+      version='0.1.5',
       author='Reuben Lindroos, Sam loescher',
       packages=find_packages(),
       scripts=['tigre/demos/launch.sh'],

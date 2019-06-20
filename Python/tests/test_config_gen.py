@@ -1,4 +1,4 @@
-from tests.algorithm_test import AlgorithmTest
+from algorithm_test import AlgorithmTest
 import unittest
 import os
 import numpy as np

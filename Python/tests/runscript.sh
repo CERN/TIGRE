@@ -23,7 +23,6 @@ python $DIR/generate_configurations.py
 
 algs=("FDK" "fbp" "sirt" "ossart" "cgls" "asd_pocs" "awasd_pocs")
 
-
 # RUN algorithm tests
 for testnr in {1..4}; do
 	for alg in "${algs[@]}"; do
