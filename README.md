@@ -1,5 +1,4 @@
 [![pip](https://img.shields.io/pypi/v/pytigre.svg?label=pip%20install%20pytigre)]()
-[![Documentation Status](https://readthedocs.org/projects/tigre/badge/?version=latest)](https://tigre.readthedocs.io/en/latest/?badge=latest)
 
 TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
 ======
