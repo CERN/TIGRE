@@ -74,6 +74,14 @@ class FISTA(IterativeReconAlg):
                  "angularDistance": chooses the next subset with the
                                     biggest angular distance with the
                                     ones used
+    :keyword tviter: (int)
+        Number of iterations of im3ddenoise for every iteration.
+        Default: 20
+
+    :keyword lambda: (float)
+        Adjustement of lambdaForTV. Default: 0.1
+
+
     Usage
     --------
     >>> import numpy as np
@@ -123,6 +131,14 @@ class FISTA(IterativeReconAlg):
             self.__L__ = 2.e4
         else:
             self.__L__ = kwargs['hyper']
+        if 'tviter' not in kwargs:
+            self.__numiter_tv__ = 20
+        else:
+            self.__numiter_tv__ = kwargs['tviter']
+        if 'lambda' not in kwargs:
+            self.__lambda__ = 0.1
+        else:
+            self.__lambda__ = kwargs['lambda']
         self.__t__ = 1
         self.__bm__ = 1. / self.__L__
 
@@ -150,7 +166,7 @@ class FISTA(IterativeReconAlg):
         t = self.__t__
         Quameasopts = self.Quameasopts
         x_rec = copy.deepcopy(self.res)
-        lambdaForTv = 2 * self.__bm__ * self.lmbda
+        lambdaForTv = 2 * self.__bm__ * self.__lambda__
         for i in range(self.niter):
 
             res_prev = None
@@ -168,7 +184,7 @@ class FISTA(IterativeReconAlg):
             getattr(self, self.dataminimizing)()
 
             x_rec_old = copy.deepcopy(x_rec)
-            x_rec = im3ddenoise(self.res, 20, 1. / lambdaForTv)
+            x_rec = im3ddenoise(self.res, self.__numiter_tv__, 1. / lambdaForTv)
             t_old = t
             t = (1 + np.sqrt(1 + 4 * t ** 2)) / 2
             self.res = x_rec + (t_old - 1) / t * (x_rec - x_rec_old)

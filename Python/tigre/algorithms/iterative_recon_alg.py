@@ -88,6 +88,9 @@ class IterativeReconAlg(object):
     :keyword tviter: (int)
         For algorithms that make use of a tvdenoising step in their
         iterations.
+    :keyword tvlambda: (float)
+        For algorithms that make use of a tvdenoising step in their
+        iterations.
 
     Usage
     --------
@@ -326,11 +329,6 @@ class IterativeReconAlg(object):
             if self.noneg:
                 self.res = self.res.clip(min=0)
 
-    def third_dim_sum(self, V):
-        if V.ndim == 3:
-            return np.sum(V, axis=2, dtype=np.float32)
-        else:
-            return V
 
     def minimizeTV(self, res_prev, dtvg):
         return minTV(res_prev, dtvg, self.numiter_tv)
