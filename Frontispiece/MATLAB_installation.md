@@ -106,7 +106,9 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 
    If it fails, try opening `mex_CUDA_win64.xml` with your favourite editor and changing line 125 to link to your local `nvcc` location.
    
-9. Run file `TIGRE/MATLAB/Demos/d03_generateData.m`. If it successfully executes, you have installed and compiled TIGRE properly.
+9. Initialize TIGRE by typing `InitTIGRE` on the MATLAB Command Window.
+
+10. Run file `TIGRE/MATLAB/Demos/d03_generateData.m`. If it successfully executes, you have installed and compiled TIGRE properly.
 
 
 If none of this works, please contact the authors at [tigre.toolbox@gmail.com](mailto:tigre.toolbox@gmail.com) or [ander.biguri@gmail.com](mailto:ander.biguri@gmail.com)
