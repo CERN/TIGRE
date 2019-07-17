@@ -61,11 +61,13 @@ class CGLS(IterativeReconAlg):
         avgtime = []
         for i in range(self.niter):
             if i == 0:
-                print("CGLS Algorithm in progress.")
+                if self.verbose:
+                    print("CGLS Algorithm in progress.")
                 toc = time.clock()
             if i == 1:
                 tic = time.clock()
-                print('Esitmated time until completetion (s): ' +
+                if self.verbose:
+                    print('Esitmated time until completetion (s): ' +
                       str((self.niter - 1) * (tic - toc)))
             avgtic = time.clock()
             q = tigre.Ax(self.__p__, self.geo, self.angles, 'ray-voxel')
@@ -84,9 +86,11 @@ class CGLS(IterativeReconAlg):
                 tigre.Ax(self.res, self.geo, self.angles, 'ray-voxel')
             self.l2l[i] = np.linalg.norm(aux)
             if i > 0 and self.l2l[i] > self.l2l[i - 1]:
-                print('re-initilization of CGLS called at iteration:' + str(i))
+                if self.verbose:
+                    print('re-initilization of CGLS called at iteration:' + str(i))
                 if self.re_init_at_iteration + 1 == i:
-                    print('Algorithm exited with two consecutive reinitializations.')
+                    if self.verbose:
+                        print('Algorithm exited with two consecutive reinitializations.')
                     return self.res
                 self.res -= alpha * self.__p__
                 self.reinitialise_cgls()
@@ -107,9 +111,9 @@ class CGLS(IterativeReconAlg):
 
             self.__gamma__ = gamma1
             self.__p__ = s + beta * self.__p__
-
-        print('Average time taken for each iteration for CGLS:' +
-              str(sum(avgtime) / len(avgtime)) + '(s)')
+        if self.verbose:
+            print('Average time taken for each iteration for CGLS:' +
+                  str(sum(avgtime) / len(avgtime)) + '(s)')
 
 
 cgls = decorator(CGLS, name='cgls')
