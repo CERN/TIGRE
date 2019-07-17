@@ -54,17 +54,8 @@ class IterativeReconAlg(object):
 
     :keyword init: (str)
         Describes different initialization techniques.
-              "none"     : Initializes the image to zeros (default)
+               None      : Initializes the image to zeros (default)
               "FDK"      : intializes image to FDK reconstrucition
-              "multigrid": Initializes image by solving the problem in
-                           small scale and increasing it when relative
-                           convergence is reached.
-              "image"    : Initialization using a user specified
-                           image. Not recommended unless you really
-                           know what you are doing.
-
-    :keyword InitImg: (np.ndarray)
-        Not yet implemented. Image for the "image" initialization.
 
     :keyword verbose:  (Boolean)
         Feedback print statements for algorithm progress
@@ -87,7 +78,13 @@ class IterativeReconAlg(object):
 
     :keyword tviter: (int)
         For algorithms that make use of a tvdenoising step in their
-        iterations.
+        iterations. This includes:
+
+            OS_SART_TV
+            ASD_POCS
+            AWASD_POCS
+            FISTA
+
     :keyword tvlambda: (float)
         For algorithms that make use of a tvdenoising step in their
         iterations.
