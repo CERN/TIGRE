@@ -44,7 +44,7 @@
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search"  style="background: white" >
+        <div class="wy-side-nav-search" >
           
 
           
@@ -83,7 +83,7 @@
 <li><a class="reference internal" href="#">Welcome to pytigre’s documentation!</a></li>
 <li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
 <li><a class="reference internal" href="#module-tigre.algorithms">Algorithms</a></li>
-<li><a class="reference internal" href="#module-tigre">Utilities</a></li>
+<li><a class="reference internal" href="#module-utilities">Utilities</a></li>
 </ul>
 </div>
             
@@ -1423,78 +1423,8 @@ Coded by:          MATLAB (original code): Ander Biguri</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-tigre">
-<span id="utilities"></span><h1>Utilities<a class="headerlink" href="#module-tigre" title="Permalink to this headline">¶</a></h1>
-<dl class="function">
-<dt id="tigre.geometry">
-<code class="descclassname">tigre.</code><code class="descname">geometry</code><span class="sig-paren">(</span><em>mode='cone'</em>, <em>nVoxel=None</em>, <em>default=False</em>, <em>high_quality=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tigre/utilities/geometry.html#geometry"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tigre.geometry" title="Permalink to this definition">¶</a></dt>
-<dd><p>Constructor for geometry used in reconstruction of images in TIGRE</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>mode</strong> – (str)
-‘cone’ or ‘parallel’</li>
-<li><strong>nVoxel</strong> – (np.ndarray)
-number of voxels the reconstruction is composed of</li>
-<li><strong>default</strong> – (bool)
-calculates other parameters in geometry. is by default true for
-parallel geometry</li>
-<li><strong>high_quality</strong> – (bool)
-preset values for geometry in mode=cone. WARNING: for smaller
-tests it is better to use this rather than setting nVoxel
-manually.
-if true: nVoxel = np.array([512,512,512])
-if false: nVoxel = np.array([64,64,64])</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">(tigre.geometry.Geometry)</p>
-</td>
-</tr>
-</tbody>
-</table>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">tigre</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1">#Cone beam with no preset parameters</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">geo_cone</span> <span class="o">=</span> <span class="n">tigre</span><span class="o">.</span><span class="n">geometry</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;cone&#39;</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Cone beam default, low quality</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">geo_cone_default</span> <span class="o">=</span> <span class="n">tigre</span><span class="o">.</span><span class="n">geometry</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;cone&#39;</span><span class="p">,</span><span class="n">high_quality</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Cone beam with specific nVoxel requirements</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">geo_cone__default2</span> <span class="o">=</span> <span class="n">tigre</span><span class="o">.</span><span class="n">geometry</span><span class="p">(</span><span class="n">nVoxel</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">]),</span>
-<span class="gp">&gt;&gt;&gt; </span>                                    <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;cone&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span>                                    <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Parallel beam</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">geo_par</span> <span class="o">=</span> <span class="n">tigre</span><span class="o">.</span><span class="n">geometry</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;parallel&#39;</span><span class="p">,</span>
-<span class="gp">&gt;&gt;&gt; </span>                         <span class="n">nVoxel</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">,</span><span class="mi">64</span><span class="p">]))</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="class">
-<dt id="tigre.plotimg">
-<em class="property">class </em><code class="descclassname">tigre.</code><code class="descname">plotimg</code><span class="sig-paren">(</span><em>cube</em>, <em>dim=None</em>, <em>slice=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/tigre/utilities/plotimg.html#plotimg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#tigre.plotimg" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>plotImg(cube, dim) </dt>
-<dd>plots figure</dd>
-<dt>default: progressive in slices following</dt>
-<dd>axis (dim)</dd>
-</dl>
-<p>cube : Any 3D numpy array</p>
-<dl class="docutils">
-<dt>dim <span class="classifier-delimiter">:</span> <span class="classifier">(“X”,”Y”,”Z”,”x”,”y”,”z”), optional </span></dt>
-<dd>default is “Z”
-NOTE: string arguments!</dd>
-<dt>slice: int, optional</dt>
-<dd>returns page of matrix according to index</dd>
-</dl>
-<p>a=np.ones([3,3,3])
-plotImg(a)
-&gt;&gt;&gt;returns plot along dim Z
-plotImg(a,dim=”X”)
-&gt;&gt;&gt;returns plot along dim X</p>
-</dd></dl>
-
+<div class="section" id="module-utilities">
+<span id="utilities"></span><h1>Utilities<a class="headerlink" href="#module-utilities" title="Permalink to this headline">¶</a></h1>
 </div>
 
 
@@ -1533,18 +1463,6 @@ plotImg(a,dim=”X”)
 
   
   
-    
-    <!-- Theme Analytics -->
-    <script>
-    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-
-    ga('create', 'UA-XXXXXXX-1', 'auto');
-    ga('send', 'pageview');
-    </script>
-
     
    
 
