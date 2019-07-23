@@ -3,16 +3,17 @@ from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.utilities.im3Dnorm import im3DNORM
 from tigre.algorithms.single_pass_algorithms import FDK
-from tigre.Ax import Ax
+from tigre.utilities.Ax import Ax
 import time
 import copy
 import numpy as np
 
 
 class ASD_POCS(IterativeReconAlg):
-    __doc__ = (" solves the reconstruction problem\n"
-               " using the projection data PROJ taken over ALPHA angles, corresponding\n"
-               " to the geometry described in GEO, using NITER iterations.\n")
+    __doc__ = (
+        " solves the reconstruction problem\n"
+        " using the projection data PROJ taken over ALPHA angles, corresponding\n"
+        " to the geometry descrived in GEO, using NITER iterations.\n") + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
@@ -26,9 +27,13 @@ class ASD_POCS(IterativeReconAlg):
         if 'rmax' not in kwargs:
             self.rmax = 0.95
         if 'maxl2err' not in kwargs:
-            self.epsilon = im3DNORM(FDK(proj, geo, angles), 2)*0.2
-        if "numiter_tv" not in kwargs:
+            self.epsilon = im3DNORM(FDK(proj, geo, angles), 2) * 0.2
+        else:
+            self.epsilon = kwargs['maxl2err']
+        if "tviter" not in kwargs:
             self.numiter_tv = 20
+        else:
+            self.numiter_tv = kwargs["tviter"]
         if 'regularisation' not in kwargs:
             self.regularisation = 'minimizeTV'
         self.beta = self.lmbda
@@ -45,12 +50,13 @@ class ASD_POCS(IterativeReconAlg):
                     toc = time.clock()
                 if n_iter == 1:
                     tic = time.clock()
-                    print('Esitmated time until completetion (s): ' + str((self.niter - 1) * (tic - toc)))
+                    print('Esitmated time until completetion (s): ' +
+                          str((self.niter - 1) * (tic - toc)))
             res_prev = copy.deepcopy(self.res)
             n_iter += 1
             getattr(self, self.dataminimizing)()
             g = Ax(self.res, self.geo, self.angles)
-            dd = im3DNORM(g-self.proj, 2)
+            dd = im3DNORM(g - self.proj, 2)
             dp_vec = self.res - res_prev
             dp = im3DNORM(dp_vec, 2)
 
@@ -62,18 +68,20 @@ class ASD_POCS(IterativeReconAlg):
             dg_vec = self.res - res_prev
             dg = im3DNORM(dg_vec, 2)
 
-            if dg > self.rmax*dp and dd > self.epsilon:
-                dtvg = dtvg*self.alpha_red
+            if dg > self.rmax * dp and dd > self.epsilon:
+                dtvg = dtvg * self.alpha_red
 
             self.beta *= self.beta_red
-            c = np.dot(dg_vec.reshape(-1,), dp_vec.reshape(-1,))/max(dg*dp, 1e-6)
-            if (c < -0.99 and dd <= self.epsilon) or self.beta < 0.005 or n_iter > self.niter:
+            c = np.dot(dg_vec.reshape(-1,), dp_vec.reshape(-1,)) / \
+                max(dg * dp, 1e-6)
+            if (c < -0.99 and dd <=
+                    self.epsilon) or self.beta < 0.005 or n_iter > self.niter:
                 if self.verbose:
                     print("\n"
                           "     Stop criteria met: \n"
                           "     c = " + str(c) + "\n"
-                          "     beta = " + str(self.beta) + "\n" 
-                          "     iter = " + str(n_iter)) + "\n"
+                          "     beta = " + str(self.beta) + "\n"
+                          "     iter = " + str(n_iter) + "\n")
                 stop_criteria = True
 
 

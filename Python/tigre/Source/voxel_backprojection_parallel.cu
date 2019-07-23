@@ -60,7 +60,7 @@ inline int cudaCheckErrors(const char * msg)
    cudaError_t __err = cudaGetLastError();
    if (__err != cudaSuccess)
    {
-      printf("CUDA:tv_denoising:%s:%s\n",msg, cudaGetErrorString(__err));
+      printf("CUDA:voxel_backprojection_par:%s:%s\n",msg, cudaGetErrorString(__err));
       cudaDeviceReset();
       return 1;
    }

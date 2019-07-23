@@ -1,3 +1,5 @@
+[![pip](https://img.shields.io/pypi/v/pytigre.svg?label=pip%20install%20pytigre)]()
+
 TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
 ======
 

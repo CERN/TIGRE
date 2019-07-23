@@ -30,22 +30,22 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
 
     cdef int total_projections = angles.shape[0]
 
-    # TODO: For now we will just make a new geometry (C) struct from the python one,
-    # but this is really ugly and should be changed.
-
     #PERMUTE INPUT: convert_contig_mode(C_CONTIG) -> F_CONTIG
     # (N, V, U) -> (U, V, N) 
     geometry.convert_contig_mode()
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
-
+    if not c_geometry:
+        raise MemoryError()
     cdef float** c_projections = <float**> malloc(total_projections * sizeof(float*))
-
+    if not c_projections:
+        raise MemoryError()
     cdef int i = 0
     for i in range(total_projections):
        c_projections[i] = <float*> malloc(geometry.nDetector[0] * geometry.nDetector[1] * sizeof(float))
 
     cdef float* c_angles = <float*> angles.data
-
+    if not c_angles:
+        raise MemoryError()
     if projection_type == "ray-voxel":
         interpolated = False
     elif projection_type == "interpolated":
@@ -75,27 +75,11 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
             cuda_raise_errors(siddon_ray_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections))
         else:
             cuda_raise_errors(interpolation_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections))
-    cdef float theta,psi;
-    theta=0;
-    psi=0;
-    for i in range(total_projections):
-        theta+=abs(c_angles[i*3+1])
-        psi  +=abs(c_angles[i*3+2])
-    
-    standard_rotation = True;
-    
-    if psi == 0.0 and theta == 0.0:
-        standard_rotation=True
-    else:
-        standard_rotation=False
-
     img = img.copy(order='C')
-
 
     cdef np.npy_intp shape[2]
     shape[0] = <np.npy_intp> geometry.nDetector[0]
     shape[1] = <np.npy_intp> geometry.nDetector[1]
-
     projections = [None] * total_projections
     for i in range(total_projections):
         projections[i] = np.PyArray_SimpleNewFromData(2, shape, np.NPY_FLOAT32, c_projections[i])
@@ -105,8 +89,6 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     free(c_projections)  # Free pointer array, not actual data
     free_c_geometry(c_geometry)
     geometry.convert_contig_mode()
-    #TODO: check stack doesn't cause memory leak, as it seems projections needs multiple free calls
-    # A possible solution is to rewrite SiddonProjection to allow 1d array results
 
     # PERMUTE OUTPUT: (U, V, N) -> (N, V, U)
     return np.stack(projections,0).swapaxes(1,2).copy(order='C')

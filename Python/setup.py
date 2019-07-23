@@ -11,14 +11,14 @@ import sys
 # Code from https://github.com/rmcgibbo/npcuda-example/blob/master/cython/setup.py
 compute_capability_args = [  # '-gencode=arch=compute_20,code=sm_20',
     '-gencode=arch=compute_30,code=sm_30',
-     '-gencode=arch=compute_37,code=sm_37',
-     '-gencode=arch=compute_52,code=sm_52',
-     '-gencode=arch=compute_60,code=sm_60',
+    '-gencode=arch=compute_37,code=sm_37',
+    '-gencode=arch=compute_52,code=sm_52',
+    '-gencode=arch=compute_60,code=sm_60',
      '-gencode=arch=compute_61,code=sm_61',
-     #'-gencode=arch=compute_70,code=sm_70', #untested
-     '--ptxas-options=-v', '-c',
-     '--default-stream=per-thread',
-     '--compiler-options', "'-fPIC'"]
+    # '-gencode=arch=compute_70,code=sm_70', #untested
+    '--ptxas-options=-v', '-c',
+    '--default-stream=per-thread',
+    '--compiler-options', "'-fPIC'"]
 
 
 def find_in_path(name, path):
@@ -53,8 +53,8 @@ def locate_cuda():
             if not nvcc_is_in_path:
                 print('WARNING: The nvcc binary could not be located in your $PATH. '
                       'Either add it to your path, or set $CUDAHOME')
-                raise EnvironmentError(
-                    'The CUDA  path could not be located in $PATH or $CUDAHOME. Either add it to your path, or set $CUDAHOME')
+                # raise EnvironmentError(
+                #     'The CUDA  path could not be located in $PATH or $CUDAHOME. Either add it to your path, or set $CUDAHOME')
             home = '/usr/local/cuda'
             nvcc = pjoin(home, 'bin', 'nvcc')
         else:
@@ -63,7 +63,7 @@ def locate_cuda():
     cudaconfig = {'home': home, 'nvcc': nvcc,
                   'include': pjoin(home, 'include'),
                   'lib64': pjoin(home, 'lib64')}
-    for k, v in cudaconfig.iteritems():
+    for k, v in cudaconfig.items():
         if not os.path.exists(v):
             raise EnvironmentError(
                 'The CUDA  path could not be located in $PATH or $CUDAHOME. Either add it to your path, or set $CUDAHOME')
@@ -222,7 +222,7 @@ class custom_build_ext(build_ext):
 
 
 setup(name='pytigre',
-      version='0.1.4',
+      version='0.1.5',
       author='Reuben Lindroos, Sam loescher',
       packages=find_packages(),
       scripts=['tigre/demos/launch.sh'],

@@ -57,11 +57,13 @@ class ConeGeometryDefault(Geometry):
             self.DSD = 1536                                     # Distance Source Detector      (mm)
             self.DSO = 1000                                     # Distance Source Origin        (mm)
                                                                 # Detector parameters
-            self.nDetector = np.array((128, 128))               # (V,U) number of pixels        (px)
-            self.dDetector = np.array((0.8, 0.8)) * 4           # size of each pixel            (mm)
-            self.sDetector = self.nDetector * self.dDetector        # total size of the detector    (mm)
+            self.nDetector = np.array((nVoxel[1],
+                                       nVoxel[2])
+                                                                ) # (V,U) number of pixels        (px)
+            self.dDetector = np.array([0.8, 0.8])               # size of each pixel            (mm)
+            self.sDetector = self.dDetector * self.nDetector    # total size of the detector    (mm)
                                                                 # Image parameters
-            self.nVoxel = np.array((nVoxel))                # number of voxels              (vx)
+            self.nVoxel = np.array((nVoxel))                    # number of voxels              (vx)
             self.sVoxel = np.array((256, 256, 256))             # total size of the image       (mm)
             self.dVoxel = self.sVoxel / self.nVoxel             # size of each voxel            (mm)
             # Offsets

@@ -8,14 +8,15 @@ import copy
 from tigre.utilities.Atb import Atb
 from tigre.utilities.filtering import filtering
 
-# TODO: this is quite nasty; it would be nice to reorganise file structure later so top level folder is always in path
+# TODO: this is quite nasty; it would be nice to reorganise file structure
+# later so top level folder is always in path
 currDir = os.path.dirname(os.path.realpath(__file__))
 rootDir = os.path.abspath(os.path.join(currDir, '..'))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
 
-def FDK(proj, geo, angles, filter='ram_lak', verbose=False, **kwargs):
+def FDK(proj, geo, angles,**kwargs):
     """
     solves CT image reconstruction.
 
@@ -81,23 +82,35 @@ def FDK(proj, geo, angles, filter='ram_lak', verbose=False, **kwargs):
 
     if 'niter' in kwargs:
         kwargs.pop('niter')
+    if 'verbose' in kwargs:
+        verbose = kwargs['verbose']
+    else: verbose = False
 
     geo = copy.deepcopy(geo)
     geo.check_geo(angles)
     geo.checknans()
+    if 'filter' in kwargs: filter = kwargs['filter']
+    else: filter = None
     if filter is not None:
-        geo.filter = filter
+        geo.filter = kwargs['filter']
     # Weight
     proj_filt = np.zeros(proj.shape, dtype=np.float32)
     for ii in range(angles.shape[0]):
-        xv = np.arange((-geo.nDetector[1] / 2) + 0.5, 1 + (geo.nDetector[1] / 2) - 0.5) * geo.dDetector[1]
-        yv = np.arange((-geo.nDetector[0] / 2) + 0.5, 1 + (geo.nDetector[0] / 2) - 0.5) * geo.dDetector[0]
+        xv = np.arange((-geo.nDetector[1] / 2) + 0.5,
+                       1 + (geo.nDetector[1] / 2) - 0.5) * geo.dDetector[1]
+        yv = np.arange((-geo.nDetector[0] / 2) + 0.5,
+                       1 + (geo.nDetector[0] / 2) - 0.5) * geo.dDetector[0]
         (yy, xx) = np.meshgrid(xv, yv)
 
         w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx ** 2 + yy ** 2))
         proj_filt[ii] = copy.deepcopy(proj[ii]) * w
 
-    proj_filt = filtering(proj_filt, geo, angles, parker=False, verbose=verbose)
+    proj_filt = filtering(
+        proj_filt,
+        geo,
+        angles,
+        parker=False,
+        verbose=verbose)
     # m = {
     #     'py_projfilt': proj_filt,
     #
@@ -112,13 +125,22 @@ def FDK(proj, geo, angles, filter='ram_lak', verbose=False, **kwargs):
 fdk = FDK
 
 
-def fbp(proj, geo, angles, filter=None, verbose=False, **kwargs):
+def fbp(proj, geo, angles, **kwargs):
     __doc__ = FDK.__doc__
     if geo.mode != 'parallel':
         raise ValueError("Only use FBP for parallel beam. Check geo.mode.")
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
-    proj_filt = filtering(copy.deepcopy(proj), geox, angles, parker=False, verbose=verbose)
+    if 'verbose' in kwargs:
+        verbose = kwargs['verbose']
+    else: verbose = False
+
+    proj_filt = filtering(
+        copy.deepcopy(proj),
+        geox,
+        angles,
+        parker=False,
+        verbose=verbose)
     res = Atb(proj_filt, geo, angles) * geo.DSO / geo.DSD
 
     return res
