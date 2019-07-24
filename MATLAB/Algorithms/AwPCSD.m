@@ -90,7 +90,7 @@ W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks);
+V=computeV(geo,angles,num2cell(angles));
 
 %Initialize image.
 f=zeros(geo.nVoxel','single');

@@ -680,7 +680,7 @@ do { \
             cudaDeviceSynchronize();
         }
         cudaCheckErrors("Memory free");
-//         cudaDeviceReset();
+        cudaDeviceReset();
     }
         
 void checkFreeMemory(int deviceCount,size_t *mem_GPU_global){

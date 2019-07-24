@@ -46,6 +46,7 @@ function [ f,qualMeasOut] = PCSD(proj,geo,angles,maxiter,varargin)
 
 measurequality=~isempty(QualMeasOpts);
 
+
 % does detector rotation exists?
 if ~isfield(geo,'rotDetector')
     geo.rotDetector=[0;0;0];
@@ -67,7 +68,7 @@ W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 
 % Compute V
-V=computeV(geo,angles,{angles});
+V=computeV(geo,angles,num2cell(angles,1));
 
 
 %Initialize image.
@@ -126,7 +127,7 @@ while ~stop_criteria %POCS
     end
     
     % Compute L2 error of actual image. Ax-b
-    dd=im3Dnorm(Ax(f,geo,angles);-proj,'L2');
+    dd=im3Dnorm(Ax(f,geo,angles)-proj,'L2');
     % Compute change in the image after last SART iteration
     dp_vec=(f-f0);
     
