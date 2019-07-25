@@ -11,7 +11,6 @@ Welcome to pytigre's documentation!
    :caption: Contents:
 
 
-
 Indices and tables
 ==================
 
@@ -28,5 +27,5 @@ Algorithms
 
 Utilities
 =========
-.. automodule:: tigre
+.. automodule:: utilities
       :members: geometry, plotimg, plotproj
