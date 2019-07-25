@@ -79,13 +79,14 @@ end
 % Projection weigth, W
 
 geoaux=geo;
-geoaux.sVoxel([1 2])=geo.sVoxel([1 2])*1.1; % a Bit bigger, to avoid numerical division by zero (small number)
+geoaux.sVoxel([1 2])=geo.sDetector([1])*1.1; % a Bit bigger, to avoid numerical division by zero (small number)
 geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
 W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
+W(W>0.1)=0.1;
 
 % Back-Projection weigth, V
 V=computeV(geo,angles,alphablocks);
@@ -145,10 +146,10 @@ for ii=1:niter
         if nesterov
             % The nesterov update is quite similar to the normal update, it
             % just uses this update, plus part of the last one.
-            ynesterov=res+ bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj))),geo,angles_reorder(:,jj)));
+            ynesterov=res+ bsxfun(@times,1./V(:,:,index_angles(:,jj)),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj))),geo,angles_reorder(:,jj)));
             res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
         else
-             res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj))),geo,angles_reorder(:,jj)));
+             res=res+lambda* bsxfun(@times,1./V(:,:,index_angles(:,jj)),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj))),geo,angles_reorder(:,jj)));
         end
         if nonneg
             res=max(res,0);
