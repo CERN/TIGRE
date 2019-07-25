@@ -12,8 +12,8 @@ import copy
 class FISTA(IterativeReconAlg):
     """
     Solves the reconstruction problem
-    using the projection data PROJ taken over ALPHA angles, corresponding
-    to the geometry descrived in GEO, using NITER iterations.
+    using the projection data PROJ taken over ALPHA angles, correspond-
+    ing to the geometry descrived in GEO, using NITER iterations.
 
     Parameters
     ----------
@@ -53,33 +53,23 @@ class FISTA(IterativeReconAlg):
                            image. Not recommended unless you really
                            know what you are doing.
 
-    :keyword InitImg: (np.ndarray)
-        Not yet implemented. Image for the "image" initialization.
-
     :keyword verbose:  (Boolean)
         Feedback print statements for algorithm progress
         default=True
-
-    :keyword Quameasopts: (list)
-        Asks the algorithm for a set of quality measurement
-        parameters. Input should contain a list or tuple of strings of
-        quality measurement names. Examples:
-            RMSE, CC, UQI, MSSIM
 
     :keyword OrderStrategy : (str)
         Chooses the subset ordering strategy. Options are:
                  "ordered"        : uses them in the input order, but
                                     divided
-                 "random"         : orders them randomply
-                 "angularDistance": chooses the next subset with the
-                                    biggest angular distance with the
-                                    ones used
+                 "random"         : orders them randomly
+
     :keyword tviter: (int)
         Number of iterations of im3ddenoise for every iteration.
         Default: 20
 
-    :keyword lambda: (float)
-        Adjustement of lambdaForTV. Default: 0.1
+    :keyword tvlambda: (float)
+        Multiplier for lambdaForTV which is proportional to L (hyper)
+        Default: 0.1
 
 
     Usage
@@ -138,7 +128,7 @@ class FISTA(IterativeReconAlg):
         if 'lambda' not in kwargs:
             self.__lambda__ = 0.1
         else:
-            self.__lambda__ = kwargs['lambda']
+            self.__lambda__ = kwargs['tvlambda']
         self.__t__ = 1
         self.__bm__ = 1. / self.__L__
 
