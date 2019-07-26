@@ -8,7 +8,7 @@ version: 2
 python:
   version: 3.7
   install:
-    - requirements: docs/requirements.txt
+    - requirements: Python/docs/requirements.txt
     
 
 
