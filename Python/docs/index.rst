@@ -3,29 +3,32 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pytigre's documentation!
-===================================
+Pytigre: Documentation
+======================
 
+This is a collection of the demos for pytigre, showcasing how to use the different algorithms and utilities in the software. To get the source files for the demos, run::
+
+    $ wget https://github.com/CERN/TIGRE/tree/master/Python/tigre/demos .
+
+Demos
+=====
+.. toctree::
+   :maxdepth: 6
+   
+   d01_create_geometry
+   d02_sample_data
+   d03_simple_image_reconstruction
+   d04_plottingfunctions
+   d05_Algorithms01
+   d06_Algorithms02
+   d07_Algorithms03
+   d08_algorithms04
+   demo10_FISTA
+
+Other
+=====
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-
-Algorithms
-==========
-.. automodule:: tigre.algorithms
-      :members: sart, sirt, ossart, iterativereconalg, FDK, fbp, asd_pocs, aw_asdpocs, cgls, fista
-
-
-Utilities
-=========
-.. automodule:: utilities
-      :members: geometry, plotimg, plotproj
+   
+   license
+   help

@@ -61,20 +61,11 @@ class IterativeReconAlg(object):
         Feedback print statements for algorithm progress
         default=True
 
-    :keyword Quameasopts: (list)
-        Asks the algorithm for a set of quality measurement
-        parameters. Input should contain a list or tuple of strings of
-        quality measurement names. Examples:
-            RMSE, CC, UQI, MSSIM
-
     :keyword OrderStrategy : (str)
         Chooses the subset ordering strategy. Options are:
                  "ordered"        : uses them in the input order, but
                                     divided
                  "random"         : orders them randomply
-                 "angularDistance": chooses the next subset with the
-                                    biggest angular distance with the
-                                    ones used
 
     :keyword tviter: (int)
         For algorithms that make use of a tvdenoising step in their
@@ -88,6 +79,9 @@ class IterativeReconAlg(object):
     :keyword tvlambda: (float)
         For algorithms that make use of a tvdenoising step in their
         iterations.
+
+            OS_SART_TV
+            FISTA
 
     Usage
     --------
