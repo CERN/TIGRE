@@ -81,8 +81,6 @@ class IterativeReconAlg(object):
         iterations.
 
             OS_SART_TV
-            ASD_POCS
-            AWASD_POCS
             FISTA
 
     Usage

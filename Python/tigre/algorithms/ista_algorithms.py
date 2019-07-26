@@ -46,13 +46,6 @@ class FISTA(IterativeReconAlg):
         Describes different initialization techniques.
               "none"     : Initializes the image to zeros (default)
               "FDK"      : intializes image to FDK reconstrucition
-              "multigrid": Initializes image by solving the problem in
-                           small scale and increasing it when relative
-                           convergence is reached.
-              "image"    : Initialization using a user specified
-                           image. Not recommended unless you really
-                           know what you are doing.
-
     :keyword verbose:  (Boolean)
         Feedback print statements for algorithm progress
         default=True
@@ -70,8 +63,6 @@ class FISTA(IterativeReconAlg):
     :keyword tvlambda: (float)
         Multiplier for lambdaForTV which is proportional to L (hyper)
         Default: 0.1
-
-
     Usage
     --------
     >>> import numpy as np
@@ -125,7 +116,7 @@ class FISTA(IterativeReconAlg):
             self.__numiter_tv__ = 20
         else:
             self.__numiter_tv__ = kwargs['tviter']
-        if 'lambda' not in kwargs:
+        if 'tvlambda' not in kwargs:
             self.__lambda__ = 0.1
         else:
             self.__lambda__ = kwargs['tvlambda']
