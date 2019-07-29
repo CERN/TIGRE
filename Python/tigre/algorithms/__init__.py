@@ -9,7 +9,7 @@ from .pocs_algorithms import asd_pocs
 from .pocs_algorithms import awasd_pocs
 from .single_pass_algorithms import fbp
 from .single_pass_algorithms import fdk
-from .conjugate_gradient_algorithms import cgls
+from .krylov_subspace_algorithms import cgls
 from .ista_algorithms import fista
 from .ista_algorithms import ista
 
