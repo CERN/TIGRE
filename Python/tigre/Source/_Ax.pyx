@@ -14,7 +14,7 @@ cdef extern from "numpy/arrayobject.h":
 
 
 cdef extern from "Siddon_projection.hpp":
-    cdef int siddon_ray_projection(float* img, c_Geometry geo, float** result, float* alphas, int nalpha)
+    cdef int siddon_ray_projection(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, int GPUID)
 cdef extern from "Siddon_projection_parallel.hpp":
     cdef int siddon_ray_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha)
 cdef extern from "ray_interpolated_projection.hpp":
@@ -26,8 +26,8 @@ def cuda_raise_errors(error_code):
     if error_code:
         raise ValueError('TIGRE: Call to Ax failed')
 
-def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=2] angles, projection_type="ray-voxel", mode="cone"):
-
+def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=2] angles, GPUID, projection_type="ray-voxel", mode="cone"):
+    #print('It entrans _Ax.pyx and projection_type=', projection_type, 'GPUID is', GPUID)
     cdef int total_projections = angles.shape[0]
 
     #PERMUTE INPUT: convert_contig_mode(C_CONTIG) -> F_CONTIG
@@ -67,7 +67,7 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     cdef float* c_img = <float*> img.data
     if cone_beam:
         if not interpolated:
-            cuda_raise_errors(siddon_ray_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections))
+            cuda_raise_errors(siddon_ray_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections, GPUID))
         else:
             cuda_raise_errors(interpolation_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections))
     else:

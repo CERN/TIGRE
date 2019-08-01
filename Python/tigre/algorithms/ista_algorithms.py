@@ -12,8 +12,8 @@ import copy
 class FISTA(IterativeReconAlg):
     """
     Solves the reconstruction problem
-    using the projection data PROJ taken over ALPHA angles, correspond-
-    ing to the geometry descrived in GEO, using NITER iterations.
+    using the projection data PROJ taken over ALPHA angles, corresponding
+    to the geometry descrived in GEO, using NITER iterations.
 
     Parameters
     ----------
@@ -46,23 +46,34 @@ class FISTA(IterativeReconAlg):
         Describes different initialization techniques.
               "none"     : Initializes the image to zeros (default)
               "FDK"      : intializes image to FDK reconstrucition
+              "multigrid": Initializes image by solving the problem in
+                           small scale and increasing it when relative
+                           convergence is reached.
+              "image"    : Initialization using a user specified
+                           image. Not recommended unless you really
+                           know what you are doing.
+
+    :keyword InitImg: (np.ndarray)
+        Not yet implemented. Image for the "image" initialization.
+
     :keyword verbose:  (Boolean)
         Feedback print statements for algorithm progress
         default=True
+
+    :keyword Quameasopts: (list)
+        Asks the algorithm for a set of quality measurement
+        parameters. Input should contain a list or tuple of strings of
+        quality measurement names. Examples:
+            RMSE, CC, UQI, MSSIM
 
     :keyword OrderStrategy : (str)
         Chooses the subset ordering strategy. Options are:
                  "ordered"        : uses them in the input order, but
                                     divided
-                 "random"         : orders them randomly
-
-    :keyword tviter: (int)
-        Number of iterations of im3ddenoise for every iteration.
-        Default: 20
-
-    :keyword tvlambda: (float)
-        Multiplier for lambdaForTV which is proportional to L (hyper)
-        Default: 0.1
+                 "random"         : orders them randomply
+                 "angularDistance": chooses the next subset with the
+                                    biggest angular distance with the
+                                    ones used
     Usage
     --------
     >>> import numpy as np
@@ -112,14 +123,6 @@ class FISTA(IterativeReconAlg):
             self.__L__ = 2.e4
         else:
             self.__L__ = kwargs['hyper']
-        if 'tviter' not in kwargs:
-            self.__numiter_tv__ = 20
-        else:
-            self.__numiter_tv__ = kwargs['tviter']
-        if 'tvlambda' not in kwargs:
-            self.__lambda__ = 0.1
-        else:
-            self.__lambda__ = kwargs['tvlambda']
         self.__t__ = 1
         self.__bm__ = 1. / self.__L__
 
@@ -147,7 +150,7 @@ class FISTA(IterativeReconAlg):
         t = self.__t__
         Quameasopts = self.Quameasopts
         x_rec = copy.deepcopy(self.res)
-        lambdaForTv = 2 * self.__bm__ * self.__lambda__
+        lambdaForTv = 2 * self.__bm__ * self.lmbda
         for i in range(self.niter):
 
             res_prev = None
@@ -165,7 +168,7 @@ class FISTA(IterativeReconAlg):
             getattr(self, self.dataminimizing)()
 
             x_rec_old = copy.deepcopy(x_rec)
-            x_rec = im3ddenoise(self.res, self.__numiter_tv__, 1. / lambdaForTv)
+            x_rec = im3ddenoise(self.res, 20, 1. / lambdaForTv)
             t_old = t
             t = (1 + np.sqrt(1 + 4 * t ** 2)) / 2
             self.res = x_rec + (t_old - 1) / t * (x_rec - x_rec_old)

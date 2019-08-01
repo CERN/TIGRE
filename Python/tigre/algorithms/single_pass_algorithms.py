@@ -16,7 +16,7 @@ if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
 
-def FDK(proj, geo, angles,**kwargs):
+def FDK(proj, geo, angles, filter='ram_lak', verbose=False, **kwargs):
     """
     solves CT image reconstruction.
 
@@ -82,17 +82,12 @@ def FDK(proj, geo, angles,**kwargs):
 
     if 'niter' in kwargs:
         kwargs.pop('niter')
-    if 'verbose' in kwargs:
-        verbose = kwargs['verbose']
-    else: verbose = False
 
     geo = copy.deepcopy(geo)
     geo.check_geo(angles)
     geo.checknans()
-    if 'filter' in kwargs: filter = kwargs['filter']
-    else: filter = None
     if filter is not None:
-        geo.filter = kwargs['filter']
+        geo.filter = filter
     # Weight
     proj_filt = np.zeros(proj.shape, dtype=np.float32)
     for ii in range(angles.shape[0]):
@@ -125,16 +120,12 @@ def FDK(proj, geo, angles,**kwargs):
 fdk = FDK
 
 
-def fbp(proj, geo, angles, **kwargs):
+def fbp(proj, geo, angles, filter=None, verbose=False, **kwargs):
     __doc__ = FDK.__doc__
     if geo.mode != 'parallel':
         raise ValueError("Only use FBP for parallel beam. Check geo.mode.")
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
-    if 'verbose' in kwargs:
-        verbose = kwargs['verbose']
-    else: verbose = False
-
     proj_filt = filtering(
         copy.deepcopy(proj),
         geox,

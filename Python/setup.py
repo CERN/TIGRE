@@ -222,11 +222,10 @@ class custom_build_ext(build_ext):
 
 
 setup(name='pytigre',
-      version='0.1.7',
+      version='0.1.5',
       author='Reuben Lindroos, Sam loescher',
       packages=find_packages(),
-      scripts=['tigre/demos/launch.sh',
-               'tests/runscript.sh'],
+      scripts=['tigre/demos/launch.sh'],
       include_package_data=True,
       ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext],
       py_modules=['tigre.py'],

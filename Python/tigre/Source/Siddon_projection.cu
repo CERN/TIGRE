@@ -238,12 +238,15 @@ __global__ void kernelPixelDetector( Geometry geo,
 }
 
 
-int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
+int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const angles,int nangles, int GPUID){
     
     
-    
+    cudaSetDevice(GPUID);
+    cudaDeviceSynchronize();
+    //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+    if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
     //DONE, Tesla found
-    
+
     // copy data to CUDA memory
     cudaArray *d_imagedata = 0;
     

@@ -54,34 +54,40 @@ class IterativeReconAlg(object):
 
     :keyword init: (str)
         Describes different initialization techniques.
-               None      : Initializes the image to zeros (default)
+              "none"     : Initializes the image to zeros (default)
               "FDK"      : intializes image to FDK reconstrucition
+              "multigrid": Initializes image by solving the problem in
+                           small scale and increasing it when relative
+                           convergence is reached.
+              "image"    : Initialization using a user specified
+                           image. Not recommended unless you really
+                           know what you are doing.
+
+    :keyword InitImg: (np.ndarray)
+        Not yet implemented. Image for the "image" initialization.
 
     :keyword verbose:  (Boolean)
         Feedback print statements for algorithm progress
         default=True
+
+    :keyword Quameasopts: (list)
+        Asks the algorithm for a set of quality measurement
+        parameters. Input should contain a list or tuple of strings of
+        quality measurement names. Examples:
+            RMSE, CC, UQI, MSSIM
 
     :keyword OrderStrategy : (str)
         Chooses the subset ordering strategy. Options are:
                  "ordered"        : uses them in the input order, but
                                     divided
                  "random"         : orders them randomply
+                 "angularDistance": chooses the next subset with the
+                                    biggest angular distance with the
+                                    ones used
 
     :keyword tviter: (int)
         For algorithms that make use of a tvdenoising step in their
-        iterations. This includes:
-
-            OS_SART_TV
-            ASD_POCS
-            AWASD_POCS
-            FISTA
-
-    :keyword tvlambda: (float)
-        For algorithms that make use of a tvdenoising step in their
         iterations.
-
-            OS_SART_TV
-            FISTA
 
     Usage
     --------
@@ -320,6 +326,11 @@ class IterativeReconAlg(object):
             if self.noneg:
                 self.res = self.res.clip(min=0)
 
+    def third_dim_sum(self, V):
+        if V.ndim == 3:
+            return np.sum(V, axis=2, dtype=np.float32)
+        else:
+            return V
 
     def minimizeTV(self, res_prev, dtvg):
         return minTV(res_prev, dtvg, self.numiter_tv)

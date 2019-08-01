@@ -95,7 +95,7 @@ inline int cudaCheckErrors(const char * msg)
      **/
     
 // this definitionmust go here.
-void CreateTexture2(int num_devices, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate);
+void CreateTexture2( int GPUID, int num_devices, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate);
 
 __global__ void matrixConstantMultiply(const Geometry geo,float* image,float constant){
     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -314,14 +314,15 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
 //      Description:    Main host function for FDK backprojection (invokes the kernel)
 //______________________________________________________________________________
 
-int voxel_backprojection2(float * projections, Geometry geo, float* result,float const * const alphas, int nalpha){
+int voxel_backprojection2(float * projections, Geometry geo, float* result,float const * const alphas, int nalpha, int GPUID){
     
     
     
     
     // Prepare for MultiGPU
-    int deviceCount = 0;
-    cudaGetDeviceCount(&deviceCount);
+    int deviceCount = 1;
+    // int deviceCount = 0;
+    // cudaGetDeviceCount(&deviceCount);
     if(cudaCheckErrors("Device query fail")){return 1;}
     if (deviceCount == 0) {
         //mexErrMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","There are no available device(s) that support CUDA\n");
@@ -349,7 +350,10 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     size_t num_bytes_img = (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geoArray[0].nVoxelZ* sizeof(float);
     float** dimage=(float**)malloc(deviceCount*sizeof(float*));
     for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(GPUID);
+        cudaDeviceSynchronize();
+        //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+        if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
         cudaMalloc((void**)&dimage[dev], num_bytes_img);
         if(cudaCheckErrors("cudaMalloc fail")){return 1;}
     }
@@ -380,7 +384,10 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));;
     
     for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(GPUID);
+        cudaDeviceSynchronize();
+        //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+        if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
         for (int i = 0; i < nStreamDevice; ++i){
             cudaStreamCreate(&stream[i+dev*nStreamDevice]);
             
@@ -417,7 +424,10 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
 //
         // Initialize the memory if its the first time.
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(GPUID);
+            cudaDeviceSynchronize();
+            //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+            if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
             cudaMemset(dimage[dev],0,num_bytes_img);
             if(cudaCheckErrors("memset fail")){return 1;}
         }
@@ -461,7 +471,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                 
                 // Now get the projections on memory
 
-                CreateTexture2(deviceCount,
+                CreateTexture2( GPUID,  deviceCount,
                         partial_projection[proj_block_split],geo,
                         &d_cuArrTex[(proj_block_split%2)*deviceCount],
                         proj_split_size[proj_block_split],
@@ -470,7 +480,10 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                         (proj_block_split<2)&!proj&!img_slice);// Only allocate if its the first 2 calls
                 
                 for (dev = 0; dev < deviceCount; dev++){
-                    cudaSetDevice(dev);
+                    cudaSetDevice(GPUID);
+                    cudaDeviceSynchronize();
+                    //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+                    if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
                     cudaStreamSynchronize(stream[dev*nStreamDevice+1]);
                  }
 
@@ -481,8 +494,10 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                     if(geoArray[img_slice*deviceCount+dev].nVoxelZ==0)
                         break;
                     
-                    cudaSetDevice(dev);
-                    
+                    cudaSetDevice(GPUID);
+                    cudaDeviceSynchronize();
+                    //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+                    if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
                     
                     
                     int divx,divy,divz;
@@ -573,13 +588,19 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
         } // END projection splits
         
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(GPUID);
+            cudaDeviceSynchronize();
+            //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+            if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
             matrixConstantMultiply<<<60,MAXTREADS,0,stream[dev*nStreamDevice]>>>(  geoArray[img_slice*deviceCount+dev],dimage[dev],geo.dVoxelX*geo.dVoxelY*geo.dVoxelZ/(geo.dDetecU*geo.dDetecV));
         }
 
         // Now we need to take the image out of the GPU
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(GPUID);
+            cudaDeviceSynchronize();
+            //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+            if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
             cudaStreamSynchronize(stream[dev*nStreamDevice]);
             
             num_bytes_img_curr=(size_t)geoArray[img_slice*deviceCount+dev].nVoxelX*(size_t)geoArray[img_slice*deviceCount+dev].nVoxelY*(size_t)geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
@@ -589,8 +610,9 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     } // end image splits
     
     for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(GPUID);
         cudaDeviceSynchronize();
+        if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
     }  
     
     
@@ -599,7 +621,10 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     for(unsigned int i=0; i<2;i++){ // 2 buffers (if needed, maybe only 1)
         if (!two_buffers_used && i==1)
             break;        for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(GPUID);
+            cudaDeviceSynchronize();
+            //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+            if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
             cudaDestroyTextureObject(texProj[i*deviceCount+dev]);
             cudaFreeArray(d_cuArrTex[i*deviceCount+dev]);
         }
@@ -607,7 +632,10 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
 
 
     for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(GPUID);
+        cudaDeviceSynchronize();
+        //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+        if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
         cudaFree(dimage[dev]);
     }
     
@@ -631,7 +659,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     
     if(cudaCheckErrors("cudaFree fail")){return 1;}
     
-//     cudaDeviceReset(); // For the Nvidia Visual Profiler
+     cudaDeviceReset(); // For the Nvidia Visual Profiler
     return 0;
     
 }  // END voxel_backprojection
@@ -640,13 +668,15 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
 
 
 
-void CreateTexture2(int num_devices, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate){
+void CreateTexture2(int GPUID, int num_devices, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate){
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
     const cudaExtent extent =make_cudaExtent(geo.nDetecV, geo.nDetecU, nangles);
     if (allocate){
         for (unsigned int dev = 0; dev < num_devices; dev++){
-            cudaSetDevice(dev);
-            
+            cudaSetDevice(GPUID);
+            cudaDeviceSynchronize();
+            //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+            //if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
             //cudaArray Descriptor
             cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
             //cuda Array
@@ -655,7 +685,10 @@ void CreateTexture2(int num_devices, float* projectiondata,Geometry geo,cudaArra
         }
     }
     for (unsigned int dev = 0; dev < num_devices; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(GPUID);
+        cudaDeviceSynchronize();
+        //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+        // if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
         cudaMemcpy3DParms copyParams = {0};
         //Array creation
         copyParams.srcPtr   = make_cudaPitchedPtr((void *)projectiondata, extent.width*sizeof(float), extent.width, extent.height);
@@ -667,7 +700,10 @@ void CreateTexture2(int num_devices, float* projectiondata,Geometry geo,cudaArra
 
     //Array creation End
     for (unsigned int dev = 0; dev < num_devices; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(GPUID);
+        cudaDeviceSynchronize();
+        //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+        // if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
         cudaResourceDesc    texRes;
         memset(&texRes, 0, sizeof(cudaResourceDesc));
         texRes.resType = cudaResourceTypeArray;
@@ -684,17 +720,21 @@ void CreateTexture2(int num_devices, float* projectiondata,Geometry geo,cudaArra
     }
 }
 #ifndef BACKPROJECTION_HPP
-void checkDevices(void){
+void checkDevices(void){ 
     // CODE assumes
     // 1.-All available devices are usable by this code
     // 2.-All available devices are equal, they are the same machine (warning thrown)
     int dev;
-    int deviceCount = 0;
-    cudaGetDeviceCount(&deviceCount);
+    int deviceCount = 1;
+    // int deviceCount = 0;
+   // cudaGetDeviceCount(&deviceCount);
     char * devicenames;
     cudaDeviceProp deviceProp;
     for (dev = 0; dev < deviceCount; dev++) {
-        cudaSetDevice(dev);
+        cudaSetDevice(GPUID);
+        cudaDeviceSynchronize();
+        //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+        if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
         cudaGetDeviceProperties(&deviceProp, dev);
         if (dev>0){
             if (strcmp(devicenames,deviceProp.name)!=0){
@@ -705,7 +745,7 @@ void checkDevices(void){
         devicenames=deviceProp.name;
     }
 }
-void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
+void splitCTbackprojection( int deviceCount,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
     
     
     // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
@@ -847,12 +887,15 @@ void rollPitchYawT(Geometry geo,int i, Point3D* point){
             +cos(geo.dPitch[i])*cos(geo.dYaw[i])*auxPoint.z;
     
 }
-void checkFreeMemory(int deviceCount,size_t *mem_GPU_global){
+void checkFreeMemory( int deviceCount,size_t *mem_GPU_global){
     size_t memfree;
     size_t memtotal;
     
     for (int dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(GPUID);
+        cudaDeviceSynchronize();
+        //cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!");
+        if(cudaCheckErrors("Unable to switch to specific GPU Device BUT currently it cannot be stopped!!!!!!")){return 1;}
         cudaMemGetInfo(&memfree,&memtotal);
         if(dev==0) *mem_GPU_global=memfree;
         if(memfree<memtotal/2){
