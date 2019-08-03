@@ -8,6 +8,7 @@ def Atb(projections, geo, angles,  krylov="matched"):
     if not np.isreal(projections).all():
         raise ValueError("Complex types not compatible for back projection.")
     geox = copy.deepcopy(geo)
+    geox.check_geo(angles)
     """
        Here we cast all values in geo to single point precision float. This way we 
        know what behaviour to expect from pytigre to Cuda and can change 
