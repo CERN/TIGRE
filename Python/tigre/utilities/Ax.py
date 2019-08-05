@@ -16,7 +16,7 @@ def Ax(img, geo, angles,  krylov="ray-voxel"):
     single parameters accordingly. 
     """
     geox.cast_to_single()
-    geox.checknans()
+    #geox.checknans()
 
     if all(img.shape != geox.nVoxel):
         raise ValueError("Input data should be of shape geo.nVoxel: "+ str(geox.nVoxel) +

@@ -15,7 +15,7 @@ def Atb(projections, geo, angles,  krylov="matched"):
        single parameters accordingly. 
     """
     geox.cast_to_single()
-    geox.checknans()
+    #geox.checknans()
 
     if projections.shape != (geox.angles.shape[0],geox.nDetector[0],geox.nDetector[1]):
         raise ValueError("Expected data shape: " + str((geox.angles.shape[0], geox.nDetector[0],geox.nDetector[1])) +
