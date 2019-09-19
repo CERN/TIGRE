@@ -4,6 +4,29 @@ import numpy as np
 import tigre
 
 def svd_power_method(arr,geo,angles,**kwargs):
+    """
+    method to determine the largest singular value for the rectangular A
+    projection matrix.
+
+    :param arr: (np.ndarray, dtype=np.float32)
+        random vector
+    :param geo: (tigre.geometry())
+        geometry of the set up
+    :param angles: (np.ndarray, dtype=np.float32)
+        angles of projection
+    :param kwargs:
+        optional arguments
+    :keyword maxiter: (int)
+        number of iterations to run unless margin of error epsilon has
+        been reached. Default: 100
+    :keyword epsilon: (float)
+        margin of error for the algorithm. Default: 0.001
+    :keyword verbose: (bool)
+        print stuff. Default: False
+
+    :return: (float)
+        the largest singular value of the A matrix.
+    """
     maxiter = 100
     if 'maxiter' in kwargs:
         maxiter = kwargs['maxiter']
