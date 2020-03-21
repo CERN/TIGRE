@@ -33,7 +33,7 @@ def im3DNORM(img,normind,varargin=None):
         return np.linalg.norm(img.ravel(),normind)
     if type(normind) is int:
         return np.linalg.norm(img.ravel(),normind)
-    if normind is 'TV':
+    if normind == 'TV':
         raise Exception('TV not yet implemented')
 
 
