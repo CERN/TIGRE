@@ -9,6 +9,11 @@ import copy
 import numpy as np
 
 
+if hasattr(time, 'perf_counter'):
+    default_timer = time.perf_counter
+else:
+    default_timer = time.clock
+
 class ASD_POCS(IterativeReconAlg):
     """
     ASD_POCS solves the ASD_POCS total variation constrained image in 3D
@@ -132,9 +137,9 @@ class ASD_POCS(IterativeReconAlg):
             if self.verbose:
                 if n_iter == 0:
                     print("POCS Algorithm in progress.")
-                    toc = time.perf_counter()
+                    toc = default_timer()
                 if n_iter == 1:
-                    tic = time.perf_counter()
+                    tic = default_timer()
                     print('Esitmated time until completetion (s): ' +
                           str((self.niter - 1) * (tic - toc)))
             res_prev = copy.deepcopy(self.res)

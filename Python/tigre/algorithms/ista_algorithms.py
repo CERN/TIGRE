@@ -9,6 +9,11 @@ from tigre.algorithms.single_pass_algorithms import FDK
 import copy
 
 
+if hasattr(time, 'perf_counter'):
+    default_timer = time.perf_counter
+else:
+    default_timer = time.clock
+
 class FISTA(IterativeReconAlg):
     """
     Solves the reconstruction problem
@@ -157,9 +162,9 @@ class FISTA(IterativeReconAlg):
                 if i == 0:
                     print(str(self.name).upper() +
                           ' ' + "algorithm in progress.")
-                    toc = time.perf_counter()
+                    toc = default_timer()
                 if i == 1:
-                    tic = time.perf_counter()
+                    tic = default_timer()
                     print('Esitmated time until completetion (s): ' +
                           str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()

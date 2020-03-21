@@ -5,6 +5,11 @@ import time
 import copy
 
 
+if hasattr(time, 'perf_counter'):
+    default_timer = time.perf_counter
+else:
+    default_timer = time.clock
+
 class SART(IterativeReconAlg):
     __doc__ = (
         "SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
@@ -85,9 +90,9 @@ class OS_SART_TV(IterativeReconAlg):
                 if i == 0:
                     print(str(self.name).upper() +
                           ' ' + "algorithm in progress.")
-                    toc = time.perf_counter()
+                    toc = default_timer()
                 if i == 1:
-                    tic = time.perf_counter()
+                    tic = default_timer()
                     print('Esitmated time until completetion (s): ' +
                           str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()
