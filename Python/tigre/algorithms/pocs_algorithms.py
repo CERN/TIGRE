@@ -132,9 +132,9 @@ class ASD_POCS(IterativeReconAlg):
             if self.verbose:
                 if n_iter == 0:
                     print("POCS Algorithm in progress.")
-                    toc = time.clock()
+                    toc = time.perf_counter()
                 if n_iter == 1:
-                    tic = time.clock()
+                    tic = time.perf_counter()
                     print('Esitmated time until completetion (s): ' +
                           str((self.niter - 1) * (tic - toc)))
             res_prev = copy.deepcopy(self.res)

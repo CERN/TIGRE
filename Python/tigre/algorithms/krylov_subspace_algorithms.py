@@ -63,18 +63,18 @@ class CGLS(IterativeReconAlg):
             if i == 0:
                 if self.verbose:
                     print("CGLS Algorithm in progress.")
-                toc = time.clock()
+                toc = time.perf_counter()
             if i == 1:
-                tic = time.clock()
+                tic = time.perf_counter()
                 if self.verbose:
                     print('Esitmated time until completetion (s): ' +
                       str((self.niter - 1) * (tic - toc)))
-            avgtic = time.clock()
+            avgtic = time.perf_counter()
             q = tigre.Ax(self.__p__, self.geo, self.angles, 'ray-voxel')
             q_norm = np.linalg.norm(q)
             alpha = self.__gamma__ / (q_norm * q_norm)
             self.res += alpha * self.__p__
-            avgtoc = time.clock()
+            avgtoc = time.perf_counter()
             avgtime.append(abs(avgtic - avgtoc))
             for item in self.__dict__:
                 if isinstance(getattr(self, item), np.ndarray):

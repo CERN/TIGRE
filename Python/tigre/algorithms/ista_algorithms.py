@@ -157,9 +157,9 @@ class FISTA(IterativeReconAlg):
                 if i == 0:
                     print(str(self.name).upper() +
                           ' ' + "algorithm in progress.")
-                    toc = time.clock()
+                    toc = time.perf_counter()
                 if i == 1:
-                    tic = time.clock()
+                    tic = time.perf_counter()
                     print('Esitmated time until completetion (s): ' +
                           str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()
@@ -198,9 +198,9 @@ class ISTA(FISTA):
                 if i == 0:
                     print(str(self.name).upper() +
                           ' ' + "algorithm in progress.")
-                    toc = time.clock()
+                    toc = time.perf_counter()
                 if i == 1:
-                    tic = time.clock()
+                    tic = time.perf_counter()
                     print('Esitmated time until completetion (s): ' +
                           str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()
