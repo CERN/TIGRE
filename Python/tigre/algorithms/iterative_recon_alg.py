@@ -21,6 +21,11 @@ the single pass type algorithms.
 # coding: utf8
 
 
+if hasattr(time, 'perf_counter'):
+    default_timer = time.perf_counter
+else:
+    default_timer = time.clock
+
 class IterativeReconAlg(object):
     """
     Parameters
@@ -285,9 +290,9 @@ class IterativeReconAlg(object):
                 if i == 0:
                     print(str(self.name).upper() +
                           ' ' + "algorithm in progress.")
-                    toc = time.clock()
+                    toc = default_timer()
                 if i == 1:
-                    tic = time.clock()
+                    tic = default_timer()
                     print('Esitmated time until completetion (s): ' +
                           str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()
