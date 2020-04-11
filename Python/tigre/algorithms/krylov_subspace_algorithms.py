@@ -10,6 +10,11 @@ import os
 import math
 
 
+if hasattr(time, 'perf_counter'):
+    default_timer = time.perf_counter
+else:
+    default_timer = time.clock
+
 class CGLS(IterativeReconAlg):
     __doc__ = (
         " CGLS_CBCT solves the CBCT problem using the conjugate gradient least\n"
@@ -63,18 +68,18 @@ class CGLS(IterativeReconAlg):
             if i == 0:
                 if self.verbose:
                     print("CGLS Algorithm in progress.")
-                toc = time.clock()
+                toc = default_timer()
             if i == 1:
-                tic = time.clock()
+                tic = default_timer()
                 if self.verbose:
                     print('Esitmated time until completetion (s): ' +
                       str((self.niter - 1) * (tic - toc)))
-            avgtic = time.clock()
+            avgtic = default_timer()
             q = tigre.Ax(self.__p__, self.geo, self.angles, 'ray-voxel')
             q_norm = np.linalg.norm(q)
             alpha = self.__gamma__ / (q_norm * q_norm)
             self.res += alpha * self.__p__
-            avgtoc = time.clock()
+            avgtoc = default_timer()
             avgtime.append(abs(avgtic - avgtoc))
             for item in self.__dict__:
                 if isinstance(getattr(self, item), np.ndarray):

@@ -1,4 +1,5 @@
 from __future__ import print_function
+from __future__ import division
 import tigre
 import copy
 import tigre.algorithms as algs
@@ -32,9 +33,9 @@ print(Measure_Quality(fdkout,head,['nRMSE']))
 print('RMSE ossart')
 print(Measure_Quality(sirtout,head,['nRMSE']))
 plt.subplot(211)
-plt.imshow(fdkout[geo.nVoxel[0]/2])
+plt.imshow(fdkout[geo.nVoxel[0]//2])
 plt.subplot(212)
-plt.imshow(sirtout[geo.nVoxel[0]/2])
+plt.imshow(sirtout[geo.nVoxel[0]//2])
 plt.colorbar()
 plt.show()
 # print(proj.shape)
