@@ -92,7 +92,7 @@ W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index);
+V=computeV(geo,angles,alphablocks);
 %% Iterate
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;

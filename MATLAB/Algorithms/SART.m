@@ -89,7 +89,7 @@ W=1./W;
 W(W>0.1)=0.1;
 
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index);
+V=computeV(geo,angles,alphablocks);
 
 clear A x y dx dz;
 %% hyperparameter stuff

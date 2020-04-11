@@ -25,15 +25,11 @@ geo=checkGeo(geo,angles);
 geo.filter=filter;
 
 %Input is data,geosize,angles
-
-
-
 if size(geo.offDetector,2)==1
     offset=repmat(geo.offDetector,[1 size(angles,2)]);
 else
     offset=geo.offDetector;
 end
-
 
 %% Weight
 proj=permute(proj,[2 1 3]);
@@ -54,13 +50,24 @@ proj = filtering(proj,geo,angles,parker); % Not sure if offsets are good in here
 %RMFIELD Remove fields from a structure array.
 geo=rmfield(geo,'filter');
 %% backproject
+%%%
+% [proj, w] = preweighting(proj,geo);
+% imshow(w,[])
+%%%
 res=Atb((proj),geo,angles); % Weighting is inside
 
 
 end
 
 function [filter, parker]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'filter','parker'};
+% Parker weighting logic control
+if(range(alpha)<1.5*pi)
+    opts =     {'filter','parker'};
+else
+    opts = {'filter'};
+    parker = 0;
+end
+
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
