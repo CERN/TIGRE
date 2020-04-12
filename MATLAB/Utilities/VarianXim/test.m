@@ -11,6 +11,6 @@ for ii = 1:length(filestr)
 	if(~isempty(page))
 		proj(:,:,ii) = page;
 		angle(ii) = rtn;
-        ximstr{ii} = ReadXim(filename, 0);
+        ximinfo{ii} = ReadXim(filename, 0);
 	end
 end
