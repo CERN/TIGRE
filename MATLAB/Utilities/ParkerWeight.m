@@ -14,13 +14,13 @@ function data=ParkerWeight(data,geo,angles,q)
 %   year={2002},
 %   publisher={American Association of Physicists in Medicine}
 % }
-if unique(geo.DSD)>1
-   warning('Parker weigths not supported for varying geo.DSD, mean(DSD) is used.') % mean(DSD) might be better than DSD(1) for varying DSD
+if length(unique(geo.DSD))>1
+   warning('Parker weigths not supported for varying geo.DSD, mean(geo.DSD) is used.') % mean(DSD) might be better than DSD(1) for varying DSD
 end
 
 alpha = atan([-geo.sDetector(1)/2+geo.dDetector(1)/2:geo.dDetector(1):geo.sDetector(1)/2-geo.dDetector(1)/2]/mean(geo.DSD));
 diff_angles = diff(angles);
-if (all(diff_angles>=0))
+if (all(diff_angles>=0)) % if angles are incremental, flip alpha in the left-right direction
    alpha=-alpha;
 end
 delta = abs(alpha(end)-alpha(1))/2;
@@ -36,7 +36,7 @@ epsilon=max(totangles-(pi+2*delta),0);
 
 
 for ii=1:size(data,3)
-    beta=abs(angles(ii)-angles(1)); 
+    beta=abs(angles(ii)-angles(1)); % make sure beta always starts from 0 to totangles
      w=0.5*(S(beta./b(alpha,delta,epsilon,q)-0.5)+S((beta-2*delta+2*alpha-epsilon)./b(alpha,delta,epsilon,q)+0.5)...
          -S((beta-pi+2*alpha)./b(-alpha,delta,epsilon,q)-0.5) ...
           -S((beta-pi-2*delta-epsilon)./b(-alpha,delta,epsilon,q)+0.5)...
