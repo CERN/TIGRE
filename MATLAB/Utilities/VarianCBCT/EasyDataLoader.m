@@ -1,8 +1,8 @@
-function [proj, angle, geo, ximinfo, ScanXML, ReconXML] = EasyDataLoader(datafolder, varargin)
+function [proj, angle, geo, ximinfo, ScanXML, ReconXML] = EasyDataLoader(datafolder)
 % EASYDATALOADER Summary of this function goes here
 % Detailed explanation goes here
 
-% datafolder = 'E:\BigData\Edge\CBCT_Export\2019-09-03_121026';
+% datafolder = 'E:\BigData\Edge\CBCT_Export\2019-09-03_114227';
 %% Learn to use inputParser
 p=inputParser;
 % add optional parameters
