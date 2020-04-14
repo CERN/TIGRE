@@ -1,6 +1,7 @@
 function geo=checkGeo(geo, angles )
-%CHECKGEO Summary of this function goes here
-%   Detailed explanation goes here
+% CHECKGEO Summary of this function goes here
+% Detailed explanation goes here
+% More optional fields to be added
 geofields_mandatory={'nVoxel','sVoxel','dVoxel', ...
     'nDetector','sDetector','dDetector',...
     'DSO','DSD'};

@@ -18,8 +18,8 @@ ReconXML = getfield(xml2struct(fullfile(filestr.folder, filestr.name)),...
 % Cone-beam CT scenario
 geo.mode = 'cone';
 
-% Full/Half scan
-geo.trajectory = ScanXML.Acquisitions.Trajectory.Text;
+% Circular Trajectory: Full/Half arc
+geo.arc = ScanXML.Acquisitions.Trajectory.Text;
 % Full/Half fan
 geo.fan = ScanXML.Acquisitions.Fan.Text;
 % Rotation Direction
@@ -27,7 +27,7 @@ geo.closewise = sign(...
     str2double(ScanXML.Acquisitions.StopAngle.Text)...
      - str2double(ScanXML.Acquisitions.StartAngle.Text));
 
- % Distances
+% Distances
 geo.DSD = str2double(ScanXML.Acquisitions.SID.Text);
 geo.DSO = str2double(ScanXML.Acquisitions.SAD.Text);
 
