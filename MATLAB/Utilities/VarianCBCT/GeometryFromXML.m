@@ -18,15 +18,18 @@ ReconXML = getfield(xml2struct(fullfile(filestr.folder, filestr.name)),...
 % Cone-beam CT scenario
 geo.mode = 'cone';
 
-% Circular Trajectory: Full/Half arc
+% Circular Trajectory: Full/Half
+% flag to decide whether to use Parker weighting in FDK
 geo.arc = ScanXML.Acquisitions.Trajectory.Text;
-% Full/Half fan
+% Full/Half Fan: Full/Half
+% flag to decide whether to use Wang weighting in FDK
 geo.fan = ScanXML.Acquisitions.Fan.Text;
-% Rotation Direction
+% Rotation Direction: 1 for clockwise, -1 for counterclockwise
+% as a limitation in current FDK
 geo.closewise = sign(...
     str2double(ScanXML.Acquisitions.StopAngle.Text)...
      - str2double(ScanXML.Acquisitions.StartAngle.Text));
-
+ 
 % Distances
 geo.DSD = str2double(ScanXML.Acquisitions.SID.Text);
 geo.DSO = str2double(ScanXML.Acquisitions.SAD.Text);
