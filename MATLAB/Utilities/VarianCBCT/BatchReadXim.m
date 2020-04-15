@@ -22,11 +22,11 @@ ximfilelist = dir([foldername filesep '**' filesep 'Proj_*.xim']);
 
 proj = [];
 angle = [];
-for ii = 1:10% length(ximfilelist)
+for ii = 1:length(ximfilelist)
 	ximfilename = fullfile(ximfilelist(ii).folder, ximfilelist(ii).name);
 	[page, rtn] = mexReadXim(ximfilename);
 	if(~isempty(page))
-		proj(:,:,ii) = page;
+		proj(:,:,ii) = page';
 		angle(ii) = rtn;
         if(ii==1)
             projinfo{ii} = ReadXim(ximfilename, 0);
@@ -47,5 +47,6 @@ end
 
 blkfilename = fullfile(blkfilestr.folder, blkfilestr.name);
 blk = mexReadXim(blkfilename);
+blk = double(blk');
 
 end

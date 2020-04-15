@@ -60,18 +60,18 @@ void mexFunction(
 	plhs[0] = mxCreateNumericMatrix(para->ImgWidth, para->ImgHeight, mxINT32_CLASS, mxREAL);
     frame = (int*)mxGetPr(plhs[0]);
 
-	// Std should be returned as plhs
+	// empty file return
 	if (para->PixelNO == 0)
     {
     	plhs[1] = mxCreateDoubleScalar(10000);
     	mexPrintf("%s is an empty file\n", filename);
         return;
     }
-
-	/******* Kernel Function*********/
+        
+	/******* Kernel Function *********/
     cReadXim(filename, para, frame);
 
-	/*Only GantryRtn is the only parameter-of-interest to return*/
+	/**** GantryRtn is the only parameter-of-interest to return ****/
 	double GantryRtn = para->GantryRtn;
 	plhs[1] = mxCreateDoubleScalar(para->GantryRtn);
 
