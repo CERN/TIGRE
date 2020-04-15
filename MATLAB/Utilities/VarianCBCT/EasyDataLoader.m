@@ -28,11 +28,7 @@ angle = angle/180*pi;
 % angle starts from zero and increments positively
 % limitation of current FDK
 if(angle(end) - angle(1)>0)
-    angle = angle - angle(1);
-else
-    angle = flip(angle);
-    angle = angle - angle(1);
-    proj = flip(proj,3);
+    proj = flip(proj, 3);
 end
 
 %% Load geometry

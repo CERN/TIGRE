@@ -37,6 +37,8 @@ for ii = 1:length(ximfilelist)
 end
 
 %% Load Blk
+% ----------------------- To be revise -----------------
+% frame problem here, blk frames are not comsistent with that of proj
 tag_bowtie = strfind(projinfo{1}.properties.KVCollimatorShape, 'None');
 % wi Bowtie1
 if(isempty(tag_bowtie))

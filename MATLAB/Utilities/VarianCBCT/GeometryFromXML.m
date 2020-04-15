@@ -47,7 +47,7 @@ geo.dDetector = [...
     str2double(ScanXML.Acquisitions.ImagerResX.Text); ...
     str2double(ScanXML.Acquisitions.ImagerResY.Text)];
 % total size of the detector   (mm)
-geo.dDetector = geo.nDetector.*geo.dDetector;
+geo.sDetector = geo.nDetector.*geo.dDetector;
 
 % Offset of Detector           (mm)
 offset = str2double(ScanXML.Acquisitions.ImagerLat.Text);

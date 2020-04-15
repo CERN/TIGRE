@@ -63,6 +63,7 @@ function [filter, parker]=parse_inputs(proj,geo,alpha,argin)
 % Parker weighting logic control
 if(range(alpha)<1.5*pi)
     opts =     {'filter','parker'};
+    warning("Half-Arc Scan: Parker weighting is applied");
 else
     opts = {'filter'};
     parker = 0;
