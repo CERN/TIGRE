@@ -1,6 +1,8 @@
 
-KVSourceRtn = GantryRtn + 90 deg
-mAs = KVMilliSeconds * KVMilliAmperes;
+% KVSourceRtn = GantryRtn + 90 deg
+% mAs = KVMilliSeconds * KVMilliAmperes;
 
-Image matrix is oblique.
+% Image matrix is oblique in short-course scans(head), 
+% and upside down in full course scans(thorax/pelvis/abd), 
+% trying to figure out a solution.
 

@@ -57,3 +57,4 @@ Python/tigre/Source/_tvdenoising.cpp
 *.dSYM/
 MATLAB/Private/
 MATLAB/Torelease/mexReadXim/mexReadXim.mexw64
+MATLAB/Utilities/VarianCBCT/script_debug.m
