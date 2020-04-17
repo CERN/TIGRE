@@ -1,18 +1,21 @@
-function [proj, angle, geo] = EasyDataLoader(datafolder)
-% EASYDATALOADER Summary of this function goes here
-% Detailed explanation goes here
+function [proj, angles, geo] = EasyDataLoader(datafolder)
+% Load all dataset that are needed for reconstruction
+% Date: 2020-04-16
+% Author: Yi Du (yi.du@hotmail.com)
+% datafolder = 'E:\BigData\Edge\CBCT_Export\2020-01-09_144244';
 
-% datafolder = 'E:\BigData\Edge\CBCT_Export\2019-09-03_114227';
 %% Load proj and angle
-[proj, angle, blk] = BatchReadXim(datafolder);
+[proj, angles, blk] = BatchReadXim(datafolder);
 
-for ii = 1:length(angle)
-    proj(:,:,ii) = log(blk./(proj(:,:,ii) + eps));
+proj = log(repmat(blk, [1 1 size(proj,3)])./proj);
+
+% Mediate filtering along colume-orth
+for ii = 1:size(proj,3)
+    proj(:,:,ii) = ordfilt2(proj(:,:,ii), 5, ones(1,9));
 end
 
-% remove possible abnormlies
+% in case of abnormlies
 proj(isnan(proj)) = 0;
-proj(isinf(proj)) = 0;
 proj(isinf(proj)) = 0;
 
 % all negative to zeros
@@ -22,12 +25,11 @@ proj(proj<0) = 0;
 proj = single(proj);
 
 % degree to rad
-angle = angle/180*pi;
+angles = angles/180*pi;
 
 % -------------------- to test ------------------
-% angle starts from zero and increments positively
-% limitation of current FDK
-if(angle(end) - angle(1)>0)
+% Gantry Rotation correction: limitation of current FDK
+if(angles(end) - angles(1)>0)
     proj = flip(proj, 3);
 end
 

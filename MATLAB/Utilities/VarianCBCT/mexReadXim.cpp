@@ -28,15 +28,15 @@ void mexFunction(
     // .xim filename
     char *filename;
     filename = mxArrayToString(prhs[0]);
-    mexPrintf("%s\n", filename);
+    //mexPrintf("%s\n", filename);
 
     // file open
     FILE *fid = fopen(filename, "rb");    
     if(fid == NULL)
     {
-        mexPrintf("%s open failed.\n", filename);
-        getchar();
-        exit(1);
+        mexErrMsgIdAndTxt("%s fopen failed.\n", filename);
+        //getchar();
+        //exit(1);
     }
 
     // Parameter structure
@@ -71,9 +71,10 @@ void mexFunction(
 	/******* Kernel Function *********/
     cReadXim(filename, para, frame);
 
-	/**** GantryRtn is the only parameter-of-interest to return ****/
-	double GantryRtn = para->GantryRtn;
-	plhs[1] = mxCreateDoubleScalar(para->GantryRtn);
+	/**** KVSourceRtn is the only parameter-of-interest to return ****/
+    // KVSourceRtn = GantryRtn + 90 deg;
+	double KVSourceRtn = para->GantryRtn + 90;
+	plhs[1] = mxCreateDoubleScalar(KVSourceRtn);
 
 }
 
@@ -94,9 +95,9 @@ int cReadXim(char *XimFullFile,
 	// Syntax Parsing
 	if (fid == NULL)
 	{
-		printf("Error: file %s doesn't exist, at all\n", XimFullFile);
-        getchar();
-		exit(1);
+		mexErrMsgIdAndTxt("Error: file %s doesn't exist, at all\n", XimFullFile);
+        //getchar();
+		//exit(1);
 	}
 
     // ******* Stage 1: Portal Image Data ****//
