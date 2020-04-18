@@ -1,4 +1,4 @@
-function [proj, angles, blk, projinfo] = BatchReadXim(datafolder)
+function [proj, angles, blk, projinfo] = BatchReadXim(datafolder,varargin)
 % [proj, angle, blk, projinfo] = BatchReadXim(foldername, varargin)
 % Varian .xim files exported from TrueBeam on-board imager/EPID, Halcyon imager
 % .xim files are exported under service mode, as a single .zip file
@@ -6,12 +6,19 @@ function [proj, angles, blk, projinfo] = BatchReadXim(datafolder)
 % Input:
 %       datafolder    : root folder of the upzipped files,
 %                       or the subfolder Acquisitions where all xim files are stored
+%       thd           : 0(default), no motion lag correcion
+%                       thd,  motion correcion threadhold
 % Output:
 %       proj          : .xim pixel_images frame by frame
-%       angles         : KVSourceRtn at each frame
+%       angles        : KVSourceRtn at each frame
 %       projinfo      : proj_*.xim info cell arrays
 % Date: 2020-04-11
 % Author: Yi Du, yi.du@hotmail.com
+
+thd = 0;
+if(nargin == 2)
+    thd = varargin;
+end
 
 read_xim_info = 0;
 if(nargout==4)
@@ -25,8 +32,10 @@ ximfilelist = dir([datafolder filesep '**' filesep 'Proj_*.xim']);
 proj = [];
 angles = [];
 
+%
 proj_no = length(ximfilelist);
-
+%
+count = 1;
 for ii = 1:proj_no
 	ximfilename = fullfile(ximfilelist(ii).folder, ximfilelist(ii).name);
     if(~mod(ii,50))
@@ -34,12 +43,32 @@ for ii = 1:proj_no
     end
 	[page, rtn] = mexReadXim(ximfilename);
 	if(~isempty(page))
-		proj(:,:,ii) = double(page');
-		angles(ii) = rtn;
-        if(ii==1)
-            projinfo{ii} = ReadXim(ximfilename, 0);
-        elseif(read_xim_info)
-            projinfo{ii} = ReadXim(ximfilename, 0);
+        % load first page
+        if(count==1)
+            projinfo{count} = ReadXim(ximfilename, 0);
+    		angles(count) = rtn;
+        	proj(:,:,count) = double(page');
+            count = count + 1;
+        else
+            % proj info
+            if(read_xim_info)
+                projinfo{count} = ReadXim(ximfilename, 0);
+            end
+            
+            % whether threshold is applied
+            if(thd)
+                if(abs(rtn-angles(end))>thd)
+                    angles(count) = rtn;
+                    proj(:,:,count) = double(page');
+                    count = count + 1;
+                else
+                    continue;
+                end
+            else
+                angles(count) = rtn;
+                proj(:,:,count) = double(page');
+                count = count + 1;
+            end
         end
 	end
 end

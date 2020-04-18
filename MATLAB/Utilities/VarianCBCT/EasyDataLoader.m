@@ -1,15 +1,27 @@
-function [proj, angles, geo] = EasyDataLoader(datafolder)
+function [proj, angles, geo] = EasyDataLoader(datafolder, varargin)
 % Load all dataset that are needed for reconstruction
 % Date: 2020-04-16
 % Author: Yi Du (yi.du@hotmail.com)
 % datafolder = 'E:\BigData\Edge\CBCT_Export\2020-01-09_144244';
 
-%% Load proj and angle
-[proj, angles, blk] = BatchReadXim(datafolder);
+%% Load geometry
+[geo, ScanXML] = GeometryFromXML(datafolder);
 
+%% Motion lag correcion
+thd = 0;
+if(~isempty(varargin)&&(varargin{1}))
+    thd = str2double(ScanXML.Acquisitions.Velocity.Text)...
+        ./str2double(ScanXML.Acquisitions.FrameRate.Text);
+    thd = thd *0.95;
+end
+
+%% Load proj and angle
+[proj, angles, blk] = BatchReadXim(datafolder, thd);
+
+%% Logarithmic calculation
 proj = log(repmat(blk, [1 1 size(proj,3)])./proj);
 
-% Mediate filtering along colume-orth
+%% Mediate filtering along colume-orth
 for ii = 1:size(proj,3)
     proj(:,:,ii) = ordfilt2(proj(:,:,ii), 5, ones(1,9));
 end
@@ -27,13 +39,13 @@ proj = single(proj);
 % degree to rad
 angles = angles/180*pi;
 
-% -------------------- to test ------------------
-% Gantry Rotation correction: limitation of current FDK
+%% Gantry Rotation correction
+% Clockwise
 if(angles(end) - angles(1)>0)
     proj = flip(proj, 3);
+% Counter-clockwise -> Clockwise
+else
+    angles = flip(angles);
 end
-
-%% Load geometry
-geo = GeometryFromXML(datafolder);
 
 end
