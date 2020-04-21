@@ -14,7 +14,7 @@ else
     imgFDK = FDK(proj, geo, angles);
 end
 
-%% Show results
+%% Set all negatives to zero
 imgFDK(imgFDK<0)=0;
 
 %% imshow with a ROI mask
