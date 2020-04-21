@@ -17,7 +17,7 @@ function [proj, angles, blk, projinfo] = BatchReadXim(datafolder,varargin)
 
 thd = 0;
 if(nargin == 2)
-    thd = varargin;
+    thd = varargin{1};
 end
 
 read_xim_info = 0;
