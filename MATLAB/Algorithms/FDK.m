@@ -59,17 +59,11 @@ res=Atb((proj),geo,angles); % Weighting is inside
 
 end
 
-function [filter, parker]=parse_inputs(proj,geo,alpha,argin)
-% Parker weighting logic control
-if(range(alpha)<1.5*pi)
-    opts =     {'filter','parker'};
-    warning("Half-Arc Scan: Parker weighting is applied");
-else
-    opts = {'filter'};
-    parker = 0;
-end
+function [filter, parker]=parse_inputs(proj,geo,angles,argin)
 
+opts =  {'filter','parker'};
 defaults=ones(length(opts),1);
+
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
@@ -101,10 +95,13 @@ for ii=1:length(opts)
     end
     
     switch opt
-        % % % % % % % Verbose
         case 'parker'
             if default
-                parker=0;
+                if(range(angles)<2*pi)
+                    parker=true;
+                else
+                    parker=false;
+                end
             else
                 parker=val;
             end
