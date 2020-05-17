@@ -33,7 +33,6 @@ mex -setup
 if ispc
     currentFolder = cd;
     fileExisting  = (exist(fullfile(currentFolder, 'mex_CUDA_win64.xml'), 'file') == 2);    
-%    fileExisting  = (exist(fullfile(currentFolder, 'mex_CUDA_win64_MVS2013.xml'), 'file') == 2);
     if ~fileExisting
         error(sprintf('mex_CUDA_win64.xml not found. You may need to rename the existing files depending on your MVS version')) ;
     end
