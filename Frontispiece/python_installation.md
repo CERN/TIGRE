@@ -3,7 +3,49 @@ Installation Instructions for Python
 
 ## Windows
 
-The python version of TIGRE has not been teste on a windows machine yet. Please feel free to test it and help us build an easy installer for this OS. [Contact us](mailto:ander.biguri@gmail.com).
+### Requirements:
+
+1. Python 3
+2. MSVC
+3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.0](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
+4. CUDA Toolkit
+
+Tested on
+
+| Software        | Version           | 
+| ------------- |:-------------:|
+|**Windows**| 10 |
+|**Python**| 3.7 3.8 |
+|**CUDA**| 10.1 |
+|**MSVC**| 19.24 |
+
+### Simple Instructions
+
+1. Install Python and pip (recommended: conda environment), MSVC and CUDA
+2. run `pip install pytigre --user`
+3. or download from repo and run `python setup.py install --user`.
+
+A succesfull installation should be able to execute the script at TIGRE/Python/example.py
+
+###  Step by Step Instructions:
+
+1. Install [MS Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/) with Windows SDK.
+
+2. Install Python 3 + pip. Recommended: use a virtual [conda environment](https://www.anaconda.com/).
+
+3. Install [CUDA](https://developer.nvidia.com/cuda-downloads). Make sure the `CUDA_PATH` and
+      `PATH` environment variable are set accordingly.
+   
+4. Get TIGRE
+	```pip install pytigre --user```
+	or inside a conda environment (recommended)
+	```pip install pytigre```
+	
+5. Try demo 3. If it runs succesfully then you are good to go.
+
+**Note:** It is known that the package cannot be imported using a pure Python 3.8 installation, i.e.
+not using a conda environment. Please try a pure installation of Python 3.7 or consider using a
+conda environment.
 
 ## Linux
 
