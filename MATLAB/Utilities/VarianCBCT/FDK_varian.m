@@ -18,7 +18,7 @@ end
 imgFDK(imgFDK<0)=0;
 
 %% imshow with a ROI mask
-imgFDK = ROIMask(imgFDK, size(imgFDK,1));
+imgFDK = ROI_mask(imgFDK, geo,size(imgFDK,1));
 figure;
 subplot(1,3,1),imshow(imgFDK(:,:,30),[])
 subplot(1,3,2),imshow(imgFDK(:,:,45),[])
