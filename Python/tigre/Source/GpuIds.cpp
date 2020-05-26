@@ -10,6 +10,10 @@ GpuIds::GpuIds() : m_piDeviceIds (nullptr), m_iCount(0) {
 }
 void GpuIds::SetIds(int iCount, int* piDeviceIds) {
     if (iCount > 0 && piDeviceIds != 0) {
+        if (m_piDeviceIds) {
+            free(m_piDeviceIds); m_piDeviceIds = nullptr;
+            m_iCount = 0;
+        }
         m_piDeviceIds = (int*)malloc(iCount * sizeof(int));
         if (m_piDeviceIds) {
             for (int iI = 0; iI < iCount; ++iI) {
@@ -26,4 +30,6 @@ int GpuIds::GetLength() const {
 int& GpuIds::operator[](int iIndex){
     return m_piDeviceIds[iIndex];
 }
-
+int GpuIds::operator[](int iIndex) const {
+    return m_piDeviceIds[iIndex];
+}

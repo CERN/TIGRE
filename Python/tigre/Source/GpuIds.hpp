@@ -9,6 +9,7 @@ struct GpuIds {
     void SetIds(int iCount, int* piDeviceIds);
     int GetLength() const;
     int& operator[](int iIndex);
+    int operator[](int iIndex) const;
 };
 #endif
 
