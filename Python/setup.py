@@ -339,6 +339,17 @@ AwminTV_ext = Extension('_AwminTV',
                         include_dirs=[NUMPY_INCLUDE, CUDA['include'], 'Source'])
 
 
+gpuUtils_ext = Extension('_gpuUtils',
+                        sources=include_headers(['tigre/Source/gpuUtils.cu',
+                                                 'tigre/Source/_gpuUtils.pxd',
+                                                 'tigre/Source/_gpuUtils.pyx'],
+                                                sdist=sys.argv[1] == "sdist"),
+                        library_dirs=[CUDA['lib64']],
+                        libraries=['cudart'],
+                        language='c++',
+                        runtime_library_dirs=[CUDA['lib64']] if not IS_WINDOWS else None,
+                        include_dirs=[NUMPY_INCLUDE, CUDA['include'], 'Source'])
+
 setup(name='pytigre',
       version='0.1.8',
       author='Reuben Lindroos, Sam Loescher',
@@ -346,7 +357,7 @@ setup(name='pytigre',
       scripts=['tigre/demos/launch.sh',
                'tests/runscript.sh'],
       include_package_data=True,
-      ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext],
+      ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext, gpuUtils_ext],
       py_modules=['tigre.py'],
       cmdclass={'build_ext': BuildExtension},
       install_requires=['Cython',
