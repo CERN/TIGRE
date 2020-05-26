@@ -135,7 +135,8 @@ class IterativeReconAlg(object):
                        OrderStrategy=None, Quameasopts=None,
                        init=None, verbose=True, noneg=True,
                        computel2=False, dataminimizing='art_data_minimizing',
-                       name='Iterative Reconstruction', sup_kw_warning=False)
+                       name='Iterative Reconstruction', sup_kw_warning=False,
+                       gpuids = None)
         allowed_keywords = [
             'V',
             'W',
@@ -190,7 +191,8 @@ class IterativeReconAlg(object):
                 dtype=np.float32),
             geox,
             self.angles,
-            "ray-voxel")
+            "ray-voxel",
+            gpuids=self.gpuids)
         W[W <= min(self.geo.dVoxel / 4)] = np.inf
         W = 1. / W
         setattr(self, 'W', W)
@@ -338,7 +340,7 @@ class IterativeReconAlg(object):
         if self.computel2:
             # compute l2 borm for b-Ax
             errornow = im3DNORM(
-                self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel'), 2)
+                self.proj - Ax(self.res, self.geo, self.angles, 'ray-voxel', gpuids=self.gpuids), 2)
             self.l2l.append(errornow)
 
     def update_image(self, geo, angle, iteration):
@@ -356,7 +358,7 @@ class IterativeReconAlg(object):
         :return: None
         """
         self.res += self.lmbda * 1. / self.V[iteration] * Atb(self.W[self.angle_index[iteration]] * (
-            self.proj[self.angle_index[iteration]] - Ax(self.res, geo, angle, 'interpolated')), geo, angle, 'FDK')
+            self.proj[self.angle_index[iteration]] - Ax(self.res, geo, angle, 'interpolated', gpuids=self.gpuids)), geo, angle, 'FDK', gpuids=self.gpuids)
 
     def getres(self):
         return self.res

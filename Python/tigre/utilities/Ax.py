@@ -23,7 +23,7 @@ def Ax(img, geo, angles,  krylov="ray-voxel", **kwargs):
                          " not:" + str(img.shape))
 
     if 'gpuids' in kwargs:
-        gpuids = kwargs["gpuids"]
+        gpuids = kwargs['gpuids']
     else:
         gpuids = None
 
