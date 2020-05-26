@@ -1,7 +1,7 @@
 from _Atb import _Atb_ext
 import numpy as np
 import copy
-def Atb(projections, geo, angles,  krylov="matched"):
+def Atb(projections, geo, angles,  krylov="matched", **kwargs):
 
     if projections.dtype != np.float32:
         raise TypeError("Input data should be float32, not " + str(projections.dtype))
@@ -21,4 +21,10 @@ def Atb(projections, geo, angles,  krylov="matched"):
         raise ValueError("Expected data shape: " + str((geox.angles.shape[0], geox.nDetector[0],geox.nDetector[1])) +
                          " not compatible with: " + str(projections.shape))
 
-    return _Atb_ext(projections, geox, geox.angles, krylov,geox.mode)
+    if 'gpuids' in kwargs:
+        gpuids = kwargs["gpuids"]
+    else:
+        gpuids = None
+
+    return _Atb_ext(projections, geox, geox.angles, krylov,geox.mode, gpuids=gpuids)
+    

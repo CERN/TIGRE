@@ -179,7 +179,7 @@ template<bool sphericalrotation>
 
 int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
     GpuIds gpuids;
-    gpuids.SetIds(1, {0});
+    gpuids.SetIds(0, {0});
     return interpolation_projection(img, geo, result, angles, nangles, gpuids);
 }
 // legnth(angles)=3 x nagnles, as we have roll, pitch, yaw.
