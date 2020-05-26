@@ -2,7 +2,7 @@ from _Ax import _Ax_ext
 import numpy as np
 import copy
 
-def Ax(img, geo, angles,  krylov="ray-voxel"):
+def Ax(img, geo, angles,  krylov="ray-voxel", **kwargs):
 
     if img.dtype != np.float32:
         raise TypeError("Input data should be float32, not "+ str(img.dtype))
@@ -22,4 +22,9 @@ def Ax(img, geo, angles,  krylov="ray-voxel"):
         raise ValueError("Input data should be of shape geo.nVoxel: "+ str(geox.nVoxel) +
                          " not:" + str(img.shape))
 
-    return _Ax_ext(img, geox, geox.angles, krylov, geox.mode)
+    if 'gpuids' in kwargs:
+        gpuids = kwargs["gpuids"]
+    else:
+        gpuids = None
+
+    return _Ax_ext(img, geox, geox.angles, krylov, geox.mode, gpuids=gpuids)

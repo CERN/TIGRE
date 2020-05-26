@@ -1,6 +1,8 @@
 cimport numpy as np
 import numpy as np
 from tigre.Source._types cimport Geometry as c_Geometry, convert_to_c_geometry, free_c_geometry
+from tigre.Source._gpuUtils cimport GpuIds as c_GpuIds, convert_to_c_gpuids, free_c_gpuids
+
 
 # Numpy must be initialized. When using numpy from C or Cython you must
 # _always_ do that, or you will have segfaults
@@ -18,7 +20,7 @@ cdef extern from "Siddon_projection.hpp":
 cdef extern from "Siddon_projection_parallel.hpp":
     cdef int siddon_ray_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha)
 cdef extern from "ray_interpolated_projection.hpp":
-    cdef int interpolation_projection(float* img, c_Geometry geo, float** result, float* alphas, int nalpha)
+    cdef int interpolation_projection(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, const c_GpuIds& gpuids)
 cdef extern from "ray_interpolated_projection_parallel.hpp":
     cdef int interpolation_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha)
 
@@ -26,7 +28,12 @@ def cuda_raise_errors(error_code):
     if error_code:
         raise ValueError('TIGRE: Call to Ax failed')
 
-def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=2] angles, projection_type="ray-voxel", mode="cone"):
+def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=2] angles, projection_type="ray-voxel", mode="cone", gpuids=None):
+    
+    cdef c_GpuIds* c_gpuids = convert_to_c_gpuids(gpuids)
+    if not c_gpuids:
+        raise MemoryError()
+    
 
     cdef int total_projections = angles.shape[0]
 
@@ -69,7 +76,7 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
         if not interpolated:
             cuda_raise_errors(siddon_ray_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections))
         else:
-            cuda_raise_errors(interpolation_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections))
+            cuda_raise_errors(interpolation_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0]))
     else:
         if not interpolated:
             cuda_raise_errors(siddon_ray_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections))
@@ -89,6 +96,6 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     free(c_projections)  # Free pointer array, not actual data
     free_c_geometry(c_geometry)
     geometry.convert_contig_mode()
-
+    free_c_gpuids(c_gpuids)
     # PERMUTE OUTPUT: (U, V, N) -> (N, V, U)
     return np.stack(projections,0).swapaxes(1,2).copy(order='C')

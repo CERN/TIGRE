@@ -10,8 +10,24 @@ import sys
 from tigre.demos.Test_data import data_loader
 from matplotlib import pyplot as plt
 from tigre.utilities.Measure_Quality import Measure_Quality
-geo = tigre.geometry(mode='cone', high_quality=False, default=True)
-#geo = tigre.geometry(mode='cone', nVoxel=np.array([256,256,256]),default=True)
+
+isDebug = True
+if isDebug:
+    sys.path.append(".")
+from tigre.utilities import gpu
+
+listGpuNames = gpu.getGpuNames()
+if len(listGpuNames) == 0:
+    print ("Error: No gpu found")
+else:
+    for id in range(len(listGpuNames)):
+        print("name")
+
+gpuids = gpu.getGpuIds(listGpuNames[0])
+print(gpuids)
+
+#geo = tigre.geometry(mode='cone', high_quality=False, default=True)
+geo = tigre.geometry(mode='cone', nVoxel=np.array([256,256,256]),default=True)
 geo.dDetector = np.array([0.8, 0.8])*2               # size of each pixel            (mm)
 geo.sDetector = geo.dDetector * geo.nDetector
 
@@ -20,8 +36,8 @@ nangles = 100
 angles = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
 #head = np.load('src_img_cubic_256.npy') #data_loader.load_head_phantom(geo.nVoxel)
 head = data_loader.load_head_phantom(geo.nVoxel)
-proj = tigre.Ax(head,geo,angles)
-fdkout = algs.fdk(proj,geo,angles)
+proj = tigre.Ax(head,geo,angles, gpuids = gpuids)
+fdkout = algs.fdk(proj,geo,angles, gpuids = gpuids)
 sirtout = algs.ossart(proj,geo,angles,20,blocksize=20)
 # 'RMSE'
 # 'MSSIM'

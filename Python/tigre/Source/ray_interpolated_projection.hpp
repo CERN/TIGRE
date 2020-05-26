@@ -46,13 +46,14 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 #include "types_TIGRE.hpp"
-
+#include "GpuIds.hpp"
 
 
 #ifndef PROJECTION_HPP
 #define PROJECTION_HPP
 
 int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
+int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha, GpuIds gpuid);
 float computeMaxLength(Geometry geo, float alpha);
 void computeDeltas(Geometry geo,unsigned int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 void rollPitchYaw(Geometry geo,unsigned int i, Point3D* point);
