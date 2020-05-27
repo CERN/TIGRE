@@ -38,7 +38,7 @@ angles = np.linspace(0, 2 * np.pi, nangles, dtype=np.float32)
 head = data_loader.load_head_phantom(geo.nVoxel)
 proj = tigre.Ax(head,geo,angles, gpuids = gpuids)
 fdkout = algs.fdk(proj,geo,angles, gpuids = gpuids)
-sirtout = algs.ossart(proj,geo,angles,20,blocksize=20)
+sirtout = algs.ossart(proj,geo,angles,20,blocksize=20, gpuids = gpuids)
 # 'RMSE'
 # 'MSSIM'
 # 'SSD'
