@@ -15,7 +15,8 @@ cdef inline void free_c_gpuids(GpuIds* c_gpuids):
 #TODO: Change from inline to stop duplication. Discussed on slack "python-questions" 28-Mar-2017
 cdef inline GpuIds* convert_to_c_gpuids(p_gpuids):
     cdef GpuIds* c_gpuids =<GpuIds *>malloc(sizeof(GpuIds))
-
+    if not c_gpuids:
+        MemoryError()
     if p_gpuids is not None:
         c_gpuids.m_iCount = len(p_gpuids)
     else:
