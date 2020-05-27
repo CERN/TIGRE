@@ -183,11 +183,11 @@ int interpolation_projection(float const * const img, Geometry geo, float** resu
     return interpolation_projection(img, geo, result, angles, nangles, gpuids);
 }
 // legnth(angles)=3 x nagnles, as we have roll, pitch, yaw.
-int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const angles,int nangles, const GpuIds& gpuid){
-    if (gpuid.GetLength() == 0) {
+int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const angles,int nangles, const GpuIds& gpuids){
+    if (gpuids.GetLength() == 0) {
         cudaSetDevice(0);
-    } else { 
-        cudaSetDevice(gpuid[0]);
+    } else {
+        cudaSetDevice(gpuids[0]);
     }
     // copy data to CUDA memory
     cudaArray *d_imagedata = 0;
