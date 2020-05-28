@@ -33,3 +33,17 @@ int& GpuIds::operator[](int iIndex){
 int GpuIds::operator[](int iIndex) const {
     return m_piDeviceIds[iIndex];
 }
+
+void GpuIds::SetAllGpus(int iTotalDeviceCount) {
+    // Set all GPUs for compatibility
+    // Makeup valid GpuIds.
+    int* aiIds = nullptr;
+    if (iTotalDeviceCount == 0) {
+        (int*)malloc(iTotalDeviceCount*sizeof(int));
+        for (int iI = 0; iI < iTotalDeviceCount; ++iI) {
+            aiIds[iI] = iI;
+        }
+    }
+    SetIds(iTotalDeviceCount, aiIds);
+    free(aiIds); aiIds = 0;    
+}

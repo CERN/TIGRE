@@ -296,17 +296,7 @@ int voxel_backprojection(float* projections, Geometry geo, float* result,float c
         // Compatibility mode
         int iTotalDeviceCount = GetGpuCount();
         if(cudaCheckErrors("Device query fail")){return 1;}
-        if (iTotalDeviceCount == 0) {
-            //mexErrMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","There are no available device(s) that support CUDA\n");
-            return ERR_NO_CAPABLE_DEVICES;
-        }
-        // Makeup valid GpuIds.
-        int* aiIds = (int*)malloc(iTotalDeviceCount*sizeof(int));
-        for (int iI = 0; iI < iTotalDeviceCount; ++iI) {
-            aiIds[iI] = iI;
-        }
-        gpuids.SetIds(iTotalDeviceCount, aiIds);
-        free(aiIds); aiIds = 0;
+        gpuids.SetAllGpus(iTotalDeviceCount);
         // Check the available devices, and if they are the same
         checkDevices(gpuids);
     }

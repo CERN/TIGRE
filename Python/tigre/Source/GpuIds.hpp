@@ -8,6 +8,7 @@ struct GpuIds {
     GpuIds();
     void SetIds(int iCount, int* piDeviceIds);
     int GetLength() const;
+    void SetAllGpus(int iTotalDeviceCount);
     int& operator[](int iIndex);
     int operator[](int iIndex) const;
 };
