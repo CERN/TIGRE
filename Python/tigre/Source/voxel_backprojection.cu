@@ -608,7 +608,7 @@ int voxel_backprojection(float* projections, Geometry geo, float* result,float c
 }  // END voxel_backprojection
 
 // TODO: Remove this function when all algorithms supports GpuIds. Search for BACKPROJECTION_HPP in voxel_backprojection2.cu
-void checkDevices(){
+void checkDevices(void){
     // CODE assumes
     // 1.-All available devices are usable by this code
     // 2.-All available devices are equal, they are the same machine (warning thrown)
@@ -642,17 +642,7 @@ void checkDevices(const GpuIds& gpuids){
         devicenames=deviceProp.name;
     }
 }
-// TODO: Remove this function when all algorithms supports GpuIds.
-void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
-    GpuIds gpuids;
-    int* piX = (int*)malloc(deviceCount*sizeof(int));
-    for (int iI = 0; iI < deviceCount; ++iI){
-        piX[iI] = iI;
-    }
-    gpuids.SetIds(deviceCount,piX);
-    free(piX);
-    splitCTbackprojection(gpuids, geo, nalpha, split_image, split_projections);
-}
+
 void splitCTbackprojection(const GpuIds& gpuids,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
     int deviceCount = gpuids.GetLength();
     

@@ -17,7 +17,7 @@ cdef extern from "numpy/arrayobject.h":
 cdef extern from "voxel_backprojection.hpp":
     cdef int voxel_backprojection(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids)
 cdef extern from "voxel_backprojection2.hpp":
-    cdef int voxel_backprojection2(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha)
+    cdef int voxel_backprojection2(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids)
 cdef extern from "voxel_backprojection_parallel.hpp":
     cdef int voxel_backprojection_parallel(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha)
 
@@ -66,7 +66,7 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
 
     if cone_beam:
         if krylov_proj:
-            cuda_raise_errors(voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections))
+            cuda_raise_errors(voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
         else:
             cuda_raise_errors(voxel_backprojection(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
 
