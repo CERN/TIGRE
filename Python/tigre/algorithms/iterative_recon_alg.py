@@ -332,7 +332,7 @@ class IterativeReconAlg(object):
         return minTV(res_prev, dtvg, self.numiter_tv, self.gpuids)
 
     def minimizeAwTV(self, res_prev, dtvg):
-        return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta)
+        return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta, self.gpuids)
 
     def error_measurement(self, res_prev, iter):
         if self.Quameasopts is not None and iter > 0:
