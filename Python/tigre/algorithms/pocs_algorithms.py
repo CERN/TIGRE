@@ -117,7 +117,7 @@ class ASD_POCS(IterativeReconAlg):
         if 'rmax' not in kwargs:
             self.rmax = 0.95
         if 'maxl2err' not in kwargs:
-            self.epsilon = im3DNORM(FDK(proj, geo, angles), 2) * 0.2
+            self.epsilon = im3DNORM(FDK(proj, geo, angles, gpuids=self.gpuids), 2) * 0.2
         else:
             self.epsilon = kwargs['maxl2err']
         if "tviter" not in kwargs:
@@ -145,7 +145,7 @@ class ASD_POCS(IterativeReconAlg):
             res_prev = copy.deepcopy(self.res)
             n_iter += 1
             getattr(self, self.dataminimizing)()
-            g = Ax(self.res, self.geo, self.angles)
+            g = Ax(self.res, self.geo, self.angles, gpuids = self.gpuids)
             dd = im3DNORM(g - self.proj, 2)
             dp_vec = self.res - res_prev
             dp = im3DNORM(dp_vec, 2)

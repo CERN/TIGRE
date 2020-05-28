@@ -329,7 +329,7 @@ class IterativeReconAlg(object):
 
 
     def minimizeTV(self, res_prev, dtvg):
-        return minTV(res_prev, dtvg, self.numiter_tv)
+        return minTV(res_prev, dtvg, self.numiter_tv, self.gpuids)
 
     def minimizeAwTV(self, res_prev, dtvg):
         return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta)
