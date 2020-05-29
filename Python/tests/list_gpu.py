@@ -1,15 +1,13 @@
 #%%
-# 
-
 isDebug = True
 if isDebug:
+    import os
     import sys
-    sys.path.append('.')
+    dirsup = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+    sys.path.insert(0, dirsup)
 
 from tigre.utilities import gpu
-
 print("import _gpuUtils OK")
-
 
 print("Querying installed GPU names")
 listDeviceNames = gpu.getGpuNames()
@@ -26,10 +24,12 @@ for nameGpu in listQuery:
         print ("Querying All devices")
     else:
         print ("Querying {}".format(nameGpu))
-    # gpuids = gpu.getGpuIdList(nameGpu)
     gpuids = gpu.getGpuIds(nameGpu)
     print("\tGpuIDs: {}".format(gpuids))
     print("\t # of IDs: {}".format(len(gpuids)))
     print("---")
 
 
+
+
+# %%
