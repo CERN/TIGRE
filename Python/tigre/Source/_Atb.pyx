@@ -19,7 +19,7 @@ cdef extern from "voxel_backprojection.hpp":
 cdef extern from "voxel_backprojection2.hpp":
     cdef int voxel_backprojection2(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids)
 cdef extern from "voxel_backprojection_parallel.hpp":
-    cdef int voxel_backprojection_parallel(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha)
+    cdef int voxel_backprojection_parallel(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids)
 
 
 def cuda_raise_errors(error_code):
@@ -72,7 +72,7 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
 
 
     else:
-        cuda_raise_errors(voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections))
+        cuda_raise_errors(voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
 
     projections = projections.swapaxes(0,2).swapaxes(1,2).copy(order='C')
 

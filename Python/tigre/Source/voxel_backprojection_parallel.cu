@@ -282,8 +282,13 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
 //      Description:    Main host function for FDK backprojection (invokes the kernel)
 //______________________________________________________________________________
 
-int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* result,float const * const alphas, int nalpha)
+int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* result,float const * const alphas, int nalpha,GpuIds gpuids)
 {
+    if (gpuids.GetLength() == 0) {
+        cudaSetDevice(0);
+    } else {
+        cudaSetDevice(gpuids[0]);
+    }
     
     /*
      * Allocate texture memory on the device
