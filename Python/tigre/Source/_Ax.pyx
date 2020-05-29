@@ -16,13 +16,13 @@ cdef extern from "numpy/arrayobject.h":
 
 
 cdef extern from "Siddon_projection.hpp":
-    cdef int siddon_ray_projection(float* img, c_Geometry geo, float** result, float* alphas, int nalpha)
+    cdef int siddon_ray_projection(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, const c_GpuIds& gpuids)
 cdef extern from "Siddon_projection_parallel.hpp":
-    cdef int siddon_ray_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha)
+    cdef int siddon_ray_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, const c_GpuIds& gpuids)
 cdef extern from "ray_interpolated_projection.hpp":
     cdef int interpolation_projection(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, const c_GpuIds& gpuids)
 cdef extern from "ray_interpolated_projection_parallel.hpp":
-    cdef int interpolation_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha)
+    cdef int interpolation_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, const c_GpuIds& gpuids)
 
 def cuda_raise_errors(error_code):
     if error_code:
@@ -74,14 +74,14 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     cdef float* c_img = <float*> img.data
     if cone_beam:
         if not interpolated:
-            cuda_raise_errors(siddon_ray_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections))
+            cuda_raise_errors(siddon_ray_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0]))
         else:
             cuda_raise_errors(interpolation_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0]))
     else:
         if not interpolated:
-            cuda_raise_errors(siddon_ray_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections))
+            cuda_raise_errors(siddon_ray_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0]))
         else:
-            cuda_raise_errors(interpolation_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections))
+            cuda_raise_errors(interpolation_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0]))
     img = img.copy(order='C')
 
     cdef np.npy_intp shape[2]

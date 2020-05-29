@@ -238,12 +238,12 @@ __global__ void kernelPixelDetector( Geometry geo,
 }
 
 
-int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
-    
-    
-    
-    //DONE, Tesla found
-    
+int siddon_ray_projection(float const * const img, Geometry geo, float** result,float const * const angles,int nangles, const GpuIds& gpuids){
+    if (gpuids.GetLength() == 0) {
+        cudaSetDevice(0);
+    } else {
+        cudaSetDevice(gpuids[0]);
+    }
     // copy data to CUDA memory
     cudaArray *d_imagedata = 0;
     

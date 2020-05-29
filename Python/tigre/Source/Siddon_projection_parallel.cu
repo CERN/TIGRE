@@ -255,7 +255,12 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
 }
 
 
-int siddon_ray_projection_parallel(float const * const img, Geometry geo, float** result,float const * const angles,int nangles){
+int siddon_ray_projection_parallel(float const * const img, Geometry geo, float** result,float const * const angles,int nangles, const GpuIds& gpuids){
+    if (gpuids.GetLength() == 0) {
+        cudaSetDevice(0);
+    } else {
+        cudaSetDevice(gpuids[0]);
+    }
     
     
   
