@@ -16,12 +16,13 @@ IS_WINDOWS = sys.platform == 'win32'
 
 # Code from https://github.com/pytorch/pytorch/blob/master/torch/utils/cpp_extension.py
 COMPUTE_CAPABILITY_ARGS = [  # '-gencode=arch=compute_20,code=sm_20',
-    '-gencode=arch=compute_30,code=sm_30',
-    '-gencode=arch=compute_37,code=sm_37',
-    '-gencode=arch=compute_52,code=sm_52',
-    '-gencode=arch=compute_60,code=sm_60',
-    '-gencode=arch=compute_61,code=sm_61',
-    # '-gencode=arch=compute_70,code=sm_70', #untested
+    #'-gencode=arch=compute_30,code=sm_30',
+    #'-gencode=arch=compute_37,code=sm_37',
+    #'-gencode=arch=compute_52,code=sm_52',  # Maxwell
+    '-gencode=arch=compute_60,code=sm_60',  # Pascal
+    '-gencode=arch=compute_61,code=sm_61',  # Pascal
+    # '-gencode=arch=compute_70,code=sm_70', #untested, Volta
+    '-gencode=arch=compute_75,code=sm_75',  # Turing
     '--ptxas-options=-v', '-c',
     '--default-stream=per-thread',
     ]
