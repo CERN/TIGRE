@@ -136,9 +136,9 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     if not c_geom.dYaw:
         raise MemoryError()
     for i in range (total_projections):
-        c_geom.dRoll[i] = 0
-        c_geom.dPitch[i] = 0
-        c_geom.dYaw[i] = 0
+        c_geom.dRoll[i] = p_geometry.rotDetector[i][2]
+        c_geom.dPitch[i] = p_geometry.rotDetector[i][1]
+        c_geom.dYaw[i] = p_geometry.rotDetector[i][0]
 
     # The base unit we are working with in mm.
     c_geom.unitX = 1
