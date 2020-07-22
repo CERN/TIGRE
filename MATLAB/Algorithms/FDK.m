@@ -21,6 +21,11 @@ function [res]=FDK(proj,geo,angles,varargin)
 % Coded by:           Kyungsang Kim, modified by Ander Biguri 
 %--------------------------------------------------------------------------
 [filter,parker]=parse_inputs(proj,geo,angles,varargin);
+
+if abs(geo.offDetector(1)) > 0
+    proj = apply_wang_weights(proj, geo);
+end
+
 geo=checkGeo(geo,angles);
 geo.filter=filter;
 
@@ -116,4 +121,23 @@ for ii=1:length(opts)
     end
 end
 
+end
+
+function proj = apply_wang_weights(proj, geo)
+
+    overlap_in_mm = geo.sDetector(1)/2 - abs(geo.offDetector(1));
+    overlap_in_pix = round(overlap_in_mm / geo.dDetector(1));
+
+    t_in_mm = linspace(-overlap_in_mm, overlap_in_mm, 2 * overlap_in_pix);
+    R_in_mm = geo.DSO;
+    w = 0.5 * (sin((pi * atan(t_in_mm / R_in_mm)) / (2 * atan(overlap_in_mm / R_in_mm))) + 1);
+    w = repmat(w, [geo.nDetector(1), 1, size(proj, 3)]);
+
+    wang_weights = ones(size(proj));
+    wang_weights(:, 1:size(w, 2), :) = w;
+    if sign(geo.offDetector(1)) < 0
+        wang_weights = fliplr(wang_weights);
+    end
+    wang_weights = 2 * wang_weights;
+    proj = proj .* wang_weights;
 end
