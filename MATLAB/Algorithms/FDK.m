@@ -152,7 +152,7 @@ function bool = apply_wang_weights(geo)
         return
     end
     
-    if numel(geo.DSO) > 1 || numel(geo.DSD) > 1
+    if numel(geo.DSO) > 1
         bool = false;
         return
     end
