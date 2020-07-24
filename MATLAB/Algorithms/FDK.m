@@ -142,7 +142,8 @@ function proj = wang_displaced_detector_weighting(proj, geo)
 end
 
 function bool = apply_wang_weights(geo)
-    if size(geo.offDetector,2) > 1
+    if (size(geo.offDetector,2) > 1) && length(unique(geo.offDetector(1,:)))>1
+        warning('FDK Wang weights: varying offDetector detected, Wang weigths not being applied');
         bool = false;
         return
     end
@@ -152,14 +153,15 @@ function bool = apply_wang_weights(geo)
         return
     end
     
-    if numel(geo.DSO) > 1
+    if (numel(geo.DSO) > 1) && (length(unique(geo.DSO))>1)
+        warning('FDK Wang weights: varying DSO detected, Wang weigths not being applied');
         bool = false;
         return
     end
 
     percent_offset = abs(geo.offDetector(1)/geo.sDetector(1)) * 100;    
     if percent_offset > 30
-        warning("Detector offset percent: %0.2f) is greater than 30 which may result in image artifacts, consider rebinning 360 degree projections to 180 degrees", percent_offset)
+        warning('FDK Wang weights: Detector offset percent: %0.2f) is greater than 30 which may result in image artifacts, consider rebinning 360 degree projections to 180 degrees', percent_offset)
     end
     
     bool = true;
