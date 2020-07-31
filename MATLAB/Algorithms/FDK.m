@@ -18,9 +18,14 @@ function [res]=FDK(proj,geo,angles,varargin)
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
-% Coded by:           Kyungsang Kim, modified by Ander Biguri 
+% Coded by:           Kyungsang Kim, modified by Ander Biguri, Brandon Nelson 
 %--------------------------------------------------------------------------
 [filter,parker]=parse_inputs(proj,geo,angles,varargin);
+
+if apply_wang_weights(geo)
+    proj = wang_displaced_detector_weighting(proj, geo);
+end
+
 geo=checkGeo(geo,angles);
 geo.filter=filter;
 
@@ -116,4 +121,48 @@ for ii=1:length(opts)
     end
 end
 
+end
+
+function proj = wang_displaced_detector_weighting(proj, geo)
+    overlap_in_mm = geo.sDetector(1)/2 - abs(geo.offDetector(1));
+    overlap_in_pix = round(overlap_in_mm / geo.dDetector(1));
+
+    t_in_mm = linspace(-overlap_in_mm, overlap_in_mm, 2 * overlap_in_pix);
+    R_in_mm = geo.DSO(1);
+    w = 0.5 * (sin((pi * atan(t_in_mm / R_in_mm)) / (2 * atan(overlap_in_mm / R_in_mm))) + 1);
+    w = repmat(w, [geo.nDetector(1), 1, size(proj, 3)]);
+
+    wang_weights = ones(size(proj));
+    wang_weights(:, 1:size(w, 2), :) = w;
+    if sign(geo.offDetector(1)) < 0
+        wang_weights = fliplr(wang_weights);
+    end
+    wang_weights = 2 * wang_weights;
+    proj = proj .* wang_weights;
+end
+
+function bool = apply_wang_weights(geo)
+    if (size(geo.offDetector,2) > 1) && length(unique(geo.offDetector(1,:)))>1
+        warning('FDK Wang weights: varying offDetector detected, Wang weigths not being applied');
+        bool = false;
+        return
+    end
+    
+    if geo.offDetector(1) == 0
+        bool = false;
+        return
+    end
+    
+    if (numel(geo.DSO) > 1) && (length(unique(geo.DSO))>1)
+        warning('FDK Wang weights: varying DSO detected, Wang weigths not being applied');
+        bool = false;
+        return
+    end
+
+    percent_offset = abs(geo.offDetector(1)/geo.sDetector(1)) * 100;    
+    if percent_offset > 30
+        warning('FDK Wang weights: Detector offset percent: %0.2f) is greater than 30 which may result in image artifacts, consider rebinning 360 degree projections to 180 degrees', percent_offset)
+    end
+    
+    bool = true;
 end
