@@ -58,3 +58,5 @@ Python/tigre/Source/_tvdenoising.cpp
 *.mexa64
 
 MATLAB/mex_CUDA_win64.xml
+
+*.mexw64
