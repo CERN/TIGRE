@@ -47,9 +47,9 @@ Gz=cat(3,zeros(size(Gz(:,:,1))),Gz);
 nrm=safenorm(Gx,Gy,Gz); 
 
 tvg(1:end,1:end,1:end)= tvg(1:end,1:end,1:end)+(Gx(1:end,1:end,1:end)+Gy(1:end,1:end,1:end)+Gz(1:end,1:end,1:end))./nrm(1:end,1:end,1:end);
-tvg(2:end-1,:,:)=tvg(2:end-1,:,:)-Gx([2:end-1]+1,:,:)./nrm([2:end-1]+1,:,:);
-tvg(:,2:end-1,:)=tvg(:,2:end-1,:)-Gy(:,[2:end-1]+1,:)./nrm(:,[2:end-1]+1,:);
-tvg(:,:,2:end-1)=tvg(:,:,2:end-1)-Gz(:,:,[2:end-1]+1)./nrm(:,:,[2:end-1]+1);
+tvg(1:end-1,:,:)=tvg(1:end-1,:,:)-Gx([1:end-1]+1,:,:)./nrm([1:end-1]+1,:,:);
+tvg(:,1:end-1,:)=tvg(:,1:end-1,:)-Gy(:,[1:end-1]+1,:)./nrm(:,[1:end-1]+1,:);
+tvg(:,:,1:end-1)=tvg(:,:,1:end-1)-Gz(:,:,[1:end-1]+1)./nrm(:,:,[1:end-1]+1);
 
 end
 %% Forward differences
@@ -66,9 +66,9 @@ Gy=cat(2,Gy,zeros(size(Gy(:,end,:))));
 Gz=cat(3,Gz,zeros(size(Gz(:,:,end))));
 nrm=safenorm(Gx,Gy,Gz); 
 tvg(1:end-1,1:end-1,1:end-1)=tvg(1:end-1,1:end-1,1:end-1)-(Gx(1:end-1,1:end-1,1:end-1)+Gy(1:end-1,1:end-1,1:end-1)+Gz(1:end-1,1:end-1,1:end-1))./nrm(1:end-1,1:end-1,1:end-1);
-tvg(2:end-1,:,:)=tvg(2:end-1,:,:)+Gx([2:end-1]-1,:,:)./nrm([2:end-1]-1,:,:);
-tvg(:,2:end-1,:)=tvg(:,2:end-1,:)+Gy(:,[2:end-1]-1,:)./nrm(:,[2:end-1]-1,:);
-tvg(:,:,2:end-1)=tvg(:,:,2:end-1)+Gz(:,:,[2:end-1]-1)./nrm(:,:,[2:end-1]-1);
+tvg(2:end,:,:)=tvg(2:end,:,:)+Gx([2:end]-1,:,:)./nrm([2:end]-1,:,:);
+tvg(:,2:end,:)=tvg(:,2:end,:)+Gy(:,[2:end]-1,:)./nrm(:,[2:end]-1,:);
+tvg(:,:,2:end)=tvg(:,:,2:end)+Gz(:,:,[2:end]-1)./nrm(:,:,[2:end]-1);
 end
 %% Central differences
 % Doesnt accound for edges of the image!!!
