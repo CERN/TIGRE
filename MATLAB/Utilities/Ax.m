@@ -41,7 +41,7 @@ if size(angles,1)==1
 end
 %% geometry
 geo=checkGeo(geo,angles);
-assert(isequal(size(img),geo.nVoxel.'),'TIGRE:Ax:BadGeometry','nVoxel does not match with provided image size');
+assert(isequal([size(img,1) size(img,2) size(img,3)],squeeze(geo.nVoxel.')),'TIGRE:Ax:BadGeometry','nVoxel does not match with provided image size');
 
 %% Temporary (?)
 
