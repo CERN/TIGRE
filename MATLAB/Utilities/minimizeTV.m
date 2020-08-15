@@ -20,7 +20,7 @@ function img=minimizeTV(img,varargin)
 % Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
 if nargin==1
-    dtdv=1;
+    dtvg=1;
     ng=30;
 else
     if nargin == 3
@@ -30,7 +30,12 @@ else
         error('Wrogn amount of inputs');
     end
 end
-% img=(permute(img,[3 2 1]));
-img=minTV(img,dtvg,ng);
-% img=(permute(img,[3 2 1]));
+if ndims(img)==3
+    img=minTV(img,dtvg,ng);
+else
+    for ii=1:ng
+       gd=gradientTVnorm(img,'backward');
+       img=img-dtvg*gd/sqrt(sum(gd(:).^2));
+    end
+end
 end
