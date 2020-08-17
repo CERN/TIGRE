@@ -61,8 +61,6 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     else:
         print("Warning: Unknown mode, using default cone beam")
         cone_beam = True
-    #PERMUTE INPUT: (Z, Y, X) -> (X ,Y ,Z)
-    img = img.transpose().copy(order='F')
 
     cdef float* c_img = <float*> img.data
     if cone_beam:
@@ -75,7 +73,6 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
             cuda_raise_errors(siddon_ray_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections))
         else:
             cuda_raise_errors(interpolation_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections))
-    img = img.copy(order='C')
 
     cdef np.npy_intp shape[2]
     shape[0] = <np.npy_intp> geometry.nDetector[0]
