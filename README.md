@@ -122,10 +122,14 @@ If you use TIGRE, please reference the following papers:
 And especially if you use images bigger than 512<sup>3</sup> or multiple GPUs
 
 **Arbitrarily large iterative tomographic reconstruction on multiple GPUs using the TIGRE toolbox**
-*Ander Biguri, Reuben Lindroos, Robert Bryll, Hossein Towsyfyan, Hans Deyhle, Richard
+*Ander Biguri, Reuben Lindroos, Robert Bryll, Hossein Towsyfyan, Hans Deyhle, Ibrahim El khalil Harrane, Richard
 Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*
-**Submitted for publication** https://arxiv.org/abs/1905.03748
+**Journal of Parallel and Distributed Computing**
+[Read the article][4], 
+[Preprint][5]
 
 [1]: LICENSE.txt
 [2]: http://www.linfo.org/bsdlicense.html
 [3]: http://iopscience.iop.org/article/10.1088/2057-1976/2/5/055010
+[4]: https://doi.org/10.1016/j.jpdc.2020.07.004
+[5]: https://arxiv.org/abs/1905.03748

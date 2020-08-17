@@ -410,56 +410,65 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
             
             
             // Now that the computation is happening, we need to either prepare the memory for
-            // combining of the projections (splits>1) or start removing previous results.
-            
+            // combining of the projections (splits>1) and start removing previous results.
             
             
             // If our image does not fit in memory then we need to make sure we accumulate previous results too.
-            if( !fits_in_memory&&sp>0){
-                // First, grab previous results and put them in the auxiliary variable
-                for (dev = 0; dev < deviceCount; dev++){
-                    projection_this_block=PROJ_PER_BLOCK;
+            // This is done in 2 steps: 
+            // 1)copy previous results back into GPU 
+            // 2)accumulate with current results
+            // The code to take them out is the same as when there are no splits needed
+            if( !fits_in_memory&&sp>0)
+            {
+                // 1) grab previous results and put them in the auxiliary variable dProjection_accum
+                for (dev = 0; dev < deviceCount; dev++)
+                {
                     cudaSetDevice(dev);
-                    // this werid code makes sure we dont access bad memory. Its necesary for deviceCount>2
-                    if (dev+1==deviceCount){ // if its the last device
-                        if(i+1==last_device_blocks) // If we are in the last block of the last device, how many projections?
-                            projection_this_block=nangles_last_device-(last_device_blocks-1)*PROJ_PER_BLOCK;
-                        if(i+1>last_device_blocks) // As the last device can have less blocs, i may be over it.
-                            break;
-                    }else{
-                        if(i+1==noOfKernelCalls) // if its not the last device, it can still be the lat block
-                            projection_this_block=nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK;
-                    }
-                    cudaMemcpyAsync(dProjection_accum[(i%2)+dev*2], result[i*PROJ_PER_BLOCK+dev*nangles_device], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyHostToDevice,stream[dev*2+1]);
+                    //Global index of FIRST projection on this set on this GPU
+                    proj_global=i*PROJ_PER_BLOCK+dev*nangles_device;
+                    if(proj_global>=nangles) 
+                        break;
+
+                    // Unless its the last projection set, we have PROJ_PER_BLOCK angles. Otherwise...
+                    if(i+1==noOfKernelCalls) //is it the last block?
+                        projection_this_block=min(nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK, //the remaining angles that this GPU had to do (almost never PROJ_PER_BLOCK)
+                                                  nangles-proj_global);                              //or whichever amount is left to finish all (this is for the last GPU)
+                    else
+                        projection_this_block=PROJ_PER_BLOCK;
+
+                    cudaMemcpyAsync(dProjection_accum[(i%2)+dev*2], result[proj_global], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyHostToDevice,stream[dev*2+1]);
                 }
-                // Second, take the results from current compute call and add it to the code in execution.
-                for (dev = 0; dev < deviceCount; dev++){
-                    
-                    projection_this_block=PROJ_PER_BLOCK;
+                //  2) take the results from current compute call and add it to the code in execution.
+                for (dev = 0; dev < deviceCount; dev++)
+                {
                     cudaSetDevice(dev);
-                    // this werid code makes sure we dont access bad memory. Its necesary for deviceCount>2
-                    if (dev+1==deviceCount){ // if its the last device
-                        if(i+1==last_device_blocks) // If we are in the last block of the last device, how many projections?
-                            projection_this_block=nangles_last_device-(last_device_blocks-1)*PROJ_PER_BLOCK;
-                        if(i+1>last_device_blocks) // As the last device can have less blocs, i may be over it.
-                            break;
-                    }else{
-                        if(i+1==noOfKernelCalls) // if its not the last device, it can still be the lat block
-                            projection_this_block=nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK;
-                    }
+                    //Global index of FIRST projection on this set on this GPU
+                    proj_global=i*PROJ_PER_BLOCK+dev*nangles_device;
+                    if(proj_global>=nangles) 
+                        break;
+
+                    // Unless its the last projection set, we have PROJ_PER_BLOCK angles. Otherwise...
+                    if(i+1==noOfKernelCalls) //is it the last block?
+                        projection_this_block=min(nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK, //the remaining angles that this GPU had to do (almost never PROJ_PER_BLOCK)
+                                                  nangles-proj_global);                              //or whichever amount is left to finish all (this is for the last GPU)
+                    else
+                        projection_this_block=PROJ_PER_BLOCK;
+
                     cudaStreamSynchronize(stream[dev*2+1]); // wait until copy is finished
                     vecAddInPlaceInterp<<<(geo.nDetecU*geo.nDetecV*projection_this_block+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev*2]>>>(dProjection[(i%2)+dev*2],dProjection_accum[(i%2)+dev*2],(unsigned long)geo.nDetecU*geo.nDetecV*projection_this_block);
                 }
-            }
+            } // end accumulation case, where the image needs to be split 
+
             // Now, lets get out the projections from the previous execution of the kernels.
             if (i>0){
-                for (dev = 0; dev < deviceCount; dev++){
-                    projection_this_block=PROJ_PER_BLOCK;
+                for (dev = 0; dev < deviceCount; dev++)
+                {
                     cudaSetDevice(dev);
-                    if (dev+1==deviceCount && i+1==noOfKernelCalls && last_device_blocks!=noOfKernelCalls){ 
-                            projection_this_block=nangles_last_device-(last_device_blocks-1)*PROJ_PER_BLOCK;
-                    }
-                    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(!(i%2))+dev*2],  projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
+                    //Global index of FIRST projection on previous set on this GPU
+                    proj_global=(i-1)*PROJ_PER_BLOCK+dev*nangles_device;
+                    //Unless it is the last (handled separately later), all blocks are full.
+                    projection_this_block=PROJ_PER_BLOCK;
+                    cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(i%2))+dev*2],  projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
                 }
             }
             // Make sure Computation on kernels has finished before we launch the next batch.
@@ -467,30 +476,28 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                 cudaSetDevice(dev);
                 cudaStreamSynchronize(stream[dev*2]);
             }
-        }
+        } // End noOfKernelCalls (i) loop.
         
-        // We still have the last one to get out, do that one
-        int projection_this_block;
-        for (dev = 0; dev < deviceCount; dev++){
-            projection_this_block=PROJ_PER_BLOCK;
+        // We still have the last set of projections to get out of all GPUs
+        //Note: noOfKernelCalls==i
+        for (dev = 0; dev < deviceCount; dev++)
+        {
             cudaSetDevice(dev);
-            // this werid code makes sure we dont access bad memory. Its necesary for deviceCount>2
-            if (dev+1==deviceCount){ // if its the last device
-                projection_this_block=nangles_last_device-(last_device_blocks-1)*PROJ_PER_BLOCK;
-                if(i>last_device_blocks) // As the last device can have less blocs, i may be over it.
-                    break;
-            }else{
-               projection_this_block=nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK;
-            }
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Fail memcopy fail");
-            cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK+dev*nangles_device], dProjection[(int)(!(i%2))+dev*2], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
+            //Global index of FIRST projection on this set on this GPU
+            proj_global=(noOfKernelCalls-1)*PROJ_PER_BLOCK+dev*nangles_device;
+            if(proj_global>=nangles) 
+                break;
+            // How many projections are left here?
+            projection_this_block=min(nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK, //the remaining angles that this GPU had to do (almost never PROJ_PER_BLOCK)
+                                      nangles-proj_global);                              //or whichever amount is left to finish all (this is for the last GPU)
+
+            cudaDeviceSynchronize(); //Not really necesary, but just in case, we los nothing. 
+            cudaCheckErrors("Error at copying the last set of projections out (or in the previous copy)");
+            cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(noOfKernelCalls%2))+dev*2], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
         }
-        // Free memory for the next piece of image
-        
+        // Make sure everyone has done their bussiness before the next image split:
         cudaDeviceSynchronize();
-        
-    }
+    } // End image split loop.
     
     cudaCheckErrors("Main loop  fail");
     ///////////////////////////////////////////////////////////////////////
