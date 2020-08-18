@@ -335,16 +335,16 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     unsigned int last_device_blocks= (nangles_last_device+PROJ_PER_BLOCK-1)/PROJ_PER_BLOCK; // we will use this in the memory management.
     int projection_this_block;
 
+
     
     cudaTextureObject_t *texImg = new cudaTextureObject_t[deviceCount];
     cudaArray **d_cuArrTex = new cudaArray*[deviceCount];
     for (unsigned int sp=0;sp<splits;sp++){
-        
         // Create texture objects for all GPUs
         
         
         size_t linear_idx_start;
-        //First one shoudl always be  the same size as all the rest but the last
+        // They are all the same size, except the last one.
         linear_idx_start= (size_t)sp*(size_t)geoArray[0].nVoxelX*(size_t)geoArray[0].nVoxelY*(size_t)geoArray[0].nVoxelZ;
         CreateTextureInterp(deviceCount,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg,!sp);
         cudaCheckErrors("Texture object creation fail");
@@ -372,16 +372,16 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                         break;
                      if ((i*PROJ_PER_BLOCK+j)>=nangles_device)
                         break;
-                    geo.alpha=angles[proj_global*3];
-                    geo.theta=angles[proj_global*3+1];
-                    geo.psi  =angles[proj_global*3+2];
+                    geoArray[sp].alpha=angles[proj_global*3];
+                    geoArray[sp].theta=angles[proj_global*3+1];
+                    geoArray[sp].psi  =angles[proj_global*3+2];
                     
-                    is_spherical+=abs(geo.theta)+abs(geo.psi);
+                    is_spherical+=abs(geoArray[sp].theta)+abs(geoArray[sp].psi);
                     
                     //precomute distances for faster execution
-                    maxdist=maxdistanceCuboid(geo,proj_global);
+                    maxdist=maxdistanceCuboid(geoArray[sp],proj_global);
                     //Precompute per angle constant stuff for speed
-                    computeDeltas(geo, proj_global, &uvOrigin, &deltaU, &deltaV, &source);
+                    computeDeltas(geoArray[sp], proj_global, &uvOrigin, &deltaU, &deltaV, &source);
                     //Ray tracing!
                     projParamsArrayHost[4*j]=uvOrigin;		// 6*j because we have 6 Point3D values per projection
                     projParamsArrayHost[4*j+1]=deltaU;
@@ -433,7 +433,6 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                                                   nangles-proj_global);                              //or whichever amount is left to finish all (this is for the last GPU)
                     else
                         projection_this_block=PROJ_PER_BLOCK;
-
                     cudaMemcpyAsync(dProjection_accum[(i%2)+dev*2], result[proj_global], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyHostToDevice,stream[dev*2+1]);
                 }
                 //  2) take the results from current compute call and add it to the code in execution.
@@ -451,14 +450,14 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                                                   nangles-proj_global);                              //or whichever amount is left to finish all (this is for the last GPU)
                     else
                         projection_this_block=PROJ_PER_BLOCK;
-
                     cudaStreamSynchronize(stream[dev*2+1]); // wait until copy is finished
                     vecAddInPlaceInterp<<<(geo.nDetecU*geo.nDetecV*projection_this_block+MAXTREADS-1)/MAXTREADS,MAXTREADS,0,stream[dev*2]>>>(dProjection[(i%2)+dev*2],dProjection_accum[(i%2)+dev*2],(unsigned long)geo.nDetecU*geo.nDetecV*projection_this_block);
                 }
             } // end accumulation case, where the image needs to be split 
 
             // Now, lets get out the projections from the previous execution of the kernels.
-            if (i>0){
+            if (i>0)
+            {
                 for (dev = 0; dev < deviceCount; dev++)
                 {
                     cudaSetDevice(dev);
@@ -470,7 +469,8 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                 }
             }
             // Make sure Computation on kernels has finished before we launch the next batch.
-            for (dev = 0; dev < deviceCount; dev++){
+            for (dev = 0; dev < deviceCount; dev++)
+            {
                 cudaSetDevice(dev);
                 cudaStreamSynchronize(stream[dev*2]);
             }
@@ -494,7 +494,11 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
             cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(noOfKernelCalls%2))+dev*2], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
         }
         // Make sure everyone has done their bussiness before the next image split:
-        cudaDeviceSynchronize();
+        for (dev = 0; dev < deviceCount; dev++)
+        {
+            cudaSetDevice(dev);
+            cudaDeviceSynchronize();
+        }
     } // End image split loop.
     
     cudaCheckErrors("Main loop  fail");
