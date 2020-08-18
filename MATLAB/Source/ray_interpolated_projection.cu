@@ -306,9 +306,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     if (isHostRegisterSupported & splits>1){
         cudaHostRegister(img, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float),cudaHostRegisterPortable);
     }
-    
-    
-    
+    cudaCheckErrors("Error pinning memory");
     
     Point3D source, deltaU, deltaV, uvOrigin;
     
@@ -316,7 +314,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     cudaMallocHost((void**)&projParamsArrayHost,4*PROJ_PER_BLOCK*sizeof(Point3D));
     float* projFloatsArrayHost;
     cudaMallocHost((void**)&projFloatsArrayHost,2*PROJ_PER_BLOCK*sizeof(float));
-    
+    cudaCheckErrors("Error allocating auxiliary constant memory");
     
     // Create Streams for overlapping memcopy and compute
     int nStream_device=2;
