@@ -34,7 +34,12 @@ if strcmp(type,'TV')
     immax=max(img(:));
 
     img=img./(immax+2*eps);
-    imgO=tvDenoise(img,hyper,iter);
+    if ndims(img)==2
+        imgO=tvDenoise(cat(3,img,img),hyper,iter);
+        imgO=imgO(:,:,1);
+    else
+        imgO=tvDenoise(img,hyper,iter);
+    end
     clear img;
     
     imgO=imgO*immax;
