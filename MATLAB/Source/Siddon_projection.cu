@@ -357,6 +357,7 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
     if (isHostRegisterSupported & (splits>1 |deviceCount>1)){
         cudaHostRegister(img, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float),cudaHostRegisterPortable);
     }
+    cudaCheckErrors("Error pinning memory");
 
     
     
@@ -364,7 +365,7 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
     Point3D source, deltaU, deltaV, uvOrigin;
     Point3D* projParamsArrayHost;
     cudaMallocHost((void**)&projParamsArrayHost,4*PROJ_PER_BLOCK*sizeof(Point3D));
-    
+    cudaCheckErrors("Error allocating auxiliary constant memory");
     
     // Create Streams for overlapping memcopy and compute
     int nStreams=deviceCount*2;

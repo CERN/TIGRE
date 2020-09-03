@@ -1,8 +1,8 @@
 function img=minimizeTV(img,varargin)
 %MINIMIZETV MATLAB wrapper for the CUDA stepest descend minimization of TV
-% norm. Note that this does not minimize the TV noise, using the ROF mdoel,
-% this minimizes the TV alone. Infinite iterations of this code will lead
-% to a flat image.
+% norm. Note that this does not minimize the TV noise, using the ROF model,
+% this minimizes the TV alone, using gradient desced. 
+% Infinite iterations of this code will lead to a flat image.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -27,15 +27,13 @@ else
         dtvg=varargin{1};
         ng=varargin{2};
     else
-        error('Wrogn amount of inputs');
+        error('Wrong amount of inputs, 1 or 3 expected');
     end
 end
 if ndims(img)==3
     img=minTV(img,dtvg,ng);
 else
-    for ii=1:ng
-       gd=gradientTVnorm(img,'backward');
-       img=img-dtvg*gd/sqrt(sum(gd(:).^2));
-    end
+    img=minTV(cat(3,img,img),dtvg,ng);
+    img=img(:,:,1);
 end
 end
