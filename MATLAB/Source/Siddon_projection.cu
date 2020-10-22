@@ -546,6 +546,8 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
             cudaDestroyTextureObject(texImg[dev]);
             cudaFreeArray(d_cuArrTex[dev]);
     }
+    delete[] texImg; texImg = 0;
+    delete[] d_cuArrTex; d_cuArrTex = 0;
     // Freeing Stage
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);

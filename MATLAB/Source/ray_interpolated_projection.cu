@@ -310,9 +310,9 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     
     Point3D source, deltaU, deltaV, uvOrigin;
     
-    Point3D* projParamsArrayHost;
+    Point3D* projParamsArrayHost = 0;
     cudaMallocHost((void**)&projParamsArrayHost,4*PROJ_PER_BLOCK*sizeof(Point3D));
-    float* projFloatsArrayHost;
+    float* projFloatsArrayHost = 0;
     cudaMallocHost((void**)&projFloatsArrayHost,2*PROJ_PER_BLOCK*sizeof(float));
     cudaCheckErrors("Error allocating auxiliary constant memory");
     
@@ -509,6 +509,8 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         cudaDestroyTextureObject(texImg[dev]);
         cudaFreeArray(d_cuArrTex[dev]);
     }
+    delete[] texImg; texImg = 0;
+    delete[] d_cuArrTex; d_cuArrTex = 0;
     // Freeing Stage
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
@@ -529,6 +531,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     }
     freeGeoArray(splits,geoArray);
     cudaFreeHost(projParamsArrayHost);
+    cudaFreeHost(projFloatsArrayHost);
     
     
     for (int i = 0; i < nStreams; ++i)
