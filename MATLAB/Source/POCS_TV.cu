@@ -269,19 +269,21 @@ do { \
         // 1.-All available devices are usable by this code
         // 2.-All available devices are equal, they are the same machine (warning trhown)
         int dev;
-        char * devicenames;
+        const int devicenamelength = 256;  // The length 256 is fixed by spec of cudaDeviceProp::name
+        char devicename[devicenamelength];
         cudaDeviceProp deviceProp;
         
         for (dev = 0; dev < deviceCount; dev++) {
             cudaSetDevice(dev);
             cudaGetDeviceProperties(&deviceProp, dev);
             if (dev>0){
-                if (strcmp(devicenames,deviceProp.name)!=0){
+                if (strcmp(devicename,deviceProp.name)!=0){
                     mexWarnMsgIdAndTxt("minimizeTV:POCS_TV:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n POCS_TV.cu line 277.");
                     break;
                 }
             }
-            devicenames=deviceProp.name;
+            memset(devicename, 0, devicenamelength);
+            strcpy(devicename, deviceProp.name);
         }
         
         
