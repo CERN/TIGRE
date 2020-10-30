@@ -299,27 +299,17 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
     size_t mem_proj=                  (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
     
     // Does everything fit in the GPUs?
-    bool fits_in_memory=false;
+    const bool fits_in_memory = mem_image+2*PROJ_PER_BLOCK*mem_proj<mem_GPU_global;
     unsigned int splits=1;
-    Geometry * geoArray;
-    
-    
-    if (mem_image+2*PROJ_PER_BLOCK*mem_proj<mem_GPU_global){// yes it does
-        fits_in_memory=true;
-        geoArray=(Geometry*)malloc(sizeof(Geometry));
-        geoArray[0]=geo;
-    }
-    else{// Nope nope.
-        fits_in_memory=false; // Oh dear.
+    if (!fits_in_memory) {
+        // Nope nope.
         // approx free memory we have. We already have left some extra 5% free for internal stuff
         // we need a second projection memory to combine multi-GPU stuff.
         size_t mem_free=mem_GPU_global-4*PROJ_PER_BLOCK*mem_proj;
-        
-        
         splits=mem_image/mem_free+1;// Ceil of the truncation
-        geoArray=(Geometry*)malloc(splits*sizeof(Geometry));
-        splitImage(splits,geo,geoArray,nangles);
     }
+    Geometry* geoArray = (Geometry*)malloc(splits*sizeof(Geometry));
+    splitImage(splits,geo,geoArray,nangles);
     
     // Allocate axuiliary memory for projections on the GPU to accumulate partial results
     float ** dProjection_accum;
