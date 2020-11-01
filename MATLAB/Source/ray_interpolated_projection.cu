@@ -236,7 +236,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         }
         memset(devicename, 0, devicenamelength);
         strcpy(devicename, deviceProp.name);
-}
+    }
     
     // Check free memory
     size_t mem_GPU_global;
@@ -324,7 +324,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     int nangles_device=(nangles+deviceCount-1)/deviceCount;
     int nangles_last_device=(nangles-(deviceCount-1)*nangles_device);
     unsigned int noOfKernelCalls = (nangles_device+PROJ_PER_BLOCK-1)/PROJ_PER_BLOCK;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_BLOCK
-    unsigned int last_device_blocks= (nangles_last_device+PROJ_PER_BLOCK-1)/PROJ_PER_BLOCK; // we will use this in the memory management.
+    unsigned int noOfKernelCallsLastDev = (nangles_last_device+PROJ_PER_BLOCK-1)/PROJ_PER_BLOCK; // we will use this in the memory management.
     int projection_this_block;
 
 
@@ -349,11 +349,10 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         dim3 block(divU,divV,PROJ_PER_BLOCK);
         
         unsigned int proj_global;
-        unsigned int i;
         float maxdist;
         // Now that we have prepared the image (piece of image) and parameters for kernels
         // we project for all angles.
-        for ( i=0; i<noOfKernelCalls; i++){
+        for (unsigned int i=0; i<noOfKernelCalls; i++) {
             for (dev=0;dev<deviceCount;dev++){
                 float is_spherical=0;
                 cudaSetDevice(dev);
@@ -455,8 +454,23 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                     cudaSetDevice(dev);
                     //Global index of FIRST projection on previous set on this GPU
                     proj_global=(i-1)*PROJ_PER_BLOCK+dev*nangles_device;
-                    //Unless it is the last (handled separately later), all blocks are full.
-                    projection_this_block=PROJ_PER_BLOCK;
+                    if (dev+1==deviceCount) {    //is it the last device?
+                        // projections assigned to this device is >=nangles_device-(deviceCount-1) and < nangles_device
+                        if (i-1 < noOfKernelCallsLastDev) {
+                            // The previous set(block) was not empty.
+                            projection_this_block=min(PROJ_PER_BLOCK, nangles-proj_global);
+                        }
+                        else {
+                            // The previous set was empty.
+                            // This happens if deviceCount > PROJ_PER_BLOCK+1.
+                            // e.g. PROJ_PER_BLOCK = 9, deviceCount = 11, nangles = 199.
+                            // e.g. PROJ_PER_BLOCK = 1, deviceCount =  3, nangles =   7.
+                            break;
+                        }
+                    }
+                    else {
+                        projection_this_block=PROJ_PER_BLOCK;
+                    }
                     cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(i%2))+dev*2],  projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
                 }
             }
@@ -468,8 +482,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
             }
         } // End noOfKernelCalls (i) loop.
         
-        // We still have the last set of projections to get out of all GPUs
-        //Note: noOfKernelCalls==i
+        // We still have the last set of projections to get out of GPUs
         for (dev = 0; dev < deviceCount; dev++)
         {
             cudaSetDevice(dev);
