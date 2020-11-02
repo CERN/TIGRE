@@ -115,8 +115,13 @@ __global__ void kernelPixelDetector_parallel_interpolated( Geometry geo,
 //         float DSO,
 //         float maxdist){
     
+#if IS_FOR_MATLAB_TIGRE
     unsigned long y = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long x = blockIdx.x * blockDim.x + threadIdx.x;
+#else
+    unsigned long x = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned long y = blockIdx.x * blockDim.x + threadIdx.x;
+#endif
 //     unsigned long idx =  x  * geo.nDetecV + y;
     unsigned long projNumber=threadIdx.z;
     
@@ -126,7 +131,11 @@ __global__ void kernelPixelDetector_parallel_interpolated( Geometry geo,
     int indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array
     
     
+#if IS_FOR_MATLAB_TIGRE
     size_t idx =  (size_t)(x  * geo.nDetecV + y)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+#else
+    size_t idx =  (size_t)(y  * geo.nDetecU + x)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+#endif
     
     if(indAlpha>=totalNoOfProjections)
         return;

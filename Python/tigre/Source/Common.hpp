@@ -8,10 +8,16 @@
 // #define PRINT_HERE (void*)0
 
 #if defined(IS_FOR_PYTIGRE)
+#ifndef IS_FOR_MATLAB_TIGRE
+    #define IS_FOR_MATLAB_TIGRE 0
+#endif  // IS_FOR_MATLAB_TIGRE
 void mexPrintf(const char*, ...);
 void mexErrMsgIdAndTxt(const char* pcTag, const char* pcMsg);
 void mexWarnMsgIdAndTxt(const char* pcTag, const char* pcMsg);
 #else
+#ifndef IS_FOR_MATLAB_TIGRE
+    #define IS_FOR_MATLAB_TIGRE 1
+#endif  // IS_FOR_MATLAB_TIGRE
 #include "mex.h"
 #include "tmwtypes.h"
 #endif  // IS_TIGRE_FOR_PYTHON

@@ -114,15 +114,24 @@ __global__ void kernelPixelDetector( Geometry geo,
         cudaTextureObject_t tex){
     
     
+#if IS_FOR_MATLAB_TIGRE
     unsigned long y = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long x = blockIdx.x * blockDim.x + threadIdx.x;
+#else
+    unsigned long x = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned long y = blockIdx.x * blockDim.x + threadIdx.x;
+#endif
     unsigned long projNumber=threadIdx.z;
     
     
     if ((x>= geo.nDetecU) | (y>= geo.nDetecV)|  (projNumber>=PROJ_PER_BLOCK))
         return;
     
-    size_t idx =  (size_t)(x  * geo.nDetecV + y)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+#if IS_FOR_MATLAB_TIGRE
+    size_t idx =  (size_t)(x * geo.nDetecV + y)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+#else
+    size_t idx =  (size_t)(y * geo.nDetecU + x)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+#endif
     int indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array (for a given GPU)
 
     if(indAlpha>=totalNoOfProjections)

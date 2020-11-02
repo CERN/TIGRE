@@ -90,5 +90,4 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     free_c_geometry(c_geometry)
     geometry.convert_contig_mode()
 
-    # PERMUTE OUTPUT: (N, V, U) -> (N, U, V)
-    return projections.swapaxes(1,2).copy()
+    return projections

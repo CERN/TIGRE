@@ -122,15 +122,24 @@ template<bool sphericalrotation>
         const int totalNoOfProjections,
         cudaTextureObject_t tex){
     
+#if IS_FOR_MATLAB_TIGRE
     unsigned long  y = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long  x = blockIdx.x * blockDim.x + threadIdx.x;
+#else
+    unsigned long  x = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned long  y = blockIdx.x * blockDim.x + threadIdx.x;
+#endif
     unsigned long projNumber=threadIdx.z;
     
     
     if ((x>= geo.nDetecU) | (y>= geo.nDetecV)|  (projNumber>=PROJ_PER_BLOCK))
         return;
     
+#if IS_FOR_MATLAB_TIGRE
     size_t idx =  (size_t)(x  * geo.nDetecV + y)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+#else
+    size_t idx =  (size_t)(y  * geo.nDetecU + x)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+#endif
     int indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array
     
     if(indAlpha>=totalNoOfProjections)
@@ -193,7 +202,11 @@ template<bool sphericalrotation>
         ty=vectY*i+source.y;
         tz=vectZ*i+source.z;
         
+#if 1 //IS_FOR_MATLAB_TIGRE
         sum += tex3D<float>(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
+#else
+        sum += tex3D<float>(tex, ty+0.5f, tx+0.5f, tz+0.5f); // this line is 94% of time.
+#endif
     }
     
     float deltalength=sqrtf((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
