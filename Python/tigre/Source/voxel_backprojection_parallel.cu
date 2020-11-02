@@ -244,7 +244,11 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
+#if IS_FOR_MATLAB_TIGRE
             voxelColumn[colIdx]+=tex3D<float>(tex, v+0.5f, u+0.5f ,indAlpha+0.5f);
+#else
+            voxelColumn[colIdx]+=tex3D<float>(tex, u+0.5f, v+0.5f ,indAlpha+0.5f);
+#endif
             
         }  // END iterating through column of voxels
         

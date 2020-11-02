@@ -243,7 +243,11 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             float u,v;
             u=y+(float)geo.nDetecU*0.5f;
             v=z+(float)geo.nDetecV*0.5f;
+#if IS_FOR_MATLAB_TIGRE
             float sample=tex3D<float>(tex, v, u ,indAlpha+0.5f);
+#else
+            float sample=tex3D<float>(tex, u, v ,indAlpha+0.5f);
+#endif
             float weigth=0;
             //
             //
