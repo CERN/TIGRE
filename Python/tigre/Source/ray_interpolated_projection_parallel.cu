@@ -53,7 +53,7 @@
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #include "ray_interpolated_projection_parallel.hpp"
-#include "mex.h"
+#include "Common.hpp"
 #include <math.h>
 
 #define cudaCheckErrors(msg) \
