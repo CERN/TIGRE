@@ -55,17 +55,17 @@
 #define BLOCK_SIZE 10  // BLOCK_SIZE^3 must be smaller than MAXTREADS
 
 #include "tvdenoising.hpp"
-inline int cudaCheckErrors(const char * msg)
-{
-   cudaError_t __err = cudaGetLastError();
-   if (__err != cudaSuccess)
-   {
-      printf("CUDA:tv_denoising:%s:%s\n",msg, cudaGetErrorString(__err));
-      cudaDeviceReset();
-      return 1;
-   }
-   return 0;
-}
+#define cudaCheckErrors(msg) \
+do { \
+        cudaError_t __err = cudaGetLastError(); \
+        if (__err != cudaSuccess) { \
+                cudaDeviceReset();\
+                mexPrintf("%s \n",msg);\
+                        mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising",cudaGetErrorString(__err));\
+        } \
+} while (0)
+    
+    
     
     __device__ __inline__
             float divergence(const float* pz, const float* py, const float* px,
@@ -171,35 +171,36 @@ inline int cudaCheckErrors(const char * msg)
     
     
 // Main function
-    int tvdenoising(float* src, float* dst, float lambda,
+    void tvdenoising(float* src, float* dst, float lambda,
             const float* spacing, const long* image_size, int maxIter){
         
         // Prepare for MultiGPU
         int deviceCount = 0;
         cudaGetDeviceCount(&deviceCount);
-        if(cudaCheckErrors("Device query fail")){return 1;}
+        cudaCheckErrors("Device query fail");
         if (deviceCount == 0) {
-            //mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPUselect","There are no available device(s) that support CUDA\n");
-            return ERR_NO_CAPABLE_DEVICES;
+            mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPUselect","There are no available device(s) that support CUDA\n");
         }
         //
         // CODE assumes
         // 1.-All available devices are usable by this code
         // 2.-All available devices are equal, they are the same machine (warning trhown)
         int dev;
-        char * devicenames;
+        const int devicenamelength = 256;  // The length 256 is fixed by spec of cudaDeviceProp::name
+        char devicename[devicenamelength];
         cudaDeviceProp deviceProp;
         
         for (dev = 0; dev < deviceCount; dev++) {
             cudaSetDevice(dev);
             cudaGetDeviceProperties(&deviceProp, dev);
             if (dev>0){
-                if (strcmp(devicenames,deviceProp.name)!=0){
-                    printf("tvDenoise:tvdenoising:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n POCS_TV.cu line 277.");
+                if (strcmp(devicename,deviceProp.name)!=0){
+                    mexWarnMsgIdAndTxt("tvDenoise:tvdenoising:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n POCS_TV.cu line 277.");
                     break;
                 }
             }
-            devicenames=deviceProp.name;
+            memset(devicename, 0, devicenamelength);
+            strcpy(devicename, deviceProp.name);
         }
         
         // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
@@ -254,8 +255,7 @@ inline int cudaCheckErrors(const char * msg)
             
             // Assert
             if (mem_GPU_global< 5*mem_img_each_GPU){
-                //mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","Bad assert. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
-                return ERR_BAD_ASSERT;
+                mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","Bad assert. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
             }
         }
         
@@ -268,7 +268,7 @@ inline int cudaCheckErrors(const char * msg)
             cudaHostRegister(src ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
             cudaHostRegister(dst ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
         }
-        if(cudaCheckErrors("Error pinning memory")){return 1;}
+        cudaCheckErrors("Error pinning memory");
         
         
         
@@ -279,16 +279,16 @@ inline int cudaCheckErrors(const char * msg)
             
             //These take A LOT of memory and A LOT of time to use. If we can avoid using them, better.
             if (buffer_length<maxIter){ // if we do only 1 big iter, they are not needed.
-                printf("tvDenoise:tvdenoising:Memory: TV dneoising requires 5 times the image memory. Your GPU(s) do not have the required memory.\n This memory will be attempted to allocate on the CPU, Whic may fail or slow the computation by a very significant amount.\n If you want to kill the execution: CTRL+C");
+                mexWarnMsgIdAndTxt("tvDenoise:tvdenoising:Memory","TV dneoising requires 5 times the image memory. Your GPU(s) do not have the required memory.\n This memory will be attempted to allocate on the CPU, Whic may fail or slow the computation by a very significant amount.\n If you want to kill the execution: CTRL+C");
                 
                 cudaMallocHost((void**)&h_px,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
-                if(cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine")){return 1;}
+                cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
                 
                 cudaMallocHost((void**)&h_py,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
-                if(cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine")){return 1;}
+                cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
                 
                 cudaMallocHost((void**)&h_pz,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
-                if(cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine")){return 1;}
+                cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
             }
             h_u=dst;
         }else{
@@ -322,7 +322,7 @@ inline int cudaCheckErrors(const char * msg)
             cudaMalloc((void**)&d_pz[dev],  mem_img_each_GPU);
         }
         cudaDeviceSynchronize();
-        if(cudaCheckErrors("Malloc  error")){return 1;}
+        cudaCheckErrors("Malloc  error");
         
         
         // Create streams
@@ -336,7 +336,7 @@ inline int cudaCheckErrors(const char * msg)
                 cudaStreamCreate(&stream[i+dev*nStream_device]);
             }
         }
-        if(cudaCheckErrors("Stream creation fail")){return 1;}
+        cudaCheckErrors("Stream creation fail");
         
         
         
@@ -402,7 +402,7 @@ inline int cudaCheckErrors(const char * msg)
                         cudaSetDevice(dev);
                         cudaDeviceSynchronize();
                     }
-                    if(cudaCheckErrors("Memcpy failure")){return 1;}
+                    cudaCheckErrors("Memcpy failure");
                     
                 }
                 // if we need to split and its not the first iteration, then we need to copy from Host memory.
@@ -445,7 +445,7 @@ inline int cudaCheckErrors(const char * msg)
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(dev);
                         cudaDeviceSynchronize();
-                        if(cudaCheckErrors("Memcpy failure on multi split")){return 1;}
+                        cudaCheckErrors("Memcpy failure on multi split");
                     }
                 }
                 
@@ -476,7 +476,6 @@ inline int cudaCheckErrors(const char * msg)
                                 (long)(curr_slices+buffer_length*2), image_size[1], image_size[0],
                                 spacing[2], spacing[1], spacing[0]);
                     }
-                    
                 }// END internal iter
                 
                 // Syncronize mathematics, make sure bounding pixels are correct
@@ -556,9 +555,11 @@ inline int cudaCheckErrors(const char * msg)
             }//END splits
         }//END main iter
         
-        
-        cudaDeviceSynchronize();
-        if(cudaCheckErrors("TV minimization")){return 1;}
+        for(dev=0; dev<deviceCount;dev++){
+            cudaSetDevice(dev);
+            cudaDeviceSynchronize();
+        }
+        cudaCheckErrors("TV minimization");
         
         if(splits==1){
             for(dev=0; dev<deviceCount;dev++){
@@ -568,9 +569,11 @@ inline int cudaCheckErrors(const char * msg)
                 cudaMemcpyAsync(dst+slices_per_split*image_size[0]*image_size[1]*dev, d_u[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
             }
         }
-        cudaDeviceSynchronize();
-        if(cudaCheckErrors("Copy result back")){return 1;}
-        
+        for(dev=0; dev<deviceCount;dev++){
+            cudaSetDevice(dev);
+            cudaDeviceSynchronize();
+        }
+        cudaCheckErrors("Copy result back");
         for(dev=0; dev<deviceCount;dev++){
             
             cudaFree(d_src[dev]);
@@ -579,7 +582,7 @@ inline int cudaCheckErrors(const char * msg)
             cudaFree(d_py[dev]);
             cudaFree(d_px[dev]);
         }
-       if(splits>1 && buffer_length<maxIter){
+        if(splits>1 && buffer_length<maxIter){
             cudaFreeHost(h_px);
             cudaFreeHost(h_py);
             cudaFreeHost(h_pz);
@@ -589,15 +592,20 @@ inline int cudaCheckErrors(const char * msg)
             cudaFreeHost(buffer_py);
             cudaFreeHost(buffer_pz);
         }
+        
         for (int i = 0; i < nStreams; ++i)
            cudaStreamDestroy(stream[i]) ;
-        
+
         if (isHostRegisterSupported & splits>1){
             cudaHostUnregister(src);
             cudaHostUnregister(dst);
         }
-//         cudaDeviceReset(); // for the profiler
-        return 0;
+        for(dev=0; dev<deviceCount;dev++){
+            cudaSetDevice(dev);
+            cudaDeviceSynchronize();
+        }
+        cudaCheckErrors("Copy free ");
+        
     }
     
     
@@ -610,7 +618,7 @@ void checkFreeMemory(int deviceCount,size_t *mem_GPU_global){
             cudaMemGetInfo(&memfree,&memtotal);
             if(dev==0) *mem_GPU_global=memfree;
             if(memfree<memtotal/2){
-                printf("tvDenoise:tvdenoising:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+                mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
             }
             cudaCheckErrors("Check mem error");
             

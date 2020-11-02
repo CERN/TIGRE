@@ -50,22 +50,19 @@
 #include <cuda.h>
 #include "voxel_backprojection.hpp"
 #include "voxel_backprojection_parallel.hpp"
-#include <stdio.h>
-#include "errors.hpp"
+
+#include "mex.h"
 #include <math.h>
 
 // https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
-inline int cudaCheckErrors(const char * msg)
-{
-   cudaError_t __err = cudaGetLastError();
-   if (__err != cudaSuccess)
-   {
-      printf("CUDA:voxel_backprojection_par:%s:%s\n",msg, cudaGetErrorString(__err));
-      cudaDeviceReset();
-      return 1;
-   }
-   return 0;
-}
+#define cudaCheckErrors(msg) \
+do { \
+        cudaError_t __err = cudaGetLastError(); \
+        if (__err != cudaSuccess) { \
+                mexPrintf("%s \n",msg);\
+                mexErrMsgIdAndTxt("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
+        } \
+} while (0)
     
     
 #define MAXTREADS 1024
@@ -307,7 +304,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     if (isHostRegisterSupported){
         cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
     }
-    if(cudaCheckErrors("Error pinning memory")){return 1;}
+    cudaCheckErrors("Error pinning memory");
     
     
     // Allocate result image memory
@@ -315,7 +312,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     float* dimage;
     cudaMalloc((void**)&dimage, num_bytes);
     cudaMemset(dimage,0,num_bytes);
-    if(cudaCheckErrors("cudaMalloc fail")){return 1;}
+    cudaCheckErrors("cudaMalloc fail");
     
     
     Point3D* projParamsArrayHostParallel;
@@ -469,7 +466,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     }
     cudaDeviceSynchronize();
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
-    if(cudaCheckErrors("cudaMemcpy result fail")){return 1;}
+    cudaCheckErrors("cudaMemcpy result fail");
     
     free(partial_projection);
     free(proj_split_size);
