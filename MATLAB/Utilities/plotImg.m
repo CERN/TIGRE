@@ -202,7 +202,7 @@ for ii=list
     
     if crossect==3 
         xlabel('->Y');
-        ylabel('X<-');
+        ylabel('->X');
         title(['Bottom to top->Z : ',num2str(ii)]);
     end
      if crossect==2 
