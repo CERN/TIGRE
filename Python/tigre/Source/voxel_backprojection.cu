@@ -157,7 +157,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
     // unsigned long startIndZ = blockIdx.z * blockDim.z + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     unsigned long startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     //Make sure we dont go out of bounds
-    if (indX>=geo.nVoxelX | indY>=geo.nVoxelY |startIndZ>=geo.nVoxelZ)
+    if (indX>=geo.nVoxelX || indY>=geo.nVoxelY || startIndZ>=geo.nVoxelZ)
         return;
     
     // We'll keep a local auxiliary array of values of a column of voxels that this thread will update
@@ -291,9 +291,11 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
 
 int voxel_backprojection(float  *  projections, Geometry geo, float* result,float const * const alphas, int nalpha)
 {
+    // printf("voxel_backprojection(geo.nDetector = %d, %d)\n", geo.nDetecU, geo.nDetecV);
+    // printf("geo.nVoxel    = %d, %d, %d\n", geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
     
     
-    
+
     // Prepare for MultiGPU
     int deviceCount = 0;
     cudaGetDeviceCount(&deviceCount);
@@ -678,7 +680,11 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
 
 void CreateTexture(int num_devices, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate){
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+#if IS_FOR_MATLAB_TIGRE
     const cudaExtent extent =make_cudaExtent(geo.nDetecV, geo.nDetecU, nangles);
+#else
+    const cudaExtent extent =make_cudaExtent(geo.nDetecU, geo.nDetecV, nangles);
+#endif
     if (allocate){
         for (unsigned int dev = 0; dev < num_devices; dev++){
             cudaSetDevice(dev);

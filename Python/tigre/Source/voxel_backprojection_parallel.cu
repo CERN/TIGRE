@@ -159,7 +159,7 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
     // unsigned long startIndZ = blockIdx.z * blockDim.z + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     unsigned long startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     //Make sure we dont go out of bounds
-    if (indX>=geo.nVoxelX | indY>=geo.nVoxelY |startIndZ>=geo.nVoxelZ)
+    if (indX>=geo.nVoxelX || indY>=geo.nVoxelY || startIndZ>=geo.nVoxelZ)
         return;
     
     // We'll keep a local auxiliary array of values of a column of voxels that this thread will update
@@ -555,10 +555,12 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
 }  // END computeDeltasCube
 void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool alloc)
 {
-    //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
-        
         //cudaArray Descriptor
-        const cudaExtent extent = make_cudaExtent(geo.nDetecV, geo.nDetecU, nangles);
+#if IS_FOR_MATLAB_TIGRE
+        const cudaExtent extent =make_cudaExtent(geo.nDetecV, geo.nDetecU, nangles);
+#else
+        const cudaExtent extent =make_cudaExtent(geo.nDetecU, geo.nDetecV, nangles);
+#endif
         cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
         //cuda Array
         if (alloc){
