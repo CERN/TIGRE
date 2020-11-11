@@ -122,24 +122,19 @@ template<bool sphericalrotation>
         const int totalNoOfProjections,
         cudaTextureObject_t tex){
     
-#if IS_FOR_MATLAB_TIGRE
-    unsigned long  y = blockIdx.y * blockDim.y + threadIdx.y;
-    unsigned long  x = blockIdx.x * blockDim.x + threadIdx.x;
-#else
-    unsigned long  x = blockIdx.y * blockDim.y + threadIdx.y;
-    unsigned long  y = blockIdx.x * blockDim.x + threadIdx.x;
-#endif
+    unsigned long  u = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned long  v = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long projNumber=threadIdx.z;
     
-    
-    if ((x>= geo.nDetecU) | (y>= geo.nDetecV)|  (projNumber>=PROJ_PER_BLOCK))
+    if (u>= geo.nDetecU || v>= geo.nDetecV || projNumber>=PROJ_PER_BLOCK)
         return;
     
 #if IS_FOR_MATLAB_TIGRE
-    size_t idx =  (size_t)(x  * geo.nDetecV + y)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+    size_t idx =  (size_t)(u * geo.nDetecV + v)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
 #else
-    size_t idx =  (size_t)(y  * geo.nDetecU + x)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+    size_t idx =  (size_t)(v * geo.nDetecU + u)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
 #endif
+
     int indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array
     
     if(indAlpha>=totalNoOfProjections)
@@ -156,9 +151,8 @@ template<bool sphericalrotation>
     
     
     /////// Get coordinates XYZ of pixel UV
-    int pixelV = geo.nDetecV-y-1;
-    int pixelU = x;
-    
+    int pixelV = geo.nDetecV-v-1;
+    int pixelU = u;
     
     
     float vectX,vectY,vectZ;
@@ -202,11 +196,7 @@ template<bool sphericalrotation>
         ty=vectY*i+source.y;
         tz=vectZ*i+source.z;
         
-#if 1 //IS_FOR_MATLAB_TIGRE
         sum += tex3D<float>(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
-#else
-        sum += tex3D<float>(tex, ty+0.5f, tx+0.5f, tz+0.5f); // this line is 94% of time.
-#endif
     }
     
     float deltalength=sqrtf((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
@@ -254,6 +244,8 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     // Check free memory
     size_t mem_GPU_global;
     checkFreeMemory(deviceCount,&mem_GPU_global);
+
+    // printf("geo.nDetec (U, V) = %d, %d\n", geo.nDetecU, geo.nDetecV);
     
     size_t mem_image=(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
     size_t mem_proj =(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV * sizeof(float);

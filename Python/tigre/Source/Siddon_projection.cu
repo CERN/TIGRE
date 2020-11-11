@@ -114,23 +114,18 @@ __global__ void kernelPixelDetector( Geometry geo,
         cudaTextureObject_t tex){
     
     
-#if IS_FOR_MATLAB_TIGRE
-    unsigned long y = blockIdx.y * blockDim.y + threadIdx.y;
-    unsigned long x = blockIdx.x * blockDim.x + threadIdx.x;
-#else
-    unsigned long x = blockIdx.y * blockDim.y + threadIdx.y;
-    unsigned long y = blockIdx.x * blockDim.x + threadIdx.x;
-#endif
+    unsigned long u = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned long v = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long projNumber=threadIdx.z;
     
     
-    if ((x>= geo.nDetecU) | (y>= geo.nDetecV)|  (projNumber>=PROJ_PER_BLOCK))
+    if (u>= geo.nDetecU || v>= geo.nDetecV || projNumber>=PROJ_PER_BLOCK)
         return;
     
 #if IS_FOR_MATLAB_TIGRE
-    size_t idx =  (size_t)(x * geo.nDetecV + y)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+    size_t idx =  (size_t)(u * geo.nDetecV + v)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
 #else
-    size_t idx =  (size_t)(y * geo.nDetecU + x)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+    size_t idx =  (size_t)(v * geo.nDetecU + u)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
 #endif
     int indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array (for a given GPU)
 
@@ -143,8 +138,8 @@ __global__ void kernelPixelDetector( Geometry geo,
     Point3D source = projParamsArrayDev[4*projNumber+3];
     
     /////// Get coordinates XYZ of pixel UV
-    int pixelV = geo.nDetecV-y-1;
-    int pixelU = x;
+    int pixelV = geo.nDetecV-v-1;
+    int pixelU = u;
     Point3D pixel1D;
     pixel1D.x=(uvOrigin.x+pixelU*deltaU.x+pixelV*deltaV.x);
     pixel1D.y=(uvOrigin.y+pixelU*deltaU.y+pixelV*deltaV.y);
