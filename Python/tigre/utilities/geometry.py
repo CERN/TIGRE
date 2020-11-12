@@ -152,12 +152,6 @@ class Geometry(object):
             else:
                 print(self.mode + ': ' + str(obj))
 
-    def convert_contig_mode(self):
-        dim_attribs = ['nVoxel', 'sVoxel', 'dVoxel',
-                       'nDetector', 'sDetector', 'dDetector']
-        for attrib in dim_attribs:
-            setattr(self, attrib, getattr(self, attrib)[::-1].copy())
-
     def __str__(self):
         parameters = []
         parameters.append("TIGRE parameters")

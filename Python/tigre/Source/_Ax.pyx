@@ -31,9 +31,6 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     cdef int total_projections = angles.shape[0]
     cdef int nDetectorPixels = <int>geometry.nDetector[0] * <int>geometry.nDetector[1]
 
-    #PERMUTE INPUT: convert_contig_mode(C_CONTIG) -> F_CONTIG
-    # (N, V, U) -> (U, V, N) 
-    geometry.convert_contig_mode()
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
     if not c_geometry:
         raise MemoryError()
@@ -81,13 +78,12 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
  
     cdef np.npy_intp shape[3]
     shape[0] = <np.npy_intp> total_projections
-    shape[1] = <np.npy_intp> geometry.nDetector[1]
-    shape[2] = <np.npy_intp> geometry.nDetector[0]
+    shape[1] = <np.npy_intp> geometry.nDetector[0]
+    shape[2] = <np.npy_intp> geometry.nDetector[1]
     projections = np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_projectionsNonPinned)
     PyArray_ENABLEFLAGS(projections, np.NPY_OWNDATA)  # Attribute new memory owner
 
     free(c_projections)  # Free pointer array, not actual data
     free_c_geometry(c_geometry)
-    geometry.convert_contig_mode()
 
     return projections
