@@ -285,7 +285,7 @@ def include_headers(filename_list, sdist=False):
 
 Ax_ext = Extension('_Ax',
                    sources=include_headers(['tigre/Source/projection.cpp',
-                                            'tigre/Source/Common.cpp',
+                                            'tigre/Source/TIGRE_common.cpp',
                                             'tigre/Source/Siddon_projection.cu',
                                             'tigre/Source/Siddon_projection_parallel.cu',
                                             'tigre/Source/ray_interpolated_projection.cu',
@@ -302,7 +302,7 @@ Ax_ext = Extension('_Ax',
 
 
 Atb_ext = Extension('_Atb',
-                    sources=include_headers(['tigre/Source/Common.cpp',
+                    sources=include_headers(['tigre/Source/TIGRE_common.cpp',
                                              'tigre/Source/voxel_backprojection.cu',
                                              'tigre/Source/voxel_backprojection2.cu',
                                              'tigre/Source/voxel_backprojection_parallel.cu',
@@ -318,7 +318,7 @@ Atb_ext = Extension('_Atb',
 
 
 tvdenoising_ext = Extension('_tvdenoising',
-                            sources=include_headers(['tigre/Source/Common.cpp',
+                            sources=include_headers(['tigre/Source/TIGRE_common.cpp',
                                                      'tigre/Source/tvdenoising.cu',
                                                      'tigre/Source/_types.pxd',
                                                      'tigre/Source/_tvdenoising.pyx'],
@@ -332,7 +332,7 @@ tvdenoising_ext = Extension('_tvdenoising',
 
 
 minTV_ext = Extension('_minTV',
-                      sources=include_headers(['tigre/Source/Common.cpp',
+                      sources=include_headers(['tigre/Source/TIGRE_common.cpp',
                                                'tigre/Source/POCS_TV.cu',
                                                'tigre/Source/_types.pxd',
                                                'tigre/Source/_minTV.pyx'],
@@ -346,7 +346,7 @@ minTV_ext = Extension('_minTV',
 
 
 AwminTV_ext = Extension('_AwminTV',
-                        sources=include_headers(['tigre/Source/Common.cpp',
+                        sources=include_headers(['tigre/Source/TIGRE_common.cpp',
                                                  'tigre/Source/POCS_TV2.cu',
                                                  # 'tigre/Source/_types.pxd',
                                                  'tigre/Source/_AwminTV.pyx'],

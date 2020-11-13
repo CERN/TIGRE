@@ -56,7 +56,7 @@
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #include "ray_interpolated_projection.hpp"
-#include "Common.hpp"
+#include "TIGRE_common.hpp"
 #include <math.h>
 
 #define cudaCheckErrors(msg) \

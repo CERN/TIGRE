@@ -51,7 +51,7 @@
 #include "voxel_backprojection.hpp"
 #include "voxel_backprojection_parallel.hpp"
 
-#include "Common.hpp"
+#include "TIGRE_common.hpp"
 #include <math.h>
 
 // https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
