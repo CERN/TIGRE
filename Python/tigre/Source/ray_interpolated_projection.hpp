@@ -52,13 +52,15 @@ Codes  : https://github.com/CERN/TIGRE
 #ifndef PROJECTION_HPP
 #define PROJECTION_HPP
 
-int interpolation_projection(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha);
+int interpolation_projection(float* img, Geometry geo, float** result,float const * const alphas,int nalpha);
 float computeMaxLength(Geometry geo, float alpha);
 void computeDeltas(Geometry geo,unsigned int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 void rollPitchYaw(Geometry geo,unsigned int i, Point3D* point);
 float maxdistanceCuboid(Geometry geo,unsigned int i);
 void eulerZYZ(Geometry geo, Point3D* point);
-
+void splitImageInterp(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned int nangles);
+void freeGeoArray(unsigned int splits,Geometry* geoArray);
+void checkFreeMemory(int deviceCount,size_t *mem_GPU_global);
 // below, not used
 Geometry nomralizeGeometryImage(Geometry geo);
 #endif

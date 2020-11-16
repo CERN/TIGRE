@@ -213,6 +213,15 @@ class BuildExtension(build_ext):
                         cflags = COMMON_NVCC_FLAGS + cflags + COMPUTE_CAPABILITY_ARGS
                         for flag in COMMON_MSVC_FLAGS:
                             cflags = ['-Xcompiler', flag] + cflags
+                        for macro in macros:
+                            if len(macro) == 2:
+                                if macro[1]==None:
+                                    cflags += ['--define-macro', macro[0]]
+                                else:
+                                    cflags += ['--define-macro', "{}={}".format(macro[0], macro[1])]
+                            elif len(macro) == 1:
+                                cflags +=  ['--undefine-macro', macro[0]]
+                                
                         cmd = [nvcc, '-c', src, '-o', obj] + include_list + cflags
                     elif isinstance(cflags, dict):
                         cflags = COMMON_MSVC_FLAGS #+ self.cflags['cxx']
@@ -276,6 +285,7 @@ def include_headers(filename_list, sdist=False):
 
 Ax_ext = Extension('_Ax',
                    sources=include_headers(['tigre/Source/projection.cpp',
+                                            'tigre/Source/TIGRE_common.cpp',
                                             'tigre/Source/Siddon_projection.cu',
                                             'tigre/Source/Siddon_projection_parallel.cu',
                                             'tigre/Source/ray_interpolated_projection.cu',
@@ -283,6 +293,7 @@ Ax_ext = Extension('_Ax',
                                             'tigre/Source/_types.pxd',
                                             'tigre/Source/_Ax.pyx'],
                                            sdist=sys.argv[1] == "sdist"),
+                   define_macros=[('IS_FOR_PYTIGRE', None)],
                    library_dirs=[CUDA['lib64']],
                    libraries=['cudart'],
                    language='c++',
@@ -291,12 +302,14 @@ Ax_ext = Extension('_Ax',
 
 
 Atb_ext = Extension('_Atb',
-                    sources=include_headers(['tigre/Source/voxel_backprojection.cu',
+                    sources=include_headers(['tigre/Source/TIGRE_common.cpp',
+                                             'tigre/Source/voxel_backprojection.cu',
                                              'tigre/Source/voxel_backprojection2.cu',
                                              'tigre/Source/voxel_backprojection_parallel.cu',
                                              'tigre/Source/_types.pxd',
                                              'tigre/Source/_Atb.pyx'],
                                             sdist=sys.argv[1] == "sdist"),
+                    define_macros=[('IS_FOR_PYTIGRE', None)],
                     library_dirs=[CUDA['lib64']],
                     libraries=['cudart'],
                     language='c++',
@@ -305,10 +318,12 @@ Atb_ext = Extension('_Atb',
 
 
 tvdenoising_ext = Extension('_tvdenoising',
-                            sources=include_headers(['tigre/Source/tvdenoising.cu',
+                            sources=include_headers(['tigre/Source/TIGRE_common.cpp',
+                                                     'tigre/Source/tvdenoising.cu',
                                                      'tigre/Source/_types.pxd',
                                                      'tigre/Source/_tvdenoising.pyx'],
                                                     sdist=sys.argv[1] == "sdist"),
+                            define_macros=[('IS_FOR_PYTIGRE', None)],
                             library_dirs=[CUDA['lib64']],
                             libraries=['cudart'],
                             language='c++',
@@ -317,10 +332,12 @@ tvdenoising_ext = Extension('_tvdenoising',
 
 
 minTV_ext = Extension('_minTV',
-                      sources=include_headers(['tigre/Source/POCS_TV.cu',
+                      sources=include_headers(['tigre/Source/TIGRE_common.cpp',
+                                               'tigre/Source/POCS_TV.cu',
                                                'tigre/Source/_types.pxd',
                                                'tigre/Source/_minTV.pyx'],
                                               sdist=sys.argv[1] == "sdist"),
+                      define_macros=[('IS_FOR_PYTIGRE', None)],
                       library_dirs=[CUDA['lib64']],
                       libraries=['cudart'],
                       language='c++',
@@ -329,10 +346,12 @@ minTV_ext = Extension('_minTV',
 
 
 AwminTV_ext = Extension('_AwminTV',
-                        sources=include_headers(['tigre/Source/POCS_TV2.cu',
+                        sources=include_headers(['tigre/Source/TIGRE_common.cpp',
+                                                 'tigre/Source/POCS_TV2.cu',
                                                  # 'tigre/Source/_types.pxd',
                                                  'tigre/Source/_AwminTV.pyx'],
                                                 sdist=sys.argv[1] == "sdist"),
+                        define_macros=[('IS_FOR_PYTIGRE', None)],
                         library_dirs=[CUDA['lib64']],
                         libraries=['cudart'],
                         language='c++',

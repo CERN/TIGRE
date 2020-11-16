@@ -26,7 +26,7 @@ cdef extern from "numpy/arrayobject.h":
     void PyArray_CLEARFLAGS(np.ndarray arr, int flags)
 
 cdef extern from "POCS_TV.hpp":
-    cdef int pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter)
+    cdef void pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter)
 
 
 def cuda_raise_errors(error_code):
@@ -51,7 +51,7 @@ def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 
 
     cdef float* c_src = <float*> src.data
     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
-    cuda_raise_errors(pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter))
+    pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter)
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
     PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)
 
