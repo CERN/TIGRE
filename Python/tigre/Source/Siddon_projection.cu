@@ -669,6 +669,19 @@ void splitImage(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned in
  * it does saves about 30% of each of the kernel calls. Thats something!
  **/
 void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
+    
+    
+     // Before doing geometric stuff, lets make sure we avoid floating point errors
+    // this one avoids issue #198
+    float epsilon_offset=0.0001; // Manually tested. 
+    // If the detector is odd and the image is even 
+    // (I think the or is not needed, could be an and, but better safe than sorry)
+    if(geo.nDetecU%2 && (!(geo.nVoxelX%2) || !(geo.nVoxelY%2)) && abs(geo.offDetecU[i])<=epsilon_offset)
+        geo.offDetecU[i]=epsilon_offset;
+    if(geo.nDetecV%2 && !(geo.nVoxelZ%2) && abs(geo.offDetecV[i])==epsilon_offset)
+        geo.offDetecV[i]=epsilon_offset;
+    
+    
     Point3D S;
     S.x=geo.DSO[i];
     S.y=0;
