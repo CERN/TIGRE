@@ -678,7 +678,7 @@ void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU
     // (I think the or is not needed, could be an and, but better safe than sorry)
     if(geo.nDetecU%2 && (!(geo.nVoxelX%2) || !(geo.nVoxelY%2)) && abs(geo.offDetecU[i])<=epsilon_offset)
         geo.offDetecU[i]=epsilon_offset;
-    if(geo.nDetecV%2 && !(geo.nVoxelZ%2) && abs(geo.offDetecV[i])==epsilon_offset)
+    if(geo.nDetecV%2 && !(geo.nVoxelZ%2) && abs(geo.offDetecV[i])<=epsilon_offset)
         geo.offDetecV[i]=epsilon_offset;
     
     
