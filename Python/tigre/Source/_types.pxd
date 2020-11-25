@@ -155,7 +155,7 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     # Centre of Rotation correction.
     c_geom.COR =<float *>malloc(total_projections * sizeof(float))
     for i in range (total_projections):
-        c_geom.COR[i] = 0
+        c_geom.COR[i] = p_geometry.COR[i]
 
     #Maximum length of cube
     # float maxLength; #TODO: Check this is redundant
