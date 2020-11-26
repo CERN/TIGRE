@@ -60,7 +60,6 @@ if wang
     %% Replace original proj and geo
     % proj = proj_w;
     geo = zgeo;
-
 end
 
 %% Weight
@@ -172,7 +171,7 @@ if(theta<0)
 end
 proj_w=proj;% preallocation
 for ii = 1:size(proj,3)
-    proj_w(:,:,ii) = proj(:,:,ii).*w;
+    proj_w(:,:,ii) = proj(:,:,ii).*w*2;
 end
 
 end
@@ -221,7 +220,7 @@ for ii=1:length(opts)
             end
         case 'wang'
             if default
-                wang=abs(geo.offDetector(1))>0;
+                wang=apply_wang_weights(geo);
             else
                 wang=val;
             end
@@ -241,5 +240,30 @@ for ii=1:length(opts)
             error('CBCT:FDK:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in FAK()']);
     end
 end
+end
 
+function bool = apply_wang_weights(geo)
+    if (size(geo.offDetector,2) > 1) && length(unique(geo.offDetector(1,:)))>1
+        warning('FDK Wang weights: varying offDetector detected, Wang weigths not being applied');
+        bool = false;
+        return
+    end
+    
+    if geo.offDetector(1) == 0
+        bool = false;
+        return
+    end
+    
+    if (numel(geo.DSO) > 1) && (length(unique(geo.DSO))>1)
+        warning('FDK Wang weights: varying DSO detected, Wang weigths not being applied');
+        bool = false;
+        return
+    end
+
+    percent_offset = abs(geo.offDetector(1)/geo.sDetector(1)) * 100;    
+    if percent_offset > 30
+        warning('FDK Wang weights: Detector offset percent: %0.2f) is greater than 30 which may result in image artifacts, consider rebinning 360 degree projections to 180 degrees', percent_offset)
+    end
+    
+    bool = true;
 end
