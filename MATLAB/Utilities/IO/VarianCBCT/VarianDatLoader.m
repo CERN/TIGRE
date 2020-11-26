@@ -1,4 +1,4 @@
-function [proj, angles, geo] = EasyDataLoader(datafolder, varargin)
+function [proj, angles, geo] = VarianDatLoader(datafolder, varargin)
 % Load all dataset that are needed for reconstruction
 % Date: 2020-04-16
 % Author: Yi Du (yi.du@hotmail.com)

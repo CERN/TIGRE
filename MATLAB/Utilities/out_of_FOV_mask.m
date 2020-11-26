@@ -1,4 +1,4 @@
-function result = ROI_mask(img, geo, dia)
+function result = out_of_FOV_mask(img, geo, dia)
 % ROI_mask=Cylindrical Mask to Input image matrix
 % Date: 2015-10-22
 % Author: Yi Du (yi.du@hotmail.com)
