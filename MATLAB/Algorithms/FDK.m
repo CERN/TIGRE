@@ -243,27 +243,6 @@ for ii=1:length(opts)
 end
 end
 
-function bool = apply_wang_weights(geo)
-    if (size(geo.offDetector,2) > 1) && length(unique(geo.offDetector(1,:)))>1
-        warning('FDK Wang weights: varying offDetector detected, Wang weigths not being applied');
-        bool = false;
-        return
-    end
-    
-    if geo.offDetector(1) == 0
-        bool = false;
-        return
-    end
-    
-    if (numel(geo.DSO) > 1) && (length(unique(geo.DSO))>1)
-        warning('FDK Wang weights: varying DSO detected, Wang weigths not being applied');
-        bool = false;
-        return
-    end
-
-
-end
-
 
 function bool = apply_wang_weights(geo)
     if (size(geo.offDetector,2) > 1) && length(unique(geo.offDetector(1,:)))>1
