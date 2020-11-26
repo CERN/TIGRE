@@ -55,11 +55,12 @@ if wang
     [zproj, zgeo, theta] = zeropadding(proj, geo);
     % Preweighting using Wang function
     % to same memory
-    [proj, ~] = preweighting(zproj, zgeo, theta);
+    [proj, ~] = preweighting2(zproj, zgeo, theta);
 
     %% Replace original proj and geo
     % proj = proj_w;
     geo = zgeo;
+
 end
 
 %% Weight
@@ -76,8 +77,9 @@ for ii=1:size(angles,2)
     %Multiply the weights with projection data
     proj(:,:,ii) = proj(:,:,ii).*w';
 end
-%% filter
+%% Fourier transform based filtering
 proj = filtering(proj,geo,angles,parker); % Not sure if offsets are good in here
+
 %RMFIELD Remove fields from a structure array.
 geo=rmfield(geo,'filter');
 %% backproject
@@ -101,7 +103,6 @@ zgeo.sDetector(1) = zgeo.nDetector(1) * zgeo.dDetector(1);
 
 theta = (geo.sDetector(1)/2 - abs(geo.offDetector(1)))...
         * sign(geo.offDetector(1));
-
 % Pad on the left size when offset >0
 if(geo.offDetector(1)>0)
     for ii = 1:size(proj,3)
@@ -122,8 +123,9 @@ function [proj_w, w] = preweighting(proj,geo,theta)
 offset = geo.offDetector(1);
 us = ((-geo.nDetector(1)/2+0.5):1:(geo.nDetector(1)/2-0.5))*geo.dDetector(1) + abs(offset);
 
-w = ones(size(proj(:,:,1)));
+abstheta=abs(theta);
 
+w = ones(size(proj(:,:,1)));
 for ii = 1:geo.nDetector
     t = us(ii);
     if(abs(t) <= abstheta)
@@ -137,9 +139,40 @@ end
 if(theta<0)
     w = fliplr(w);
 end
-proj_w=proj;% preallocation
+
 for ii = 1:size(proj,3)
     proj_w(:,:,ii) = proj(:,:,ii).*w*2;
+end
+
+end
+function [proj_w, w] = preweighting2(proj,geo,theta)
+% Preweighting using Wang function
+% Ref: 
+%    Wang, Ge. X-ray micro-CT with a displaced detector array. Medical Physics, 2002,29(7):1634-1636.
+offset = geo.offDetector(1);
+us = ((-geo.nDetector(1)/2+0.5):1:(geo.nDetector(1)/2-0.5))*geo.dDetector(1) + abs(offset);
+
+us = us * geo.DSO(1)/geo.DSD(1);
+abstheta = abs(theta * geo.DSO(1)/geo.DSD(1));
+
+w = ones(size(proj(:,:,1)));
+
+for ii = 1:geo.nDetector
+    t = us(ii);
+    if(abs(t) <= abstheta)
+        w(:,ii) = 0.5*(sin((pi/2)*atan(t/geo.DSO(1))/(atan(abstheta/geo.DSO(1)))) + 1);
+    end
+    if(t<-abstheta)
+        w(:,ii) = 0;
+    end
+end
+
+if(theta<0)
+    w = fliplr(w);
+end
+proj_w=proj;% preallocation
+for ii = 1:size(proj,3)
+    proj_w(:,:,ii) = proj(:,:,ii).*w;
 end
 
 end
@@ -182,7 +215,7 @@ for ii=1:length(opts)
     switch opt
         case 'parker'
             if default
-                parker=range(angles)<2*pi;
+                parker=range(angles)<(2*pi-max(diff(angles)));
             else
                 parker=val;
             end
