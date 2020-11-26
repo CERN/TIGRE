@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <iostream>
+#include <cstdint>
 //**** C data types are defined in tmwtypes.h
 #include <tmwtypes.h>
 #include "mex.h"
@@ -43,12 +44,13 @@ void mexFunction(
     XimPara *para = new XimPara[1];
     
     // file pointer position
-    fpos_t position = 0;
+    //fpos_t position = {0};
     
 	// Skip useless information
     // 8 * sizeof(char) + sizeof(int32_t);
-	position = 8*sizeof(char) + sizeof(int32_T); 
-	setFilePos(fid, (fpos_t*) &position);
+	long int position = 8*sizeof(char) + sizeof(int32_T); 
+    fseek ( fid , position , SEEK_SET );
+// 	setFilePos(fid, (fpos_t*) &position);
 	// Read ImgWidth & ImgHeight (int32)
 	fread(&(para->ImgWidth), sizeof(int32_T), 1, fid);
 	fread(&(para->ImgHeight), sizeof(int32_T), 1, fid);
@@ -202,9 +204,9 @@ int cReadXim(char *XimFullFile,
 		{
 		case 1:	
 		{
-			__int8 *buffer8 = new __int8[XimStr->ImgWidth * XimStr->ImgHeight];
-			memset(buffer8, 0, sizeof(__int8)* XimStr->ImgWidth * XimStr->ImgHeight);
-			fread(buffer8, sizeof(__int8), BufferSize, fid);
+			uint8_t *buffer8 = new uint8_t[XimStr->ImgWidth * XimStr->ImgHeight];
+			memset(buffer8, 0, sizeof(uint8_t)* XimStr->ImgWidth * XimStr->ImgHeight);
+			fread(buffer8, sizeof(uint8_t), BufferSize, fid);
 			for (int ii = 0; ii < XimStr->ImgWidth * XimStr->ImgHeight;ii++)
 			{
 				XimImg[ii] = int(buffer8[ii]);
@@ -213,9 +215,9 @@ int cReadXim(char *XimFullFile,
 		}
 		case 2:
 		{
-			__int16 *buffer16 = new __int16[XimStr->ImgWidth * XimStr->ImgHeight];
-			memset(buffer16, 0, sizeof(__int16)* XimStr->ImgWidth * XimStr->ImgHeight);
-			fread(buffer16, sizeof(__int16), BufferSize / 2, fid);
+			uint16_t *buffer16 = new uint16_t[XimStr->ImgWidth * XimStr->ImgHeight];
+			memset(buffer16, 0, sizeof(uint16_t)* XimStr->ImgWidth * XimStr->ImgHeight);
+			fread(buffer16, sizeof(uint16_t), BufferSize / 2, fid);
 			for (int ii = 0; ii < XimStr->ImgWidth * XimStr->ImgHeight; ii++)
 			{
 				XimImg[ii] = int(buffer16[ii]);

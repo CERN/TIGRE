@@ -22,6 +22,8 @@
 addpath('./Algorithms');
 addpath('./Utilities');
 addpath('./Utilities/Quality_measures');
+addpath('./Utilities/IO/VarianCBCT');
+
 addpath(genpath('./Test_data'));
 
 % different arch versions
