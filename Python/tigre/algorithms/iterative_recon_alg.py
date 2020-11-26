@@ -202,15 +202,21 @@ class IterativeReconAlg(object):
         """
         geo = self.geo
         if geo.mode != 'parallel':
-
-            start = geo.sVoxel[1] / 2 - geo.dVoxel[1] / 2 + geo.offOrigin[1]
-            stop = -geo.sVoxel[1] / 2 + geo.dVoxel[1] / 2 + geo.offOrigin[1]
+            
+            if len(geo.offOrigin.shape)==1:
+                offY=geo.offOrigin[1]
+                offZ=geo.offOrigin[2]
+            else:
+                offY=geo.offOrigin[1,0]
+                offZ=geo.offOrigin[2,0]
+            start = geo.sVoxel[1] / 2 - geo.dVoxel[1] / 2 + offY
+            stop = -geo.sVoxel[1] / 2 + geo.dVoxel[1] / 2 + offY
             step = -geo.dVoxel[1]
 
             xv = np.arange(start, stop + step, step)
 
-            start = geo.sVoxel[2] / 2 - geo.dVoxel[2] / 2 + geo.offOrigin[2]
-            stop = -geo.sVoxel[2] / 2 + geo.dVoxel[2] / 2 + geo.offOrigin[2]
+            start = geo.sVoxel[2] / 2 - geo.dVoxel[2] / 2 + offZ
+            stop = -geo.sVoxel[2] / 2 + geo.dVoxel[2] / 2 + offZ
             step = -geo.dVoxel[2]
 
             yv = -1 * np.arange(start, stop + step, step)

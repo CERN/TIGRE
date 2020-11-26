@@ -68,20 +68,20 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         alpha=15.0f;
     }
     if (nrhs==2){
-       mexErrMsgIdAndTxt("err", "Only 1 POCS hyperparemter inputed");
+       mexErrMsgIdAndTxt("minTV:mex", "Only 1 POCS hyperparemter inputed");
     }
     if (nrhs>3){
-       mexErrMsgIdAndTxt("err", "Too many imput argumets");
+       mexErrMsgIdAndTxt("minTV:mex", "Too many imput argumets");
     }
     if (nrhs==3){
      size_t mrows = mxGetM(prhs[1]);
      size_t ncols = mxGetN(prhs[1]);
      if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("err", "POCS parameters shoudl be 1x1");
+        mexErrMsgIdAndTxt("minTV:mex", "POCS parameters shoudl be 1x1");
      mrows = mxGetM(prhs[2]);
      ncols = mxGetN(prhs[2]);
      if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("err", "POCS parameters shoudl be 1x1");
+        mexErrMsgIdAndTxt("minTV:mex", "POCS parameters shoudl be 1x1");
      alpha= (float)(mxGetScalar(prhs[1]));
      maxIter=(int)floor(mxGetScalar(prhs[2])+0.5);
     }
@@ -93,7 +93,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     // Image should be dim 3
     if (numDims!=3){
-        mexErrMsgIdAndTxt("err", "Image is not 3D");
+      //  mexErrMsgIdAndTxt("minTV:mex", "Image is not 3D");
     }
     // Now that input is ok, parse it to C data types.
     float  *  img = static_cast<float  *>(mxGetData(image));

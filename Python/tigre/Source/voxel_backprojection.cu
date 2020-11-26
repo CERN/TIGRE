@@ -48,22 +48,18 @@
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #include "voxel_backprojection.hpp"
-#include "errors.hpp"
-#include <stdio.h>
+#include "TIGRE_common.hpp"
 #include <math.h>
 
 // https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
-inline int cudaCheckErrors(const char * msg)
-{
-   cudaError_t __err = cudaGetLastError();
-   if (__err != cudaSuccess)
-   {
-      printf("CUDA:voxel_backprojection:%s:%s\n",msg, cudaGetErrorString(__err));
-      cudaDeviceReset();
-      return 1;
-   }
-   return 0;
-}
+#define cudaCheckErrors(msg) \
+do { \
+        cudaError_t __err = cudaGetLastError(); \
+        if (__err != cudaSuccess) { \
+                mexPrintf("%s \n",msg);\
+                mexErrMsgIdAndTxt("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
+        } \
+} while (0)
     
     
 #define MAXTREADS 1024
@@ -161,7 +157,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
     // unsigned long startIndZ = blockIdx.z * blockDim.z + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     unsigned long startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     //Make sure we dont go out of bounds
-    if (indX>=geo.nVoxelX | indY>=geo.nVoxelY |startIndZ>=geo.nVoxelZ)
+    if (indX>=geo.nVoxelX || indY>=geo.nVoxelY || startIndZ>=geo.nVoxelZ)
         return;
     
     // We'll keep a local auxiliary array of values of a column of voxels that this thread will update
@@ -254,7 +250,11 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             // Get Value in the computed (U,V) and multiply by the corresponding weigth.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             
+#if IS_FOR_MATLAB_TIGRE
             voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f)*weigth;
+#else
+            voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,indAlpha+0.5f)*weigth;
+#endif
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
@@ -291,18 +291,18 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
 
 int voxel_backprojection(float  *  projections, Geometry geo, float* result,float const * const alphas, int nalpha)
 {
+    // printf("voxel_backprojection(geo.nDetector = %d, %d)\n", geo.nDetecU, geo.nDetecV);
+    // printf("geo.nVoxel    = %d, %d, %d\n", geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
     
     
-    
+
     // Prepare for MultiGPU
     int deviceCount = 0;
     cudaGetDeviceCount(&deviceCount);
-    if(cudaCheckErrors("Device query fail")){return 1;}
+    cudaCheckErrors("Device query fail");
     if (deviceCount == 0) {
-        //mexErrMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","There are no available device(s) that support CUDA\n");
-        return ERR_NO_CAPABLE_DEVICES;
+        mexErrMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","There are no available device(s) that support CUDA\n");
     }
-    
     
     // Check the available devices, and if they are the same
     int dev;
@@ -314,7 +314,7 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     splitCTbackprojection(deviceCount,geo,nalpha,&split_image,&split_projections);
     
     
-    if(cudaCheckErrors("Error")){return 1;}
+    cudaCheckErrors("Error");
     //Pagelock memory for syncronous copy.
     // Lets try to make the host memory pinned:
     // We laredy queried the GPU and assuemd they are the same, thus shoudl have the same attributes.
@@ -322,13 +322,13 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
     // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to
     // pin the memory is greater than the lost time in Syncronously launching the memcpys. This is only worth it when the image is too big.
-    if (isHostRegisterSupported & split_image>1){
+    if (isHostRegisterSupported & (split_image>1 |deviceCount>1)){
         cudaHostRegister(result, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float),cudaHostRegisterPortable);
     }
-    if (isHostRegisterSupported ){
-        cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
-    }
-    if(cudaCheckErrors("Error pinning memory")){return 1;}
+//     if (isHostRegisterSupported ){
+//         cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
+//     }
+    cudaCheckErrors("Error pinning memory");
     
     
     // Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the
@@ -343,7 +343,7 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
         cudaMalloc((void**)&dimage[dev], num_bytes_img);
-        if(cudaCheckErrors("cudaMalloc fail")){return 1;}
+        cudaCheckErrors("cudaMalloc fail");
     }
     
     //If it is the first time, lets make sure our image is zeroed.
@@ -389,13 +389,14 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     float** partial_projection;
     size_t* proj_split_size;
     
+    
+    
     for(unsigned int img_slice=0;img_slice<split_image;img_slice++){
-        
         // Initialize the memory if its the first time.
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
             cudaMemset(dimage[dev],0,num_bytes_img);
-            if(cudaCheckErrors("memset fail")){return 1;}
+            cudaCheckErrors("memset fail");
         }
         
         for( unsigned int proj=0;proj<split_projections;proj++){
@@ -561,10 +562,10 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(dev);
             cudaDeviceSynchronize();
+            cudaCheckErrors("Main loop fail");
         }
         
     } // end image splits
-    if(cudaCheckErrors("Main loop fail")){return 1;}
 
     ///////// Cleaning:
     
@@ -579,7 +580,7 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
             cudaFreeArray(d_cuArrTex[i*deviceCount+dev]);
         }
     }
-    if(cudaCheckErrors("cudadestroy textures result fail")){return 1;}
+    cudaCheckErrors("cudadestroy textures result fail");
     
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(dev);
@@ -592,20 +593,20 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     
     freeGeoArray(split_image*deviceCount,geoArray);
     
-    if (isHostRegisterSupported & split_image>1){
+    if (isHostRegisterSupported & (split_image>1 |deviceCount>1)){
         cudaHostUnregister(result);
     }
-    if (isHostRegisterSupported){
-        cudaHostUnregister(projections);
-    }
-    
+//     if (isHostRegisterSupported){
+//         cudaHostUnregister(projections);
+//     }
+//     
     
     for (int i = 0; i < nStreams; ++i)
         cudaStreamDestroy(stream[i]);
     
-    if(cudaCheckErrors("cudaFree fail")){return 1;}
+    cudaCheckErrors("cudaFree fail");
     
-//     cudaDeviceReset(); // For the Nvidia Visual Profiler
+    cudaDeviceReset(); // For the Nvidia Visual Profiler
     return 0;
     
 }  // END voxel_backprojection
@@ -617,18 +618,20 @@ void checkDevices(void){
     int dev;
     int deviceCount = 0;
     cudaGetDeviceCount(&deviceCount);
-    char * devicenames;
+    const int devicenamelength = 256;  // The length 256 is fixed by spec of cudaDeviceProp::name
+    char devicename[devicenamelength];
     cudaDeviceProp deviceProp;
     for (dev = 0; dev < deviceCount; dev++) {
         cudaSetDevice(dev);
         cudaGetDeviceProperties(&deviceProp, dev);
         if (dev>0){
-            if (strcmp(devicenames,deviceProp.name)!=0){
-                printf("Atb:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 275.");
+            if (strcmp(devicename,deviceProp.name)!=0){
+                mexWarnMsgIdAndTxt("Atb:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 275.");
                 break;
             }
         }
-        devicenames=deviceProp.name;
+        memset(devicename, 0, devicenamelength);
+        strcpy(devicename, deviceProp.name);
     }
 }
 void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
@@ -660,7 +663,7 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
     {
         // As we can overlap memcpys from H2D of the projections, we should then minimize the amount of image splits.
         // Lets assume to start with that we only need 1 stack of PROJ_PER_KERNEL projections. The rest is for the image.
-        size_t mem_free=mem_GPU_global-mem_proj*PROJ_PER_KERNEL;
+        size_t mem_free=mem_GPU_global-2*mem_proj*PROJ_PER_KERNEL;
         
         *split_image=(mem_image/deviceCount+mem_free-1)/mem_free;
         // Now knowing how many splits we have for images, we can recompute how many slices of projections actually
@@ -677,7 +680,11 @@ void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int
 
 void CreateTexture(int num_devices, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate){
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+#if IS_FOR_MATLAB_TIGRE
     const cudaExtent extent =make_cudaExtent(geo.nDetecV, geo.nDetecU, nangles);
+#else
+    const cudaExtent extent =make_cudaExtent(geo.nDetecU, geo.nDetecV, nangles);
+#endif
     if (allocate){
         for (unsigned int dev = 0; dev < num_devices; dev++){
             cudaSetDevice(dev);
@@ -892,7 +899,7 @@ void checkFreeMemory(int deviceCount,size_t *mem_GPU_global){
         cudaMemGetInfo(&memfree,&memtotal);
         if(dev==0) *mem_GPU_global=memfree;
         if(memfree<memtotal/2){
-            printf("voxel_backprojection:voxel_backprojection:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+            mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
         }
         cudaCheckErrors("Check mem error");
         

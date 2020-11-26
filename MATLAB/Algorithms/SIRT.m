@@ -273,7 +273,7 @@ for ii=1:length(opts)
                 continue;
             end
             if strcmp(val,'FDK')
-                res=FDK_CBCT(proj,geo,alpha);
+                res=FDK(proj,geo,alpha);
                 continue;
             end
             if strcmp(val,'multigrid')

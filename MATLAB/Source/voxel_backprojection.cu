@@ -612,18 +612,20 @@ void checkDevices(void){
     int dev;
     int deviceCount = 0;
     cudaGetDeviceCount(&deviceCount);
-    char * devicenames;
+    const int devicenamelength = 256;  // The length 256 is fixed by spec of cudaDeviceProp::name
+    char devicename[devicenamelength];
     cudaDeviceProp deviceProp;
     for (dev = 0; dev < deviceCount; dev++) {
         cudaSetDevice(dev);
         cudaGetDeviceProperties(&deviceProp, dev);
         if (dev>0){
-            if (strcmp(devicenames,deviceProp.name)!=0){
+            if (strcmp(devicename,deviceProp.name)!=0){
                 mexWarnMsgIdAndTxt("Atb:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 275.");
                 break;
             }
         }
-        devicenames=deviceProp.name;
+        memset(devicename, 0, devicenamelength);
+        strcpy(devicename, deviceProp.name);
     }
 }
 void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
