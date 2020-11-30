@@ -1,4 +1,8 @@
-function [proj, angles, geo] = VarianDataLoader(datafolder, varargin)
+function [proj,geo, angles ] = VarianDataLoader(datafolder, varargin)
+% VarianDataLoader   Loads Varian CBCT projection, geomtry and angles data
+%
+%   Optional parameter: Motion lag correction. Default True. 
+%
 % Load all dataset that are needed for reconstruction
 % Date: 2020-04-16
 % Author: Yi Du (yi.du@hotmail.com)
