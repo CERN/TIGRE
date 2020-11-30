@@ -104,6 +104,7 @@ Contact the authors directly at:
 
 [tigre.toolbox@gmail.com](mailto:tigre.toolbox@gmail.com) or [ander.biguri@gmail.com](mailto:ander.biguri@gmail.com)
 
+for any questions/comments or if you want to be added to the mailing list. 
 
 ## Licensing
 
