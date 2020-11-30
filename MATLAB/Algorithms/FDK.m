@@ -51,7 +51,7 @@ else
 end
 
 if wang
-    disp("FDK: applying detector offset weights")
+    disp('FDK: applying detector offset weights')
     % Zero-padding to avoid FFT-induced alising
     [zproj, zgeo, theta] = zeropadding(proj, geo);
     % Preweighting using Wang function
