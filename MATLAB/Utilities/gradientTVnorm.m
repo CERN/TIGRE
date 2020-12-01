@@ -16,6 +16,11 @@ function [ tvgrad ] = gradientTVnorm(f,type)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
+if ndims(f)==2
+    tvgrad=gradientTVnormBackward2D(f);
+    return;
+end
+
 if strcmp(type,'central')
     warning('It seems that central does not give correct results. Please consider using back or forward')
     tvgrad= gradientTVnormCentral(f);
@@ -47,11 +52,31 @@ Gz=cat(3,zeros(size(Gz(:,:,1))),Gz);
 nrm=safenorm(Gx,Gy,Gz); 
 
 tvg(1:end,1:end,1:end)= tvg(1:end,1:end,1:end)+(Gx(1:end,1:end,1:end)+Gy(1:end,1:end,1:end)+Gz(1:end,1:end,1:end))./nrm(1:end,1:end,1:end);
-tvg(2:end-1,:,:)=tvg(2:end-1,:,:)-Gx([2:end-1]+1,:,:)./nrm([2:end-1]+1,:,:);
-tvg(:,2:end-1,:)=tvg(:,2:end-1,:)-Gy(:,[2:end-1]+1,:)./nrm(:,[2:end-1]+1,:);
-tvg(:,:,2:end-1)=tvg(:,:,2:end-1)-Gz(:,:,[2:end-1]+1)./nrm(:,:,[2:end-1]+1);
+tvg(1:end-1,:,:)=tvg(1:end-1,:,:)-Gx([1:end-1]+1,:,:)./nrm([1:end-1]+1,:,:);
+tvg(:,1:end-1,:)=tvg(:,1:end-1,:)-Gy(:,[1:end-1]+1,:)./nrm(:,[1:end-1]+1,:);
+tvg(:,:,1:end-1)=tvg(:,:,1:end-1)-Gz(:,:,[1:end-1]+1)./nrm(:,:,[1:end-1]+1);
 
 end
+%%
+function tvg=gradientTVnormBackward2D(f)
+Gx=diff(f,1,1);
+Gy=diff(f,1,2);
+tvg=zeros(size(f));
+clear f
+% these are not defined, but we will define them just for indexing
+% readability. They shoudl never be used.
+Gx=cat(1,zeros(size(Gx(1,:))),Gx);
+Gy=cat(2,zeros(size(Gy(:,1))),Gy);
+
+nrm=safenorm(Gx,Gy,0); 
+nrmx=safenorm(Gx,Gy,0); 
+nrmy=safenorm(Gx,Gy,0); 
+
+tvg(1:end,1:end)= tvg(1:end,1:end)+(Gx(1:end,1:end)+Gy(1:end,1:end))./nrm(1:end,1:end);
+tvg(1:end-1,:)=tvg(1:end-1,:)-Gx([1:end-1]+1,:)./nrm([1:end-1]+1,:);
+tvg(:,1:end-1)=tvg(:,1:end-1)-Gy(:,[1:end-1]+1)./nrm(:,[1:end-1]+1);
+end
+
 %% Forward differences
 function tvg=gradientTVnormForward(f)
 Gx=diff(f,1,1);
@@ -66,9 +91,9 @@ Gy=cat(2,Gy,zeros(size(Gy(:,end,:))));
 Gz=cat(3,Gz,zeros(size(Gz(:,:,end))));
 nrm=safenorm(Gx,Gy,Gz); 
 tvg(1:end-1,1:end-1,1:end-1)=tvg(1:end-1,1:end-1,1:end-1)-(Gx(1:end-1,1:end-1,1:end-1)+Gy(1:end-1,1:end-1,1:end-1)+Gz(1:end-1,1:end-1,1:end-1))./nrm(1:end-1,1:end-1,1:end-1);
-tvg(2:end-1,:,:)=tvg(2:end-1,:,:)+Gx([2:end-1]-1,:,:)./nrm([2:end-1]-1,:,:);
-tvg(:,2:end-1,:)=tvg(:,2:end-1,:)+Gy(:,[2:end-1]-1,:)./nrm(:,[2:end-1]-1,:);
-tvg(:,:,2:end-1)=tvg(:,:,2:end-1)+Gz(:,:,[2:end-1]-1)./nrm(:,:,[2:end-1]-1);
+tvg(2:end,:,:)=tvg(2:end,:,:)+Gx([2:end]-1,:,:)./nrm([2:end]-1,:,:);
+tvg(:,2:end,:)=tvg(:,2:end,:)+Gy(:,[2:end]-1,:)./nrm(:,[2:end]-1,:);
+tvg(:,:,2:end)=tvg(:,:,2:end)+Gz(:,:,[2:end]-1)./nrm(:,:,[2:end]-1);
 end
 %% Central differences
 % Doesnt accound for edges of the image!!!

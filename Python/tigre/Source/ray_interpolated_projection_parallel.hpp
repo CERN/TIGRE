@@ -49,12 +49,12 @@ Codes  : https://github.com/CERN/TIGRE
 #include "ray_interpolated_projection.hpp"
 
 #include "types_TIGRE.hpp"
-
+#include "GpuIds.hpp"
 
 #ifndef PROJECTION_PARALLEL_HPP
 #define PROJECTION_PARALLEL_HPP
 
-int interpolation_projection_parallel(float const * const img, Geometry geo, float** result,float const * const alphas,int nalpha, const GpuIds& gpuids);
+int interpolation_projection_parallel(float* img, Geometry geo, float** result,float const * const alphas,int nalpha, const GpuIds& gpuids);
 // float computeMaxLength(Geometry geo, float alpha);
 void computeDeltas_parallel(Geometry geo, float alpha,unsigned int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 

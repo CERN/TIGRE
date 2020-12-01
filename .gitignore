@@ -55,5 +55,11 @@ Python/tigre/Source/_gpuUtils.cpp
 *.hex
 
 # Debug files
+
 *.dSYM/
 *.mexa64
+
+MATLAB/mex_CUDA_win64.xml
+
+
+*.mexw64

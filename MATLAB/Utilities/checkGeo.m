@@ -1,6 +1,6 @@
 function geo=checkGeo(geo, angles )
-%CHECKGEO Summary of this function goes here
-%   Detailed explanation goes here
+% CHECKGEO checks for correctness in the geometry struct and prepares it
+% for usage in the mex files. 
 geofields_mandatory={'nVoxel','sVoxel','dVoxel', ...
     'nDetector','sDetector','dDetector',...
     'DSO','DSD'};

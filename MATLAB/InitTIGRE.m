@@ -22,6 +22,9 @@
 addpath('./Algorithms');
 addpath('./Utilities');
 addpath('./Utilities/Quality_measures');
+addpath('./Utilities/IO/VarianCBCT');
+addpath('./Utilities/IO/Nikon');
+
 addpath(genpath('./Test_data'));
 
 % different arch versions

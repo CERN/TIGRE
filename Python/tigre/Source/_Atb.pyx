@@ -36,10 +36,7 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
     
     cdef int total_projections = angles.shape[0]
 
-    geometry.convert_contig_mode()
-
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
-
 
     cdef float* c_model = <float*> malloc(geometry.nVoxel[0] * geometry.nVoxel[1] * geometry.nVoxel[2] * sizeof(float))
     cdef float* c_angles = <float*> angles.data
@@ -61,7 +58,6 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
         print("Warning: Unknown mode, using default cone beam")
         cone_beam = True
 
-    projections = projections.swapaxes(1,2).swapaxes(0,2).copy(order='F')
     cdef float* c_projections = <float*> projections.data
 
     if cone_beam:
@@ -74,19 +70,16 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
     else:
         cuda_raise_errors(voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
 
-    projections = projections.swapaxes(0,2).swapaxes(1,2).copy(order='C')
-
     cdef np.npy_intp shape[3]
-    shape[0] = <np.npy_intp> geometry.nVoxel[2]
+    shape[0] = <np.npy_intp> geometry.nVoxel[0]
     shape[1] = <np.npy_intp> geometry.nVoxel[1]
-    shape[2] = <np.npy_intp> geometry.nVoxel[0]
+    shape[2] = <np.npy_intp> geometry.nVoxel[2]
 
     # TODO: Swap axis here could be making a copy
     model = np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_model)
     PyArray_ENABLEFLAGS(model, np.NPY_OWNDATA) # Attribute new memory owner
 
     free_c_geometry(c_geometry)
-    geometry.convert_contig_mode()
 
 
     return model

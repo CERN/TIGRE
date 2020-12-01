@@ -289,8 +289,8 @@ int siddon_ray_projection_parallel(float  *  img, Geometry geo, float** result,f
     
         
     // Texture object variables
-    cudaTextureObject_t *texImg;
-    cudaArray **d_cuArrTex;
+    cudaTextureObject_t *texImg = 0;
+    cudaArray **d_cuArrTex = 0;
     texImg =(cudaTextureObject_t*)malloc(1*sizeof(cudaTextureObject_t));
     d_cuArrTex =(cudaArray**)malloc(1*sizeof(cudaArray*));
     
@@ -359,6 +359,8 @@ int siddon_ray_projection_parallel(float  *  img, Geometry geo, float** result,f
 
     cudaDestroyTextureObject(texImg[0]);
     cudaFreeArray(d_cuArrTex[0]);
+    free(texImg); texImg = 0;
+    free(d_cuArrTex); d_cuArrTex = 0;
     cudaCheckErrors("Unbind  fail");
     cudaFree(dProjection[0]);
     cudaFree(dProjection[1]);

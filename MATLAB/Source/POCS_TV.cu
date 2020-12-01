@@ -65,7 +65,7 @@ do { \
         if (__err != cudaSuccess) { \
                 mexPrintf("%s \n",msg);\
                 cudaDeviceReset();\
-                mexErrMsgIdAndTxt("CBCT:CUDA:POCS_TV",cudaGetErrorString(__err));\
+                mexErrMsgIdAndTxt("POCS_TV:GPU",cudaGetErrorString(__err));\
         } \
 } while (0)
     
@@ -262,26 +262,28 @@ do { \
         cudaGetDeviceCount(&deviceCount);
         cudaCheckErrors("Device query fail");
         if (deviceCount == 0) {
-            mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPUselect","There are no available device(s) that support CUDA\n");
+            mexErrMsgIdAndTxt("POCS_TV:GPU","There are no available device(s) that support CUDA\n");
         }
         //
         // CODE assumes
         // 1.-All available devices are usable by this code
         // 2.-All available devices are equal, they are the same machine (warning trhown)
         int dev;
-        char * devicenames;
+        const int devicenamelength = 256;  // The length 256 is fixed by spec of cudaDeviceProp::name
+        char devicename[devicenamelength];
         cudaDeviceProp deviceProp;
         
         for (dev = 0; dev < deviceCount; dev++) {
             cudaSetDevice(dev);
             cudaGetDeviceProperties(&deviceProp, dev);
             if (dev>0){
-                if (strcmp(devicenames,deviceProp.name)!=0){
+                if (strcmp(devicename,deviceProp.name)!=0){
                     mexWarnMsgIdAndTxt("minimizeTV:POCS_TV:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n POCS_TV.cu line 277.");
                     break;
                 }
             }
-            devicenames=deviceProp.name;
+            memset(devicename, 0, devicenamelength);
+            strcpy(devicename, deviceProp.name);
         }
         
         
@@ -346,7 +348,7 @@ do { \
 
             // Assert
             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
-                mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","Assertion Failed. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
+                mexErrMsgIdAndTxt("POCS_TV:GPU","Assertion Failed. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
             }
         }
         
@@ -354,7 +356,7 @@ do { \
          // Assert
        
         if ((slices_per_split+buffer_length*2)*image_size[0]*image_size[1]* sizeof(float)!= mem_img_each_GPU){
-            mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","Assertion Failed. Memory needed calculation broken! Please tell: ander.biguri@gmail.com\n");
+            mexErrMsgIdAndTxt("POCS_TV:GPU","Assertion Failed. Memory needed calculation broken! Please tell: ander.biguri@gmail.com\n");
         }
         
         
@@ -692,7 +694,7 @@ void checkFreeMemory(int deviceCount,size_t *mem_GPU_global){
             cudaMemGetInfo(&memfree,&memtotal);
             if(dev==0) *mem_GPU_global=memfree;
             if(memfree<memtotal/2){
-                mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+                mexErrMsgIdAndTxt("POCS_TV:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
             }
             cudaCheckErrors("Check mem error");
             

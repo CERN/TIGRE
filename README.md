@@ -1,4 +1,3 @@
-[![pip](https://img.shields.io/pypi/v/pytigre.svg?label=pip%20install%20pytigre)]()
 [![Documentation Status](https://readthedocs.org/projects/tigre/badge/?version=latest)](https://tigre.readthedocs.io/en/latest/?badge=latest)
 
 
@@ -8,12 +7,12 @@ TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
 TIGRE is an open-source toolbox for fast and accurate 3D tomographic 
 reconstruction for any geometry.  Its focus is on iterative algorithms 
 for improved image quality that have all been optimized to run on GPUs 
-(including multi-GPUs)<sup>1</sup> for improved speed.  It combines the higher level 
-abstraction of MATLAB or Python<sup>1</sup>  with the performance of CUDA at a lower level in order to make 
+(including multi-GPUs) for improved speed. It combines the higher level 
+abstraction of MATLAB or Python with the performance of CUDA at a lower level in order to make 
 it both fast and easy to use.
 
 TIGRE is free to download and distribute: use it, modify it, add to it, 
-share it.  Our aim is to provide a wide range of easy-to-use algorithms 
+share it. Our aim is to provide a wide range of easy-to-use algorithms 
 for the tomographic community "off the shelf".  We would like to build a 
 stronger bridge between algorithm developers and imaging 
 researchers/clinicians by encouraging and supporting contributions from 
@@ -35,7 +34,6 @@ application, do not hesitate to [contact us](#contact)!
  
  - [Licensing](#licensing)
 
-<sup>1</sup> Semi-stable code available in branches, soon to be available in the main code. Use at your own risk.
 
 ## TIGRE features
 
@@ -59,7 +57,7 @@ TIGRE is a GPU-based CT reconstruction software repository that contains a wide 
        
         - Statistical reconstruction (MLEM)
        
-        - Total variation regularization based algorithms: FISTA-based (SART-TV) and POCS-based (ASD-POCS, OS-ASD-POCS, B-ASD-POCS-β, PCSD, AwPCSD, Aw-ASD-POCS)
+        - Total variation regularization based algorithms: proximal-based (FISTA, SART-TV) and POCS-based (ASD-POCS, OS-ASD-POCS, B-ASD-POCS-β, PCSD, AwPCSD, Aw-ASD-POCS)
        
 - TV denoising for 3D images.
        
@@ -76,7 +74,7 @@ MATLAB and Python builds are both fully supported.
 
 - [Installation instructions and requirements for MATLAB](Frontispiece/MATLAB_installation.md).
 
-- [Installation instructions and requirements for Python](Frontispiece/python_installation.md). **NOTE: python code works, but its subomtimal. We are working on fixing this currently [14/05/2019]**
+- [Installation instructions and requirements for Python](Frontispiece/python_installation.md). 
 
 **Advanced, not required to run TIGRE**, will change the source code. Only do if performance is critical.
 
@@ -122,10 +120,14 @@ If you use TIGRE, please reference the following papers:
 And especially if you use images bigger than 512<sup>3</sup> or multiple GPUs
 
 **Arbitrarily large iterative tomographic reconstruction on multiple GPUs using the TIGRE toolbox**
-*Ander Biguri, Reuben Lindroos, Robert Bryll, Hossein Towsyfyan, Hans Deyhle, Richard
+*Ander Biguri, Reuben Lindroos, Robert Bryll, Hossein Towsyfyan, Hans Deyhle, Ibrahim El khalil Harrane, Richard
 Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*
-**Submitted for publication** https://arxiv.org/abs/1905.03748
+**Journal of Parallel and Distributed Computing**
+[Read the article][4], 
+[Preprint][5]
 
 [1]: LICENSE.txt
 [2]: http://www.linfo.org/bsdlicense.html
 [3]: http://iopscience.iop.org/article/10.1088/2057-1976/2/5/055010
+[4]: https://doi.org/10.1016/j.jpdc.2020.07.004
+[5]: https://arxiv.org/abs/1905.03748

@@ -59,18 +59,16 @@
 
 
 
-inline int cudaCheckErrors(const char * msg)
-{
-   cudaError_t __err = cudaGetLastError();
-   if (__err != cudaSuccess)
-   {
-      printf("CUDA:pocs_tv:%s:%s\n",msg, cudaGetErrorString(__err));
-      cudaDeviceReset();
-      return 1;
-   }
-   return 0;
-}
-
+#define cudaCheckErrors(msg) \
+do { \
+        cudaError_t __err = cudaGetLastError(); \
+        if (__err != cudaSuccess) { \
+                mexPrintf("%s \n",msg);\
+                cudaDeviceReset();\
+                mexErrMsgIdAndTxt("POCS_TV:GPU",cudaGetErrorString(__err));\
+        } \
+} while (0)
+    
 // CUDA kernels
 //https://stackoverflow.com/questions/21332040/simple-cuda-kernel-optimization/21340927#21340927
     __global__ void divideArrayScalar(float* vec,float scalar,const size_t n){
@@ -254,45 +252,44 @@ inline int cudaCheckErrors(const char * msg)
     
     
 // main function
-    int pocs_tv(float* img,float* dst,float alpha,const long* image_size, int maxIter, GpuIds gpuids){
-        // Prepare for MultiGPU
-        if (gpuids.GetLength() == 0) {
-            // Compatibility mode
-            int iTotalDeviceCount = GetGpuCount();
-            if(cudaCheckErrors("Device query fail")){return 1;}
-            gpuids.SetAllGpus(iTotalDeviceCount);
-        }
-        int deviceCount = gpuids.GetLength();
+    void pocs_tv(float* img,float* dst,float alpha,const long* image_size, int maxIter, const GpuIds& gpuids){
+        
+        
        
+        
+        // Prepare for MultiGPU
+        int deviceCount = gpuids.GetLength();
+        cudaCheckErrors("Device query fail");
         if (deviceCount == 0) {
-            //mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPUselect","There are no available device(s) that support CUDA\n");
-            return ERR_NO_CAPABLE_DEVICES;
+            mexErrMsgIdAndTxt("POCS_TV:GPU","There are no available device(s) that support CUDA\n");
         }
         //
         // CODE assumes
         // 1.-All available devices are usable by this code
         // 2.-All available devices are equal, they are the same machine (warning trhown)
         int dev;
-        char * devicenames;
+        const int devicenamelength = 256;  // The length 256 is fixed by spec of cudaDeviceProp::name
+        char devicename[devicenamelength];
         cudaDeviceProp deviceProp;
         
         for (dev = 0; dev < deviceCount; dev++) {
             cudaSetDevice(gpuids[dev]);
             cudaGetDeviceProperties(&deviceProp, dev);
             if (dev>0){
-                if (strcmp(devicenames,deviceProp.name)!=0){
-                    printf("minimizeTV:POCS_TV:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n POCS_TV.cu line 277.");
+                if (strcmp(devicename,deviceProp.name)!=0){
+                    mexWarnMsgIdAndTxt("minimizeTV:POCS_TV:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n POCS_TV.cu line 277.");
                     break;
                 }
             }
-            devicenames=deviceProp.name;
+            memset(devicename, 0, devicenamelength);
+            strcpy(devicename, deviceProp.name);
         }
         
         
         // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
 
         size_t mem_GPU_global;
-        checkFreeMemory(gpuids,&mem_GPU_global);
+        checkFreeMemory(gpuids, &mem_GPU_global);
 
         
         
@@ -350,8 +347,7 @@ inline int cudaCheckErrors(const char * msg)
 
             // Assert
             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
-                //mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","Assertion Failed. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
-                return ERR_BAD_ASSERT;
+                mexErrMsgIdAndTxt("POCS_TV:GPU","Assertion Failed. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
             }
         }
         
@@ -359,8 +355,7 @@ inline int cudaCheckErrors(const char * msg)
          // Assert
        
         if ((slices_per_split+buffer_length*2)*image_size[0]*image_size[1]* sizeof(float)!= mem_img_each_GPU){
-            //mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","Assertion Failed. Memory needed calculation broken! Please tell: ander.biguri@gmail.com\n");
-            return ERR_ASSERT_FAIL;
+            mexErrMsgIdAndTxt("POCS_TV:GPU","Assertion Failed. Memory needed calculation broken! Please tell: ander.biguri@gmail.com\n");
         }
         
         
@@ -389,7 +384,7 @@ inline int cudaCheckErrors(const char * msg)
        unsigned long long buffer_pixels=buffer_length*image_size[0]*image_size[1];
         float* buffer;
         if(splits>1){
-            printf("minimizeTV:POCS_TV:Image_split","Your image can not be fully split between the available GPUs. The computation of minTV will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
+            mexWarnMsgIdAndTxt("minimizeTV:POCS_TV:Image_split","Your image can not be fully split between the available GPUs. The computation of minTV will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
         }else{
             cudaMallocHost((void**)&buffer,buffer_length*image_size[0]*image_size[1]*sizeof(float));
         }
@@ -399,17 +394,17 @@ inline int cudaCheckErrors(const char * msg)
         // Lets try to make the host memory pinned:
         // We laredy queried the GPU and assuemd they are the same, thus shoudl have the same attributes.
         int isHostRegisterSupported;
-        cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
+        cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
         // splits>2 is completely empirical observation
         if (isHostRegisterSupported & splits>2){
             cudaHostRegister(img ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
             cudaHostRegister(dst ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
         }
-        if(cudaCheckErrors("Error pinning memory")){return 1;}
+        cudaCheckErrors("Error pinning memory");
 
         
         
-        // Create streams
+                // Create streams
         int nStream_device=2;
         int nStreams=deviceCount*nStream_device;
         cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
@@ -420,7 +415,7 @@ inline int cudaCheckErrors(const char * msg)
                 cudaStreamCreate(&stream[i+dev*nStream_device]);
             }
         }
-        if(cudaCheckErrors("Stream creation fail")){return 1;}
+        cudaCheckErrors("Stream creation fail");
 
         
         // For the reduction
@@ -492,7 +487,7 @@ inline int cudaCheckErrors(const char * msg)
                         cudaDeviceSynchronize();
                     }
                 }
-                if(cudaCheckErrors("Memcpy failure on multi split")){return 1;}
+                cudaCheckErrors("Memcpy failure on multi split");
                 
                 for(unsigned int ib=0;  (ib<(buffer_length-1)) && ((i+ib)<maxIter);  ib++){
                     
@@ -557,7 +552,7 @@ inline int cudaCheckErrors(const char * msg)
                         cudaSetDevice(gpuids[dev]);
                         cudaDeviceSynchronize();
                      }
-                    if(cudaCheckErrors("Reduction error")){return 1;}
+                    cudaCheckErrors("Reduction error");
                     
                     
                     // Accumulate the nomr accross devices
@@ -591,7 +586,7 @@ inline int cudaCheckErrors(const char * msg)
                         cudaSetDevice(gpuids[dev]);
                         cudaDeviceSynchronize();
                      }
-                    if(cudaCheckErrors("Scalar operations error")){return 1;}
+                    cudaCheckErrors("Scalar operations error");
                     
                     //SUBSTRACT GRADIENT
                     //////////////////////////////////////////////
@@ -615,14 +610,14 @@ inline int cudaCheckErrors(const char * msg)
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
                         if (dev<deviceCount-1){
-                            cudaSetDevice(gpuids[dev]+1);
+                            cudaSetDevice(gpuids[dev+1]);
                             cudaMemcpy(buffer, d_image[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
                             cudaSetDevice(gpuids[dev]);
                             cudaMemcpy(d_image[dev]+total_pixels+buffer_pixels,buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice); 
                         }
                         cudaDeviceSynchronize();
                         if (dev>0){
-                            cudaSetDevice(gpuids[dev]-1);
+                            cudaSetDevice(gpuids[dev-1]);
                             cudaMemcpyAsync(buffer, d_image[dev-1]+total_pixels+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
                             cudaSetDevice(gpuids[dev]);
                             cudaMemcpyAsync(d_image[dev],buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
@@ -645,7 +640,7 @@ inline int cudaCheckErrors(const char * msg)
                     cudaSetDevice(gpuids[dev]);
                     cudaDeviceSynchronize();
                 }
-                if(cudaCheckErrors("Memory gather error")){return 1;}
+                cudaCheckErrors("Memory gather error");
 
                 totalsum_prev+=sum_curr_spl;
             }
@@ -661,7 +656,7 @@ inline int cudaCheckErrors(const char * msg)
                 cudaMemcpy(dst+slices_per_split*image_size[0]*image_size[1]*dev, d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
             }
         }
-        if(cudaCheckErrors("Copy result back")){return 1;}
+        cudaCheckErrors("Copy result back");
         
         for(dev=0; dev<deviceCount;dev++){
             cudaSetDevice(gpuids[dev]);
@@ -680,28 +675,31 @@ inline int cudaCheckErrors(const char * msg)
         }
         for (int i = 0; i < nStreams; ++i)
            cudaStreamDestroy(stream[i]) ;
-        if(cudaCheckErrors("Memory free")){return 1;}
-        return 0;
-    }
         
-
-void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
-    size_t memfree;
-    size_t memtotal;
-    int deviceCount = gpuids.GetLength();
-    
-    for (int dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(gpuids[dev]);
-        cudaMemGetInfo(&memfree,&memtotal);
-        if(dev==0) *mem_GPU_global=memfree;
-        if(memfree<memtotal/2){
-            printf("tvDenoise:tvdenoising:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+        for (dev = 0; dev < deviceCount; dev++){
+            cudaSetDevice(gpuids[dev]);
+            cudaDeviceSynchronize();
         }
-        cudaCheckErrors("Check mem error");
-        
-        *mem_GPU_global=(memfree<*mem_GPU_global)?memfree:*mem_GPU_global;
+        cudaCheckErrors("Memory free");
+        cudaDeviceReset();
     }
-    *mem_GPU_global=(size_t)((double)*mem_GPU_global*0.95);
-    
-    //*mem_GPU_global= insert your known number here, in bytes.
+        
+void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
+        size_t memfree;
+        size_t memtotal;
+        int deviceCount = gpuids.GetLength();
+        for (int dev = 0; dev < deviceCount; dev++){
+            cudaSetDevice(gpuids[dev]);
+            cudaMemGetInfo(&memfree,&memtotal);
+            if(dev==0) *mem_GPU_global=memfree;
+            if(memfree<memtotal/2){
+                mexErrMsgIdAndTxt("POCS_TV:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+            }
+            cudaCheckErrors("Check mem error");
+            
+            *mem_GPU_global=(memfree<*mem_GPU_global)?memfree:*mem_GPU_global;
+        }
+        *mem_GPU_global=(size_t)((double)*mem_GPU_global*0.95);
+        
+        //*mem_GPU_global= insert your known number here, in bytes.
 }

@@ -6,7 +6,7 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %   using the projection data PROJ taken over ALPHA angles, corresponding
 %   to the geometry descrived in GEO, using NITER iterations.
 %
-%   SART_CBCT(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
+%   SART(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 %
 %
@@ -307,7 +307,7 @@ for ii=1:length(opts)
                 continue;
             end
             if strcmp(val,'FDK')
-                res=FDK_CBCT(proj,geo,alpha);
+                res=FDK(proj,geo,alpha);
                 continue;
             end
             if strcmp(val,'multigrid')

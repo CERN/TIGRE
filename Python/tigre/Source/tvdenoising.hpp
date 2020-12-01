@@ -46,11 +46,11 @@ Codes  : https://github.com/CERN/TIGRE
 
 #ifndef TVDENOISE
 #define TVDENOISE
-#include "errors.hpp"
-#include <stdio.h>
+#include "TIGRE_common.hpp"
 #include "GpuIds.hpp"
-int tvdenoising(float* src, float* dst, float lambda,
-                 const float* spacing,const long* image_size, int maxIter, GpuIds gpuids);
-void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global);
+
+void tvdenoising(float* src, float* dst, float lambda,
+                 const float* spacing,const long* image_size, int maxIter, const GpuIds& gpuids);
+void checkFreeMemory(const GpuIds& gpuids, size_t *mem_GPU_global);
 
 #endif

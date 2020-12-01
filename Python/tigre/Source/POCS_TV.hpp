@@ -52,12 +52,10 @@ Codes  : https://github.com/CERN/TIGRE
 
 #ifndef POCS_TV_HPP
 #define POCS_TV_HPP
-
-#include <stdio.h>
-#include "errors.hpp"
+#include "TIGRE_common.hpp"
 #include "GpuIds.hpp"
-int pocs_tv(float* img,float* dst,float alpha,const long* image_size, int maxIter, GpuIds gpuids);
 
-void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global);
+void pocs_tv(float* img,float* dst,float alpha,const long* image_size, int maxIter, const GpuIds& gpuids);
 
+void checkFreeMemory(const GpuIds& gpuids, size_t *mem_GPU_global);
 #endif

@@ -111,7 +111,7 @@ while ~stop_criteria %POCS
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;
     
-    for jj=1:size(angles,2);
+    for jj=1:size(angles,2)
         if size(offOrigin,2)==size(angles,2)
             geo.offOrigin=offOrigin(:,index_angles(:,jj));
         end
