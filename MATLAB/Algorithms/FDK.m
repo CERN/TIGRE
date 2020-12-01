@@ -215,7 +215,8 @@ for ii=1:length(opts)
     switch opt
         case 'parker'
             if default
-                parker=range(angles)<(2*pi-max(diff(angles)));
+%                parker=range(angles)<(2*pi-max(diff(angles)));
+                parker=max(angles)-min(angles)<(2*pi-max(diff(angles)));
             else
                 parker=val;
             end

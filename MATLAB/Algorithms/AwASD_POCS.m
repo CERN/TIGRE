@@ -18,6 +18,10 @@ function [ f,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,varargin)
 %   'lambdared':   Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
+%       'init':    Describes diferent initialization techniques.
+%                   •  'none'     : Initializes the image to ones (default)
+%                   •  'FDK'      : intializes image to FDK reconstrucition
+%
 %   'TViter':      Defines the amount of TV iterations performed per SART
 %                  iteration. Default is 20
 %
@@ -63,8 +67,12 @@ function [ f,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,varargin)
 
 %% parse inputs
 blocksize=1;
-[beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,delta,OrderStrategy,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,f,ng,verbose,alpha,alpha_red,rmax,epsilon,delta,OrderStrategy,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
+
+if measurequality
+    qualMeasOut=zeros(length(QualMeasOpts),maxiter);
+end
 
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 
@@ -96,7 +104,7 @@ W=1./W;
 V=computeV(geo,angles,alphablocks,orig_index);
 
 % initialize image.
-f=zeros(geo.nVoxel','single');
+% f=zeros(geo.nVoxel','single');
 
 stop_criteria=0;
 iter=0;
@@ -194,7 +202,7 @@ while ~stop_criteria %POCS
         stop_criteria=true;
     end
     
-    if (iter==1 && verbose==1);
+    if (iter==1 && verbose==1)
         expected_time=toc*maxiter;
         disp('AwASD-POCS');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
@@ -206,8 +214,8 @@ end
 
 end
 
-function [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,delta,OrderStrategy,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
-opts=     {'lambda','lambda_red','tviter','verbose','alpha','alpha_red','ratio','maxl2err','delta','orderstrategy','qualmeas'};
+function [beta,beta_red,f0,ng,verbose,alpha,alpha_red,rmax,epsilon,delta,OrderStrategy,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
+opts=     {'lambda','lambda_red','init','tviter','verbose','alpha','alpha_red','ratio','maxl2err','delta','orderstrategy','qualmeas'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -254,8 +262,8 @@ for ii=1:length(opts)
                 warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
-            % Lambda
-            %  =========================================================================
+        % Lambda
+        %  =========================================================================
         case 'lambda'
             if default
                 beta=1;
@@ -265,8 +273,8 @@ for ii=1:length(opts)
                 end
                 beta=val;
             end
-            % Lambda reduction
-            %  =========================================================================
+        % Lambda reduction
+        %  =========================================================================
         case 'lambda_red'
             if default
                 beta_red=0.99;
@@ -276,49 +284,61 @@ for ii=1:length(opts)
                 end
                 beta_red=val;
             end
-            % Number of iterations of TV
-            %  =========================================================================
+        % Initial image
+        %  =========================================================================
+        case 'init'
+            if default || strcmp(val,'none')
+                f0=ones(geo.nVoxel','single');
+            else
+                if strcmp(val,'FDK')
+                    f0=FDK(proj, geo, angles);
+                else
+                    error('TIGRE:AwASD_POCS:InvalidInput','Invalid init')
+                end
+            end
+        % Number of iterations of TV
+        %  =========================================================================
         case 'tviter'
             if default
                 ng=20;
             else
                 ng=val;
             end
-            %  TV hyperparameter
-            %  =========================================================================
+        %  TV hyperparameter
+        %  =========================================================================
         case 'alpha'
             if default
                 alpha=0.002; % 0.2
             else
                 alpha=val;
             end
-            %  TV hyperparameter redution
-            %  =========================================================================
+        %  TV hyperparameter redution
+        %  =========================================================================
         case 'alpha_red'
             if default
                 alpha_red=0.95;
             else
                 alpha_red=val;
             end
-            %  Maximum update ratio
-            %  =========================================================================
+        %  Maximum update ratio
+        %  =========================================================================
         case 'ratio'
             if default
                 rmax=0.95;
             else
                 rmax=val;
             end
-            %  Maximum L2 error to have a "good image"
-            %  =========================================================================
+        %  Maximum L2 error to have a "good image"
+        %  =========================================================================
         case 'maxl2err'
             if default
                 epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
             else
                 epsilon=val;
             end
-            %Parameter to control the amount of smoothing for pixels at the
-            %edges
-            %  =========================================================================
+        %Parameter to control the amount of smoothing for pixels at the
+        %edges
+        %  =========================================================================
         case 'delta'
             if default
                 delta=-0.005;
@@ -331,8 +351,8 @@ for ii=1:length(opts)
             else
                 OrderStrategy=val;
             end
-            % Image Quality Measure
-            %  =========================================================================
+        % Image Quality Measure
+        %  =========================================================================
         case 'qualmeas'
             if default
                 QualMeasOpts={};

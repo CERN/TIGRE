@@ -1,4 +1,4 @@
-function [x,errorL2]= CGLS(proj,geo,angles,niter,varargin)
+function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
 % CGLS_CBCT solves the CBCT problem using the conjugate gradient least
 % squares
 % 
@@ -37,24 +37,83 @@ function [x,errorL2]= CGLS(proj,geo,angles,niter,varargin)
 % Coded by:           Ander Biguri 
 %--------------------------------------------------------------------------
 
+%%
+
+[verbose,x,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
+measurequality=~isempty(QualMeasOpts);
+
+qualMeasOut=zeros(length(QualMeasOpts),niter);
+
+% //doi: 10.1088/0031-9155/56/13/004
+
+r=proj-Ax(x,geo,angles,'ray-voxel');
+p=Atb(r,geo,angles,'matched');
+gamma=norm(p(:),2)^2;
+
+errorL2=zeros(1,niter);
+for ii=1:niter
+    x0 = x;
+    if (ii==1 && verbose);tic;end
+    
+    q=Ax(p,geo,angles,'ray-voxel');
+    alpha=gamma/norm(q(:),2)^2;
+    x=x+alpha*p;
+    
+    aux=proj-Ax(x,geo,angles,'ray-voxel'); %expensive, is there any way to check this better?
+    errorL2(ii)=im3Dnorm(aux,'L2');
+    
+    if measurequality
+        qualMeasOut(:,ii)=Measure_Quality(x0,x,QualMeasOpts);
+    end
+
+    if ii>1 && errorL2(ii)>errorL2(ii-1)
+        % OUT!
+       x=x-alpha*p;
+       if verbose
+          disp(['CGLS stoped in iteration N', num2str(ii),' due to divergence.']) 
+       end
+       return; 
+    end
+    % If step is adecuatem, then continue withg CGLS
+    r=r-alpha*q;
+    
+    s=Atb(r,geo,angles,'matched');
+    gamma1=norm(s(:),2)^2;
+    beta=gamma1/gamma;
+    gamma=gamma1;
+    p=s+beta*p;
+    
+   
+     if (ii==1 && verbose)
+        expected_time=toc*niter;   
+        disp('CGLS');
+        disp(['Expected duration  :    ',secs2hms(expected_time)]);
+        disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);   
+        disp('');
+     end
+end
+
+end
+
 
 %% parse inputs'
-opts=     {'init','initimg','verbose'};
-defaults= [   1  ,    1 , 1];
+function [verbose,x,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas'};
+defaults= [   1  ,    1 , 1, 1];
 
 % Check inputs
-nVarargs = length(varargin);
+nVarargs = length(argin);
 if mod(nVarargs,2)
     error('TIGRE:CGLS:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
 for ii=1:2:nVarargs
-    ind=find(ismember(opts,lower(varargin{ii})));
+    ind=find(ismember(opts,lower(argin{ii})));
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('TIGRE:CGLS:InvalidInput',['Optional parameter "' varargin{ii} '" does not exist' ]); 
+       error('TIGRE:CGLS:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
     end
 end
 
@@ -65,13 +124,13 @@ for ii=1:length(opts)
    if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
-            ind=find(isequal(opt,lower(varargin{jj})));
+            ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
         end
         if isempty(ind)
-            error('TIGRE:CGLS:InvalidInput',['Optional parameter "' varargin{jj} '" does not exist' ]); 
+            error('TIGRE:CGLS:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
         end
-        val=varargin{jj};
+        val=argin{jj};
     end
     
     switch opt
@@ -101,11 +160,22 @@ for ii=1:length(opts)
             if default
                 continue;
             end
-            if exist('initwithimage','var');
-                if isequal(size(val),geo.nVoxel');
+            if exist('initwithimage','var')
+                if isequal(size(val),geo.nVoxel')
                     x=single(val);
                 else
                     error('TIGRE:CGLS:InvalidInput','Invalid image for initialization');
+                end
+            end
+        %  =========================================================================
+        case 'qualmeas'
+            if default
+                QualMeasOpts={};
+            else
+                if iscellstr(val)
+                    QualMeasOpts=val;
+                else
+                    error('TIGRE:CGLS:InvalidInput','Invalid quality measurement parameters');
                 end
             end
          case 'verbose'
@@ -119,57 +189,9 @@ for ii=1:length(opts)
                 verbose=false;
             end
         otherwise 
+            error('TIGRE:CGLS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);
     end
 end
-%%
-
-% //doi: 10.1088/0031-9155/56/13/004
-
-r=proj-Ax(x,geo,angles,'ray-voxel');
-p=Atb(r,geo,angles,'matched');
-gamma=norm(p(:),2)^2;
-
-
-errorL2=zeros(1,niter);
-for ii=1:niter
-     if (ii==1 && verbose);tic;end
-    
-    q=Ax(p,geo,angles,'ray-voxel');
-    alpha=gamma/norm(q(:),2)^2;
-    x=x+alpha*p;
-    
-    aux=proj-Ax(x,geo,angles,'ray-voxel'); %expensive, is there any way to check this better?
-    errorL2(ii)=im3Dnorm(aux,'L2');
-    if ii>1 && errorL2(ii)>errorL2(ii-1)
-        % OUT!
-       x=x-alpha*p;
-       if verbose
-          disp(['CGLS stoped in iteration N', num2str(ii),' due to divergence.']) 
-       end
-       return; 
-    end
-    % If step is adecuatem, then continue withg CGLS
-    r=r-alpha*q;
-    
-    s=Atb(r,geo,angles,'matched');
-    gamma1=norm(s(:),2)^2;
-    beta=gamma1/gamma;
-    gamma=gamma1;
-    p=s+beta*p;
-    
-   
-     if (ii==1 && verbose)
-        expected_time=toc*niter;   
-        disp('CGLS');
-        disp(['Expected duration  :    ',secs2hms(expected_time)]);
-        disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);   
-        disp('');
-     end
-
-
-end
-
-
 
 
 end

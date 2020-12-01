@@ -1,5 +1,9 @@
-function [res,qualMeasOut] = FISTA(proj,geo,angles,niter,varargin)
-% FISTA is a quadratically converging algorithm.
+function [res,qualMeasOut] = FISTA_mod(proj,geo,angles,niter,varargin)
+% FISTA_mod is a quadratically converging algorithm, modified from FISTA.
+%
+% J. Liang and C. Schonlieb, "Faster FISTA", in 26th European Signal
+% Processing Conference, 2018, pp.732-736. Lazy-start FISTA_mod
+%
 
 % 'hyper': This parameter should approximate the largest 
 %          eigenvalue in the A matrix in the equation Ax-b and Atb. 
@@ -47,6 +51,10 @@ x_rec = res;
 L = hyper;
 bm = 1/L;
 t = 1;
+p=1/50;  % p=1 for standard FISTA
+q=1/10;  % q=1 for standard FISTA
+r=4;     % r=4 for standard FISTA
+
 for ii = 1:niter
     res0 = res;
     if (ii==1);tic;end
@@ -56,7 +64,7 @@ for ii = 1:niter
     x_recold = x_rec;
     x_rec = im3DDenoise(res,'TV',tviter,1/lambdaforTV);  
     told = t;
-    t = ( 1+sqrt(1+4*t*t) ) / 2;
+    t = ( p+sqrt(q+r*t*t) ) / 2;
     res= x_rec + (told-1)/t * (x_rec - x_recold);
 
     if measurequality
