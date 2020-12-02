@@ -18,7 +18,8 @@ function [ fres, qualMeasOut ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargi
 %                  lambda=lambdared*lambda. Default is 0.99
 %
 %       'init':    Describes diferent initialization techniques.
-%                   •  'none'     : Initializes the image to ones (default)
+%                   •  'none'     : Initializes the image to zeros(default)
+
 %                   •  'FDK'      : intializes image to FDK reconstrucition
 %
 %   'TViter':      Defines the amount of TV iterations performed per SART
@@ -117,8 +118,6 @@ V=computeV(geo,angles,alphablocks,orig_index);
 clear A x y dx dz;
 
 
-% initialize image.
-% f=zeros(geo.nVoxel','single');
 
 
 stop_criteria=0;
@@ -318,12 +317,14 @@ for ii=1:length(opts)
         %  =========================================================================
         case 'init'
             if default || strcmp(val,'none')
-                f0=ones(geo.nVoxel','single');
+                f0=zeros(geo.nVoxel','single');
+
             else
                 if strcmp(val,'FDK')
                     f0=FDK(proj, geo, angles);
                 else
-                    error('TIGRE:MLEM:InvalidInput','Invalid init')
+                    error('TIGRE:B_ASD_POCS_beta:InvalidInput','Invalid init')
+
                 end
             end
         % Number of iterations of TV
@@ -409,7 +410,8 @@ for ii=1:length(opts)
                 if iscellstr(val)
                     QualMeasOpts=val;
                 else
-                    error('TIGRE:MLEM:InvalidInput','Invalid quality measurement parameters');
+                    error('TIGRE:B_ASD_POCS_beta:InvalidInput','Invalid quality measurement parameters');
+
                 end
             end
         otherwise
@@ -419,7 +421,6 @@ for ii=1:length(opts)
 end
 
 end
-
 
 
 

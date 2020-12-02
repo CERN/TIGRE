@@ -17,7 +17,8 @@ function [ f,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 %                  lambda=lambdared*lambda. Default is 0.99
 %
 %   'init':        Describes diferent initialization techniques.
-%                   •  'none'     : Initializes the image to ones (default)
+%                   •  'none'     : Initializes the image to zeros (default)
+
 %                   •  'FDK'      : intializes image to FDK reconstrucition
 %   'TViter':      Defines the amount of TV iterations performed per SART
 %                  iteration. Default is 20
@@ -98,8 +99,6 @@ W=1./W;
 V=computeV(geo,angles,alphablocks,orig_index);
 
 
-% initialize image.
-%f=zeros(geo.nVoxel','single');
 
 %%
 stop_criteria=0;
@@ -301,7 +300,8 @@ for ii=1:length(opts)
                 if strcmp(val,'FDK')
                     f0=FDK(proj, geo, angles);
                 else
-                    error('TIGRE:MLEM:InvalidInput','Invalid init')
+                    error('TIGRE:ASD_POCS:InvalidInput','Invalid init')
+
                 end
             end
         % Number of iterations of TV
@@ -373,6 +373,5 @@ for ii=1:length(opts)
 end
 
 end
-
 
 

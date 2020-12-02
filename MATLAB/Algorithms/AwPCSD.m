@@ -17,7 +17,8 @@ function [ f,errorSART,errorTV,errorL2,qualMeasOut] = AwPCSD(proj,geo,angles,max
 %                  lambda=lambdared*lambda. Default is 0.99
 %
 %       'init':    Describes diferent initialization techniques.
-%                   •  'none'     : Initializes the image to ones (default)
+%                   •  'none'     : Initializes the image to zeros(default)
+
 %                   •  'FDK'      : intializes image to FDK reconstrucition
 %
 %   'TViter':      Defines the amount of TV iterations performed per SART
@@ -311,7 +312,8 @@ for ii=1:length(opts)
         %  =========================================================================
         case 'init'
             if default || strcmp(val,'none')
-                f0=ones(geo.nVoxel','single');
+                f0=zeros(geo.nVoxel','single');
+
             else
                 if strcmp(val,'FDK')
                     f0=FDK(proj, geo, angles);
