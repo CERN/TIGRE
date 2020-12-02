@@ -104,7 +104,6 @@ W=1./W;
 V=computeV(geo,angles,alphablocks,orig_index);
 
 % initialize image.
-% f=zeros(geo.nVoxel','single');
 
 stop_criteria=0;
 iter=0;
