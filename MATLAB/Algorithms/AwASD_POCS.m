@@ -19,7 +19,8 @@ function [ f,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,varargin)
 %                  lambda=lambdared*lambda. Default is 0.99
 %
 %       'init':    Describes diferent initialization techniques.
-%                   •  'none'     : Initializes the image to ones (default)
+%                   •  'none'     : Initializes the image to zeros (default)
+
 %                   •  'FDK'      : intializes image to FDK reconstrucition
 %
 %   'TViter':      Defines the amount of TV iterations performed per SART
