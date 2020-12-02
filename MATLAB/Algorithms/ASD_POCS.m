@@ -295,7 +295,8 @@ for ii=1:length(opts)
         %  =========================================================================
         case 'init'
             if default || strcmp(val,'none')
-                f0=ones(geo.nVoxel','single');
+                f0=zeros(geo.nVoxel','single');
+
             else
                 if strcmp(val,'FDK')
                     f0=FDK(proj, geo, angles);
@@ -372,7 +373,6 @@ for ii=1:length(opts)
 end
 
 end
-
 
 
 
