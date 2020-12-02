@@ -12,6 +12,7 @@ from .single_pass_algorithms import fdk
 from .krylov_subspace_algorithms import cgls
 from .ista_algorithms import fista
 from .ista_algorithms import ista
+from .mlem import mlem
 
 __all__ = ['sart',
            'sirt',
@@ -24,4 +25,5 @@ __all__ = ['sart',
            'fbp',
            'cgls',
            'fista',
-           'ista']
+           'ista',
+           'mlem']
