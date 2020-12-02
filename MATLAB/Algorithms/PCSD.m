@@ -75,7 +75,6 @@ W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 
 % Compute V
-%V=computeV(geo,angles,num2cell(angles,1));
 V=computeV(geo,angles,num2cell(angles),num2cell(1:length(angles)));
 
 
