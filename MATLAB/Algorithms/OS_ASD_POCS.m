@@ -100,7 +100,6 @@ V=computeV(geo,angles,alphablocks,orig_index);
 qualMeasOut=zeros(length(QualMeasOpts),maxiter);
 
 % initialize image.
-%f=zeros(geo.nVoxel','single');
 
 
 stop_criteria=0;
