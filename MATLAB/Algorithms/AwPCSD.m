@@ -16,6 +16,11 @@ function [ f,errorSART,errorTV,errorL2,qualMeasOut] = AwPCSD(proj,geo,angles,max
 %   'lambdared':   Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
+%       'init':    Describes diferent initialization techniques.
+%                   •  'none'     : Initializes the image to zeros(default)
+
+%                   •  'FDK'      : intializes image to FDK reconstrucition
+%
 %   'TViter':      Defines the amount of TV iterations performed per SART
 %                  iteration. Default is 20
 %
@@ -48,7 +53,7 @@ function [ f,errorSART,errorTV,errorL2,qualMeasOut] = AwPCSD(proj,geo,angles,max
 % Coded by:           Ander Biguri and Manasavee Lohvithee
 %--------------------------------------------------------------------------
 %% parse inputs
-[beta,beta_red,ng,verbose,epsilon,delta,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,f,ng,verbose,epsilon,delta,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
 
 measurequality=~isempty(QualMeasOpts);
 
@@ -93,7 +98,7 @@ W=1./W;
 V=computeV(geo,angles,num2cell(angles),num2cell(1:length(angles)));
 
 %Initialize image.
-f=zeros(geo.nVoxel','single');
+%f=zeros(geo.nVoxel','single');
 
 iter=0;
 offOrigin=geo.offOrigin;
@@ -113,7 +118,7 @@ while ~stop_criteria %POCS
     
     %Enforcing ART along all projections if squared delta_p > epsilon
     if (delta_p^2)>epsilon
-        for jj=1:size(angles,2);
+        for jj=1:size(angles,2)
             if size(offOrigin,2)==size(angles,2)
                 geo.offOrigin=offOrigin(:,jj);
             end
@@ -221,7 +226,7 @@ while ~stop_criteria %POCS
     end
     
     
-    if (iter==1 && verbose==1);
+    if (iter==1 && verbose==1)
         expected_time=toc*maxiter;
         disp('AwPCSD');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
@@ -233,8 +238,8 @@ end
 end
 
 
-function [beta,beta_red,ng,verbose,epsilon,delta,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
-opts=     {'lambda','lambda_red','tviter','verbose','maxl2err','delta','qualmeas'};
+function [beta,beta_red,f0,ng,verbose,epsilon,delta,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
+opts=     {'lambda','lambda_red','init','tviter','verbose','maxl2err','delta','qualmeas'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -281,8 +286,8 @@ for ii=1:length(opts)
                 warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
-            % Lambda
-            %  =========================================================================
+        % Lambda
+        %  =========================================================================
         case 'lambda'
             if default
                 beta=1;
@@ -292,8 +297,8 @@ for ii=1:length(opts)
                 end
                 beta=val;
             end
-            % Lambda reduction
-            %  =========================================================================
+        % Lambda reduction
+        %  =========================================================================
         case 'lambda_red'
             if default
                 beta_red=0.99;
@@ -303,16 +308,29 @@ for ii=1:length(opts)
                 end
                 beta_red=val;
             end
-            % Number of iterations of TV
-            %  =========================================================================
+        % Initial image
+        %  =========================================================================
+        case 'init'
+            if default || strcmp(val,'none')
+                f0=zeros(geo.nVoxel','single');
+
+            else
+                if strcmp(val,'FDK')
+                    f0=FDK(proj, geo, angles);
+                else
+                    error('TIGRE:AwPCSD:InvalidInput','Invalid init')
+                end
+            end
+        % Number of iterations of TV
+        %  =========================================================================
         case 'tviter'
             if default
                 ng=20;
             else
                 ng=val;
             end
-            %  Maximum L2 error to have a "good image"
-            %  =========================================================================
+        %  Maximum L2 error to have a "good image"
+        %  =========================================================================
         case 'maxl2err'
             if default
                 epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
@@ -330,17 +348,17 @@ for ii=1:length(opts)
             %                 block_size=val;
             %             end
             
-            %Parameter to control the amount of smoothing for pixels at the
-            %edges
-            %  =========================================================================
+        %Parameter to control the amount of smoothing for pixels at the
+        %edges
+        %  =========================================================================
         case 'delta'
             if default
                 delta=-0.005;
             else
                 delta=val;
             end
-            %Image Quality Measure
-            %  =========================================================================
+        %Image Quality Measure
+        %  =========================================================================
         case 'qualmeas'
             if default
                 QualMeasOpts={};

@@ -10,7 +10,18 @@
 % very big or the number of projections is small, however, they require more
 % computational time and memory than the other algorithms to run.
 % 
-% 
+%
+% This Demo is not fully complete, as several algorithms are not shown
+% here, yet are available in TIGRE, namely:
+%
+% - AwASD_POCS:  Edge preserving ASD_POCS (Adaptative weigthed).
+% - OS_AwASD_POCS: OS-version of the previous algorithm
+% - PCSD: A version of ASD_POCS that heuristically select some of the
+%         parameters, particularly epsilon (maxL2norm)
+% - AwPCSD: Edge preserving version of the previous algorithm
+% - OS_AwPCSD: block-wise version of the previous
+%
+% You can use these algorithms in a very similar manner as below examples.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox

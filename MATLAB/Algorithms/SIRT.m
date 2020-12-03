@@ -53,6 +53,8 @@ function [res,errorL2,qualMeasOut]=SIRT(proj,geo,angles,niter,varargin)
 
 [lambda,res,lambdared,verbose,QualMeasOpts,nonneg]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
+qualMeasOut=zeros(length(QualMeasOpts),niter);
+
 if nargout>1
     computeL2=true;
 else
