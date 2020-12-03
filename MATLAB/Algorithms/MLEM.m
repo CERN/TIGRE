@@ -41,7 +41,6 @@ if measurequality
 end
 
 res = max(res,0);
-%res=ones(geo.nVoxel.','single');
 W=Atb(ones(size(proj),'single'),geo,angles);
 W(W<=0.) = inf;
 
@@ -52,12 +51,8 @@ for ii=1:niter
     den = Ax(res,geo,angles);
     den(den<=0.)=inf;
     auxMLEM=proj./den;
-%     auxMLEM(isnan(auxMLEM)) = 0;
-%     auxMLEM(isinf(auxMLEM)) = 0;
     
     imgupdate = Atb(auxMLEM, geo,angles)./W;
-%     imgupdate(isnan(imgupdate)) = 0;
-%     imgupdate(isinf(imgupdate)) = 0;
     res = max(res.*imgupdate,0.);
     
     if measurequality

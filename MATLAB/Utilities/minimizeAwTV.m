@@ -36,4 +36,4 @@ if ndims(img)==3
 else
     img=AwminTV(cat(3,img,img),dtvg,ng,delta);
     img=img(:,:,1);
-endend
+end
