@@ -1,6 +1,7 @@
 function [res,qualMeasOut] = FISTA_mod(proj,geo,angles,niter,varargin)
 % FISTA_mod is a quadratically converging algorithm, modified from FISTA.
 %
+% It is the lazy-start FISTA modification in the following work:
 % J. Liang and C. Schonlieb, "Faster FISTA", in 26th European Signal
 % Processing Conference, 2018, pp.732-736. Lazy-start FISTA_mod
 %
