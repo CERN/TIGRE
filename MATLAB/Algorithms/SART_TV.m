@@ -64,6 +64,8 @@ function [res,errorL2,qualMeasOut]=SART_TV(proj,geo,angles,niter,varargin)
 %% Deal with input parameters
 [lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
+qualMeasOut=zeros(length(QualMeasOpts),niter);
+
 if nargout>1
     computeL2=true;
 else
@@ -93,6 +95,7 @@ W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
 V=computeV(geo,angles,alphablocks,orig_index);
+
 %% Iterate
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
@@ -299,8 +302,8 @@ for ii=1:length(opts)
             if default
                 continue;
             end
-            if exist('initwithimage','var');
-                if isequal(size(val),geo.nVoxel');
+            if exist('initwithimage','var')
+                if isequal(size(val),geo.nVoxel')
                     res=single(val);
                 else
                     error('TIGRE:SART_TV:InvalidInput','Invalid image for initialization');
@@ -345,5 +348,5 @@ for ii=1:length(opts)
             error('TIGRE:SART_TV:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART()']);
     end
 end
-if multigrid; res=init_multigrid(proj,geo,alpha,TViter,TVlambda);end;
+if multigrid; res=init_multigrid(proj,geo,alpha,TViter,TVlambda); end
 end

@@ -72,6 +72,8 @@ function [res,errorL2,qualMeasOut]=OS_SART(proj,geo,angles,niter,varargin)
 [blocksize,lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 
+qualMeasOut=zeros(length(QualMeasOpts),niter);
+
 if nargout>1
     computeL2=true;
 else
