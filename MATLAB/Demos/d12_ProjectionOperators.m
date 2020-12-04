@@ -51,14 +51,14 @@ tic
 projInterp=Ax(shepp,geo,0,'interpolated');
 interptime=toc;
 tic
-projray   =Ax(shepp,geo,0,'ray-voxel');
+projray   =Ax(shepp,geo,0,'Siddon');
 raytime=toc;
 % It is relatively clear that discretization artefacts appear with the
 % ray-voxel approach
 plotProj([projInterp projray abs(projInterp-projray)],0);
 % But also the ray voxel approach is faster (more ovbious at bigger seizes)
 disp(['Time interpolated: ' num2str(interptime)]);
-disp(['Time ray-voxel   : ' num2str(raytime)]);
+disp(['Time Siddon      : ' num2str(raytime)]);
 disp('Press enter to continue')
 pause
 %% We can play with the accuracy value
