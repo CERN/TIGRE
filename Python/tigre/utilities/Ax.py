@@ -2,7 +2,7 @@ from _Ax import _Ax_ext
 import numpy as np
 import copy
 
-def Ax(img, geo, angles, projection_type="ray-voxel"):
+def Ax(img, geo, angles, projection_type="Siddon"):
 
     if img.dtype != np.float32:
         raise TypeError("Input data should be float32, not "+ str(img.dtype))
