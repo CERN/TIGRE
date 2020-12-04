@@ -11,12 +11,12 @@ function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
 % 
 % 
 %  'Init'    Describes diferent initialization techniques.
-%             •  'none'     : Initializes the image to zeros (default)
-%             •  'FDK'      : intializes image to FDK reconstrucition
-%             •  'multigrid': Initializes image by solving the problem in
+%             * 'none'     : Initializes the image to zeros (default)
+%             * 'FDK'      : intializes image to FDK reconstrucition
+%             * 'multigrid': Initializes image by solving the problem in
 %                            small scale and increasing it when relative
 %                            convergence is reached.
-%             •  'image'    : Initialization using a user specified
+%             * 'image'    : Initialization using a user specified
 %                            image. Not recomended unless you really
 %                            know what you are doing.
 %  'InitImg'    an image for the 'image' initialization. Avoid.
@@ -46,7 +46,7 @@ qualMeasOut=zeros(length(QualMeasOpts),niter);
 
 % //doi: 10.1088/0031-9155/56/13/004
 
-r=proj-Ax(x,geo,angles,'ray-voxel');
+r=proj-Ax(x,geo,angles,'Siddon');
 p=Atb(r,geo,angles,'matched');
 gamma=norm(p(:),2)^2;
 
@@ -55,11 +55,11 @@ for ii=1:niter
     x0 = x;
     if (ii==1 && verbose);tic;end
     
-    q=Ax(p,geo,angles,'ray-voxel');
+    q=Ax(p,geo,angles,'Siddon');
     alpha=gamma/norm(q(:),2)^2;
     x=x+alpha*p;
     
-    aux=proj-Ax(x,geo,angles,'ray-voxel'); %expensive, is there any way to check this better?
+    aux=proj-Ax(x,geo,angles,'Siddon'); %expensive, is there any way to check this better?
     errorL2(ii)=im3Dnorm(aux,'L2');
     
     if measurequality

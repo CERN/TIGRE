@@ -19,9 +19,9 @@ function [ projections ] = Ax(img, geo, angles, varargin )
 % Lets make 100% sure that data is correct
 %% OPtionals
 
-ptype='ray-voxel';
+ptype='Siddon';
 if nargin > 3
-   assert(any(strcmpi(varargin{1},{'ray-voxel','interpolated'})),'TIGRE:Ax:InvalidInput','Projection type not understood (4th input).');
+   assert(any(strcmpi(varargin{1},{'Siddon','ray-voxel','interpolated'})),'TIGRE:Ax:InvalidInput','Projection type not understood (4th input).');
    ptype=varargin{1};
 end
 
@@ -46,8 +46,8 @@ assert(isequal([size(img,1) size(img,2) size(img,3)],squeeze(geo.nVoxel.')),'TIG
 %% Temporary (?)
 
 s= sum(abs(angles),2);
-if (s(2)~=0 || s(3)~=0) && strcmp(ptype,'ray-voxel') && strcmp(geo.mode,'parallel')
-    warning(['''ray-voxel'' Not supported for parallel beam arbitrary axis rotation, changed to ''interpolated''.',char(10),'Ignore this message if you are not purposedly triying enforce its use.']);
+if (s(2)~=0 || s(3)~=0) && (strcmp(ptype,'Siddon')||strcmp(ptype,'ray-voxel')) && strcmp(geo.mode,'parallel')
+    warning(['''Siddon'' Not supported for parallel beam arbitrary axis rotation, changed to ''interpolated''.',char(10),'Ignore this message if you are not purposedly triying enforce its use.']);
     ptype='interpolated';
 end
 

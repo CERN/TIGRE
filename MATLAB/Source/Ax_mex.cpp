@@ -74,18 +74,18 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput", "Invalid number of inputs to MEX file.");
     }
     ////////////////////////////
-    //4rd argument is interpolated or ray-voxel
+    //4rd argument is interpolated or ray-voxel/Siddon
     bool rayvoxel=false;
     if ( mxIsChar(prhs[3]) != 1)
         mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be a string");
     
     /* copy the string data from prhs[0] into a C string input_ buf.    */
     char *krylov = mxArrayToString(prhs[3]);
-    if (strcmp(krylov,"interpolated") && strcmp(krylov,"ray-voxel"))
-        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be either 'interpolated' or 'ray-voxel'");
+    if (strcmp(krylov,"interpolated") && strcmp(krylov,"Siddon") && strcmp(krylov,"ray-voxel"))
+        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be either 'interpolated' or 'Siddon'");
     else
         // If its not ray-voxel, its "interpolated"
-        if (!strcmp(krylov,"ray-voxel")) //strcmp returs 0 if they are equal
+        if (!strcmp(krylov,"Siddon") == 0 || strcmp(krylov,"ray-voxel") == 0) //strcmp returs 0 if they are equal
             rayvoxel=true;
     ///////////////////////// 3rd argument: angle of projection.
     

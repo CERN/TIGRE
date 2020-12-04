@@ -51,7 +51,7 @@ for ii = 1:niter
     res0 = res;
     if (ii==1);tic;end
     % gradient descent step
-    res = res + bm * 2 * Atb(proj - Ax(res,geo,angles, 'ray-voxel'), geo, angles, 'matched');
+    res = res + bm * 2 * Atb(proj - Ax(res,geo,angles, 'Siddon'), geo, angles, 'matched');
     lambdaforTV = 2* bm* lambda;
     x_recold = x_rec;
     x_rec = im3DDenoise(res,'TV',tviter,1/lambdaforTV);  
