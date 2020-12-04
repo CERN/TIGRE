@@ -11,12 +11,12 @@ function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
 % 
 % 
 %  'Init'    Describes diferent initialization techniques.
-%             ? 'none'     : Initializes the image to zeros (default)
-%             ? 'FDK'      : intializes image to FDK reconstrucition
-%             ? 'multigrid': Initializes image by solving the problem in
+%             * 'none'     : Initializes the image to zeros (default)
+%             * 'FDK'      : intializes image to FDK reconstrucition
+%             * 'multigrid': Initializes image by solving the problem in
 %                            small scale and increasing it when relative
 %                            convergence is reached.
-%             ? 'image'    : Initialization using a user specified
+%             * 'image'    : Initialization using a user specified
 %                            image. Not recomended unless you really
 %                            know what you are doing.
 %  'InitImg'    an image for the 'image' initialization. Avoid.
