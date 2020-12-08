@@ -85,7 +85,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be either 'interpolated' or 'Siddon'");
     else
         // If its not ray-voxel, its "interpolated"
-        if (!strcmp(krylov,"Siddon") == 0 || strcmp(krylov,"ray-voxel") == 0) //strcmp returs 0 if they are equal
+        if (strcmp(krylov,"Siddon") == 0 || strcmp(krylov,"ray-voxel") == 0) //strcmp returs 0 if they are equal
             rayvoxel=true;
     ///////////////////////// 3rd argument: angle of projection.
     
