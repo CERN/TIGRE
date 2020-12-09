@@ -201,14 +201,18 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     // get intersection point N1. eq(20-21) [(also eq 9-10)]
     float ax,ay,az;
-    ax=(source.x<pixel1D.x)?  __fdividef(imin-source.x,ray.x+0.000000000001f) :  __fdividef(imax-source.x,ray.x+0.000000000001f);
-    ay=(source.y<pixel1D.y)?  __fdividef(jmin-source.y,ray.y+0.000000000001f) :  __fdividef(jmax-source.y,ray.y+0.000000000001f);
-    az=(source.z<pixel1D.z)?  __fdividef(kmin-source.z,ray.z+0.000000000001f) :  __fdividef(kmax-source.z,ray.z+0.000000000001f);
+    ax=(source.x<pixel1D.x)?  __fdividef(imin-source.x,ray.x) :  __fdividef(imax-source.x,ray.x);
+    ay=(source.y<pixel1D.y)?  __fdividef(jmin-source.y,ray.y) :  __fdividef(jmax-source.y,ray.y);
+    az=(source.z<pixel1D.z)?  __fdividef(kmin-source.z,ray.z) :  __fdividef(kmax-source.z,ray.z);
     
     
     
     // get index of first intersection. eq (26) and (19)
     int i,j,k;
+    // If its Infinite (i.e. ray is parallel to axis), make sure its positive
+    ax=(isinf(ax))? abs(ax) : ax;
+    ay=(isinf(ay))? abs(ay) : ay;
+    az=(isinf(az))? abs(az) : az;
     float aminc=fminf(fminf(ax,ay),az);
     i=(int)floorf(source.x+ (aminc+am)*0.5f*ray.x);
     j=(int)floorf(source.y+ (aminc+am)*0.5f*ray.y);
@@ -233,19 +237,23 @@ __global__ void kernelPixelDetector( Geometry geo,
     i+=0.5f;
     j+=0.5f;
     k+=0.5f;
+    
     for (unsigned int ii=0;ii<Np;ii++){
         if (ax==aminc){
             sum+=(ax-ac)*tex3D<float>(tex, i, j, k);
+//             sum+=tex3D<float>(tex, i, j, k);
             i=i+iu;
             ac=ax;
             ax+=axu;
         }else if(ay==aminc){
             sum+=(ay-ac)*tex3D<float>(tex, i, j, k);
+//             sum+=tex3D<float>(tex, i, j, k);
             j=j+ju;
             ac=ay;
             ay+=ayu;
         }else if(az==aminc){
             sum+=(az-ac)*tex3D<float>(tex, i, j, k);
+//             sum+=tex3D<float>(tex, i, j, k);
             k=k+ku;
             ac=az;
             az+=azu;
