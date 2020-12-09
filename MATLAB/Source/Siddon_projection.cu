@@ -205,14 +205,13 @@ __global__ void kernelPixelDetector( Geometry geo,
     ay=(source.y<pixel1D.y)?  __fdividef(jmin-source.y,ray.y) :  __fdividef(jmax-source.y,ray.y);
     az=(source.z<pixel1D.z)?  __fdividef(kmin-source.z,ray.z) :  __fdividef(kmax-source.z,ray.z);
     
-    
-    
-    // get index of first intersection. eq (26) and (19)
-    int i,j,k;
     // If its Infinite (i.e. ray is parallel to axis), make sure its positive
     ax=(isinf(ax))? abs(ax) : ax;
     ay=(isinf(ay))? abs(ay) : ay;
-    az=(isinf(az))? abs(az) : az;
+    az=(isinf(az))? abs(az) : az;    
+    
+    // get index of first intersection. eq (26) and (19)
+    int i,j,k;
     float aminc=fminf(fminf(ax,ay),az);
     i=(int)floorf(source.x+ (aminc+am)*0.5f*ray.x);
     j=(int)floorf(source.y+ (aminc+am)*0.5f*ray.y);
