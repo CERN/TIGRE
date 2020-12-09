@@ -241,19 +241,16 @@ __global__ void kernelPixelDetector( Geometry geo,
     for (unsigned int ii=0;ii<Np;ii++){
         if (ax==aminc){
             sum+=(ax-ac)*tex3D<float>(tex, i, j, k);
-//             sum+=tex3D<float>(tex, i, j, k);
             i=i+iu;
             ac=ax;
             ax+=axu;
         }else if(ay==aminc){
             sum+=(ay-ac)*tex3D<float>(tex, i, j, k);
-//             sum+=tex3D<float>(tex, i, j, k);
             j=j+ju;
             ac=ay;
             ay+=ayu;
         }else if(az==aminc){
             sum+=(az-ac)*tex3D<float>(tex, i, j, k);
-//             sum+=tex3D<float>(tex, i, j, k);
             k=k+ku;
             ac=az;
             az+=azu;
