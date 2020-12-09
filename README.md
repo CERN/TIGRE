@@ -20,7 +20,7 @@ both sides into TIGRE.
 
 TIGRE remains under development as we are still adding new features 
 (e.g., motion compensation).  If you have any request for a specific 
-application, do not hesitate to [contact us](#contact)!
+application, do not hesitate to [contact us](#contact) or open a  [discussion thread](https://github.com/CERN/TIGRE/discussions)!
 
  - [TIGRE features](#features)
  
@@ -86,6 +86,7 @@ MATLAB and Python builds are both fully supported.
 
 For answers to frequently asked questions [click here](Frontispiece/FAQ.md).
 
+If you have new question not answered in the FAQ, please [contact us](#contact) or open a  [discussion thread](https://github.com/CERN/TIGRE/discussions).
 
 ## Gallery
 
