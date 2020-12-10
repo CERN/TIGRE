@@ -6,7 +6,7 @@ Installation Instructions for Python
 ### Requirements:
 
 1. Python 3
-2. MSVC
+2. MVS
 3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.0](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
 4. CUDA Toolkit
 
@@ -29,12 +29,15 @@ A succesfull installation should be able to execute the script at TIGRE/Python/e
 
 ###  Step by Step Instructions:
 
-1. Install [MS Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/) with Windows SDK.
-
+1. Install [MS Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/) with Windows SDK.\
+   **NOTE:** The User has to have no spaces.
+	
 2. Install Python 3 + pip. Use a virtual [conda environment](https://www.anaconda.com/) or jus tnormal python installation.
 
 3. Install [CUDA](https://developer.nvidia.com/cuda-downloads). Make sure the `CUDA_PATH` and
-      `PATH` environment variable are set accordingly.
+      `PATH` environment variable are set accordingly.\
+  **NOTE:** The User has to have no spaces.
+
    
 4. Download/clone TIGRE
     
