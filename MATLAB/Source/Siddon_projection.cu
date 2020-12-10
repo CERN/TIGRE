@@ -149,6 +149,10 @@ __global__ void kernelPixelDetector( Geometry geo,
     ray.x=pixel1D.x-source.x;
     ray.y=pixel1D.y-source.y;
     ray.z=pixel1D.z-source.z;
+    float eps=0.001;
+    ray.x=(fabsf(ray.x)<eps)? 0 : ray.x;
+    ray.y=(fabsf(ray.y)<eps)? 0 : ray.y; 
+    ray.z=(fabsf(ray.z)<eps)? 0 : ray.z; 
     // This variables are ommited because
     // bx,by,bz ={0,0,0}
     // dx,dy,dz ={1,1,1}
@@ -205,6 +209,12 @@ __global__ void kernelPixelDetector( Geometry geo,
     ay=(source.y<pixel1D.y)?  __fdividef(jmin-source.y,ray.y) :  __fdividef(jmax-source.y,ray.y);
     az=(source.z<pixel1D.z)?  __fdividef(kmin-source.z,ray.z) :  __fdividef(kmax-source.z,ray.z);
     
+
+    // eq(29), direction of update
+    float iu,ju,ku;
+    iu=(source.x< pixel1D.x)? 1.0f : -1.0f;
+    ju=(source.y< pixel1D.y)? 1.0f : -1.0f;
+    ku=(source.z< pixel1D.z)? 1.0f : -1.0f;
     // If its Infinite (i.e. ray is parallel to axis), make sure its positive
     ax=(isinf(ax))? abs(ax) : ax;
     ay=(isinf(ay))? abs(ay) : ay;
@@ -223,12 +233,7 @@ __global__ void kernelPixelDetector( Geometry geo,
     axu=__frcp_rd(fabsf(ray.x));
     ayu=__frcp_rd(fabsf(ray.y));
     azu=__frcp_rd(fabsf(ray.z));
-    // eq(29), direction of update
-    float iu,ju,ku;
-    iu=(source.x< pixel1D.x)? 1.0f : -1.0f;
-    ju=(source.y< pixel1D.y)? 1.0f : -1.0f;
-    ku=(source.z< pixel1D.z)? 1.0f : -1.0f;
-    
+
     float maxlength=__fsqrt_rd(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
     float sum=0.0f;
     unsigned int Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections
@@ -236,7 +241,7 @@ __global__ void kernelPixelDetector( Geometry geo,
     i+=0.5f;
     j+=0.5f;
     k+=0.5f;
-    
+
     for (unsigned int ii=0;ii<Np;ii++){
         if (ax==aminc){
             sum+=(ax-ac)*tex3D<float>(tex, i, j, k);

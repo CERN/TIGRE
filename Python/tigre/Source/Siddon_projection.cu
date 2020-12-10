@@ -153,6 +153,10 @@ __global__ void kernelPixelDetector( Geometry geo,
     ray.x=pixel1D.x-source.x;
     ray.y=pixel1D.y-source.y;
     ray.z=pixel1D.z-source.z;
+    float eps=0.001;
+    ray.x=(fabsf(ray.x)<eps)? 0 : ray.x;
+    ray.y=(fabsf(ray.y)<eps)? 0 : ray.y; 
+    ray.z=(fabsf(ray.z)<eps)? 0 : ray.z; 
     // This variables are ommited because
     // bx,by,bz ={0,0,0}
     // dx,dy,dz ={1,1,1}
