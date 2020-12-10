@@ -205,9 +205,9 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     // get intersection point N1. eq(20-21) [(also eq 9-10)]
     float ax,ay,az;
-    ax=(source.x<pixel1D.x)?  __fdividef(imin-source.x,ray.x+0.000000000001f) :  __fdividef(imax-source.x,ray.x+0.000000000001f);
-    ay=(source.y<pixel1D.y)?  __fdividef(jmin-source.y,ray.y+0.000000000001f) :  __fdividef(jmax-source.y,ray.y+0.000000000001f);
-    az=(source.z<pixel1D.z)?  __fdividef(kmin-source.z,ray.z+0.000000000001f) :  __fdividef(kmax-source.z,ray.z+0.000000000001f);
+    ax=(source.x<pixel1D.x)?  __fdividef(imin-source.x,ray.x) :  __fdividef(imax-source.x,ray.x);
+    ay=(source.y<pixel1D.y)?  __fdividef(jmin-source.y,ray.y) :  __fdividef(jmax-source.y,ray.y);
+    az=(source.z<pixel1D.z)?  __fdividef(kmin-source.z,ray.z) :  __fdividef(kmax-source.z,ray.z);
     
     // If its Infinite (i.e. ray is parallel to axis), make sure its positive
     ax=(isinf(ax))? abs(ax) : ax;
