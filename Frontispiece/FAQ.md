@@ -8,6 +8,7 @@ If it is a specific problem in a specific scenario, please provide a [*Minimal C
 Make it as short as possible. Ensure that your example is self-complete, no other code is needed. Ensure that someone else can execute it and 
 reproduce the error you are having. 
 
+If you have more of a comment or a suggestion, you can also open a thread in the  [discussions](https://github.com/CERN/TIGRE/discussions) page. 
 
 ***
 
@@ -16,13 +17,20 @@ reproduce the error you are having.
 *A: Have a look at the installation instructions of [the MATLAB version](Frontispiece/MATLAB_installation) or [the Python version](Frontispiece/Python_installation).\
 If after reading that you still have problems, please feel free to contact us.*
 
+**Q: I get compilation error nvcc fatal   : Unsupported gpu architecture 'compute_XX'**
+
+Your particular CUDA version does not support all compute capablities of all GPUs. TIGRE by default compiles assuming
+CUDA 11.0, meaning we compile up to compute capability 8.6 (`-gencode=arch=compute_86,code=sm_86`). 
+If you are using an older CUDA version, maybe you can not compile to some architectures. Try removing the higher numbered arguments in the following line in the XML,
+or a similar line in the `setup.py` file for python. 
+
+ ```
+COMPFLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_61,code=sm_61 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_86,code=sm_86 --default-stream per-thread  --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"
+ ```
+
 **Q: TIGRE succesfully compiles but I get `texture memory fail` when I run the code**
 
-*A: It is likely you are running on a GPU that has compute capability older than 3.0, which is not supported.\
- However, you may be able to still run TIGRE, by compiling with CUDA 8.0 and changing line 38 of `mex_CUDA_win.xml` to:*
- ```
- COMPFLAGS="-gencode=arch=compute_21,code=sm_21 -gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=&#92;&quot;sm_50,compute_50&#92;&quot; -gencode arch=compute_52,code=sm_52 --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"
- ```
+*A: It is likely you are running on a GPU that has compute capability older than 3.5, which is not supported.\
 
 **Q: I get a fair amount of warnings when I compile the code, what is happening?**
 
@@ -56,9 +64,9 @@ this. Hopefully we can find a solution for this without the need of restarting M
 
 *A: No. CUDA only allows windows compilation using Visual Studio. The free versions are good enough, however.*
 
-**Q: Is the pyhton versiona vailable for Windows?**
+**Q: Is the pyhton version available for Windows?**
 
-*A: Not yet. We do want it running but we have problems with compilation. Feel free to contribute, we'd like help with this problem*
+*A: Yes, but there are particular versions of python 3 that had caused problems, so please report back to us if you had issues. *
 
 **Q: Can I use your code for XXXXXX**
 
