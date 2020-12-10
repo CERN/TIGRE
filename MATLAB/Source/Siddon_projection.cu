@@ -210,11 +210,6 @@ __global__ void kernelPixelDetector( Geometry geo,
     az=(source.z<pixel1D.z)?  __fdividef(kmin-source.z,ray.z) :  __fdividef(kmax-source.z,ray.z);
     
 
-    // eq(29), direction of update
-    float iu,ju,ku;
-    iu=(source.x< pixel1D.x)? 1.0f : -1.0f;
-    ju=(source.y< pixel1D.y)? 1.0f : -1.0f;
-    ku=(source.z< pixel1D.z)? 1.0f : -1.0f;
     // If its Infinite (i.e. ray is parallel to axis), make sure its positive
     ax=(isinf(ax))? abs(ax) : ax;
     ay=(isinf(ay))? abs(ay) : ay;
@@ -233,7 +228,11 @@ __global__ void kernelPixelDetector( Geometry geo,
     axu=__frcp_rd(fabsf(ray.x));
     ayu=__frcp_rd(fabsf(ray.y));
     azu=__frcp_rd(fabsf(ray.z));
-
+    // eq(29), direction of update
+    float iu,ju,ku;
+    iu=(source.x< pixel1D.x)? 1.0f : -1.0f;
+    ju=(source.y< pixel1D.y)? 1.0f : -1.0f;
+    ku=(source.z< pixel1D.z)? 1.0f : -1.0f;
     float maxlength=__fsqrt_rd(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
     float sum=0.0f;
     unsigned int Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections

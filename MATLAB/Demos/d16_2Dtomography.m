@@ -52,7 +52,7 @@ geo.sDetector=geo.nDetector.*geo.dDetector; % total size of the detector    (mm)
 
 % Offsets
 geo.offOrigin =[0;0;0];                     % Offset of image from origin   (mm)              
-geo.offDetector=[0; 0.5]; 
+geo.offDetector=[0; 0]; 
 
 
 % Auxiliary 
@@ -98,7 +98,7 @@ geo.sDetector=geo.nDetector.*geo.dDetector; % total size of the detector    (mm)
 
 % Offsets
 geo.offOrigin =[0;0;0];                        % Offset of image from origin   (mm)              ; 
-geo.offDetector=[0; 0.5]; 
+geo.offDetector=[0; 0]; 
 
 % Auxiliary 
 geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/sample)
