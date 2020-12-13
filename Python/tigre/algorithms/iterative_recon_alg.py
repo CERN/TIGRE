@@ -184,7 +184,7 @@ class IterativeReconAlg(object):
         :return: None
         """
         geox = copy.deepcopy(self.geo)
-        geox.sVoxel[1:] = geox.sVoxel[1:] * 1.11 # a bit larger to avoid zeros in projections
+        geox.sVoxel[1:] = geox.sVoxel[1:] * 1.1 # a bit larger to avoid zeros in projections
         geox.sVoxel[0] = max(geox.sDetector[0],geox.sVoxel[0])
         # geox.sVoxel[0:] = self.geo.DSD - self.geo.DSO
         # geox.sVoxel[2] = max(geox.sDetector[1], geox.sVoxel[2])
