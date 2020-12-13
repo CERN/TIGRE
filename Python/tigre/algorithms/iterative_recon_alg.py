@@ -210,7 +210,7 @@ class IterativeReconAlg(object):
                 geox = copy.deepcopy(self.geo)
                 geox.angles = self.angleblocks[i]
                 # shrink the volume size to avoid zeros in backprojection
-                geox.sVoxel = geox.sVoxel * np.max(geox.sVoxel[1:] / np.linalg.norm(geox.sVoxel[1:]))
+                geox.sVoxel = geox.sVoxel * np.max(geox.sVoxel[1:] / np.linalg.norm(geox.sVoxel[1:])) * 0.9
                 geox.dVoxel = geox.sVoxel / geox.nVoxel
                 proj_one = np.ones((len(self.angleblocks[i]), geo.nDetector[0], 
                                     geo.nDetector[1]), dtype=np.float32)
