@@ -1,20 +1,25 @@
 function V=computeV(geo,angles,alphablocks,orig_index)
 
 V=zeros(geo.nVoxel(1),geo.nVoxel(2) ,length(alphablocks),'single');
-% V2=zeros(geo.nVoxel(1),geo.nVoxel(2) ,length(alphablocks),'single');
 geo=checkGeo(geo,angles);
 
 if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
     for ii=1:length(alphablocks)
-        [x,y]=meshgrid(geo.sVoxel(1)/2-geo.dVoxel(1)/2+geo.offOrigin(1):-geo.dVoxel(1):-geo.sVoxel(1)/2+geo.dVoxel(1)/2+geo.offOrigin(1),...
-            -geo.sVoxel(2)/2+geo.dVoxel(2)/2+geo.offOrigin(2): geo.dVoxel(2): geo.sVoxel(2)/2-geo.dVoxel(2)/2+geo.offOrigin(2));
         auxang=alphablocks{ii};
         auxindex=orig_index{ii};
-%         A = permute(auxang(1,:)+pi/2, [1 3 2]);
-        for jj=1:length(auxang(1,:))
-            V(:,:,ii)=V(:,:,ii)+single(((geo.DSO(auxindex(jj)) ./ (geo.DSO(auxindex(jj)) +  y.*sin(-auxang(1,jj)-pi/2) -  x.*cos(-auxang(1,jj)-pi/2))).^2).');
-        end
-%         V(:,:,ii)= sum(permute(single((geo.DSO ./ (geo.DSO +  y.*sin(-A) -  x.*cos(-A))).^2),[2 1 3]),3);
+        auxgeo = geo;
+        % shrink the volume to avoiding zeros in backprojection
+        auxgeo.sVoxel = auxgeo.sVoxel * max(auxgeo.sVoxel(1:2)/norm(auxgeo.sVoxel(1:2),2));
+        auxgeo.dVoxel = auxgeo.sVoxel ./ auxgeo.nVoxel;
+        % subset of projection angles
+        auxgeo.DSD = geo.DSD(auxindex);
+        auxgeo.DSO = geo.DSO(auxindex);
+        auxgeo.offOrigin = geo.offOrigin(:,auxindex);
+        auxgeo.offDetector = geo.offDetector(:,auxindex);
+        auxgeo.rotDetector = geo.rotDetector(:,auxindex);
+        auxgeo.COR = geo.COR(auxindex);
+        
+        V(:,:,ii) = mean(Atb(ones(geo.nDetector(2),geo.nDetector(1),length(auxang),'single'),auxgeo,auxang),3);
     end
 else
     for ii=1:length(alphablocks)

@@ -142,6 +142,10 @@ class IterativeReconAlg(object):
             'log_parameters',
             'angleblocks',
             'angle_index',
+            'alpha',
+            'alpha_red',
+            'rmax',
+            'maxl2err',
             'delta',
             'regularisation',
             'tviter',
@@ -180,18 +184,14 @@ class IterativeReconAlg(object):
         :return: None
         """
         geox = copy.deepcopy(self.geo)
-        geox.sVoxel[0:] = self.geo.DSD - self.geo.DSO
-        geox.sVoxel[2] = max(geox.sDetector[1], geox.sVoxel[2])
+        geox.sVoxel[1:] = geox.sVoxel[1:] * 1.11 # a bit larger to avoid zeros in projections
+        geox.sVoxel[0] = max(geox.sDetector[0],geox.sVoxel[0])
+        # geox.sVoxel[0:] = self.geo.DSD - self.geo.DSO
+        # geox.sVoxel[2] = max(geox.sDetector[1], geox.sVoxel[2])
         geox.nVoxel = np.array([2, 2, 2])
         geox.dVoxel = geox.sVoxel / geox.nVoxel
-        W = Ax(
-            np.ones(
-                geox.nVoxel,
-                dtype=np.float32),
-            geox,
-            self.angles,
-            "Siddon")
-        W[W <= min(self.geo.dVoxel / 4)] = np.inf
+        W = Ax(np.ones(geox.nVoxel, dtype=np.float32), geox, self.angles, "Siddon")
+#        W[W <= min(self.geo.dVoxel / 4)] = np.inf
         W = 1. / W
         setattr(self, 'W', W)
 
@@ -201,46 +201,25 @@ class IterativeReconAlg(object):
         :return: None
         """
         geo = self.geo
-        if geo.mode != 'parallel':
-            
-            if len(geo.offOrigin.shape)==1:
-                offY=geo.offOrigin[1]
-                offZ=geo.offOrigin[2]
+        V = np.ones((self.angleblocks.shape[0], geo.nVoxel[1], 
+                      geo.nVoxel[2]), dtype=np.float32)
+        
+        for i in range(self.angleblocks.shape[0]):
+            if geo.mode != 'parallel':
+                        
+                geox = copy.deepcopy(self.geo)
+                geox.angles = self.angleblocks[i]
+                # shrink the volume size to avoid zeros in backprojection
+                geox.sVoxel = geox.sVoxel * np.max(geox.sVoxel[1:] / np.linalg.norm(geox.sVoxel[1:]))
+                geox.dVoxel = geox.sVoxel / geox.nVoxel
+                proj_one = np.ones((len(self.angleblocks[i]), geo.nDetector[0], 
+                                    geo.nDetector[1]), dtype=np.float32)
+                V[i] = Atb(proj_one, geox, self.angleblocks[i],'FDK').mean(axis=0)
+                
             else:
-                offY=geo.offOrigin[1,0]
-                offZ=geo.offOrigin[2,0]
-            start = geo.sVoxel[1] / 2 - geo.dVoxel[1] / 2 + offY
-            stop = -geo.sVoxel[1] / 2 + geo.dVoxel[1] / 2 + offY
-            step = -geo.dVoxel[1]
-
-            xv = np.arange(start, stop + step, step)
-
-            start = geo.sVoxel[2] / 2 - geo.dVoxel[2] / 2 + offZ
-            stop = -geo.sVoxel[2] / 2 + geo.dVoxel[2] / 2 + offZ
-            step = -geo.dVoxel[2]
-
-            yv = -1 * np.arange(start, stop + step, step)
-
-            (yy, xx) = np.meshgrid(yv, xv)
-            A = (self.angles[:, 0] + np.pi / 2)
-
-            V = np.empty((self.angles.shape[0], geo.nVoxel[1], geo.nVoxel[2]))
-            for i in range(self.angles.shape[0]):
-                if hasattr(geo.DSO, 'shape') and len(geo.DSO.shape) >= 1:
-                    DSO = geo.DSO[i]
-                else:
-                    DSO = geo.DSO
-                V[i] = (DSO / (DSO + (yy * np.sin(-A[i])) -
-                               (xx * np.cos(-A[i])))) ** 2
-
-        else:
-            V = np.ones((self.angles.shape[0]), dtype=np.float32)
-        if self.blocksize > 1:
-            v_list = [np.sum(V[self.angle_index[i]], axis=0)
-                      for i in range(len(self.angleblocks))]
-            V = np.stack(v_list, 0)
-
-        V = np.array(V, dtype=np.float32)
+                V[i] *= len(self.angleblocks[i])
+                
+        
         setattr(self, 'V', V)
 
     def set_res(self):
@@ -352,7 +331,7 @@ class IterativeReconAlg(object):
         VERBOSE:
          for j in range(angleblocks):
              angle = np.array([alpha[j]], dtype=np.float32)
-             proj_err = proj[angle_index[j]] - Ax(res, geo, angle, 'Siddon')
+             proj_err = proj[angle_index[j]] - Ax(res, geo, angle, 'ray-voxel')
              weighted_err = W[angle_index[j]] * proj_err
              backprj = Atb(weighted_err, geo, angle, 'FDK')
              weighted_backprj = 1 / V[angle_index[j]] * backprj
@@ -361,8 +340,9 @@ class IterativeReconAlg(object):
 
         :return: None
         """
-        self.res += self.lmbda * 1. / self.V[iteration] * Atb(self.W[self.angle_index[iteration]] * (
-            self.proj[self.angle_index[iteration]] - Ax(self.res, geo, angle, 'interpolated')), geo, angle, 'FDK')
+        ang_index = self.angle_index[iteration].astype(np.int)
+        self.res += self.lmbda * 1. / self.V[iteration] * Atb(self.W[ang_index] * (
+            self.proj[ang_index] - Ax(self.res, geo, angle, 'Siddon')), geo, angle, 'FDK')
 
     def getres(self):
         return self.res

@@ -34,6 +34,7 @@ def im3DNORM(img,normind,varargin=None):
     if type(normind) is int:
         return np.linalg.norm(img.ravel(),normind)
     if normind == 'TV':
-        raise Exception('TV not yet implemented')
-
+        gx,gy,gz = np.gradient(img.ravel())
+        g = np.sqrt(gx*gx + gy*gy + gz*gz)
+        return g
 
