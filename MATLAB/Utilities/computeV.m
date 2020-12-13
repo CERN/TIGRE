@@ -9,7 +9,7 @@ if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
         auxindex=orig_index{ii};
         auxgeo = geo;
         % shrink the volume to avoiding zeros in backprojection
-        auxgeo.sVoxel = auxgeo.sVoxel * max(auxgeo.sVoxel(1:2)/norm(auxgeo.sVoxel(1:2),2));
+        auxgeo.sVoxel = auxgeo.sVoxel * max(auxgeo.sVoxel(1:2)/norm(auxgeo.sVoxel(1:2),2)) * 0.9;
         auxgeo.dVoxel = auxgeo.sVoxel ./ auxgeo.nVoxel;
         % subset of projection angles
         auxgeo.DSD = geo.DSD(auxindex);
