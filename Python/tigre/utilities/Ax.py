@@ -18,7 +18,7 @@ def Ax(img, geo, angles, projection_type="Siddon"):
     geox.cast_to_single()
     #geox.checknans()
 
-    if all(img.shape != geox.nVoxel):
+    if abs(img.shape - geox.nVoxel).max()>1e-8:
         raise ValueError("Input data should be of shape geo.nVoxel: "+ str(geox.nVoxel) +
                          " not:" + str(img.shape))
 
