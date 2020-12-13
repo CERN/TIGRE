@@ -331,7 +331,7 @@ class IterativeReconAlg(object):
         VERBOSE:
          for j in range(angleblocks):
              angle = np.array([alpha[j]], dtype=np.float32)
-             proj_err = proj[angle_index[j]] - Ax(res, geo, angle, 'ray-voxel')
+             proj_err = proj[angle_index[j]] - Ax(res, geo, angle, 'Siddon')
              weighted_err = W[angle_index[j]] * proj_err
              backprj = Atb(weighted_err, geo, angle, 'FDK')
              weighted_backprj = 1 / V[angle_index[j]] * backprj
