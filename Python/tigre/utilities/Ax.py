@@ -8,6 +8,9 @@ def Ax(img, geo, angles, projection_type="Siddon"):
         raise TypeError("Input data should be float32, not "+ str(img.dtype))
     if not np.isreal(img).all():
         raise ValueError("Complex types not compatible for projection.")
+    if any(img.shape != geo.nVoxel):
+        raise ValueError("Input data should be of shape geo.nVoxel: "+ str(geo.nVoxel) +
+                         " not:" + str(img.shape))
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
     """
@@ -18,8 +21,5 @@ def Ax(img, geo, angles, projection_type="Siddon"):
     geox.cast_to_single()
     #geox.checknans()
 
-    if abs(img.shape - geox.nVoxel).max()>1e-8:
-        raise ValueError("Input data should be of shape geo.nVoxel: "+ str(geox.nVoxel) +
-                         " not:" + str(img.shape))
 
     return _Ax_ext(img, geox, geox.angles, projection_type, geox.mode)
