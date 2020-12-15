@@ -186,12 +186,11 @@ class IterativeReconAlg(object):
         geox = copy.deepcopy(self.geo)
         geox.sVoxel[1:] = geox.sVoxel[1:] * 1.1 # a bit larger to avoid zeros in projections
         geox.sVoxel[0] = max(geox.sDetector[0],geox.sVoxel[0])
-        # geox.sVoxel[0:] = self.geo.DSD - self.geo.DSO
-        # geox.sVoxel[2] = max(geox.sDetector[1], geox.sVoxel[2])
+
         geox.nVoxel = np.array([2, 2, 2])
         geox.dVoxel = geox.sVoxel / geox.nVoxel
         W = Ax(np.ones(geox.nVoxel, dtype=np.float32), geox, self.angles, "Siddon")
-#        W[W <= min(self.geo.dVoxel / 4)] = np.inf
+        W[W <= min(self.geo.dVoxel / 4)] = np.inf
         W = 1. / W
         setattr(self, 'W', W)
 

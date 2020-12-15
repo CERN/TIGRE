@@ -94,16 +94,14 @@ geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not 
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
 W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon'); %
-%W(W<min(geo.dVoxel)/4)=Inf;
+W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 
 
 % Back-Projection weight, V
 V=computeV(geo,angles,alphablocks,orig_index);
 
-% initialize image.
-%f=zeros(geo.nVoxel','single');
-%f=FDK(proj,geo,angles);
+
 if measurequality
     qualMeasOut=zeros(length(QualMeasOpts),maxiter);
 end
@@ -138,7 +136,6 @@ while ~stop_criteria %POCS
             geo.DSO=DSO(jj);
         end
         f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj})),geo,alphablocks{:,jj}));
-%        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj})),geo,alphablocks{:,jj}));
         f(f<0)=0;
     end
     
