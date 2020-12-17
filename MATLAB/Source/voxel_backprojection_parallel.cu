@@ -533,10 +533,10 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
     Px.x=Px.x+(geo.DSD[i]-geo.DSO[i]);
     Py.x=Py.x+(geo.DSD[i]-geo.DSO[i]);
     Pz.x=Pz.x+(geo.DSD[i]-geo.DSO[i]);
-    rollPitchYawT(geo,i,&P);
-    rollPitchYawT(geo,i,&Px);
-    rollPitchYawT(geo,i,&Py);
-    rollPitchYawT(geo,i,&Pz);
+    rollPitchYawT_parallel(geo,i,&P);
+    rollPitchYawT_parallel(geo,i,&Px);
+    rollPitchYawT_parallel(geo,i,&Py);
+    rollPitchYawT_parallel(geo,i,&Pz);
     
     P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
     Px.x=Px.x-(geo.DSD[i]-geo.DSO[i]);
@@ -547,7 +547,7 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
     source.x=geo.DSO[i]; //allready offseted for rotation
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
-    rollPitchYawT(geo,i,&source);
+    rollPitchYawT_parallel(geo,i,&source);
     
     
     P.z =P.z /geo.dDetecV;                          P.y =P.y/geo.dDetecU;
@@ -605,5 +605,26 @@ void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuAr
         texDescr.readMode = cudaReadModeElementType;
         cudaCreateTextureObject(&texImage[0], &texRes, &texDescr, NULL);
         cudaCheckErrors("Texture object creation fail");
+    
+}
+void rollPitchYawT_parallel(Geometry geo,int i, Point3D* point){
+    Point3D auxPoint;
+    auxPoint.x=point->x;
+    auxPoint.y=point->y;
+    auxPoint.z=point->z;
+    
+    point->x=cos(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x
+            +sin(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.y
+            -sin(geo.dPitch[i])*auxPoint.z;
+    
+    
+    point->y=(cos(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) - sin(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.x
+            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) + cos(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y
+            +cos(geo.dPitch[i])*sin(geo.dYaw[i])*auxPoint.z;
+    
+    
+    point->z=(cos(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) + sin(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.x
+            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) - cos(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.y
+            +cos(geo.dPitch[i])*cos(geo.dYaw[i])*auxPoint.z;
     
 }

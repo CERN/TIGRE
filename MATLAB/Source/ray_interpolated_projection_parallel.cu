@@ -328,9 +328,9 @@ void computeDeltas_parallel(Geometry geo, float alpha,unsigned int i, Point3D* u
     P.x=0;Pu0.x=0;Pv0.x=0;
     
     //1. Roll pitch yaw
-    rollPitchYaw(geo,i,&P);
-    rollPitchYaw(geo,i,&Pu0);
-    rollPitchYaw(geo,i,&Pv0);
+    rollPitchYaw_parallel(geo,i,&P);
+    rollPitchYaw_parallel(geo,i,&Pu0);
+    rollPitchYaw_parallel(geo,i,&Pv0);
     //Now ltes translate the detector coordinates to DOD (original position on real coordinate system:
     P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
     Pu0.x=Pu0.x-(geo.DSD[i]-geo.DSO[i]);
@@ -439,5 +439,24 @@ void CreateTextureParallelInterp(float* image,Geometry geo,cudaArray** d_cuArrTe
     texDescr.addressMode[2] = cudaAddressModeBorder;
     texDescr.readMode = cudaReadModeElementType;
     cudaCreateTextureObject(&texImage[0], &texRes, &texDescr, NULL);
+    
+}
+void rollPitchYaw_parallel(Geometry geo,unsigned int i, Point3D* point){
+    Point3D auxPoint;
+    auxPoint.x=point->x;
+    auxPoint.y=point->y;
+    auxPoint.z=point->z;
+    
+    point->x=cos(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x
+            +(cos(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) - sin(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y
+            +(cos(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) + sin(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.z;
+    
+    point->y=sin(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x
+            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) + cos(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y
+            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) - cos(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.z;
+    
+    point->z=-sin(geo.dPitch[i])*auxPoint.x
+            +cos(geo.dPitch[i])*sin(geo.dYaw[i])*auxPoint.y
+            +cos(geo.dPitch[i])*cos(geo.dYaw[i])*auxPoint.z;
     
 }

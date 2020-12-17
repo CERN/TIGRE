@@ -49,7 +49,7 @@ Codes  : https://github.com/CERN/TIGRE
 
 #ifndef BACKPROJECTION_PARALLEL_HPP
 #define BACKPROJECTION_PARALLEL_HPP
-
+void rollPitchYawT_parallel(Geometry geo,int i, Point3D* point);
 int  voxel_backprojection_parallel(float  *  projections, Geometry geo, float* result,float const * const alphas,int nalpha);
 void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D *S);
 void createGeoArrayParallel(unsigned int image_splits, Geometry geo,Geometry* geoArray, unsigned int nangles);

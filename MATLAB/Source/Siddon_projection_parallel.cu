@@ -406,9 +406,9 @@ void computeDeltas_Siddon_parallel(Geometry geo, float angles,int i, Point3D* uv
     P.x=0;Pu0.x=0;Pv0.x=0;
     
     // Roll pitch yaw
-    rollPitchYaw(geo,i,&P);
-    rollPitchYaw(geo,i,&Pu0);
-    rollPitchYaw(geo,i,&Pv0);
+    rollPitchYaw_parallel(geo,i,&P);
+    rollPitchYaw_parallel(geo,i,&Pu0);
+    rollPitchYaw_parallel(geo,i,&Pv0);
     //Now ltes translate the points where they shoudl be:
     P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
     Pu0.x=Pu0.x-(geo.DSD[i]-geo.DSO[i]);
@@ -533,5 +533,23 @@ float maxDistanceCubeXY(Geometry geo, float angles,int i){
     return geo.DSO[i]/geo.dVoxelX-sqrt(maxCubX*maxCubX+maxCubY*maxCubY);
     
 }
-
+void rollPitchYaw_parallel(Geometry geo,int i, Point3D* point){
+    Point3D auxPoint;
+    auxPoint.x=point->x;
+    auxPoint.y=point->y;
+    auxPoint.z=point->z;
+    
+    point->x=cos(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x
+            +(cos(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) - sin(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y
+            +(cos(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) + sin(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.z;
+    
+    point->y=sin(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x
+            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) + cos(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y
+            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) - cos(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.z;
+    
+    point->z=-sin(geo.dPitch[i])*auxPoint.x
+            +cos(geo.dPitch[1])*sin(geo.dYaw[i])*auxPoint.y
+            +cos(geo.dPitch[1])*cos(geo.dYaw[i])*auxPoint.z;
+    
+}
 #endif
