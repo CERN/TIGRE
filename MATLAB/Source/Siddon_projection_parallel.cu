@@ -395,7 +395,26 @@ void computeDeltas_Siddon_parallel(Geometry geo, float angles,int i, Point3D* uv
     Pv0.x=-(geo.DSD[i]-geo.DSO[i]);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
     // Geomtric trasnformations:
     
-    //1: Offset detector
+    //1.Roll,pitch,jaw
+    // The detector can have a small rotation.
+    // according to
+    //"A geometric calibration method for cone beam CT systems" Yang K1, Kwan AL, Miller DF, Boone JM. Med Phys. 2006 Jun;33(6):1695-706.
+    // Only the Z rotation will have a big influence in the image quality when they are small.
+    // Still all rotations are supported
+    
+    // To roll pitch jaw, the detector has to be in centered in OXYZ.
+    P.x=0;Pu0.x=0;Pv0.x=0;
+    
+    // Roll pitch yaw
+    rollPitchYaw(geo,i,&P);
+    rollPitchYaw(geo,i,&Pu0);
+    rollPitchYaw(geo,i,&Pv0);
+    //Now ltes translate the points where they shoudl be:
+    P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
+    Pu0.x=Pu0.x-(geo.DSD[i]-geo.DSO[i]);
+    Pv0.x=Pv0.x-(geo.DSD[i]-geo.DSO[i]);
+    
+    //2: Offset detector
     
     //P.x
     P.y  =P.y  +geo.offDetecU[i];    P.z  =P.z  +geo.offDetecV[i];
