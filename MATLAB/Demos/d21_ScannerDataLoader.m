@@ -11,6 +11,7 @@
 %
 %       Xradia (Zeiss)
 %
+%       Philips (in theory, any DICOM, but only tested in Philips Allura)
 %
 % Currently we have instructions for generic, Nikon (micro-CT) and Varian
 % scanners. 
@@ -78,6 +79,22 @@ directory='~/your_data_path/Nikon/Sample_name/';
 img=OS_SART(proj,geo,angles,100);
 img=FDK(proj,geo,angles);
 
+%% DICOM data (only tested on Philips Allura)
+
+% As with the other loaders, this can be simply done with:
+
+directory='~/your_data_path/Dicom/Some_folder/';
+[proj,geo, angles,dicomhdr] = dicomDataLoader(datafolder);
+
+%This also returns the headers for DICOM files, so you can inspect them
+%yourself. Its been almost untested aside from few datasets, please do
+%contact us to help us increase support to more devices/DICOM attributes if
+%it does not work for your data. 
+
+% You can directly call reconstruction code now:
+
+img=OS_SART(proj,geo,angles,100);
+img=FDK(proj,geo,angles);
 %% Generic
 
 % It is possible that your scanner is not currently supported, or that it
