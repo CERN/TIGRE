@@ -35,7 +35,7 @@ def cuda_raise_errors(error_code):
 
 
 def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100):
-
+    src=np.transpose(src,(1,2,0)).copy() # shift 1st dim to last, match MATLAB order
     
     cdef np.npy_intp size_img[3]
     size_img[0]= <np.npy_intp> src.shape[0]
@@ -55,4 +55,4 @@ def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
     PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)
 
-    return imgout
+    return np.transpose(imgout,(2,0,1)).copy()
