@@ -22,27 +22,80 @@ if ~isfield(dicomhdr{length(x)},'PositionerType') || ~strcmi(dicomhdr{length(x)}
     disp('Attempting to read the data anyway....');
     
 end
-% We have only teste CARM, but
-% load info
-for ii=1:length(x)-1
-    dicomhdr{ii}=dicominfo([filepath, x(ii).name]);
-end
 
-% Its not usual, but there is a chance that some of the headers are
-% corrupted. We should check if the required info is there, and otherwise
-% error.
-[dicomhdr,~]=checkDicomHeaders(dicomhdr);
+% Standard circular scans will only create 1 DICOM file, while one may
+% "hack" the scan to do one-shots in each projection, and create several
+% 1-projection scans. We do want to support both, so....:
 
-% Load projetion data
-proj=zeros(dicomhdr{1}.Height,dicomhdr{1}.Width,length(dicomhdr),'single');
-for ii=1:length(dicomhdr)
-    projaux=dicomread(dicomhdr{ii}.Filename);
+if length(x)>1
+    
+    % load info
+    for ii=1:length(x)-1
+        dicomhdr{ii}=dicominfo([filepath, x(ii).name]);
+    end
+    
+    % Its not usual, but there is a chance that some of the headers are
+    % corrupted. We should check if the required info is there, and otherwise
+    % error.
+    [dicomhdr,~]=checkDicomHeaders(dicomhdr);
+    
+    % Load projetion data
+    proj=zeros(dicomhdr{1}.Height,dicomhdr{1}.Width,length(dicomhdr),'single');
+    for ii=1:length(dicomhdr)
+        projaux=dicomread(dicomhdr{ii}.Filename);
+        if size(projaux,4)>1
+            proj(:,:,ii)=projaux(:,:,1,1);
+        else
+            proj(:,:,ii)=projaux;
+        end
+    end
+
+    % fill data
+    DSD=zeros(1,length(dicomhdr));
+    DSO=zeros(1,length(dicomhdr));
+    primary_angle=zeros(1,length(dicomhdr));
+    secondary_angle=zeros(1,length(dicomhdr));
+    
+    for ii=1:length(dicomhdr)
+        DSD(ii)=dicomhdr{ii}.DistanceSourceToDetector;
+        DSO(ii)=dicomhdr{ii}.DistanceSourceToPatient;
+        primary_angle(ii)=dicomhdr{ii}.PositionerPrimaryAngle; %RAO/LAO
+        secondary_angle(ii)=dicomhdr{ii}.PositionerSecondaryAngle; %CRA/CAU
+    end
+else
+    extra_required_fields={ 'PositionerPrimaryAngleIncrement',
+                            'PositionerSecondaryAngleIncrement'};
+    [dicomhdr,~]=checkDicomHeaders(dicomhdr,extra_required_fields);
+    if isempty(dicomhdr)
+        warning('DICOM header lacks required information to construct a geometry, outputing projection data only');
+        dicomhdr{1}=dicominfo([filepath, x(1).name]);
+        proj=dicomread(dicomhdr{1}.Filename);
+        geo=[];
+        angles=[];
+        return;
+    end
+    % Load projetion data
+    projaux=dicomread(dicomhdr{1}.Filename);
     if size(projaux,4)>1
-        proj(:,:,ii)=projaux(:,:,1,1);
+        proj=single(squeeze(projaux(:,:,1,:)));
     else
-        proj(:,:,ii)=projaux;
+        proj=single(projaux);
+    end
+    DSD=dicomhdr{1}.DistanceSourceToDetector;
+    DSO=dicomhdr{1}.DistanceSourceToPatient;
+    primary_angle=dicomhdr{1}.PositionerPrimaryAngle+dicomhdr{1}.PositionerPrimaryAngleIncrement'; %RAO/LAO
+    secondary_angle=dicomhdr{1}.PositionerSecondaryAngle+dicomhdr{1}.PositionerSecondaryAngleIncrement'; %CRA/CAU
+    % Check if projection has been padded.
+    padding_fields={'ShutterLeftVerticalEdge',
+                    'ShutterRightVerticalEdge',
+                    'ShutterUpperHorizontalEdge',
+                    'ShutterLowerHorizontalEdge'};
+    if ~isempty(checkDicomHeaders(dicomhdr,padding_fields))
+       % padding fields present, pad. 
+       proj=proj(dicomhdr{1}.ShutterUpperHorizontalEdge:dicomhdr{1}.ShutterLowerHorizontalEdge,dicomhdr{1}.ShutterLeftVerticalEdge:dicomhdr{1}.ShutterRightVerticalEdge,:);
     end
 end
+
 if any(proj(:)==0)
     warning(sprintf(['Zeroes detected in projection data, adding +1 to apply the Beer-Lambert law\n',...
         'This is caise by either very high attenuation in an image, to the point of blocking x-rays totally or the detector being cropped digitally (horizontal/vertical zero bands)\n',...
@@ -51,23 +104,9 @@ if any(proj(:)==0)
     proj=proj+1;
 end
 proj=-log(proj./(max(proj(:))+1));
-
-% fill data
-DSD=zeros(1,length(dicomhdr));
-DSO=zeros(1,length(dicomhdr));
-primary_angle=zeros(1,length(dicomhdr));
-secondary_angle=zeros(1,length(dicomhdr));
-
-for ii=1:length(dicomhdr)
-    DSD(ii)=dicomhdr{ii}.DistanceSourceToDetector;
-    DSO(ii)=dicomhdr{ii}.DistanceSourceToPatient;
-    primary_angle(ii)=dicomhdr{ii}.PositionerPrimaryAngle; %RAO/LAO
-    secondary_angle(ii)=dicomhdr{ii}.PositionerSecondaryAngle; %CRA/CAU
-end
-
 % Fill in the geometry info.
 geo.dDetector=dicomhdr{1}.ImagerPixelSpacing;
-geo.nDetector=double([dicomhdr{1}.Height;dicomhdr{1}.Width]);
+geo.nDetector=double([size(proj,2);size(proj,1)]);
 geo.sDetector=geo.dDetector.*geo.nDetector;
 geo.offDetector=[0;0];
 if length(unique(DSD))==1
@@ -86,18 +125,19 @@ geo.nVoxel=ceil([geo.nDetector(1)+abs(geo.offDetector(1))/geo.dDetector(1);geo.n
 geo.sVoxel=geo.nVoxel.*geo.dVoxel;
 
 % this is not strictly necesary, but will make users understand the
-% geometry easier. 
+% geometry easier.
 % TODO: make PositionerSecondaryAngle not required at all... Need more
 % data. to test
-if all(secondary_angle(ii)==0)
-    angles=primary_angle;
+if all(secondary_angle==0)
+    angles=-primary_angle*pi/180;
 else
     angles=[-primary_angle;-secondary_angle;zeros(1,length(primary_angle))]*pi/180;
 end
+
 disp('Projection data loaded.')
 end
 % Function to check if dicomhdr has required fields
-function [dicomhdr,correct_index]=checkDicomHeaders(dicomhdr)
+function [dicomhdr,correct_index]=checkDicomHeaders(dicomhdr,extra_required)
 
 required_fields={'DistanceSourceToDetector',
     'DistanceSourceToPatient',
@@ -106,6 +146,9 @@ required_fields={'DistanceSourceToDetector',
     'PositionerPrimaryAngle',
     'PositionerSecondaryAngle',
     'ImagerPixelSpacing'};
+if nargin>1
+    required_fields=cat(1,required_fields,extra_required);
+end
 invalid_index=false(1,length(dicomhdr));
 correct_index=1:length(dicomhdr);
 for ii=1:length(dicomhdr)
