@@ -101,9 +101,7 @@ W=1./W;
 % Back-Projection weight, V
 V=computeV(geo,angles,alphablocks,orig_index);
 
-% initialize image.
-%f=zeros(geo.nVoxel','single');
-%f=FDK(proj,geo,angles);
+
 if measurequality
     qualMeasOut=zeros(length(QualMeasOpts),maxiter);
 end
@@ -137,7 +135,7 @@ while ~stop_criteria %POCS
         if size(DSO,2)==size(angles,2)
             geo.DSO=DSO(jj);
         end
-        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj})),geo,alphablocks{:,jj}));
+        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj})),geo,alphablocks{:,jj}));
         f(f<0)=0;
     end
     
