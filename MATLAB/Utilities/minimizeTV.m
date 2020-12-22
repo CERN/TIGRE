@@ -30,10 +30,7 @@ else
         error('Wrong amount of inputs, 1 or 3 expected');
     end
 end
-if ndims(img)==3
-    img=minTV(img,dtvg,ng);
-else
-    img=minTV(cat(3,img,img),dtvg,ng);
-    img=img(:,:,1);
-end
+
+img=minTV(img,dtvg,ng);
+
 end

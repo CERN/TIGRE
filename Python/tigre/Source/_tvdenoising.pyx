@@ -50,9 +50,9 @@ def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lam
     spacing[2]=<float> 1
 
     cdef long imgsize[3]
-    imgsize[0] = <long> size_img[0]
+    imgsize[0] = <long> size_img[2]
     imgsize[1] = <long> size_img[1]
-    imgsize[2] = <long> size_img[2]
+    imgsize[2] = <long> size_img[0]
 
     cdef float* c_src = <float*> src.data
     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
