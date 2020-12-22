@@ -306,6 +306,10 @@ do { \
         unsigned int buffer_length=2;
         //Does everything fit in the GPU?
         unsigned int slices_per_split;
+        
+        // if it is a thin problem (no need to split), just use one GPU
+        if (image_size[2]<4){deviceCount=1;}
+
         unsigned int splits=1; // if the number does not fit in an uint, you have more serious trouble than this.
         if(mem_GPU_global> 3*mem_size_image+3*(deviceCount-1)*mem_slice_image*buffer_length+mem_auxiliary){
             // We only need to split if we have extra GPUs
