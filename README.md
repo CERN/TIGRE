@@ -67,7 +67,7 @@ TIGRE is a GPU-based CT reconstruction software repository that contains a wide 
        
 - Image quality metrics.
 
-- Nikon and Varian scanners data loaders. 
+- Nikon and Varian and Phillips (DICOM) scanner data loaders. 
 
 ## Installation
 
