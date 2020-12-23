@@ -87,74 +87,6 @@ for outer = 1:nBreg
     
     
 end
-% undo the normalization so that results are scaled properly
-% u = u*normFactorJ/(normFactor*scale);     %%%%%%%%%%%%% MANUCH
-
-    function normFactor = getNormalizationFactor(R,f)
-        
-        normFactor = 1/norm(f(:)/size(R==1,1));
-        
-    end
-    
-    % Ander: Backward differences in X
-    function d = Dx(u)
-        % TODO: I think  this is doing the worng axes (2 instead of 1)
-        d=diff(u,1,2);
-        d=cat(2,u(:,1,:,:)-u(:,end,:,:),d);
-        % TODO: I think previous line should not be circular boundary conditions,
-        % instead:
-%         d=cat(2,zeros(size(d(:,1,:,:))),d);
-
-    end
-
-    function d = Dxt(u)
-        [rows,cols,height,time] = size(u);
-        d = zeros(rows,cols,height,time);
-        d(:,1:cols-1,:,:) = u(:,1:cols-1,:,:)-u(:,2:cols,:,:);
-        d(:,cols,:,:) = u(:,cols,:,:)-u(:,1,:,:);
-    end
-
-    function d = Dy(u)
-        [rows,cols,height,time] = size(u);
-        d = zeros(rows,cols,height,time);
-        d(2:rows,:,:,:) = u(2:rows,:,:,:)-u(1:rows-1,:,:,:);
-        d(1,:,:,:) = u(1,:,:,:)-u(rows,:,:,:);
-    end
-
-    function d = Dyt(u)
-        [rows,cols,height,time] = size(u);
-        d = zeros(rows,cols,height,time);
-        d(1:rows-1,:,:,:) = u(1:rows-1,:,:,:)-u(2:rows,:,:,:);
-        d(rows,:,:,:) = u(rows,:,:,:)-u(1,:,:,:);
-    end
-
-    function d = Dz(u)
-        [rows,cols,height,time] = size(u);
-        d = zeros(rows,cols,height,time);
-        d(:,:,2:height,:) = u(:,:,2:height,:)-u(:,:,1:height-1,:);
-        d(:,:,1,:) = u(:,:,1,:)-u(:,:,height,:);
-    end
-
-    function d = Dzt(u)
-        [rows,cols,height,time] = size(u);
-        d = zeros(rows,cols,height,time);
-        d(:,:,1:height-1,:) = u(:,:,1:height-1,:)-u(:,:,2:height,:);
-        d(:,:,height,:) = u(:,:,height,:)-u(:,:,1,:);
-    end
-
-    function d = Dt(u) %
-        [rows,cols,height,time] = size(u);
-        d = zeros(rows,cols,height,time);
-        d(:,:,:,2:time) = u(:,:,:,2:time)-u(:,:,:,1:size(f,4)-1);
-        d(:,:,:,1) = u(:,:,:,1)-u(:,:,:,time);
-    end
-
-    function d = Dtt(u)
-        [rows,cols,height,time] = size(u);
-        d = zeros(rows,cols,height,time);
-        d(:,:,:,1:size(f,4)-1) = u(:,:,:,1:size(f,4)-1)-u(:,:,:,2:time);
-        d(:,:,:,time) = u(:,:,:,time)-u(:,:,:,1);
-    end
 
 
     function [xs,ys] = shrink2(x,y,lambda)
@@ -216,4 +148,49 @@ end
 % =====================================================================
 end
 
-%
+%% Numerical difference functions
+% Backward differences in X
+function d = Dx(u)
+% TODO: I think  this is doing the wrong axes (i.e. this is Dy)
+d=diff(u,1,2);
+d=cat(2,u(:,1,:,:)-u(:,end,:,:),d);
+end
+% Transpose of the Backward differences in X
+function d = Dxt(u)
+% TODO: I think  this is doing the wrong axes (i.e. this is Dy)
+d=-diff(u,1,2);
+d=cat(2,d,(u(:,end,:,:)-u(:,1,:,:)));
+end
+% Backward differences in Y
+function d = Dy(u)
+% TODO: I think  this is doing the wrong axes (i.e. this is Dx)
+d=diff(u,1,1);
+d=cat(1,u(1,:,:,:)-u(end,:,:,:),d);
+end
+% Transpose of the Backward differences in Y
+function d = Dyt(u)
+% TODO: I think  this is doing the wrong axes (i.e. this is Dx)
+d=-diff(u,1,1);
+d=cat(1,d,(u(end,:,:,:)-u(1,:,:,:)));
+end
+% Backward differences in Z
+function d = Dz(u)
+d=diff(u,1,3);
+d=cat(3,u(:,:,1,:)-u(:,:,end,:),d);
+end
+% Transpose of the Backward differences in Z
+function d = Dzt(u)
+d=-diff(u,1,3);
+d=cat(3,d,(u(:,:,end,:)-u(:,:,1,:)));
+end
+% Backward differences in T
+function d = Dt(u)
+d=diff(u,1,4);
+d=cat(4,u(:,:,:,1)-u(:,:,:,end),d);
+end
+% Transpose of the Backward differences in T
+function d = Dtt(u)
+d=-diff(u,1,4);
+d=cat(4,d,(u(:,:,:,end)-u(:,:,:,1)));
+end
+
