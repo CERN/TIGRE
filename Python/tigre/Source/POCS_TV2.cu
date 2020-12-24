@@ -283,7 +283,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
         //
         // CODE assumes
         // 1.-All available devices are usable by this code
-        // 2.-All available devices are equal, they are the same machine (warning trhown)
+        // 2.-All available devices are equal, they are the same machine (warning thrown)
         int dev;
         const int devicenamelength = 256;  // The length 256 is fixed by spec of cudaDeviceProp::name
         char devicename[devicenamelength];
@@ -304,13 +304,13 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
         
         
         // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
-
+        // check free memory
         size_t mem_GPU_global;
         checkFreeMemory(gpuids, &mem_GPU_global);
 
         
         
-        // %5 of free memory shoudl be enough, we have almsot no variables in these kernels
+        // %5 of free memory should be enough, we have almost no variables in these kernels
         size_t total_pixels              = image_size[0] * image_size[1]  * image_size[2] ;
         size_t mem_slice_image           = sizeof(float)* image_size[0] * image_size[1]  ;
         size_t mem_size_image            = sizeof(float)* total_pixels;
@@ -322,8 +322,12 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
         unsigned int buffer_length=2;
         //Does everything fit in the GPU?
         unsigned int slices_per_split;
+        
+        // if it is a thin problem (no need to split), just use one GPU
+        if (image_size[2]<4){deviceCount=1;}
+        
         unsigned int splits=1; // if the number does not fit in an uint, you have more serious trouble than this.
-        if(mem_GPU_global> 3*mem_size_image+3*(deviceCount-1)*mem_slice_image*buffer_length+mem_auxiliary){
+        if(mem_GPU_global> 3*mem_size_image+3*(deviceCount-1)*mem_slice_image*buffer_length+mem_auxiliary) {
             // We only need to split if we have extra GPUs
             slices_per_split=(image_size[2]+deviceCount-1)/deviceCount;
             mem_img_each_GPU=mem_slice_image*((slices_per_split+buffer_length*2));
@@ -332,14 +336,14 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
             size_t mem_free=mem_GPU_global-mem_auxiliary;
             
             splits=(unsigned int)(ceil(((float)(3*mem_size_image)/(float)(deviceCount))/mem_free));
-            // Now, there is an overhead here, as each splits should have 2 slices more, to accoutn for overlap of images.
+            // Now, there is an overhead here, as each splits should have 2 slices more, to account for overlap of images.
             // lets make sure these 2 slices fit, if they do not, add 1 to splits.
             slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits);
             mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
             
-            // if the new stuff does not fit in the GPU, it measn we are in the edge case where adding that extra slice will overflow memory
+            // if the new stuff does not fit in the GPU, it means we are in the edge case where adding that extra slice will overflow memory
             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
-                // one more splot shoudl do the job, as its an edge case.
+                // one more split should do the job, as its an edge case.
                 splits++;
                 //recompute for later
                 slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits); // amountf of slices that fit on a GPU. Later we add 2 to these, as we need them for overlap

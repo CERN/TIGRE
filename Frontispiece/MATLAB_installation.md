@@ -52,13 +52,15 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 
    Any version avobe 9.2 has been tested, however its recommended to get the latests version as possible, for performance and support.\
    [CUDA download link](https://developer.nvidia.com/cuda-downloads)\
-   [Detailed installation guide](https://developer.download.nvidia.com/compute/cuda/10.0/Prod/docs/sidebar/CUDA_Installation_Guide_Windows.pdf)
+   [Detailed installation guide](https://developer.download.nvidia.com/compute/cuda/10.0/Prod/docs/sidebar/CUDA_Installation_Guide_Windows.pdf)\
+   **NOTE**: In windows at least, the User has to have no spaces. 
    
 3. Install Visiual Studio
 
    **Make sure you install C++**.\
    [Download link for the latest version](https://visualstudio.microsoft.com/downloads/)\
-   [Download link for older versions](https://visualstudio.microsoft.com/vs/older-downloads/)
+   [Download link for older versions](https://visualstudio.microsoft.com/vs/older-downloads/)\
+   **NOTE**: In windows at least, the User has to have no spaces. 
    
 4. Download TIGRE
 

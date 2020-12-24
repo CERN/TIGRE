@@ -60,5 +60,8 @@ imgFISTA_hyper = FISTA(noise_projections,geo,angles,100,'hyper' ,2.e6);
 %% Recon more significant tv parameters
 imgFISTA_hightv = FISTA(noise_projections,geo,angles,100,'hyper',2.e6,'tviter',100,'lambda',20);
 
+%% Faster converging FISTA
+imgFISTA_mod = FISTA_mod(noise_projections,geo,angles,100,'hyper',2.e6,'tviter',100,'lambda',20);
+
 %% Plot results
-plotImg([imgFISTA_default,imgFISTA_hyper,imgFISTA_hightv])
+plotImg([imgFISTA_default,imgFISTA_hyper,imgFISTA_hightv,imgFISTA_mod])

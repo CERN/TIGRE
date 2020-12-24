@@ -20,7 +20,7 @@ both sides into TIGRE.
 
 TIGRE remains under development as we are still adding new features 
 (e.g., motion compensation).  If you have any request for a specific 
-application, do not hesitate to [contact us](#contact)!
+application, do not hesitate to [contact us](#contact) or open a  [discussion thread](https://github.com/CERN/TIGRE/discussions)!
 
  - [TIGRE features](#features)
  
@@ -66,7 +66,8 @@ TIGRE is a GPU-based CT reconstruction software repository that contains a wide 
 - A variety of plotting functions.
        
 - Image quality metrics.
-    
+
+- Nikon and Varian and Phillips (DICOM) scanner data loaders. 
 
 ## Installation
 
@@ -85,6 +86,7 @@ MATLAB and Python builds are both fully supported.
 
 For answers to frequently asked questions [click here](Frontispiece/FAQ.md).
 
+If you have new question not answered in the FAQ, please [contact us](#contact) or open a  [discussion thread](https://github.com/CERN/TIGRE/discussions).
 
 ## Gallery
 
@@ -104,6 +106,7 @@ Contact the authors directly at:
 
 [tigre.toolbox@gmail.com](mailto:tigre.toolbox@gmail.com) or [ander.biguri@gmail.com](mailto:ander.biguri@gmail.com)
 
+for any questions/comments or if you want to be added to the mailing list. 
 
 ## Licensing
 

@@ -31,9 +31,7 @@ else
         error('Wrong amount of inputs');
     end
 end
-if ndims(img)==3
-    img=AwminTV(img,dtvg,ng,delta);
-else
-    img=AwminTV(cat(3,img,img),dtvg,ng,delta);
-    img=img(:,:,1);
-endend
+
+img=AwminTV(img,dtvg,ng,delta);
+
+end

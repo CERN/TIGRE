@@ -153,6 +153,10 @@ __global__ void kernelPixelDetector( Geometry geo,
     ray.x=pixel1D.x-source.x;
     ray.y=pixel1D.y-source.y;
     ray.z=pixel1D.z-source.z;
+    float eps=0.001;
+    ray.x=(fabsf(ray.x)<eps)? 0 : ray.x;
+    ray.y=(fabsf(ray.y)<eps)? 0 : ray.y; 
+    ray.z=(fabsf(ray.z)<eps)? 0 : ray.z; 
     // This variables are ommited because
     // bx,by,bz ={0,0,0}
     // dx,dy,dz ={1,1,1}
@@ -205,11 +209,15 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     // get intersection point N1. eq(20-21) [(also eq 9-10)]
     float ax,ay,az;
-    ax=(source.x<pixel1D.x)?  __fdividef(imin-source.x,ray.x+0.000000000001f) :  __fdividef(imax-source.x,ray.x+0.000000000001f);
-    ay=(source.y<pixel1D.y)?  __fdividef(jmin-source.y,ray.y+0.000000000001f) :  __fdividef(jmax-source.y,ray.y+0.000000000001f);
-    az=(source.z<pixel1D.z)?  __fdividef(kmin-source.z,ray.z+0.000000000001f) :  __fdividef(kmax-source.z,ray.z+0.000000000001f);
+    ax=(source.x<pixel1D.x)?  __fdividef(imin-source.x,ray.x) :  __fdividef(imax-source.x,ray.x);
+    ay=(source.y<pixel1D.y)?  __fdividef(jmin-source.y,ray.y) :  __fdividef(jmax-source.y,ray.y);
+    az=(source.z<pixel1D.z)?  __fdividef(kmin-source.z,ray.z) :  __fdividef(kmax-source.z,ray.z);
     
-    
+    // If its Infinite (i.e. ray is parallel to axis), make sure its positive
+    ax=(isinf(ax))? abs(ax) : ax;
+    ay=(isinf(ay))? abs(ay) : ay;
+    az=(isinf(az))? abs(az) : az;    
+       
     
     // get index of first intersection. eq (26) and (19)
     int i,j,k;
@@ -667,18 +675,7 @@ void splitImage(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned in
  * it does saves about 30% of each of the kernel calls. Thats something!
  **/
 void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source){
-    
-    
-     // Before doing geometric stuff, lets make sure we avoid floating point errors
-    // this one avoids issue #198
-    float epsilon_offset=0.0001; // Manually tested. 
-    // If the detector is odd and the image is even 
-    // (I think the or is not needed, could be an and, but better safe than sorry)
-    if(geo.nDetecU%2 && (!(geo.nVoxelX%2) || !(geo.nVoxelY%2)) && abs(geo.offDetecU[i])<=epsilon_offset)
-        geo.offDetecU[i]=epsilon_offset;
-    if(geo.nDetecV%2 && !(geo.nVoxelZ%2) && abs(geo.offDetecV[i])<=epsilon_offset)
-        geo.offDetecV[i]=epsilon_offset;
-    
+
     
     Point3D S;
     S.x=geo.DSO[i];

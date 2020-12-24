@@ -48,14 +48,14 @@ class CGLS(IterativeReconAlg):
             self.parameter_history = parameter_history
 
         self.__r__ = self.proj - \
-            Ax(self.res, self.geo, self.angles, 'ray-voxel', gpuids = self.gpuids)
+            Ax(self.res, self.geo, self.angles, 'Siddon', gpuids = self.gpuids)
         self.__p__ = Atb(self.__r__, self.geo, self.angles, gpuids = self.gpuids)
         p_norm = np.linalg.norm(self.__p__.ravel(), 2)
         self.__gamma__ = p_norm * p_norm
 
     def reinitialise_cgls(self):
         self.__r__ = self.proj - \
-            Ax(self.res, self.geo, self.angles, 'ray-voxel', gpuids = self.gpuids)
+            Ax(self.res, self.geo, self.angles, 'Siddon', gpuids = self.gpuids)
         self.__p__ = Atb(self.__r__, self.geo, self.angles, gpuids = self.gpuids)
         p_norm = np.linalg.norm(self.__p__.ravel(), 2)
         self.__gamma__ = p_norm * p_norm
@@ -75,7 +75,7 @@ class CGLS(IterativeReconAlg):
                     print('Esitmated time until completetion (s): ' +
                       str((self.niter - 1) * (tic - toc)))
             avgtic = default_timer()
-            q = tigre.Ax(self.__p__, self.geo, self.angles, 'ray-voxel', gpuids = self.gpuids)
+            q = tigre.Ax(self.__p__, self.geo, self.angles, 'Siddon', gpuids = self.gpuids)
             q_norm = np.linalg.norm(q)
             alpha = self.__gamma__ / (q_norm * q_norm)
             self.res += alpha * self.__p__
@@ -88,7 +88,7 @@ class CGLS(IterativeReconAlg):
                             'nan found for ' + item + ' at iteraton ' + str(i))
 
             aux = self.proj - \
-                tigre.Ax(self.res, self.geo, self.angles, 'ray-voxel', gpuids = self.gpuids)
+                tigre.Ax(self.res, self.geo, self.angles, 'Siddon', gpuids = self.gpuids)
             self.l2l[i] = np.linalg.norm(aux)
             if i > 0 and self.l2l[i] > self.l2l[i - 1]:
                 if self.verbose:

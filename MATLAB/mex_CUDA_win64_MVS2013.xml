@@ -35,7 +35,7 @@
           CMDLINE300="del $OBJ $EXP $LIB $MANIFEST $ILK"
           
           COMPILER="nvcc"
-          COMPFLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=&#92;&quot;sm_50,compute_50&#92;&quot; -gencode arch=compute_52,code=sm_52 --default-stream per-thread  --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"
+          COMPFLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_61,code=sm_61 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 --default-stream per-thread  --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"
           COMPDEFINES="--compiler-options=/D_CRT_SECURE_NO_DEPRECATE,/D_SCL_SECURE_NO_DEPRECATE,/D_SECURE_SCL=0,$MATLABMEX"
           MATLABMEX="/DMATLAB_MEX_FILE"
           OPTIMFLAGS="--compiler-options=/O2,/Oy-,/DNDEBUG"
@@ -129,7 +129,7 @@
         </CUDA_BIN_PATH>
     </locationFinder>
     <env
-        PATH="$CUDA_BIN_PATH;$VSROOT\VC\Bin\amd64;$VSROOT\VC\Bin\VCPackages;$VSROOT\Common7\IDE;$VSROOT\Common7\Tools;$VSROOT\Common7\Tools\bin;$SDKROOT\Bin\x64;$SDKROOT\Bin\win64\x64;$SDKROOT\Bin;$PATH"
+        PATH="$CUDA_BIN_PATH;$VSROOT\VC\bin\amd64;$VSROOT\VC\bin\VCPackages;$VSROOT\Common7\IDE;$VSROOT\Common7\Tools;$VSROOT\Common7\Tools\bin;$SDKROOT\Bin\x64;$SDKROOT\Bin\win64\x64;$SDKROOT\Bin;$PATH"
         INCLUDE="$VSROOT\VC\ATLMFC\INCLUDE;$VSROOT\VC\INCLUDE;$SDKROOT\include;$MATLABROOT\extern\include;$MATLABROOT\toolbox\distcomp\gpu\extern\include"
         LIB="$VSROOT\VC\ATLMFC\LIB\amd64;$VSROOT\VC\Lib\amd64;$SDKROOT\Lib\X64;$MATLABROOT\lib\$ARCH;$CUDA_LIB_PATH"
         LIBPATH="&$VSROOT\VC\Lib\amd64;"

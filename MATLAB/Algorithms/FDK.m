@@ -215,7 +215,11 @@ for ii=1:length(opts)
     switch opt
         case 'parker'
             if default
-                parker=range(angles)<(2*pi-max(diff(angles)));
+                if size(angles,1)==1 || (all(angles(2,:)==0) && all(angles(3,:)==0))
+                    parker=max(angles)-min(angles)<(2*pi-max(diff(angles)));
+                else
+                    parker=false;
+                end
             else
                 parker=val;
             end
@@ -269,4 +273,3 @@ function bool = apply_wang_weights(geo)
     
     bool = true;
 end
-

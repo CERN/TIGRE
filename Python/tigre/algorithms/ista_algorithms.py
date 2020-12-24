@@ -134,7 +134,7 @@ class FISTA(IterativeReconAlg):
         VERBOSE:
          for j in range(angleblocks):
              angle = np.array([alpha[j]], dtype=np.float32)
-             proj_err = proj[angle_index[j]] - Ax(res, geo, angle, 'ray-voxel')
+             proj_err = proj[angle_index[j]] - Ax(res, geo, angle, 'Siddon')
              backprj = Atb(proj_err, geo, angle, 'FDK')
              res += backprj
              res[res<0]=0

@@ -28,7 +28,7 @@ def cuda_raise_errors(error_code):
     if error_code:
         raise ValueError('TIGRE: Call to Ax failed')
 
-def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=2] angles, projection_type="ray-voxel", mode="cone", gpuids=None):
+def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float32_t, ndim=2] angles, projection_type="Siddon", mode="cone", gpuids=None):
     
     cdef c_GpuIds* c_gpuids = convert_to_c_gpuids(gpuids)
     if not c_gpuids:
@@ -54,12 +54,12 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     cdef float* c_angles = <float*> angles.data
     if not c_angles:
         raise MemoryError()
-    if projection_type == "ray-voxel":
+    if projection_type == "Siddon" or projection_type == "ray-voxel":
         interpolated = False
     elif projection_type == "interpolated":
         interpolated = True
     else:
-        print("Warning: Unknown projection_type, using default ray-voxel")
+        print("Warning: Unknown projection_type, using default Siddon")
         interpolated = False
 
     if mode == "parallel":

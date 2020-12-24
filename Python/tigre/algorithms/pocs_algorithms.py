@@ -162,8 +162,7 @@ class ASD_POCS(IterativeReconAlg):
                 dtvg = dtvg * self.alpha_red
 
             self.beta *= self.beta_red
-            c = np.dot(dg_vec.reshape(-1,), dp_vec.reshape(-1,)) / \
-                max(dg * dp, 1e-6)
+            c = np.dot(dg_vec.reshape(-1,), dp_vec.reshape(-1,)) / max(dg * dp, 1e-6) # reshape ensures no copy is made. 
             if (c < -0.99 and dd <=
                     self.epsilon) or self.beta < 0.005 or n_iter > self.niter:
                 if self.verbose:

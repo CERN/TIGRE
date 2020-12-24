@@ -49,14 +49,14 @@ def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 
     cdef float* c_imgout = <float*> malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float))
 
     cdef long imgsize[3]
-    imgsize[0] = <long> size_img[0]
+    imgsize[0] = <long> size_img[2]
     imgsize[1] = <long> size_img[1]
-    imgsize[2] = <long> size_img[2]
+    imgsize[2] = <long> size_img[0]
 
     cdef float* c_src = <float*> src.data
     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
     cuda_raise_errors(pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter, c_gpuids[0]))
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
     PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)
-
+    
     return imgout

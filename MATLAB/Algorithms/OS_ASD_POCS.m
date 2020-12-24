@@ -1,4 +1,4 @@
-function [ fres ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
+function [ fres, qualMeasOut ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
 %ASD_POCS Solves theOS_ASD_POCS total variation constrained image in 3D
 % tomography.
 %
@@ -15,6 +15,10 @@ function [ fres ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
 %
 %   'lambdared':   Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
+%
+%   'Init':        Describes diferent initialization techniques.
+%                   •  'none'     : Initializes the image to zeros (default)
+%                   •  'FDK'      : intializes image to FDK reconstrucition
 %
 %   'TViter':      Defines the amount of TV iterations performed per SART
 %                  iteration. Default is 20
@@ -38,6 +42,10 @@ function [ fres ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
 %                  'random'  : orders them randomply
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
+%   'QualMeas'     Asks the algorithm for a set of quality measurement
+%                  parameters. Input should contain a cell array of desired
+%                  quality measurement names. Example: {'CC','RMSE','MSSIM'}
+%                  These will be computed in each iteration.
 %
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
@@ -59,7 +67,8 @@ function [ fres ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
 %--------------------------------------------------------------------------
 
 %% parse inputs
-[beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,blocksize,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,f,ng,verbose,alpha,alpha_red,rmax,epsilon,blocksize,OrderStrategy,nonneg,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
+measurequality=~isempty(QualMeasOpts);
 
 % first order the projection angles
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
@@ -80,7 +89,7 @@ geoaux.sVoxel([1 2])=geo.sVoxel([1 2])*1.1; % a Bit bigger, to avoid numerical d
 geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'ray-voxel');  %
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon');  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
@@ -88,9 +97,8 @@ W=1./W;
 V=computeV(geo,angles,alphablocks,orig_index);
 
 
+qualMeasOut=zeros(length(QualMeasOpts),maxiter);
 
-% initialize image.
-f=zeros(geo.nVoxel','single');
 
 
 stop_criteria=0;
@@ -144,6 +152,9 @@ while ~stop_criteria %POCS
     geo.DSO=DSO;
     % Save copy of image.
     fres=f;
+    if measurequality
+        qualMeasOut(:,iter)=Measure_Quality(f0,f,QualMeasOpts);
+    end
     % compute L2 error of actual image. Ax-b
     dd=im3Dnorm(Ax(f,geo,angles)-proj,'L2');
     % compute change in the image after last SART iteration
@@ -170,6 +181,7 @@ while ~stop_criteria %POCS
     % update parameters
     % ==========================================================================
     
+    
     % compute change by TV min
     dg_vec=(f-f0);
     dg=im3Dnorm(dg_vec,'L2');
@@ -192,7 +204,7 @@ while ~stop_criteria %POCS
         end
         stop_criteria=true;
     end
-    if (iter==1 && verbose==1);
+    if (iter==1 && verbose==1)
         expected_time=toc*maxiter;
         disp('OSC-ASD-POCS');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
@@ -206,9 +218,9 @@ end
 
 end
 
-function [beta,beta_red,ng,verbose,alpha,alpha_red,rmax,epsilon,block_size,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,argin)
+function [beta,beta_red,f0,ng,verbose,alpha,alpha_red,rmax,epsilon,block_size,OrderStrategy,nonneg,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
 
-opts=     {'lambda','lambda_red','tviter','verbose','alpha','alpha_red','ratio','maxl2err','blocksize','orderstrategy','blocksize','nonneg'};
+opts=     {'lambda','lambda_red','init','tviter','verbose','alpha','alpha_red','ratio','maxl2err','blocksize','orderstrategy','blocksize','nonneg','qualmeas'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -255,9 +267,9 @@ for ii=1:length(opts)
                 warning('TIGRE: Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
-            % Lambda
-            %  =========================================================================
-            % Its called beta in OS_ASD_POCS
+        % Lambda
+        %  =========================================================================
+        % Its called beta in OS_ASD_POCS
         case 'lambda'
             if default
                 beta=1;
@@ -267,8 +279,8 @@ for ii=1:length(opts)
                 end
                 beta=val;
             end
-            % Lambda reduction
-            %  =========================================================================
+        % Lambda reduction
+        %  =========================================================================
         case 'lambda_red'
             if default
                 beta_red=0.99;
@@ -278,48 +290,60 @@ for ii=1:length(opts)
                 end
                 beta_red=val;
             end
-            % Number of iterations of TV
-            %  =========================================================================
+        % Initial image
+        %  =========================================================================
+        case 'init'
+            if default || strcmp(val,'none')
+                f0=zeros(geo.nVoxel','single');
+            else
+                if strcmp(val,'FDK')
+                    f0=FDK(proj, geo, angles);
+                else
+                    error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid init')
+                end
+            end
+        % Number of iterations of TV
+        %  =========================================================================
         case 'tviter'
             if default
                 ng=20;
             else
                 ng=val;
             end
-            %  TV hyperparameter
-            %  =========================================================================
+        %  TV hyperparameter
+        %  =========================================================================
         case 'alpha'
             if default
                 alpha=0.002; % 0.2
             else
                 alpha=val;
             end
-            %  TV hyperparameter redution
-            %  =========================================================================
+        %  TV hyperparameter redution
+        %  =========================================================================
         case 'alpha_red'
             if default
                 alpha_red=0.95;
             else
                 alpha_red=val;
             end
-            %  Maximum update ratio
-            %  =========================================================================
+        %  Maximum update ratio
+        %  =========================================================================
         case 'ratio'
             if default
                 rmax=0.95;
             else
                 rmax=val;
             end
-            %  Maximum L2 error to have a "good image"
-            %  =========================================================================
+        %  Maximum L2 error to have a "good image"
+        %  =========================================================================
         case 'maxl2err'
             if default
                 epsilon=im3Dnorm(FDK(proj,geo,angles),'L2')*0.2; %heuristic
             else
                 epsilon=val;
             end
-            %  Block size for OS-SART
-            %  =========================================================================
+        %  Block size for OS-SART
+        %  =========================================================================
         case 'blocksize'
             if default
                 block_size=20;
@@ -329,8 +353,8 @@ for ii=1:length(opts)
                 end
                 block_size=val;
             end
-            %  Order strategy
-            %  =========================================================================
+        %  Order strategy
+        %  =========================================================================
         case 'orderstrategy'
             if default
                 OrderStrategy='random';
@@ -342,6 +366,18 @@ for ii=1:length(opts)
                 nonneg=true;
             else
                 nonneg=val;
+            end
+        % Image Quality Measure
+        %  =========================================================================
+        case 'qualmeas'
+            if default
+                QualMeasOpts={};
+            else
+                if iscellstr(val)
+                    QualMeasOpts=val;
+                else
+                    error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid quality measurement parameters');
+                end
             end
         otherwise
             error('TIGRE:OS_ASD_POCS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option']);
