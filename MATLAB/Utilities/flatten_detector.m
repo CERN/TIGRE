@@ -11,7 +11,7 @@ pixel_arclength=arclength/size(proj,2);
 
 %% useful tools
 
-distance_arc_to_plane=@(alpha)((sqrt(1/(1-sin(alpha)^2))-1)*geo.DSD);
+distance_arc_to_plane=@(alpha)((sqrt(1/(1-sin(alpha).^2))-1)*geo.DSD);
 
 %% Geometric interesting values. 
 
@@ -29,5 +29,18 @@ geo.sDetector=[(geo.DSD+distance_arc_to_plane(arclength/2))*2;1];
 geo.nDetector=geo.sDetector./geo.dDetector;
 
 %% Interpolation
+
+% We need to define the point in the flat detector
+% then move them to the arc, and compute their angular-index. 
+% that index will be used to interpolate. 
+
+% step 1: define points
+detector=(-geo.sDetector(1)/2+geo.dDetector(1)/2):geo.dDetector(1):(geo.sDetector(1)/2-geo.dDetector(1)/2);
+angle=asin(detector.^2./(detector.^2+geo.DSD.^2));
+normalized_angle=angle/pixel_arclength;
+
+for ii=1:size(proj,3)
+    proj(:,:,ii)=interp1(proj(:,:,ii),normalized_angle);
+end
 
 end
