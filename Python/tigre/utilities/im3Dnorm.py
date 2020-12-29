@@ -3,8 +3,8 @@ import numpy as np
 def im3DNORM(img,normind,varargin=None):
     '''
     % IMAGE3DNORM computes the desired image norm
-    %   IMAGE3DNORM(IMG,NORMIND) computes the norm if image IMG using the norm
-    %   defined in NORMING
+    %   IMAGE3DNORM(IMG,NORMIND) computes the norm of image IMG using the norm
+    %   defined in NORMIND
     %
     %   IMG         A 3D image
     %   NORMIND     {non-zero int, inf, -inf, 'fro', 'nuc'}
@@ -34,7 +34,7 @@ def im3DNORM(img,normind,varargin=None):
     if type(normind) is int:
         return np.linalg.norm(img.ravel(),normind)
     if normind == 'TV':
-        gx,gy,gz = np.diff(img, axis=0), np.diff(img,axis=1), np.diff(img,axis=2)
+        gx,gy,gz = np.diff(img, axis=2), np.diff(img,axis=1), np.diff(img,axis=0)
         g = np.sum(np.sqrt(gx*gx + gy*gy + gz*gz))
         return g
 
