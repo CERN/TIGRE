@@ -327,7 +327,7 @@ do { \
             
             // if the new stuff does not fit in the GPU, it measn we are in the edge case where adding that extra slice will overflow memory
             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
-                // one more splot should do the job, as its an edge case.
+                // one more split should do the job, as its an edge case.
                 splits++;
                 //recompute for later
                 slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits); // amount of slices that fit on a GPU. Later we add 2 to these, as we need them for overlap
