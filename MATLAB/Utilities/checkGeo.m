@@ -61,7 +61,7 @@ if isequal(size(geo.DSO),[1 1])
     
 end
 
-assert(all(geo.DSD>=geo.DSO), 'TIGRE:checkGeo:BadGeometry','DSD shoudl be bigger or equal to DSO');
+assert(all(geo.DSD>=geo.DSO), 'TIGRE:checkGeo:BadGeometry','DSD should be bigger or equal to DSO');
 
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Now we know that optional fields are properly written or they would have
@@ -111,8 +111,8 @@ else
 end
 
 if isfield(geo,'mode')
-    assert(ischar(geo.mode),'TIGRE:checkGeo:BadGeometry','geo.mode shoudl be a character array');
-    assert(strcmp(geo.mode,'cone')|strcmp(geo.mode,'parallel'),'TIGRE:checkGeo:BadGeometry','geo.mode shoudl ''cone'' or ''parallel''')
+    assert(ischar(geo.mode),'TIGRE:checkGeo:BadGeometry','geo.mode should be a character array');
+    assert(strcmp(geo.mode,'cone')|strcmp(geo.mode,'parallel'),'TIGRE:checkGeo:BadGeometry','geo.mode should ''cone'' or ''parallel''')
 else
     geo.mode='cone';
 end

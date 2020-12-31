@@ -26,13 +26,13 @@ end
 
 
 %% image
-assert(isa(projections,'single'),'TIGRE:Atb:InvalidInput','Image shoudl be single type');
-assert(isreal(projections),'TIGRE:Atb:InvalidInput','Image shoudl be real (non-complex)');
-assert(size(projections,2)>1,'TIGRE:Atb:InvalidInput', 'Projections shoudl be 2D'); %TODO: needed? 
-assert(size(projections,3)==size(angles,2),'TIGRE:Atb:InvalidInput', 'Number of projections shoudl match number of angles.'); 
+assert(isa(projections,'single'),'TIGRE:Atb:InvalidInput','Image should be single type');
+assert(isreal(projections),'TIGRE:Atb:InvalidInput','Image should be real (non-complex)');
+assert(size(projections,2)>1,'TIGRE:Atb:InvalidInput', 'Projections should be 2D'); %TODO: needed? 
+assert(size(projections,3)==size(angles,2),'TIGRE:Atb:InvalidInput', 'Number of projections should match number of angles.'); 
 %% Angles
-assert(isreal(angles),'TIGRE:Atb:InvalidInput','Angles shoudl be real (non-complex)');
-assert(size(angles,1)==1 | size(angles,1)==3 ,'TIGRE:Atb:InvalidInput','Angles shoudl be of size 1xN or 3xN');
+assert(isreal(angles),'TIGRE:Atb:InvalidInput','Angles should be real (non-complex)');
+assert(size(angles,1)==1 | size(angles,1)==3 ,'TIGRE:Atb:InvalidInput','Angles should be of size 1xN or 3xN');
 angles=double(angles); %in case they were single.
 if size(angles,1)==1
    angles=repmat(angles,[3 1]);

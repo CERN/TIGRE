@@ -294,7 +294,7 @@ do { \
 
         
         
-        // %5 of free memory shoudl be enough, we have almsot no variables in these kernels
+        // %5 of free memory should be enough, we have almsot no variables in these kernels
         size_t total_pixels              = image_size[0] * image_size[1]  * image_size[2] ;
         size_t mem_slice_image           = sizeof(float)* image_size[0] * image_size[1]  ;
         size_t mem_size_image            = sizeof(float)* total_pixels;
@@ -327,7 +327,7 @@ do { \
             
             // if the new stuff does not fit in the GPU, it measn we are in the edge case where adding that extra slice will overflow memory
             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
-                // one more splot shoudl do the job, as its an edge case.
+                // one more splot should do the job, as its an edge case.
                 splits++;
                 //recompute for later
                 slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits); // amountf of slices that fit on a GPU. Later we add 2 to these, as we need them for overlap
@@ -397,7 +397,7 @@ do { \
         
         
         // Lets try to make the host memory pinned:
-        // We laredy queried the GPU and assuemd they are the same, thus shoudl have the same attributes.
+        // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
         int isHostRegisterSupported;
         cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
         // splits>2 is completely empirical observation
@@ -505,7 +505,7 @@ do { \
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         // Compute the gradient of the TV norm
                         
-                        // I Dont understand why I need to store 2 layers to compute correctly with 1 buffer. The bounding checks shoudl
+                        // I Dont understand why I need to store 2 layers to compute correctly with 1 buffer. The bounding checks should
                         // be enough but they are not.
                         gradientTV<<<gridGrad, blockGrad,0,stream[dev*nStream_device]>>>(d_image[dev],d_dimgTV[dev],(long)(curr_slices+buffer_length*2-1), image_size[1],image_size[0]);
                         

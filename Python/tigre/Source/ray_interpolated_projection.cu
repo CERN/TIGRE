@@ -295,7 +295,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     
     //Pagelock memory for syncronous copy.
     // Lets try to make the host memory pinned:
-    // We laredy queried the GPU and assuemd they are the same, thus shoudl have the same attributes.
+    // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
     int isHostRegisterSupported;
     cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
     // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to

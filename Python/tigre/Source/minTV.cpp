@@ -77,11 +77,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
      size_t mrows = mxGetM(prhs[1]);
      size_t ncols = mxGetN(prhs[1]);
      if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("err", "POCS parameters shoudl be 1x1");
+        mexErrMsgIdAndTxt("err", "POCS parameters should be 1x1");
      mrows = mxGetM(prhs[2]);
      ncols = mxGetN(prhs[2]);
      if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("err", "POCS parameters shoudl be 1x1");
+        mexErrMsgIdAndTxt("err", "POCS parameters should be 1x1");
      alpha= (float)(mxGetScalar(prhs[1]));
      maxIter=(int)floor(mxGetScalar(prhs[2])+0.5);
     }

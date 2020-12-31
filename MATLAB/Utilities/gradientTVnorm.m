@@ -44,7 +44,7 @@ Gz=diff(f,1,3);
 tvg=zeros(size(f));
 clear f
 % these are not defined, but we will define them just for indexing
-% readability. They shoudl never be used.
+% readability. They should never be used.
 Gx=cat(1,zeros(size(Gx(1,:,:))),Gx);
 Gy=cat(2,zeros(size(Gy(:,1,:))),Gy);
 Gz=cat(3,zeros(size(Gz(:,:,1))),Gz);
@@ -64,7 +64,7 @@ Gy=diff(f,1,2);
 tvg=zeros(size(f));
 clear f
 % these are not defined, but we will define them just for indexing
-% readability. They shoudl never be used.
+% readability. They should never be used.
 Gx=cat(1,zeros(size(Gx(1,:))),Gx);
 Gy=cat(2,zeros(size(Gy(:,1))),Gy);
 
@@ -85,7 +85,7 @@ Gz=diff(f,1,3);
 tvg=zeros(size(f));
 clear f
 % these are not defined, but we will define them just for indexing
-% readability. They shoudl never be used.
+% readability. They should never be used.
 Gx=cat(1,Gx,zeros(size(Gx(end,:,:))));
 Gy=cat(2,Gy,zeros(size(Gy(:,end,:))));
 Gz=cat(3,Gz,zeros(size(Gz(:,:,end))));

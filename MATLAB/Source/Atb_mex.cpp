@@ -298,7 +298,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 }
                 break;
             default:
-                mexErrMsgIdAndTxt( "CBCT:MEX:Atb:unknown","This shoudl not happen. Weird");
+                mexErrMsgIdAndTxt( "CBCT:MEX:Atb:unknown","This should not happen. Weird");
                 break;
                 
         }

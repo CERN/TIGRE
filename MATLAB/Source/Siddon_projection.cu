@@ -349,7 +349,7 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
     
     //Pagelock memory for syncronous copy.
     // Lets try to make the host memory pinned:
-    // We laredy queried the GPU and assuemd they are the same, thus shoudl have the same attributes.
+    // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
     int isHostRegisterSupported;
     cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
     // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to
@@ -395,7 +395,7 @@ int siddon_ray_projection(float  *  img, Geometry geo, float** result,float cons
         
         
         size_t linear_idx_start;
-        //First one shoudl always be  the same size as all the rest but the last
+        //First one should always be  the same size as all the rest but the last
         linear_idx_start= (size_t)sp*(size_t)geoArray[0].nVoxelX*(size_t)geoArray[0].nVoxelY*(size_t)geoArray[0].nVoxelZ;
         
         
@@ -710,7 +710,7 @@ void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU
     rollPitchYaw(geo,i,&P);
     rollPitchYaw(geo,i,&Pu0);
     rollPitchYaw(geo,i,&Pv0);
-    //Now ltes translate the points where they shoudl be:
+    //Now ltes translate the points where they should be:
     P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
     Pu0.x=Pu0.x-(geo.DSD[i]-geo.DSO[i]);
     Pv0.x=Pv0.x-(geo.DSD[i]-geo.DSO[i]);
