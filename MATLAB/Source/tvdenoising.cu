@@ -365,7 +365,7 @@ do { \
             for(unsigned int sp=0;sp<splits;sp++){
                 
                 // For each iteration we need to comptue all the image. The ordering of these loops
-                // need to be like this due to the bounding layers between slpits. If more than 1 split is needed
+                // need to be like this due to the bounding layers between splits. If more than 1 split is needed
                 // for each GPU then there is no other way that taking the entire memory out of GPU and putting it back.
                 // If the memory can be shared between GPUs fully without extra splits, then there is an easy way of synchronizing the memory
                 
