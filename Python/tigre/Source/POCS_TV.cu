@@ -294,7 +294,7 @@ do { \
 
         
         
-        // %5 of free memory should be enough, we have almsot no variables in these kernels
+        // %5 of free memory should be enough, we have almost no variables in these kernels
         size_t total_pixels              = image_size[0] * image_size[1]  * image_size[2] ;
         size_t mem_slice_image           = sizeof(float)* image_size[0] * image_size[1]  ;
         size_t mem_size_image            = sizeof(float)* total_pixels;

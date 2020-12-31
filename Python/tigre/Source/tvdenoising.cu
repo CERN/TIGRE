@@ -209,7 +209,7 @@ do { \
         checkFreeMemory(deviceCount,&mem_GPU_global);
         
         
-        // %5 of free memory should be enough, we have almsot no variables in these kernels
+        // %5 of free memory should be enough, we have almost no variables in these kernels
        size_t total_pixels           = image_size[0] * image_size[1] * image_size[2] ;
        const size_t pixels_per_slice = image_size[0] * image_size[1] ;
        const size_t mem_slice_image  = sizeof(float)* pixels_per_slice  ;
