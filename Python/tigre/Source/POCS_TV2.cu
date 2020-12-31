@@ -350,7 +350,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                 // one more split should do the job, as its an edge case.
                 splits++;
                 //recompute for later
-                slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits); // amountf of slices that fit on a GPU. Later we add 2 to these, as we need them for overlap
+                slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits); // amount of slices that fit on a GPU. Later we add 2 to these, as we need them for overlap
                 mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
             }
 
