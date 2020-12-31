@@ -121,7 +121,7 @@ if isfield(geo,'accuracy')
     assert(isscalar(geo.accuracy),'TIGRE:checkGeo:BadGeometry','geo.accuracy should be a scalar');
     assert(isa(geo.accuracy,'double'),'TIGRE:checkGeo:BadGeometry','geo.accuracy should be double');
     if geo.accuracy>1
-        warning('geo.accuracy too big, you will ignore image information resulting in wrogn reconstruction.\n Change geo.accuracy to smaller or equal than 1.')
+        warning('geo.accuracy too big, you will ignore image information resulting in wrong reconstruction.\n Change geo.accuracy to smaller or equal than 1.')
     end
 else
     geo.accuracy=0.5;
