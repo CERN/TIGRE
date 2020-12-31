@@ -60,7 +60,7 @@ Codes  : https://github.com/CERN/TIGRE
 void mexFunction(int  nlhs , mxArray *plhs[],
         int nrhs, mxArray const *prhs[])
 {
-///////// First check if the amount of imputs is rigth.    
+///////// First check if the amount of imputs is right.    
     int maxIter;
     float alpha;
     if (nrhs==1){

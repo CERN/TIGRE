@@ -116,7 +116,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     mwSize const numDims = mxGetNumberOfDimensions(image); // Get numer of Dimensions of input matrix.
     // Image should be dim 3
     if (!(numDims==3 && nangles>1) && !(numDims==2 && nangles==1) ){
-        mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",  "Projection data is not the rigth size");
+        mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",  "Projection data is not the right size");
     }
     if( !mxIsSingle(prhs[0])) {
         mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput",
