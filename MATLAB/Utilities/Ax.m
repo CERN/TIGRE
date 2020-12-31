@@ -27,12 +27,12 @@ end
 
 
 %% image
-assert(isa(img,'single'),'TIGRE:Ax:InvalidInput','Image shoudl be single type');
-assert(isreal(img),'TIGRE:Ax:InvalidInput','Image shoudl be real (non-complex)');
-% assert(size(img,3)>1,'TIGRE:Ax:InvalidInput', 'image shoudl be 3D'); %TODO: needed? 
+assert(isa(img,'single'),'TIGRE:Ax:InvalidInput','Image should be single type');
+assert(isreal(img),'TIGRE:Ax:InvalidInput','Image should be real (non-complex)');
+% assert(size(img,3)>1,'TIGRE:Ax:InvalidInput', 'image should be 3D'); %TODO: needed? 
 %% Angles
-assert(isreal(angles),'TIGRE:Ax:InvalidInput','Angles shoudl be real (non-complex)');
-assert(size(angles,1)==1 | size(angles,1)==3 ,'TIGRE:Ax:InvalidInput','Angles shoudl be of size 1xN or 3xN');
+assert(isreal(angles),'TIGRE:Ax:InvalidInput','Angles should be real (non-complex)');
+assert(size(angles,1)==1 | size(angles,1)==3 ,'TIGRE:Ax:InvalidInput','Angles should be of size 1xN or 3xN');
 angles=double(angles); %in case they were single.
 if size(angles,1)==1
    angles=repmat(angles,[3 1]);

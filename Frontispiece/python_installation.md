@@ -105,7 +105,7 @@ For Ubuntu
 
 3. Install gcc 
 
-   gcc shoudl already be installed in your linux, as it is part of the linux distribution.\
+   gcc should already be installed in your linux, as it is part of the linux distribution.\
    If you need to install an older version of gcc, [read here](https://askubuntu.com/questions/923337/installing-an-older-gcc-version3-4-3-on-ubuntu-14-04-currently-4-8-installed).
    
 4. Download/clone TIGRE

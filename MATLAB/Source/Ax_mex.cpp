@@ -77,12 +77,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     //4rd argument is interpolated or ray-voxel/Siddon
     bool rayvoxel=false;
     if ( mxIsChar(prhs[3]) != 1)
-        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be a string");
+        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input should be a string");
     
     /* copy the string data from prhs[0] into a C string input_ buf.    */
     char *krylov = mxArrayToString(prhs[3]);
     if (strcmp(krylov,"interpolated") && strcmp(krylov,"Siddon") && strcmp(krylov,"ray-voxel"))
-        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be either 'interpolated' or 'Siddon'");
+        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input should be either 'interpolated' or 'Siddon'");
     else
         // If its not ray-voxel, its "interpolated"
         if (strcmp(krylov,"Siddon") == 0 || strcmp(krylov,"ray-voxel") == 0) //strcmp returs 0 if they are equal
@@ -273,7 +273,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 }
                 break;
             default:
-                mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","This shoudl not happen. Weird");
+                mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","This should not happen. Weird");
                 break;
                 
         }
