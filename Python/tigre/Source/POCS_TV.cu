@@ -581,7 +581,7 @@ do { \
                         cudaSetDevice(dev);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
-                        //NOMRALIZE
+                        //NORMALIZE
                         //in a Tesla, maximum blocks =15 SM * 4 blocks/SM
                         divideArrayScalar  <<<60,MAXTHREADS,0,stream[dev*nStream_device]>>>(d_dimgTV[dev]+buffer_pixels,(float)sqrt(totalsum),total_pixels);
                         //MULTIPLY HYPERPARAMETER
