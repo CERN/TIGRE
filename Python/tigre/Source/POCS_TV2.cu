@@ -580,7 +580,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                     cudaCheckErrors("Reduction error");
                     
                     
-                    // Accumulate the nomr accross devices
+                    // Accumulate the norm accross devices
                     sum_curr_spl=0;
                     // this is CPU code
                     for (dev = 0; dev < deviceCount; dev++){
