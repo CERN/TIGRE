@@ -448,7 +448,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                 
                 proj_linear_idx_start=(unsigned long long)((nalpha+split_projections-1)/split_projections)*(unsigned long long)proj*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
                 proj_linear_idx_start+=proj_block_split*max((current_proj_split_size+proj_split_overlap_number-1)/proj_split_overlap_number,PROJ_PER_KERNEL)*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
-                //Store resutl
+                //Store result
                 proj_split_size[proj_block_split]=current_proj_overlap_split_size;
                 partial_projection[proj_block_split]=&projections[proj_linear_idx_start];
                 

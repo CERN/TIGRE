@@ -263,7 +263,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     Geometry* geoArray = (Geometry*)malloc(splits*sizeof(Geometry));
     splitImageInterp(splits,geo,geoArray,nangles);
     
-    // Allocate auiliary memory for projections on the GPU to accumulate partial resutsl
+    // Allocate auiliary memory for projections on the GPU to accumulate partial results
     float ** dProjection_accum;
     size_t num_bytes_proj = PROJ_PER_BLOCK*geo.nDetecU*geo.nDetecV * sizeof(float);
     if (!fits_in_memory){
