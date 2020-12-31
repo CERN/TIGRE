@@ -64,10 +64,10 @@ SART family of algorithms
     lmbda=1;
     
     
-    #'lmbdared': reduction multiplier for the hyperparameter.
-    # lmbda=lmbda*lmbdared every iterations, so the steps can be smaller
+    #'lmbda_red': reduction multiplier for the hyperparameter.
+    # lmbda=lmbda*lmbda_red every iterations, so the steps can be smaller
     # the further the update. Default=0.99
-    lmbdared=0.999;
+    lmbda_red=0.999;
     
     # 'Init' : Initialization method. Possible options are
     #          'none' (default). There will be no initialization method, just
