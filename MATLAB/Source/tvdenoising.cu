@@ -539,7 +539,7 @@ do { \
                         total_pixels     = curr_slices*pixels_per_slice;
                         cudaMemcpyAsync(&h_u[linear_idx_start],  d_u [dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
                     }
-                    if ((i+buffer_length)<maxIter){ // If its the last iteration, we dont need to get these out.
+                    if ((i+buffer_length)<maxIter){ // If its the last iteration, we don't need to get these out.
                         for(dev=0; dev<deviceCount;dev++){
                             cudaSetDevice(dev);
                             curr_slices      = ((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);

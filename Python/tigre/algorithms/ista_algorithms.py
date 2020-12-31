@@ -106,7 +106,7 @@ class FISTA(IterativeReconAlg):
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
-        # Dont precompute W and V
+        # Don't precompute W and V
         kwargs.update(dict(W=None,
                            V=None,
                            ))

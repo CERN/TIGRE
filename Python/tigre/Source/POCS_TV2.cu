@@ -525,7 +525,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         // Compute the gradient of the TV norm
                         
-                        // I Dont understand why I need to store 2 layers to compute correctly with 1 buffer. The bounding checks should
+                        // I don't understand why I need to store 2 layers to compute correctly with 1 buffer. The bounding checks should
                         // be enough but they are not.
                         gradientTV<<<gridGrad, blockGrad,0,stream[dev*nStream_device]>>>(d_image[dev],d_dimgTV[dev],(long)(curr_slices+buffer_length*2-1), image_size[1],image_size[0],delta);
                         
