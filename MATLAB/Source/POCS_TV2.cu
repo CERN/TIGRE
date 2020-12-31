@@ -542,7 +542,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                     }
                     
                     
-                    // Compute the L2 norm of the gradint. For that, reduction is used.
+                    // Compute the L2 norm of the gradient. For that, reduction is used.
                     //REDUCE
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(dev);

@@ -522,7 +522,7 @@ do { \
                     }
                     
                     
-                    // Compute the L2 norm of the gradint. For that, reduction is used.
+                    // Compute the L2 norm of the gradient. For that, reduction is used.
                     //REDUCE
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(dev);
