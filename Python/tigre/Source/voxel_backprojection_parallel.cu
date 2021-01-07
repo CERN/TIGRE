@@ -158,7 +158,7 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
     unsigned long indX = blockIdx.x * blockDim.x + threadIdx.x;
     // unsigned long startIndZ = blockIdx.z * blockDim.z + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     unsigned long startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
-    //Make sure we dont go out of bounds
+    //Make sure we don't go out of bounds
     if (indX>=geo.nVoxelX || indY>=geo.nVoxelY || startIndZ>=geo.nVoxelZ)
         return;
     
@@ -305,9 +305,9 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
         
         
     }
-    //Pagelock memory for syncronous copy.
+    //Pagelock memory for synchronous copy.
     // Lets try to make the host memory pinned:
-    // We laredy queried the GPU and assuemd they are the same, thus shoudl have the same attributes.
+    // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
     int isHostRegisterSupported;
     cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
     if (isHostRegisterSupported){
@@ -370,7 +370,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
         //Get the linear index where the current memory chunk starts.
         
         proj_linear_idx_start=proj_block_split*max((current_proj_split_size+proj_split_overlap_number-1)/proj_split_overlap_number,PROJ_PER_KERNEL)*(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV;
-        //Store resutl
+        //Store result
         proj_split_size[proj_block_split]=current_proj_overlap_split_size;
         partial_projection[proj_block_split]=&projections[proj_linear_idx_start];
         

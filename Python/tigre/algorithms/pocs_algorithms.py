@@ -45,8 +45,8 @@ class ASD_POCS(IterativeReconAlg):
         Sets the value of the hyperparameter for SART iteration.
 
     :keyword lmbda_red: (np.float64)
-        Reduction of lambda every iteration
-        lambda=lambdared*lambda. Default is 0.99
+        Reduction of lmbda every iteration
+        lmbda=lmbda_red*lmbda. Default is 0.99
 
     :keyword init: (str)
         Describes different initialization techniques.
