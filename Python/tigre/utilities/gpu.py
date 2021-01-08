@@ -2,12 +2,23 @@
 import _gpuUtils as gpuUtils
 
 class GpuIds(object):
-    def __init__(self):
-        self.name = ""
-        self.devices = []
-    def setup(self, nameGPU):
-        self.name = nameGPU
+    """GpuIds
+    To get all GPU names and Ids,
+    ```
+    gpuids = GpuIds()
+    ```
+    To get GPU Ids of specific name,
+    ```
+    gpuids = GpuIds('GeForce RTX 2080 Ti')
+    ```
+    """
+    def __init__(self, nameGPU = None):
+        if nameGPU is None:
+            self.name = ""
+        else:
+            self.name = nameGPU
         self.devices = gpuUtils.getGpuIdList(nameGPU)
+
     def __len__(self):
         return len(self.devices)
     def __str__(self):
@@ -22,12 +33,11 @@ def getGpuNames():
     # Returns a list of all installed GPUs.
     return gpuUtils.getGpuNames()
 
-def getGpuIdList(gpuName):
-    # Returns the list of index of the device that whose name maches gpuName.
-    return gpuUtils.getGpuIdList()
+# def getGpuCount():
+#     # Returns number of installed GPUs.
+#     return gpuUtils.getGpuCount()
 
 def getGpuIds(gpuName):
-    # Returns the GpuIds object, which contains the indexes of the device that whose name maches gpuName.
-    gpuids = GpuIds()
-    gpuids.setup(gpuName)
+    # Returns the GpuIds object, which contains the indexes of the device that whose name matches gpuName.
+    gpuids = GpuIds(gpuName)
     return gpuids
