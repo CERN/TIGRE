@@ -21,7 +21,7 @@ function [ projections ] = Ax(img, geo, angles, varargin )
 
 ptype='Siddon';
 if nargin > 3
-   assert(any(strcmpi(varargin{1},{'Siddon','ray-voxel','interpolated'})),'TIGRE:Ax:InvalidInput','Projection type not understood (4th input).');
+   assert(any(strcmp(varargin{1},{'Siddon','ray-voxel','interpolated'})),'TIGRE:Ax:InvalidInput','Projection type not understood (4th input).');
    ptype=varargin{1};
 end
 
