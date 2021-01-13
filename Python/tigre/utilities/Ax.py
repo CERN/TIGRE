@@ -1,6 +1,7 @@
 from _Ax import _Ax_ext
 import numpy as np
 import copy
+from .gpu import GpuIds
 
 def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
 
@@ -21,10 +22,9 @@ def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
     geox.cast_to_single()
     #geox.checknans()
 
-
-    if 'gpuids' in kwargs:
-        gpuids = kwargs['gpuids']
+    if not 'gpuids' in kwargs or kwargs['gpuids'] is None:
+        gpuids = GpuIds()
     else:
-        gpuids = None
+        gpuids = kwargs['gpuids']
 
     return _Ax_ext(img, geox, geox.angles, projection_type, geox.mode, gpuids=gpuids)

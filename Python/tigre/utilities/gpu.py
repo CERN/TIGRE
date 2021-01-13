@@ -1,15 +1,22 @@
-
+"""
+1. Check the names of installed GPUs.
+   names = getGpuNames()
+   print(names)
+2. Select the name of the GPUs that you want your program run on.
+   gpuids = getGpuIds('GeForce RTX 2080 Ti')
+3. Pass the gpuids instance to Tigre functions.
+"""
 import _gpuUtils as gpuUtils
 
 class GpuIds(object):
     """GpuIds
-    To get all GPU names and Ids,
-    ```
-    gpuids = GpuIds()
-    ```
-    To get GPU Ids of specific name,
+    A class that holds the IDs and their (common) name
     ```
     gpuids = GpuIds('GeForce RTX 2080 Ti')
+    ```
+    If name is ""/None, IDs of all GPUs are hold.
+    ```
+    gpuids = GpuIds()
     ```
     """
     def __init__(self, nameGPU = None):
@@ -17,7 +24,7 @@ class GpuIds(object):
             self.name = ""
         else:
             self.name = nameGPU
-        self.devices = gpuUtils.getGpuIdList(nameGPU)
+        self.devices = gpuUtils.getGpuIdList(self.name)
 
     def __len__(self):
         return len(self.devices)
@@ -34,10 +41,10 @@ def getGpuNames():
     return gpuUtils.getGpuNames()
 
 # def getGpuCount():
-#     # Returns number of installed GPUs.
+#     # Returns the number of installed GPUs.
 #     return gpuUtils.getGpuCount()
 
-def getGpuIds(gpuName):
-    # Returns the GpuIds object, which contains the indexes of the device that whose name matches gpuName.
+def getGpuIds(gpuName=None):
+    # Returns the GpuIds object, which contains the IDs of the devices whose name matches gpuName.
     gpuids = GpuIds(gpuName)
     return gpuids
