@@ -13,7 +13,7 @@ if len(listGpuNames) == 0:
     print ("Error: No gpu found")
 else:
     for id in range(len(listGpuNames)):
-        print("name")
+        print("{}: {}".format(id, listGpuNames[id]))
 
 gpuids = gpu.getGpuIds(listGpuNames[0])
 print(gpuids)
