@@ -55,6 +55,7 @@
 #include "Siddon_projection.hpp"
 #include "Siddon_projection_parallel.hpp"
 #include <string.h>
+#include "GpuIds.hpp"
 
 /**
  * MEX gateway
@@ -70,11 +71,31 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     
     //Check amount of inputs
-    if (nrhs<3 || nrhs>4) {
+    if (nrhs != 5) {
         mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput", "Invalid number of inputs to MEX file.");
     }
     ////////////////////////////
-    //4rd argument is interpolated or ray-voxel/Siddon
+    // 5th argument is array of GPU-IDs.
+    GpuIds gpuids;
+    {
+        size_t iM = mxGetM(prhs[4]);
+        if (iM != 1) {
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","5th parameter must be a row vector.");
+            return;
+        }
+        size_t uiGpuCount = mxGetN(prhs[4]);
+        if (uiGpuCount == 0) {
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","5th parameter must be a row vector.");
+            return;
+        }
+        int* piGpuIds = (int*)mxGetData(prhs[4]);
+        for (int iI = 0; iI < uiGpuCount; ++iI) {
+            printf("%d: %d\n", iI, piGpuIds[iI]);
+        }
+        gpuids.SetIds(uiGpuCount, piGpuIds);
+    }
+    ////////////////////////////
+    // 4th argument is interpolated or ray-voxel/Siddon
     bool rayvoxel=false;
     if ( mxIsChar(prhs[3]) != 1)
         mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input should be a string");
