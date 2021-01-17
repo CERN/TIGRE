@@ -25,6 +25,7 @@ addpath('./Utilities/Quality_measures');
 addpath('./Utilities/IO/VarianCBCT');
 addpath('./Utilities/IO/Nikon');
 addpath('./Utilities/IO/Dicom');
+addpath('./Utilities/GPU');
 
 addpath(genpath('./Test_data'));
 
