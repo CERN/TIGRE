@@ -89,9 +89,6 @@ void mexFunction(int  nlhs , mxArray *plhs[],
             return;
         }
         int* piGpuIds = (int*)mxGetData(prhs[4]);
-        for (int iI = 0; iI < uiGpuCount; ++iI) {
-            printf("%d: %d\n", iI, piGpuIds[iI]);
-        }
         gpuids.SetIds(uiGpuCount, piGpuIds);
     }
     ////////////////////////////
