@@ -324,15 +324,15 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // call the real function
     if (coneBeam){
         if (rayvoxel){
-            siddon_ray_projection(img,geo,result,angles,nangles);
+            siddon_ray_projection(img,geo,result,angles,nangles, gpuids);
         }else{
-            interpolation_projection(img,geo,result,angles,nangles);
+            interpolation_projection(img,geo,result,angles,nangles, gpuids);
         }
     }else{
         if (rayvoxel){
-            siddon_ray_projection_parallel(img,geo,result,angles,nangles);
+            siddon_ray_projection_parallel(img,geo,result,angles,nangles, gpuids);
         }else{
-            interpolation_projection_parallel(img,geo,result,angles,nangles);
+            interpolation_projection_parallel(img,geo,result,angles,nangles, gpuids);
         }
     }
     
