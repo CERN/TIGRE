@@ -26,6 +26,7 @@ acceptableOptionName = {'gpuids'};
 
 if nargin > 3
     if any(strcmp(varargin{1}, expectedProjectionTypes))
+        ptype = varargin{1};
         [gpuids] = parse_inputs(varargin{2:length(varargin)});
         %[ptype, gpuids] = parse_inputs1(varargin{1}, expectedProjectionTypes, varargin{2:length(varargin)});
     elseif any(strcmp(varargin{1}, acceptableOptionName))
