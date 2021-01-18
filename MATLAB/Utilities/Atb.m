@@ -19,9 +19,22 @@ function [ img ] = Atb( projections,geo,angles,varargin )
 %% OPtionals
 
 ptype='FDK';
+expectedProjectionTypes = {'FDK','matched'};
+acceptableOptionName = {'gpuids'};
+
 if nargin > 3
-   assert(any(strcmpi(varargin{1},{'FDK','matched'})),'TIGRE:Atb:InvalidInput','Projection type not understood (4th input).');
-   ptype=varargin{1};
+    if any(strcmp(varargin{1}, expectedProjectionTypes))
+        ptype = varargin{1};
+        [gpuids] = parse_inputs(varargin{2:length(varargin)});
+        %[ptype, gpuids] = parse_inputs1(varargin{1}, expectedProjectionTypes, varargin{2:length(varargin)});
+    elseif any(strcmp(varargin{1}, acceptableOptionName))
+        [gpuids] = parse_inputs(varargin{:});
+        %[ptype, gpuids] = parse_inputs1(ptype, expectedProjectionTypes, varargin{:});
+    else
+        assert(false,'TIGRE:Atb:InvalidInput','Projection type not understood (4th input).');
+    end
+else
+    gpuids = GpuIds();
 end
 
 
@@ -45,9 +58,23 @@ assert(isequal([size(projections,2) size(projections,1)],geo.nDetector.'),'TIGRE
 
 %% Thats it, lets call the mex fucntion
 
-img=Atb_mex(projections,geo,angles,ptype);
+img=Atb_mex(projections,geo,angles,ptype, gpuids.devices);
 
+end
 
-
+function [gpuids]=parse_inputs(varargin)
+    %fprintf('parse_inputs0(varargin (%d))\n', length(varargin));
+    if isempty(varargin)
+        gpuids = GpuIds();
+    else
+        % create input parser
+        p=inputParser;
+        % add optional parameters
+        addParameter(p,'gpuids', GpuIds());
+        %execute
+        parse(p,varargin{:});
+        %extract
+        gpuids=p.Results.gpuids;
+    end
 end
 

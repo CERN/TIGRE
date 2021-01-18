@@ -57,6 +57,7 @@
 #include "voxel_backprojection_parallel.hpp"
 #include <math.h>
 // #include <time.h>
+#include "GpuIds.hpp"
 
 
 
@@ -75,11 +76,29 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         int nrhs, mxArray const *prhs[]){
     
     //Check amount of inputs
-    if (nrhs<3 ||nrhs>4) {
+    if (nrhs != 5) {
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput", "Wrong number of inputs provided");
     }
+    ////////////////////////////
+    // 5th argument is array of GPU-IDs.
+    GpuIds gpuids;
+    {
+        size_t iM = mxGetM(prhs[4]);
+        if (iM != 1) {
+            mexErrMsgIdAndTxt( "CBCT:MEX:Atb:unknown","5th parameter must be a row vector.");
+            return;
+        }
+        size_t uiGpuCount = mxGetN(prhs[4]);
+        if (uiGpuCount == 0) {
+            mexErrMsgIdAndTxt( "CBCT:MEX:Atb:unknown","5th parameter must be a row vector.");
+            return;
+        }
+        int* piGpuIds = (int*)mxGetData(prhs[4]);
+        gpuids.SetIds(uiGpuCount, piGpuIds);
+    }
+    
     /*
-     ** 4rd argument is matched or un matched.
+     ** 4th argument is matched or un matched.
      */
     bool pseudo_matched=false; // Caled krylov, because I designed it for krylov case....
     if (nrhs==4){
@@ -336,12 +355,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // Run the CUDA code.
     if (coneBeam){
         if (pseudo_matched){
-            voxel_backprojection2(projections,geo,result,angles,nangles);
+            voxel_backprojection2(projections,geo,result,angles,nangles, gpuids);
         }else{
-            voxel_backprojection(projections,geo,result,angles,nangles);
+            voxel_backprojection(projections,geo,result,angles,nangles, gpuids);
         }
     }else{
-        voxel_backprojection_parallel(projections,geo,result,angles,nangles);
+        voxel_backprojection_parallel(projections,geo,result,angles,nangles, gpuids);
     }
 
 

@@ -1,4 +1,4 @@
-function V=computeV(geo,angles,alphablocks,orig_index)
+function V=computeV(geo,angles,alphablocks,orig_index, gpuids)
 
 V=zeros(geo.nVoxel(1),geo.nVoxel(2) ,length(alphablocks),'single');
 geo=checkGeo(geo,angles);
@@ -19,7 +19,7 @@ if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
         auxgeo.rotDetector = geo.rotDetector(:,auxindex);
         auxgeo.COR = geo.COR(auxindex);
         
-        V(:,:,ii) = mean(Atb(ones(geo.nDetector(2),geo.nDetector(1),length(auxang),'single'),auxgeo,auxang),3);
+        V(:,:,ii) = mean(Atb(ones(geo.nDetector(2),geo.nDetector(1),length(auxang),'single'),auxgeo,auxang, 'gpuids', gpuids),3);
     end
 else
     for ii=1:length(alphablocks)
