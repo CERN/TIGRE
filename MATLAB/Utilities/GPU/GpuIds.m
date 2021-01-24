@@ -6,7 +6,7 @@ classdef GpuIds
     %  To select GPUIDs of all installed GPUs,
     %    gpuids = GpuIds();
     
-    properties(SetAccess = private)
+    properties
         name;
         devices;
     end
