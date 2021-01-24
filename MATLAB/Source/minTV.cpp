@@ -56,24 +56,43 @@ Codes  : https://github.com/CERN/TIGRE
 #include "matrix.h"
 #include "POCS_TV.hpp"
 #include <string.h>
-// #include <time.h>
+#include "GpuIds.hpp"
+#include "gpuUtils.hpp"
 void mexFunction(int  nlhs , mxArray *plhs[],
         int nrhs, mxArray const *prhs[])
 {
 ///////// First check if the amount of imputs is right.    
     int maxIter;
     float alpha;
+    GpuIds gpuids;
+    if (nrhs==4) {
+        size_t iM = mxGetM(prhs[3]);
+        if (iM != 1) {
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","4th parameter must be a row vector.");
+            return;
+        }
+        size_t uiGpuCount = mxGetN(prhs[3]);
+        if (uiGpuCount == 0) {
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","4th parameter must be a row vector.");
+            return;
+        }
+        int* piGpuIds = (int*)mxGetData(prhs[3]);
+        gpuids.SetIds(uiGpuCount, piGpuIds);
+    } else {
+        int iGpuCount = GetGpuCount();
+        int* piDev = (int*)malloc(iGpuCount * sizeof(int));
+        for (int iI = 0; iI < iGpuCount; ++iI) {
+            piDev[iI] = iI;
+        }
+        gpuids.SetIds(iGpuCount, piDev);
+        free(piDev); piDev = 0;
+    }
     if (nrhs==1){
         maxIter=100;
         alpha=15.0f;
-    }
-    if (nrhs==2){
+    } else if (nrhs==2){
        mexErrMsgIdAndTxt("minTV:mex", "Only 1 POCS hyperparemter inputed");
-    }
-    if (nrhs>3){
-       mexErrMsgIdAndTxt("minTV:mex", "Too many imput argumets");
-    }
-    if (nrhs==3){
+    } else if (nrhs==3 || nrhs==4){
      size_t mrows = mxGetM(prhs[1]);
      size_t ncols = mxGetN(prhs[1]);
      if (mrows!=1 || ncols !=1)
@@ -84,6 +103,8 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         mexErrMsgIdAndTxt("minTV:mex", "POCS parameters should be 1x1");
      alpha= (float)(mxGetScalar(prhs[1]));
      maxIter=(int)floor(mxGetScalar(prhs[2])+0.5);
+    } else {
+       mexErrMsgIdAndTxt("minTV:mex", "Too many imput argumets");
     }
     
 ////////////////////////// First input.
@@ -107,7 +128,5 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     plhs[0] = mxCreateNumericArray(numDims, size_img, mxSINGLE_CLASS, mxREAL);
     float *imgout =(float*) mxGetPr(plhs[0]);
     
-    pocs_tv(img,imgout, alpha, imageSize, maxIter); 
-    
-    
+    pocs_tv(img,imgout, alpha, imageSize, maxIter, gpuids); 
 }

@@ -133,7 +133,7 @@ for ii=1:niter
         %         backprj=Atb(weighted_err,geo,angles(:,jj));         %                     At * W^-1 * (b-Ax)
         %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
         %         res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
-        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj))),geo,angles_reorder(:,jj)));
+        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
         if nonneg
             res=max(res,0);
         end
