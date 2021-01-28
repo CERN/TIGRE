@@ -299,8 +299,10 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     //Pagelock memory for syncronous copy.
     // Lets try to make the host memory pinned:
     // We laredy queried the GPU and assuemd they are the same, thus shoudl have the same attributes.
-    int isHostRegisterSupported;
+    int isHostRegisterSupported = 0;
+#if CUDART_VERSION >= 9020
     cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
+#endif
     if (isHostRegisterSupported){
         cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
     }
