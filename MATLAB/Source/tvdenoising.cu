@@ -262,8 +262,10 @@ do { \
         
         // Lets try to make the host memory pinned:
         // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
-        int isHostRegisterSupported;
+        int isHostRegisterSupported = 0;
+#if CUDART_VERSION >= 9020
         cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
+#endif
         if (isHostRegisterSupported & splits>1){
             cudaHostRegister(src ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
             cudaHostRegister(dst ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
