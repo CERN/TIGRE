@@ -204,7 +204,7 @@ do { \
         __syncthreads();
         
         
-#if (__CUDA_ARCH__ >= 300)
+#if (__CUDART_VERSION >= 9000)
         if ( tid < 32 )
         {
             mySum = sdata[tid] + sdata[tid + 32];
@@ -252,7 +252,7 @@ do { \
         __syncthreads();
         
         
-#if (__CUDA_ARCH__ >= 300)
+#if (__CUDART_VERSION >= 9000)
         if ( tid < 32 )
         {
             mySum = sdata[tid] + sdata[tid + 32];
@@ -417,9 +417,11 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
         
         
         // Lets try to make the host memory pinned:
-        // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
-        int isHostRegisterSupported;
+        // We laredy queried the GPU and assuemd they are the same, thus shoudl have the same attributes.
+        int isHostRegisterSupported = 0;
+#if CUDART_VERSION >= 9020
         cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
+#endif
         // splits>2 is completely empirical observation
         if (isHostRegisterSupported & splits>2){
             cudaHostRegister(img ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
