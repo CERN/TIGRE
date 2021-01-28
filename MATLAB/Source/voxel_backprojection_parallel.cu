@@ -310,7 +310,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
     int isHostRegisterSupported = 0;
 #if CUDART_VERSION >= 9020
-    cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
+    cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
 #endif
     if (isHostRegisterSupported){
         cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);

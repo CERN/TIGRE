@@ -399,7 +399,7 @@ do { \
         // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
         int isHostRegisterSupported = 0;
 #if CUDART_VERSION >= 9020
-        cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
+        cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
 #endif
         // splits>2 is completely empirical observation
         if (isHostRegisterSupported & splits>2){
