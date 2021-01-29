@@ -55,7 +55,7 @@
 #define MAX_BUFFER 60
 
 #include "POCS_TV.hpp"
-
+#include "gpuUtils.hpp"
 
 
 
@@ -252,14 +252,13 @@ do { \
     
     
 // main function
-    void pocs_tv(float* img,float* dst,float alpha,const long* image_size, int maxIter){
+    void pocs_tv(float* img,float* dst,float alpha,const long* image_size, int maxIter, const GpuIds& gpuids){
         
         
        
         
         // Prepare for MultiGPU
-        int deviceCount = 0;
-        cudaGetDeviceCount(&deviceCount);
+        int deviceCount = gpuids.GetLength();
         cudaCheckErrors("Device query fail");
         if (deviceCount == 0) {
             mexErrMsgIdAndTxt("POCS_TV:GPU","There are no available device(s) that support CUDA\n");
@@ -274,7 +273,7 @@ do { \
         cudaDeviceProp deviceProp;
         
         for (dev = 0; dev < deviceCount; dev++) {
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             cudaGetDeviceProperties(&deviceProp, dev);
             if (dev>0){
                 if (strcmp(devicename,deviceProp.name)!=0){
@@ -290,7 +289,7 @@ do { \
         // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
 
         size_t mem_GPU_global;
-        checkFreeMemory(deviceCount,&mem_GPU_global);
+        checkFreeMemory(gpuids, &mem_GPU_global);
 
         
         
@@ -375,7 +374,7 @@ do { \
          
         // allocate memory in each GPU
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             
             cudaMalloc((void**)&d_image[dev]    , mem_img_each_GPU);
             cudaMemset(d_image[dev],0           , mem_img_each_GPU);
@@ -397,10 +396,10 @@ do { \
         
         
         // Lets try to make the host memory pinned:
-        // We laredy queried the GPU and assuemd they are the same, thus shoudl have the same attributes.
+        // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
         int isHostRegisterSupported = 0;
 #if CUDART_VERSION >= 9020
-        cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
+        cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
 #endif
         // splits>2 is completely empirical observation
         if (isHostRegisterSupported & splits>2){
@@ -417,7 +416,7 @@ do { \
         cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
         
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             for (int i = 0; i < nStream_device; ++i){
                 cudaStreamCreate(&stream[i+dev*nStream_device]);
             }
@@ -470,27 +469,27 @@ do { \
 
                 if(i==0){
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         
                         cudaMemcpyAsync(d_image[dev]+offset_device[dev], img+offset_host[dev]  , bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
                         
                         
                     }
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         cudaDeviceSynchronize();
                     }
                 }
                 // if we need to split and its not the first iteration, then we need to copy from Host memory the previosu result.
                 if (splits>1 & i>0){
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         cudaMemcpyAsync(d_image[dev]+offset_device[dev], dst+offset_host[dev]  , bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
                         
                         
                     }
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         cudaDeviceSynchronize();
                     }
                 }
@@ -503,7 +502,7 @@ do { \
                     dim3 gridGrad((image_size[0]+blockGrad.x-1)/blockGrad.x, (image_size[1]+blockGrad.y-1)/blockGrad.y, (curr_slices+buffer_length*2+blockGrad.z-1)/blockGrad.z);
                     
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         // Compute the gradient of the TV norm
                         
@@ -516,7 +515,7 @@ do { \
                     
                     
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         // no need to copy the 2 aux slices here
                         cudaStreamSynchronize(stream[dev*nStream_device]);
@@ -527,7 +526,7 @@ do { \
                     // Compute the L2 norm of the gradient. For that, reduction is used.
                     //REDUCE
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
                         
@@ -539,7 +538,7 @@ do { \
                         
                     }
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
                         size_t dimblockRed = MAXTHREADS;
@@ -556,7 +555,7 @@ do { \
                         }
                     }
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         cudaDeviceSynchronize();
                      }
                     cudaCheckErrors("Reduction error");
@@ -580,7 +579,7 @@ do { \
                     
                     
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
                         //NORMALIZE
@@ -590,7 +589,7 @@ do { \
                         multiplyArrayScalar<<<60,MAXTHREADS,0,stream[dev*nStream_device]>>>(d_dimgTV[dev]+buffer_pixels,alpha,   total_pixels);
                     }
                      for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         cudaDeviceSynchronize();
                      }
                     cudaCheckErrors("Scalar operations error");
@@ -598,7 +597,7 @@ do { \
                     //SUBSTRACT GRADIENT
                     //////////////////////////////////////////////
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
                         
@@ -608,7 +607,7 @@ do { \
 
                 // Synchronize mathematics, make sure bounding pixels are correct
                  for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         cudaDeviceSynchronize();
                      }
                 
@@ -617,16 +616,16 @@ do { \
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
                         if (dev<deviceCount-1){
-                            cudaSetDevice(dev+1);
+                            cudaSetDevice(gpuids[dev+1]);
                             cudaMemcpy(buffer, d_image[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
-                            cudaSetDevice(dev);
+                            cudaSetDevice(gpuids[dev]);
                             cudaMemcpy(d_image[dev]+total_pixels+buffer_pixels,buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice); 
                         }
                         cudaDeviceSynchronize();
                         if (dev>0){
-                            cudaSetDevice(dev-1);
+                            cudaSetDevice(gpuids[dev-1]);
                             cudaMemcpyAsync(buffer, d_image[dev-1]+total_pixels+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
-                            cudaSetDevice(dev);
+                            cudaSetDevice(gpuids[dev]);
                             cudaMemcpyAsync(d_image[dev],buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
                         }
                     }
@@ -634,7 +633,7 @@ do { \
                     
                     // We need to take it out :(
                     for(dev=0; dev<deviceCount;dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         linear_idx_start=image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
@@ -644,7 +643,7 @@ do { \
                 }
                 
                 for (dev = 0; dev < deviceCount; dev++){
-                    cudaSetDevice(dev);
+                    cudaSetDevice(gpuids[dev]);
                     cudaDeviceSynchronize();
                 }
                 cudaCheckErrors("Memory gather error");
@@ -656,7 +655,7 @@ do { \
         // If there has not been splits, we still have data in memory
         if(splits==1){
             for(dev=0; dev<deviceCount;dev++){
-                cudaSetDevice(dev);
+                cudaSetDevice(gpuids[dev]);
                 
                 curr_slices=((dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*dev;
                 total_pixels=curr_slices*image_size[0]*image_size[1];
@@ -666,7 +665,7 @@ do { \
         cudaCheckErrors("Copy result back");
         
         for(dev=0; dev<deviceCount;dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             cudaFree(d_image[dev]);
             cudaFree(d_norm2aux[dev]);
             cudaFree(d_dimgTV[dev]);
@@ -684,19 +683,19 @@ do { \
            cudaStreamDestroy(stream[i]) ;
         
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             cudaDeviceSynchronize();
         }
         cudaCheckErrors("Memory free");
         cudaDeviceReset();
     }
         
-void checkFreeMemory(int deviceCount,size_t *mem_GPU_global){
+void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
         size_t memfree;
         size_t memtotal;
-        
+        int deviceCount = gpuids.GetLength();
         for (int dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             cudaMemGetInfo(&memfree,&memtotal);
             if(dev==0) *mem_GPU_global=memfree;
             if(memfree<memtotal/2){

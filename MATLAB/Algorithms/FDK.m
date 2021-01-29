@@ -38,7 +38,7 @@ function [res]=FDK(proj,geo,angles,varargin)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Kyungsang Kim, modified by Ander Biguri, Brandon Nelson 
 %--------------------------------------------------------------------------
-[filter,parker,wang]=parse_inputs(proj,geo,angles,varargin);
+[filter,parker,wang,gpuids]=parse_inputs(proj,geo,angles,varargin);
 
 geo=checkGeo(geo,angles);
 geo.filter=filter;
@@ -87,7 +87,7 @@ geo=rmfield(geo,'filter');
 % [proj, w] = preweighting(proj,geo);
 % imshow(w,[])
 %%%
-res=Atb((proj),geo,angles); % Weighting is inside
+res=Atb((proj),geo,angles, 'gpuids', gpuids); % Weighting is inside
 
 
 end
@@ -177,9 +177,9 @@ end
 
 end
 
-function [filter, parker,wang]=parse_inputs(proj,geo,angles,argin)
+function [filter, parker,wang, gpuids]=parse_inputs(proj,geo,angles,argin)
 
-opts =  {'filter','parker','wang'};
+opts =  {'filter','parker','wang', 'gpuids'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -239,6 +239,12 @@ for ii=1:length(opts)
                     error('CBCT:FDK:InvalidInput','Invalid filter')
                 end
                 filter=val;
+            end
+        case 'gpuids'
+            if default
+                gpuids = GpuIds();
+            else
+                gpuids = val;
             end
        
         otherwise

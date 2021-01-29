@@ -80,7 +80,7 @@ function [ fres, qualMeasOut ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargi
 %% parse inputs
 blocksize=1;
 
-[beta,beta_red,f,ng,verbose,alpha,alpha_red,rmax,epsilon,bregman,bregman_red,bregman_iter,OrderStrategy,nonneg,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,f,ng,verbose,alpha,alpha_red,rmax,epsilon,bregman,bregman_red,bregman_iter,OrderStrategy,nonneg,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
@@ -108,12 +108,12 @@ geoaux.sVoxel([1 2])=geo.sVoxel([1 2])*1.1; % a Bit bigger, to avoid numerical d
 geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon');  %
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index);
+V=computeV(geo,angles,alphablocks,orig_index,gpuids);
 
 clear A x y dx dz;
 
@@ -152,7 +152,7 @@ while ~stop_criteria %POCS
         %         backprj=Atb(weighted_err,geo,angles(:,jj));            %                     At * W^-1 * (b-Ax)
         %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
         %         f=f+beta*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
-        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles_reorder(:,jj))),geo,angles_reorder(:,jj)));
+        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
         
         % Enforce positivity
         if nonneg
@@ -171,7 +171,7 @@ while ~stop_criteria %POCS
     % Save copy of image.
     fres=f;
     % compute L2 error of actual image. Ax-b
-    dd=im3Dnorm(Ax(f,geo,angles)-proj,'L2');
+    dd=im3Dnorm(Ax(f,geo,angles,'gpuids',gpuids)-proj,'L2');
     % compute change in the image after last SART iteration
     dp_vec=(f-f0);
     dp=im3Dnorm(dp_vec,'L2');
@@ -184,7 +184,7 @@ while ~stop_criteria %POCS
     %  TV MINIMIZATION
     % =========================================================================
     %  Call GPU to minimize TV
-    f=minimizeTV(f0,dtvg,ng);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
+    f=minimizeTV(f0,dtvg,ng,'gpuids',gpuids);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
     %                                             for ii=1:ng
     % %                                                 Steepest descend of TV norm
     %                                                 tv(ng*(iter-1)+ii)=im3Dnorm(f,'TV','forward');
@@ -220,7 +220,7 @@ while ~stop_criteria %POCS
     end
     
     if ~mod(iter,bregman_iter)
-        proj=proj+bregman*(proj-Ax(f,geo,angles));
+        proj=proj+bregman*(proj-Ax(f,geo,angles,'gpuids',gpuids));
         bregman=bregman*bregman_red;
         
     end
@@ -241,9 +241,9 @@ end
 
 end
 
-function [beta,beta_red,f0,ng,verbose,alpha,alpha_red,rmax,epsilon,bregman,bregman_red,bregman_iter,OrderStrategy,nonneg,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
+function [beta,beta_red,f0,ng,verbose,alpha,alpha_red,rmax,epsilon,bregman,bregman_red,bregman_iter,OrderStrategy,nonneg,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,argin)
 
-opts=     {'lambda','lambda_red','init','tviter','verbose','alpha','alpha_red','ratio','maxl2err','beta','beta_red','bregman_iter','orderstrategy','nonneg','qualmeas'};
+opts=     {'lambda','lambda_red','init','tviter','verbose','alpha','alpha_red','ratio','maxl2err','beta','beta_red','bregman_iter','orderstrategy','nonneg','qualmeas','gpuids'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -413,6 +413,12 @@ for ii=1:length(opts)
                     error('TIGRE:B_ASD_POCS_beta:InvalidInput','Invalid quality measurement parameters');
 
                 end
+            end
+        case 'gpuids'
+            if default
+                gpuids = GpuIds();
+            else
+                gpuids = val;
             end
         otherwise
             error('TIGRE:B_ASD_POCS_beta:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option']);

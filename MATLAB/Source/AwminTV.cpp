@@ -56,34 +56,57 @@ Codes  : https://github.com/CERN/TIGRE
 #include "matrix.h"
 #include "POCS_TV2.hpp"
 #include <string.h>
-// #include <time.h>
+#include "GpuIds.hpp"
+#include "gpuUtils.hpp"
 void mexFunction(int  nlhs , mxArray *plhs[],
         int nrhs, mxArray const *prhs[])
 {
 ///////// First check if the amount of imputs is right.    
     int maxIter;
     float alpha;
+    GpuIds gpuids;
+    if (nrhs==5) {
+        size_t iM = mxGetM(prhs[4]);
+        if (iM != 1) {
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","4th parameter must be a row vector.");
+            return;
+        }
+        size_t uiGpuCount = mxGetN(prhs[4]);
+        if (uiGpuCount == 0) {
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","4th parameter must be a row vector.");
+            return;
+        }
+        int* piGpuIds = (int*)mxGetData(prhs[4]);
+        gpuids.SetIds(uiGpuCount, piGpuIds);
+    } else {
+        int iGpuCount = GetGpuCount();
+        int* piDev = (int*)malloc(iGpuCount * sizeof(int));
+        for (int iI = 0; iI < iGpuCount; ++iI) {
+            piDev[iI] = iI;
+        }
+        gpuids.SetIds(iGpuCount, piDev);
+        free(piDev); piDev = 0;
+    }    
     if (nrhs==1){
         maxIter=100;
         alpha=15.0f;
-    }
-    if (nrhs==2){
+    } else if (nrhs==2){
        mexErrMsgIdAndTxt("err", "Only 1 POCS hyperparemter inputed");
-    }
-    if (nrhs>4){
+    } else if (nrhs==4 || nrhs==5){
+        size_t mrows = mxGetM(prhs[1]);
+        size_t ncols = mxGetN(prhs[1]);
+        if (mrows!=1 || ncols !=1) {
+            mexErrMsgIdAndTxt("err", "POCS parameters should be 1x1");
+        }
+        mrows = mxGetM(prhs[2]);
+        ncols = mxGetN(prhs[2]);
+        if (mrows!=1 || ncols !=1) {
+            mexErrMsgIdAndTxt("err", "POCS parameters should be 1x1");
+        }
+        alpha= (float)(mxGetScalar(prhs[1]));
+        maxIter=(int)floor(mxGetScalar(prhs[2])+0.5);
+    } else {
        mexErrMsgIdAndTxt("err", "Too many imput argumets");
-    }
-    if (nrhs==4){
-     size_t mrows = mxGetM(prhs[1]);
-     size_t ncols = mxGetN(prhs[1]);
-     if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("err", "POCS parameters should be 1x1");
-     mrows = mxGetM(prhs[2]);
-     ncols = mxGetN(prhs[2]);
-     if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("err", "POCS parameters should be 1x1");
-      alpha= (float)(mxGetScalar(prhs[1]));
-      maxIter=(int)floor(mxGetScalar(prhs[2])+0.5);
     }
     float delta=(float)(mxGetScalar(prhs[3]));
 ////////////////////////// First input.
@@ -108,9 +131,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
   
     const long imageSize[3]={size_img[0], size_img[1], third_dim };
     
-    aw_pocs_tv(img,imgout, alpha, imageSize, maxIter,delta); 
+    aw_pocs_tv(img,imgout, alpha, imageSize, maxIter, delta, gpuids); 
     
     //prepareotputs
-  
-
 }

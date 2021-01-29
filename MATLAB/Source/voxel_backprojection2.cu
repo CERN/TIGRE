@@ -48,8 +48,9 @@
 #include <cuda_runtime_api.h>
 #include <cuda.h>
 #include "voxel_backprojection2.hpp"
-#include "mex.h"
+#include "TIGRE_common.hpp"
 #include <math.h>
+#include "GpuIds.hpp"
 
 // https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
 #define cudaCheckErrors(msg) \
@@ -91,7 +92,7 @@ do { \
      **/
     
 // this definitionmust go here.
-void CreateTexture2(int num_devices, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate);
+void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate);
 
 __global__ void matrixConstantMultiply(const Geometry geo,float* image,float constant){
     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -146,7 +147,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
     // unsigned long startIndZ = blockIdx.z * blockDim.z + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     unsigned long startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     //Make sure we don't go out of bounds
-    if (indX>=geo.nVoxelX | indY>=geo.nVoxelY |startIndZ>=geo.nVoxelZ)
+    if (indX>=geo.nVoxelX || indY>=geo.nVoxelY || startIndZ>=geo.nVoxelZ)
         return;
     
     // We'll keep a local auxiliary array of values of a column of voxels that this thread will update
@@ -243,7 +244,11 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             float u,v;
             u=y+(float)geo.nDetecU*0.5f;
             v=z+(float)geo.nDetecV*0.5f;
+#if IS_FOR_MATLAB_TIGRE
             float sample=tex3D<float>(tex, v, u ,indAlpha+0.5f);
+#else
+            float sample=tex3D<float>(tex, u, v ,indAlpha+0.5f);
+#endif
             float weigth=0;
             //
             //
@@ -310,14 +315,13 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
 //      Description:    Main host function for FDK backprojection (invokes the kernel)
 //______________________________________________________________________________
 
-int voxel_backprojection2(float * projections, Geometry geo, float* result,float const * const alphas, int nalpha){
+int voxel_backprojection2(float * projections, Geometry geo, float* result,float const * const alphas, int nalpha, const GpuIds& gpuids){
     
     
     
     
     // Prepare for MultiGPU
-    int deviceCount = 0;
-    cudaGetDeviceCount(&deviceCount);
+    int deviceCount = gpuids.GetLength();
     cudaCheckErrors("Device query fail");
     if (deviceCount == 0) {
         mexErrMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","There are no available device(s) that support CUDA\n");
@@ -326,12 +330,12 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     
     // Check the available devices, and if they are the same
     int dev;
-    checkDevices();
+    checkDevices(gpuids);
     
     // Split the CT problem
     unsigned int split_image;
     unsigned int split_projections;
-    splitCTbackprojection(deviceCount,geo,nalpha,&split_image,&split_projections);
+    splitCTbackprojection(gpuids,geo,nalpha,&split_image,&split_projections);
     
     
     // Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the
@@ -344,7 +348,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     size_t num_bytes_img = (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geoArray[0].nVoxelZ* sizeof(float);
     float** dimage=(float**)malloc(deviceCount*sizeof(float*));
     for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(gpuids[dev]);
         cudaMalloc((void**)&dimage[dev], num_bytes_img);
         cudaCheckErrors("cudaMalloc fail");
     }
@@ -352,10 +356,10 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     
     //Pagelock memory for synchronous copy.
     // Lets try to make the host memory pinned:
-    // We laredy queried the GPU and assuemd they are the same, thus shoudl have the same attributes.
+    // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
     int isHostRegisterSupported = 0;
 #if CUDART_VERSION >= 9020
-    cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
+    cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
 #endif
     // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to
     // pin the memory is greater than the lost time in Synchronously launching the memcpys. This is only worth it when the image is too big.
@@ -377,7 +381,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));;
     
     for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(gpuids[dev]);
         for (int i = 0; i < nStreamDevice; ++i){
             cudaStreamCreate(&stream[i+dev*nStreamDevice]);
             
@@ -414,7 +418,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
 //
         // Initialize the memory if its the first time.
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             cudaMemset(dimage[dev],0,num_bytes_img);
             cudaCheckErrors("memset fail");
         }
@@ -458,7 +462,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                 
                 // Now get the projections on memory
 
-                CreateTexture2(deviceCount,
+                CreateTexture2(gpuids,
                         partial_projection[proj_block_split],geo,
                         &d_cuArrTex[(proj_block_split%2)*deviceCount],
                         proj_split_size[proj_block_split],
@@ -467,7 +471,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                         (proj_block_split<2)&!proj&!img_slice);// Only allocate if its the first 2 calls
                 
                 for (dev = 0; dev < deviceCount; dev++){
-                    cudaSetDevice(dev);
+                    cudaSetDevice(gpuids[dev]);
                     cudaStreamSynchronize(stream[dev*nStreamDevice+1]);
                  }
 
@@ -478,7 +482,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                     if(geoArray[img_slice*deviceCount+dev].nVoxelZ==0)
                         break;
                     
-                    cudaSetDevice(dev);
+                    cudaSetDevice(gpuids[dev]);
                     
                     
                     
@@ -570,13 +574,13 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
         } // END projection splits
         
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             matrixConstantMultiply<<<60,MAXTREADS,0,stream[dev*nStreamDevice]>>>(  geoArray[img_slice*deviceCount+dev],dimage[dev],geo.dVoxelX*geo.dVoxelY*geo.dVoxelZ/(geo.dDetecU*geo.dDetecV));
         }
 
         // Now we need to take the image out of the GPU
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             cudaStreamSynchronize(stream[dev*nStreamDevice]);
             
             num_bytes_img_curr=(size_t)geoArray[img_slice*deviceCount+dev].nVoxelX*(size_t)geoArray[img_slice*deviceCount+dev].nVoxelY*(size_t)geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
@@ -586,7 +590,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     } // end image splits
     
     for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(gpuids[dev]);
         cudaDeviceSynchronize();
     }  
     
@@ -596,7 +600,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     for(unsigned int i=0; i<2;i++){ // 2 buffers (if needed, maybe only 1)
         if (!two_buffers_used && i==1)
             break;        for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             cudaDestroyTextureObject(texProj[i*deviceCount+dev]);
             cudaFreeArray(d_cuArrTex[i*deviceCount+dev]);
         }
@@ -604,7 +608,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
 
 
     for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(gpuids[dev]);
         cudaFree(dimage[dev]);
     }
     
@@ -637,12 +641,17 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
 
 
 
-void CreateTexture2(int num_devices, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate){
+void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate){
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+    int num_devices = gpuids.GetLength();
+#if IS_FOR_MATLAB_TIGRE
     const cudaExtent extent =make_cudaExtent(geo.nDetecV, geo.nDetecU, nangles);
+#else
+    const cudaExtent extent =make_cudaExtent(geo.nDetecU, geo.nDetecV, nangles);
+#endif
     if (allocate){
         for (unsigned int dev = 0; dev < num_devices; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             
             //cudaArray Descriptor
             cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
@@ -652,7 +661,7 @@ void CreateTexture2(int num_devices, float* projectiondata,Geometry geo,cudaArra
         }
     }
     for (unsigned int dev = 0; dev < num_devices; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(gpuids[dev]);
         cudaMemcpy3DParms copyParams = {0};
         //Array creation
         copyParams.srcPtr   = make_cudaPitchedPtr((void *)projectiondata, extent.width*sizeof(float), extent.width, extent.height);
@@ -664,7 +673,7 @@ void CreateTexture2(int num_devices, float* projectiondata,Geometry geo,cudaArra
 
     //Array creation End
     for (unsigned int dev = 0; dev < num_devices; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(gpuids[dev]);
         cudaResourceDesc    texRes;
         memset(&texRes, 0, sizeof(cudaResourceDesc));
         texRes.resType = cudaResourceTypeArray;
@@ -681,18 +690,17 @@ void CreateTexture2(int num_devices, float* projectiondata,Geometry geo,cudaArra
     }
 }
 #ifndef BACKPROJECTION_HPP
-void checkDevices(void){
+void checkDevices(const GpuIds& gpuids){
     // CODE assumes
     // 1.-All available devices are usable by this code
     // 2.-All available devices are equal, they are the same machine (warning thrown)
     int dev;
-    int deviceCount = 0;
-    cudaGetDeviceCount(&deviceCount);
+    int deviceCount = gpuids.GetLength();
     const int devicenamelength = 256;  // The length 256 is fixed by spec of cudaDeviceProp::name
     char devicename[devicenamelength];
     cudaDeviceProp deviceProp;
     for (dev = 0; dev < deviceCount; dev++) {
-        cudaSetDevice(dev);
+        cudaSetDevice(gpuids[dev]);
         cudaGetDeviceProperties(&deviceProp, dev);
         if (dev>0){
             if (strcmp(devicename,deviceProp.name)!=0){
@@ -704,14 +712,14 @@ void checkDevices(void){
         strcpy(devicename, deviceProp.name);
     }
 }
-void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
+void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
     
     
     // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
     
     size_t mem_GPU_global;
-    checkFreeMemory(deviceCount,&mem_GPU_global);
-    
+    checkFreeMemory(gpuids, &mem_GPU_global);
+    const int deviceCount = gpuids.GetLength();
     
     // Compute how much memory each of the relevant memory pieces need
     size_t mem_image=       (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
@@ -846,12 +854,13 @@ void rollPitchYawT(Geometry geo,int i, Point3D* point){
             +cos(geo.dPitch[i])*cos(geo.dYaw[i])*auxPoint.z;
     
 }
-void checkFreeMemory(int deviceCount,size_t *mem_GPU_global){
+void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
     size_t memfree;
     size_t memtotal;
+    const int gpuids.GetLength();
     
     for (int dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(dev);
+        cudaSetDevice(gpuids[dev]);
         cudaMemGetInfo(&memfree,&memtotal);
         if(dev==0) *mem_GPU_global=memfree;
         if(memfree<memtotal/2){

@@ -47,10 +47,11 @@ Codes  : https://github.com/CERN/TIGRE
 
 #include "ray_interpolated_projection.hpp"
 #include "types_TIGRE.hpp"
+#include "GpuIds.hpp"
 
 #ifndef PROJECTION_HPP_SIDDON
 #define PROJECTION_HPP_SIDDON
-int siddon_ray_projection(float  *  img, Geometry geo, float** result,float const * const angles,int nangle);
+int siddon_ray_projection(float*  img, Geometry geo, float** result,float const * const angles,int nangle, const GpuIds& gpuids);
 
 //double computeMaxLength(Geometry geo, double alpha);
 void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
@@ -61,5 +62,5 @@ void freeGeoArray(unsigned int splits,Geometry* geoArray);
 
 #endif
 #ifndef PROJECTION_HPP
-void checkFreeMemory(int deviceCount,size_t *mem_GPU_global);
+void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global);
 #endif

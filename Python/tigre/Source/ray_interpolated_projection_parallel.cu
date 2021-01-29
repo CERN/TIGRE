@@ -194,7 +194,7 @@ __global__ void kernelPixelDetector_parallel_interpolated( Geometry geo,
 
 
 
-int interpolation_projection_parallel(float  *  img, Geometry geo, float** result,float const * const angles,int nangles){
+int interpolation_projection_parallel(float  *  img, Geometry geo, float** result,float const * const angles,int nangles, const GpuIds& gpuids){
     
     
     

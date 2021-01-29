@@ -172,11 +172,10 @@ do { \
     
 // Main function
     void tvdenoising(float* src, float* dst, float lambda,
-            const float* spacing, const long* image_size, int maxIter){
+            const float* spacing, const long* image_size, int maxIter, const GpuIds& gpuids) {
         
         // Prepare for MultiGPU
-        int deviceCount = 0;
-        cudaGetDeviceCount(&deviceCount);
+        int deviceCount = gpuids.GetLength();
         cudaCheckErrors("Device query fail");
         if (deviceCount == 0) {
             mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPUselect","There are no available device(s) that support CUDA\n");
@@ -191,7 +190,7 @@ do { \
         cudaDeviceProp deviceProp;
         
         for (dev = 0; dev < deviceCount; dev++) {
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             cudaGetDeviceProperties(&deviceProp, dev);
             if (dev>0){
                 if (strcmp(devicename,deviceProp.name)!=0){
@@ -206,7 +205,7 @@ do { \
         // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
         
         size_t mem_GPU_global;
-        checkFreeMemory(deviceCount,&mem_GPU_global);
+        checkFreeMemory(gpuids, &mem_GPU_global);
         
         
         // %5 of free memory should be enough, we have almost no variables in these kernels
@@ -262,10 +261,10 @@ do { \
         
         
         // Lets try to make the host memory pinned:
-        // We laredy queried the GPU and assuemd they are the same, thus shoudl have the same attributes.
+        // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
         int isHostRegisterSupported = 0;
 #if CUDART_VERSION >= 9020
-        cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,0);
+        cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
 #endif
         if (isHostRegisterSupported & splits>1){
             cudaHostRegister(src ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
@@ -312,7 +311,7 @@ do { \
         
         //Malloc
         for(dev=0;dev<deviceCount;dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             // F
             cudaMalloc((void**)&d_src[dev], mem_img_each_GPU);
             // U
@@ -334,7 +333,7 @@ do { \
         cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
         
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             for (int i = 0; i < nStream_device; ++i){
                 cudaStreamCreate(&stream[i+dev*nStream_device]);
             }
@@ -389,11 +388,11 @@ do { \
                 }
                 if(i==0){
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         cudaMemcpyAsync(d_src[dev]+offset_device[dev], src+offset_host[dev]  , bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
                     }
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         // All these are async
                         cudaMemcpyAsync(d_u[dev]  +offset_device[dev], d_src[dev]+offset_device[dev], bytes_device[dev]*sizeof(float), cudaMemcpyDeviceToDevice,stream[dev*nStream_device+1]);
                         cudaMemsetAsync(d_px[dev], 0, mem_img_each_GPU,stream[dev*nStream_device]);
@@ -402,7 +401,7 @@ do { \
                     }
                     // we need all the stream to finish
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         cudaDeviceSynchronize();
                     }
                     cudaCheckErrors("Memcpy failure");
@@ -413,26 +412,26 @@ do { \
                 if (splits>1 & i>0){
 
                     for (dev = 0; dev < deviceCount; dev++){   
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+1]);
                         cudaMemcpyAsync(d_u [dev] +offset_device[dev], h_u +offset_host[dev],  bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
                        
                     }
 
                     for (dev = 0; dev < deviceCount; dev++){   
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+2]);
                         cudaMemcpyAsync(d_px[dev]+offset_device[dev], h_px+offset_host[dev],  bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+2]);
                        
                     }
                     for (dev = 0; dev < deviceCount; dev++){   
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+3]);
                         cudaMemcpyAsync(d_py[dev] +offset_device[dev], h_py+offset_host[dev],  bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+3]);
                         
                     }
                     for (dev = 0; dev < deviceCount; dev++){   
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+4]);
                         cudaMemcpyAsync(d_pz[dev] +offset_device[dev], h_pz+offset_host[dev],  bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+4]);
                         
@@ -446,7 +445,7 @@ do { \
 
                     }
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         cudaDeviceSynchronize();
                         cudaCheckErrors("Memcpy failure on multi split");
                     }
@@ -460,7 +459,7 @@ do { \
                     // bdim and gdim
                     
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         dim3 block(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
                         dim3 grid((image_size[0]+block.x-1)/block.x, (image_size[1]+block.y-1)/block.y, (curr_slices+buffer_length*2+block.z-1)/block.z);
@@ -470,7 +469,7 @@ do { \
                                 spacing[2], spacing[1], spacing[0]);
                     }
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         dim3 block(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
                         dim3 grid((image_size[0]+block.x-1)/block.x, (image_size[1]+block.y-1)/block.y, (curr_slices+buffer_length*2+block.z-1)/block.z);
@@ -483,21 +482,21 @@ do { \
                 
                 // Synchronize mathematics, make sure bounding pixels are correct
                 for(dev=0; dev<deviceCount;dev++){
-                    cudaSetDevice(dev);
+                    cudaSetDevice(gpuids[dev]);
                     cudaDeviceSynchronize();
                 }
                 if(splits==1){
                     for(dev=0; dev<deviceCount;dev++){
                         if (dev<deviceCount-1){
                             // U
-                            cudaSetDevice(dev+1);
+                            cudaSetDevice(gpuids[dev+1]);
                             cudaMemcpyAsync(buffer_u , d_u[dev+1] , buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+1]);
                             cudaMemcpyAsync(buffer_px, d_px[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+2]);
                             cudaMemcpyAsync(buffer_py, d_py[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+3]);
                             cudaMemcpyAsync(buffer_pz, d_pz[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+4]);
 
                             
-                            cudaSetDevice(dev);
+                            cudaSetDevice(gpuids[dev]);
                             cudaStreamSynchronize(stream[(dev+1)*nStream_device+1]);
                             cudaMemcpyAsync(d_u[dev] +slices_per_split*pixels_per_slice+buffer_pixels, buffer_u , buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+1]);
                             cudaStreamSynchronize(stream[(dev+1)*nStream_device+2]);
@@ -512,14 +511,14 @@ do { \
                         cudaDeviceSynchronize();
                         if (dev>0){
                             // U
-                            cudaSetDevice(dev-1);
+                            cudaSetDevice(gpuids[dev-1]);
                             cudaMemcpyAsync(buffer_u,  d_u[dev-1] +slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+1]);
                             cudaMemcpyAsync(buffer_px, d_px[dev-1]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+2]);
                             cudaMemcpyAsync(buffer_py, d_py[dev-1]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+3]);
                             cudaMemcpyAsync(buffer_pz, d_pz[dev-1]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+4]);
                             
                             
-                            cudaSetDevice(dev);
+                            cudaSetDevice(gpuids[dev]);
                             cudaStreamSynchronize(stream[(dev-1)*nStream_device+1]);
                             cudaMemcpyAsync(d_u[dev] ,buffer_u , buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+1]);
                             cudaStreamSynchronize(stream[(dev-1)*nStream_device+2]);
@@ -535,7 +534,7 @@ do { \
                 }else{
                     // We need to take it out :(
                     for(dev=0; dev<deviceCount;dev++){
-                        cudaSetDevice(dev);
+                        cudaSetDevice(gpuids[dev]);
                         curr_slices      = ((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         linear_idx_start = pixels_per_slice*slices_per_split*(sp*deviceCount+dev);
                         total_pixels     = curr_slices*pixels_per_slice;
@@ -543,7 +542,7 @@ do { \
                     }
                     if ((i+buffer_length)<maxIter){ // If its the last iteration, we don't need to get these out.
                         for(dev=0; dev<deviceCount;dev++){
-                            cudaSetDevice(dev);
+                            cudaSetDevice(gpuids[dev]);
                             curr_slices      = ((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                             linear_idx_start = pixels_per_slice*slices_per_split*(sp*deviceCount+dev);
                             total_pixels     = curr_slices*pixels_per_slice;
@@ -559,21 +558,21 @@ do { \
         }//END main iter
         
         for(dev=0; dev<deviceCount;dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             cudaDeviceSynchronize();
         }
         cudaCheckErrors("TV minimization");
         
         if(splits==1){
             for(dev=0; dev<deviceCount;dev++){
-                cudaSetDevice(dev);
+                cudaSetDevice(gpuids[dev]);
                 curr_slices  = ((dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*dev;
                 total_pixels = curr_slices*pixels_per_slice;
                 cudaMemcpyAsync(dst+slices_per_split*pixels_per_slice*dev, d_u[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
             }
         }
         for(dev=0; dev<deviceCount;dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             cudaDeviceSynchronize();
         }
         cudaCheckErrors("Copy result back");
@@ -604,7 +603,7 @@ do { \
             cudaHostUnregister(dst);
         }
         for(dev=0; dev<deviceCount;dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             cudaDeviceSynchronize();
         }
         cudaCheckErrors("Copy free ");
@@ -612,12 +611,13 @@ do { \
     }
     
     
-void checkFreeMemory(int deviceCount,size_t *mem_GPU_global){
+void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
         size_t memfree;
         size_t memtotal;
-        
+        const int deviceCount = gpuids.GetLength();
+
         for (int dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(dev);
+            cudaSetDevice(gpuids[dev]);
             cudaMemGetInfo(&memfree,&memtotal);
             if(dev==0) *mem_GPU_global=memfree;
             if(memfree<memtotal/2){
