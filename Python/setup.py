@@ -16,7 +16,7 @@ IS_WINDOWS = sys.platform == 'win32'
 
 # Code from https://github.com/pytorch/pytorch/blob/master/torch/utils/cpp_extension.py
 COMPUTE_CAPABILITY_ARGS = [  # '-gencode=arch=compute_20,code=sm_20', #deprecated
-    '-gencode=arch=compute_30,code=sm_30',
+    '-gencode=arch=compute_30,code=sm_30', # Derecated at CUDA 9.2
     '-gencode=arch=compute_37,code=sm_37',
     '-gencode=arch=compute_50,code=sm_50',
     '-gencode=arch=compute_52,code=sm_52',
@@ -24,16 +24,25 @@ COMPUTE_CAPABILITY_ARGS = [  # '-gencode=arch=compute_20,code=sm_20', #deprecate
     '-gencode=arch=compute_61,code=sm_61',
     '-gencode=arch=compute_70,code=sm_70',
     '-gencode=arch=compute_75,code=sm_75',
-    '-gencode=arch=compute_86,code=sm_86',
+    '-gencode=arch=compute_86,code=sm_86', # Only CUDA 11 
     '--ptxas-options=-v', '-c',
     '--default-stream=per-thread',
     ]
 
-
+def get_cuda_version(cuda_home):
+    """Locate the CUDA version
+    """
+    version_file = os.path.join(cuda_home, "version.txt")
+    try:
+        with open(version_file) as f:
+            version_str = f.readline().replace('\n', '').replace('\r', '')
+            return version_str.split(" ")[2][:4]
+    except:
+        raise RuntimeError("Cannot read cuda version file") 
 def locate_cuda():
     """Locate the CUDA environment on the system
 
-    Returns a dict with keys 'home', 'include', and 'lib64'
+    Returns a dict with keys 'home', 'include' and 'lib64'
     and values giving the absolute path to each directory.
 
     Starts by looking for the CUDA_HOME or CUDA_PATH env variable. If not found, everything
@@ -61,7 +70,7 @@ def locate_cuda():
                 cuda_home = '/usr/local/cuda'
             if not os.path.exists(cuda_home):
                 cuda_home = None
-
+    version = get_cuda_version(cuda_home)
     cudaconfig = {'home': cuda_home,
                   'include': pjoin(cuda_home, 'include'),
                   'lib64': pjoin(cuda_home, pjoin('lib', 'x64') if IS_WINDOWS else 'lib64')}
@@ -70,12 +79,15 @@ def locate_cuda():
             'The CUDA  path could not be located in $PATH, $CUDA_HOME or $CUDA_PATH. '
             'Either add it to your path, or set $CUDA_HOME or $CUDA_PATH.')
 
-    return cudaconfig
+    return cudaconfig, version
 
 
-CUDA = locate_cuda()
-
-
+CUDA, CUDA_VERSION = locate_cuda()
+# Cleanup CUDA arguments depedning on the version
+if float(CUDA_VERSION) < 11.0:
+    COMPUTE_CAPABILITY_ARGS.pop(8)
+elif float(CUDA_VERSION) >= 9.2:
+    COMPUTE_CAPABILITY_ARGS.pop(0)
 # Obtain the numpy include directory.  This logic works across numpy versions.
 try:
     NUMPY_INCLUDE = numpy.get_include()
