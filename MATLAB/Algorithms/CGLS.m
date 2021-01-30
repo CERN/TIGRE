@@ -99,7 +99,7 @@ end
 %% parse inputs'
 function [verbose,x,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,argin)
 opts=     {'init','initimg','verbose','qualmeas','gpuids'};
-defaults= [   1  ,    1 , 1, 1];
+defaults=ones(length(opts),1);
 
 % Check inputs
 nVarargs = length(argin);
