@@ -41,7 +41,8 @@ def get_cuda_version(cuda_home):
         else:
             version_str = subprocess.check_output([os.path.join(cuda_home,"bin","nvcc.exe"),"--version"])
             version_str=str(version_str).replace('\n', '').replace('\r', '')
-            return version_str.split(" ")[-1][1:5]
+            idx=version_str.find("release")
+            return version_str[idx+len("release "):idx+len("release ")+4]
     except:
         raise RuntimeError("Cannot read cuda version file") 
 def locate_cuda():
