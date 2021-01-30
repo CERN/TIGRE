@@ -101,12 +101,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
      ** 4th argument is matched or un matched.
      */
     bool pseudo_matched=false; // Caled krylov, because I designed it for krylov case....
-    if (nrhs==4){
-        /* copy the string data from prhs[0] into a C string input_ buf.    */
-        char *krylov = mxArrayToString(prhs[3]);
-        if (!strcmp(krylov,"matched")) // if its 0, they are the same
-            pseudo_matched=true;
-    }
+    /* copy the string data from prhs[0] into a C string input_ buf.    */
+    char *krylov = mxArrayToString(prhs[3]);
+    if (!strcmp(krylov,"matched")) // if its 0, they are the same
+        pseudo_matched=true;
+
     /*
      ** Third argument: angle of projection.
      */

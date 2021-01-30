@@ -62,7 +62,7 @@ noise_projections=addCTnoise(projections);
 %  'InitImg'    an image for the 'image' initialization. Avoid.
  
 % use CGLS
-[imgCGLS, errL2CGLS]=CGLS(noise_projections,geo,angles,100);
+[imgCGLS, errL2CGLS]=CGLS(noise_projections,geo,angles,6);
 % SIRT for comparison.
 [imgSIRT,errL2SIRT]=SIRT(noise_projections,geo,angles,60);
 
