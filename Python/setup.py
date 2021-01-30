@@ -34,9 +34,14 @@ def get_cuda_version(cuda_home):
     """
     version_file = os.path.join(cuda_home, "version.txt")
     try:
-        with open(version_file) as f:
-            version_str = f.readline().replace('\n', '').replace('\r', '')
-            return version_str.split(" ")[2][:4]
+        if os.path.isfile(version_file):
+            with open(version_file) as f:
+                version_str = f.readline().replace('\n', '').replace('\r', '')
+                return version_str.split(" ")[2][:4]
+        else:
+            version_str = subprocess.check_output([os.path.join(cuda_home,"bin","nvcc.exe"),"--version"])
+            version_str=str(version_str).replace('\n', '').replace('\r', '')
+            return version_str.split(" ")[-1][1:5]
     except:
         raise RuntimeError("Cannot read cuda version file") 
 def locate_cuda():
@@ -83,6 +88,7 @@ def locate_cuda():
 
 
 CUDA, CUDA_VERSION = locate_cuda()
+exit()
 # Cleanup CUDA arguments depedning on the version
 if float(CUDA_VERSION) < 11.0:
     COMPUTE_CAPABILITY_ARGS.pop(8)
