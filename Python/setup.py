@@ -88,7 +88,6 @@ def locate_cuda():
 
 
 CUDA, CUDA_VERSION = locate_cuda()
-exit()
 # Cleanup CUDA arguments depedning on the version
 if float(CUDA_VERSION) < 11.0:
     COMPUTE_CAPABILITY_ARGS.pop(8)
