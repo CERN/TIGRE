@@ -1,8 +1,9 @@
 from _Ax import _Ax_ext
 import numpy as np
 import copy
+from .gpu import GpuIds
 
-def Ax(img, geo, angles, projection_type="Siddon"):
+def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
 
     if img.dtype != np.float32:
         raise TypeError("Input data should be float32, not "+ str(img.dtype))
@@ -21,5 +22,9 @@ def Ax(img, geo, angles, projection_type="Siddon"):
     geox.cast_to_single()
     #geox.checknans()
 
+    if not 'gpuids' in kwargs or kwargs['gpuids'] is None:
+        gpuids = GpuIds()
+    else:
+        gpuids = kwargs['gpuids']
 
-    return _Ax_ext(img, geox, geox.angles, projection_type, geox.mode)
+    return _Ax_ext(img, geox, geox.angles, projection_type, geox.mode, gpuids=gpuids)

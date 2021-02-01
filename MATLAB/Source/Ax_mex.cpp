@@ -55,6 +55,7 @@
 #include "Siddon_projection.hpp"
 #include "Siddon_projection_parallel.hpp"
 #include <string.h>
+#include "GpuIds.hpp"
 
 /**
  * MEX gateway
@@ -70,19 +71,36 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     
     //Check amount of inputs
-    if (nrhs<3 || nrhs>4) {
+    if (nrhs != 5) {
         mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput", "Invalid number of inputs to MEX file.");
     }
     ////////////////////////////
-    //4rd argument is interpolated or ray-voxel/Siddon
+    // 5th argument is array of GPU-IDs.
+    GpuIds gpuids;
+    {
+        size_t iM = mxGetM(prhs[4]);
+        if (iM != 1) {
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","5th parameter must be a row vector.");
+            return;
+        }
+        size_t uiGpuCount = mxGetN(prhs[4]);
+        if (uiGpuCount == 0) {
+            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","5th parameter must be a row vector.");
+            return;
+        }
+        int* piGpuIds = (int*)mxGetData(prhs[4]);
+        gpuids.SetIds(uiGpuCount, piGpuIds);
+    }
+    ////////////////////////////
+    // 4th argument is interpolated or ray-voxel/Siddon
     bool rayvoxel=false;
     if ( mxIsChar(prhs[3]) != 1)
-        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be a string");
+        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input should be a string");
     
     /* copy the string data from prhs[0] into a C string input_ buf.    */
     char *krylov = mxArrayToString(prhs[3]);
     if (strcmp(krylov,"interpolated") && strcmp(krylov,"Siddon") && strcmp(krylov,"ray-voxel"))
-        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input shoudl be either 'interpolated' or 'Siddon'");
+        mexErrMsgIdAndTxt( "CBCT:MEX:Ax:InvalidInput","4rd input should be either 'interpolated' or 'Siddon'");
     else
         // If its not ray-voxel, its "interpolated"
         if (strcmp(krylov,"Siddon") == 0 || strcmp(krylov,"ray-voxel") == 0) //strcmp returs 0 if they are equal
@@ -273,7 +291,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                 }
                 break;
             default:
-                mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","This shoudl not happen. Weird");
+                mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","This should not happen. Weird");
                 break;
                 
         }
@@ -303,15 +321,15 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // call the real function
     if (coneBeam){
         if (rayvoxel){
-            siddon_ray_projection(img,geo,result,angles,nangles);
+            siddon_ray_projection(img,geo,result,angles,nangles, gpuids);
         }else{
-            interpolation_projection(img,geo,result,angles,nangles);
+            interpolation_projection(img,geo,result,angles,nangles, gpuids);
         }
     }else{
         if (rayvoxel){
-            siddon_ray_projection_parallel(img,geo,result,angles,nangles);
+            siddon_ray_projection_parallel(img,geo,result,angles,nangles, gpuids);
         }else{
-            interpolation_projection_parallel(img,geo,result,angles,nangles);
+            interpolation_projection_parallel(img,geo,result,angles,nangles, gpuids);
         }
     }
     

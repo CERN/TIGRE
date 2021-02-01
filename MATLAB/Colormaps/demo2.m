@@ -5,7 +5,7 @@
 % this is an exampe of 4 colormaps that are being considered as the default
 % colormap in python's matplotlib lybrary.
 %
-% All of them look quite good and they dont have any official name, so at
+% All of them look quite good and they don't have any official name, so at
 % the moment they are A,B,C,D.
 %
 % colormaps from https://github.com/bids/colormap

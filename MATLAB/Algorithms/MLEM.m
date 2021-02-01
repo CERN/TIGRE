@@ -33,7 +33,7 @@ function [res,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Ander Biguri 
 %--------------------------------------------------------------------------
-[verbose,res,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
+[verbose,res,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 
 if measurequality
@@ -41,18 +41,18 @@ if measurequality
 end
 
 res = max(res,0);
-W=Atb(ones(size(proj),'single'),geo,angles);
+W=Atb(ones(size(proj),'single'),geo,angles,'gpuids',gpuids);
 W(W<=0.) = inf;
 
 tic
 for ii=1:niter
     res0 = res;
     
-    den = Ax(res,geo,angles);
+    den = Ax(res,geo,angles,'gpuids',gpuids);
     den(den<=0.)=inf;
     auxMLEM=proj./den;
     
-    imgupdate = Atb(auxMLEM, geo,angles)./W;
+    imgupdate = Atb(auxMLEM, geo,angles,'gpuids',gpuids)./W;
     res = max(res.*imgupdate,0.);
     
     if measurequality
@@ -71,8 +71,8 @@ end
 end
 
 %% Parse inputs
-function [verbose,f0,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
-opts = {'verbose','init','qualmeas'};
+function [verbose,f0,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,argin)
+opts = {'verbose','init','qualmeas','gpuids'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -141,6 +141,14 @@ for ii=1:length(opts)
                 else
                     error('TIGRE:MLEM:InvalidInput','Invalid quality measurement parameters');
                 end
+            end
+        % GPUIDS
+        % =========================================================================
+        case 'gpuids'
+            if default
+                gpuids = GpuIds();
+            else
+                gpuids = val;
             end
         otherwise
             error('TIGRE:MLEM:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in MLEM()']);

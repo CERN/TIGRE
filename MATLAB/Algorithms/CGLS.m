@@ -39,15 +39,15 @@ function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
 
 %%
 
-[verbose,x,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 
 % //doi: 10.1088/0031-9155/56/13/004
 
-r=proj-Ax(x,geo,angles,'Siddon');
-p=Atb(r,geo,angles,'matched');
+r=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
+p=Atb(r,geo,angles,'matched','gpuids',gpuids);
 gamma=norm(p(:),2)^2;
 
 errorL2=zeros(1,niter);
@@ -55,11 +55,11 @@ for ii=1:niter
     x0 = x;
     if (ii==1 && verbose);tic;end
     
-    q=Ax(p,geo,angles,'Siddon');
+    q=Ax(p,geo,angles,'Siddon','gpuids',gpuids);
     alpha=gamma/norm(q(:),2)^2;
     x=x+alpha*p;
     
-    aux=proj-Ax(x,geo,angles,'Siddon'); %expensive, is there any way to check this better?
+    aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids); %expensive, is there any way to check this better?
     errorL2(ii)=im3Dnorm(aux,'L2');
     
     if measurequality
@@ -77,7 +77,7 @@ for ii=1:niter
     % If step is adecuatem, then continue withg CGLS
     r=r-alpha*q;
     
-    s=Atb(r,geo,angles,'matched');
+    s=Atb(r,geo,angles,'matched','gpuids',gpuids);
     gamma1=norm(s(:),2)^2;
     beta=gamma1/gamma;
     gamma=gamma1;
@@ -97,9 +97,9 @@ end
 
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas'};
-defaults= [   1  ,    1 , 1, 1];
+function [verbose,x,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids'};
+defaults=ones(length(opts),1);
 
 % Check inputs
 nVarargs = length(argin);
@@ -187,6 +187,12 @@ for ii=1:length(opts)
             if ~is2014bOrNewer
                 warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
+            end
+        case 'gpuids'
+            if default
+                gpuids = GpuIds();
+            else
+                gpuids = val;
             end
         otherwise 
             error('TIGRE:CGLS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);

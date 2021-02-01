@@ -44,17 +44,17 @@ Codes  : https://github.com/CERN/TIGRE
  */
 
 #include "types_TIGRE.hpp"
-
+#include "GpuIds.hpp"
 
 #ifndef BACKPROJECTION_HPP
 #define BACKPROJECTION_HPP
 void rollPitchYawT(Geometry geo,int i, Point3D* point);
-int  voxel_backprojection(float* projections, Geometry geo, float* result,float const * const alphas,int nalpha);
-void splitCTbackprojection(int deviceCount,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections);
+int  voxel_backprojection(float* projections, Geometry geo, float* result,float const * const alphas,int nalpha, const GpuIds& gpuids);
+void splitCTbackprojection(const GpuIds& gpuids,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections);
 void eulerZYZT(Geometry geo, Point3D* point);
 void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S);
 void createGeoArray(unsigned int image_splits, Geometry geo,Geometry* geoArray, unsigned int nangles);
 void freeGeoArray(unsigned int splits,Geometry* geoArray);
-void checkDevices(void);
-void checkFreeMemory(int deviceCount,size_t *mem_GPU_global);
+void checkDevices(const GpuIds& gpuids);
+void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global);
 #endif

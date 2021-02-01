@@ -269,7 +269,7 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
 }
 
 
-int siddon_ray_projection_parallel(float  *  img, Geometry geo, float** result,float const * const angles,int nangles){
+int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,float const * const angles,int nangles, const GpuIds& gpuids){
     
     
 

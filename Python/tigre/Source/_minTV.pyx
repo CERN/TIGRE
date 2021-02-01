@@ -17,6 +17,8 @@
 cimport numpy as np 
 import numpy as np
 from tigre.utilities.errors import TigreCudaCallError
+from tigre.Source._gpuUtils cimport GpuIds as c_GpuIds, convert_to_c_gpuids, free_c_gpuids
+
 np.import_array()
 
 from libc.stdlib cimport malloc, free 
@@ -26,7 +28,7 @@ cdef extern from "numpy/arrayobject.h":
     void PyArray_CLEARFLAGS(np.ndarray arr, int flags)
 
 cdef extern from "POCS_TV.hpp":
-    cdef void pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter)
+    cdef void pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter, c_GpuIds gpuids)
 
 
 def cuda_raise_errors(error_code):
@@ -34,9 +36,11 @@ def cuda_raise_errors(error_code):
         raise TigreCudaCallError('minimizeTV:POCS_TV:', error_code)
 
 
-def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100):
-#    src=np.transpose(src,(1,2,0)).copy() # shift 1st dim to last, match MATLAB order
-    
+def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 100, gpuids=None):
+    cdef c_GpuIds* c_gpuids = convert_to_c_gpuids(gpuids)
+    if not c_gpuids:
+        raise MemoryError()
+
     cdef np.npy_intp size_img[3]
     size_img[0]= <np.npy_intp> src.shape[0]
     size_img[1]= <np.npy_intp> src.shape[1]
@@ -44,16 +48,15 @@ def minTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter = 
 
     cdef float* c_imgout = <float*> malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float))
 
-    cdef long imgsize[3] # shift 1st dim to last, match MATLAB order
+    cdef long imgsize[3]
     imgsize[0] = <long> size_img[2]
     imgsize[1] = <long> size_img[1]
     imgsize[2] = <long> size_img[0]
 
     cdef float* c_src = <float*> src.data
     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
-    pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter)
+    cuda_raise_errors(pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter, c_gpuids[0]))
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
     PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)
     
     return imgout
-#    return np.transpose(imgout,(2,0,1)).copy()

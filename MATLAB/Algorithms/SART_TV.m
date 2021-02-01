@@ -62,7 +62,7 @@ function [res,errorL2,qualMeasOut]=SART_TV(proj,geo,angles,niter,varargin)
 %--------------------------------------------------------------------------
 
 %% Deal with input parameters
-[lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 
@@ -90,11 +90,11 @@ geoaux.sVoxel([1 2])=geo.DSD-geo.DSO;
 geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon');  %
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index);
+V=computeV(geo,angles,alphablocks,orig_index,gpuids);
 
 %% Iterate
 offOrigin=geo.offOrigin;
@@ -133,7 +133,7 @@ for ii=1:niter
         %         backprj=Atb(weighted_err,geo,angles(:,jj));         %                     At * W^-1 * (b-Ax)
         %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
         %         res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
-        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj))),geo,angles_reorder(:,jj)));
+        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
         if nonneg
             res=max(res,0);
         end
@@ -147,7 +147,7 @@ for ii=1:niter
     
     lambda=lambda*lamdbared;
     % TV denoising
-    res=im3DDenoise(res,'TV',TViter,TVlambda);
+    res=im3DDenoise(res,'TV',TViter,TVlambda,'gpuids',gpuids);
     
     
     if computeL2
@@ -155,7 +155,7 @@ for ii=1:niter
         geo.offDetector=offDetector;
         geo.DSD=DSD;
         geo.rotDetector=rotDetector;
-        errornow=im3Dnorm(proj(:,:,index_angles)-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
+        errornow=im3Dnorm(proj(:,:,index_angles)-Ax(res,geo,angles,'gpuids',gpuids),'L2');                       % Compute error norm2 of b-Ax
         % If the error is not minimized.
         if  ii~=1 && errornow>errorL2(end)
             if verbose
@@ -181,7 +181,7 @@ end
 
 end
 
-function initres=init_multigrid(proj,geo,alpha,TViter,TVlambda)
+function initres=init_multigrid(proj,geo,alpha,TViter,TVlambda,gpuids)
 
 finalsize=geo.nVoxel;
 % start with 64
@@ -197,7 +197,7 @@ while ~isequal(geo.nVoxel,finalsize)
     
     
     % solve subsampled grid
-    initres=SART_TV(proj,geo,alpha,niter,'Init','image','InitImg',initres,'Verbose',0,'TViter',TViter,'TVlambda',TVlambda);
+    initres=SART_TV(proj,geo,alpha,niter,'Init','image','InitImg',initres,'Verbose',0,'TViter',TViter,'TVlambda',TVlambda,'gpuids',gpuids);
     
     % Get new dims.
     geo.nVoxel=geo.nVoxel*2;
@@ -214,8 +214,8 @@ end
 end
 
 
-function [lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy,nonneg]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','tviter','tvlambda','orderstrategy','nonneg'};
+function [lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','tviter','tvlambda','orderstrategy','nonneg','gpuids'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -344,9 +344,15 @@ for ii=1:length(opts)
             else 
                 nonneg=val;
             end
+        case 'gpuids'
+            if default
+                gpuids = GpuIds();
+            else
+                gpuids = val;
+            end
         otherwise
             error('TIGRE:SART_TV:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART()']);
     end
 end
-if multigrid; res=init_multigrid(proj,geo,alpha,TViter,TVlambda); end
+if multigrid; res=init_multigrid(proj,geo,alpha,TViter,TVlambda,gpuids); end
 end
