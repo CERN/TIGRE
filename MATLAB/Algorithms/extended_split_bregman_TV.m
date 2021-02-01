@@ -1,4 +1,4 @@
-function [u] = extended_split_bregman_TV(f,geo, angles, N,mu, lambda, gamma, alpha, nInner, nBreg)
+function [u] = extended_split_bregman_TV(f,geo, angles,mu, lambda, gamma, alpha, nInner, nBreg,tolKrylov,max_iter)
 % 4D split bregman TV reconstruction. From the following article
 %
 % Montesinos, P., Abascal, J.F.P., Cussó, L., Vaquero, J.J. and Desco, M. (2014),
@@ -8,21 +8,24 @@ function [u] = extended_split_bregman_TV(f,geo, angles, N,mu, lambda, gamma, alp
 
 % Krylov convergence criterion: decrease to improve precision for solving
 % the linear system, increase to go faster
-tolKrylov   = 1e-4; % 1e-4
-
+if nargin<=9
+    tolKrylov   = 1e-4;
+    max_iter=100;
+end
+size4 = [geo.nVoxel',size(f,4)];
+verbose=1;
 % Reserve memory for the auxillary variables
 
 f0          = f;
-u           = zeros(N,'single');
-x           = zeros(N,'single');
-y           = zeros(N,'single');
-z           = zeros(N,'single');
-t           = zeros(N,'single');
-bx          = zeros(N,'single');
-by          = zeros(N,'single');
-bz          = zeros(N,'single');
-bt          = zeros(N,'single');
-max_iter=100;
+u           = zeros(size4,'single');
+x           = zeros(size4,'single');
+y           = zeros(size4,'single');
+z           = zeros(size4,'single');
+t           = zeros(size4,'single');
+bx          = zeros(size4,'single');
+by          = zeros(size4,'single');
+bz          = zeros(size4,'single');
+bt          = zeros(size4,'single');
 
 murf=zeros([geo.nVoxel' size(f,4)],'single');
 for it = 1:size(f,4)
@@ -31,10 +34,11 @@ end
 
 %  Do the reconstruction
 for outer = 1:nBreg
+    if (outer==1 && verbose==1);tic;end
     for inner = 1:nInner
         % update u
         rhs     = murf+lambda*(Dxt(x-bx)+Dyt(y-by)+Dzt(z-bz)+ Dtt(t-bt));
-        u       = krylov(rhs,tolKrylov,max_iter,N,lambda,mu,gamma,geo,angles);
+        u       = krylov(rhs,tolKrylov,max_iter,size4,lambda,mu,gamma,geo,angles);
         
         dx      = Dx(u);
         dy      = Dy(u);
@@ -57,7 +61,13 @@ for outer = 1:nBreg
         f(:,:,:,it)         = f(:,:,:,it) + f0(:,:,:,it) - Ax(single(u(:,:,:,it)),geo,angles,'ray-voxel');
         murf(:,:,:,it)=mu*single(Atb(f(:,:,:,it),geo,angles,'matched'));
     end
-    
+    if (outer==1 && verbose==1)
+        expected_time=toc*nBreg;
+        disp('extended split bregman TV');
+        disp(['Expected duration  :    ',secs2hms(expected_time)]);
+        disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
+        disp('');
+    end
 end
 
 end
@@ -73,13 +83,13 @@ end
 % Callback function for matrix-vector product (called by krylov)
 function b = jtjx(sol,N,lambda,mu,gamma,geo,angles)
 
-solMat  = reshape(single(sol),N);
+sol  = reshape(single(sol),N);
 % Laplacian part
-bTV     = lambda*(Dxt(Dx(solMat))+Dyt(Dy(solMat))+Dzt(Dz(solMat))+Dtt(Dt(solMat)));
+bTV     = lambda*(Dxt(Dx(sol))+Dyt(Dy(sol))+Dzt(Dz(sol))+Dtt(Dt(sol)));
 % Jacobian part
 bJac=zeros(N,'single');
 for it = 1:N(4)
-    bJac(:,:,:,it)=mu* Atb(Ax(solMat(:,:,:,it),geo,angles,'ray-voxel'),geo,angles,'matched');
+    bJac(:,:,:,it)=mu* Atb(Ax(sol(:,:,:,it),geo,angles,'ray-voxel'),geo,angles,'matched');
 end
 % Stability term
 b   = bTV(:) + bJac(:) + gamma*sol(:);
@@ -100,47 +110,51 @@ xs = sign(x).*max(s-lambda,0);
 end
 %% Numerical difference functions
 % Backward differences in X
-function d = Dx(u)
-% TODO: I think  this is doing the wrong axes (i.e. this is Dy)
-d=diff(u,1,2);
-d=cat(2,u(:,1,:,:)-u(:,end,:,:),d);
+function d = Dy(u)
+d=zeros(size(u));
+d(:,2:end,:,:)=diff(u,1,2);
+d(:,1,:,:)=u(:,1,:,:)-u(:,end,:,:);
 end
 % Transpose of the Backward differences in X
-function d = Dxt(u)
-% TODO: I think  this is doing the wrong axes (i.e. this is Dy)
-d=-diff(u,1,2);
-d=cat(2,d,(u(:,end,:,:)-u(:,1,:,:)));
+function d = Dyt(u)
+d=zeros(size(u));
+d(:,1:end-1,:,:)=-diff(u,1,2);
+d(:,end,:,:)=(u(:,end,:,:)-u(:,1,:,:));
 end
 % Backward differences in Y
-function d = Dy(u)
-% TODO: I think  this is doing the wrong axes (i.e. this is Dx)
-d=diff(u,1,1);
-d=cat(1,u(1,:,:,:)-u(end,:,:,:),d);
+function d = Dx(u)
+d=zeros(size(u));
+d(2:end,:,:,:)=diff(u,1,1);
+d(1,:,:,:)=u(1,:,:,:)-u(end,:,:,:);
 end
 % Transpose of the Backward differences in Y
-function d = Dyt(u)
-% TODO: I think  this is doing the wrong axes (i.e. this is Dx)
-d=-diff(u,1,1);
-d=cat(1,d,(u(end,:,:,:)-u(1,:,:,:)));
+function d = Dxt(u)
+d=zeros(size(u));
+d(1:end-1,:,:,:)=-diff(u,1,1);
+d(end,:,:,:)=u(end,:,:,:)-u(1,:,:,:);
 end
 % Backward differences in Z
 function d = Dz(u)
-d=diff(u,1,3);
-d=cat(3,u(:,:,1,:)-u(:,:,end,:),d);
+d=zeros(size(u));
+d(:,:,2:end,:)=diff(u,1,3);
+d(:,:,1,:)=u(:,:,1,:)-u(:,:,end,:);
 end
 % Transpose of the Backward differences in Z
 function d = Dzt(u)
-d=-diff(u,1,3);
-d=cat(3,d,(u(:,:,end,:)-u(:,:,1,:)));
+d=zeros(size(u));
+d(:,:,1:end-1,:)=-diff(u,1,3);
+d(:,:,end,:)=u(:,:,end,:)-u(:,:,1,:);
 end
 % Backward differences in T
 function d = Dt(u)
-d=diff(u,1,4);
-d=cat(4,u(:,:,:,1)-u(:,:,:,end),d);
+d=zeros(size(u));
+d(:,:,:,2:end)=diff(u,1,4);
+d(:,:,:,1)=u(:,:,:,1)-u(:,:,:,end);
 end
 % Transpose of the Backward differences in T
 function d = Dtt(u)
-d=-diff(u,1,4);
-d=cat(4,d,(u(:,:,:,end)-u(:,:,:,1)));
+d=zeros(size(u));
+d(:,:,:,1:end-1)=-diff(u,1,4);
+d(:,:,:,end)=u(:,:,:,end)-u(:,:,:,1);
 end
 
