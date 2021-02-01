@@ -6,7 +6,7 @@ Please, add here all changes added since previous version of TIGRE (v2.1)
 ## Features
 
 - You can now select which GPUs to run the code on, either by name, or GPUid. By @genusn
-- Improved Python compilation, now there is no need to edit setup.py for your GPU/CUDA SDK
+- Improved compilation, now there is no need to edit setup.py/cml files for your GPU/CUDA SDK
 
 ## BugFix
 
