@@ -34,11 +34,13 @@ if ispc
     if ~fileExisting
         error(sprintf('mex_CUDA_win64.xml not found. You may need to rename the existing files depending on your MVS version')) ;
     end
-%     cudapath=getenv('CUDA_PATH');
-    [cudapath, cuda_ver]=locate_cuda();
-    if isempty(cudapath)
-        error(sprintf('CUDA Path not found. \nAdd the path by writting in MATLAB:\nsetenv(''CUDA_PATH'',''your path'')\nWhere "your path" is C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2, for example, \nor /usr/local/cuda on linux')) ;
-    end
+end
+[cudapath, cuda_ver]=locate_cuda();
+if isempty(cudapath)
+    error(sprintf('CUDA Path not found. \nAdd the path by writting in MATLAB:\nsetenv(''CUDA_PATH'',''your path'')\nWhere "your path" is C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2, for example, \nor /usr/local/cuda on linux')) ;
+end
+if ispc
+   setenv('CUDA_PATH',cudapath);
 end
 
 % Compile for x64 or x32
@@ -138,8 +140,8 @@ if ~status % succeded
     verstr=strsplit(cmout,'\n');
     %which one to use? the first one I guess.
     verstr=verstr{1};
-    cuda_path=strsplit(verstr,'\\bin');
-    cuda_path=cuda_path{1};
+    cuda_path=strsplit(verstr,'bin');  
+    cuda_path=cuda_path{1}(1:end-1);
     cuda_ver=get_cuda_ver(cuda_path);
     return
 end
@@ -168,15 +170,15 @@ end
 
 end
 function cuda_ver=get_cuda_ver(cuda_path)
-    if ispc
-        [status,cmout]=system(['"', cuda_path, '/bin/nvcc" -V']);
-    else
-        [status,cmout]=system([cuda_path, '/bin/nvcc -V']);
-    end
-    if status
-        error('Error finding CUDA version')
-    else
-        stridx=strfind(cmout,'release ');
-        cuda_ver=str2double(cmout(stridx+length('release ') : stridx+length('release ')+3));
-    end
+if ispc
+    [status,cmout]=system(['"', cuda_path, '/bin/nvcc" -V']);
+else
+    [status,cmout]=system([cuda_path, '/bin/nvcc -V']);
+end
+if status
+    error('Error finding CUDA version')
+else
+    stridx=strfind(cmout,'release ');
+    cuda_ver=str2double(cmout(stridx+length('release ') : stridx+length('release ')+3));
+end
 end
