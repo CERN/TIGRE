@@ -62,10 +62,23 @@ nBreg   = 5;
 for ii=1:size(phantom,4)
     imgFDK(:,:,:,ii)=FDK(data(:,:,:,ii),geo,angles);
 end
+for ii=1:size(phantom,4)
+    imgOSSART_TV(:,:,:,ii)=OS_ASD_POCS(data(:,:,:,ii),geo,angles,20,'maxL2err',0.2*im3Dnorm(Ax(imgFDK(:,:,:,ii),geo,angles)-data(:,:,:,ii),'L2'));
+end
 %% Compute error images
 error_TV=abs(split_bregg-phantom);
 error_FDK=abs(imgFDK-phantom);
+error_OSSART_TV=abs(imgOSSART_TV-phantom;
 
+for ii=1:size(phantom,4)
+    UQI_TV(ii)=UQI(split_bregg(:,:,:,ii),phantom(:,:,:,ii));
+    UQI_FDK(ii)=UQI(imgFDK(:,:,:,ii),phantom(:,:,:,ii));
+    UQI_OSSART_TV(ii)=UQI(imgOSSART_TV(:,:,:,ii),phantom(:,:,:,ii));
+end
 %% Plot
-plotImg( [split_bregg(:,:,:,1),imgFDK(:,:,:,1);split_bregg(:,:,:,3),imgFDK(:,:,:,3);split_bregg(:,:,:,5),imgFDK(:,:,:,5) ],'Dim','z','slice',34);
-plotImg( [error_TV(:,:,:,1),error_FDK(:,:,:,1);error_TV(:,:,:,3),error_FDK(:,:,:,3);error_TV(:,:,:,5),error_FDK(:,:,:,5) ],'Dim','z','slice',34);
+plotImg( [split_bregg(:,:,:,1),imgFDK(:,:,:,1), imgOSSART_TV(:,:,:,1); ...
+          split_bregg(:,:,:,3),imgFDK(:,:,:,3), imgOSSART_TV(:,:,:,3); ...
+          split_bregg(:,:,:,5),imgFDK(:,:,:,5), imgOSSART_TV(:,:,:,5) ],'Dim','z','slice',34);
+plotImg( [error_TV(:,:,:,1),error_FDK(:,:,:,1),error_OSSART_TV(:,:,:,1);...
+          error_TV(:,:,:,3),error_FDK(:,:,:,3),error_OSSART_TV(:,:,:,3);...
+          error_TV(:,:,:,5),error_FDK(:,:,:,5),error_OSSART_TV(:,:,:,5) ],'Dim','z','slice',34);

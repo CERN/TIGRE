@@ -29,7 +29,7 @@ bt          = zeros(size4,'single');
 
 murf=zeros([geo.nVoxel' size(f,4)],'single');
 for it = 1:size(f,4)
-    murf(:,:,:,it)=Atb(f(:,:,:,it),geo,angles,'matched');
+    murf(:,:,:,it)=mu*Atb(f(:,:,:,it),geo,angles,'matched');
 end
 
 %  Do the reconstruction
