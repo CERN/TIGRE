@@ -12,6 +12,9 @@ if nargin<=9
     tolKrylov   = 1e-4;
     max_iter=100;
 end
+norm_factor=1./norm(f(:)/prod(geo.nDetector));
+f=f.*norm_factor;
+
 size4 = [geo.nVoxel',size(f,4)];
 verbose=1;
 % Reserve memory for the auxillary variables
@@ -26,6 +29,7 @@ bx          = zeros(size4,'single');
 by          = zeros(size4,'single');
 bz          = zeros(size4,'single');
 bt          = zeros(size4,'single');
+
 
 murf=zeros([geo.nVoxel' size(f,4)],'single');
 for it = 1:size(f,4)
@@ -69,7 +73,7 @@ for outer = 1:nBreg
         disp('');
     end
 end
-
+u=u./norm_factor;
 end
 %% Krylov solver subroutine
 function dx = krylov(r,tolKrylov,max_iter,N,lambda,mu,gamma,geo,angles)
