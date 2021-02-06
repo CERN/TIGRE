@@ -361,7 +361,6 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
 #if CUDART_VERSION >= 9020
     cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
 #endif
-
     // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to
     // pin the memory is greater than the lost time in Synchronously launching the memcpys. This is only worth it when the image is too big.
     if (isHostRegisterSupported & split_image>1){
@@ -742,7 +741,7 @@ void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsign
     {
         // As we can overlap memcpys from H2D of the projections, we should then minimize the amount of image splits.
         // Lets assume to start with that we only need 1 stack of PROJ_PER_KERNEL projections. The rest is for the image.
-        size_t mem_free=mem_GPU_global-mem_proj*PROJ_PER_KERNEL;
+        size_t mem_free=mem_GPU_global-2*mem_proj*PROJ_PER_KERNEL;
         
         *split_image=(mem_image/deviceCount+mem_free-1)/mem_free;
         // Now knowing how many splits we have for images, we can recompute how many slices of projections actually
