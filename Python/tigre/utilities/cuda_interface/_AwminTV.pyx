@@ -16,7 +16,7 @@
 
 cimport numpy as np 
 import numpy as np
-from tigre.Source._gpuUtils cimport GpuIds as c_GpuIds, convert_to_c_gpuids, free_c_gpuids
+from tigre.utilities.cuda_interface._gpuUtils cimport GpuIds as c_GpuIds, convert_to_c_gpuids, free_c_gpuids
 
 np.import_array()
 from libc.stdlib cimport malloc, free 
