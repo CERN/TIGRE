@@ -50,12 +50,12 @@
 #include "tmwtypes.h"
 #include "mex.h"
 #include "matrix.h"
-#include "ray_interpolated_projection.hpp"
-#include "ray_interpolated_projection_parallel.hpp"
-#include "Siddon_projection.hpp"
-#include "Siddon_projection_parallel.hpp"
+#include "../../Common/CUDA/ray_interpolated_projection.hpp"
+#include "../../Common/CUDA/ray_interpolated_projection_parallel.hpp"
+#include "../../Common/CUDA/Siddon_projection.hpp"
+#include "../../Common/CUDA/Siddon_projection_parallel.hpp"
 #include <string.h>
-#include "GpuIds.hpp"
+#include "../../Common/CUDA/GpuIds.hpp"
 
 /**
  * MEX gateway

@@ -54,10 +54,10 @@ Codes  : https://github.com/CERN/TIGRE
 #include "mex.h"
 #include <math.h>
 #include "matrix.h"
-#include "POCS_TV.hpp"
+#include "../../Common/CUDA/POCS_TV.hpp"
 #include <string.h>
-#include "GpuIds.hpp"
-#include "gpuUtils.hpp"
+#include "../../Common/CUDA/GpuIds.hpp"
+#include "../../Common/CUDA/gpuUtils.hpp"
 void mexFunction(int  nlhs , mxArray *plhs[],
         int nrhs, mxArray const *prhs[])
 {
