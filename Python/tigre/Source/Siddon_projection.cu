@@ -817,8 +817,8 @@ void rollPitchYaw(Geometry geo,int i, Point3D* point){
             +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) - cos(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.z;
     
     point->z=-sin(geo.dPitch[i])*auxPoint.x
-            +cos(geo.dPitch[1])*sin(geo.dYaw[i])*auxPoint.y
-            +cos(geo.dPitch[1])*cos(geo.dYaw[i])*auxPoint.z;
+            +cos(geo.dPitch[i])*sin(geo.dYaw[i])*auxPoint.y
+            +cos(geo.dPitch[i])*cos(geo.dYaw[i])*auxPoint.z;
     
 }
 void eulerZYZ(Geometry geo, Point3D* point){

@@ -502,7 +502,7 @@ void CreateTextureParallel(float* image,Geometry geo,cudaArray** d_cuArrTex, cud
 
 #ifndef PROJECTION_HPP
 
-float maxDistanceCubeXY(Geometry geo, float angles,int i){
+float maxDistanceCubeXY(Geometry geo, float alpha,int i){
     ///////////
     // Compute initial "t" so we access safely as less as out of bounds as possible.
     //////////
