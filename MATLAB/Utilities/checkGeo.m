@@ -72,7 +72,7 @@ assert(all(geo.DSD>=geo.DSO), 'TIGRE:checkGeo:BadGeometry','DSD should be bigger
 
 if isfield(geo,'offOrigin')
     assert(isequal(size(geo.offOrigin),[3 1]) | isequal(size(geo.offOrigin),[3 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offOrigin Should be 3x1 or 3xsize(angles,2)')
-    assert(isa(geo.offOrigin,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.offOrigin is not double type.' )% "we could cas it to double" 
+    assert(isa(geo.offOrigin,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.offOrigin is not double type.' )% "we could cast it to double" 
     if isequal(size(geo.offOrigin),[3 1])
         geo.offOrigin=repmat(geo.offOrigin,[1, size(angles,2)]);
     end
