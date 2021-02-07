@@ -205,7 +205,11 @@ while ischar(tline)
 end
 fclose(fid);
 
-idx=squeeze(cellfun(@(x)strfind(x,'COMPILER="nvcc"'),A,'UniformOutput',false));
+if ispc
+    idx=squeeze(cellfun(@(x)strfind(x,'COMPILER="nvcc"'),A,'UniformOutput',false));
+else % same for mac and linux
+    idx=squeeze(cellfun(@(x)strfind(x,'MATLABMEX="-DMATLAB_MEX_FILE"'),A,'UniformOutput',false));
+end
 idx=find(~cellfun('isempty', idx));
 
 if cuda_version>=11.0
