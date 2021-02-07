@@ -833,12 +833,12 @@ void freeGeoArray(unsigned int splits,Geometry* geoArray){
 //
 //      Description:    check available memory on devices
 //______________________________________________________________________________
-void checkFreeMemory(const GpuIds& gpuid, size_t *mem_GPU_global){
+void checkFreeMemory(const GpuIds& gpuids, size_t *mem_GPU_global){
     size_t memfree;
     size_t memtotal;
-    int deviceCount = gpuid.GetLength();
+    int deviceCount = gpuids.GetLength();
     for (int dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(gpuid[dev]);
+        cudaSetDevice(gpuids[dev]);
         cudaMemGetInfo(&memfree,&memtotal);
         if(dev==0) *mem_GPU_global=memfree;
         if(memfree<memtotal/2){

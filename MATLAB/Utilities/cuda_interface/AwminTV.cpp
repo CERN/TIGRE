@@ -50,12 +50,12 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 
+#include <math.h>
+#include <string.h>
 #include "tmwtypes.h"
 #include "mex.h"
-#include <math.h>
 #include "matrix.h"
 #include "../../../Common/CUDA/POCS_TV2.hpp"
-#include <string.h>
 #include "../../../Common/CUDA/GpuIds.hpp"
 #include "../../../Common/CUDA/gpuUtils.hpp"
 void mexFunction(int  nlhs , mxArray *plhs[],
