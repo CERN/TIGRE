@@ -47,6 +47,7 @@
 
 
 
+#include <string.h>
 #include "tmwtypes.h"
 #include "mex.h"
 #include "matrix.h"
@@ -54,7 +55,6 @@
 #include "../../../Common/CUDA/ray_interpolated_projection_parallel.hpp"
 #include "../../../Common/CUDA/Siddon_projection.hpp"
 #include "../../../Common/CUDA/Siddon_projection_parallel.hpp"
-#include <string.h>
 #include "../../../Common/CUDA/GpuIds.hpp"
 
 /**

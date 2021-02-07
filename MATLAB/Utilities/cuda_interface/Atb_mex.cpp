@@ -48,15 +48,14 @@
 
 
 
+#include <math.h>
+#include <string.h>
 #include "tmwtypes.h"
 #include "mex.h"
 #include "matrix.h"
 #include "../../../Common/CUDA/voxel_backprojection.hpp"
 #include "../../../Common/CUDA/voxel_backprojection2.hpp"
-#include <string.h>
 #include "../../../Common/CUDA/voxel_backprojection_parallel.hpp"
-#include <math.h>
-// #include <time.h>
 #include "../../../Common/CUDA/GpuIds.hpp"
 
 

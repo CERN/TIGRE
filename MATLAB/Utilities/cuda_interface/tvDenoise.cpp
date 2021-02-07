@@ -49,15 +49,14 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 
+#include <math.h>
+#include <string.h>
 #include "tmwtypes.h"
 #include "mex.h"
-#include <math.h>
 #include "matrix.h"
 #include "../../../Common/CUDA/tvdenoising.hpp"
-#include <string.h>
 #include "../../../Common/CUDA/GpuIds.hpp"
 #include "../../../Common/CUDA/gpuUtils.hpp"
-// #include <time.h>
 /**
  * MEX gateway
  */
