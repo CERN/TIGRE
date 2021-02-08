@@ -52,12 +52,12 @@ Codes  : https://github.com/CERN/TIGRE
 
 #include <math.h>
 #include <string.h>
-#include "tmwtypes.h"
-#include "mex.h"
-#include "matrix.h"
-#include "../../../Common/CUDA/POCS_TV2.hpp"
-#include "../../../Common/CUDA/GpuIds.hpp"
-#include "../../../Common/CUDA/gpuUtils.hpp"
+#include <tmwtypes.h>
+#include <mex.h>
+#include <matrix.h>
+#include <CUDA/POCS_TV2.hpp>
+#include <CUDA/GpuIds.hpp>
+#include <CUDA/gpuUtils.hpp>
 void mexFunction(int  nlhs , mxArray *plhs[],
         int nrhs, mxArray const *prhs[])
 {
