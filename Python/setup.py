@@ -39,7 +39,7 @@ def get_cuda_version(cuda_home):
                 version_str = f.readline().replace('\n', '').replace('\r', '')
                 return version_str.split(" ")[2][:4]
         else:
-            version_str = subprocess.check_output([os.path.join(cuda_home,"bin","nvcc.exe"),"--version"])
+            version_str = subprocess.check_output([os.path.join(cuda_home,"bin","nvcc"),"--version"])
             version_str=str(version_str).replace('\n', '').replace('\r', '')
             idx=version_str.find("release")
             return version_str[idx+len("release "):idx+len("release ")+4]
