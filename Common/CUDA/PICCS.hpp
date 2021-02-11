@@ -52,8 +52,9 @@ Codes  : https://github.com/CERN/TIGRE
 
 #ifndef POCS_TV_HPP
 #define POCS_TV_HPP
-#include "mex.h"
-#include "tmwtypes.h"
+#include "TIGRE_common.hpp"
+#include "GpuIds.hpp"
+
 void piccs_tv(const float* img,const float* prior, float* dst,float alpha, float ratio, const long* image_size, int maxIter);
 
 

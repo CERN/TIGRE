@@ -50,11 +50,11 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 
-#include "tmwtypes.h"
-#include "mex.h"
+#include <tmwtypes.h>
+#include <mex.h>
 #include <math.h>
-#include "matrix.h"
-#include "PICCS.hpp"
+#include <matrix.h>
+#include <CUDA/PICCS.hpp>
 #include <string.h>
 // #include <time.h>
 void mexFunction(int  nlhs , mxArray *plhs[],
@@ -64,30 +64,32 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     int maxIter;
     float alpha;
     float ratio;
+    if (nrhs<2)
+        mexErrMsgIdAndTxt("TIGRE:minPICCS", "At least 2 inputs needed: Image and prior image");
     if (nrhs==2){
         maxIter=100;
         alpha=15.0f;
         ratio=0.5;
     }
     if (nrhs>2 && nrhs<5){
-       mexErrMsgIdAndTxt("err", "Only 1 PICCS hyperparemter inputed");
+       mexErrMsgIdAndTxt("TIGRE:minPICCS", "Only 1 PICCS hyperparemter inputed");
     }
     if (nrhs>5){
-       mexErrMsgIdAndTxt("err", "Too many imput argumets");
+       mexErrMsgIdAndTxt("TIGRE:minPICCS", "Too many imput argumets");
     }
     if (nrhs==5){
      size_t mrows = mxGetM(prhs[2]);
      size_t ncols = mxGetN(prhs[2]);
      if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("err", "PICCS parameters shoudl be 1x1");
+        mexErrMsgIdAndTxt("TIGRE:minPICCS", "PICCS parameters shoudl be 1x1");
      mrows = mxGetM(prhs[3]);
      ncols = mxGetN(prhs[3]);
      if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("err", "PICCS parameters shoudl be 1x1");
+        mexErrMsgIdAndTxt("TIGRE:minPICCS", "PICCS parameters shoudl be 1x1");
      mrows = mxGetM(prhs[4]);
      ncols = mxGetN(prhs[4]);
      if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("err", "PICCS parameters shoudl be 1x1");
+        mexErrMsgIdAndTxt("TIGRE:minPICCS", "PICCS parameters shoudl be 1x1");
      alpha= (float)(mxGetScalar(prhs[2]));
      maxIter=(int)floor(mxGetScalar(prhs[3])+0.5);
      ratio= (float)(mxGetScalar(prhs[4]));
@@ -97,13 +99,18 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // First input should be x from (Ax=b), or the image.
     mxArray const * const image = prhs[0];
     mwSize const numDims = mxGetNumberOfDimensions(image);
-    
-    mxArray const * const prior_mex = prhs[1];
-    
-    // Image should be dim 3
     if (numDims!=3){
-        mexErrMsgIdAndTxt("err", "Image is not 3D");
+        mexErrMsgIdAndTxt("TIGRE:minPICCS", "Image is not 3D");
+    }   
+    mxArray const * const prior_mex = prhs[1];
+    mwSize const numDims_prior = mxGetNumberOfDimensions(image);
+    if (numDims_prior!=3){
+        mexErrMsgIdAndTxt("TIGRE:minPICCS", "Image is not 3D");
     }
+    if(numDims_prior!=numDims)
+        mexErrMsgIdAndTxt("TIGRE:minPICCS", "Image and prior are not the same size");
+    // Image should be dim 3
+
     // Now that input is ok, parse it to C data types.
     float const * const img   = static_cast<float const *>(mxGetData(image));
     float const * const prior = static_cast<float const *>(mxGetData(prior_mex));

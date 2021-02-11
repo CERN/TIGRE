@@ -186,12 +186,12 @@ do { \
         __syncthreads();
         
         
-#if (__CUDA_ARCH__ >= 300)
+#if (__CUDART_VERSION >= 9000)
         if ( tid < 32 )
         {
             mySum = sdata[tid] + sdata[tid + 32];
             for (int offset = warpSize/2; offset > 0; offset /= 2) {
-                mySum += __shfl_down(mySum, offset);
+                mySum += __shfl_down_sync(0xFFFFFFFF, mySum, offset,32);
             }
         }
 #else
@@ -233,12 +233,12 @@ do { \
         __syncthreads();
         
         
-#if (__CUDA_ARCH__ >= 300)
+#if (__CUDART_VERSION >= 9000)
         if ( tid < 32 )
         {
             mySum = sdata[tid] + sdata[tid + 32];
             for (int offset = warpSize/2; offset > 0; offset /= 2) {
-                mySum += __shfl_down(mySum, offset);
+                mySum += __shfl_down_sync(0xFFFFFFFF, mySum, offset,32);
             }
         }
 #else
