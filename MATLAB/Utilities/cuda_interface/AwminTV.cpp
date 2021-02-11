@@ -1,8 +1,10 @@
+/*
 /*-------------------------------------------------------------------------
  *
- * MATLAB MEX  functions for TV image denoising. Check inputs and parses 
- * MATLAB data to C++ data.
+ * MATLAB MEX gateway for Total variation minimization via Steepest descend
  *
+ * This file gets the data from MATLAB, checks it for errors and then 
+ * parses it to C and calls the relevant C/CUDA fucntions.
  *
  * CODE by       Ander Biguri
  *
@@ -48,37 +50,33 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 
-
-#include "tmwtypes.h"
-#include "mex.h"
 #include <math.h>
-#include "matrix.h"
-#include "tvdenoising.hpp"
 #include <string.h>
-#include "GpuIds.hpp"
-#include "gpuUtils.hpp"
-// #include <time.h>
-/**
- * MEX gateway
- */
+#include <tmwtypes.h>
+#include <mex.h>
+#include <matrix.h>
+#include <CUDA/POCS_TV2.hpp>
+#include <CUDA/GpuIds.hpp>
+#include <CUDA/gpuUtils.hpp>
 void mexFunction(int  nlhs , mxArray *plhs[],
         int nrhs, mxArray const *prhs[])
 {
+///////// First check if the amount of imputs is right.    
     int maxIter;
-    float lambda;
+    float alpha;
     GpuIds gpuids;
-    if (nrhs==4) {
-        size_t iM = mxGetM(prhs[3]);
+    if (nrhs==5) {
+        size_t iM = mxGetM(prhs[4]);
         if (iM != 1) {
             mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","4th parameter must be a row vector.");
             return;
         }
-        size_t uiGpuCount = mxGetN(prhs[3]);
+        size_t uiGpuCount = mxGetN(prhs[4]);
         if (uiGpuCount == 0) {
             mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","4th parameter must be a row vector.");
             return;
         }
-        int* piGpuIds = (int*)mxGetData(prhs[3]);
+        int* piGpuIds = (int*)mxGetData(prhs[4]);
         gpuids.SetIds(uiGpuCount, piGpuIds);
     } else {
         int iGpuCount = GetGpuCount();
@@ -88,61 +86,52 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         }
         gpuids.SetIds(iGpuCount, piDev);
         free(piDev); piDev = 0;
-    }
-    if (nrhs == 0) {
-        mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising", "At least one input argumet required.");
-    } else if (nrhs==1){
+    }    
+    if (nrhs==1){
         maxIter=100;
-        lambda=15.0f;
+        alpha=15.0f;
     } else if (nrhs==2){
-        mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising", "Only 1 TV hyperparemter inputed");
-    } else if (nrhs==3 || nrhs==4){
+       mexErrMsgIdAndTxt("err", "Only 1 POCS hyperparemter inputed");
+    } else if (nrhs==4 || nrhs==5){
         size_t mrows = mxGetM(prhs[1]);
         size_t ncols = mxGetN(prhs[1]);
         if (mrows!=1 || ncols !=1) {
-            mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising", "TV parameters should be 1x1");
+            mexErrMsgIdAndTxt("err", "POCS parameters should be 1x1");
         }
         mrows = mxGetM(prhs[2]);
         ncols = mxGetN(prhs[2]);
         if (mrows!=1 || ncols !=1) {
-            mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising", "TV parameters should be 1x1");
+            mexErrMsgIdAndTxt("err", "POCS parameters should be 1x1");
         }
-        lambda= (float)(mxGetScalar(prhs[1]));
-        maxIter=(int)round(mxGetScalar(prhs[2]));
-    } else if (nrhs>4) {
-        mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising", "Too many imput argumets");
+        alpha= (float)(mxGetScalar(prhs[1]));
+        maxIter=(int)floor(mxGetScalar(prhs[2])+0.5);
+    } else {
+       mexErrMsgIdAndTxt("err", "Too many imput argumets");
     }
-    ////////////////////////// First input.
+    float delta=(float)(mxGetScalar(prhs[3]));
+////////////////////////// First input.
     // First input should be x from (Ax=b), or the image.
     mxArray const * const image = prhs[0];
     mwSize const numDims = mxGetNumberOfDimensions(image);
+    mwSize third_dim = 1;
     
-    // Image should be dim 3
-    if (numDims!=3){
-        mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising", "Image is not 3D");
-    }
     // Now that input is ok, parse it to C data types.
     float  *  img = static_cast<float  *>(mxGetData(image));
-    // We need a float image, and, unfortunatedly, the only way of casting it is by value
     const mwSize *size_img= mxGetDimensions(image); //get size of image
-    
-    //////////////
-    //prepareotputs
-    plhs[0] = mxCreateNumericArray(3,size_img, mxSINGLE_CLASS, mxREAL);
-    float *imgout =(float*) mxGetPr(plhs[0]);
-    // Allocte output image
-    // call C function with the CUDA denoising
-    const float spacing[3]={1,1,1};
-    const long imageSize[3]={size_img[0] ,size_img[1],size_img[2] };
-   
-    tvdenoising(img,imgout, lambda, spacing, imageSize, maxIter, gpuids); 
-    
-    
-    
-//     memcpy(mxImgout,imgout,size_img[0] *size_img[1] *size_img[2]*sizeof(float));
-    //free memory
-//     free(img);
-//     free(imgout);
-     
 
+    // Image should be dim 3
+    if (numDims==3){
+        third_dim = size_img[2];
+    }
+    
+    // Allocte output image
+    plhs[0] = mxCreateNumericArray(numDims, size_img, mxSINGLE_CLASS, mxREAL);
+    float *imgout =(float*) mxGetPr(plhs[0]);
+    // call C function with the CUDA denoising
+  
+    const long imageSize[3]={size_img[0], size_img[1], third_dim };
+    
+    aw_pocs_tv(img,imgout, alpha, imageSize, maxIter, delta, gpuids); 
+    
+    //prepareotputs
 }

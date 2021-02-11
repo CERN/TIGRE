@@ -39,7 +39,7 @@
           COMPDEFINES="--compiler-options=/D_CRT_SECURE_NO_DEPRECATE,/D_SCL_SECURE_NO_DEPRECATE,/D_SECURE_SCL=0,$MATLABMEX"
           MATLABMEX="/DMATLAB_MEX_FILE"
           OPTIMFLAGS="--compiler-options=/O2,/Oy-,/DNDEBUG"
-          INCLUDE="-I&quot;$MATLABROOT\extern\include&quot; -I&quot;$MATLABROOT\simulink\include&quot;"
+          INCLUDE="-I&quot;$MATLABROOT\extern\include&quot; -I&quot;$MATLABROOT\simulink\include&quot; -I&quot;..\Common&quot;"
           DEBUGFLAGS="--compiler-options=/Z7"
 
           LINKER="link"

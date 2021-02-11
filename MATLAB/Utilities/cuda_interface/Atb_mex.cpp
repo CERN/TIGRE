@@ -48,16 +48,15 @@
 
 
 
-#include "tmwtypes.h"
-#include "mex.h"
-#include "matrix.h"
-#include "voxel_backprojection.hpp"
-#include "voxel_backprojection2.hpp"
-#include <string.h>
-#include "voxel_backprojection_parallel.hpp"
 #include <math.h>
-// #include <time.h>
-#include "GpuIds.hpp"
+#include <string.h>
+#include <tmwtypes.h>
+#include <mex.h>
+#include <matrix.h>
+#include <CUDA/voxel_backprojection.hpp>
+#include <CUDA/voxel_backprojection2.hpp>
+#include <CUDA/voxel_backprojection_parallel.hpp>
+#include <CUDA/GpuIds.hpp>
 
 
 
@@ -366,5 +365,3 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     return;
 }
-
-

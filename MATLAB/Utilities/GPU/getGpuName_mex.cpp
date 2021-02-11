@@ -1,5 +1,5 @@
-#include "mex.h"
-#include "../../Source/gpuUtils.hpp"
+#include <mex.h>
+#include <CUDA/gpuUtils.hpp>
 
 void mexFunction(int  nlhs , mxArray *plhs[],
         int nrhs, mxArray const *prhs[])
