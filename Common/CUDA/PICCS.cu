@@ -254,7 +254,7 @@ do { \
     
     
 // main function
- void piccs_tv(const float* img,const float* prior, float* dst,float alpha,float ratio, const long* image_size, int maxIter){
+ void piccs_tv(const float* img,const float* prior, float* dst,float alpha,float ratio, const long* image_size, int maxIter, const GpuIds& gpuids){
         
     
         size_t total_pixels = image_size[0] * image_size[1]  * image_size[2] ;

@@ -25,7 +25,7 @@ else
     gpuids = GpuIds();
 end
 
-img=minPICCS(img,prior,dtvg,ng,ratio);
+img=minPICCS(img,prior,dtvg,ng,ratio,gpuids.devices);
 
 end
 

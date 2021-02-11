@@ -55,6 +55,8 @@ Codes  : https://github.com/CERN/TIGRE
 #include <math.h>
 #include <matrix.h>
 #include <CUDA/PICCS.hpp>
+#include <CUDA/GpuIds.hpp>
+#include <CUDA/gpuUtils.hpp>
 #include <string.h>
 // #include <time.h>
 void mexFunction(int  nlhs , mxArray *plhs[],
@@ -64,20 +66,13 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     int maxIter;
     float alpha;
     float ratio;
-    if (nrhs<2)
+    GpuIds gpuids;
+    if (nrhs<5)
         mexErrMsgIdAndTxt("TIGRE:minPICCS", "At least 2 inputs needed: Image and prior image");
-    if (nrhs==2){
-        maxIter=100;
-        alpha=15.0f;
-        ratio=0.5;
-    }
-    if (nrhs>2 && nrhs<5){
-       mexErrMsgIdAndTxt("TIGRE:minPICCS", "Only 1 PICCS hyperparemter inputed");
-    }
-    if (nrhs>5){
+    if (nrhs>6){
        mexErrMsgIdAndTxt("TIGRE:minPICCS", "Too many imput argumets");
     }
-    if (nrhs==5){
+    if (nrhs==6){
      size_t mrows = mxGetM(prhs[2]);
      size_t ncols = mxGetN(prhs[2]);
      if (mrows!=1 || ncols !=1)
@@ -93,7 +88,29 @@ void mexFunction(int  nlhs , mxArray *plhs[],
      alpha= (float)(mxGetScalar(prhs[2]));
      maxIter=(int)floor(mxGetScalar(prhs[3])+0.5);
      ratio= (float)(mxGetScalar(prhs[4]));
+     
+     size_t uiGpuCount = mxGetN(prhs[5]);
+        if (uiGpuCount == 0) {
+            mexErrMsgIdAndTxt( "TIGRE:minPICCS","6th parameter must be a row vector");
+            return;
+        }
+        int* piGpuIds = (int*)mxGetData(prhs[5]);
+        gpuids.SetIds(uiGpuCount, piGpuIds);
+    }else{
+        int iGpuCount = GetGpuCount();
+        int* piDev = (int*)malloc(iGpuCount * sizeof(int));
+        for (int iI = 0; iI < iGpuCount; ++iI) {
+            piDev[iI] = iI;
+        }
+        gpuids.SetIds(iGpuCount, piDev);
+        free(piDev); piDev = 0;
     }
+    if (nrhs==2){
+        maxIter=100;
+        alpha=15.0f;
+        ratio=0.5;
+    }
+        
     
 ////////////////////////// First input.
     // First input should be x from (Ax=b), or the image.
@@ -123,7 +140,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     float *imgout =(float*) mxGetPr(plhs[0]);
     
     
-    piccs_tv(img,prior,imgout, alpha,ratio, imageSize, maxIter); 
+    piccs_tv(img,prior,imgout, alpha,ratio, imageSize, maxIter,gpuids); 
     
 
     
