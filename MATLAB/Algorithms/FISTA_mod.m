@@ -75,8 +75,8 @@ for ii = 1:niter
     if (ii==1)&&(verbose==1)
         expected_time=toc*niter;
         disp('FISTA_mod');
-        disp(['Expected duration  :    ',secs2hms(expected_time)]);
-        disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
+        disp(['Expected duration   :    ',secs2hms(expected_time)]);
+        disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
     end
     
