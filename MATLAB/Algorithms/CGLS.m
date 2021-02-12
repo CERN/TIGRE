@@ -87,8 +87,8 @@ for ii=1:niter
      if (ii==1 && verbose)
         expected_time=toc*niter;   
         disp('CGLS');
-        disp(['Expected duration  :    ',secs2hms(expected_time)]);
-        disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);   
+        disp(['Expected duration   :    ',secs2hms(expected_time)]);
+        disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);   
         disp('');
      end
 end
