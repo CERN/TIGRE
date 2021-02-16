@@ -48,7 +48,7 @@
 % change the image parameters, but the detector parameters should stay the
 % same unless you change the projections. 
 
-directory='~/your_data_path/varian/2020-01-01_123456/';
+datafolder='~/your_data_path/varian/2020-01-01_123456/';
 [proj,geo, angles ] = VarianDataLoader(datafolder);
 [proj,geo, angles ] = VarianDataLoader(datafolder, false); %remove motion lag correction.
 
@@ -61,7 +61,7 @@ img=FDK(proj,geo,angles);
 
 % Similarly, a Nikon dataset can be loaded with the following code:
 
-directory='~/your_data_path/Nikon/Sample_name/';
+datafolder='~/your_data_path/Nikon/Sample_name/';
 [proj,geo, angles ] = NikonDataLoader(datafolder);
 
 % as micro-CT datasets are large, optional arguments for loading partial
@@ -83,7 +83,7 @@ img=FDK(proj,geo,angles);
 
 % As with the other loaders, this can be simply done with:
 
-directory='~/your_data_path/Dicom/Some_folder/';
+datafolder='~/your_data_path/Dicom/Some_folder/';
 [proj,geo, angles,dicomhdr] = dicomDataLoader(datafolder);
 
 %This also returns the headers for DICOM files, so you can inspect them
