@@ -3,7 +3,6 @@ import numpy as np
 
 
 class TIGREParameters:
-
     def __init__(self, high_quality=True):
         if high_quality:
             # VARIABLE                                          DESCRIPTION                    UNITS
@@ -48,6 +47,7 @@ class TIGREParameters:
             # Mode
             self.mode=None                                      # parallel, cone                ...
             self.filter=None
+
     def __str__(self):
         parameters = []
         parameters.append("TIGRE parameters")
@@ -76,4 +76,4 @@ class TIGREParameters:
         parameters.append("Auxillary parameters")
         parameters.append("Accuracy of forward projection = " + str(self.accuracy))
 
-        return '\n'.join(parameters)
+        return "\n".join(parameters)

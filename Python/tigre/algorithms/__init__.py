@@ -14,16 +14,18 @@ from .ista_algorithms import fista
 from .ista_algorithms import ista
 from .statistical_algorithms import mlem
 
-__all__ = ['sart',
-           'sirt',
-           'ossart',
-           'ossart_tv',
-           'iterativereconalg',
-           'FDK',
-           'asd_pocs',
-           'awasd_pocs',
-           'fbp',
-           'cgls',
-           'fista',
-           'ista',
-           'mlem']
+__all__ = [
+    "sart",
+    "sirt",
+    "ossart",
+    "ossart_tv",
+    "iterativereconalg",
+    "FDK",
+    "asd_pocs",
+    "awasd_pocs",
+    "fbp",
+    "cgls",
+    "fista",
+    "ista",
+    "mlem",
+]

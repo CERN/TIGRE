@@ -3,15 +3,20 @@ import numpy as np
 import copy
 from .gpu import GpuIds
 
+
 def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
 
     if img.dtype != np.float32:
-        raise TypeError("Input data should be float32, not "+ str(img.dtype))
+        raise TypeError("Input data should be float32, not " + str(img.dtype))
     if not np.isreal(img).all():
         raise ValueError("Complex types not compatible for projection.")
     if any(img.shape != geo.nVoxel):
-        raise ValueError("Input data should be of shape geo.nVoxel: "+ str(geo.nVoxel) +
-                         " not:" + str(img.shape))
+        raise ValueError(
+            "Input data should be of shape geo.nVoxel: "
+            + str(geo.nVoxel)
+            + " not:"
+            + str(img.shape)
+        )
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
     """
@@ -20,11 +25,11 @@ def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
     single parameters accordingly. 
     """
     geox.cast_to_single()
-    #geox.checknans()
+    # geox.checknans()
 
-    if not 'gpuids' in kwargs or kwargs['gpuids'] is None:
+    if not "gpuids" in kwargs or kwargs["gpuids"] is None:
         gpuids = GpuIds()
     else:
-        gpuids = kwargs['gpuids']
+        gpuids = kwargs["gpuids"]
 
     return _Ax_ext(img, geox, geox.angles, projection_type, geox.mode, gpuids=gpuids)

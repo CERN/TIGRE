@@ -2,7 +2,7 @@
 max-line-length=100
 docstring-convention=all
 import-order-style=pycharm
-allow-untyped-defs=True  # Allowed to support gradual typing
+allow-untyped-defs=true
 ignore=
     P102,B311,W503,E226,S311,
     # Missing Docstrings

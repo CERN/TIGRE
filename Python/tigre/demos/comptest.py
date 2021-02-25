@@ -8,17 +8,15 @@ from tigre.utilities.plotproj import ppslice
 from tigre.utilities.plotproj import plotproj
 
 geo = geometry.ConeGeometryDefault(high_quality=False)
-geo.mode = 'cone'
+geo.mode = "cone"
 geo.COR = None
 source_img = data_loader.load_head_phantom(number_of_voxels=geo.nVoxel)
-angles = np.linspace(0, 2*np.pi, 100, dtype=np.float32)
+angles = np.linspace(0, 2 * np.pi, 100, dtype=np.float32)
 
-projsirt = Ax(source_img, geo, angles, 'Siddon')
+projsirt = Ax(source_img, geo, angles, "Siddon")
 plotproj(projsirt)
-#fdk=FDK(projsirt,geo,angles)
+# fdk=FDK(projsirt,geo,angles)
 # blocksize=input('blocksize:')
 niter = 5
 # sart=SART(projsirt,geo,angles,niter,init='multigrid',OrderStrategy='angularDistance')
 ppslice(projsirt)
-
-

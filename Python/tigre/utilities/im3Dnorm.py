@@ -1,7 +1,8 @@
 import numpy as np
 
-def im3DNORM(img,normind,varargin=None):
-    '''
+
+def im3DNORM(img, normind, varargin=None):
+    """
     % IMAGE3DNORM computes the desired image norm
     %   IMAGE3DNORM(IMG,NORMIND) computes the norm of image IMG using the norm
     %   defined in NORMIND
@@ -27,14 +28,13 @@ def im3DNORM(img,normind,varargin=None):
     % Codes:              https://github.com/CERN/TIGRE/
     % Coded by:           Ander Biguri
     %--------------------------------------------------------------------------
-    '''
+    """
 
-    if normind is [np.inf,-np.inf,'fro','nuc']:
-        return np.linalg.norm(img.ravel(),normind)
+    if normind is [np.inf, -np.inf, "fro", "nuc"]:
+        return np.linalg.norm(img.ravel(), normind)
     if type(normind) is int:
-        return np.linalg.norm(img.ravel(),normind)
-    if normind == 'TV':
-        gx,gy,gz = np.diff(img, axis=2), np.diff(img,axis=1), np.diff(img,axis=0)
-        g = np.sum(np.sqrt(gx*gx + gy*gy + gz*gz))
+        return np.linalg.norm(img.ravel(), normind)
+    if normind == "TV":
+        gx, gy, gz = np.diff(img, axis=2), np.diff(img, axis=1), np.diff(img, axis=0)
+        g = np.sum(np.sqrt(gx * gx + gy * gy + gz * gz))
         return g
-

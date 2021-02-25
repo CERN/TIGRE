@@ -1,4 +1,6 @@
 import os
+
+
 def test():
     """
     Function only outputs to terminal but gives good coverage of
@@ -14,7 +16,7 @@ def test():
     """
     dirname = os.path.dirname(__file__)
     for filename in os.listdir(dirname):
-        if filename.startswith('d0'):
+        if filename.startswith("d0"):
             """
             cmd = ['jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=60 ' +
                       os.path.join(dirname,filename)]
@@ -22,13 +24,16 @@ def test():
             output=subprocess.Popen(cmd, stdout=subprocess.PIPE,shell=True).communicate()[0]
             nb = nbformat.read(output, nbformat.current_nbformat)
             """
-            os.system('jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=60 ' +
-                      os.path.join(dirname,filename))
+            os.system(
+                "jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=60 "
+                + os.path.join(dirname, filename)
+            )
 
     cleanup()
+
 
 def cleanup():
     dirname = os.path.dirname(__file__)
     for filename in os.listdir(dirname):
-        if filename.endswith('nbconvert.ipynb'):
-            os.system('rm ' + os.path.join(dirname,filename))
+        if filename.endswith("nbconvert.ipynb"):
+            os.system("rm " + os.path.join(dirname, filename))

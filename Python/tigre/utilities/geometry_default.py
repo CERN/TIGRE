@@ -27,7 +27,7 @@ class ConeGeometryDefault(Geometry):
             # Auxiliary
             self.accuracy = 0.5                                 # Accuracy of FWD proj          (vx/sample)
             # Mode
-            self.mode = 'cone'                                  # parallel, cone                ...
+            self.mode = "cone"                                  # parallel, cone                ...
             self.filter = None
         else:
             # VARIABLE                                          DESCRIPTION                    UNITS
@@ -49,7 +49,7 @@ class ConeGeometryDefault(Geometry):
             # Auxiliary
             self.accuracy = 0.5                                 # Accuracy of FWD proj          (vx/sample)
             # Mode
-            self.mode='cone'                                    # parallel, cone                ...
+            self.mode="cone"                                    # parallel, cone                ...
             self.filter=None
         if nVoxel is not None:
             # VARIABLE                                          DESCRIPTION                    UNITS
@@ -57,9 +57,7 @@ class ConeGeometryDefault(Geometry):
             self.DSD = 1536                                     # Distance Source Detector      (mm)
             self.DSO = 1000                                     # Distance Source Origin        (mm)
                                                                 # Detector parameters
-            self.nDetector = np.array((nVoxel[1],
-                                       nVoxel[2])
-                                                                ) # (V,U) number of pixels        (px)
+            self.nDetector = np.array((nVoxel[1], nVoxel[2]))   # (V,U) number of pixels        (px)
             self.dDetector = np.array([0.8, 0.8])               # size of each pixel            (mm)
             self.sDetector = self.dDetector * self.nDetector    # total size of the detector    (mm)
                                                                 # Image parameters
@@ -73,4 +71,4 @@ class ConeGeometryDefault(Geometry):
             # Auxiliary
             self.accuracy = 0.5                                 # Accuracy of FWD proj          (vx/sample)
             # Mode
-            self.mode = 'cone'                                  # parallel, cone
+            self.mode = "cone"                                  # parallel, cone
