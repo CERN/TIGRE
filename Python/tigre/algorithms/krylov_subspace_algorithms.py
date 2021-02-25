@@ -1,13 +1,13 @@
 from __future__ import division
+
+import time
+
 import numpy as np
 import tigre
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
-from tigre.utilities.Ax import Ax
 from tigre.utilities.Atb import Atb
-import time
-import os
-import math
+from tigre.utilities.Ax import Ax
 
 
 if hasattr(time, "perf_counter"):

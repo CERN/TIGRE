@@ -7,15 +7,15 @@ rootDir = os.path.abspath(os.path.join(currDir, ".."))
 if rootDir not in sys.path:  # add parent dir to paths
     sys.path.append(rootDir)
 
-import numpy as np
-import tigre.geometry_default as geometry
 import Test_data.data_loader as data_loader
+import numpy as np
 import scipy.io
+import tigre.geometry_default as geometry
+from _Ax import Ax
 from tigre.utilities.plotproj import plotproj
 
-from _Ax import Ax
-
 TIGRE_parameters = geometry(high_quality=False)
+
 
 head = data_loader.load_head_phantom(number_of_voxels=TIGRE_parameters.nVoxel)
 

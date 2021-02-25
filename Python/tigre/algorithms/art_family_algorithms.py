@@ -1,8 +1,9 @@
+import copy
+import time
+
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.utilities.im_3d_denoise import im3ddenoise
-import time
-import copy
 
 
 if hasattr(time, "perf_counter"):

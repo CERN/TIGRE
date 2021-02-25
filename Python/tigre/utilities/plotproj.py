@@ -1,8 +1,9 @@
 from __future__ import print_function
-import matplotlib.pyplot as plt
+
 import matplotlib.animation as animation
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.pyplot as plt
 import numpy as np
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def plotproj(projections):
     plt.ion()
@@ -179,4 +180,3 @@ def plotSinogram(proj, posV):
     posV : integer. in range of 0:proj.shape[1].
     '''
     plotProj(proj, dim='V', slice=posV)
-

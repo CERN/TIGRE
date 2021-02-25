@@ -1,8 +1,9 @@
 from __future__ import division
-from matplotlib import pyplot as plt
+
 import matplotlib.animation as animation
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
+from matplotlib import pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 class plotImg:

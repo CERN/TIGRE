@@ -1,5 +1,7 @@
 from __future__ import division
+
 import os
+
 import numpy as np
 import scipy.io
 import scipy.ndimage.interpolation

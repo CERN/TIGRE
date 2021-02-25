@@ -1,9 +1,10 @@
-from __future__ import print_function
 from __future__ import division
-from tigre.utilities.parkerweight import parkerweight
-import numpy as np
+from __future__ import print_function
 
 import warnings
+
+import numpy as np
+from tigre.utilities.parkerweight import parkerweight
 
 # TODO: Fix parker
 def filtering(proj, geo, angles, parker, verbose=False):

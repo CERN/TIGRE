@@ -1,6 +1,8 @@
-from _Atb import _Atb_ext
-import numpy as np
 import copy
+
+import numpy as np
+from _Atb import _Atb_ext
+
 from .gpu import GpuIds
 
 

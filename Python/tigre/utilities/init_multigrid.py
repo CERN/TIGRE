@@ -1,7 +1,7 @@
-from scipy.interpolate import RegularGridInterpolator as rgi
-from numpy.lib.stride_tricks import as_strided
 import numpy as np
 import tigre
+from numpy.lib.stride_tricks import as_strided
+from scipy.interpolate import RegularGridInterpolator as rgi
 
 
 def init_multigrid(proj, geo, alpha, alg):

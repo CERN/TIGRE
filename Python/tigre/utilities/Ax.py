@@ -1,6 +1,8 @@
-from _Ax import _Ax_ext
-import numpy as np
 import copy
+
+import numpy as np
+from _Ax import _Ax_ext
+
 from .gpu import GpuIds
 
 

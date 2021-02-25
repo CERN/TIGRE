@@ -1,17 +1,18 @@
 from __future__ import division
 
+import copy
+import time
+
 import numpy as np
-from tigre.utilities.Ax import Ax
+from _AwminTV import AwminTV
+from _minTV import minTV
+from tigre.algorithms.single_pass_algorithms import FDK
 from tigre.utilities.Atb import Atb
-from tigre.utilities.order_subsets import order_subsets
-from tigre.utilities.init_multigrid import init_multigrid
+from tigre.utilities.Ax import Ax
 from tigre.utilities.Measure_Quality import Measure_Quality as MQ
 from tigre.utilities.im3Dnorm import im3DNORM
-from tigre.algorithms.single_pass_algorithms import FDK
-from _minTV import minTV
-from _AwminTV import AwminTV
-import time
-import copy
+from tigre.utilities.init_multigrid import init_multigrid
+from tigre.utilities.order_subsets import order_subsets
 
 """
 This module is where the umbrella class IterativeReconAlg is located

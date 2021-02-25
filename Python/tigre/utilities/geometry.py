@@ -1,10 +1,11 @@
 from __future__ import division
 from __future__ import print_function
+
+import inspect
+
 import numpy as np
 import numpy.matlib as matlib
-import inspect
 import tigre
-import math
 
 
 class Geometry(object):

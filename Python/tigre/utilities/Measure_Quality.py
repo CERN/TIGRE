@@ -16,10 +16,11 @@
                       Python: Reuben Lindroos
 %--------------------------------------------------------------------------
 """
-
 from __future__ import division
-import numpy as np
+
 from functools import reduce
+
+import numpy as np
 
 
 def Measure_Quality(res_prev, res, QualMeasOpts):

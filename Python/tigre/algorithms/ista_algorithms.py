@@ -1,12 +1,13 @@
 from __future__ import division
+
+import copy
+import time
+
 import numpy as np
 import tigre
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
-import time
 from tigre.utilities.im_3d_denoise import im3ddenoise
-from tigre.algorithms.single_pass_algorithms import FDK
-import copy
 
 
 if hasattr(time, "perf_counter"):

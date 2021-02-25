@@ -1,11 +1,12 @@
 from __future__ import print_function
 
+import Test_data.data_loader as data_loader
 import numpy as np
 import tigre.utilities.geometry_default as geometry
-import Test_data.data_loader as data_loader
 from tigre.utilities.Ax import Ax
-from tigre.utilities.plotproj import ppslice
 from tigre.utilities.plotproj import plotproj
+from tigre.utilities.plotproj import ppslice
+
 
 geo = geometry.ConeGeometryDefault(high_quality=False)
 geo.mode = "cone"
