@@ -413,6 +413,18 @@ setup(name='pytigre',
                         'matplotlib',
                         'numpy',
                         'scipy'],
+      extras_require={
+          "lint": [
+              "black",
+              "flake8",
+              "flake8-annotations",
+              "flake8-bugbear",
+              "flake8-docstrings",
+              "flake8-import-order",
+              "pep8-naming",
+              "pre-commit",
+          ]
+      },
       license_file='LICENSE.txt',
       license='BSD 3-Clause',
       # since the package has c code, the egg cannot be zipped
