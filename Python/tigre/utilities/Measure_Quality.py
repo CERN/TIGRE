@@ -23,9 +23,8 @@ from functools import reduce
 import numpy as np
 
 
-def Measure_Quality(res_prev, res, QualMeasOpts):
+def Measure_Quality(res_prev, res, QualMeasOpts):  # noqa: N803
     """
-
     :param res_prev: (np.ndarray)
         object being compared to
     :param res: (np.ndarray)
@@ -59,7 +58,7 @@ def Measure_Quality(res_prev, res, QualMeasOpts):
 
         K1 = 0.01  # K1 is a small constant <<1
         d = np.max(res_prev) - np.min(res_prev)  # dynamic range of the pixel values
-        l = ((2 * mean_res * mean_res_p) + (K1 * d) ** 2) / (
+        l = ((2 * mean_res * mean_res_p) + (K1 * d) ** 2) / (  # noqa: E741
             (mean_res_p ** 2) + (mean_res ** 2) + K1 * d ** 2
         )
 

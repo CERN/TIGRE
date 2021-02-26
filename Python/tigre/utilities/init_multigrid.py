@@ -1,7 +1,7 @@
 import numpy as np
 import tigre
 from numpy.lib.stride_tricks import as_strided
-from scipy.interpolate import RegularGridInterpolator as rgi
+from scipy.interpolate import RegularGridInterpolator
 
 
 def init_multigrid(proj, geo, alpha, alg):
@@ -46,7 +46,7 @@ def init_multigrid(proj, geo, alpha, alg):
             tile_array(tile_array(x, 2), geo.nVoxel[0] ** 2),
         ]
 
-        initres = rgi((x, y, z), initres)(np.column_stack((xv, yv, zv)))
+        initres = RegularGridInterpolator((x, y, z), initres)(np.column_stack((xv, yv, zv)))
         initres = initres.reshape(geo.nVoxel)
 
     return initres

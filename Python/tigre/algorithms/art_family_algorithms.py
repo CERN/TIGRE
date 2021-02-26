@@ -46,7 +46,7 @@ class SIRT(IterativeReconAlg):  # noqa: D101
 sirt = decorator(SIRT, name="sirt")
 
 
-class OS_SART(IterativeReconAlg):  # noqa: D101
+class OS_SART(IterativeReconAlg):  # noqa: D101, N801
     __doc__ = (
         "OS_SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
         "Simultaneous Algebraic Reconxtruction Techique algorithm\n"
@@ -62,7 +62,7 @@ class OS_SART(IterativeReconAlg):  # noqa: D101
 ossart = decorator(OS_SART, name="ossart")
 
 
-class OS_SART_TV(IterativeReconAlg):  # noqa: D101
+class OS_SART_TV(IterativeReconAlg):  # noqa: D101, N801
     __doc__ = (
         "OS_SART_TV_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
         "Simultaneous Algebraic Reconxtruction Techique algorithm\n"

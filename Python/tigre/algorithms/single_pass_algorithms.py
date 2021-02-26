@@ -12,10 +12,10 @@ from tigre.utilities.filtering import filtering
 
 # TODO: this is quite nasty; it would be nice to reorganise file structure
 # later so top level folder is always in path
-currDir = os.path.dirname(os.path.realpath(__file__))
-rootDir = os.path.abspath(os.path.join(currDir, ".."))
-if rootDir not in sys.path:  # add parent dir to paths
-    sys.path.append(rootDir)
+curr_dir = os.path.dirname(os.path.realpath(__file__))
+root_dir = os.path.abspath(os.path.join(curr_dir, ".."))
+if root_dir not in sys.path:  # add parent dir to paths
+    sys.path.append(root_dir)
 
 
 def FDK(proj, geo, angles, **kwargs):

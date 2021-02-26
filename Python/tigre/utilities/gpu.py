@@ -21,7 +21,7 @@ class GpuIds(object):
     ```
     """
 
-    def __init__(self, nameGPU=None):
+    def __init__(self, nameGPU=None):  # noqa: N803
         if nameGPU is None:
             self.name = ""
         else:
@@ -49,7 +49,7 @@ def getGpuNames():
 #     return gpuUtils.getGpuCount()
 
 
-def getGpuIds(gpuName=None):
+def getGpuIds(gpuName=None):  # noqa: N803
     """Returns the GpuIds object, which contains the IDs of devices whose name matches gpuName."""
     gpuids = GpuIds(gpuName)
     return gpuids

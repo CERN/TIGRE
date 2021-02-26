@@ -6,6 +6,7 @@ import warnings
 import numpy as np
 from tigre.utilities.parkerweight import parkerweight
 
+
 # TODO: Fix parker
 def filtering(proj, geo, angles, parker, verbose=False):
     if parker:
@@ -20,7 +21,7 @@ def filtering(proj, geo, angles, parker, verbose=False):
     for i in range(angles.shape[0]):
         fproj = np.zeros((geo.nDetector[0], filt_len), dtype=np.float32)
         fproj[
-            :, int(filt_len / 2 - geo.nDetector[1] / 2) : int(filt_len / 2 + geo.nDetector[1] / 2)
+            :, int(filt_len / 2 - geo.nDetector[1] / 2):int(filt_len / 2 + geo.nDetector[1] / 2)
         ] = proj[i]
         fproj = np.fft.fft(fproj, axis=1)
 
@@ -28,15 +29,8 @@ def filtering(proj, geo, angles, parker, verbose=False):
 
         fproj = np.real(np.fft.ifft(fproj, axis=1))
         proj[i] = (
-            fproj[
-                :,
-                int(filt_len / 2 - geo.nDetector[1] / 2) : int(filt_len / 2 + geo.nDetector[1] / 2),
-            ]
-            / 2
-            / geo.dDetector[0]
-            * (2 * np.pi / len(angles))
-            / 2
-            * (geo.DSD[0] / geo.DSO[0])
+            fproj[:, int(filt_len / 2 - geo.nDetector[1] / 2):int(filt_len / 2 + geo.nDetector[1] / 2)]  # noqa: E501
+            / 2 / geo.dDetector[0] * (2 * np.pi / len(angles)) / 2 * (geo.DSD[0] / geo.DSO[0])
         )
 
     return proj

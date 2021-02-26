@@ -27,7 +27,7 @@ def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
     geox.cast_to_single()
     # geox.checknans()
 
-    if not "gpuids" in kwargs or kwargs["gpuids"] is None:
+    if kwargs.get("gpuids", None) is None:
         gpuids = GpuIds()
     else:
         gpuids = kwargs["gpuids"]

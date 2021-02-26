@@ -6,10 +6,10 @@ from matplotlib import pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
-class plotImg:
+class plotImg:  # noqa: N801
     """
-    plotImg(cube, dim) 
-        plots figure 
+    plotImg(cube, dim)
+        plots figure
     default: progressive in slices following
         axis (dim)
 
@@ -29,7 +29,7 @@ class plotImg:
         Step is 1 by default.
 
     savegif: string, optional
-            Saves the image as .gif with the file name
+        Saves the image as .gif with the file name
 
     Examples:
     ---------
@@ -49,10 +49,10 @@ class plotImg:
         self.dimlist = ['X', 'Y', 'Z', 'x', 'y', 'z', None]  # accepted parameters for dim
         self.step = step
         self.savegif = savegif
-        if self.step is None or self.step==0:
-            self.step=1
-        if self.savegif=='':
-            self.savegif == None
+        if self.step is None or self.step == 0:
+            self.step = 1
+        if self.savegif == '':
+            self.savegif = None
         if self.slice is None:
             self.run()
         if self.slice is not None:

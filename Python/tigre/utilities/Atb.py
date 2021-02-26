@@ -7,7 +7,6 @@ from .gpu import GpuIds
 
 
 def Atb(projections, geo, angles, krylov="matched", **kwargs):
-
     if projections.dtype != np.float32:
         raise TypeError("Input data should be float32, not " + str(projections.dtype))
     if not np.isreal(projections).all():
@@ -29,7 +28,7 @@ def Atb(projections, geo, angles, krylov="matched", **kwargs):
             + str(projections.shape)
         )
 
-    if not "gpuids" in kwargs or kwargs["gpuids"] is None:
+    if kwargs.get("gpuids", None) is None:
         gpuids = GpuIds()
     else:
         gpuids = kwargs["gpuids"]

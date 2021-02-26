@@ -25,12 +25,11 @@ class Geometry(object):
             if angles.shape[1] != 3:
                 raise BufferError("Expected angles of dimensions (n, 3), got: " + str(angles.shape))
             self.n_proj = angles.shape[0]
-            angles = angles.copy()
-            setattr(self, "angles", angles)
+            self.angles = angles.copy()
         else:
             raise BufferError("Unexpected angles shape: " + str(angles.shape))
         if self.mode is None:
-            setattr(self, "mode", "cone")
+            self.mode = "cone"
 
         manditory_attribs = [
             "nVoxel",
@@ -49,7 +48,7 @@ class Geometry(object):
                 "missing from geometry:"
                 + str([attrib for attrib in manditory_attribs if not hasattr(self, attrib)])
             )
-        optional_attribs = ["offOrigin", "offDetector", "rotDetector", "COR", "mode", "accuracy"]
+        # optional_attribs = ["offOrigin", "offDetector", "rotDetector", "COR", "mode", "accuracy"]
 
         # image data
         if not self.nVoxel.shape == (3,):
@@ -137,7 +136,7 @@ class Geometry(object):
 
         elif type(old_attrib) == np.ndarray:
             if old_attrib.ndim == 1:
-                if old_attrib.shape in [(3,), (2,)] and not attrib in ["DSD", "DSO", "COR"]:
+                if old_attrib.shape in [(3,), (2,)] and attrib not in ["DSD", "DSO", "COR"]:
                     new_attrib = matlib.repmat(old_attrib, angles.shape[0], 1)
                     setattr(self, attrib, new_attrib)
                 elif old_attrib.shape in [(1,)]:
@@ -251,7 +250,7 @@ class Geometry(object):
 
 
 class ParallelGeo(Geometry):
-    def __init__(self, nVoxel):
+    def __init__(self, nVoxel):  # noqa: N803
         if nVoxel is None:
             raise ValueError("nVoxel needs to be given for initialisation of parallel beam")
         Geometry.__init__(self)
@@ -279,7 +278,7 @@ class ParallelGeo(Geometry):
         self.rotDetector = np.array([0, 0, 0])
 
 
-def geometry(mode="cone", nVoxel=None, default=False, high_quality=True):
+def geometry(mode="cone", nVoxel=None, default=False, high_quality=True):  # noqa: N803
     """
     Constructor for geometry used in reconstruction of images in TIGRE
 

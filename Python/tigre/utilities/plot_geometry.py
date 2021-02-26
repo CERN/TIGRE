@@ -1,5 +1,7 @@
 import matplotlib.patches
 import numpy as np
+import tigre
+from mpl_toolkits.mplot3d import art3d
 
 # https://matplotlib.org/mpl_toolkits/mplot3d/tutorial.html
 
@@ -18,16 +20,16 @@ class Arrow3D(matplotlib.patches.FancyArrowPatch):
         matplotlib.patches.FancyArrowPatch.draw(self, renderer)
 
 
-def pathpatch_2d_to_3d_affine(
-    pathpatch, mat_rot=np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]), vec_trans=np.array([0, 0, 0])
-):
+ROT_DEFAULT = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+TRANS_DEFAULT = np.array([0, 0, 0])
+
+
+def pathpatch_2d_to_3d_affine(pathpatch, mat_rot=ROT_DEFAULT, vec_trans=TRANS_DEFAULT):
     """
     Transforms a 2D Patch to a 3D patch using the affine tranform
     of the given rotation matrix and translation vector.
     The pathpatch is assumed to be on the plane Z = 0.
     """
-    import mpl_toolkits.mplot3d.art3d as art3d
-
     path = pathpatch.get_path()  # Get the path and the associated transform
     trans = pathpatch.get_patch_transform()
 
@@ -211,24 +213,25 @@ def plot_geometry(geo, angle=0):
 
 
 if __name__ == "__main__":
-    nVoxelZ = 128
-    nVoxelY = 256
-    nVoxelX = 512
-    nDetectorU = 400
-    nDetectorV = 300
-    offDetectorU = 0  # 500
-    offDetectorV = 0  # 500
-    offOriginX = 0  # 300
-    offOriginY = 0  # 100
-    offOriginZ = 0  # 100
+    n_voxel_z = 128
+    n_voxel_y = 256
+    n_voxel_x = 512
+    n_detector_u = 400
+    n_detector_v = 300
+    off_detector_u = 0  # 500
+    off_detector_v = 0  # 500
+    off_origin_x = 0  # 300
+    off_origin_y = 0  # 100
+    off_origin_z = 0  # 100
+
     geo = tigre.geometry(mode="cone", default=True)
-    geo.nVoxel = np.array([nVoxelZ, nVoxelY, nVoxelX])
+    geo.nVoxel = np.array([n_voxel_z, n_voxel_y, n_voxel_x])
     geo.sVoxel = geo.nVoxel
     geo.dVoxel = geo.sVoxel / geo.nVoxel
-    geo.nDetector = np.array([nDetectorV, nDetectorU])
+    geo.nDetector = np.array([n_detector_v, n_detector_u])
     geo.sDetector = geo.nDetector * geo.dDetector
-    geo.offDetector = np.array([offDetectorV, offDetectorU])
-    geo.offOrigin = np.array([offOriginZ, offOriginY, offOriginX])
+    geo.offDetector = np.array([off_detector_v, off_detector_u])
+    geo.offOrigin = np.array([off_origin_z, off_origin_y, off_origin_x])
     print(geo)
     angle = -np.pi / 6
     plot_geometry(geo, angle)

@@ -17,7 +17,7 @@ else:
     default_timer = time.clock
 
 
-class ASD_POCS(IterativeReconAlg):
+class ASD_POCS(IterativeReconAlg):  # noqa: N801
     """
     ASD_POCS solves the ASD_POCS total variation constrained image in 3D
     tomography
@@ -183,7 +183,7 @@ class ASD_POCS(IterativeReconAlg):
 asd_pocs = decorator(ASD_POCS, name="asd_pocs")
 
 
-class AwASD_POCS(ASD_POCS):  # noqa: D101
+class AwASD_POCS(ASD_POCS):  # noqa: D101, N801
     __doc__ = ASD_POCS.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):

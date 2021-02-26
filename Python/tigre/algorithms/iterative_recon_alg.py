@@ -9,7 +9,7 @@ from _minTV import minTV
 from tigre.algorithms.single_pass_algorithms import FDK
 from tigre.utilities.Atb import Atb
 from tigre.utilities.Ax import Ax
-from tigre.utilities.Measure_Quality import Measure_Quality as MQ
+from tigre.utilities.Measure_Quality import Measure_Quality
 from tigre.utilities.im3Dnorm import im3DNORM
 from tigre.utilities.init_multigrid import init_multigrid
 from tigre.utilities.order_subsets import order_subsets
@@ -174,12 +174,12 @@ class IterativeReconAlg(object):
                         print(
                             "Warning: "
                             + kw
-                            + " not recognised as default parameter for instance of IterativeReconAlg."
+                            + " not recognised as default parameter for instance of IterativeReconAlg."  # noqa: E501
                         )
         if self.angles.ndim == 1:
             a1 = self.angles
             a2 = np.zeros(self.angles.shape[0], dtype=np.float32)
-            setattr(self, "angles", np.vstack((a1, a2, a2)).T)
+            self.angles = np.vstack((a1, a2, a2)).T
         if not all([hasattr(self, "angleindex"), hasattr(self, "angleblocks")]):
             self.set_angle_index()
         if not hasattr(self, "W"):
@@ -188,8 +188,9 @@ class IterativeReconAlg(object):
             self.set_v()
         if not hasattr(self, "res"):
             self.set_res()
-        setattr(self, "lq", [])  # quameasoptslist
-        setattr(self, "l2l", [])  # l2list
+
+        self.lq = []  # quameasoptslist
+        self.l2l = []  # l2list
 
     def set_w(self):
         """
@@ -207,7 +208,7 @@ class IterativeReconAlg(object):
         )
         W[W <= min(self.geo.dVoxel / 4)] = np.inf
         W = 1.0 / W
-        setattr(self, "W", W)
+        self.W = W
 
     def set_v(self):
         """
@@ -237,14 +238,14 @@ class IterativeReconAlg(object):
             else:
                 V[i] *= len(self.angleblocks[i])
 
-        setattr(self, "V", V)
+        self.V = V
 
     def set_res(self):
         """
         Calulates initial value for res if this is not given.
         :return: None
         """
-        setattr(self, "res", np.zeros(self.geo.nVoxel, dtype=np.float32))
+        self.res = np.zeros(self.geo.nVoxel, dtype=np.float32)
         init = self.init
         verbose = self.verbose
         if init == "multigrid":
@@ -270,9 +271,9 @@ class IterativeReconAlg(object):
         sets angle_index and angleblock if this is not given.
         :return: None
         """
-        angleblocks, angle_index = order_subsets(self.angles, self.blocksize, self.OrderStrategy)
-        setattr(self, "angleblocks", angleblocks)
-        setattr(self, "angle_index", angle_index)
+        self.angleblocks, self.angle_index = order_subsets(
+            self.angles, self.blocksize, self.OrderStrategy
+        )
 
     def run_main_iter(self):
         """
@@ -300,7 +301,6 @@ class IterativeReconAlg(object):
             self.error_measurement(res_prev, i)
 
     def art_data_minimizing(self):
-
         geo = copy.deepcopy(self.geo)
         for j in range(len(self.angleblocks)):
             if self.blocksize == 1:
@@ -334,7 +334,7 @@ class IterativeReconAlg(object):
 
     def error_measurement(self, res_prev, iter):
         if self.Quameasopts is not None and iter > 0:
-            self.lq.append(MQ(self.res, res_prev, self.Quameasopts))
+            self.lq.append(Measure_Quality(self.res, res_prev, self.Quameasopts))
         if self.computel2:
             # compute l2 borm for b-Ax
             errornow = im3DNORM(
@@ -391,7 +391,7 @@ class IterativeReconAlg(object):
         return "\n".join(parameters)
 
 
-def decorator(IterativeReconAlg, name=None, docstring=None):
+def decorator(IterativeReconAlg, name=None, docstring=None):  # noqa: N803
     """
     Calls run_main_iter when parameters are given to it.
 
@@ -427,11 +427,12 @@ def decorator(IterativeReconAlg, name=None, docstring=None):
             return alg.getres()
 
     if docstring is not None:
-        setattr(iterativereconalg, "__doc__", docstring + IterativeReconAlg.__doc__)
+        iterativereconalg.__doc__ = docstring + IterativeReconAlg.__doc__
     else:
-        setattr(iterativereconalg, "__doc__", IterativeReconAlg.__doc__)
+        iterativereconalg.__doc__ = IterativeReconAlg.__doc__
     if name is not None:
-        setattr(iterativereconalg, "__name__", name)
+        iterativereconalg.__name__ = name
+
     return iterativereconalg
 
 

@@ -4,7 +4,6 @@ from __future__ import print_function
 import warnings
 
 import numpy as np
-import scipy.io
 
 
 def parkerweight(proj, geo, angles, q):
@@ -28,19 +27,15 @@ def parkerweight(proj, geo, angles, q):
             "there is nosufficient data, thus weigthing for data redundancy is not required."
         )
     epsilon = max(totangles - (np.pi + 2 * delta), 0)
-    data = proj
+
     # for i in range(proj.shape[0]):
     for i in range(33):
         beta = angles[i]
         w = 0.5 * (
             s_function(beta / b_subf(alpha, delta, epsilon, q) - 0.5)
-            + s_function(
-                (beta - 2 * delta + 2 * alpha - epsilon) / b_subf(alpha, delta, epsilon, q) + 0.5
-            )
+            + s_function((beta - 2 * delta + 2 * alpha - epsilon) / b_subf(alpha, delta, epsilon, q) + 0.5)  # noqa: E501
             - s_function((beta - np.pi + 2 * alpha) / b_subf(-alpha, delta, epsilon, q) - 0.5)
-            - s_function(
-                (beta - np.pi - 2 * delta - epsilon) / b_subf(-alpha, delta, epsilon, q) + 0.5
-            )
+            - s_function((beta - np.pi - 2 * delta - epsilon) / b_subf(-alpha, delta, epsilon, q) + 0.5)  # noqa: E501
         )
         proj[i] *= w
 
