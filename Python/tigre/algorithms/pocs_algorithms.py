@@ -183,7 +183,7 @@ class ASD_POCS(IterativeReconAlg):
 asd_pocs = decorator(ASD_POCS, name="asd_pocs")
 
 
-class AwASD_POCS(ASD_POCS):
+class AwASD_POCS(ASD_POCS):  # noqa: D101
     __doc__ = ASD_POCS.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):

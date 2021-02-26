@@ -29,7 +29,6 @@ def im3DNORM(img, normind, varargin=None):
     % Coded by:           Ander Biguri
     %--------------------------------------------------------------------------
     """
-
     if normind is [np.inf, -np.inf, "fro", "nuc"]:
         return np.linalg.norm(img.ravel(), normind)
     if type(normind) is int:

@@ -78,7 +78,6 @@ def FDK(proj, geo, angles, **kwargs):
     Coded by:           MATLAB (original code): Ander Biguri
                         PYTHON : Reuben Lindroos
     """
-
     if "niter" in kwargs:
         kwargs.pop("niter")
     if "verbose" in kwargs:
@@ -131,8 +130,8 @@ def FDK(proj, geo, angles, **kwargs):
 fdk = FDK
 
 
-def fbp(proj, geo, angles, **kwargs):
-    __doc__ = FDK.__doc__
+def fbp(proj, geo, angles, **kwargs):  # noqa: D103
+    __doc__ = FDK.__doc__  # noqa: F841
     if geo.mode != "parallel":
         raise ValueError("Only use FBP for parallel beam. Check geo.mode.")
     geox = copy.deepcopy(geo)

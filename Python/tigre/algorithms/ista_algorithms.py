@@ -199,7 +199,7 @@ class FISTA(IterativeReconAlg):
 fista = decorator(FISTA, name="FISTA")
 
 
-class ISTA(FISTA):
+class ISTA(FISTA):  # noqa: D101
     __doc__ = FISTA.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):

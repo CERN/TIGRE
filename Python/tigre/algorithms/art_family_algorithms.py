@@ -12,7 +12,7 @@ else:
     default_timer = time.clock
 
 
-class SART(IterativeReconAlg):
+class SART(IterativeReconAlg):  # noqa: D101
     __doc__ = (
         "SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
         "Simultaneous Algebraic Reconstruction Techique algorithm\n"
@@ -29,7 +29,7 @@ class SART(IterativeReconAlg):
 sart = decorator(SART, name="sart")
 
 
-class SIRT(IterativeReconAlg):
+class SIRT(IterativeReconAlg):  # noqa: D101
     __doc__ = (
         "SIRT_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
         "Simultaneous Algebraic Reconxtruction Techique algorithm\n"
@@ -46,7 +46,7 @@ class SIRT(IterativeReconAlg):
 sirt = decorator(SIRT, name="sirt")
 
 
-class OS_SART(IterativeReconAlg):
+class OS_SART(IterativeReconAlg):  # noqa: D101
     __doc__ = (
         "OS_SART_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
         "Simultaneous Algebraic Reconxtruction Techique algorithm\n"
@@ -62,7 +62,7 @@ class OS_SART(IterativeReconAlg):
 ossart = decorator(OS_SART, name="ossart")
 
 
-class OS_SART_TV(IterativeReconAlg):
+class OS_SART_TV(IterativeReconAlg):  # noqa: D101
     __doc__ = (
         "OS_SART_TV_CBCT solves Cone Beam CT image reconstruction using Oriented Subsets\n"
         "Simultaneous Algebraic Reconxtruction Techique algorithm\n"

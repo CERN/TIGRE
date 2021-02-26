@@ -16,7 +16,7 @@ else:
     default_timer = time.clock
 
 
-class CGLS(IterativeReconAlg):
+class CGLS(IterativeReconAlg):  # noqa: D101
     __doc__ = (
         " CGLS_CBCT solves the CBCT problem using the conjugate gradient least\n"
         " squares\n"

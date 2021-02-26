@@ -7,7 +7,6 @@ from .gpu import GpuIds
 
 
 def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
-
     if img.dtype != np.float32:
         raise TypeError("Input data should be float32, not " + str(img.dtype))
     if not np.isreal(img).all():
@@ -22,9 +21,8 @@ def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
     """
-    Here we cast all values in geo to single point precision float. This way we 
-    know what behaviour to expect from pytigre to Cuda and can change 
-    single parameters accordingly. 
+    Here we cast all values in geo to single point precision float. This way we know what behaviour
+    to expect from pytigre to Cuda and can change single parameters accordingly.
     """
     geox.cast_to_single()
     # geox.checknans()

@@ -10,7 +10,7 @@ import _gpuUtils as gpuUtils
 
 
 class GpuIds(object):
-    """GpuIds
+    """
     A class that holds the IDs and their (common) name
     ```
     gpuids = GpuIds('GeForce RTX 2080 Ti')
@@ -40,16 +40,16 @@ class GpuIds(object):
 
 
 def getGpuNames():
-    # Returns a list of all installed GPUs.
+    """Returns a list of all installed GPUs."""
     return gpuUtils.getGpuNames()
 
 
 # def getGpuCount():
-#     # Returns the number of installed GPUs.
+#     """Returns the number of installed GPUs."""
 #     return gpuUtils.getGpuCount()
 
 
 def getGpuIds(gpuName=None):
-    # Returns the GpuIds object, which contains the IDs of the devices whose name matches gpuName.
+    """Returns the GpuIds object, which contains the IDs of devices whose name matches gpuName."""
     gpuids = GpuIds(gpuName)
     return gpuids

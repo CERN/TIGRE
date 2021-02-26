@@ -15,7 +15,7 @@ else:
     default_timer = time.clock
 
 
-class MLEM(IterativeReconAlg):
+class MLEM(IterativeReconAlg):  # noqa: D101
     __doc__ = (
         " MLEM_CBCT solves the CBCT problem using the maximum likelihood expectation maximization\n"
         " algorithm\n"

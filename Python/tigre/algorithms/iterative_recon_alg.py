@@ -124,7 +124,6 @@ class IterativeReconAlg(object):
     --------------------------------------------------------------------
     Coded by:          MATLAB (original code): Ander Biguri
                        PYTHON : Reuben Lindroos
-
     """
 
     def __init__(self, proj, geo, angles, niter, **kwargs):

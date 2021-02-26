@@ -7,34 +7,39 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 class plotImg:
-    # NOTE: type help(plotImg) after importing in order to get a readable manual.
-    ('\n'
-     'plotImg(cube, dim) \n'
-     '    plots figure \n'
-     'default: progressive in slices following\n'
-     '    axis (dim)\n'
-     'Parameters \n'
-     '---------- \n'
-     'cube : Any 3D numpy array \n'
-     '\n'
-     'dim : ("X","Y","Z","x","y","z"), optional \n'
-     '       default is "X"\n'
-     '       NOTE: string arguments!'
-     '\n'
-     'slice: int, optional\n'
-     '     returns page of matrix according to index\n'
-     'step: int, optional\n'
-     '      Sets the step size between slice and slice.'
-     '      Step is 1 by default.\n'
-     'savegif: string, optional\n'
-     '         Saves the image as .gif with the file name\n'
-     'Examples:\n'
-     '---------\n'
-     'a=np.ones([3,3,3])\n'
-     'plotImg(a)\n'
-     '>>>returns plot along dim Z\n'
-     'plotImg(a,dim="X")\n'
-     '>>>returns plot along dim X\n')
+    """
+    plotImg(cube, dim) 
+        plots figure 
+    default: progressive in slices following
+        axis (dim)
+
+    Parameters
+    ----------
+    cube : Any 3D numpy array
+
+    dim : ("X","Y","Z","x","y","z"), optional
+        default is "X"
+        NOTE: string arguments!
+
+    slice: int, optional
+        returns page of matrix according to index
+
+    step: int, optional
+        Sets the step size between slice and slice.
+        Step is 1 by default.
+
+    savegif: string, optional
+            Saves the image as .gif with the file name
+
+    Examples:
+    ---------
+    a=np.ones([3,3,3])
+    plotImg(a)
+    >>>returns plot along dim Z
+
+    plotImg(a,dim="X")
+    >>>returns plot along dim X
+    """
 
     def __init__(self, cube, dim=None, slice=None, step=1, savegif=None):
         self.cube = cube

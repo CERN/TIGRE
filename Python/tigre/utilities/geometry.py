@@ -110,8 +110,8 @@ class Geometry(object):
 
     def cast_to_single(self):
         """
-        Casts all number values in current instance to
-        single prevision floating point types.
+        Casts all number values in current instance to single prevision floating point types.
+
         :return: None
         """
         for attrib in self.__dict__:
@@ -124,6 +124,7 @@ class Geometry(object):
     def __check_and_repmat__(self, attrib, angles):
         """
         Checks whether the attribute is a single value and repeats it into an array if it is
+
         :rtype: None
         :param attrib: string
         :param angles: np.ndarray

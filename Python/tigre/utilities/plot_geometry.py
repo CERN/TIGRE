@@ -51,9 +51,7 @@ def pathpatch_2d_to_3d_affine(
 
 
 def plot_geometry(geo, angle=0):
-    """
-    Plots the given geometry.
-    """
+    """Plots the given geometry."""
     import mpl_toolkits.mplot3d.art3d as art3d
     import matplotlib.pyplot as plt
 

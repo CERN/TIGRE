@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+
 def plotproj(projections):
     plt.ion()
 
@@ -45,37 +46,43 @@ def ppslice(projections,slice=None,Dim=2):
 
 
 class plotProj:
-    # NOTE: type help(plotImg) after importing in order to get a readable manual.
-    ('\n'
-     'plotProj(proj, dim) \n'
-     '    plots figure \n'
-     'default: progressive in slices following\n'
-     '    axis (dim)\n'
-     'Parameters \n'
-     '---------- \n'
-     'proj : Any 3D numpy array \n'
-     '\n'
-     'dim : ("U","V","T","u","v","t"), optional \n'
-     '       default is "T"\n'
-     '       NOTE: string arguments!'
-     '\n'
-     'angles: Any 1D numpy array. \n'
-     '        Its length must be the same as proj.shape[0].\n'
-     '        Works only when dim is "T" or "t"\n'
-     'slice: int, optional\n'
-     '     returns page of matrix according to index\n'
-     'step: int, optional\n'
-     '      Sets the step size between slice and slice.'
-     '      Step is 1 by default.\n'
-     'savegif: string, optional\n'
-     '         Saves the image as .gif with the file name\n'
-     'Examples:\n'
-     '---------\n'
-     'a=np.ones([3,3,3])\n'
-     'plotImg(a)\n'
-     '>>>returns plot along dim T\n'
-     'plotImg(a,dim="v")\n'
-     '>>>returns plot along dim V\n')
+    """
+    plotProj(proj, dim)
+        plots figure
+    default: progressive in slices following
+        axis (dim)
+
+    Parameters
+    ----------
+    proj : Any 3D numpy array 
+
+    dim : ("U","V","T","u","v","t"), optional 
+        default is "T"
+        NOTE: string arguments!
+
+    angles: Any 1D numpy array.
+            Its length must be the same as proj.shape[0].
+            Works only when dim is "T" or "t"
+
+    slice: int, optional
+        returns page of matrix according to index
+
+    step: int, optional
+        Sets the step size between slice and slice.
+        Step is 1 by default.
+
+    savegif: string, optional
+            Saves the image as .gif with the file name
+
+    Examples:
+    ---------
+    a=np.ones([3,3,3])
+    plotImg(a)
+    >>>returns plot along dim T
+
+    plotImg(a,dim="v")
+    >>>returns plot along dim V
+    """
 
     def __init__(self, proj, angles=None, dim=None, slice=None, step=1, savegif=None):
         self.proj = proj
@@ -171,12 +178,13 @@ class plotProj:
         plt.show()
 
 def plotSinogram(proj, posV):
-    '''
+    """
     plotSinogram(proj, posV)
         plots sinogram at V=posV
+
     Parameters 
     ----------
     proj : Any 3D numpy array
     posV : integer. in range of 0:proj.shape[1].
-    '''
+    """
     plotProj(proj, dim='V', slice=posV)
