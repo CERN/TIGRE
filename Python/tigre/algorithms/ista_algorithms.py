@@ -107,14 +107,8 @@ class FISTA(IterativeReconAlg):
     """
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
-
         # Don't precompute W and V
-        kwargs.update(
-            dict(
-                W=None,
-                V=None,
-            )
-        )
+        kwargs.update({"W": None, "V": None})
         kwargs.update(dict(blocksize=angles.shape[0]))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         self.lmbda = 0.1
