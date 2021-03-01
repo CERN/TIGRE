@@ -135,7 +135,8 @@ class IterativeReconAlg(object):
                        OrderStrategy=None, Quameasopts=None,
                        init=None, verbose=True, noneg=True,
                        computel2=False, dataminimizing='art_data_minimizing',
-                       name='Iterative Reconstruction', sup_kw_warning=False)
+                       name='Iterative Reconstruction', sup_kw_warning=False,
+                       gpuids = None)
         allowed_keywords = [
             'V',
             'W',
@@ -189,7 +190,7 @@ class IterativeReconAlg(object):
 
         geox.nVoxel = np.array([2, 2, 2])
         geox.dVoxel = geox.sVoxel / geox.nVoxel
-        W = Ax(np.ones(geox.nVoxel, dtype=np.float32), geox, self.angles, "Siddon")
+        W = Ax(np.ones(geox.nVoxel, dtype=np.float32), geox, self.angles, "Siddon", gpuids=self.gpuids)
         W[W <= min(self.geo.dVoxel / 4)] = np.inf
         W = 1. / W
         setattr(self, 'W', W)
@@ -213,7 +214,7 @@ class IterativeReconAlg(object):
                 geox.dVoxel = geox.sVoxel / geox.nVoxel
                 proj_one = np.ones((len(self.angleblocks[i]), geo.nDetector[0], 
                                     geo.nDetector[1]), dtype=np.float32)
-                V[i] = Atb(proj_one, geox, self.angleblocks[i],'FDK').mean(axis=0)
+                V[i] = Atb(proj_one, geox, self.angleblocks[i],'FDK', gpuids=self.gpuids).mean(axis=0)
                 
             else:
                 V[i] *= len(self.angleblocks[i])
@@ -311,10 +312,10 @@ class IterativeReconAlg(object):
 
 
     def minimizeTV(self, res_prev, dtvg):
-        return minTV(res_prev, dtvg, self.numiter_tv)
+        return minTV(res_prev, dtvg, self.numiter_tv, self.gpuids)
 
     def minimizeAwTV(self, res_prev, dtvg):
-        return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta)
+        return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta, self.gpuids)
 
     def error_measurement(self, res_prev, iter):
         if self.Quameasopts is not None and iter > 0:
@@ -322,7 +323,7 @@ class IterativeReconAlg(object):
         if self.computel2:
             # compute l2 borm for b-Ax
             errornow = im3DNORM(
-                self.proj - Ax(self.res, self.geo, self.angles, 'Siddon'), 2)
+                self.proj - Ax(self.res, self.geo, self.angles, 'Siddon', gpuids=self.gpuids), 2)
             self.l2l.append(errornow)
 
     def update_image(self, geo, angle, iteration):
@@ -340,8 +341,12 @@ class IterativeReconAlg(object):
         :return: None
         """
         ang_index = self.angle_index[iteration].astype(np.int)
-        self.res += self.lmbda * 1. / self.V[iteration] * Atb(self.W[ang_index] * (
-            self.proj[ang_index] - Ax(self.res, geo, angle, 'Siddon')), geo, angle, 'FDK')
+        self.res += self.lmbda * 1. / self.V[iteration] * Atb(
+            self.W[ang_index] * (self.proj[ang_index] - Ax(self.res, geo, angle, 'Siddon', gpuids=self.gpuids)),
+            geo, 
+            angle,
+            'FDK',
+            gpuids=self.gpuids)
 
     def getres(self):
         return self.res

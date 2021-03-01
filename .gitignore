@@ -12,16 +12,17 @@ so.*
 *.pyc
 ## python build files
 Python/build
-Python/tigre.egg-info/
+Python/pytigre.egg-info/
 Python/purge.sh
 Python/.idea/
 Python/devtest.py
 Python/dist/
-Python/tigre/Source/_Atb.cpp
-Python/tigre/Source/_Ax.cpp
-Python/tigre/Source/_minTV.cpp
-Python/tigre/Source/_AwminTV.cpp
-Python/tigre/Source/_tvdenoising.cpp
+Python/tigre/utilities/cuda_interface/_Atb.cpp
+Python/tigre/utilities/cuda_interface/_Ax.cpp
+Python/tigre/utilities/cuda_interface/_minTV.cpp
+Python/tigre/utilities/cuda_interface/_AwminTV.cpp
+Python/tigre/utilities/cuda_interface/_tvdenoising.cpp
+Python/tigre/utilities/cuda_interface/_gpuUtils.cpp
 .ipynb_checkpoints
 # Object files
 *.o

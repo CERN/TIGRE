@@ -6,6 +6,18 @@ import tigre
 import tigre.algorithms as algs
 from tigre.demos.Test_data import data_loader
 from tigre.utilities.Measure_Quality import Measure_Quality
+from tigre.utilities import gpu
+
+listGpuNames = gpu.getGpuNames()
+if len(listGpuNames) == 0:
+    print ("Error: No gpu found")
+else:
+    for id in range(len(listGpuNames)):
+        print("{}: {}".format(id, listGpuNames[id]))
+
+gpuids = gpu.getGpuIds(listGpuNames[0])
+print(gpuids)
+
 
 # Geometry
 #geo1 = tigre.geometry(mode='cone', high_quality=False, default=True)
@@ -20,12 +32,12 @@ angles = np.linspace(0, 2 * np.pi, nangles, endpoint=False, dtype=np.float32)
 # Prepare projection data
 #head = np.load('src_img_cubic_256.npy')
 head = data_loader.load_head_phantom(geo.nVoxel)
-proj = tigre.Ax(head,geo,angles)
+proj = tigre.Ax(head,geo,angles, gpuids = gpuids)
 
 # Reconstruct
 niter = 20
-fdkout = algs.fdk(proj,geo,angles)
-sirtout = algs.ossart(proj,geo,angles,niter,blocksize=20)
+fdkout = algs.fdk(proj,geo,angles, gpuids = gpuids)
+sirtout = algs.ossart(proj,geo,angles,niter,blocksize=20, gpuids = gpuids)
 
 # Measure Quality
 # 'RMSE', 'MSSIM', 'SSD', 'UQI'

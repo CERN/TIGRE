@@ -30,7 +30,7 @@ class MLEM(IterativeReconAlg):
         if self.init is None:
             self.res += 1.  
 
-        self.W = Atb(np.ones(proj.shape,dtype=np.float32), geo, angles)
+        self.W = Atb(np.ones(proj.shape,dtype=np.float32), geo, angles, gpuids=self.gpuids)
         self.W[self.W <= 0.] = np.inf
 
     # Overide
@@ -48,7 +48,7 @@ class MLEM(IterativeReconAlg):
                       format((self.niter - 1) * (tic - toc)))
             
 #            tic = time.process_time()
-            den = Ax(self.res, self.geo, self.angles, 'interpolated')
+            den = Ax(self.res, self.geo, self.angles, 'interpolated', gpuids=self.gpuids)
             # toc = time.process_time()
             # print('Ax time: {}'.format(toc-tic))
             den[den==0.] = np.inf
@@ -58,7 +58,7 @@ class MLEM(IterativeReconAlg):
             
             # update
             # tic = time.process_time()
-            img = Atb(auxmlem, self.geo, self.angles) / self.W
+            img = Atb(auxmlem, self.geo, self.angles, gpuids=self.gpuids) / self.W
             # toc = time.process_time()
             # print('Atb time: {}'.format(toc-tic))
             # img[img == np.nan] = 0.

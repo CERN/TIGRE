@@ -17,12 +17,26 @@ function [ projections ] = Ax(img, geo, angles, varargin )
 % Coded by:           Ander Biguri 
 %--------------------------------------------------------------------------
 % Lets make 100% sure that data is correct
-%% OPtionals
+%% Optionals
 
 ptype='Siddon';
+% expected projection types. 'ray-voxel' is obsolete. Use 'Siddon'
+expectedProjectionTypes = {'Siddon','ray-voxel','interpolated'};
+acceptableOptionName = {'gpuids'};
+
 if nargin > 3
-   assert(any(strcmpi(varargin{1},{'Siddon','ray-voxel','interpolated'})),'TIGRE:Ax:InvalidInput','Projection type not understood (4th input).');
-   ptype=varargin{1};
+    if any(strcmp(varargin{1}, expectedProjectionTypes))
+        ptype = varargin{1};
+        [gpuids] = parse_inputs(varargin{2:length(varargin)});
+        %[ptype, gpuids] = parse_inputs1(varargin{1}, expectedProjectionTypes, varargin{2:length(varargin)});
+    elseif any(strcmp(varargin{1}, acceptableOptionName))
+        [gpuids] = parse_inputs(varargin{:});
+        %[ptype, gpuids] = parse_inputs1(ptype, expectedProjectionTypes, varargin{:});
+    else
+        assert(false,'TIGRE:Ax:InvalidInput','Projection type should be either ''interpolated'' or ''Siddon''.');
+    end
+else
+    gpuids = GpuIds();
 end
 
 
@@ -53,8 +67,25 @@ end
 
 
 %% Thats it, lets call the mex fucntion
+%% TODO: When Ax_mex accepts class-objects, gpuids itself will be passed.
+projections=Ax_mex(img,geo,angles,ptype, gpuids.devices);
 
+end
 
+function [gpuids]=parse_inputs(varargin)
+    %fprintf('parse_inputs0(varargin (%d))\n', length(varargin));
+    if isempty(varargin)
+        gpuids = GpuIds();
+    else
+        % create input parser
+        p=inputParser;
+        % add optional parameters
+        addParameter(p,'gpuids', GpuIds());
+        %execute
+        parse(p,varargin{:});
+        %extract
+        gpuids=p.Results.gpuids;
+    end
+end
 
-projections=Ax_mex(img,geo,angles,ptype);
 

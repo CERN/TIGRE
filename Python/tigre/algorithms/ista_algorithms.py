@@ -142,7 +142,7 @@ class FISTA(IterativeReconAlg):
         :return: None
         """
         self.res += self.__bm__ * 2 * tigre.Atb((self.proj[self.angle_index[iteration]] - tigre.Ax(
-            self.res, geo, angle, 'interpolated')), geo, angle, 'matched')
+            self.res, geo, angle, 'interpolated', gpuids=self.gpuids)), geo, angle, 'matched', gpuids=self.gpuids)
 
     def run_main_iter(self):
         """
@@ -170,7 +170,7 @@ class FISTA(IterativeReconAlg):
             getattr(self, self.dataminimizing)()
 
             x_rec_old = copy.deepcopy(x_rec)
-            x_rec = im3ddenoise(self.res, self.__numiter_tv__, 1. / lambdaForTv)
+            x_rec = im3ddenoise(self.res, self.__numiter_tv__, 1. / lambdaForTv, self.gpuids)
             t_old = t
             t = (1 + np.sqrt(1 + 4 * t ** 2)) / 2
             self.res = x_rec + (t_old - 1) / t * (x_rec - x_rec_old)
@@ -210,7 +210,7 @@ class ISTA(FISTA):
                           str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()
 
-            self.res = im3ddenoise(self.res, 20, 1. / lambdaForTv)
+            self.res = im3ddenoise(self.res, 20, 1. / lambdaForTv, self.gpuids)
 
             self.error_measurement(res_prev, i)
 

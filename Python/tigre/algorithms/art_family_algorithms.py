@@ -96,7 +96,8 @@ class OS_SART_TV(IterativeReconAlg):
                     print('Esitmated time until completetion (s): ' +
                           str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()
-            self.res = im3ddenoise(self.res, self.tviter, self.tvlambda)
+            # print("run_main_iter: gpuids = {}", self.gpuids)
+            self.res = im3ddenoise(self.res, self.tviter, self.tvlambda, self.gpuids)
             self.error_measurement(res_prev, i)
 
 

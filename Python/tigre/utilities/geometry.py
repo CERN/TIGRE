@@ -123,7 +123,10 @@ class Geometry(object):
 
         elif type(old_attrib) == np.ndarray:
             if old_attrib.ndim == 1:
-                if old_attrib.shape in [(3,), (2,), (1,)]:
+                if old_attrib.shape in [(3,), (2,)] and not attrib in ['DSD', 'DSO', 'COR']:
+                    new_attrib = matlib.repmat(old_attrib, angles.shape[0], 1)
+                    setattr(self, attrib, new_attrib)
+                elif old_attrib.shape in [(1,)]:
                     new_attrib = matlib.repmat(old_attrib, angles.shape[0], 1)
                     setattr(self, attrib, new_attrib)
                 elif old_attrib.shape == (angles.shape[0],):

@@ -51,7 +51,7 @@ function [res,errorL2,qualMeasOut]=SIRT(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 
-[lambda,res,lambdared,verbose,QualMeasOpts,nonneg]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lambdared,verbose,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 
@@ -73,13 +73,13 @@ geoaux.sVoxel([1 2])=geo.sVoxel([1 2])*1.1; % a Bit bigger, to avoid numerical d
 geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon');  %
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 clear geoaux;
 
 % Back-Projection weigth, V
- V=computeV(geo,angles,{angles},{1:length(angles)});
+ V=computeV(geo,angles,{angles},{1:length(angles)},gpuids);
 
 %% hyperparameter stuff
 nesterov=false;
@@ -114,10 +114,10 @@ for ii=1:niter
     if nesterov
         % The nesterov update is quite similar to the normal update, it
         % just uses this update, plus part of the last one.
-        ynesterov=res + bsxfun(@times,1./V,Atb(W.*(proj-Ax(res,geo,angles)),geo,angles));
+        ynesterov=res + bsxfun(@times,1./V,Atb(W.*(proj-Ax(res,geo,angles,'gpuids',gpuids)),geo,angles,'gpuids',gpuids));
         res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
     else
-        res=res+lambda*bsxfun(@times,1./V,Atb(W.*(proj-Ax(res,geo,angles)),geo,angles)); % x= x + lambda * V * At * W^-1 * (b-Ax)
+        res=res+lambda*bsxfun(@times,1./V,Atb(W.*(proj-Ax(res,geo,angles,'gpuids',gpuids)),geo,angles,'gpuids',gpuids)); % x= x + lambda * V * At * W^-1 * (b-Ax)
     end
     % ------------------------------------
     
@@ -138,7 +138,7 @@ for ii=1:niter
     end
     
     if computeL2 || nesterov
-        errornow=im3Dnorm(proj-Ax(res,geo,angles),'L2');                       % Compute error norm2 of b-Ax
+        errornow=im3Dnorm(proj-Ax(res,geo,angles,'gpuids',gpuids),'L2','gpuids',gpuids);                       % Compute error norm2 of b-Ax
         % If the error is not minimized.
         if  ii~=1 && errornow>errorL2(end)
             if verbose
@@ -153,8 +153,8 @@ for ii=1:niter
     if (ii==1 && verbose==1);
         expected_time=toc*niter;
         disp('SIRT');
-        disp(['Expected duration  :    ',secs2hms(expected_time)]);
-        disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
+        disp(['Expected duration   :    ',secs2hms(expected_time)]);
+        disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
     end
 end
@@ -182,7 +182,7 @@ while ~isequal(geo.nVoxel,finalsize)
     
     
     % solve subsampled grid
-    initres=SIRT(proj,geo,alpha,niter,'Init','image','InitImg',initres,'Verbose',0);
+    initres=SIRT(proj,geo,alpha,niter,'Init','image','InitImg',initres,'Verbose',0,'gpuids',gpuids);
     
     % Get new dims.
     geo.nVoxel=geo.nVoxel*2;
@@ -201,8 +201,8 @@ end
 end
 
 
-function [lambda,res,lambdared,verbose,QualMeasOpts,nonneg]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','nonneg'};
+function [lambda,res,lambdared,verbose,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','nonneg','gpuids'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -316,6 +316,12 @@ for ii=1:length(opts)
                 nonneg=true;
             else
                 nonneg=val;
+            end
+        case 'gpuids'
+            if default
+                gpuids = GpuIds();
+            else
+                gpuids = val;
             end
         otherwise
             error('TIGRE:SIRT:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SIRT()']);
