@@ -50,8 +50,8 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 
-#ifndef POCS_TV_HPP
-#define POCS_TV_HPP
+#ifndef GD_AwTV_HPP
+#define GD_AwTV_HPP
 #include "TIGRE_common.hpp"
 #include "GpuIds.hpp"
 

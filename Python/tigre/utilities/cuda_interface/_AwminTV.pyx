@@ -25,7 +25,7 @@ cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
     void PyArray_CLEARFLAGS(np.ndarray arr, int flags)
 
-cdef extern from "POCS_TV2.hpp":
+cdef extern from "GD_AwTV.hpp":
     cdef void aw_pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter, float delta, c_GpuIds gpuids)
 def cuda_raise_errors(error_code):
     if error_code:

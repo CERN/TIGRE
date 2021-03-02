@@ -53,7 +53,7 @@ Codes  : https://github.com/CERN/TIGRE
 
 #define MAXTHREADS 1024
 
-#include "POCS_TV.hpp"
+#include "PICCS.hpp"
 
 
 

@@ -55,7 +55,7 @@ Codes  : https://github.com/CERN/TIGRE
 #include <tmwtypes.h>
 #include <mex.h>
 #include <matrix.h>
-#include <CUDA/POCS_TV.hpp>
+#include <CUDA/GD_TV.hpp>
 #include <CUDA/GpuIds.hpp>
 #include <CUDA/gpuUtils.hpp>
 void mexFunction(int  nlhs , mxArray *plhs[],
