@@ -395,8 +395,24 @@ void computeDeltas_Siddon_parallel(Geometry geo, float angles,int i, Point3D* uv
     P.x  =-(geo.DSD[i]-geo.DSO[i]);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
     Pu0.x=-(geo.DSD[i]-geo.DSO[i]);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
     Pv0.x=-(geo.DSD[i]-geo.DSO[i]);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
-    // Geomtric trasnformations:
+    // Geometric trasnformations:
+    P.x=0;Pu0.x=0;Pv0.x=0;
     
+    // Roll pitch yaw
+    rollPitchYaw(geo,i,&P);
+    rollPitchYaw(geo,i,&Pu0);
+    rollPitchYaw(geo,i,&Pv0);
+    //Now lets translate the points where they should be:
+    P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
+    Pu0.x=Pu0.x-(geo.DSD[i]-geo.DSO[i]);
+    Pv0.x=Pv0.x-(geo.DSD[i]-geo.DSO[i]);
+
+    S.x=0;
+    // Roll pitch yaw
+    rollPitchYaw(geo,i,&S);
+    //Now lets translate the points where they should be:
+    S.x=S.x+geo.DSO[i];
+
     //1: Offset detector
     
     //P.x
