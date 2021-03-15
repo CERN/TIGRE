@@ -14,3 +14,4 @@ Please, add here all changes added since previous version of TIGRE (v2.1)
 - Fix bug where compute 5.0 was not being compiled in python
 - Some arbitrary rotation angles were not being passed to the kernel 
 - Reduced memory needed in MATLAB NikonDataLoader
+- MAyor bug that impedes many iterative algorithms to work in python. The way order_subsets returns arrays changed, now they are not dtype=object, but dtype=float
