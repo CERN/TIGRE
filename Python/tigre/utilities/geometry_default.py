@@ -4,10 +4,10 @@ from tigre.utilities.geometry import Geometry
 
 class ConeGeometryDefault(Geometry):
 
-    def __init__(self, high_quality=True, nVoxel = None):
+    def __init__(self, high_resolution=True, nVoxel = None):
 
         Geometry.__init__(self)
-        if high_quality:
+        if high_resolution:
             # VARIABLE                                          DESCRIPTION                    UNITS
             # -------------------------------------------------------------------------------------
             self.DSD = 1536                                     # Distance Source Detector      (mm)

@@ -23,7 +23,7 @@ def test_generator(algorithm,proj,geo,angles,niter):
 
 
 if __name__ == '__main__':
-    geo = tigre.geometry(mode='cone',default=True,high_quality=False)
+    geo = tigre.geometry(mode='cone',default=True,high_resolution=False)
     print(geo)
 
     true_img = data_loader.load_head_phantom(geo.nVoxel)

@@ -385,7 +385,7 @@ def decorator(IterativeReconAlg, name=None, docstring=None):
     --------
     >>> import tigre
     >>> from tigre.demos.Test_data.data_loader import load_head_phantom
-    >>> geo = tigre.geometry_defaut(high_quality=False)
+    >>> geo = tigre.geometry_defaut(high_resolution=False)
     >>> src = load_head_phantom(number_of_voxels=geo.nVoxel)
     >>> proj = Ax(src,geo,angles)
     >>> angles = np.linspace(0,2*np.pi,100)

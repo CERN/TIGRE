@@ -236,13 +236,13 @@ class ParallelGeo(Geometry):
 
         self.accuracy = 0.5
 
-        self.offOrigin = np.array([0, 0, 0]);
-        self.offDetector = np.array([0, 0]);
+        self.offOrigin = np.array([0, 0, 0])
+        self.offDetector = np.array([0, 0])
 
         self.rotDetector = np.array([0, 0, 0])
 
 
-def geometry(mode='cone', nVoxel=None, default=False, high_quality=True):
+def geometry(mode='cone', nVoxel=None, default=False, high_resolution=True):
     """
     Constructor for geometry used in reconstruction of images in TIGRE
 
@@ -255,7 +255,7 @@ def geometry(mode='cone', nVoxel=None, default=False, high_quality=True):
     :param default: (bool)
         calculates other parameters in geometry. is by default true for
         parallel geometry
-    :param high_quality: (bool)
+    :param high_resolution: (bool)
         preset values for geometry in mode=cone. WARNING: for smaller
         tests it is better to use this rather than setting nVoxel
         manually.
@@ -269,7 +269,7 @@ def geometry(mode='cone', nVoxel=None, default=False, high_quality=True):
     >>> #Cone beam with no preset parameters
     >>> geo_cone = tigre.geometry(mode='cone')
     >>> # Cone beam default, low quality
-    >>> geo_cone_default = tigre.geometry(mode='cone',high_quality=False)
+    >>> geo_cone_default = tigre.geometry(mode='cone',high_resolution=False)
     >>> # Cone beam with specific nVoxel requirements
     >>> geo_cone__default2 = tigre.geometry(nVoxel=np.array([64,64,64]),
     >>>                                     mode='cone'
@@ -280,7 +280,7 @@ def geometry(mode='cone', nVoxel=None, default=False, high_quality=True):
     """
     if mode == 'cone':
         if default:
-            return tigre.geometry_default(high_quality, nVoxel)
+            return tigre.geometry_default(high_resolution, nVoxel)
         else:
             return Geometry()
     if mode == 'parallel':

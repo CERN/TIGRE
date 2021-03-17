@@ -20,7 +20,7 @@ print(gpuids)
 
 
 # Geometry
-#geo1 = tigre.geometry(mode='cone', high_quality=False, default=True)
+#geo1 = tigre.geometry(mode='cone', high_resolution=False, default=True)
 geo = tigre.geometry(mode='cone', nVoxel=np.array([256,256,256]), default=True)
 geo.dDetector = np.array([0.8, 0.8])*2               # size of each pixel            (mm)
 geo.sDetector = geo.dDetector * geo.nDetector
