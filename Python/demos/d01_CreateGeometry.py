@@ -112,7 +112,7 @@ geo.mode='cone'                             # Or 'parallel'. Geometry type.
 print(geo)
 #%% Alternatively, 
 # # if you are just experimenting with TIGRE and you dont care too much about the geometry, you can generate default geometries as:
-geo=tigre.geometry_default();                                                   # Default cone beam geometry
+geo=tigre.geometry_default()                                                   # Default cone beam geometry
 geo=tigre.geometry(mode='cone',default=True)                                    # default=True calculates all parameters for the geometry for you, so you can do:
 geo=tigre.geometry(mode='cone',default=True, nVoxel=np.array([256,256,256]))    # This will calculate a reasonable geometry for this number of voxels
 geo=tigre.geometry(mode='cone', default=True, high_resolution=True)              # high_resolution will result on an image 512^3, while false will result on a 128^3 image. nVoxel overrides these values.

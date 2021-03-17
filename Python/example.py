@@ -4,7 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import tigre
 import tigre.algorithms as algs
-from tigre.demos.Test_data import data_loader
+from tigre.utilities import sample_loader
 from tigre.utilities.Measure_Quality import Measure_Quality
 from tigre.utilities import gpu
 
@@ -30,8 +30,7 @@ nangles = 100
 angles = np.linspace(0, 2 * np.pi, nangles, endpoint=False, dtype=np.float32)
 
 # Prepare projection data
-#head = np.load('src_img_cubic_256.npy')
-head = data_loader.load_head_phantom(geo.nVoxel)
+head = sample_loader.load_head_phantom(geo.nVoxel)
 proj = tigre.Ax(head,geo,angles, gpuids = gpuids)
 
 # Reconstruct
