@@ -120,4 +120,4 @@ geo=tigre.geometry(mode='parallel',nVoxel=np.array([512,512,512]))              
 
 #%% Plot your geometry
 geo=tigre.geometry_default()                                                   # Default cone beam geometry
-tigre.plot_geometry(geo)
+tigre.plot_geometry(geo, angle=-np.pi/6)
