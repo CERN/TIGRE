@@ -31,8 +31,10 @@ import tigre
 from tigre.utilities import sample_loader
 
 #%% Define geometry
-geo=tigre.geometry_default() 
+geo=tigre.geometry_default(high_resolution=False) 
 #%% load head phantom
 head = sample_loader.load_head_phantom(geo.nVoxel)
+#check the shape
+print(head.shape)
 # show it
-tigre.plotImg(head,'Dim','Z')
+tigre.plotImg(head, dim='z')
