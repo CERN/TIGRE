@@ -4,7 +4,7 @@
 % TIGRE has some sample data so you can use without the need of having
 % your own data. This code sample shows how to load the data.
 %
-% Sample data is stored in "test_data" folder, inside TIGRE.
+% Sample data is stored in "data" folder, inside TIGRE/Common.
 %
 % If you want to contribute your own phantom/real data, please do. Send an
 % email to tigre.toolbox@gmail.com. If you want us to just add a link to

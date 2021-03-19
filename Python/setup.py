@@ -5,6 +5,7 @@ from os.path import join as pjoin
 import re
 import subprocess
 import sys
+import shutil
 
 from Cython.Distutils import build_ext
 import numpy
@@ -87,6 +88,9 @@ def locate_cuda():
 
     return cudaconfig, version
 
+def _is_cuda_file(path):
+    return os.path.splitext(path)[1] in ['.cu', '.cuh']
+
 
 CUDA, CUDA_VERSION = locate_cuda()
 # Cleanup CUDA arguments depedning on the version
@@ -101,8 +105,6 @@ except AttributeError:
     NUMPY_INCLUDE = numpy.get_numpy_include()
 
 
-def _is_cuda_file(path):
-    return os.path.splitext(path)[1] in ['.cu', '.cuh']
 
 
 COMMON_MSVC_FLAGS = ['/MD', '/wd4819', '/EHsc']
@@ -405,6 +407,7 @@ setup(name='pytigre',
       packages=find_packages(),
       scripts=['tests/runscript.sh'],
       include_package_data=True,
+      data_files=[('data', ['../Common/data/head.mat'])],
       ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext, gpuUtils_ext],
       py_modules=['tigre.py'],
       cmdclass={'build_ext': BuildExtension},
@@ -412,7 +415,7 @@ setup(name='pytigre',
                         'matplotlib',
                         'numpy',
                         'scipy'],
-      license_file='LICENSE.txt',
+      license_files=('LICENSE',),
       license='BSD 3-Clause',
       # since the package has c code, the egg cannot be zipped
       zip_safe=False)
