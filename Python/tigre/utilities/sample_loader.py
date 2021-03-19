@@ -10,6 +10,9 @@ def load_head_phantom(number_of_voxels=None):
         number_of_voxels = np.array((128, 128, 128))
     dirname = os.path.dirname(__file__)
     dirname = os.path.join(dirname,'../../../Common/data/head.mat')
+    if not os.path.isfile(dirname):
+        dirname = os.path.dirname(__file__)
+        dirname = os.path.join(dirname,'./../../data/head.mat')
     test_data = scipy.io.loadmat(dirname)
 
     # Loads data in F_CONTIGUOUS MODE (column major), convert to Row major
