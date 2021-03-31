@@ -1,14 +1,8 @@
-#%% DEMO 02: Sample data in TIGRE
+#%% Demo 4: Simple Image reconstruction
 #
 #
-# TIGRE has some sample data so you can use without the need of having
-# your own data. This code sample shows how to load the data.
-#
-# Sample data is stored in "data" folder, inside TIGRE/Common.
-#
-# If you want to contribute your own phantom/real data, please do. Send an
-# email to tigre.toolbox@gmail.com. If you want us to just add a link to
-# your own page with data, we could also do that.
+# This demo will show how a simple image reconstruction can be performed,
+# by using OS-SART and FDK
 #
 #--------------------------------------------------------------------------
 #--------------------------------------------------------------------------
@@ -26,15 +20,34 @@
 # Codes:              https://github.com/CERN/TIGRE/
 # Coded by:           Ander Biguri 
 #--------------------------------------------------------------------------
-#
+#%%Initialize
 import tigre
+import numpy as np
 from tigre.utilities import sample_loader
+from tigre.utilities import CTnoise
+import tigre.algorithms as algs
 
-#%% Define geometry
+#%% Geometry
 geo=tigre.geometry_default(high_resolution=False) 
-#%% load head phantom
+
+#%% Load data and generate projections 
+# define angles
+angles=np.linspace(0,2*np.pi,100)
+# Load thorax phatom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
-#check the shape
-print(head.shape)
-# show it
-tigre.plotImg(head, dim='z')
+# generate projections
+projections=tigre.Ax(head,geo,angles)
+# add noise
+noise_projections=CTnoise.add(projections,Poisson=1e5,Gaussian=np.array([0, 10]))
+
+#%% Reconstruct image using OS-SART and FDK
+
+# FDK
+imgFDK=algs.fdk(noise_projections,geo,angles)
+# OS-SART
+
+niter=50
+imgOSSART=algs.ossart(noise_projections,geo,angles,niter)
+
+#%% Show the results
+tigre.plotimg(np.concatenate([imgFDK,imgOSSART],axis=1),dim='z')

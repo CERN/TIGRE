@@ -1,4 +1,4 @@
-## DEMO 03: Generate sample data and add realistic CT noise to it.
+#%% DEMO 03: Generate sample data and add realistic CT noise to it.
 #
 # This demo will show how to generate sample data for image reconstruction
 #
@@ -19,7 +19,7 @@
 # Codes:              https://github.com/CERN/TIGRE/
 # Coded by:           Ander Biguri 
 #--------------------------------------------------------------------------
-#
+#%%
 import tigre
 import numpy as np
 from tigre.utilities import sample_loader
@@ -27,7 +27,7 @@ from tigre.utilities import CTnoise
 
 geo=tigre.geometry_default(high_resolution=False) 
 
-## Define angles of projection and load phatom image
+#%% Define angles of projection and load phatom image
 
 # define projection angles (in radians)
 angles=np.linspace(0,2*np.pi,50)
@@ -48,7 +48,7 @@ projections=tigre.Ax(head,geo,angles)
 # noise.
 noise_projections=CTnoise.add(projections,Poisson=1e5,Gaussian=np.array([0, 10]))
 
-# Plot Projections
+#%% Plot Projections
 tigre.plotproj(projections)
 # plot noise
 tigre.plotproj(projections-noise_projections)

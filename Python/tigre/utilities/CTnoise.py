@@ -22,5 +22,5 @@ def add(projections,Gaussian=None,Poisson=None):
     projections = projections+np.random.normal(Gaussian[0],Gaussian[1],size=projections.shape)
 
     projections=-np.log(projections/Poisson)*max_proj
-
+    projections=np.float32(projections)
     return projections
