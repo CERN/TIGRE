@@ -6,4 +6,5 @@ from .utilities.Atb import Atb
 from .utilities.plotproj import plotproj, plotProj, plotSinogram
 from .utilities.plotimg import plotimg, plotImg
 from .utilities.plot_geometry import plot_geometry
+from .utilities.CTnoise import add
 from . import algorithms
