@@ -47,7 +47,7 @@ imgFDK=algs.fdk(noise_projections,geo,angles)
 niter=50
 imgOSSART=algs.ossart(noise_projections,geo,angles,50)
 
-## Lets use PlotProj
+#%% Lets use PlotProj
 # 
 # plotProj plots the projection data measure on the detector on each angle.
 #

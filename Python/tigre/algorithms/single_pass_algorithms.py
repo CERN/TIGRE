@@ -80,8 +80,7 @@ def FDK(proj, geo, angles,**kwargs):
 
     """
 
-    if 'niter' in kwargs:
-        kwargs.pop('niter')
+   
     if 'verbose' in kwargs:
         verbose = kwargs['verbose']
     else: verbose = False
@@ -116,14 +115,9 @@ def FDK(proj, geo, angles,**kwargs):
         angles,
         parker=False,
         verbose=verbose)
-    # m = {
-    #     'py_projfilt': proj_filt,
-    #
-    # }
-    # scipy.io.savemat('Tests/Filter_data', m)
+  
     res = Atb(proj_filt, geo, geo.angles, 'FDK', gpuids=gpuids)
-    # res = 0
-    # res = Atb(proj,geo,angles,'FDK')
+
     return res
 
 

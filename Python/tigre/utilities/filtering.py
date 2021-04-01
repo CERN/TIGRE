@@ -9,7 +9,6 @@ import warnings
 def filtering(proj,geo,angles,parker,verbose=False):
     if parker:
         proj=parkerweight(proj.transpose(0,2,1),geo,angles,parker).transpose(0,2,1)
-        # proj=parkerweight(proj,geo,angles,parker)
     filt_len=max(64,2**nextpow2(2*max(geo.nDetector)))
     ramp_kernel=ramp_flat(filt_len)
 
