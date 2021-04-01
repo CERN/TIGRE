@@ -76,7 +76,7 @@ class plotProj:
      'plotImg(a,dim="v")\n'
      '>>>returns plot along dim V\n')
 
-    def __init__(self, proj, angles=None, dim=None, slice=None, step=1, savegif=None):
+    def __init__(self, proj, angles=None, dim=None, slice=None, step=1, savegif=None, colormap='grey'):
         self.proj = proj
         self.dim = dim
         self.slice = slice
@@ -85,6 +85,7 @@ class plotProj:
         self.step = step
         self.savegif = savegif
         self.angles = angles
+        self.colormap = colormap
         if self.step is None or self.step==0:
             self.step=1
         if self.savegif=='':
@@ -95,7 +96,7 @@ class plotProj:
             self.slicer()
 
     def run(self):
-        if self.dim not in self.dimlist:
+        if self.dim not in self.dimlist and self.dim is not None:
             raise NameError('check inputs for dim, should be string.')
         if self.angles is not None and self.angles.shape[0] != self.proj.shape[0]:
             raise NameError('check inputs for angles, should be size of proj.shape[0]')
@@ -118,11 +119,11 @@ class plotProj:
         fig.clf()
         axis = fig.add_subplot(1,1,1)
         if self.dimint == 2:
-            mappable = axis.imshow(np.squeeze(self.proj[:, :, i]), cmap=plt.cm.gray, origin='lower', vmin=min_val, vmax=max_val)
+            mappable = axis.imshow(np.squeeze(self.proj[:, :, i]), cmap=self.colormap, origin='lower', vmin=min_val, vmax=max_val)
         if self.dimint == 1:
-            mappable = axis.imshow(np.squeeze(self.proj[:, i]), cmap=plt.cm.gray, origin='lower', vmin=min_val, vmax=max_val)
+            mappable = axis.imshow(np.squeeze(self.proj[:, i]), cmap=self.colormap, origin='lower', vmin=min_val, vmax=max_val)
         if self.dimint == 0:
-            mappable = axis.imshow(np.squeeze(self.proj[i]), cmap=plt.cm.gray, origin='lower', vmin=min_val, vmax=max_val)
+            mappable = axis.imshow(np.squeeze(self.proj[i]), cmap=self.colormap, origin='lower', vmin=min_val, vmax=max_val)
         # axis.get_xaxis().set_ticks([])
         # axis.get_yaxis().set_ticks([])
         axis.set_xlabel(self.dimlist[0])
@@ -133,7 +134,7 @@ class plotProj:
             axis.set_title(self.dimlist[2] + ':' + str(i))
         divider = make_axes_locatable(axis)
         cax = divider.append_axes("right", size="5%", pad=0.05)
-        fig.colorbar(mappable, cax=cax)
+        fig.colorbar(mappable, cax=cax,cmap=self.colormap)
         # plt.pause(0.01)
 
 
@@ -156,17 +157,17 @@ class plotProj:
         if self.dim in ['U', 'u']:
             plt.xlabel('V')
             plt.ylabel('T')
-            plt.imshow(np.squeeze(self.proj[:,:, self.slice]), cmap=plt.cm.gray, origin='lower', vmin=min_val, vmax=max_val)
+            plt.imshow(np.squeeze(self.proj[:,:, self.slice]), cmap=self.colormap, origin='lower', vmin=min_val, vmax=max_val)
         if self.dim in ['V', 'v']:
             plt.xlabel('U')
             plt.ylabel('T')
-            plt.imshow(np.squeeze(self.proj[:, self.slice]), cmap=plt.cm.gray,origin='lower', vmin=min_val, vmax=max_val)
+            plt.imshow(np.squeeze(self.proj[:, self.slice]), cmap=self.colormap,origin='lower', vmin=min_val, vmax=max_val)
         if self.dim in [None, 'T', 't']:
             if self.angles is not None:
                 plt.title("alpha={:+.3f} pi".format(self.angles[self.slice]/np.pi))
             plt.xlabel('U')
             plt.ylabel('V')
-            plt.imshow(np.squeeze(self.proj[self.slice]), cmap=plt.cm.gray,origin='lower', vmin=min_val, vmax=max_val)
+            plt.imshow(np.squeeze(self.proj[self.slice]), cmap=self.colormap,origin='lower', vmin=min_val, vmax=max_val)
         plt.show()
 
 def plotSinogram(proj, posV):
