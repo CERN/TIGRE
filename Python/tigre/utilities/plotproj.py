@@ -4,43 +4,6 @@ import matplotlib.animation as animation
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 
-def plotproj(projections):
-    plt.ion()
-
-    min_val = np.amin(projections)
-    max_val = np.amax(projections)
-    total_projections = projections.shape[0]
-    for i in range(total_projections):
-        plt.clf()
-        plt.imshow(np.squeeze(projections[i]), cmap=plt.cm.gray, origin='lower', vmin=min_val, vmax=max_val)
-
-        plt.gca().get_xaxis().set_ticks([])
-        plt.gca().get_yaxis().set_ticks([])
-
-        plt.xlabel("-> U")
-        plt.ylabel("-> V")
-        plt.title("Projection angle : " + str(i*360/total_projections))
-
-        plt.colorbar()
-
-        plt.pause(0.001)
-
-def ppslice(projections,slice=None,Dim=2):
-    if slice is None:
-        slice = projections.shape[2]/2
-    min_val = np.amin(projections)
-    max_val = np.amax(projections)
-    plt.clf()
-    if Dim==0:
-        plt.imshow(np.squeeze(projections[:,:,slice]), cmap=plt.cm.gray, origin='lower', vmin=min_val, vmax=max_val)
-    if Dim==1:
-        plt.imshow(np.squeeze(projections[:,slice]), cmap=plt.cm.gray, origin='lower', vmin=min_val, vmax=max_val)
-    if Dim==2:
-        plt.imshow(np.squeeze(projections[slice]), cmap=plt.cm.gray, origin='lower', vmin=min_val, vmax=max_val)
-    plt.colorbar()
-    plt.show()
-
-
 
 
 class plotProj:
@@ -76,7 +39,7 @@ class plotProj:
      'plotImg(a,dim="v")\n'
      '>>>returns plot along dim V\n')
 
-    def __init__(self, proj, angles=None, dim=None, slice=None, step=1, savegif=None, colormap='grey'):
+    def __init__(self, proj, angles=None, dim=None, slice=None, step=1, savegif=None, colormap='gray',clims=None):
         self.proj = proj
         self.dim = dim
         self.slice = slice
@@ -86,6 +49,12 @@ class plotProj:
         self.savegif = savegif
         self.angles = angles
         self.colormap = colormap
+        if clims is None:
+            self.min_val = np.amin(self.proj)
+            self.max_val = np.amax(self.proj)
+        else:
+            self.min_val=clims[0]
+            self.max_val=clims[1]
         if self.step is None or self.step==0:
             self.step=1
         if self.savegif=='':
@@ -119,11 +88,11 @@ class plotProj:
         fig.clf()
         axis = fig.add_subplot(1,1,1)
         if self.dimint == 2:
-            mappable = axis.imshow(np.squeeze(self.proj[:, :, i]), cmap=self.colormap, origin='lower', vmin=min_val, vmax=max_val)
+            mappable = axis.imshow(np.squeeze(self.proj[:, :, i]), cmap=self.colormap, origin='lower', vmin=self.min_val, vmax=self.max_val)
         if self.dimint == 1:
-            mappable = axis.imshow(np.squeeze(self.proj[:, i]), cmap=self.colormap, origin='lower', vmin=min_val, vmax=max_val)
+            mappable = axis.imshow(np.squeeze(self.proj[:, i]), cmap=self.colormap, origin='lower', vmin=self.min_val, vmax=self.max_val)
         if self.dimint == 0:
-            mappable = axis.imshow(np.squeeze(self.proj[i]), cmap=self.colormap, origin='lower', vmin=min_val, vmax=max_val)
+            mappable = axis.imshow(np.squeeze(self.proj[i]), cmap=self.colormap, origin='lower', vmin=self.min_val, vmax=self.max_val)
         # axis.get_xaxis().set_ticks([])
         # axis.get_yaxis().set_ticks([])
         axis.set_xlabel(self.dimlist[0])
@@ -139,12 +108,11 @@ class plotProj:
 
 
     def run_plot(self):
-        min_val = np.amin(self.proj)
-        max_val = np.amax(self.proj)
+        
         dim = self.proj.shape
 
         fig = plt.figure()
-        ani = animation.FuncAnimation(fig, self.update_frame, fargs = (fig, min_val, max_val), interval = 100, repeat_delay=1000, frames = len(range(0,dim[self.dimint])[::self.step]))
+        ani = animation.FuncAnimation(fig, self.update_frame, fargs = (fig, self.min_val, self.max_val), interval = 100, repeat_delay=1000, frames = len(range(0,dim[self.dimint])[::self.step]))
         if self.savegif is not None:
             ani.save(self.savegif, writer="pillow")
             plt.show()
@@ -152,22 +120,21 @@ class plotProj:
             plt.show()
 
     def slicer(self):
-        min_val = np.amin(self.proj)
-        max_val = np.amax(self.proj)
+        
         if self.dim in ['U', 'u']:
             plt.xlabel('V')
             plt.ylabel('T')
-            plt.imshow(np.squeeze(self.proj[:,:, self.slice]), cmap=self.colormap, origin='lower', vmin=min_val, vmax=max_val)
+            plt.imshow(np.squeeze(self.proj[:,:, self.slice]), cmap=self.colormap, origin='lower', vmin=self.min_val, vmax=self.max_val)
         if self.dim in ['V', 'v']:
             plt.xlabel('U')
             plt.ylabel('T')
-            plt.imshow(np.squeeze(self.proj[:, self.slice]), cmap=self.colormap,origin='lower', vmin=min_val, vmax=max_val)
+            plt.imshow(np.squeeze(self.proj[:, self.slice]), cmap=self.colormap,origin='lower', vmin=self.min_val, vmax=self.max_val)
         if self.dim in [None, 'T', 't']:
             if self.angles is not None:
                 plt.title("alpha={:+.3f} pi".format(self.angles[self.slice]/np.pi))
             plt.xlabel('U')
             plt.ylabel('V')
-            plt.imshow(np.squeeze(self.proj[self.slice]), cmap=self.colormap,origin='lower', vmin=min_val, vmax=max_val)
+            plt.imshow(np.squeeze(self.proj[self.slice]), cmap=self.colormap,origin='lower', vmin=self.min_val, vmax=self.max_val)
         plt.show()
 
 def plotSinogram(proj, posV):
@@ -181,3 +148,4 @@ def plotSinogram(proj, posV):
     '''
     plotProj(proj, dim='V', slice=posV)
 
+plotproj=plotProj

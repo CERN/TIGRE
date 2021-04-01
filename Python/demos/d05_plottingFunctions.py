@@ -47,9 +47,45 @@ imgFDK=algs.fdk(noise_projections,geo,angles)
 niter=50
 imgOSSART=algs.ossart(noise_projections,geo,angles,50)
 
-#%% %% Lets use PlotProj
+## Lets use PlotProj
+# 
+# plotProj plots the projection data measure on the detector on each angle.
+#
+# exhaustive list of possible parameters:
 
-# See issue #265
+# 'Step' : Defines the step size for skippin projections when plotting,
+# usefull when there are a big amount of projections. Default is 1
+step=2
+
+# 'Colormap': Defines the colormap used to plot. Default is 'gray'. 
+
+colormap='viridis'
+colormap='plasma'
+colormap='gray'
+
+# 'Clims': Defines the data limits for the color, usefull when one wants to
+# see some specific range. The default uses the minimum and maximum of the
+# data.
+
+clims=[0, 200]
+
+# 'Savegif': allows to save the plotted figure as an animated gif,
+# specified by the given filename.
+
+giffilename='demo5projections.gif'
+
+# 'Slice': allows to plot a single projection .Will overwrite the behaviour
+# of 'Step'
+slice=5
+
+# Lets try out. 
+tigre.plotproj(noise_projections,angles,step=step,colormap=colormap,clims=clims,savegif=giffilename) # not using 'Step'
+
+# Remember you can also plot errors, for example the added noise by:
+
+noise=np.abs(noise_projections-projections) #abs is what we are interested in plotting
+tigre.plotproj(noise,angles,clims=[0,2]) 
+
 
 
 #%% PlotImg
