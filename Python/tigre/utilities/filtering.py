@@ -19,11 +19,9 @@ def filtering(proj, geo, angles, parker, verbose=False):
     filt = filter(geo.filter, ramp_kernel[0], filt_len, d, verbose=verbose)
     filt = np.kron(np.ones((np.int64(geo.nDetector[0]), 1)), filt)
     for i in range(angles.shape[0]):
-        fproj = np.zeros((geo.nDetector[0], filt_len), dtype=np.float32)
-        fproj[
-            :, int(filt_len / 2 - geo.nDetector[1] / 2):int(filt_len / 2 + geo.nDetector[1] / 2)
-        ] = proj[i]
-        fproj = np.fft.fft(fproj, axis=1)
+        fproj=np.zeros((int(geo.nDetector[0]),filt_len),dtype=np.float32)
+        fproj[:,int(filt_len/2-geo.nDetector[1]/2):int(filt_len/2+geo.nDetector[1]/2)]=proj[i]
+        fproj=np.fft.fft(fproj,axis=1)
 
         fproj = fproj * filt
 

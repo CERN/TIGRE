@@ -514,20 +514,17 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
     P.z=-(geo.sVoxelZ/2-geo.dVoxelZ/2)+geo.offOrigZ[i];
     
     // Get coors from next voxel in each direction
-    Px.x=P.x+geo.dVoxelX;      Py.x=P.x;                Pz.x=P.x;
+    Px.x=P.x+geo.dVoxelX;       Py.x=P.x;                Pz.x=P.x;
     Px.y=P.y;                   Py.y=P.y+geo.dVoxelY;    Pz.y=P.y;
     Px.z=P.z;                   Py.z=P.z;                Pz.z=P.z+geo.dVoxelZ;
     
     
     
-// Rotate image around X axis (this is equivalent of rotating the source and detector) RZ RY RZ
-    
+   // Rotate image around X axis (this is equivalent of rotating the source and detector) RZ RY RZ
     eulerZYZT(geo,&P);
     eulerZYZT(geo,&Px);
     eulerZYZT(geo,&Py);
     eulerZYZT(geo,&Pz);
-    
-    
     
     //detector offset
     P.z =P.z-geo.offDetecV[i];            P.y =P.y-geo.offDetecU[i];
@@ -536,13 +533,34 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
     Pz.z =Pz.z-geo.offDetecV[i];          Pz.y =Pz.y-geo.offDetecU[i];
     
     //Detector Roll pitch Yaw
+    //
+    //
+    // first, we need to offset everything so (0,0,0) is the center of the detector
+    // Only X is required for that
+    P.x=P.x+(geo.DSD[i]-geo.DSO[i]);
+    Px.x=Px.x+(geo.DSD[i]-geo.DSO[i]);
+    Py.x=Py.x+(geo.DSD[i]-geo.DSO[i]);
+    Pz.x=Pz.x+(geo.DSD[i]-geo.DSO[i]);
+
+    rollPitchYawT(geo,i,&P);
+    rollPitchYawT(geo,i,&Px);
+    rollPitchYawT(geo,i,&Py);
+    rollPitchYawT(geo,i,&Pz);
+
+    P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
+    Px.x=Px.x-(geo.DSD[i]-geo.DSO[i]);
+    Py.x=Py.x-(geo.DSD[i]-geo.DSO[i]);
+    Pz.x=Pz.x-(geo.DSD[i]-geo.DSO[i]);
     
     
     Point3D source;
-    source.x=geo.DSO[i]; //allready offseted for rotation
+    source.x=0;
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
     
+    rollPitchYawT(geo,i,&source);
+    source.x=source.x-(geo.DSD[i]-geo.DSO[i]);
+            
     P.z =P.z /geo.dDetecV;                          P.y =P.y/geo.dDetecU;
     Px.z=Px.z/geo.dDetecV;                          Px.y=Px.y/geo.dDetecU;
     Py.z=Py.z/geo.dDetecV;                          Py.y=Py.y/geo.dDetecU;

@@ -48,12 +48,8 @@ def order_subsets(angles, blocksize, mode):
     elif blocksize > 1:
         # using list comprehension to form the blocks.
         oldindex = np.arange(angles.shape[0])
-        index_alpha = np.array(
-            [oldindex[i:i + blocksize] for i in range(0, len(oldindex), blocksize)], dtype=object
-        )
-        block_alpha = np.array(
-            [angles[i:i + blocksize] for i in range(0, angles.shape[0], blocksize)], dtype=object
-        )
+        index_alpha = np.reshape(oldindex, (-1, blocksize))
+        block_alpha = np.reshape(angles, (-1, blocksize, 3))
         if mode is None or mode == "ordered":
             return block_alpha, index_alpha
 
