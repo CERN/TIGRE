@@ -26,6 +26,3 @@ To load the data (head phantom) for experiments, do as follows:
 .. parsed-literal::
 
     <tigre.utilities.plotimg.plotimg instance at 0x7fe948fdaea8>
-
-
-

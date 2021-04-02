@@ -59,6 +59,3 @@ Reconstruct image using OS-SART and FDK
 .. parsed-literal::
 
     <tigre.utilities.plotimg.plotimg instance at 0x7f726bd0b758>
-
-
-
