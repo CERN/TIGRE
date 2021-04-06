@@ -131,7 +131,7 @@ class IterativeReconAlg(object):
         self.geo = geo
         self.niter = niter
 
-        options = dict(blocksize=20, lmbda=1, lmbda_red=0.99,
+        options = dict(blocksize=20, lmbda=1, lmbda_red=1,
                        OrderStrategy=None, Quameasopts=None,
                        init=None, verbose=True, noneg=True,
                        computel2=False, dataminimizing='art_data_minimizing',
