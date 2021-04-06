@@ -133,4 +133,4 @@ tigre.plotimg(imgFDK,dim=dimension,step=step,clims=clims,colormap=colormap,saveg
 # Remember: You can always plot more than 1 image together!
 tigre.plotimg(np.concatenate([head, imgFDK, imgOSSART],axis=1),dim='z')
 # Or even the errors!
-plotImg(np.concatenate([np.abs(head-imgFDK), np.abs(head-imgOSSART)]),dim='z')
+tigre.plotImg(np.concatenate([np.abs(head-imgFDK), np.abs(head-imgOSSART)]),dim='z')

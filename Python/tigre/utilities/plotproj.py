@@ -103,7 +103,7 @@ class plotProj:
             axis.set_title(self.dimlist[2] + ':' + str(i))
         divider = make_axes_locatable(axis)
         cax = divider.append_axes("right", size="5%", pad=0.05)
-        fig.colorbar(mappable, cax=cax,cmap=self.colormap)
+        fig.colorbar(mappable, cax=cax)
         # plt.pause(0.01)
 
 
