@@ -179,10 +179,11 @@ class IterativeReconAlg(object):
         # make it list
         if self.Quameasopts is not None:
             self.Quameasopts = [self.Quameasopts] if isinstance(self.Quameasopts, str) else self.Quameasopts
-        setattr(self, 'lq', np.empty([len(self.Quameasopts),niter]))  # quameasoptslist
-        setattr(self, 'l2l', np.empty([1,niter]))  # l2list
-        self.lq[:]=np.nan
-        self.l2l[:]=np.nan
+            setattr(self, 'lq', np.zeros([len(self.Quameasopts),niter]))  # quameasoptslist
+        else:
+            setattr(self, 'lq', np.zeros([0,niter]))  # quameasoptslist
+        setattr(self, 'l2l', np.zeros([1,niter]))  # l2list
+        
 
     def set_w(self):
         """
