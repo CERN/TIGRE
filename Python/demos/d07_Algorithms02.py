@@ -63,7 +63,7 @@ noise_projections=CTnoise.add(projections,Poisson=1e5,Gaussian=np.array([0, 10])
 # 'lambda': hyperparameter. The update will be multiplied by this number
 # every iteration, to make the steps bigger or smaller. Default: 1
 #
-lambda=1
+lmbda = 1
 
 
 # 'lambdared': reduction multiplier for the hyperparameter.
@@ -97,12 +97,15 @@ verbose=True
 #                parameters. Input should contain a cell array of desired
 #                quality measurement names. Example: {'CC','RMSE','MSSIM'}
 #                These will be computed in each iteration. 
-qualmeas='RMSE'
+qualmeas=['UQI','RMSE']
 
 # SIRT and SART both have no extra input parameters.
 # =========================================================================
-imgSIRT,errL2SIRT,qualitySIRT=algs.sirt(projections,geo,angles,20,lambda=lambda,lambda_red=lambdared,verbose=verbose,QualMeas=qualmeas)
-imgSART,errL2SART,qualitySART=algs.sirt(projections,geo,angles,20,lambda=lambda,lambda_red=lambdared,verbose=verbose,QualMeas=qualmeas)
+imgSIRT,qualitySIRT=algs.sirt(projections,geo,angles,20,lmbda=lmbda,lmbda_red=lambdared,verbose=verbose,Quameasopts=qualmeas,computel2=False)
+# imgSART,qualitySART=algs.sirt(projections,geo,angles,20,lmbda=lmbda,lmbda_red=lambdared,verbose=verbose,QualMeas=qualmeas)
+
+print(qualitySIRT)
+exit()
 # OS-SART
 # ========================================================================
 # Additionally OS-SART includes a couple of other parameters, related to
@@ -119,4 +122,4 @@ blcks=8
 #                                     biggest angular distance with the
 #                                     ones used.  (default)
 order='angularDistance'
-imgOSSART,errL2OSSART,qualityOSSART=algs.ossart(projections,geo,angles,20,lambda=lambda,lambda_red=lambdared,verbose=verbose,Quameasopts=qualmeas,blocksize=blcks,'OrderStrategy',order);
+imgOSSART,qualityOSSART=algs.ossart(projections,geo,angles,20,lmbda=lmbda,lmbda_red=lambdared,verbose=verbose,Quameasopts=qualmeas,blocksize=blcks,OrderStrategy=order)

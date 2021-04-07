@@ -278,7 +278,7 @@ class IterativeReconAlg(object):
                     toc = default_timer()
                 if i == 1:
                     tic = default_timer()
-                    print('Esitmated time until completetion (s): ' +
+                    print('Estimated time until completion (s): ' +
                           str((self.niter - 1) * (tic - toc)))
             getattr(self, self.dataminimizing)()
             self.error_measurement(res_prev, i)
@@ -352,6 +352,8 @@ class IterativeReconAlg(object):
         return self.res
 
     def geterrors(self):
+        print(len(self.l2l))
+        print(len(self.lq))
         return self.l2l, self.lq
 
     def __str__(self):
@@ -399,7 +401,7 @@ def decorator(IterativeReconAlg, name=None, docstring=None):
         if name is not None:
             alg.name = name
         alg.run_main_iter()
-        if alg.computel2:
+        if alg.computel2 or alg.Quameasopts is not None:
             return alg.getres(), alg.geterrors()
         else:
             return alg.getres()

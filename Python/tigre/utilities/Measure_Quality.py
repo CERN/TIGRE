@@ -34,7 +34,7 @@ def Measure_Quality(res_prev, res, QualMeasOpts):
     """
     values = []
     if 'RMSE' in QualMeasOpts:
-        N = reduce(lambda x,y: x*y, res_prev.shape)
+        N=np.prod(res_prev.shape)
         diff = res_prev - res
         values.append(np.sqrt(np.sum(diff ** 2) / N))
     if 'nRMSE' in QualMeasOpts:
@@ -45,7 +45,7 @@ def Measure_Quality(res_prev, res, QualMeasOpts):
         values.append(np.corrcoef(res_prev, res))
 
     if 'MSSIM' in QualMeasOpts:
-        N = reduce(lambda x,y: x*y, res_prev.shape)
+        N=np.prod(res_prev.shape)
 
         # Compute the mean pixel values of the two images
 
@@ -71,13 +71,12 @@ def Measure_Quality(res_prev, res, QualMeasOpts):
         # Structure comparison
         diffres_p = res_prev - mean_res_p
         diffres = res - mean_res
-        delta = (1 / (N - 1)) * sum(diffres_p * diffres)
+        delta = (1 / (N - 1)) * np.sum(diffres_p * diffres)
         s = (delta + (((K2 * d) ** 2)) / 2) / ((sres_p * sres) + ((K2 * d ** 2) / 2))
 
         values.append((1 / N) * l * c * s)
     if 'UQI' in QualMeasOpts:
-        N=len(res_prev)
-
+        N=np.prod(res_prev.shape)
         # Mean
         mean_res_p = np.mean(res_prev)
         mean_res = np.mean(res)
@@ -88,14 +87,15 @@ def Measure_Quality(res_prev, res, QualMeasOpts):
         if mean_res==0 and mean_res_p==0:
             raise ValueError('Initialising with 0 matrix not valid')
         # Covariance
-        cova = sum((res)-mean_res)*((res_prev) - mean_res_p)/(N-1)
+        cova = np.sum((res-mean_res)*(res_prev - mean_res_p))/(N-1)
         front = (2*cova)/(varres+varres_p)
         back = (2*mean_res*mean_res_p)/((mean_res**2)+(mean_res_p**2))
 
-        values.append(sum(front * back))
+        values.append(np.sum(front * back))
     if 'SSD' in QualMeasOpts:
         values.append(np.sum((res_prev-res)**2))
     if len(values) ==1:
         return values[0]
     else:
+        print(values)
         return values
