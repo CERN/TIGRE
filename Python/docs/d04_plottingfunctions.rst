@@ -139,6 +139,3 @@ what about plotImg?
 .. parsed-literal::
 
     <tigre.Utilities.plotImg.plotImg instance at 0x7f00e601ab48>
-
-
-

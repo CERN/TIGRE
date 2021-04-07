@@ -191,5 +191,3 @@ plot results
 .. parsed-literal::
 
     <tigre.utilities.plotimg.plotimg instance at 0x7f4524a174d0>
-
-

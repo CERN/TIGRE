@@ -146,5 +146,3 @@ SART family of algorithms
 
 
 .. image:: d06_Algorithms02_files/d06_Algorithms02_9_0.png
-
-

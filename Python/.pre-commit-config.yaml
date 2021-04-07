@@ -1,0 +1,33 @@
+repos:
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.9.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [
+          flake8-annotations,
+          flake8-bugbear,
+          flake8-docstrings,
+          flake8-import-order,
+          pep8-naming,
+        ]
+        args: ['--config=Python/.flake8']
+  - repo: https://github.com/psf/black
+    rev: 20.8b1
+    hooks:
+      - id: black
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: end-of-file-fixer
+        exclude_types: [binary]
+        files: 'Python/'
+      - id: mixed-line-ending
+        exclude_types: [binary]
+        files: 'Python/'
+  - repo: https://github.com/pre-commit/pygrep-hooks
+    rev: v1.8.0
+    hooks:
+    -   id: python-check-blanket-noqa

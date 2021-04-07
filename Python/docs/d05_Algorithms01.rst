@@ -143,6 +143,3 @@ image while the other just in the boundaries
 .. parsed-literal::
 
     <tigre.utilities.plotimg.plotimg instance at 0x7f7401a845a8>
-
-
-

@@ -125,6 +125,3 @@ Usage of CGLS
 .. parsed-literal::
 
     <tigre.utilities.plotimg.plotimg instance at 0x7f3b03648c68>
-
-
-
