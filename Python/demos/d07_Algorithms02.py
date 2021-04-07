@@ -23,7 +23,7 @@ import numpy as np
 from tigre.utilities import sample_loader
 from tigre.utilities import CTnoise
 import tigre.algorithms as algs
-
+from matplotlib import pyplot as plt
 #%% Geometry
 geo=tigre.geometry_default(high_resolution=False) 
 
@@ -93,33 +93,64 @@ initmode=None
 #            default true.
 
 verbose=True
-# 'Quameasopts'     Asks the algorithm for a set of quality measurement
-#                parameters. Input should contain a cell array of desired
-#                quality measurement names. Example: {'CC','RMSE','MSSIM'}
+# 'Quameasopts'  Asks the algorithm for a set of quality measurement
+#                parameters. Input should contain a list of desired
+#                quality measurement names. Example: ['CC','RMSE','MSSIM']
 #                These will be computed in each iteration. 
-qualmeas=['UQI','RMSE']
+#                Note that this is the change in parameter value per iteration, not the quality of the result. 
+qualmeas=['RMSE','SSD']
 
 # SIRT and SART both have no extra input parameters.
 # =========================================================================
-imgSIRT,qualitySIRT=algs.sirt(projections,geo,angles,20,lmbda=lmbda,lmbda_red=lambdared,verbose=verbose,Quameasopts=qualmeas,computel2=False)
-# imgSART,qualitySART=algs.sirt(projections,geo,angles,20,lmbda=lmbda,lmbda_red=lambdared,verbose=verbose,QualMeas=qualmeas)
+imgSIRT,qualitySIRT=algs.sirt(projections,geo,angles,20,lmbda=lmbda,lmbda_red=lambdared,verbose=verbose,Quameasopts=qualmeas,computel2=True)
+imgSART,qualitySART=algs.sart(projections,geo,angles,20,lmbda=lmbda,lmbda_red=lambdared,verbose=verbose,Quameasopts=qualmeas,computel2=True)
 
-print(qualitySIRT)
-exit()
 # OS-SART
 # ========================================================================
 # Additionally OS-SART includes a couple of other parameters, related to
 # the subsets.
 #
-#   'BlockSize':   Sets the projection block size used simultaneously. If
+#   'blocksize':   Sets the projection block size used simultaneously. If
 #                  BlockSize = 1 OS-SART becomes SART and if  BlockSize = size(angles,2)
 #                  then OS-SART becomes SIRT. Default is 20.
-blcks=8
+blcks=10
 # 'OrderStrategy':  Chooses the subset ordering strategy. Options are
 #                  'ordered' :uses them in the input order, but divided
 #                  'random'  : orders them randomply
 #                  'angularDistance': chooses the next subset with the 
 #                                     biggest angular distance with the
 #                                     ones used.  (default)
-order='angularDistance'
-imgOSSART,qualityOSSART=algs.ossart(projections,geo,angles,20,lmbda=lmbda,lmbda_red=lambdared,verbose=verbose,Quameasopts=qualmeas,blocksize=blcks,OrderStrategy=order)
+order='random'
+imgOSSART,qualityOSSART=algs.ossart(projections,geo,angles,20,lmbda=lmbda,lmbda_red=lambdared,verbose=verbose,Quameasopts=qualmeas,blocksize=blcks,OrderStrategy=order,computel2=True)
+
+
+#%% Lets have a brief show of the results
+
+plt.subplot(211)
+plt.plot(np.log10(np.vstack((qualitySIRT[0,:],qualityOSSART[0,:],qualitySART[0,:]))).T)
+plt.title('Convergence')
+plt.xlabel('Iteration')
+plt.ylabel('$ log_{10}(|Ax-b|) $')
+plt.gca().legend(('SIRT','OS-SART','SART'))
+plt.subplot(212)
+plt.plot(np.log10(np.vstack((qualitySIRT[1,:],qualityOSSART[1,:],qualitySART[1,:]))).T)
+plt.title('Evolution of RMSE')
+plt.gca().legend(('SIRT','OS-SART','SART'))
+plt.xlabel('Iteration')
+plt.ylabel('$ log_{10}(RMSE) $')
+plt.show()
+
+#%% plot the results
+
+# It is clear that SART will get to better results for the same amoutn of
+# iterations, however, it takes x7 more time to run.
+
+# SART 
+# OS-SART
+# SIRT
+
+tigre.plotimg(np.concatenate([imgSIRT,  imgOSSART, imgSART],axis=1),dim='Z',savegif='sarts.gif')
+
+# plot error
+tigre.plotimg(np.abs(np.concatenate([head-imgSIRT, head-imgOSSART, head-imgSART ],axis=1)),dim='Z')
+

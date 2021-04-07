@@ -176,8 +176,13 @@ class IterativeReconAlg(object):
             self.set_v()
         if not hasattr(self, 'res'):
             self.set_res()
-        setattr(self, 'lq', [])  # quameasoptslist
-        setattr(self, 'l2l', [])  # l2list
+        # make it list
+        if self.Quameasopts is not None:
+            self.Quameasopts = [self.Quameasopts] if isinstance(self.Quameasopts, str) else self.Quameasopts
+        setattr(self, 'lq', np.empty([len(self.Quameasopts),niter]))  # quameasoptslist
+        setattr(self, 'l2l', np.empty([1,niter]))  # l2list
+        self.lq[:]=np.nan
+        self.l2l[:]=np.nan
 
     def set_w(self):
         """
@@ -318,13 +323,13 @@ class IterativeReconAlg(object):
         return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta, self.gpuids)
 
     def error_measurement(self, res_prev, iter):
-        if self.Quameasopts is not None and iter > 0:
-            self.lq.append(MQ(self.res, res_prev, self.Quameasopts))
+        if self.Quameasopts is not None:
+            self.lq[:,iter]=MQ(self.res, res_prev, self.Quameasopts)
         if self.computel2:
             # compute l2 borm for b-Ax
             errornow = im3DNORM(
                 self.proj - Ax(self.res, self.geo, self.angles, 'Siddon', gpuids=self.gpuids), 2)
-            self.l2l.append(errornow)
+            self.l2l[0,iter]=errornow
 
     def update_image(self, geo, angle, iteration):
         """
@@ -352,9 +357,10 @@ class IterativeReconAlg(object):
         return self.res
 
     def geterrors(self):
-        print(len(self.l2l))
-        print(len(self.lq))
-        return self.l2l, self.lq
+        if self.computel2:
+            return np.concatenate((self.l2l, self.lq),axis=0)
+        else:
+            return self.lq
 
     def __str__(self):
         parameters = []
