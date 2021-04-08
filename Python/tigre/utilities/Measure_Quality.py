@@ -44,7 +44,8 @@ def Measure_Quality(res_prev, res, QualMeasOpts):
             diff = res_prev - res
             values.append((np.sqrt(np.sum(diff ** 2) / N)/((0.00001+np.sqrt(np.sum(res ** 2)) / N))))
         if 'CC'==qual:
-            values.append(np.corrcoef(res_prev, res))
+            cc=np.corrcoef(res_prev.ravel(), res.ravel())
+            values.append(cc[0,1])
 
         if 'MSSIM'==qual:
             N=np.prod(res_prev.shape)

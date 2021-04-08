@@ -25,7 +25,6 @@
 # Codes:              https://github.com/CERN/TIGRE/
 # Coded by:           Ander Biguri 
 #--------------------------------------------------------------------------
-## Initialize
 #%%Initialize
 import tigre
 import numpy as np
