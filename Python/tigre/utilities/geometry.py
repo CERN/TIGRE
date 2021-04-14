@@ -32,13 +32,13 @@ class Geometry(object):
         if self.mode is None:
             setattr(self, 'mode', 'cone')
 
-        manditory_attribs = ['nVoxel', 'sVoxel', 'dVoxel',
+        mandatory_attribs = ['nVoxel', 'sVoxel', 'dVoxel',
                              'nDetector', 'sDetector', 'dDetector',
                              'DSO', 'DSD']
-        included_attribs_indx = [hasattr(self, attrib) for attrib in manditory_attribs]
+        included_attribs_indx = [hasattr(self, attrib) for attrib in mandatory_attribs]
         if not all(included_attribs_indx):
             raise AttributeError('following manditory fields '
-                                 'missing from geometry:' + str([attrib for attrib in manditory_attribs
+                                 'missing from geometry:' + str([attrib for attrib in mandatory_attribs
                                                                  if not hasattr(self, attrib)])
                                  )
         optional_attribs = ['offOrigin', 'offDetector', 'rotDetector', 'COR',
@@ -71,7 +71,7 @@ class Geometry(object):
             self.__check_and_repmat__('offDetector', angles)
         else:
             self.offDetector = np.array([0, 0])
-            self.offDetector = np.zeros((angles.shape[0], 2))
+            self.__check_and_repmat__('offDetector', angles)
 
         if hasattr(self, 'rotDetector'):
             self.__check_and_repmat__('rotDetector', angles)

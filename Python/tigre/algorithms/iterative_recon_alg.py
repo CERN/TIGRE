@@ -131,6 +131,8 @@ class IterativeReconAlg(object):
         self.geo = geo
         self.niter = niter
 
+        self.geo.check_geo(angles)
+        
         options = dict(blocksize=20, lmbda=1, lmbda_red=1,
                        OrderStrategy=None, Quameasopts=None,
                        init=None, verbose=True, noneg=True,
@@ -197,7 +199,7 @@ class IterativeReconAlg(object):
         geox.nVoxel = np.array([2, 2, 2])
         geox.dVoxel = geox.sVoxel / geox.nVoxel
         W = Ax(np.ones(geox.nVoxel, dtype=np.float32), geox, self.angles, "Siddon", gpuids=self.gpuids)
-        W[W <= min(self.geo.dVoxel / 4)] = np.inf
+        W[W <= min(self.geo.dVoxel / 2)] = np.inf
         W = 1. / W
         setattr(self, 'W', W)
 
@@ -215,12 +217,22 @@ class IterativeReconAlg(object):
                         
                 geox = copy.deepcopy(self.geo)
                 geox.angles = self.angleblocks[i]
+
+                
+                geox.DSD = geo.DSD[self.angle_index[i]]
+                geox.DSO = geo.DSO[self.angle_index[i]]
+                geox.offOrigin = geo.offOrigin[self.angle_index[i],:]
+                geox.offDetector = geo.offDetector[self.angle_index[i],:]
+                geox.rotDetector = geo.rotDetector[self.angle_index[i],:]
+                geox.COR = geo.COR[self.angle_index[i]]
+                
                 # shrink the volume size to avoid zeros in backprojection
                 geox.sVoxel = geox.sVoxel * np.max(geox.sVoxel[1:] / np.linalg.norm(geox.sVoxel[1:])) * 0.9
                 geox.dVoxel = geox.sVoxel / geox.nVoxel
                 proj_one = np.ones((len(self.angleblocks[i]), geo.nDetector[0], 
                                     geo.nDetector[1]), dtype=np.float32)
-                V[i] = Atb(proj_one, geox, self.angleblocks[i],'FDK', gpuids=self.gpuids).mean(axis=0)
+                
+                V[i] = Atb(proj_one, geox, self.angleblocks[i],'FDK', gpuids=self.gpuids).sum(axis=0)+0.000001
                 
             else:
                 V[i] *= len(self.angleblocks[i])
@@ -292,24 +304,22 @@ class IterativeReconAlg(object):
     def art_data_minimizing(self):
 
         geo = copy.deepcopy(self.geo)
+        
         for j in range(len(self.angleblocks)):
             if self.blocksize == 1:
                 angle = np.array([self.angleblocks[j]], dtype=np.float32)
+                angle_indices=np.array([self.angle_index[j]],dtype=np.int32)
+
             else:
                 angle = self.angleblocks[j]
-
-            if geo.offOrigin.shape[0] == self.angles.shape[0]:
-                geo.offOrigin = self.geo.offOrigin[j]
-            if geo.offDetector.shape[0] == self.angles.shape[0]:
-                geo.offOrin = self.geo.offDetector[j]
-            if geo.rotDetector.shape[0] == self.angles.shape[0]:
-                geo.rotDetector = self.geo.rotDetector[j]
-            if hasattr(geo.DSD, 'shape') and len((geo.DSD.shape)):
-                if geo.DSD.shape[0] == self.angles.shape[0]:
-                    geo.DSD = self.geo.DSD[j]
-            if hasattr(geo.DSO, 'shape') and len((geo.DSD.shape)):
-                if geo.DSO.shape[0] == self.angles.shape[0]:
-                    geo.DSO = self.geo.DSO[j]
+                angle_indices= self.angle_index[j]
+                # slice parameters if needed
+            
+            geo.offOrigin = self.geo.offOrigin[angle_indices]
+            geo.offDetector = self.geo.offDetector[angle_indices]
+            geo.rotDetector = self.geo.rotDetector[angle_indices]
+            geo.DSD = self.geo.DSD[angle_indices]
+            geo.DSO = self.geo.DSO[angle_indices]
 
             self.update_image(geo, angle, j)
 
@@ -346,13 +356,13 @@ class IterativeReconAlg(object):
 
         :return: None
         """
+        
+
         ang_index = self.angle_index[iteration].astype(np.int)
-        self.res += self.lmbda * 1. / self.V[iteration] * Atb(
-            self.W[ang_index] * (self.proj[ang_index] - Ax(self.res, geo, angle, 'Siddon', gpuids=self.gpuids)),
-            geo, 
-            angle,
-            'FDK',
-            gpuids=self.gpuids)
+
+        self.res += self.lmbda * 1. / self.V[iteration] * \
+                        Atb( self.W[ang_index] * (self.proj[ang_index] - Ax(self.res, geo, angle, 'Siddon', gpuids=self.gpuids)),\
+                                                                                                                    geo, angle,'FDK',gpuids=self.gpuids)
 
     def getres(self):
         return self.res
@@ -404,6 +414,8 @@ def decorator(IterativeReconAlg, name=None, docstring=None):
     """
 
     def iterativereconalg(proj, geo, angles, niter, **kwargs):
+        
+        geo.check_geo(angles)
         alg = IterativeReconAlg(proj, geo, angles, niter, **kwargs)
         if name is not None:
             alg.name = name

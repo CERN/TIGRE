@@ -10,8 +10,8 @@ class ConeGeometryDefault(Geometry):
         if high_resolution:
             # VARIABLE                                          DESCRIPTION                    UNITS
             # -------------------------------------------------------------------------------------
-            self.DSD = 1536                                     # Distance Source Detector      (mm)
-            self.DSO = 1000                                     # Distance Source Origin        (mm)
+            self.DSD = 1536.0                                   # Distance Source Detector      (mm)
+            self.DSO = 1000.0                                   # Distance Source Origin        (mm)
             # Detector parameters
             self.nDetector = np.array((512, 512))               # number of pixels              (px)
             self.dDetector = np.array((0.8, 0.8))               # size of each pixel            (mm)
@@ -32,8 +32,8 @@ class ConeGeometryDefault(Geometry):
         else:
             # VARIABLE                                          DESCRIPTION                    UNITS
             # -------------------------------------------------------------------------------------
-            self.DSD = 1536                                     # Distance Source Detector      (mm)
-            self.DSO = 1000                                     # Distance Source Origin        (mm)
+            self.DSD = 1536.0                                   # Distance Source Detector      (mm)
+            self.DSO = 1000.0                                   # Distance Source Origin        (mm)
             # Detector parameters
             self.nDetector = np.array((128, 128))                # (V,U) number of pixels        (px)
             self.dDetector = np.array((0.8, 0.8))*4             # size of each pixel            (mm)
@@ -54,8 +54,8 @@ class ConeGeometryDefault(Geometry):
         if nVoxel is not None:
             # VARIABLE                                          DESCRIPTION                    UNITS
             # -------------------------------------------------------------------------------------
-            self.DSD = 1536                                     # Distance Source Detector      (mm)
-            self.DSO = 1000                                     # Distance Source Origin        (mm)
+            self.DSD = 1536.0                                   # Distance Source Detector      (mm)
+            self.DSO = 1000.0                                   # Distance Source Origin        (mm)
                                                                 # Detector parameters
             self.nDetector = np.array((nVoxel[1],
                                        nVoxel[2])
