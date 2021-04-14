@@ -40,7 +40,7 @@ geo=defaultGeometry('nVoxel',[128;128;128]);
 geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/sample)
 
 %% Description
-% The difference between them is that `ray-voxel` will compute the
+% The difference between them is that `Siddon` will compute the
 % intersection of a ray crossing each voxel, and the `interpolated` will
 % sample the voxels at a given sample rate.
 
@@ -56,14 +56,14 @@ raytime=toc;
 % It is relatively clear that discretization artefacts appear with the
 % ray-voxel approach
 plotProj([projInterp projray abs(projInterp-projray)],0);
-% But also the ray voxel approach is faster (more ovbious at bigger seizes)
+% But also the ray voxel approach is faster (more obvious at bigger sizes)
 disp(['Time interpolated: ' num2str(interptime)]);
 disp(['Time Siddon      : ' num2str(raytime)]);
 disp('Press enter to continue')
 pause
 %% We can play with the accuracy value
 
-% With small voxel the errors are more ovbioous
+% With small voxel the errors are more obvious
 geo.nVoxel=[32;32;32];                      % number of voxels              (vx)
 geo.sVoxel=[256;256;256];                   % total size of the image       (mm)
 geo.dVoxel=geo.sVoxel./geo.nVoxel;          % size of each voxel            (mm)
