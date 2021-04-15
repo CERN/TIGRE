@@ -231,8 +231,7 @@ class IterativeReconAlg(object):
                 geox.dVoxel = geox.sVoxel / geox.nVoxel
                 proj_one = np.ones((len(self.angleblocks[i]), geo.nDetector[0], 
                                     geo.nDetector[1]), dtype=np.float32)
-                
-                V[i] = Atb(proj_one, geox, self.angleblocks[i],'FDK', gpuids=self.gpuids).sum(axis=0)+0.000001
+                V[i] = Atb(proj_one, geox, self.angleblocks[i],'FDK', gpuids=self.gpuids).mean(axis=0)
                 
             else:
                 V[i] *= len(self.angleblocks[i])
