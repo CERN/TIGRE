@@ -114,7 +114,7 @@ class FISTA(IterativeReconAlg):
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         self.lmbda = 0.1
         if 'hyper' not in kwargs:
-            self.__L__ = 2.e4
+            self.__L__ = 2.e8
         else:
             self.__L__ = kwargs['hyper']
         if 'tviter' not in kwargs:
@@ -154,7 +154,7 @@ class FISTA(IterativeReconAlg):
         x_rec = copy.deepcopy(self.res)
         lambdaForTv = 2 * self.__bm__ * self.__lambda__
         for i in range(self.niter):
-
+            
             res_prev = None
             if Quameasopts is not None:
                 res_prev = copy.deepcopy(self.res)

@@ -305,6 +305,7 @@ class IterativeReconAlg(object):
         geo = copy.deepcopy(self.geo)
         
         for j in range(len(self.angleblocks)):
+            
             if self.blocksize == 1:
                 angle = np.array([self.angleblocks[j]], dtype=np.float32)
                 angle_indices=np.array([self.angle_index[j]],dtype=np.int32)
@@ -313,7 +314,6 @@ class IterativeReconAlg(object):
                 angle = self.angleblocks[j]
                 angle_indices= self.angle_index[j]
                 # slice parameters if needed
-            
             geo.offOrigin = self.geo.offOrigin[angle_indices]
             geo.offDetector = self.geo.offDetector[angle_indices]
             geo.rotDetector = self.geo.rotDetector[angle_indices]
