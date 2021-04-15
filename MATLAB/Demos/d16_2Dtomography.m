@@ -1,4 +1,4 @@
-%% DEMO 16: Tricking TIGRE to do 2D tomography 
+%% DEMO 16: TIGRE 2D tomography 
 %
 %
 %  In demo we show how to do 2D tomography in TIGRE. It is exactly the same
@@ -33,10 +33,9 @@ geo.DSD = 1536;                             % Distance Source Detector      (mm)
 geo.DSO = 1000;                             % Distance Source Origin        (mm)
 % Detector parameters
 
-% HERE COMES THE TRICK.
 %
-% 1- Make the detector Nx2 (instead of 1)
-% 2- Make the image NxMx2  (isntead of 1)
+% 1- Make the detector Nx1 
+% 2- Make the image NxMx1 
 
 
 % Image parameters
@@ -62,22 +61,21 @@ geo.mode='parallel';
 
 angles=linspace(0,2*pi,100);
 phatom=single(phantom('Modified Shepp-Logan',geo.nVoxel(1)));
-projections=Ax(phatom,geo,angles,'interpolated');
+projections=Ax(phatom,geo,angles);
 %% recosntruct
 
 imgOSSART=OS_SART(projections,geo,angles,40);
 imgASDPOCS=ASD_POCS(projections,geo,angles,40);
 
 %% Plot
-plotImg([imgOSSART;imgASDPOCS ],'Dim',3,'Slice',1); %top is ASD_POCS, nottom OSSART
+plotImg([imgOSSART;imgASDPOCS ],'Dim',3,'Slice',1); %top is ASD_POCS, bottom OSSART
 
 
 %%
 %%
 %% And now Fan Beam
 %% 
-% The same thing! Just remember to offset the detector half a pixel, so its
-% centered (this is a bug, it will be changed at some point)
+% The same thing!
 
 %% FAN BEAM 2D
 
