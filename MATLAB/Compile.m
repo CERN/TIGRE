@@ -28,6 +28,8 @@ clear all;
 
 mex -setup
 
+addpath('./Utilities/Setup');
+
 if ispc
     currentFolder = cd;
     fileExisting  = (exist(fullfile(currentFolder, 'mex_CUDA_win64.xml'), 'file') == 2);
@@ -44,6 +46,8 @@ if ispc
 end
 
 set_cuda_cc_flags(cuda_ver);
+
+rmpath('./Utilities/Setup');
 
 % Compile for x64 or x32
 disp('Compiling TIGRE source...')
@@ -118,122 +122,3 @@ end
 disp('')
 disp('Compilation complete')
 
-
-function [cuda_path, cuda_ver]=locate_cuda()
-
-cuda_ver=-1;
-% Guess 1:
-cuda_path=getenv('CUDA_PATH');
-if isempty(cuda_path)
-    cuda_path=getenv('CUDA_HOME');
-end
-if ~isempty(cuda_path) % we have something.
-    cuda_ver=get_cuda_ver(cuda_path);
-    return
-end
-% Guess 2:
-if ispc
-    which='where';
-else
-    which='which';
-end
-[status,cmout]=system([which, ' nvcc']);
-if ~status % succeded
-    verstr=strsplit(cmout,'\n');
-    %which one to use? the first one I guess.
-    verstr=verstr{1};
-    cuda_path=strsplit(verstr,'bin');  
-    cuda_path=cuda_path{1}(1:end-1);
-    cuda_ver=get_cuda_ver(cuda_path);
-    return
-end
-% Guess 3
-if ispc
-    guess_cuda_path='C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/';
-    if exist(guess_cuda_path, 'dir')
-        versions=ls(guess_cuda_path);
-        % just grab biggest one.
-        versions_num=str2double(versions(3:end,2:end));
-        [~,idx]=max(versions_num);
-        cuda_path=[guess_cuda_path,versions(2+idx,:)];
-        cuda_ver=get_cuda_ver(cuda_path);
-        return
-    end
-else
-    % symlinc
-    guess_cuda_path='/usr/local/cuda';
-    if exist(guess_cuda_path, 'dir')
-        cuda_path=guess_cuda_path;
-        cuda_ver=get_cuda_ver(cuda_path);
-        return
-    end
-end
-
-
-end
-function cuda_ver=get_cuda_ver(cuda_path)
-if ispc
-    [status,cmout]=system(['"', cuda_path, '/bin/nvcc" -V']);
-else
-    [status,cmout]=system([cuda_path, '/bin/nvcc -V']);
-end
-if status
-    error('Error finding CUDA version')
-else
-    stridx=strfind(cmout,'release ');
-    cuda_ver=str2double(cmout(stridx+length('release ') : stridx+length('release ')+3));
-end
-end
-function set_cuda_cc_flags(cuda_version)
-
-if ispc
-    filename='mex_CUDA_win64.xml';
-elseif ismac
-    filename='mex_CUDA_maci64.xml';
-elseif isunix
-    filename='mex_CUDA_glnxa64.xml';
-end
-
-fid=fopen(filename,'r');
-i = 1;
-tline = fgetl(fid);
-A{i} = tline;
-while ischar(tline)
-    i = i+1;
-    tline = fgetl(fid);
-    A{i} = tline;
-end
-fclose(fid);
-
-if ispc
-    idx=squeeze(cellfun(@(x)strfind(x,'COMPILER="nvcc"'),A,'UniformOutput',false));
-else % same for mac and linux
-    idx=squeeze(cellfun(@(x)strfind(x,'MATLABMEX="-DMATLAB_MEX_FILE"'),A,'UniformOutput',false));
-end
-idx=find(~cellfun('isempty', idx));
-
-if cuda_version>=11.0
-   A{idx+1}='        COMPFLAGS=" -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_61,code=sm_61 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_72,code=sm_72 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_86,code=sm_86 --default-stream per-thread  --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"';
-elseif cuda_version>10.0
-   A{idx+1}='        COMPFLAGS=" -gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_61,code=sm_61 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_72,code=sm_72 -gencode=arch=compute_75,code=sm_75 --default-stream per-thread  --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"';
-elseif cuda_version>9.0
-   A{idx+1}='        COMPFLAGS=" -gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_61,code=sm_61 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_72,code=sm_72 --default-stream per-thread  --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"';
-elseif cuda_version>8.0
-   A{idx+1}='        COMPFLAGS=" -gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_61,code=sm_61 --default-stream per-thread  --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"';
-elseif cuda_version>7.0
-   A{idx+1}='        COMPFLAGS=" -gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_52,code=sm_52 --default-stream per-thread  --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"';
-else
-   A{idx+1}='        COMPFLAGS=" -gencode=arch=compute_30,code=sm_30 -gencode=arch=compute_35,code=sm_35 --default-stream per-thread  --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"';
-end
-% Write cell A into txt
-fid = fopen(filename, 'w');
-for i = 1:numel(A)
-    if A{i+1} == -1
-        fprintf(fid,'%s', A{i});
-        break
-    else
-        fprintf(fid,'%s\n', A{i});
-    end
-end
-
-end
