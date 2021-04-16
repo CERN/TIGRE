@@ -113,7 +113,7 @@ class FISTA(IterativeReconAlg):
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         self.lmbda = 0.1
         if "hyper" not in kwargs:
-            self.__L__ = 2.0e4
+            self.__L__ = 2.0e8
         else:
             self.__L__ = kwargs["hyper"]
         if "tviter" not in kwargs:

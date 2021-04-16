@@ -6,104 +6,52 @@ import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
-def plotproj(projections):
-    plt.ion()
+class plotProj:
+    # NOTE: type help(plotImg) after importing in order to get a readable manual.
+    (
+        "\n"
+        "plotProj(proj, dim) \n"
+        "    plots figure \n"
+        "default: progressive in slices following\n"
+        "    axis (dim)\n"
+        "Parameters \n"
+        "---------- \n"
+        "proj : Any 3D numpy array \n"
+        "\n"
+        'dim : ("U","V","T","u","v","t"), optional \n'
+        '       default is "T"\n'
+        "       NOTE: string arguments!"
+        "\n"
+        "angles: Any 1D numpy array. \n"
+        "        Its length must be the same as proj.shape[0].\n"
+        '        Works only when dim is "T" or "t"\n'
+        "slice: int, optional\n"
+        "     returns page of matrix according to index\n"
+        "step: int, optional\n"
+        "      Sets the step size between slice and slice."
+        "      Step is 1 by default.\n"
+        "savegif: string, optional\n"
+        "         Saves the image as .gif with the file name\n"
+        "Examples:\n"
+        "---------\n"
+        "a=np.ones([3,3,3])\n"
+        "plotImg(a)\n"
+        ">>>returns plot along dim T\n"
+        'plotImg(a,dim="v")\n'
+        ">>>returns plot along dim V\n"
+    )
 
-    min_val = np.amin(projections)
-    max_val = np.amax(projections)
-    total_projections = projections.shape[0]
-    for i in range(total_projections):
-        plt.clf()
-        plt.imshow(
-            np.squeeze(projections[i]), cmap=plt.cm.gray, origin="lower", vmin=min_val, vmax=max_val
-        )
-
-        plt.gca().get_xaxis().set_ticks([])
-        plt.gca().get_yaxis().set_ticks([])
-
-        plt.xlabel("-> U")
-        plt.ylabel("-> V")
-        plt.title("Projection angle : " + str(i * 360 / total_projections))
-
-        plt.colorbar()
-
-        plt.pause(0.001)
-
-
-def ppslice(projections, slice=None, Dim=2):  # noqa: N803
-    if slice is None:
-        slice = projections.shape[2] / 2
-    min_val = np.amin(projections)
-    max_val = np.amax(projections)
-    plt.clf()
-    if Dim == 0:
-        plt.imshow(
-            np.squeeze(projections[:, :, slice]),
-            cmap=plt.cm.gray,
-            origin="lower",
-            vmin=min_val,
-            vmax=max_val,
-        )
-    if Dim == 1:
-        plt.imshow(
-            np.squeeze(projections[:, slice]),
-            cmap=plt.cm.gray,
-            origin="lower",
-            vmin=min_val,
-            vmax=max_val,
-        )
-    if Dim == 2:
-        plt.imshow(
-            np.squeeze(projections[slice]),
-            cmap=plt.cm.gray,
-            origin="lower",
-            vmin=min_val,
-            vmax=max_val,
-        )
-    plt.colorbar()
-    plt.show()
-
-
-class plotProj:  # noqa: N801
-    """
-    plotProj(proj, dim)
-        plots figure
-    default: progressive in slices following
-        axis (dim)
-
-    Parameters
-    ----------
-    proj : Any 3D numpy array
-
-    dim : ("U","V","T","u","v","t"), optional
-        default is "T"
-        NOTE: string arguments!
-
-    angles: Any 1D numpy array.
-            Its length must be the same as proj.shape[0].
-            Works only when dim is "T" or "t"
-
-    slice: int, optional
-        returns page of matrix according to index
-
-    step: int, optional
-        Sets the step size between slice and slice.
-        Step is 1 by default.
-
-    savegif: string, optional
-            Saves the image as .gif with the file name
-
-    Examples:
-    ---------
-    a=np.ones([3,3,3])
-    plotImg(a)
-    >>>returns plot along dim T
-
-    plotImg(a,dim="v")
-    >>>returns plot along dim V
-    """
-
-    def __init__(self, proj, angles=None, dim=None, slice=None, step=1, savegif=None):
+    def __init__(
+        self,
+        proj,
+        angles=None,
+        dim=None,
+        slice=None,
+        step=1,
+        savegif=None,
+        colormap="gray",
+        clims=None,
+    ):
         self.proj = proj
         self.dim = dim
         self.slice = slice
@@ -112,17 +60,24 @@ class plotProj:  # noqa: N801
         self.step = step
         self.savegif = savegif
         self.angles = angles
+        self.colormap = colormap
+        if clims is None:
+            self.min_val = np.amin(self.proj)
+            self.max_val = np.amax(self.proj)
+        else:
+            self.min_val = clims[0]
+            self.max_val = clims[1]
         if self.step is None or self.step == 0:
             self.step = 1
         if self.savegif == "":
-            self.savegif = None
+            self.savegif == None
         if self.slice is None:
             self.run()
         if self.slice is not None:
             self.slicer()
 
     def run(self):
-        if self.dim not in self.dimlist:
+        if self.dim not in self.dimlist and self.dim is not None:
             raise NameError("check inputs for dim, should be string.")
         if self.angles is not None and self.angles.shape[0] != self.proj.shape[0]:
             raise NameError("check inputs for angles, should be size of proj.shape[0]")
@@ -147,26 +102,26 @@ class plotProj:  # noqa: N801
         if self.dimint == 2:
             mappable = axis.imshow(
                 np.squeeze(self.proj[:, :, i]),
-                cmap=plt.cm.gray,
+                cmap=self.colormap,
                 origin="lower",
-                vmin=min_val,
-                vmax=max_val,
+                vmin=self.min_val,
+                vmax=self.max_val,
             )
         if self.dimint == 1:
             mappable = axis.imshow(
                 np.squeeze(self.proj[:, i]),
-                cmap=plt.cm.gray,
+                cmap=self.colormap,
                 origin="lower",
-                vmin=min_val,
-                vmax=max_val,
+                vmin=self.min_val,
+                vmax=self.max_val,
             )
         if self.dimint == 0:
             mappable = axis.imshow(
                 np.squeeze(self.proj[i]),
-                cmap=plt.cm.gray,
+                cmap=self.colormap,
                 origin="lower",
-                vmin=min_val,
-                vmax=max_val,
+                vmin=self.min_val,
+                vmax=self.max_val,
             )
         # axis.get_xaxis().set_ticks([])
         # axis.get_yaxis().set_ticks([])
@@ -184,15 +139,14 @@ class plotProj:  # noqa: N801
         # plt.pause(0.01)
 
     def run_plot(self):
-        min_val = np.amin(self.proj)
-        max_val = np.amax(self.proj)
+
         dim = self.proj.shape
 
         fig = plt.figure()
         ani = animation.FuncAnimation(
             fig,
             self.update_frame,
-            fargs=(fig, min_val, max_val),
+            fargs=(fig, self.min_val, self.max_val),
             interval=100,
             repeat_delay=1000,
             frames=len(range(0, dim[self.dimint])[:: self.step]),
@@ -204,27 +158,26 @@ class plotProj:  # noqa: N801
             plt.show()
 
     def slicer(self):
-        min_val = np.amin(self.proj)
-        max_val = np.amax(self.proj)
+
         if self.dim in ["U", "u"]:
             plt.xlabel("V")
             plt.ylabel("T")
             plt.imshow(
                 np.squeeze(self.proj[:, :, self.slice]),
-                cmap=plt.cm.gray,
+                cmap=self.colormap,
                 origin="lower",
-                vmin=min_val,
-                vmax=max_val,
+                vmin=self.min_val,
+                vmax=self.max_val,
             )
         if self.dim in ["V", "v"]:
             plt.xlabel("U")
             plt.ylabel("T")
             plt.imshow(
                 np.squeeze(self.proj[:, self.slice]),
-                cmap=plt.cm.gray,
+                cmap=self.colormap,
                 origin="lower",
-                vmin=min_val,
-                vmax=max_val,
+                vmin=self.min_val,
+                vmax=self.max_val,
             )
         if self.dim in [None, "T", "t"]:
             if self.angles is not None:
@@ -233,10 +186,10 @@ class plotProj:  # noqa: N801
             plt.ylabel("V")
             plt.imshow(
                 np.squeeze(self.proj[self.slice]),
-                cmap=plt.cm.gray,
+                cmap=self.colormap,
                 origin="lower",
-                vmin=min_val,
-                vmax=max_val,
+                vmin=self.min_val,
+                vmax=self.max_val,
             )
         plt.show()
 
@@ -252,3 +205,6 @@ def plotSinogram(proj, posV):  # noqa: N803
     posV : integer. in range of 0:proj.shape[1].
     """
     plotProj(proj, dim="V", slice=posV)
+
+
+plotproj = plotProj

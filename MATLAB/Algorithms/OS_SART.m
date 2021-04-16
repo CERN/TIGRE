@@ -164,7 +164,7 @@ for ii=1:niter
         if nesterov
             % The nesterov update is quite similar to the normal update, it
             % just uses this update, plus part of the last one.
-            ynesterov=res +bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{:,jj}, 'gpuids', gpuids)),geo,alphablocks{:,jj}, 'gpuids', gpuids));
+            ynesterov=res +bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{:,jj}, 'gpuids', gpuids)),geo,alphablocks{:,jj}, 'gpuids', gpuids));
             res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
         else
             res=res+lambda* bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{:,jj}, 'gpuids', gpuids)),geo,alphablocks{:,jj}, 'gpuids', gpuids));

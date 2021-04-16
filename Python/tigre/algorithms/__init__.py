@@ -11,8 +11,9 @@ from .ista_algorithms import ista
 from .iterative_recon_alg import iterativereconalg
 from .krylov_subspace_algorithms import cgls
 from .pocs_algorithms import asd_pocs
+from .pocs_algorithms import os_asd_pocs
 from .pocs_algorithms import awasd_pocs
-from .single_pass_algorithms import FDK
+from .single_pass_algorithms import fdk
 from .single_pass_algorithms import fbp
 from .statistical_algorithms import mlem
 

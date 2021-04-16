@@ -118,7 +118,10 @@ class ASD_POCS(IterativeReconAlg):  # noqa: N801
         if "rmax" not in kwargs:
             self.rmax = 0.95
         if "maxl2err" not in kwargs:
-            self.epsilon = im3DNORM(FDK(proj, geo, angles, gpuids=self.gpuids), 2) * 0.2
+            self.epsilon = (
+                im3DNORM(Ax(FDK(proj, geo, angles, gpuids=self.gpuids), geo, angles) - proj, 2)
+                * 0.2
+            )
         else:
             self.epsilon = kwargs["maxl2err"]
         if "tviter" not in kwargs:
@@ -189,10 +192,25 @@ class AwASD_POCS(ASD_POCS):  # noqa: D101, N801
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
         kwargs.update(dict(regularisation="minimizeAwTV"))
-
+        kwargs.update(dict(blocksize=1))
         if "delta" not in kwargs:
             self.delta = np.array([-0.005], dtype=np.float32)[0]
         ASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
 
 
 awasd_pocs = decorator(AwASD_POCS, name="awasd_pocs")
+
+
+class OS_ASD_POCS(ASD_POCS):
+    __doc__ = ASD_POCS.__doc__
+
+    def __init__(self, proj, geo, angles, niter, **kwargs):
+
+        kwargs.update(dict(regularisation="minimizeTV"))
+
+        if "blocksize" not in kwargs:
+            kwargs.update(blocksize=20)
+        ASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
+
+
+os_asd_pocs = decorator(OS_ASD_POCS, name="os_asd_pocs")

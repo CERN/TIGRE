@@ -13,6 +13,15 @@ from tigre.utilities.Measure_Quality import Measure_Quality
 from tigre.utilities.im3Dnorm import im3DNORM
 from tigre.utilities.init_multigrid import init_multigrid
 from tigre.utilities.order_subsets import order_subsets
+from tigre.utilities.init_multigrid import init_multigrid
+from tigre.utilities.Measure_Quality import Measure_Quality as MQ
+from tigre.utilities.im3Dnorm import im3DNORM
+from tigre.algorithms.single_pass_algorithms import FDK
+from _minTV import minTV
+from _AwminTV import AwminTV
+import time
+import copy
+from tigre.utilities.gpu import GpuIds
 
 """
 This module is where the umbrella class IterativeReconAlg is located
@@ -133,10 +142,12 @@ class IterativeReconAlg(object):
         self.geo = geo
         self.niter = niter
 
+        self.geo.check_geo(angles)
+
         options = dict(
             blocksize=20,
             lmbda=1,
-            lmbda_red=0.99,
+            lmbda_red=1,
             OrderStrategy=None,
             Quameasopts=None,
             init=None,
@@ -188,6 +199,15 @@ class IterativeReconAlg(object):
             self.set_v()
         if not hasattr(self, "res"):
             self.set_res()
+        # make it list
+        if self.Quameasopts is not None:
+            self.Quameasopts = (
+                [self.Quameasopts] if isinstance(self.Quameasopts, str) else self.Quameasopts
+            )
+            setattr(self, "lq", np.zeros([len(self.Quameasopts), niter]))  # quameasoptslist
+        else:
+            setattr(self, "lq", np.zeros([0, niter]))  # quameasoptslist
+        setattr(self, "l2l", np.zeros([1, niter]))  # l2list
 
         self.lq = []  # quameasoptslist
         self.l2l = []  # l2list
@@ -206,9 +226,9 @@ class IterativeReconAlg(object):
         W = Ax(
             np.ones(geox.nVoxel, dtype=np.float32), geox, self.angles, "Siddon", gpuids=self.gpuids
         )
-        W[W <= min(self.geo.dVoxel / 4)] = np.inf
+        W[W <= min(self.geo.dVoxel / 2)] = np.inf
         W = 1.0 / W
-        self.W = W
+        setattr(self, "W", W)
 
     def set_v(self):
         """
@@ -223,6 +243,14 @@ class IterativeReconAlg(object):
 
                 geox = copy.deepcopy(self.geo)
                 geox.angles = self.angleblocks[i]
+
+                geox.DSD = geo.DSD[self.angle_index[i]]
+                geox.DSO = geo.DSO[self.angle_index[i]]
+                geox.offOrigin = geo.offOrigin[self.angle_index[i], :]
+                geox.offDetector = geo.offDetector[self.angle_index[i], :]
+                geox.rotDetector = geo.rotDetector[self.angle_index[i], :]
+                geox.COR = geo.COR[self.angle_index[i]]
+
                 # shrink the volume size to avoid zeros in backprojection
                 geox.sVoxel = (
                     geox.sVoxel * np.max(geox.sVoxel[1:] / np.linalg.norm(geox.sVoxel[1:])) * 0.9
@@ -294,7 +322,7 @@ class IterativeReconAlg(object):
                 if i == 1:
                     tic = default_timer()
                     print(
-                        "Esitmated time until completetion (s): "
+                        "Estimated time until completion (s): "
                         + str((self.niter - 1) * (tic - toc))
                     )
             getattr(self, self.dataminimizing)()
@@ -302,24 +330,22 @@ class IterativeReconAlg(object):
 
     def art_data_minimizing(self):
         geo = copy.deepcopy(self.geo)
+
         for j in range(len(self.angleblocks)):
+
             if self.blocksize == 1:
                 angle = np.array([self.angleblocks[j]], dtype=np.float32)
+                angle_indices = np.array([self.angle_index[j]], dtype=np.int32)
+
             else:
                 angle = self.angleblocks[j]
-
-            if geo.offOrigin.shape[0] == self.angles.shape[0]:
-                geo.offOrigin = self.geo.offOrigin[j]
-            if geo.offDetector.shape[0] == self.angles.shape[0]:
-                geo.offOrin = self.geo.offDetector[j]
-            if geo.rotDetector.shape[0] == self.angles.shape[0]:
-                geo.rotDetector = self.geo.rotDetector[j]
-            if hasattr(geo.DSD, "shape") and len((geo.DSD.shape)):
-                if geo.DSD.shape[0] == self.angles.shape[0]:
-                    geo.DSD = self.geo.DSD[j]
-            if hasattr(geo.DSO, "shape") and len((geo.DSD.shape)):
-                if geo.DSO.shape[0] == self.angles.shape[0]:
-                    geo.DSO = self.geo.DSO[j]
+                angle_indices = self.angle_index[j]
+                # slice parameters if needed
+            geo.offOrigin = self.geo.offOrigin[angle_indices]
+            geo.offDetector = self.geo.offDetector[angle_indices]
+            geo.rotDetector = self.geo.rotDetector[angle_indices]
+            geo.DSD = self.geo.DSD[angle_indices]
+            geo.DSO = self.geo.DSO[angle_indices]
 
             self.update_image(geo, angle, j)
 
@@ -327,20 +353,24 @@ class IterativeReconAlg(object):
                 self.res = self.res.clip(min=0)
 
     def minimizeTV(self, res_prev, dtvg):
+        if self.gpuids is None:
+            self.gpuids = GpuIds()
         return minTV(res_prev, dtvg, self.numiter_tv, self.gpuids)
 
     def minimizeAwTV(self, res_prev, dtvg):
+        if self.gpuids is None:
+            self.gpuids = GpuIds()
         return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta, self.gpuids)
 
     def error_measurement(self, res_prev, iter):
-        if self.Quameasopts is not None and iter > 0:
-            self.lq.append(Measure_Quality(self.res, res_prev, self.Quameasopts))
+        if self.Quameasopts is not None:
+            self.lq[:, iter] = MQ(self.res, res_prev, self.Quameasopts)
         if self.computel2:
             # compute l2 borm for b-Ax
             errornow = im3DNORM(
                 self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids), 2
             )
-            self.l2l.append(errornow)
+            self.l2l[0, iter] = errornow
 
     def update_image(self, geo, angle, iteration):
         """
@@ -356,7 +386,9 @@ class IterativeReconAlg(object):
 
         :return: None
         """
+
         ang_index = self.angle_index[iteration].astype(np.int)
+
         self.res += (
             self.lmbda
             * 1.0
@@ -375,7 +407,10 @@ class IterativeReconAlg(object):
         return self.res
 
     def geterrors(self):
-        return self.l2l, self.lq
+        if self.computel2:
+            return np.concatenate((self.l2l, self.lq), axis=0)
+        else:
+            return self.lq
 
     def __str__(self):
         parameters = []
@@ -407,7 +442,7 @@ def decorator(IterativeReconAlg, name=None, docstring=None):  # noqa: N803
     --------
     >>> import tigre
     >>> from tigre.demos.Test_data.data_loader import load_head_phantom
-    >>> geo = tigre.geometry_defaut(high_quality=False)
+    >>> geo = tigre.geometry_defaut(high_resolution=False)
     >>> src = load_head_phantom(number_of_voxels=geo.nVoxel)
     >>> proj = Ax(src,geo,angles)
     >>> angles = np.linspace(0,2*np.pi,100)
@@ -417,11 +452,13 @@ def decorator(IterativeReconAlg, name=None, docstring=None):  # noqa: N803
     """
 
     def iterativereconalg(proj, geo, angles, niter, **kwargs):
+
+        geo.check_geo(angles)
         alg = IterativeReconAlg(proj, geo, angles, niter, **kwargs)
         if name is not None:
             alg.name = name
         alg.run_main_iter()
-        if alg.computel2:
+        if alg.computel2 or alg.Quameasopts is not None:
             return alg.getres(), alg.geterrors()
         else:
             return alg.getres()

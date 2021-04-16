@@ -57,7 +57,7 @@ class CGLS(IterativeReconAlg):  # noqa: D101
 
     # Overide
     def run_main_iter(self):
-        self.l2l = np.zeros([self.niter], dtype=np.float32)
+        self.l2l = np.zeros((1, self.niter), dtype=np.float32)
         avgtime = []
         for i in range(self.niter):
             if i == 0:
@@ -86,8 +86,8 @@ class CGLS(IterativeReconAlg):  # noqa: D101
             aux = self.proj - tigre.Ax(
                 self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids
             )
-            self.l2l[i] = np.linalg.norm(aux)
-            if i > 0 and self.l2l[i] > self.l2l[i - 1]:
+            self.l2l[0, i] = np.linalg.norm(aux)
+            if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
                 if self.verbose:
                     print("re-initilization of CGLS called at iteration:" + str(i))
                 if self.re_init_at_iteration + 1 == i:

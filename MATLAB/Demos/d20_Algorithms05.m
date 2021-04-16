@@ -1,4 +1,4 @@
-%% DEMO 9:  Algorithms 05. FISTA with TV proximal
+%% DEMO 20:  Algorithms 05. FISTA with TV proximal
 %
 %
 %  This demo presents the FISTA algorithm in TIGRE. using a total variation proximal.

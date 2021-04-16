@@ -85,6 +85,11 @@ def FDK(proj, geo, angles, **kwargs):
     else:
         verbose = False
 
+    if "verbose" in kwargs:
+        verbose = kwargs["verbose"]
+    else:
+        verbose = False
+
     if "gpuids" in kwargs:
         gpuids = kwargs["gpuids"]
     else:
@@ -116,14 +121,9 @@ def FDK(proj, geo, angles, **kwargs):
         proj_filt[ii] = copy.deepcopy(proj[ii]) * w
 
     proj_filt = filtering(proj_filt, geo, angles, parker=False, verbose=verbose)
-    # m = {
-    #     'py_projfilt': proj_filt,
-    #
-    # }
-    # scipy.io.savemat('Tests/Filter_data', m)
+
     res = Atb(proj_filt, geo, geo.angles, "FDK", gpuids=gpuids)
-    # res = 0
-    # res = Atb(proj,geo,angles,'FDK')
+
     return res
 
 

@@ -1,16 +1,15 @@
 import copy
 import glob
 import os
+from os.path import join as pjoin
 import re
 import subprocess
 import sys
-from os.path import join as pjoin
+import shutil
 
-import numpy
 from Cython.Distutils import build_ext
-from setuptools import Extension
-from setuptools import find_packages
-from setuptools import setup
+import numpy
+from setuptools import setup, find_packages, Extension
 
 
 IS_WINDOWS = sys.platform == "win32"
@@ -47,20 +46,19 @@ def get_cuda_version(cuda_home):
             )
             version_str = str(version_str).replace("\n", "").replace("\r", "")
             idx = version_str.find("release")
-            return version_str[idx + len("release "):idx + len("release ") + 4]
-    except Exception:
+            return version_str[idx + len("release ") : idx + len("release ") + 4]
+    except:
         raise RuntimeError("Cannot read cuda version file")
 
 
 def locate_cuda():
-    """
-    Locate the CUDA environment on the system
+    """Locate the CUDA environment on the system
 
-    Returns a dict with keys 'home', 'include' and 'lib64' and values giving the absolute path to
-    each directory.
+    Returns a dict with keys 'home', 'include' and 'lib64'
+    and values giving the absolute path to each directory.
 
-    Starts by looking for the CUDA_HOME or CUDA_PATH env variable. If not found, everything is based
-    on finding 'nvcc' in the PATH.
+    Starts by looking for the CUDA_HOME or CUDA_PATH env variable. If not found, everything
+    is based on finding 'nvcc' in the PATH.
     """
     # Guess #1
     cuda_home = os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH")
@@ -90,11 +88,15 @@ def locate_cuda():
     }
     if not all([os.path.exists(v) for v in cudaconfig.values()]):
         raise EnvironmentError(
-            "The CUDA path could not be located in $PATH, $CUDA_HOME or $CUDA_PATH. "
+            "The CUDA  path could not be located in $PATH, $CUDA_HOME or $CUDA_PATH. "
             "Either add it to your path, or set $CUDA_HOME or $CUDA_PATH."
         )
 
     return cudaconfig, version
+
+
+def _is_cuda_file(path):
+    return os.path.splitext(path)[1] in [".cu", ".cuh"]
 
 
 CUDA, CUDA_VERSION = locate_cuda()
@@ -108,10 +110,6 @@ try:
     NUMPY_INCLUDE = numpy.get_include()
 except AttributeError:
     NUMPY_INCLUDE = numpy.get_numpy_include()
-
-
-def _is_cuda_file(path):
-    return os.path.splitext(path)[1] in [".cu", ".cuh"]
 
 
 COMMON_MSVC_FLAGS = ["/MD", "/wd4819", "/EHsc"]
@@ -133,21 +131,22 @@ class BuildExtension(build_ext):
     """
     A custom :mod:`Cython.Distutils` build extension .
 
-    This :class:`Cython.Distutils.build_ext` subclass takes care of passing the minimum required
-    compiler flags (e.g. ``-std=c++11``) as well as mixed C++/CUDA compilation (and support for CUDA
-    files in general).
+    This :class:`Cython.Distutils.build_ext` subclass takes care of passing the
+    minimum required compiler flags (e.g. ``-std=c++11``) as well as mixed
+    C++/CUDA compilation (and support for CUDA files in general).
 
-    When using :class:`BuildExtension`, it is allowed to supply a dictionary for
-    ``extra_compile_args`` (rather than the usual list) that maps from languages (``cxx`` or
-    ``nvcc``) to a list of additional compiler flags to supply to the compiler. This makes it
-    possible to supply different flags to the C++ and CUDA compiler during mixed compilation.
+    When using :class:`BuildExtension`, it is allowed to supply a dictionary
+    for ``extra_compile_args`` (rather than the usual list) that maps from
+    languages (``cxx`` or ``nvcc``) to a list of additional compiler flags to
+    supply to the compiler. This makes it possible to supply different flags to
+    the C++ and CUDA compiler during mixed compilation.
     """
 
     @classmethod
     def with_options(cls, **options):
         """
-        Returns an alternative constructor that extends any original keyword arguments to the
-        original constructor with the given options.
+        Returns an alternative constructor that extends any original keyword
+        arguments to the original constructor with the given options.
         """
 
         def init_with_options(*args, **kwargs):
@@ -244,7 +243,7 @@ class BuildExtension(build_ext):
                             cflags = ["-Xcompiler", flag] + cflags
                         for macro in macros:
                             if len(macro) == 2:
-                                if macro[1] is None:
+                                if macro[1] == None:
                                     cflags += ["--define-macro", macro[0]]
                                 else:
                                     cflags += ["--define-macro", "{}={}".format(macro[0], macro[1])]
@@ -303,7 +302,7 @@ class BuildExtension(build_ext):
 
 
 def include_headers(filename_list, sdist=False):
-    """Add hpp and h files to list if sdist is called"""
+    """add hpp and h files to list if sdist is called"""
     if not sdist:
         return filename_list
 
@@ -391,7 +390,7 @@ tvdenoising_ext = Extension(
 )
 
 
-minTV_ext = Extension(  # noqa: N816
+minTV_ext = Extension(
     "_minTV",
     sources=include_headers(
         [
@@ -434,7 +433,7 @@ AwminTV_ext = Extension(
 )
 
 
-gpuUtils_ext = Extension(  # noqa: N816
+gpuUtils_ext = Extension(
     "_gpuUtils",
     sources=include_headers(
         [
@@ -453,28 +452,16 @@ gpuUtils_ext = Extension(  # noqa: N816
 
 setup(
     name="pytigre",
-    version="0.1.8",
-    author="Reuben Lindroos, Sam Loescher",
+    version="2.1.0",
+    author="Ander Biguri, Reuben Lindroos, Sam Loescher",
     packages=find_packages(),
-    scripts=["tigre/demos/launch.sh", "tests/runscript.sh"],
     include_package_data=True,
+    data_files=[("data", ["../Common/data/head.mat"])],
     ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext, gpuUtils_ext],
     py_modules=["tigre.py"],
     cmdclass={"build_ext": BuildExtension},
     install_requires=["Cython", "matplotlib", "numpy", "scipy"],
-    extras_require={
-        "lint": [
-            "black",
-            "flake8",
-            "flake8-annotations",
-            "flake8-bugbear",
-            "flake8-docstrings",
-            "flake8-import-order",
-            "pep8-naming",
-            "pre-commit",
-        ]
-    },
-    license_file="LICENSE.txt",
+    license_files=("LICENSE",),
     license="BSD 3-Clause",
     # since the package has c code, the egg cannot be zipped
     zip_safe=False,
