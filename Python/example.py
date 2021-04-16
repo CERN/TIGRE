@@ -36,7 +36,7 @@ proj = tigre.Ax(head,geo,angles, gpuids = gpuids)
 # Reconstruct
 niter = 20
 fdkout = algs.fdk(proj,geo,angles, gpuids = gpuids)
-sirtout = algs.ossart(proj,geo,angles,niter,blocksize=20, gpuids = gpuids)
+sirtout = algs.asd_pocs(proj,geo,angles,1)
 
 # Measure Quality
 # 'RMSE', 'MSSIM', 'SSD', 'UQI'

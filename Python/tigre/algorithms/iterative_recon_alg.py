@@ -12,6 +12,8 @@ from _minTV import minTV
 from _AwminTV import AwminTV
 import time
 import copy
+from tigre.utilities.gpu import GpuIds
+
 """
 This module is where the umbrella class IterativeReconAlg is located
 which is the umbrella class to all the other algorithms apart from
@@ -327,9 +329,13 @@ class IterativeReconAlg(object):
 
 
     def minimizeTV(self, res_prev, dtvg):
+        if self.gpuids is None:
+            self.gpuids = GpuIds()
         return minTV(res_prev, dtvg, self.numiter_tv, self.gpuids)
 
     def minimizeAwTV(self, res_prev, dtvg):
+        if self.gpuids is None:
+            self.gpuids = GpuIds()
         return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta, self.gpuids)
 
     def error_measurement(self, res_prev, iter):
