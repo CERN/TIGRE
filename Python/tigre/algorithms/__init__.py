@@ -6,6 +6,7 @@ from .art_family_algorithms import ossart_tv
 from .iterative_recon_alg import iterativereconalg
 from .single_pass_algorithms import FDK
 from .pocs_algorithms import asd_pocs
+from .pocs_algorithms import os_asd_pocs
 from .pocs_algorithms import awasd_pocs
 from .single_pass_algorithms import fbp
 from .single_pass_algorithms import fdk

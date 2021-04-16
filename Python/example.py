@@ -8,6 +8,12 @@ from tigre.utilities import sample_loader
 from tigre.utilities.Measure_Quality import Measure_Quality
 from tigre.utilities import gpu
 
+
+
+### This is just a basic example of very few TIGRE functionallity. 
+# We hihgly recomend checking the Demos folder, where most if not all features of tigre are demoed. 
+
+
 listGpuNames = gpu.getGpuNames()
 if len(listGpuNames) == 0:
     print ("Error: No gpu found")
@@ -36,14 +42,14 @@ proj = tigre.Ax(head,geo,angles, gpuids = gpuids)
 # Reconstruct
 niter = 20
 fdkout = algs.fdk(proj,geo,angles, gpuids = gpuids)
-sirtout = algs.asd_pocs(proj,geo,angles,1)
+ossart = algs.ossart(proj,geo,angles,niter,blocksize=20, gpuids = gpuids)
 
 # Measure Quality
 # 'RMSE', 'MSSIM', 'SSD', 'UQI'
 print('RMSE fdk:')
 print(Measure_Quality(fdkout,head,['nRMSE']))
 print('RMSE ossart')
-print(Measure_Quality(sirtout,head,['nRMSE']))
+print(Measure_Quality(ossart,head,['nRMSE']))
 
 # Plot
 fig, axes=plt.subplots(3, 2)
@@ -52,9 +58,9 @@ axes[0, 0].imshow(fdkout[geo.nVoxel[0]//2])
 axes[1, 0].imshow(fdkout[:, geo.nVoxel[1]//2, :])
 axes[2, 0].imshow(fdkout[:, :, geo.nVoxel[2]//2])
 axes[0, 1].set_title('OS-SART')
-axes[0, 1].imshow(sirtout[geo.nVoxel[0]//2])
-axes[1, 1].imshow(sirtout[:, geo.nVoxel[1]//2, :])
-axes[2, 1].imshow(sirtout[:, :, geo.nVoxel[2]//2])
+axes[0, 1].imshow(ossart[geo.nVoxel[0]//2])
+axes[1, 1].imshow(ossart[:, geo.nVoxel[1]//2, :])
+axes[2, 1].imshow(ossart[:, :, geo.nVoxel[2]//2])
 plt.show()
 # tigre.plotProj(proj)
 # tigre.plotImg(fdkout)
