@@ -47,7 +47,7 @@ def get_cuda_version(cuda_home):
             )
             version_str = str(version_str).replace("\n", "").replace("\r", "")
             idx = version_str.find("release")
-            return version_str[idx + len("release "):idx + len("release ") + 4]
+            return version_str[idx + len("release ") : idx + len("release ") + 4]
     except Exception:
         raise RuntimeError("Cannot read cuda version file")
 
@@ -96,8 +96,9 @@ def locate_cuda():
 
     return cudaconfig, version
 
+
 def _is_cuda_file(path):
-    return os.path.splitext(path)[1] in ['.cu', '.cuh']
+    return os.path.splitext(path)[1] in [".cu", ".cuh"]
 
 
 CUDA, CUDA_VERSION = locate_cuda()

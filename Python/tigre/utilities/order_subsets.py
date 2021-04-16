@@ -56,8 +56,8 @@ def order_subsets(angles, blocksize, mode):
         if mode == "random" or mode is None:
             new_order = np.arange(len(index_alpha))
             np.random.shuffle(new_order)
-            return block_alpha[new_order],index_alpha[new_order]
-        if mode =='angularDistance':
+            return block_alpha[new_order], index_alpha[new_order]
+        if mode == "angularDistance":
             # TODO: implement this.
             raise NameError("Angular distance not implemented for blocksize >1 (yet!)")
 

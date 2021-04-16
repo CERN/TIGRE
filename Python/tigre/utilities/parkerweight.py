@@ -33,9 +33,13 @@ def parkerweight(proj, geo, angles, q):
         beta = angles[i]
         w = 0.5 * (
             s_function(beta / b_subf(alpha, delta, epsilon, q) - 0.5)
-            + s_function((beta - 2 * delta + 2 * alpha - epsilon) / b_subf(alpha, delta, epsilon, q) + 0.5)  # noqa: E501
+            + s_function(
+                (beta - 2 * delta + 2 * alpha - epsilon) / b_subf(alpha, delta, epsilon, q) + 0.5
+            )  # noqa: E501
             - s_function((beta - np.pi + 2 * alpha) / b_subf(-alpha, delta, epsilon, q) - 0.5)
-            - s_function((beta - np.pi - 2 * delta - epsilon) / b_subf(-alpha, delta, epsilon, q) + 0.5)  # noqa: E501
+            - s_function(
+                (beta - np.pi - 2 * delta - epsilon) / b_subf(-alpha, delta, epsilon, q) + 0.5
+            )  # noqa: E501
         )
         proj[i] *= w
 

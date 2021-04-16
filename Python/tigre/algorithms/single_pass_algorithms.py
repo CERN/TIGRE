@@ -85,13 +85,13 @@ def FDK(proj, geo, angles, **kwargs):
     else:
         verbose = False
 
-   
-    if 'verbose' in kwargs:
-        verbose = kwargs['verbose']
-    else: verbose = False
+    if "verbose" in kwargs:
+        verbose = kwargs["verbose"]
+    else:
+        verbose = False
 
-    if 'gpuids' in kwargs:
-        gpuids = kwargs['gpuids']
+    if "gpuids" in kwargs:
+        gpuids = kwargs["gpuids"]
     else:
         gpuids = None
 
@@ -120,14 +120,9 @@ def FDK(proj, geo, angles, **kwargs):
         w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx ** 2 + yy ** 2))
         proj_filt[ii] = copy.deepcopy(proj[ii]) * w
 
-    proj_filt = filtering(
-        proj_filt,
-        geo,
-        angles,
-        parker=False,
-        verbose=verbose)
-  
-    res = Atb(proj_filt, geo, geo.angles, 'FDK', gpuids=gpuids)
+    proj_filt = filtering(proj_filt, geo, angles, parker=False, verbose=verbose)
+
+    res = Atb(proj_filt, geo, geo.angles, "FDK", gpuids=gpuids)
 
     return res
 

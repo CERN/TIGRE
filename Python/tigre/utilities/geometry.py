@@ -31,17 +31,24 @@ class Geometry(object):
         if self.mode is None:
             self.mode = "cone"
 
-        mandatory_attribs = ['nVoxel', 'sVoxel', 'dVoxel',
-                             'nDetector', 'sDetector', 'dDetector',
-                             'DSO', 'DSD']
+        mandatory_attribs = [
+            "nVoxel",
+            "sVoxel",
+            "dVoxel",
+            "nDetector",
+            "sDetector",
+            "dDetector",
+            "DSO",
+            "DSD",
+        ]
         included_attribs_indx = [hasattr(self, attrib) for attrib in mandatory_attribs]
         if not all(included_attribs_indx):
-            raise AttributeError('following manditory fields '
-                                 'missing from geometry:' + str([attrib for attrib in mandatory_attribs
-                                                                 if not hasattr(self, attrib)])
-                                 )
-        optional_attribs = ['offOrigin', 'offDetector', 'rotDetector', 'COR',
-                            'mode', 'accuracy']
+            raise AttributeError(
+                "following manditory fields "
+                "missing from geometry:"
+                + str([attrib for attrib in mandatory_attribs if not hasattr(self, attrib)])
+            )
+        optional_attribs = ["offOrigin", "offDetector", "rotDetector", "COR", "mode", "accuracy"]
 
         # image data
         if not self.nVoxel.shape == (3,):
@@ -76,7 +83,7 @@ class Geometry(object):
             self.__check_and_repmat__("offDetector", angles)
         else:
             self.offDetector = np.array([0, 0])
-            self.__check_and_repmat__('offDetector', angles)
+            self.__check_and_repmat__("offDetector", angles)
 
         if hasattr(self, "rotDetector"):
             self.__check_and_repmat__("rotDetector", angles)
@@ -88,9 +95,9 @@ class Geometry(object):
             self.__check_and_repmat__("COR", angles)
         else:
             self.COR = np.zeros(angles.shape[0])
-        
-        if not hasattr(self,'accuracy'):
-            self.accuracy=0.5
+
+        if not hasattr(self, "accuracy"):
+            self.accuracy = 0.5
         # IMPORTANT: cast all numbers to float32
         if verbose:
             self._verbose_output()
@@ -274,7 +281,7 @@ class ParallelGeo(Geometry):
         self.rotDetector = np.array([0, 0, 0])
 
 
-def geometry(mode='cone', nVoxel=None, default=False, high_resolution=True):
+def geometry(mode="cone", nVoxel=None, default=False, high_resolution=True):
     """
     Constructor for geometry used in reconstruction of images in TIGRE
 
