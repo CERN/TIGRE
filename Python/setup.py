@@ -457,10 +457,9 @@ gpuUtils_ext = Extension(  # noqa: N816
 
 setup(
     name="pytigre",
-    version="0.1.8",
-    author="Reuben Lindroos, Sam Loescher",
+    version="2.1",
+    author="Ander Biguri. Reuben Lindroos, Sam Loescher",
     packages=find_packages(),
-    scripts=["tigre/demos/launch.sh", "tests/runscript.sh"],
     include_package_data=True,
     ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext, gpuUtils_ext],
     py_modules=["tigre.py"],
