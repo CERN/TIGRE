@@ -13,7 +13,10 @@ class plotImg:  # noqa: N801
     default: progressive in slices following
         axis (dim)
     """
-    def __init__(self, cube, dim=None, slice=None, step=1, savegif=None, colormap='gray',clims=None):
+
+    def __init__(
+        self, cube, dim=None, slice=None, step=1, savegif=None, colormap="gray", clims=None
+    ):
         self.cube = cube
         self.dim = dim
         self.slice = slice
@@ -21,16 +24,16 @@ class plotImg:  # noqa: N801
         self.dimlist = ["X", "Y", "Z", "x", "y", "z", None]  # accepted parameters for dim
         self.step = step
         self.savegif = savegif
-        self.colormap=colormap
+        self.colormap = colormap
         if clims is None:
             self.min_val = np.amin(self.cube)
             self.max_val = np.amax(self.cube)
         else:
-            self.min_val=clims[0]
-            self.max_val=clims[1]
-        if self.step is None or self.step==0:
-            self.step=1
-        if self.savegif=='':
+            self.min_val = clims[0]
+            self.max_val = clims[1]
+        if self.step is None or self.step == 0:
+            self.step = 1
+        if self.savegif == "":
             self.savegif == None
         if self.slice is None:
             self.run()
@@ -59,11 +62,29 @@ class plotImg:  # noqa: N801
         fig.clf()
         axis = fig.add_subplot(1, 1, 1)
         if self.dimint == 2:
-            mappable = axis.imshow(np.squeeze(self.cube[:, :, i]), cmap=self.colormap, origin='lower', vmin=self.in_val, vmax=self.max_val)
+            mappable = axis.imshow(
+                np.squeeze(self.cube[:, :, i]),
+                cmap=self.colormap,
+                origin="lower",
+                vmin=self.in_val,
+                vmax=self.max_val,
+            )
         if self.dimint == 1:
-            mappable = axis.imshow(np.squeeze(self.cube[:, i]), cmap=self.colormap, origin='lower', vmin=self.min_val, vmax=self.max_val)
+            mappable = axis.imshow(
+                np.squeeze(self.cube[:, i]),
+                cmap=self.colormap,
+                origin="lower",
+                vmin=self.min_val,
+                vmax=self.max_val,
+            )
         if self.dimint == 0:
-            mappable = axis.imshow(np.squeeze(self.cube[i]), cmap=self.colormap, origin='lower', vmin=self.min_val, vmax=self.max_val)
+            mappable = axis.imshow(
+                np.squeeze(self.cube[i]),
+                cmap=self.colormap,
+                origin="lower",
+                vmin=self.min_val,
+                vmax=self.max_val,
+            )
         axis.get_xaxis().set_ticks([])
         axis.get_yaxis().set_ticks([])
         axis.set_xlabel(self.dimlist[0])
@@ -75,11 +96,18 @@ class plotImg:  # noqa: N801
         # plt.pause(0.01)
 
     def run_plot(self):
-       
+
         dim = self.cube.shape
 
         fig = plt.figure()
-        ani = animation.FuncAnimation(fig, self.update_frame, fargs = (fig, self.min_val, self.max_val), interval = 100, repeat_delay=1000, frames = len(range(0,dim[self.dimint])[::self.step]))
+        ani = animation.FuncAnimation(
+            fig,
+            self.update_frame,
+            fargs=(fig, self.min_val, self.max_val),
+            interval=100,
+            repeat_delay=1000,
+            frames=len(range(0, dim[self.dimint])[:: self.step]),
+        )
         if self.savegif is not None:
             ani.save(self.savegif, writer="pillow")
             plt.show()
@@ -88,18 +116,36 @@ class plotImg:  # noqa: N801
 
     def slicer(self):
 
-        if self.dim in [None, 'X', 'x']:
-            plt.xlabel('Y')
-            plt.ylabel('Z')
-            plt.imshow(np.squeeze(self.cube[:,:, self.slice]), cmap=self.colormap, origin='lower', vmin=self.min_val, vmax=self.max_val)
-        if self.dim in ['Y', 'y']:
-            plt.xlabel('X')
-            plt.ylabel('Z')
-            plt.imshow(np.squeeze(self.cube[:, self.slice]), cmap=self.colormap,origin='lower', vmin=self.min_val, vmax=self.max_val)
-        if self.dim in ['Z', 'z']:
-            plt.xlabel('X')
-            plt.ylabel('Y')
-            plt.imshow(np.squeeze(self.cube[self.slice]), cmap=self.colormap,origin='lower', vmin=self.min_val, vmax=self.max_val)
+        if self.dim in [None, "X", "x"]:
+            plt.xlabel("Y")
+            plt.ylabel("Z")
+            plt.imshow(
+                np.squeeze(self.cube[:, :, self.slice]),
+                cmap=self.colormap,
+                origin="lower",
+                vmin=self.min_val,
+                vmax=self.max_val,
+            )
+        if self.dim in ["Y", "y"]:
+            plt.xlabel("X")
+            plt.ylabel("Z")
+            plt.imshow(
+                np.squeeze(self.cube[:, self.slice]),
+                cmap=self.colormap,
+                origin="lower",
+                vmin=self.min_val,
+                vmax=self.max_val,
+            )
+        if self.dim in ["Z", "z"]:
+            plt.xlabel("X")
+            plt.ylabel("Y")
+            plt.imshow(
+                np.squeeze(self.cube[self.slice]),
+                cmap=self.colormap,
+                origin="lower",
+                vmin=self.min_val,
+                vmax=self.max_val,
+            )
         plt.show()
 
 
