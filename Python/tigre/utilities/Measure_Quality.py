@@ -1,4 +1,4 @@
-'''
+"""
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
 %
@@ -15,15 +15,16 @@
 % Coded by:           MATLAB (original): Manasavee Lohvithee
                       Python: Reuben Lindroos
 %--------------------------------------------------------------------------
-'''
-
+"""
 from __future__ import division
-import numpy as np
+
 from functools import reduce
 
-def Measure_Quality(res_prev, res, QualMeasOpts):
-    """
+import numpy as np
 
+
+def Measure_Quality(res_prev, res, QualMeasOpts):  # noqa: N803
+    """
     :param res_prev: (np.ndarray)
         object being compared to
     :param res: (np.ndarray)

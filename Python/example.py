@@ -1,12 +1,11 @@
-from __future__ import print_function
 from __future__ import division
+from __future__ import print_function
+
 import numpy as np
-from matplotlib import pyplot as plt
 import tigre
 import tigre.algorithms as algs
 from tigre.utilities import sample_loader
 from tigre.utilities.Measure_Quality import Measure_Quality
-from tigre.utilities import gpu
 
 
 
@@ -16,14 +15,13 @@ from tigre.utilities import gpu
 
 listGpuNames = gpu.getGpuNames()
 if len(listGpuNames) == 0:
-    print ("Error: No gpu found")
+    print("Error: No gpu found")
 else:
     for id in range(len(listGpuNames)):
         print("{}: {}".format(id, listGpuNames[id]))
 
 gpuids = gpu.getGpuIds(listGpuNames[0])
 print(gpuids)
-
 
 # Geometry
 #geo1 = tigre.geometry(mode='cone', high_resolution=False, default=True)

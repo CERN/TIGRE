@@ -1,8 +1,17 @@
 from __future__ import division
 
+import copy
+import time
+
 import numpy as np
-from tigre.utilities.Ax import Ax
+from _AwminTV import AwminTV
+from _minTV import minTV
+from tigre.algorithms.single_pass_algorithms import FDK
 from tigre.utilities.Atb import Atb
+from tigre.utilities.Ax import Ax
+from tigre.utilities.Measure_Quality import Measure_Quality
+from tigre.utilities.im3Dnorm import im3DNORM
+from tigre.utilities.init_multigrid import init_multigrid
 from tigre.utilities.order_subsets import order_subsets
 from tigre.utilities.init_multigrid import init_multigrid
 from tigre.utilities.Measure_Quality import Measure_Quality as MQ
@@ -23,10 +32,11 @@ the single pass type algorithms.
 # coding: utf8
 
 
-if hasattr(time, 'perf_counter'):
+if hasattr(time, "perf_counter"):
     default_timer = time.perf_counter
 else:
     default_timer = time.clock
+
 
 class IterativeReconAlg(object):
     """
@@ -123,8 +133,7 @@ class IterativeReconAlg(object):
     --------------------------------------------------------------------
     Coded by:          MATLAB (original code): Ander Biguri
                        PYTHON : Reuben Lindroos
-
-     """
+    """
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
@@ -142,43 +151,44 @@ class IterativeReconAlg(object):
                        name='Iterative Reconstruction', sup_kw_warning=False,
                        gpuids = None)
         allowed_keywords = [
-            'V',
-            'W',
-            'log_parameters',
-            'angleblocks',
-            'angle_index',
-            'alpha',
-            'alpha_red',
-            'rmax',
-            'maxl2err',
-            'delta',
-            'regularisation',
-            'tviter',
-            'tvlambda',
-            'hyper']
+            "V",
+            "W",
+            "log_parameters",
+            "angleblocks",
+            "angle_index",
+            "alpha",
+            "alpha_red",
+            "rmax",
+            "maxl2err",
+            "delta",
+            "regularisation",
+            "tviter",
+            "tvlambda",
+            "hyper",
+        ]
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
         for kw in kwargs.keys():
             if kw not in options and (kw not in allowed_keywords):
                 if self.verbose:
-                    if not kwargs.get('sup_kw_warning'):
+                    if not kwargs.get("sup_kw_warning"):
                         # Note: might not want this warning (typo checking).
                         print(
-                            "Warning: " +
-                            kw +
-                            " not recognised as default parameter for instance of IterativeReconAlg.")
+                            "Warning: "
+                            + kw
+                            + " not recognised as default parameter for instance of IterativeReconAlg."  # noqa: E501
+                        )
         if self.angles.ndim == 1:
             a1 = self.angles
             a2 = np.zeros(self.angles.shape[0], dtype=np.float32)
-            setattr(self, 'angles', np.vstack((a1, a2, a2)).T)
-        if not all([hasattr(self, 'angleindex'),
-                    hasattr(self, 'angleblocks')]):
+            self.angles = np.vstack((a1, a2, a2)).T
+        if not all([hasattr(self, "angleindex"), hasattr(self, "angleblocks")]):
             self.set_angle_index()
-        if not hasattr(self, 'W'):
+        if not hasattr(self, "W"):
             self.set_w()
-        if not hasattr(self, 'V'):
+        if not hasattr(self, "V"):
             self.set_v()
-        if not hasattr(self, 'res'):
+        if not hasattr(self, "res"):
             self.set_res()
         # make it list
         if self.Quameasopts is not None:
@@ -189,14 +199,17 @@ class IterativeReconAlg(object):
         setattr(self, 'l2l', np.zeros([1,niter]))  # l2list
         
 
+        self.lq = []  # quameasoptslist
+        self.l2l = []  # l2list
+
     def set_w(self):
         """
         Calculates value of W if this is not given.
         :return: None
         """
         geox = copy.deepcopy(self.geo)
-        geox.sVoxel[1:] = geox.sVoxel[1:] * 1.1 # a bit larger to avoid zeros in projections
-        geox.sVoxel[0] = max(geox.sDetector[0],geox.sVoxel[0])
+        geox.sVoxel[1:] = geox.sVoxel[1:] * 1.1  # a bit larger to avoid zeros in projections
+        geox.sVoxel[0] = max(geox.sDetector[0], geox.sVoxel[0])
 
         geox.nVoxel = np.array([2, 2, 2])
         geox.dVoxel = geox.sVoxel / geox.nVoxel
@@ -211,12 +224,11 @@ class IterativeReconAlg(object):
         :return: None
         """
         geo = self.geo
-        V = np.ones((self.angleblocks.shape[0], geo.nVoxel[1], 
-                      geo.nVoxel[2]), dtype=np.float32)
-        
+        V = np.ones((self.angleblocks.shape[0], geo.nVoxel[1], geo.nVoxel[2]), dtype=np.float32)
+
         for i in range(self.angleblocks.shape[0]):
-            if geo.mode != 'parallel':
-                        
+            if geo.mode != "parallel":
+
                 geox = copy.deepcopy(self.geo)
                 geox.angles = self.angleblocks[i]
 
@@ -229,35 +241,38 @@ class IterativeReconAlg(object):
                 geox.COR = geo.COR[self.angle_index[i]]
                 
                 # shrink the volume size to avoid zeros in backprojection
-                geox.sVoxel = geox.sVoxel * np.max(geox.sVoxel[1:] / np.linalg.norm(geox.sVoxel[1:])) * 0.9
+                geox.sVoxel = (
+                    geox.sVoxel * np.max(geox.sVoxel[1:] / np.linalg.norm(geox.sVoxel[1:])) * 0.9
+                )
                 geox.dVoxel = geox.sVoxel / geox.nVoxel
-                proj_one = np.ones((len(self.angleblocks[i]), geo.nDetector[0], 
-                                    geo.nDetector[1]), dtype=np.float32)
-                V[i] = Atb(proj_one, geox, self.angleblocks[i],'FDK', gpuids=self.gpuids).mean(axis=0)
-                
+                proj_one = np.ones(
+                    (len(self.angleblocks[i]), geo.nDetector[0], geo.nDetector[1]), dtype=np.float32
+                )
+                V[i] = Atb(proj_one, geox, self.angleblocks[i], "FDK", gpuids=self.gpuids).mean(
+                    axis=0
+                )
+
             else:
                 V[i] *= len(self.angleblocks[i])
-                
-        
-        setattr(self, 'V', V)
+
+        self.V = V
 
     def set_res(self):
         """
         Calulates initial value for res if this is not given.
         :return: None
         """
-        setattr(self, 'res', np.zeros(self.geo.nVoxel, dtype=np.float32))
+        self.res = np.zeros(self.geo.nVoxel, dtype=np.float32)
         init = self.init
         verbose = self.verbose
-        if init == 'multigrid':
+        if init == "multigrid":
             if verbose:
-                print('init multigrid in progress...')
-                print('default blocksize=1 for init_multigrid(OS_SART)')
-            self.res = init_multigrid(
-                self.proj, self.geo, self.angles, alg='SART')
+                print("init multigrid in progress...")
+                print("default blocksize=1 for init_multigrid(OS_SART)")
+            self.res = init_multigrid(self.proj, self.geo, self.angles, alg="SART")
             if verbose:
-                print('init multigrid complete.')
-        if init == 'FDK':
+                print("init multigrid complete.")
+        if init == "FDK":
             self.res = FDK(self.proj, self.geo, self.angles)
 
         if isinstance(init, np.ndarray):
@@ -266,17 +281,16 @@ class IterativeReconAlg(object):
                 self.res = init
 
             else:
-                raise ValueError('wrong dimension of array for initialisation')
+                raise ValueError("wrong dimension of array for initialisation")
 
     def set_angle_index(self):
         """
         sets angle_index and angleblock if this is not given.
         :return: None
         """
-        angleblocks, angle_index = order_subsets(
-            self.angles, self.blocksize, self.OrderStrategy)
-        setattr(self, 'angleblocks', angleblocks)
-        setattr(self, 'angle_index', angle_index)
+        self.angleblocks, self.angle_index = order_subsets(
+            self.angles, self.blocksize, self.OrderStrategy
+        )
 
     def run_main_iter(self):
         """
@@ -292,8 +306,7 @@ class IterativeReconAlg(object):
                 res_prev = copy.deepcopy(self.res)
             if self.verbose:
                 if i == 0:
-                    print(str(self.name).upper() +
-                          ' ' + "algorithm in progress.")
+                    print(str(self.name).upper() + " " + "algorithm in progress.")
                     toc = default_timer()
                 if i == 1:
                     tic = default_timer()
@@ -303,7 +316,6 @@ class IterativeReconAlg(object):
             self.error_measurement(res_prev, i)
 
     def art_data_minimizing(self):
-
         geo = copy.deepcopy(self.geo)
         
         for j in range(len(self.angleblocks)):
@@ -326,7 +338,6 @@ class IterativeReconAlg(object):
 
             if self.noneg:
                 self.res = self.res.clip(min=0)
-
 
     def minimizeTV(self, res_prev, dtvg):
         if self.gpuids is None:
@@ -381,19 +392,18 @@ class IterativeReconAlg(object):
     def __str__(self):
         parameters = []
         for item in self.__dict__:
-            if item == 'geo':
+            if item == "geo":
                 pass
-            elif hasattr(self.__dict__.get(item), 'shape'):
+            elif hasattr(self.__dict__.get(item), "shape"):
                 if self.__dict__.get(item).ravel().shape[0] > 100:
-                    parameters.append(item + ' shape: ' +
-                                      str(self.__dict__.get(item).shape))
+                    parameters.append(item + " shape: " + str(self.__dict__.get(item).shape))
             else:
-                parameters.append(item + ': ' + str(self.__dict__.get(item)))
+                parameters.append(item + ": " + str(self.__dict__.get(item)))
 
-        return '\n'.join(parameters)
+        return "\n".join(parameters)
 
 
-def decorator(IterativeReconAlg, name=None, docstring=None):
+def decorator(IterativeReconAlg, name=None, docstring=None):  # noqa: N803
     """
     Calls run_main_iter when parameters are given to it.
 
@@ -431,15 +441,12 @@ def decorator(IterativeReconAlg, name=None, docstring=None):
             return alg.getres()
 
     if docstring is not None:
-        setattr(
-            iterativereconalg,
-            '__doc__',
-            docstring +
-            IterativeReconAlg.__doc__)
+        iterativereconalg.__doc__ = docstring + IterativeReconAlg.__doc__
     else:
-        setattr(iterativereconalg, '__doc__', IterativeReconAlg.__doc__)
+        iterativereconalg.__doc__ = IterativeReconAlg.__doc__
     if name is not None:
-        setattr(iterativereconalg, '__name__', name)
+        iterativereconalg.__name__ = name
+
     return iterativereconalg
 
 
