@@ -6,8 +6,8 @@ import tigre
 import tigre.algorithms as algs
 from tigre.utilities import sample_loader
 from tigre.utilities.Measure_Quality import Measure_Quality
-
-
+import tigre.utilities.gpu as gpu
+import matplotlib.pyplot as plt
 ### This is just a basic example of very few TIGRE functionallity.
 # We hihgly recomend checking the Demos folder, where most if not all features of tigre are demoed.
 
