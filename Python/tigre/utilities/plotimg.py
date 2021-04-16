@@ -12,7 +12,7 @@ class plotImg:  # noqa: N801
         plots figure
     default: progressive in slices following
         axis (dim)
-
+    """
     def __init__(self, cube, dim=None, slice=None, step=1, savegif=None, colormap='gray',clims=None):
         self.cube = cube
         self.dim = dim
