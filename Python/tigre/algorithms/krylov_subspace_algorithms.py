@@ -67,9 +67,14 @@ class CGLS(IterativeReconAlg):  # noqa: D101
             if i == 1:
                 tic = default_timer()
                 if self.verbose:
+                    # Esitmated time until completetion in HH:MM:SS:MS
+                    remaining_time = ((self.niter - 1) * (tic - toc))
+                    seconds = int(remaining_time)
+                    milliseconds = str(remaining_time - seconds)[2:5]
+
                     print(
-                        "Esitmated time until completetion (s): "
-                        + str((self.niter - 1) * (tic - toc))
+                        "Esitmated time until completetion (HH:MM:SS:MS): "
+                           + time.strftime('%H:%M:%S', time.gmtime(seconds)) + ":" + milliseconds
                     )
             avgtic = default_timer()
             q = tigre.Ax(self.__p__, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
