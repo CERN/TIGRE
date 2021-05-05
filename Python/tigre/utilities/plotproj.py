@@ -1,5 +1,6 @@
 from __future__ import print_function
 
+import matplotlib
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
@@ -32,6 +33,10 @@ class plotProj:
         "      Step is 1 by default.\n"
         "savegif: string, optional\n"
         "         Saves the image as .gif with the file name\n"
+        "show_plot: bool, optional\n"
+        "           Sets whether to show the plot.\n"
+        "           Default is None, automatically detects matplotlib backend\n"
+        "           and decides whether to call plt.show.\n"
         "Examples:\n"
         "---------\n"
         "a=np.ones([3,3,3])\n"
@@ -51,6 +56,7 @@ class plotProj:
         savegif=None,
         colormap="gray",
         clims=None,
+        show_plot = None,
     ):
         self.proj = proj
         self.dim = dim
@@ -67,6 +73,20 @@ class plotProj:
         else:
             self.min_val = clims[0]
             self.max_val = clims[1]
+        if show_plot is None:
+            # https://matplotlib.org/stable/tutorials/introductory/usage.html#backends
+            backend = matplotlib.get_backend()
+            if backend in ["GTK3Agg", "GTK3Cairo", "MacOSX", "nbAgg",
+                           "Qt4Agg", "Qt4Cairo", "Qt5Agg", "Qt5Cairo",
+                           "TkAgg", "TkCairo", "WebAgg", "WX",
+                           "WXAgg", "WXCairo",
+                           "module://ipykernel.pylab.backend_inline"]:
+                self.show_plot = True
+            elif backend in ["agg", "cairo", "pdf", "pgf", "ps",
+                             "svg", "template"]:
+                self.show_plot = False
+            else:
+                self.show_plot = True
         if self.step is None or self.step == 0:
             self.step = 1
         if self.savegif == "":
@@ -153,9 +173,9 @@ class plotProj:
         )
         if self.savegif is not None:
             ani.save(self.savegif, writer="pillow")
-            plt.show()
+            self._show()
         else:
-            plt.show()
+            self._show()
 
     def slicer(self):
 
@@ -191,10 +211,14 @@ class plotProj:
                 vmin=self.min_val,
                 vmax=self.max_val,
             )
-        plt.show()
+        self._show()
+
+    def _show(self):
+        if self.show_plot:
+            plt.show()
 
 
-def plotSinogram(proj, posV):  # noqa: N803
+def plotSinogram(proj, posV, show_plot = None):  # noqa: N803
     """
     plotSinogram(proj, posV)
         plots sinogram at V=posV
@@ -204,7 +228,7 @@ def plotSinogram(proj, posV):  # noqa: N803
     proj : Any 3D numpy array
     posV : integer. in range of 0:proj.shape[1].
     """
-    plotProj(proj, dim="V", slice=posV)
+    plotProj(proj, dim="V", slice=posV, show_plot=show_plot)
 
 
 plotproj = plotProj

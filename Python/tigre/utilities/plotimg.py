@@ -1,5 +1,6 @@
 from __future__ import division
 
+import matplotlib
 import matplotlib.animation as animation
 import numpy as np
 from matplotlib import pyplot as plt
@@ -15,7 +16,8 @@ class plotImg:  # noqa: N801
     """
 
     def __init__(
-        self, cube, dim=None, slice=None, step=1, savegif=None, colormap="gray", clims=None
+        self, cube, dim=None, slice=None, step=1, savegif=None, colormap="gray", clims=None,
+        show_plot = None
     ):
         self.cube = cube
         self.dim = dim
@@ -31,6 +33,22 @@ class plotImg:  # noqa: N801
         else:
             self.min_val = clims[0]
             self.max_val = clims[1]
+        if show_plot is None:
+            # https://matplotlib.org/stable/tutorials/introductory/usage.html#backends
+            backend = matplotlib.get_backend()
+            if backend in ["GTK3Agg", "GTK3Cairo", "MacOSX", "nbAgg",
+                           "Qt4Agg", "Qt4Cairo", "Qt5Agg", "Qt5Cairo",
+                           "TkAgg", "TkCairo", "WebAgg", "WX",
+                           "WXAgg", "WXCairo",
+                           "module://ipykernel.pylab.backend_inline"]:
+                self.show_plot = True
+            elif backend in ["agg", "cairo", "pdf", "pgf", "ps",
+                             "svg", "template"]:
+                self.show_plot = False
+            else:
+                self.show_plot = True
+        else:
+            self.show_plot = show_plot
         if self.step is None or self.step == 0:
             self.step = 1
         if self.savegif == "":
@@ -110,9 +128,9 @@ class plotImg:  # noqa: N801
         )
         if self.savegif is not None:
             ani.save(self.savegif, writer="pillow")
-            plt.show()
+            self._show()
         else:
-            plt.show()
+            self._show()
 
     def slicer(self):
 
@@ -146,7 +164,10 @@ class plotImg:  # noqa: N801
                 vmin=self.min_val,
                 vmax=self.max_val,
             )
-        plt.show()
+        self._show()
 
+    def _show(self):
+        if self.show_plot:
+            plt.show()
 
 plotimg = plotImg
