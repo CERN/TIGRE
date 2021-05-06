@@ -175,10 +175,16 @@ class FISTA(IterativeReconAlg):
                     toc = default_timer()
                 if i == 1:
                     tic = default_timer()
+
+                    # Estimated time until completion in HH:MM:SS.ms
+                    remaining_time = ((self.niter - 1) * (tic - toc))
+                    seconds = int(remaining_time)
+                    milliseconds = str(remaining_time - seconds)[2:5]
                     print(
-                        "Esitmated time until completetion (s): "
-                        + str((self.niter - 1) * (tic - toc))
+                        "Estimated time until completion : "
+                           + time.strftime('%H:%M:%S', time.gmtime(seconds)) + "." + milliseconds
                     )
+
             getattr(self, self.dataminimizing)()
 
             x_rec_old = copy.deepcopy(x_rec)
@@ -217,10 +223,16 @@ class ISTA(FISTA):  # noqa: D101
                     toc = time.perf_counter()
                 if i == 1:
                     tic = time.perf_counter()
+
+                    # Estimated time until completion in HH:MM:SS.ms
+                    remaining_time = ((self.niter - 1) * (tic - toc))
+                    seconds = int(remaining_time)
+                    milliseconds = str(remaining_time - seconds)[2:5]
                     print(
-                        "Esitmated time until completetion (s): "
-                        + str((self.niter - 1) * (tic - toc))
+                        "Estimated time until completion : "
+                           + time.strftime('%H:%M:%S', time.gmtime(seconds)) + "." + milliseconds
                     )
+                    
             getattr(self, self.dataminimizing)()
 
             self.res = im3ddenoise(self.res, 20, 1.0 / lambdaForTv, self.gpuids)

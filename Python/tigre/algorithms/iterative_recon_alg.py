@@ -321,10 +321,16 @@ class IterativeReconAlg(object):
                     toc = default_timer()
                 if i == 1:
                     tic = default_timer()
+
+                    # Estimated time until completion in HH:MM:SS.ms
+                    remaining_time = ((self.niter - 1) * (tic - toc))
+                    seconds = int(remaining_time)
+                    milliseconds = str(remaining_time - seconds)[2:5]
                     print(
-                        "Estimated time until completion (s): "
-                        + str((self.niter - 1) * (tic - toc))
+                        "Estimated time until completion : "
+                           + time.strftime('%H:%M:%S', time.gmtime(seconds)) + "." + milliseconds
                     )
+                    
             getattr(self, self.dataminimizing)()
             self.error_measurement(res_prev, i)
 
