@@ -36,8 +36,8 @@ geo = tigre.geometry_default(high_resolution=False)
 
 
 #%%
-#--------------------------------------------------------------------------
-#3D Shepp-Logan
+# --------------------------------------------------------------------------
+# 3D Shepp-Logan
 #
 # Type of shepp logan phantom. The shape will be the same, but Hounsfield
 # values will be different
@@ -49,11 +49,15 @@ geo = tigre.geometry_default(high_resolution=False)
 #  size_out : int or list whose length is three, optional
 #      Default is [128, 128, 128]
 #      The number of voxels of phantom. [nVoxelZ, nVoxelY, nVoxelX]
-#--------------------------------------------------------------------------
+# --------------------------------------------------------------------------
 # phantom_type="kak-slaney"    # Air is 0. Water is 1. Proportional to Hounsfield value.
-phantom_type="yu-ye-wang"    # Default of Python TIGRE Shepp-Logan phantom. Improved visual perception
+phantom_type = (
+    "yu-ye-wang"  # Default of Python TIGRE Shepp-Logan phantom. Improved visual perception
+)
 # phantom_type="toft-schabel"  # Default of MATLAB TIGRE Shepp-Logan phantom.
-shepp=sl3d.shepp_logan_3d(geo.nVoxel , phantom_type = phantom_type)  # Default are 128^3 and "yu-ye-wang"
+shepp = sl3d.shepp_logan_3d(
+    geo.nVoxel, phantom_type=phantom_type
+)  # Default are 128^3 and "yu-ye-wang"
 tigre.plotImg(shepp, dim="z")
 
 #%% load head phantom

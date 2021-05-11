@@ -144,10 +144,14 @@ class ASD_POCS(IterativeReconAlg):  # noqa: N801
                     toc = default_timer()
                 if n_iter == 1:
                     tic = default_timer()
+
+                    remaining_time = (self.niter - 1) * (tic - toc)
+                    seconds = int(remaining_time)
                     print(
-                        "Esitmated time until completetion (s): "
-                        + str((self.niter - 1) * (tic - toc))
+                        "Estimated time until completion : "
+                        + time.strftime("%H:%M:%S", time.gmtime(seconds))
                     )
+
             res_prev = copy.deepcopy(self.res)
             n_iter += 1
             getattr(self, self.dataminimizing)()

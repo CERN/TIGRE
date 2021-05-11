@@ -98,10 +98,14 @@ class OS_SART_TV(IterativeReconAlg):  # noqa: D101, N801
                     toc = default_timer()
                 if i == 1:
                     tic = default_timer()
+
+                    remaining_time = (self.niter - 1) * (tic - toc)
+                    seconds = int(remaining_time)
                     print(
-                        "Esitmated time until completetion (s): "
-                        + str((self.niter - 1) * (tic - toc))
+                        "Estimated time until completion : "
+                        + time.strftime("%H:%M:%S", time.gmtime(seconds))
                     )
+
             getattr(self, self.dataminimizing)()
             # print("run_main_iter: gpuids = {}", self.gpuids)
             self.res = im3ddenoise(self.res, self.tviter, self.tvlambda, self.gpuids)

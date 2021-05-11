@@ -16,8 +16,15 @@ class plotImg:  # noqa: N801
     """
 
     def __init__(
-        self, cube, dim=None, slice=None, step=1, savegif=None, colormap="gray", clims=None,
-        show_plot = None
+        self,
+        cube,
+        dim=None,
+        slice=None,
+        step=1,
+        savegif=None,
+        colormap="gray",
+        clims=None,
+        show_plot=None,
     ):
         self.cube = cube
         self.dim = dim
@@ -36,14 +43,25 @@ class plotImg:  # noqa: N801
         if show_plot is None:
             # https://matplotlib.org/stable/tutorials/introductory/usage.html#backends
             backend = matplotlib.get_backend()
-            if backend in ["GTK3Agg", "GTK3Cairo", "MacOSX", "nbAgg",
-                           "Qt4Agg", "Qt4Cairo", "Qt5Agg", "Qt5Cairo",
-                           "TkAgg", "TkCairo", "WebAgg", "WX",
-                           "WXAgg", "WXCairo",
-                           "module://ipykernel.pylab.backend_inline"]:
+            if backend in [
+                "GTK3Agg",
+                "GTK3Cairo",
+                "MacOSX",
+                "nbAgg",
+                "Qt4Agg",
+                "Qt4Cairo",
+                "Qt5Agg",
+                "Qt5Cairo",
+                "TkAgg",
+                "TkCairo",
+                "WebAgg",
+                "WX",
+                "WXAgg",
+                "WXCairo",
+                "module://ipykernel.pylab.backend_inline",
+            ]:
                 self.show_plot = True
-            elif backend in ["agg", "cairo", "pdf", "pgf", "ps",
-                             "svg", "template"]:
+            elif backend in ["agg", "cairo", "pdf", "pgf", "ps", "svg", "template"]:
                 self.show_plot = False
             else:
                 self.show_plot = True
@@ -169,5 +187,6 @@ class plotImg:  # noqa: N801
     def _show(self):
         if self.show_plot:
             plt.show()
+
 
 plotimg = plotImg

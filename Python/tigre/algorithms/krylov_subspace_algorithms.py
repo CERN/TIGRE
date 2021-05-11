@@ -60,16 +60,18 @@ class CGLS(IterativeReconAlg):  # noqa: D101
         self.l2l = np.zeros((1, self.niter), dtype=np.float32)
         avgtime = []
         for i in range(self.niter):
-            if i == 0:
-                if self.verbose:
+            if self.verbose:
+                if i == 0:
                     print("CGLS Algorithm in progress.")
-                toc = default_timer()
-            if i == 1:
-                tic = default_timer()
-                if self.verbose:
+                    toc = default_timer()
+                if i == 1:
+                    tic = default_timer()
+
+                    remaining_time = (self.niter - 1) * (tic - toc)
+                    seconds = int(remaining_time)
                     print(
-                        "Esitmated time until completetion (s): "
-                        + str((self.niter - 1) * (tic - toc))
+                        "Estimated time until completion : "
+                        + time.strftime("%H:%M:%S", time.gmtime(seconds))
                     )
             avgtic = default_timer()
             q = tigre.Ax(self.__p__, self.geo, self.angles, "Siddon", gpuids=self.gpuids)

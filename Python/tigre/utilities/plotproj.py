@@ -56,7 +56,7 @@ class plotProj:
         savegif=None,
         colormap="gray",
         clims=None,
-        show_plot = None,
+        show_plot=None,
     ):
         self.proj = proj
         self.dim = dim
@@ -76,14 +76,25 @@ class plotProj:
         if show_plot is None:
             # https://matplotlib.org/stable/tutorials/introductory/usage.html#backends
             backend = matplotlib.get_backend()
-            if backend in ["GTK3Agg", "GTK3Cairo", "MacOSX", "nbAgg",
-                           "Qt4Agg", "Qt4Cairo", "Qt5Agg", "Qt5Cairo",
-                           "TkAgg", "TkCairo", "WebAgg", "WX",
-                           "WXAgg", "WXCairo",
-                           "module://ipykernel.pylab.backend_inline"]:
+            if backend in [
+                "GTK3Agg",
+                "GTK3Cairo",
+                "MacOSX",
+                "nbAgg",
+                "Qt4Agg",
+                "Qt4Cairo",
+                "Qt5Agg",
+                "Qt5Cairo",
+                "TkAgg",
+                "TkCairo",
+                "WebAgg",
+                "WX",
+                "WXAgg",
+                "WXCairo",
+                "module://ipykernel.pylab.backend_inline",
+            ]:
                 self.show_plot = True
-            elif backend in ["agg", "cairo", "pdf", "pgf", "ps",
-                             "svg", "template"]:
+            elif backend in ["agg", "cairo", "pdf", "pgf", "ps", "svg", "template"]:
                 self.show_plot = False
             else:
                 self.show_plot = True
@@ -218,7 +229,7 @@ class plotProj:
             plt.show()
 
 
-def plotSinogram(proj, posV, show_plot = None):  # noqa: N803
+def plotSinogram(proj, posV, show_plot=None):  # noqa: N803
     """
     plotSinogram(proj, posV)
         plots sinogram at V=posV
