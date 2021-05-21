@@ -87,6 +87,13 @@ def read_Bruker_geometry(filepath):
     geometry.DSD = float(cfg_aq["Camera to Source (mm)"])
 
 
+    # I dont like the image geometry bruker gives:
+    mag=geometry.DSD/geometry.DSO
+    geometry.dVoxel=numpy.array((geometry.dVoxel[0],geometry.dVoxel[0],geometry.dVoxel[1]))/mag
+    geometry.nVoxel=numpy.array((geometry.nDetector[0], geometry.nDetector[1], geometry.nDetector[1]))
+    geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
+
+
     geometry.whitelevel=2**int(cfg_aq["Depth (bits)"])
 
     angles=numpy.arange(0.0, float(cfg_aq["Number of Files"])*float(cfg_aq["Rotation Step (deg)"]), float(cfg_aq["Rotation Step (deg)"]))
@@ -103,7 +110,7 @@ def load_Bruker_projections(folder, geometry, angles, **kwargs):
 
     image = Image.open(os.path.join(folder, files[indices[0]]))
     image = numpy.asarray(image).astype(numpy.float32)
-    projections = numpy.zeros([len(indices),image.shape[0],image.shape[1]])
+    projections = numpy.zeros([len(indices),image.shape[0],image.shape[1]],dtype=numpy.single)
     projections[0,:,:] = -numpy.log(image / float(geometry.whitelevel))
     index=1
  

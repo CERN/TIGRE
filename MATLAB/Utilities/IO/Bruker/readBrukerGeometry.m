@@ -3,7 +3,7 @@ function [geo,angles]=readBrukerGeometry(folder_or_file)
 % Developed by A. Biguri
 
 if endsWith(folder_or_file,'.log')
-    % is the xtekct file itself
+    % is the log file itself
     fid=fopen(folder_or_file);
     isfolder=false;
 else
@@ -46,11 +46,30 @@ geo.dVoxel=[str2double(xtekctText{2}(strcmp('Image Pixel Size (um)', xtekctText{
 % Size of the image in mm
 geo.nVoxel=[geo.nDetector(1);geo.nDetector(1);geo.nDetector(2)];
 geo.sVoxel=geo.nVoxel.*geo.dVoxel;
+
 geo.offOrigin=[0;0;0];
 %% Global geometry
 geo.DSO=str2double(xtekctText{2}(strcmp('Object to Source (mm)', xtekctText{1})));
 geo.DSD=str2double(xtekctText{2}(strcmp('Camera to Source (mm)', xtekctText{1})));
 
+
+% Ignoring prior image information
+mag=geo.DSD/geo.DSO;
+geo.dVoxel=[geo.dDetector(1);geo.dDetector(1);geo.dDetector(2)]/mag;
+geo.nVoxel=[geo.nDetector(1);geo.nDetector(1);geo.nDetector(2)];
+geo.sVoxel=geo.nVoxel.*geo.dVoxel;
+
+
+%% Detector offset
+if endsWith(folder_or_file,'.log')
+    folder=folder_or_file(1:end-4);
+else
+    folder=folder_or_file;
+end
+file = dir([folder,'/*.csv']); %
+if ~isempty(file)
+    geo.offDetector=csvread([file(1).folder, '/', file(1).name],5,1).';
+end
 %% whitelevel
 
 geo.whitelevel=2^str2double(xtekctText{2}(strcmp('Depth (bits)', xtekctText{1})));

@@ -155,7 +155,7 @@ def loadNikonProjections(folder, geometry, angles, **kwargs):
     
     image = Image.open(os.path.join(folder, files[indices[0]]))
     image = numpy.asarray(image).astype(numpy.float32)
-    projections = numpy.zeros([len(indices),image.shape[0],image.shape[1]])
+    projections = numpy.zeros([len(indices),image.shape[0],image.shape[1]],dtype=numpy.single)
     projections[0,:,:] = -numpy.log(image / float(geometry.whitelevel))
     index=1
     print("Loading Nikon dataset: " + folder)
