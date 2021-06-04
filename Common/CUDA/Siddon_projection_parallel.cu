@@ -188,27 +188,27 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     float imin,imax,jmin,jmax;
     // for X
     if( source.x<pixel1D.x){
-        imin=(am==axm)? 1.0f             : ceil (source.x+am*ray.x);
-        imax=(aM==axM)? geo.nVoxelX      : floor(source.x+aM*ray.x);
+        imin=(am==axm)? 1.0f             : ceilf (source.x+am*ray.x);
+        imax=(aM==axM)? geo.nVoxelX      : floorf(source.x+aM*ray.x);
     }else{
-        imax=(am==axm)? geo.nVoxelX-1.0f : floor(source.x+am*ray.x);
-        imin=(aM==axM)? 0.0f             : ceil (source.x+aM*ray.x);
+        imax=(am==axm)? geo.nVoxelX-1.0f : floorf(source.x+am*ray.x);
+        imin=(aM==axM)? 0.0f             : ceilf (source.x+aM*ray.x);
     }
     // for Y
     if( source.y<pixel1D.y){
-        jmin=(am==aym)? 1.0f             : ceil (source.y+am*ray.y);
-        jmax=(aM==ayM)? geo.nVoxelY      : floor(source.y+aM*ray.y);
+        jmin=(am==aym)? 1.0f             : ceilf (source.y+am*ray.y);
+        jmax=(aM==ayM)? geo.nVoxelY      : floorf(source.y+aM*ray.y);
     }else{
-        jmax=(am==aym)? geo.nVoxelY-1.0f : floor(source.y+am*ray.y);
-        jmin=(aM==ayM)? 0.0f             : ceil (source.y+aM*ray.y);
+        jmax=(am==aym)? geo.nVoxelY-1.0f : floorf(source.y+am*ray.y);
+        jmin=(aM==ayM)? 0.0f             : ceilf (source.y+aM*ray.y);
     }
 //     // for Z
 //     if( source.z<pixel1D.z){
-//         kmin=(am==azm)? 1             : ceil (source.z+am*ray.z);
-//         kmax=(aM==azM)? geo.nVoxelZ : floor(source.z+aM*ray.z);
+//         kmin=(am==azm)? 1             : ceilf (source.z+am*ray.z);
+//         kmax=(aM==azM)? geo.nVoxelZ : floorf(source.z+aM*ray.z);
 //     }else{
-//         kmax=(am==azm)? geo.nVoxelZ-1 : floor(source.z+am*ray.z);
-//         kmin=(aM==azM)? 0             : ceil (source.z+aM*ray.z);
+//         kmax=(am==azm)? geo.nVoxelZ-1 : floorf(source.z+am*ray.z);
+//         kmin=(aM==azM)? 0             : ceilf (source.z+aM*ray.z);
 //     }
     
     // get intersection point N1. eq(20-21) [(also eq 9-10)]
@@ -395,8 +395,24 @@ void computeDeltas_Siddon_parallel(Geometry geo, float angles,int i, Point3D* uv
     P.x  =-(geo.DSD[i]-geo.DSO[i]);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
     Pu0.x=-(geo.DSD[i]-geo.DSO[i]);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
     Pv0.x=-(geo.DSD[i]-geo.DSO[i]);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
-    // Geomtric trasnformations:
+    // Geometric trasnformations:
+    P.x=0;Pu0.x=0;Pv0.x=0;
     
+    // Roll pitch yaw
+    rollPitchYaw(geo,i,&P);
+    rollPitchYaw(geo,i,&Pu0);
+    rollPitchYaw(geo,i,&Pv0);
+    //Now lets translate the points where they should be:
+    P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
+    Pu0.x=Pu0.x-(geo.DSD[i]-geo.DSO[i]);
+    Pv0.x=Pv0.x-(geo.DSD[i]-geo.DSO[i]);
+
+    S.x=0;
+    // Roll pitch yaw
+    rollPitchYaw(geo,i,&S);
+    //Now lets translate the points where they should be:
+    S.x=S.x+geo.DSO[i];
+
     //1: Offset detector
     
     //P.x

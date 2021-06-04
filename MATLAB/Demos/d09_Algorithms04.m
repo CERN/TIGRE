@@ -79,7 +79,7 @@ noise_projections=addCTnoise(projections);
 %                  Default is 20% of the FDK L2 norm.
 %                  
 % its called epsilon in the paper
-epsilon=errL2OSSART(end);
+epsilon=im3Dnorm(Ax(FDK(noise_projections,geo,angles),geo,angles)-noise_projections,'L2')*0.15;
 %   'alpha':       Defines the TV hyperparameter. default is 0.002. 
 %                  However the paper mentions 0.2 as good choice
 alpha=0.002;

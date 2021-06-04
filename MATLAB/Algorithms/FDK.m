@@ -38,7 +38,7 @@ function [res]=FDK(proj,geo,angles,varargin)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Kyungsang Kim, modified by Ander Biguri, Brandon Nelson 
 %--------------------------------------------------------------------------
-[filter,parker,wang,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[filter,parker,dowang,gpuids]=parse_inputs(proj,geo,angles,varargin);
 
 geo=checkGeo(geo,angles);
 geo.filter=filter;
@@ -50,14 +50,14 @@ else
     offset=geo.offDetector;
 end
 
-if wang
+if dowang
     disp('FDK: applying detector offset weights')
     % Zero-padding to avoid FFT-induced alising
     [zproj, zgeo, theta] = zeropadding(proj, geo);
     % Preweighting using Wang function
     % to same memory
     [proj, ~] = preweighting2(zproj, zgeo, theta);
-
+    
     %% Replace original proj and geo
     % proj = proj_w;
     geo = zgeo;
@@ -172,7 +172,7 @@ if(theta<0)
 end
 proj_w=proj;% preallocation
 for ii = 1:size(proj,3)
-    proj_w(:,:,ii) = proj(:,:,ii).*w*2;
+    proj_w(:,:,ii) = proj(:,:,ii).*w;
 end
 
 end

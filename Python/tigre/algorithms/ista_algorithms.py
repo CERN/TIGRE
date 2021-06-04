@@ -1,18 +1,20 @@
 from __future__ import division
+
+import copy
+import time
+
 import numpy as np
 import tigre
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
-import time
 from tigre.utilities.im_3d_denoise import im3ddenoise
-from tigre.algorithms.single_pass_algorithms import FDK
-import copy
 
 
-if hasattr(time, 'perf_counter'):
+if hasattr(time, "perf_counter"):
     default_timer = time.perf_counter
 else:
     default_timer = time.clock
+
 
 class FISTA(IterativeReconAlg):
     """
@@ -102,31 +104,28 @@ class FISTA(IterativeReconAlg):
     Coded by:          MATLAB (original code): Ander Biguri
                        PYTHON : Reuben Lindroos
 
-     """
+    """
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
-
         # Don't precompute W and V
-        kwargs.update(dict(W=None,
-                           V=None,
-                           ))
+        kwargs.update({"W": None, "V": None})
         kwargs.update(dict(blocksize=angles.shape[0]))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         self.lmbda = 0.1
-        if 'hyper' not in kwargs:
-            self.__L__ = 2.e4
+        if "hyper" not in kwargs:
+            self.__L__ = 2.0e8
         else:
-            self.__L__ = kwargs['hyper']
-        if 'tviter' not in kwargs:
+            self.__L__ = kwargs["hyper"]
+        if "tviter" not in kwargs:
             self.__numiter_tv__ = 20
         else:
-            self.__numiter_tv__ = kwargs['tviter']
-        if 'tvlambda' not in kwargs:
+            self.__numiter_tv__ = kwargs["tviter"]
+        if "tvlambda" not in kwargs:
             self.__lambda__ = 0.1
         else:
-            self.__lambda__ = kwargs['tvlambda']
+            self.__lambda__ = kwargs["tvlambda"]
         self.__t__ = 1
-        self.__bm__ = 1. / self.__L__
+        self.__bm__ = 1.0 / self.__L__
 
     # overide update_image from iterative recon alg to remove W.
     def update_image(self, geo, angle, iteration):
@@ -141,8 +140,20 @@ class FISTA(IterativeReconAlg):
 
         :return: None
         """
-        self.res += self.__bm__ * 2 * tigre.Atb((self.proj[self.angle_index[iteration]] - tigre.Ax(
-            self.res, geo, angle, 'interpolated', gpuids=self.gpuids)), geo, angle, 'matched', gpuids=self.gpuids)
+        self.res += (
+            self.__bm__
+            * 2
+            * tigre.Atb(
+                (
+                    self.proj[self.angle_index[iteration]]
+                    - tigre.Ax(self.res, geo, angle, "interpolated", gpuids=self.gpuids)
+                ),
+                geo,
+                angle,
+                "matched",
+                gpuids=self.gpuids,
+            )
+        )
 
     def run_main_iter(self):
         """
@@ -160,17 +171,21 @@ class FISTA(IterativeReconAlg):
                 res_prev = copy.deepcopy(self.res)
             if self.verbose:
                 if i == 0:
-                    print(str(self.name).upper() +
-                          ' ' + "algorithm in progress.")
+                    print(str(self.name).upper() + " " + "algorithm in progress.")
                     toc = default_timer()
                 if i == 1:
                     tic = default_timer()
-                    print('Esitmated time until completetion (s): ' +
-                          str((self.niter - 1) * (tic - toc)))
+
+                    remaining_time = (self.niter - 1) * (tic - toc)
+                    seconds = int(remaining_time)
+                    print(
+                        "Estimated time until completion : "
+                        + time.strftime("%H:%M:%S", time.gmtime(seconds))
+                    )
             getattr(self, self.dataminimizing)()
 
             x_rec_old = copy.deepcopy(x_rec)
-            x_rec = im3ddenoise(self.res, self.__numiter_tv__, 1. / lambdaForTv, self.gpuids)
+            x_rec = im3ddenoise(self.res, self.__numiter_tv__, 1.0 / lambdaForTv, self.gpuids)
             t_old = t
             t = (1 + np.sqrt(1 + 4 * t ** 2)) / 2
             self.res = x_rec + (t_old - 1) / t * (x_rec - x_rec_old)
@@ -178,10 +193,10 @@ class FISTA(IterativeReconAlg):
             self.error_measurement(res_prev, i)
 
 
-fista = decorator(FISTA, name='FISTA')
+fista = decorator(FISTA, name="FISTA")
 
 
-class ISTA(FISTA):
+class ISTA(FISTA):  # noqa: D101
     __doc__ = FISTA.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
@@ -201,18 +216,19 @@ class ISTA(FISTA):
                 res_prev = copy.deepcopy(self.res)
             if self.verbose:
                 if i == 0:
-                    print(str(self.name).upper() +
-                          ' ' + "algorithm in progress.")
+                    print(str(self.name).upper() + " " + "algorithm in progress.")
                     toc = time.perf_counter()
                 if i == 1:
                     tic = time.perf_counter()
-                    print('Esitmated time until completetion (s): ' +
-                          str((self.niter - 1) * (tic - toc)))
+                    print(
+                        "Esitmated time until completetion (s): "
+                        + str((self.niter - 1) * (tic - toc))
+                    )
             getattr(self, self.dataminimizing)()
 
-            self.res = im3ddenoise(self.res, 20, 1. / lambdaForTv, self.gpuids)
+            self.res = im3ddenoise(self.res, 20, 1.0 / lambdaForTv, self.gpuids)
 
             self.error_measurement(res_prev, i)
 
 
-ista = decorator(ISTA, name='ISTA')
+ista = decorator(ISTA, name="ISTA")
