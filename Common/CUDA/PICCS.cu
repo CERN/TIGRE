@@ -76,6 +76,15 @@ do { \
             vec[i]/=scalar;
         }
     }
+    __global__ void isnan_device(float* vec,const size_t n,bool* result)
+    {
+        *result = false;
+        unsigned long long i = (blockIdx.x * blockDim.x) + threadIdx.x;
+        for(; i<n; i+=gridDim.x*blockDim.x) {
+            if(isnan(vec[i]))
+                *result=true;
+        }
+    }
     __global__ void multiplyArrayScalar(float* vec,float scalar,const size_t n)
     {
         unsigned long long i = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -137,7 +146,7 @@ do { \
         gradient(f,dfi ,z  ,y  ,x+1, depth,rows,cols);
         gradient(f,dfj ,z  ,y+1,x  , depth,rows,cols);
         gradient(f,dfk ,z+1,y  ,x  , depth,rows,cols);
-        float eps=0.00000001; //% avoid division by zero
+        float eps=0.000001; //% avoid division by zero
         dftv[idx]=(df[0]+df[1]+df[2])/(sqrt(df[0] *df[0] +df[1] *df[1] +df[2] *df[2])+eps)
         -dfi[2]/(sqrt(dfi[0]*dfi[0]+dfi[1]*dfi[1]+dfi[2]*dfi[2]) +eps)     // I wish I coudl precompute this, but if I do then Id need to recompute the gradient.
         -dfj[1]/(sqrt(dfj[0]*dfj[0]+dfj[1]*dfj[1]+dfj[2]*dfj[2]) +eps)
@@ -250,17 +259,27 @@ do { \
         if (tid == 0) g_odata[blockIdx.x] = mySum;
     }
     
-    
-    
+
+bool isnan_cuda(float* vec, size_t size){
+    bool*d_nan;
+    bool h_nan;
+    cudaMalloc((void **)&d_nan, sizeof (bool));
+    isnan_device<<<60,MAXTHREADS>>>(vec,size,d_nan);
+    cudaMemcpy(&h_nan, d_nan, sizeof(bool), cudaMemcpyDeviceToHost);
+    return h_nan;
+
+}
     
 // main function
  void piccs_tv(const float* img,const float* prior, float* dst,float alpha,float ratio, const long* image_size, int maxIter, const GpuIds& gpuids){
+        
+     
         
     
         size_t total_pixels = image_size[0] * image_size[1]  * image_size[2] ;
         size_t mem_size = sizeof(float) * total_pixels;
         
-        float *d_image,*d_prior,*d_dpiccsTV, *d_dimgTV,*d_aux_small,*d_aux_image;
+        float *d_image,*d_prior,*d_dpiccsTV, *d_dimgTV,*d_aux_small,*d_aux_image, *d_norm2;
         // memory for image
         cudaMalloc(&d_image, mem_size);
         cudaMalloc(&d_prior, mem_size);
@@ -273,7 +292,8 @@ do { \
         cudaMalloc(&d_dimgTV, mem_size);
         cudaMalloc(&d_dpiccsTV, mem_size);
         cudaCheckErrors("Memory Malloc and Memset: TV");
-        
+        cudaMalloc(&d_norm2, mem_size);
+        cudaCheckErrors("Memory Malloc and Memset: TV");
         cudaMalloc(&d_aux_image, mem_size);
         cudaCheckErrors("Memory Malloc and Memset: TV");
         
@@ -289,51 +309,74 @@ do { \
         
         // For the reduction
         float sumnorm2;
-        
-        cudaMemcpy(d_aux_image, d_prior, mem_size, cudaMemcpyDeviceToDevice);
-        cudaCheckErrors("Copy from gradient call error");
         size_t dimblockRed = MAXTHREADS;
         size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
-        reduceNorm2 << <dimgridRed, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_aux_image, d_aux_small, total_pixels);
-        cudaCheckErrors("reduce1");
-        if (dimgridRed > 1) {
-            reduceSum << <1, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_aux_small, d_aux_image, dimgridRed);
-            cudaCheckErrors("reduce2");
-            cudaMemcpy(&sumnorm2, d_aux_image, sizeof(float), cudaMemcpyDeviceToHost);
-            cudaCheckErrors("cudaMemcpy");
-            
-        }
-        else {
-            cudaMemcpy(&sumnorm2, d_aux_small, sizeof(float), cudaMemcpyDeviceToHost);
-            cudaCheckErrors("cudaMemcpy");
-        }
+
 
         for(unsigned int i=0;i<maxIter;i++){
             
             cudaMemcpy( d_aux_image,d_image, mem_size, cudaMemcpyDeviceToDevice);
+//             mexPrintf("Iteration %d\n",(int)i);
 
             // Compute the gradient of the TV norm
             gradientTV<<<gridGrad, blockGrad>>>(d_image,d_dimgTV,image_size[2], image_size[1],image_size[0]);
+            cudaDeviceSynchronize();
             cudaCheckErrors("Gradient");
+//             mexPrintf("Gradient is nan: %s\n",isnan_cuda(d_dimgTV,total_pixels) ? "true" : "false");
+
+
             multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dimgTV,(1-ratio),   total_pixels);
+            cudaDeviceSynchronize();
             cudaCheckErrors("Multiplication error");
 
             substractArrays<<<60,MAXTHREADS>>>(d_aux_image,d_prior, total_pixels);
+            cudaDeviceSynchronize();
             cudaCheckErrors("Substraction error");
+            
             gradientTV<<<gridGrad, blockGrad>>>(d_aux_image,d_dpiccsTV,image_size[2], image_size[1],image_size[0]);
+            cudaDeviceSynchronize();
             cudaCheckErrors("Gradient");
-            multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dpiccsTV,ratio,   total_pixels);
-            cudaCheckErrors("Multiplication error");
+//             mexPrintf("Gradient piccs is nan: %s\n",isnan_cuda(d_dimgTV,total_pixels) ? "true" : "false");
 
+            multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dpiccsTV,ratio,   total_pixels);
+            cudaDeviceSynchronize();
+            cudaCheckErrors("Multiplication error");
+//             mexPrintf("Multiplication is nan: %s\n",isnan_cuda(d_dimgTV,total_pixels) ? "true" : "false");
+                
             
             addArrays<<<60,MAXTHREADS>>>(d_dimgTV,d_dpiccsTV,total_pixels);
-            //NOMRALIZE
+            cudaDeviceSynchronize();
+            //NOMRALIZE via reduction
+            //mexPrintf("Pre-norm2 is nan: %s\n",isnan_cuda(d_dimgTV,total_pixels) ? "true" : "false");
+            cudaMemcpy(d_norm2, d_dimgTV, mem_size, cudaMemcpyDeviceToDevice);
+            cudaCheckErrors("Copy from gradient call error");
+            reduceNorm2 << <dimgridRed, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_norm2, d_aux_small, total_pixels);
+            cudaDeviceSynchronize();
+            cudaCheckErrors("reduce1");
+            if (dimgridRed > 1) {
+                reduceSum << <1, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_aux_small, d_norm2, dimgridRed);
+                cudaDeviceSynchronize();
+                cudaCheckErrors("reduce2");
+                cudaMemcpy(&sumnorm2, d_norm2, sizeof(float), cudaMemcpyDeviceToHost);
+                cudaCheckErrors("cudaMemcpy");
+
+            }
+            else {
+                cudaMemcpy(&sumnorm2, d_aux_small, sizeof(float), cudaMemcpyDeviceToHost);
+                cudaCheckErrors("cudaMemcpy");
+            }
+//             mexPrintf("alpha/sqrt(sumnorm2): %f\n",alpha/sqrt(sumnorm2));
             //MULTIPLY HYPERPARAMETER sqrt(sumnorm2)
             multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dimgTV,alpha/sqrt(sumnorm2),  total_pixels);
+            cudaDeviceSynchronize();
             cudaCheckErrors("Multiplication error");
             //SUBSTRACT GRADIENT
             substractArrays    <<<60,MAXTHREADS>>>(d_image,d_dimgTV, total_pixels);
+            cudaDeviceSynchronize();
             cudaCheckErrors("Substraction error");
+//             mexPrintf("Final update is nan: %s\n",isnan_cuda(d_image,total_pixels) ? "true" : "false");
+//             mexPrintf("\n");
+            sumnorm2=0;
         }
         
         cudaCheckErrors("TV minimization");
@@ -346,6 +389,7 @@ do { \
         cudaFree(d_aux_image);
         cudaFree(d_aux_small);
         cudaFree(d_prior);
+        cudaFree(d_norm2);
 
 
         cudaCheckErrors("Memory free");
