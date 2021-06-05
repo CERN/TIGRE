@@ -27,7 +27,7 @@ cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
     void PyArray_CLEARFLAGS(np.ndarray arr, int flags)
 
-cdef extern from "tvdenoising.hpp":
+cdef extern from "tv_proximal.hpp":
     cdef void tvdenoising(float* src, float* dst, float lamda, float* spacing, long* image_size, int maxiter, c_GpuIds gpuids)
 
 

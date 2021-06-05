@@ -54,7 +54,7 @@
 #define MAX_BUFFER 60
 #define BLOCK_SIZE 10  // BLOCK_SIZE^3 must be smaller than MAXTREADS
 
-#include "tvdenoising.hpp"
+#include "tv_proximal.hpp"
 #define cudaCheckErrors(msg) \
 do { \
         cudaError_t __err = cudaGetLastError(); \

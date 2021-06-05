@@ -54,7 +54,7 @@
 #define MAXTHREADS 1024
 #define MAX_BUFFER 60
 
-#include "POCS_TV.hpp"
+#include "GD_TV.hpp"
 #include "gpuUtils.hpp"
 
 
