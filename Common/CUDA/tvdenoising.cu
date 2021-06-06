@@ -191,7 +191,7 @@ do { \
         
         for (dev = 0; dev < deviceCount; dev++) {
             cudaSetDevice(gpuids[dev]);
-            cudaGetDeviceProperties(&deviceProp, dev);
+            cudaGetDeviceProperties(&deviceProp, gpuids[dev]);
             if (dev>0){
                 if (strcmp(devicename,deviceProp.name)!=0){
                     mexWarnMsgIdAndTxt("tvDenoise:tvdenoising:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n POCS_TV.cu line 277.");

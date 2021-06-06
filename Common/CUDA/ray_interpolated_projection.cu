@@ -229,7 +229,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     
     for (dev = 0; dev < deviceCount; dev++) {
         cudaSetDevice(gpuids[dev]);
-        cudaGetDeviceProperties(&deviceProp, dev);
+        cudaGetDeviceProperties(&deviceProp, gpuids[dev]);
         if (dev>0){
             if (strcmp(devicename,deviceProp.name)!=0){
                 mexWarnMsgIdAndTxt("Ax:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 275.");
