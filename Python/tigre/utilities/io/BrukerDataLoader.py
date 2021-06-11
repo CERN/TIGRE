@@ -32,10 +32,10 @@ def BrukerDataLoader(filepath, **kwargs):
     #         'sampling_step': step to load when loading projections.
     #                 Default=1. Useful for 'step' loading.
 
-    folder, geometry, angles = read_Bruker_geometry(filepath)
+    folder, geometry, angles = read_Bruker_geometry(filepath, **kwargs)
     return load_Bruker_projections(folder, geometry, angles, **kwargs)
 
-def read_Bruker_geometry(filepath):
+def read_Bruker_geometry(filepath, **kwargs):
     
     # check if input was log file itself, or just the folder
     if filepath.endswith(".log"):
@@ -45,8 +45,21 @@ def read_Bruker_geometry(filepath):
         files = [file for file in os.listdir(folder) if file.endswith(".log")]
         if not files:
             raise ValueError("No .log file found in folder: " + folder)
-        ini = files[0]
 
+        ini = min(files, key=len) #shortest one is the main one?
+        cfg = ConfigParser()
+        cfg.read(os.path.join(folder, ini))
+        cfg_aq=cfg["Acquisition"]
+
+        if cfg.has_option("Acquisition","Number of connected scans") and int(cfg_aq["Number of connected scans"])>1:
+            dataset_number=kwargs["dataset_number"] if "dataset_number" in kwargs else None
+            if dataset_number is None:
+                raise ValueError("This folder contains many datasets, please select which one to load with BrukerDataLoader(..., dataset_number=a_number)")
+            
+            matching = [s for s in files if "{0:0=2d}".format(dataset_number) + ".log" in s]
+            if len(matching)>1:
+                raise AssertionError("More than 1 file for the same dataset found, confused what to do, so I error")
+            ini=matching[0]
     # create configureation parser
     cfg = ConfigParser()
     cfg.read(os.path.join(folder, ini))
@@ -103,10 +116,12 @@ def read_Bruker_geometry(filepath):
 
 def load_Bruker_projections(folder, geometry, angles, **kwargs):
 
-    angles, indices = parse_inputs(geometry, angles, **kwargs)
+    angles, indices, dataset_number = parse_inputs(geometry, angles, **kwargs)
 
     # load images
     files = sorted([file for file in os.listdir(folder) if file.lower().endswith(".tif")])
+    if dataset_number is not None:
+        files=[file for file in files if file[-10:-8] == "{0:0=2d}".format(dataset_number)]
 
     image = Image.open(os.path.join(folder, files[indices[0]]))
     image = numpy.asarray(image).astype(numpy.float32)
@@ -132,6 +147,7 @@ def parse_inputs(geometry, angles, **kwargs):
     sampling = kwargs["sampling"] if "sampling" in kwargs else "equidistant"
     nangles = int(kwargs["num_angles"]) if "num_angles" in kwargs else len(angles)
     step = int(kwargs["sampling_step"]) if "sampling_step" in kwargs else 1
+    dataset_number=kwargs["dataset_number"] if "dataset_number" in kwargs else None
 
     indices = numpy.arange(0, len(angles))
 
@@ -148,4 +164,4 @@ def parse_inputs(geometry, angles, **kwargs):
     else:
         raise ValueError("Unknown sampling type: " + str(sampling))
 
-    return angles, indices
+    return angles, indices, dataset_number
