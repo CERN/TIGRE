@@ -32,8 +32,26 @@ def BrukerDataLoader(filepath, **kwargs):
     #         'sampling_step': step to load when loading projections.
     #                 Default=1. Useful for 'step' loading.
 
-    folder, geometry, angles = read_Bruker_geometry(filepath, **kwargs)
-    return load_Bruker_projections(folder, geometry, angles, **kwargs)
+    dataset_number=kwargs["dataset_number"] if "dataset_number" in kwargs else None
+    if dataset_number == "all":
+        print("Loading all scans in folder, assuming the same geometry for all \n\n")
+        del kwargs["dataset_number"]
+        num_scans=find_number_of_datasets(filepath)
+        angles=[None]*num_scans
+        projections=[None]*num_scans
+        for scan in range(num_scans):
+            print("Loading scan number " + str(scan) + "...\n")
+            folder, geometry, angles[scan] = read_Bruker_geometry( filepath, dataset_number=scan, **kwargs)
+            projections[scan], geometry, angles[scan] = load_Bruker_projections(folder, geometry, angles[scan], dataset_number=scan, **kwargs)
+        projections = numpy.concatenate(projections)
+        angles = numpy.concatenate(angles)
+
+        return projections, geometry, angles
+
+    else:
+    
+        folder, geometry, angles = read_Bruker_geometry(filepath, **kwargs)
+        return load_Bruker_projections(folder, geometry, angles, **kwargs)
 
 def read_Bruker_geometry(filepath, **kwargs):
     
@@ -46,16 +64,15 @@ def read_Bruker_geometry(filepath, **kwargs):
         if not files:
             raise ValueError("No .log file found in folder: " + folder)
 
-        ini = min(files, key=len) #shortest one is the main one?
-        cfg = ConfigParser()
-        cfg.read(os.path.join(folder, ini))
-        cfg_aq=cfg["Acquisition"]
+        num_scans=find_number_of_datasets(filepath)
 
-        if cfg.has_option("Acquisition","Number of connected scans") and int(cfg_aq["Number of connected scans"])>1:
+        if num_scans is not None:
             dataset_number=kwargs["dataset_number"] if "dataset_number" in kwargs else None
             if dataset_number is None:
                 raise ValueError("This folder contains many datasets, please select which one to load with BrukerDataLoader(..., dataset_number=a_number)")
-            
+            if dataset_number >= num_scans:
+                raise ValueError("Dataset number given larger than total number of datasets")
+
             matching = [s for s in files if "{0:0=2d}".format(dataset_number) + ".log" in s]
             if len(matching)>1:
                 raise AssertionError("More than 1 file for the same dataset found, confused what to do, so I error")
@@ -165,3 +182,23 @@ def parse_inputs(geometry, angles, **kwargs):
         raise ValueError("Unknown sampling type: " + str(sampling))
 
     return angles, indices, dataset_number
+
+def find_number_of_datasets(filepath):
+    # check if input was log file itself, or just the folder
+    if filepath.endswith(".log"):
+        folder, ini = os.path.split(filepath)
+    else:
+        folder = filepath
+        files = [file for file in os.listdir(folder) if file.endswith(".log")]
+        if not files:
+            raise ValueError("No .log file found in folder: " + folder)
+
+        ini = min(files, key=len) #shortest one is the main one?
+        cfg = ConfigParser()
+        cfg.read(os.path.join(folder, ini))
+        cfg_aq=cfg["Acquisition"]
+
+        if cfg.has_option("Acquisition","Number of connected scans"):
+           return int(cfg_aq["Number of connected scans"])
+        else: 
+            return None
