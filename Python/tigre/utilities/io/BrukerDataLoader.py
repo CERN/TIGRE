@@ -77,6 +77,8 @@ def read_Bruker_geometry(filepath, **kwargs):
             if len(matching)>1:
                 raise AssertionError("More than 1 file for the same dataset found, confused what to do, so I error")
             ini=matching[0]
+        else:
+            ini=files[0]
     # create configureation parser
     cfg = ConfigParser()
     cfg.read(os.path.join(folder, ini))
@@ -104,7 +106,7 @@ def read_Bruker_geometry(filepath, **kwargs):
     geometry.offDetector = numpy.array(
         (0.0, 0.0)
     )
-
+    
     # Size of each voxel
     geometry.dVoxel = numpy.array(
         (float(cfg_aq["Image Pixel Size (um)"])/1000, float(cfg_aq["Image Pixel Size (um)"])/1000, float(cfg_aq["Image Pixel Size (um)"])/1000)
