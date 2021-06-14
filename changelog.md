@@ -24,3 +24,4 @@ Many contributors have made this possible. Sincere thanks.
 - ComputeV errored for triplet angle inputs, fixed
 - Fixed many python algorithm bugs (lost track of some)
 - Removed many unnecesary files
+- Fix and refactor checkDevices
