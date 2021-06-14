@@ -28,7 +28,7 @@ def cuda_raise_errors(error_code):
 
 
 
-def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[np.float32_t, ndim=2] angles, krylov="FDK", mode="cone", gpuids=None):
+def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[np.float32_t, ndim=2] angles, backprojection_type="FDK", mode="cone", gpuids=None):
 
     cdef c_GpuIds* c_gpuids = convert_to_c_gpuids(gpuids)
     if not c_gpuids:
@@ -41,10 +41,10 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
     cdef float* c_model = <float*> malloc(geometry.nVoxel[0] * geometry.nVoxel[1] * geometry.nVoxel[2] * sizeof(float))
     cdef float* c_angles = <float*> angles.data
 
-    # TODO: Error if krylov isn't FDK or matched
-    if krylov == "matched":
+    # TODO: Error if backprojection_type isn't FDK or matched
+    if backprojection_type == "matched":
         krylov_proj = True
-    elif krylov == "FDK":
+    elif backprojection_type == "FDK":
         krylov_proj = False
     else:
         print("Warning: Unknown backprojector, using default matched")
