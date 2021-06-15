@@ -13,7 +13,7 @@ Many contributors have made this possible. Sincere thanks.
 - Add NikonDataLoader() to python. By outside github contrib.
 - Code quality optional code added, to be able to maintain decent python.
 - Demos for python available
-- Add 3D Shepp-Logan head phantom to python.
+- Add 3D Shepp-Logan head phantom to Python.
 
 ## BugFix
 
@@ -25,3 +25,4 @@ Many contributors have made this possible. Sincere thanks.
 - Fixed many python algorithm bugs (lost track of some)
 - Removed many unnecesary files
 - Fix and refactor checkDevices
+- Fix backprojection type variable name and its default value in Python.
