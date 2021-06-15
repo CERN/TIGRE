@@ -45,13 +45,13 @@ class CGLS(IterativeReconAlg):  # noqa: D101
             self.parameter_history = parameter_history
 
         self.__r__ = self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
-        self.__p__ = Atb(self.__r__, self.geo, self.angles, gpuids=self.gpuids)
+        self.__p__ = Atb(self.__r__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
         p_norm = np.linalg.norm(self.__p__.ravel(), 2)
         self.__gamma__ = p_norm * p_norm
 
     def reinitialise_cgls(self):
         self.__r__ = self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
-        self.__p__ = Atb(self.__r__, self.geo, self.angles, gpuids=self.gpuids)
+        self.__p__ = Atb(self.__r__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
         p_norm = np.linalg.norm(self.__p__.ravel(), 2)
         self.__gamma__ = p_norm * p_norm
 
@@ -101,7 +101,7 @@ class CGLS(IterativeReconAlg):  # noqa: D101
                 self.re_init_at_iteration = i
 
             self.__r__ -= alpha * q
-            s = tigre.Atb(self.__r__, self.geo, self.angles, gpuids=self.gpuids)
+            s = tigre.Atb(self.__r__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
             s_norm = np.linalg.norm(s)
 
             gamma1 = s_norm * s_norm
