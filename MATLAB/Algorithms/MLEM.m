@@ -52,7 +52,7 @@ for ii=1:niter
     den(den<=0.)=inf;
     auxMLEM=proj./den;
     
-    imgupdate = Atb(auxMLEM, geo,angles,'gpuids',gpuids)./W;
+    imgupdate = Atb(auxMLEM, geo,angles,'matched','gpuids',gpuids)./W;
     res = max(res.*imgupdate,0.);
     
     if measurequality

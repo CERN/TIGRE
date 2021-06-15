@@ -65,7 +65,7 @@ class MLEM(IterativeReconAlg):  # noqa: D101
 
             # update
             # tic = time.process_time()
-            img = Atb(auxmlem, self.geo, self.angles, gpuids=self.gpuids) / self.W
+            img = Atb(auxmlem, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids) / self.W
             # toc = time.process_time()
             # print('Atb time: {}'.format(toc-tic))
             # img[img == np.nan] = 0.
