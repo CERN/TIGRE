@@ -1,19 +1,46 @@
-function [geo,angles]=readBrukerGeometry(folder_or_file)
+function [geo,angles]=readBrukerGeometry(folder_or_file,dataset_number)
 
 % Developed by A. Biguri
+
+if nargin==1
+    dataset_number=-1;
+end
 
 if endsWith(folder_or_file,'.log')
     % is the log file itself
     fid=fopen(folder_or_file);
-    isfolder=false;
 else
     % is the folder where it lives
-    isfolder=true;
     file = dir([folder_or_file,'/*.log']); %
     if isempty(file)
         error(['No .log file found in folder: ', folder_or_file]);
     end
+  
     filename=file(1).name;
+    fid=fopen([folder_or_file,'/',filename]);
+    xtekctText = textscan(fid, '%s %s', 'Delimiter', '=', 'HeaderLines', 1, 'CommentStyle', '[');
+    fclose(fid);
+    
+    if ~isempty(xtekctText{2}(strcmp('Number of connected scans', xtekctText{1})))
+        if dataset_number==-1
+            error('This folder contains many datasets, please select which one to load with BrukerDataLoader(..., dataset_number)');
+        end
+        matching=[];
+        for ii=1:length(file)
+           if strcmp(file(ii).name(end-5:end-4),num2str(dataset_number,'%02d'))
+               matching=[matching ii];
+           end
+        end
+        if length(matching)>1
+            error('More than 1 file for the same dataset found, confused what to do, so I error')
+        elseif isempty(matching)
+            error('Dataset not found, check the number')
+        end
+        id=matching;
+    else
+        id=1;
+    end
+    filename=file(id).name;
     fid=fopen([folder_or_file,'/',filename]);
 end
 % check if it was oppened right
@@ -68,7 +95,7 @@ else
 end
 file = dir([folder,'/*.csv']); %
 if ~isempty(file)
-    geo.offDetector=csvread([file(1).folder, '/', file(1).name],5,1).';
+    geo.offDetector=csvread([file(1).folder, '/', file(1).name],5,1).'.*geo.dDetector;
 end
 %% whitelevel
 

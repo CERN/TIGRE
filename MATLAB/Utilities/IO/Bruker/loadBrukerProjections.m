@@ -30,7 +30,13 @@ function [proj,geo,angles]=loadBrukerProjections(filepath,geo,angles,varargin)
 
 %% Parse inputs. 
 
+
 [angles_to_load,index]=parse_inputs(geo,angles,varargin);
+
+% make sure its path
+if filepath(end)~='\' && filepath(end)~='/'
+   filepath=[filepath '/']; 
+end
 
 %% get filename
 % assuming TIF and 4 digits.
