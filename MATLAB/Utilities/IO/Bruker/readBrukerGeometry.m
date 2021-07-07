@@ -107,6 +107,6 @@ geo.whitelevel=2^str2double(xtekctText{2}(strcmp('Depth (bits)', xtekctText{1}))
 anlge_step=str2double(xtekctText{2}(strcmp('Rotation Step (deg)', xtekctText{1})));
 initial_angle=0;
 n_angles=str2double(xtekctText{2}(strcmp('Number of Files', xtekctText{1})))-1;
-angles=(initial_angle:anlge_step:(initial_angle+360))*pi/180;
+angles=initial_angle:angle_step*pi/180:(initial_angle+(n_angles-1)*angle_step)*pi/180;
 assert(size(angles,2)==n_angles,'Assertion failed: Inconsistent data detected. Number of projections and angle information do not match\n');
 
