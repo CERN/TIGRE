@@ -1,11 +1,11 @@
-function [proj,geo,angles]=loadNikonProjections(filepath,geo,angles,varargin)
-%[proj,angles]=loadNikonProjections(filepath,geo,angles,varargin)
-%   loads Nikon uCT machine projections
+function [proj,geo,angles]=loadBrukerProjections(filepath,geo,angles,varargin)
+%[proj,angles]=loadBrukerProjections(filepath,geo,angles,varargin)
+%   loads Bruker uCT machine projections
 %
-%   loadNikonData(filepath,geo,angles) Loads a dataset given its FILEPATH,
+%   loadBrukerData(filepath,geo,angles) Loads a dataset given its FILEPATH,
 %      a geometry GEO and angles ANGLES (loaded from readXtekctGeometry()) 
 %
-%   loadNikonData(filepath,geo,angles, OPT,VAL,...) uses options and values. 
+%   loadBrukerData(filepath,geo,angles, OPT,VAL,...) uses options and values. 
 %      These are options in case you don't want to load the entire
 %      dataset, but only particular sets of projections. 
 %      The possible options in OPT are:
@@ -25,10 +25,11 @@ function [proj,geo,angles]=loadNikonProjections(filepath,geo,angles,varargin)
 %           1. Useful for 'step' loading.
 % 
 
-% developed by A. Biguri and W. Sun 06.07.2020
+% developed by A. Biguri 
 
 
 %% Parse inputs. 
+
 
 [angles_to_load,index]=parse_inputs(geo,angles,varargin);
 
@@ -36,6 +37,7 @@ function [proj,geo,angles]=loadNikonProjections(filepath,geo,angles,varargin)
 if filepath(end)~='\' && filepath(end)~='/'
    filepath=[filepath '/']; 
 end
+
 %% get filename
 % assuming TIF and 4 digits.
 firstfile = dir([filepath,'/*.tif']); %
@@ -47,12 +49,12 @@ fprintf("Dataset in: %s \n", filepath);
 %% load images
 %proj=[];
 l = length(angles_to_load);
-proj = zeros(geo.nDetector(1),geo.nDetector(2),l,'single');
+proj = zeros(geo.nDetector(2),geo.nDetector(1),l,'single');
 for ii=1:length(angles_to_load)
     if(~mod(ii,50))
       fprintf("Loading: %d / %d \n", ii, length(angles_to_load));
     end
-     proj(:,:,ii)=single(imread([filepath,filename,num2str(index(ii),'%04d'),'.tif']));
+     proj(:,:,ii)=single(imread([filepath,filename,num2str(index(ii)-1,'%04d'),'.tif']));
 end
 %% Beer lambert
 if any(proj(:))>single(geo.whitelevel)

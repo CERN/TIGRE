@@ -102,7 +102,7 @@ class plotImg:  # noqa: N801
                 np.squeeze(self.cube[:, :, i]),
                 cmap=self.colormap,
                 origin="lower",
-                vmin=self.in_val,
+                vmin=self.min_val,
                 vmax=self.max_val,
             )
         if self.dimint == 1:
