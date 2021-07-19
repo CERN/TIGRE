@@ -210,7 +210,7 @@ class IterativeReconAlg(object):
         setattr(self, "l2l", np.zeros([1, niter]))  # l2list
 
         self.lq = []  # quameasoptslist
-        self.l2l = []  # l2list
+        self.l2l = np.array()  # l2list
 
     def set_w(self):
         """
