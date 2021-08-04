@@ -49,6 +49,14 @@ fprintf("Dataset in: %s \n", filepath);
 %% load images
 %proj=[];
 l = length(angles_to_load);
+
+test_image=single(imread([filepath,filename,num2str(index(1)-1,'%04d'),'.tif']));
+if any(size(test_image)~=fliplr(geo.nDetector'))
+    warning('Information in the Log file does not match the projection sizes, chosing projection information');
+    geo.nDetector=fliplr(size(test_image))';
+    geo.sDetector=geo.nDetector.*geo.dDetector;
+end
+
 proj = zeros(geo.nDetector(2),geo.nDetector(1),l,'single');
 for ii=1:length(angles_to_load)
     if(~mod(ii,50))

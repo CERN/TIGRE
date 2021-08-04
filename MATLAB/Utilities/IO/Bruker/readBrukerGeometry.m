@@ -21,13 +21,13 @@ else
     xtekctText = textscan(fid, '%s %s', 'Delimiter', '=', 'HeaderLines', 1, 'CommentStyle', '[');
     fclose(fid);
     
-    if ~isempty(xtekctText{2}(strcmp('Number of connected scans', xtekctText{1})))
+    if ~isempty(xtekctText{2}(strcmpi('Number of connected scans', xtekctText{1})))
         if dataset_number==-1
             error('This folder contains many datasets, please select which one to load with BrukerDataLoader(..., dataset_number)');
         end
         matching=[];
         for ii=1:length(file)
-           if strcmp(file(ii).name(end-5:end-4),num2str(dataset_number,'%02d'))
+           if strcmpi(file(ii).name(end-5:end-4),num2str(dataset_number,'%02d'))
                matching=[matching ii];
            end
         end
@@ -52,11 +52,15 @@ fclose(fid);
 
 %% Detector information
 % Number of pixel in the detector
-geo.nDetector=[str2double(xtekctText{2}(strcmp('Number of Columns', xtekctText{1})));
-    str2double(xtekctText{2}(strcmp('Number of Rows', xtekctText{1})))];
+geo.nDetector=[str2double(xtekctText{2}(strcmpi('Number of Columns', xtekctText{1})));
+    str2double(xtekctText{2}(strcmpi('Number of Rows', xtekctText{1})))];
 % Size of pixels in the detector
-geo.dDetector=[str2double(xtekctText{2}(strcmp('Camera Pixel Size (um)', xtekctText{1})))/1000;
-    str2double(xtekctText{2}(strcmp('Camera Pixel Size (um)', xtekctText{1})))/1000* str2double(xtekctText{2}(strcmp('CameraXYRatio', xtekctText{1})))];
+geo.dDetector=[str2double(xtekctText{2}(strcmpi('Camera Pixel Size (um)', xtekctText{1})))/1000;
+    str2double(xtekctText{2}(strcmpi('Camera Pixel Size (um)', xtekctText{1})))/1000];
+xyratio= str2double(xtekctText{2}(strcmpi('CameraXYRatio', xtekctText{1})));
+if ~isempty(xyratio)
+    geo.dDetector(2)=geo.dDetector(2)*xyratio;
+end
 % Total size of the detector
 geo.sDetector=geo.nDetector.*geo.dDetector;
 
@@ -67,17 +71,17 @@ geo.offDetector=[0;0];
 % Number of pixel in the detector
 
 % Size of each pixel
-geo.dVoxel=[str2double(xtekctText{2}(strcmp('Image Pixel Size (um)', xtekctText{1})))/1000;
-    str2double(xtekctText{2}(strcmp('Image Pixel Size (um)', xtekctText{1})))/1000;
-    str2double(xtekctText{2}(strcmp('Image Pixel Size (um)', xtekctText{1})))/1000 ];
+geo.dVoxel=[str2double(xtekctText{2}(strcmpi('Image Pixel Size (um)', xtekctText{1})))/1000;
+    str2double(xtekctText{2}(strcmpi('Image Pixel Size (um)', xtekctText{1})))/1000;
+    str2double(xtekctText{2}(strcmpi('Image Pixel Size (um)', xtekctText{1})))/1000 ];
 % Size of the image in mm
 geo.nVoxel=[geo.nDetector(1);geo.nDetector(1);geo.nDetector(2)];
 geo.sVoxel=geo.nVoxel.*geo.dVoxel;
 
 geo.offOrigin=[0;0;0];
 %% Global geometry
-geo.DSO=str2double(xtekctText{2}(strcmp('Object to Source (mm)', xtekctText{1})));
-geo.DSD=str2double(xtekctText{2}(strcmp('Camera to Source (mm)', xtekctText{1})));
+geo.DSO=str2double(xtekctText{2}(strcmpi('Object to Source (mm)', xtekctText{1})));
+geo.DSD=str2double(xtekctText{2}(strcmpi('Camera to Source (mm)', xtekctText{1})));
 
 
 % Ignoring prior image information
@@ -99,14 +103,14 @@ if ~isempty(file)
 end
 %% whitelevel
 
-geo.whitelevel=2^str2double(xtekctText{2}(strcmp('Depth (bits)', xtekctText{1})));
+geo.whitelevel=2^str2double(xtekctText{2}(strcmpi('Depth (bits)', xtekctText{1})));
 
 %%
 %% angles
 
-anlge_step=str2double(xtekctText{2}(strcmp('Rotation Step (deg)', xtekctText{1})));
+angle_step=str2double(xtekctText{2}(strcmpi('Rotation Step (deg)', xtekctText{1})));
 initial_angle=0;
-n_angles=str2double(xtekctText{2}(strcmp('Number of Files', xtekctText{1})))-1;
+n_angles=str2double(xtekctText{2}(strcmpi('Number of Files', xtekctText{1})))-1;
 angles=initial_angle:angle_step*pi/180:(initial_angle+(n_angles-1)*angle_step)*pi/180;
 assert(size(angles,2)==n_angles,'Assertion failed: Inconsistent data detected. Number of projections and angle information do not match\n');
 
