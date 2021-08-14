@@ -381,10 +381,13 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
             cudaSetDevice(gpuids[dev]);
             
             cudaMalloc((void**)&d_image[dev]    , mem_img_each_GPU);
-            cudaMemset(d_image[dev],0           , mem_img_each_GPU);
+            cudaMemset(         d_image[dev],0  , mem_img_each_GPU);
             cudaMalloc((void**)&d_dimgTV[dev]   , mem_img_each_GPU);
+            cudaMemset(         d_dimgTV[dev],0 , mem_img_each_GPU);
             cudaMalloc((void**)&d_norm2[dev]    , slices_per_split*mem_slice_image);
-            cudaMalloc((void**)&d_norm2aux[dev] , mem_auxiliary);
+            cudaMemset(         d_norm2[dev],0  , slices_per_split*mem_slice_image);
+            cudaMalloc((void**)&d_norm2aux[dev]   , mem_auxiliary);
+            cudaMemset(         d_norm2aux[dev],0 , mem_auxiliary);
             cudaCheckErrors("Malloc  error");
             
             
