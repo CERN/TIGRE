@@ -133,7 +133,7 @@ class Geometry(object):
         """
         old_attrib = getattr(self, attrib)
 
-        if type(old_attrib) in [float, int, np.float32, np.float64]:
+        if type(old_attrib) in [float, int, np.float32, np.float64, np.int32]:
             new_attrib = matlib.repmat(old_attrib, 1, angles.shape[0])[0]
             setattr(self, attrib, new_attrib)
 

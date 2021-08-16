@@ -196,7 +196,10 @@ class AwASD_POCS(ASD_POCS):  # noqa: D101, N801
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
         kwargs.update(dict(regularisation="minimizeAwTV"))
-        kwargs.update(dict(blocksize=1))
+        if "blocksize" not in kwargs: 
+            kwargs.update(dict(blocksize=1))
+        else:
+            self.blocksize = 1
         if "delta" not in kwargs:
             self.delta = np.array([-0.005], dtype=np.float32)[0]
         ASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
@@ -214,7 +217,27 @@ class OS_ASD_POCS(ASD_POCS):
 
         if "blocksize" not in kwargs:
             kwargs.update(blocksize=20)
+        else:
+            self.blocksize = kwargs["blocksize"]
         ASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
 
 
 os_asd_pocs = decorator(OS_ASD_POCS, name="os_asd_pocs")
+
+
+class OS_AwASD_POCS(ASD_POCS): 
+    __doc__ = ASD_POCS.__doc__
+
+    def __init__(self, proj, geo, angles, niter, **kwargs):
+
+        kwargs.update(dict(regularisation="minimizeAwTV"))
+        if "blocksize" not in kwargs:
+            kwargs.update(dict(blocksize=20))
+        else:
+            self.blocksize = kwargs["blocksize"]
+        if "delta" not in kwargs:
+            self.delta = np.array([-0.005], dtype=np.float32)[0]
+        ASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
+
+
+os_awasd_pocs = decorator(AwASD_POCS, name="os_awasd_pocs")
