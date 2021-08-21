@@ -1,4 +1,4 @@
-function proj=addCTnoise(proj,varargin)
+function proj=addCTnoise(proj, varargin)
 %ADDCTNOISE adds realistic noise to CT projections
 %   addCTnoise(PROJ):  adds Poisson and Gaussian noise to the input data.
 %
@@ -33,8 +33,8 @@ function proj=addCTnoise(proj,varargin)
 %% parse inputs
 
 
-opts=     {'Poisson','Gaussian'};
-defaults= [   1  ,  1 ];
+opts=     {'Poisson','Gaussian', 'Implementation'};
+defaults= [   1  ,  1  ,  1 ];
 
 % Check inputs
 nVarargs = length(varargin);
@@ -85,6 +85,14 @@ for ii=1:length(opts)
                 m=val(1);
                 sigma=val(2);
             end
+        
+        case 'Implementation'
+            if default
+                implementation='matlab';
+            else
+                implementation=val;
+            end
+            
         otherwise
             error('CBCT:addnoise:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_SART_CBCT()']);
     end
@@ -95,20 +103,24 @@ end
 Im=I0*exp(-proj/max(proj(:)));
 
 % Photon noise + electronic noise
-if areTheseToolboxesInstalled({'MATLAB','Image Processing Toolbox'})
-    Im=imnoise(Im/I0,'poisson')*I0;
-    Im=imnoise(Im/I0,'gaussian',m,sigma/I0)*I0;
-elseif areTheseToolboxesInstalled({'MATLAB','Statistics Toolbox'}) || areTheseToolboxesInstalled({'MATLAB','Statistics and Machine Learning Toolbox'})
-    Im=poissrnd(Im)+randn(size(Im)).*sigma + m;
-else
-    warning(['You don''t have Statistic toolbox, so poisson random noise is not available in MATLAB.',...
-        java.lang.System.getProperty('line.separator').char,...
-        'If you want to add that noise, use the following command:',...
-        java.lang.System.getProperty('line.separator').char,...
-        'Im=poissonrandom(I0*exp(-proj)); Im(Im<0)=1e-6; proj=single(log(I0./Im));',...
-        java.lang.System.getProperty('line.separator').char,...,
-        'With I0 ~ 10000'])
-    Im=randn(size(Im)).*sigma + m; % this one is slower
+if strcmp(implementation, 'matlab')
+    if areTheseToolboxesInstalled({'MATLAB','Image Processing Toolbox'})
+        %disp('Using Image Processing Toolbox');
+        Im=imnoise(Im/I0,'poisson')*I0;
+        Im=imnoise(Im/I0,'gaussian',m,sigma/I0)*I0;
+    elseif areTheseToolboxesInstalled({'MATLAB','Statistics Toolbox'}) || areTheseToolboxesInstalled({'MATLAB','Statistics and Machine Learning Toolbox'})
+        %disp('Using Statistics Toolbox');
+        Im=poissrnd(Im)+randn(size(Im)).*sigma + m;
+    else
+        warning(['You don''t have Image Processing Toolbox nor Statistic Toolbox.',...
+            java.lang.System.getProperty('line.separator').char,...
+            'CUDA version is used.']);
+        %disp('Using CUDA ..');
+        Im=AddNoise(Im, m, sigma);
+    end
+else 
+    %disp('Using CUDA');
+    Im=AddNoise(Im, m, sigma);
 end
 Im(Im<=0)=1e-6;
 proj=single(log(I0./Im))*max(proj(:));
