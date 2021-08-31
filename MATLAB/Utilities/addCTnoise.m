@@ -7,7 +7,7 @@ function proj=addCTnoise(proj, varargin)
 %   'Poisson' : changes the average photon count for Poisson noise. Default
 %               value is 1e5
 %   'Gaussian': changes the mean and standard deviation of the electronic
-%               Gaussian noise. Default value is [0 10]
+%               Gaussian noise. Default value is [0 0.5]
 %
 % The computation of the noise projection follows
 % Adaptive-weighted total variation minimization for sparse data toward low-dose x-ray computed tomography image reconstruction
@@ -88,7 +88,7 @@ for ii=1:length(opts)
         
         case 'Implementation'
             if default
-                implementation='matlab';
+                implementation='cuda';
             else
                 implementation=val;
             end
@@ -118,7 +118,7 @@ if strcmp(implementation, 'matlab')
         %disp('Using CUDA ..');
         Im=AddNoise(Im, m, sigma);
     end
-else 
+else % if implementation == 'cuda'
     %disp('Using CUDA');
     Im=AddNoise(Im, m, sigma);
 end
