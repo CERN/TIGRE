@@ -19,7 +19,10 @@ function [ fres, qualMeasOut ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
 %   'Init':        Describes diferent initialization techniques.
 %                   •  'none'     : Initializes the image to zeros (default)
 %                   •  'FDK'      : intializes image to FDK reconstrucition
-%
+%                   •  'image'    : Initialization using a user specified
+%                                   image. Not recomended unless you really
+%                                   know what you are doing.
+%   'InitImg'      an image for the 'image' initialization. Avoid.
 %   'TViter':      Defines the amount of TV iterations performed per SART
 %                  iteration. Default is 20
 %
@@ -220,7 +223,7 @@ end
 
 function [beta,beta_red,f0,ng,verbose,alpha,alpha_red,rmax,epsilon,block_size,OrderStrategy,nonneg,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,argin)
 
-opts=     {'lambda','lambda_red','init','tviter','verbose','alpha','alpha_red','ratio','maxl2err','blocksize','orderstrategy','blocksize','nonneg','qualmeas','gpuids'};
+opts=     {'lambda','lambda_red','init','initimg','tviter','verbose','alpha','alpha_red','ratio','maxl2err','blocksize','orderstrategy','blocksize','nonneg','qualmeas','gpuids'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -300,6 +303,24 @@ for ii=1:length(opts)
                     f0=FDK(proj, geo, angles);
                 else
                     error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid init')
+                end
+            if strcmp(val,'image')
+                initwithimage=1;     % it is used (10 lines below)
+                continue;
+            end
+            if isempty(res)
+                error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid Init option')
+            end
+            % % % % % % % ERROR
+        case 'initimg'
+            if default
+                continue;
+            end
+            if exist('initwithimage','var')
+                if isequal(size(val),geo.nVoxel')
+                    res=single(val);
+                else
+                    error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid image for initialization');
                 end
             end
         % Number of iterations of TV
