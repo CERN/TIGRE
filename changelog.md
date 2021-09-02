@@ -14,6 +14,7 @@ Many contributors have made this possible. Sincere thanks.
 - Code quality optional code added, to be able to maintain decent python.
 - Demos for python available
 - Add 3D Shepp-Logan head phantom to Python.
+- Replace noise generator with CUDA implementation.
 
 ## BugFix
 
