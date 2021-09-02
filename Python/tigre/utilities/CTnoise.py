@@ -1,5 +1,5 @@
 import numpy as np
-
+import _RandomNumberGenerator as RNG
 
 def add(projections, Gaussian=None, Poisson=None):
 
@@ -21,8 +21,7 @@ def add(projections, Gaussian=None, Poisson=None):
     max_proj = np.max(projections)
     projections = Poisson * np.exp(-projections / max_proj)
 
-    projections = np.random.poisson(projections)
-    projections = projections + np.random.normal(Gaussian[0], Gaussian[1], size=projections.shape)
+    projections = RNG.add_noise(projections, Gaussian[0], Gaussian[1])
 
     projections = -np.log(projections / Poisson) * max_proj
     projections = np.float32(projections)
