@@ -11,7 +11,7 @@
 #   Contact:            tigre.toolbox@gmail.com
 #   Codes:              https://github.com/CERN/TIGRE/
 # --------------------------------------------------------------------------
-#   Coded by:          Ander Biguri, Tomoyuki SADAKANE
+#   Coded by:          Tomoyuki SADAKANE
 
 cimport numpy as np 
 import numpy as np

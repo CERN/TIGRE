@@ -4,8 +4,7 @@
  *
  * Adds noise of Poisson and normal distribution to the input.
  *
- * CODE by       Ander Biguri
- *               Tomoyuki SADAKANE
+ * CODE by       Tomoyuki SADAKANE
  * ---------------------------------------------------------------------------
  * ---------------------------------------------------------------------------
  * Copyright (c) 2015, University of Bath and CERN- European Organization for
