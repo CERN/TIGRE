@@ -270,9 +270,9 @@ for ii=1:length(opts)
                 warning('TIGRE: Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
-        % Lambda
-        %  =========================================================================
-        % Its called beta in OS_ASD_POCS
+            % Lambda
+            %  =========================================================================
+            % Its called beta in OS_ASD_POCS
         case 'lambda'
             if default
                 beta=1;
@@ -282,8 +282,8 @@ for ii=1:length(opts)
                 end
                 beta=val;
             end
-        % Lambda reduction
-        %  =========================================================================
+            % Lambda reduction
+            %  =========================================================================
         case 'lambda_red'
             if default
                 beta_red=0.99;
@@ -293,8 +293,8 @@ for ii=1:length(opts)
                 end
                 beta_red=val;
             end
-        % Initial image
-        %  =========================================================================
+            % Initial image
+            %  =========================================================================
         case 'init'
             if default || strcmp(val,'none')
                 f0=zeros(geo.nVoxel','single');
@@ -304,12 +304,13 @@ for ii=1:length(opts)
                 else
                     error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid init')
                 end
-            if strcmp(val,'image')
-                initwithimage=1;     % it is used (10 lines below)
-                continue;
-            end
-            if isempty(res)
-                error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid Init option')
+                if strcmp(val,'image')
+                    initwithimage=1;     % it is used (10 lines below)
+                    continue;
+                end
+                if isempty(res)
+                    error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid Init option')
+                end
             end
             % % % % % % % ERROR
         case 'initimg'
@@ -318,53 +319,54 @@ for ii=1:length(opts)
             end
             if exist('initwithimage','var')
                 if isequal(size(val),geo.nVoxel')
-                    res=single(val);
+                    f0=single(val);
                 else
                     error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid image for initialization');
                 end
             end
-        % Number of iterations of TV
-        %  =========================================================================
+            
+            % Number of iterations of TV
+            %  =========================================================================
         case 'tviter'
             if default
                 ng=20;
             else
                 ng=val;
             end
-        %  TV hyperparameter
-        %  =========================================================================
+            %  TV hyperparameter
+            %  =========================================================================
         case 'alpha'
             if default
                 alpha=0.002; % 0.2
             else
                 alpha=val;
             end
-        %  TV hyperparameter redution
-        %  =========================================================================
+            %  TV hyperparameter redution
+            %  =========================================================================
         case 'alpha_red'
             if default
                 alpha_red=0.95;
             else
                 alpha_red=val;
             end
-        %  Maximum update ratio
-        %  =========================================================================
+            %  Maximum update ratio
+            %  =========================================================================
         case 'ratio'
             if default
                 rmax=0.95;
             else
                 rmax=val;
             end
-        %  Maximum L2 error to have a "good image"
-        %  =========================================================================
+            %  Maximum L2 error to have a "good image"
+            %  =========================================================================
         case 'maxl2err'
             if default
                 epsilon=im3Dnorm(FDK(proj,geo,angles),'L2')*0.2; %heuristic
             else
                 epsilon=val;
             end
-        %  Block size for OS-SART
-        %  =========================================================================
+            %  Block size for OS-SART
+            %  =========================================================================
         case 'blocksize'
             if default
                 block_size=20;
@@ -374,8 +376,8 @@ for ii=1:length(opts)
                 end
                 block_size=val;
             end
-        %  Order strategy
-        %  =========================================================================
+            %  Order strategy
+            %  =========================================================================
         case 'orderstrategy'
             if default
                 OrderStrategy='random';
@@ -388,8 +390,8 @@ for ii=1:length(opts)
             else
                 nonneg=val;
             end
-        % Image Quality Measure
-        %  =========================================================================
+            % Image Quality Measure
+            %  =========================================================================
         case 'qualmeas'
             if default
                 QualMeasOpts={};
