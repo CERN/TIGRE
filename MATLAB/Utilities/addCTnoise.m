@@ -71,7 +71,7 @@ for ii=1:length(opts)
                     I0=max(proj(:))/5;
                 end
             else
-                if ~isscalar(val);error('CBCT:addnoise:WorngInput','Input to Poisson should be scalar');end
+                if ~isscalar(val);error('CBCT:addnoise:WrongInput','Input to Poisson should be scalar');end
                 I0=val;
             end
             
@@ -81,7 +81,7 @@ for ii=1:length(opts)
                 m=0;
                 sigma=0.5;
             else
-                if (size(val,2)~=2);error('CBCT:addnoise:WorngInput','Input to Gaussian should be 1x2');end
+                if (size(val,2)~=2);error('CBCT:addnoise:WrongInput','Input to Gaussian should be 1x2');end
                 m=val(1);
                 sigma=val(2);
             end
@@ -94,7 +94,7 @@ for ii=1:length(opts)
             end
             
         otherwise
-            error('CBCT:addnoise:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_SART_CBCT()']);
+            error('CBCT:addnoise:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in addCTnoise()']);
     end
 end
 
