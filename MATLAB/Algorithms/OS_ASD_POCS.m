@@ -298,20 +298,17 @@ for ii=1:length(opts)
         case 'init'
             if default || strcmp(val,'none')
                 f0=zeros(geo.nVoxel','single');
-            else
-                if strcmp(val,'FDK')
-                    f0=FDK(proj, geo, angles);
-                else
-                    error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid init')
-                end
-                if strcmp(val,'image')
-                    initwithimage=1;     % it is used (10 lines below)
-                    continue;
-                end
-                if isempty(res)
-                    error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid Init option')
-                end
+            elseif strcmp(val,'FDK')
+                f0=FDK(proj, geo, angles);
+                
+            elseif strcmp(val,'image')
+                initwithimage=1;     % it is used (10 lines below)
+                continue;
             end
+            if isempty(res)
+                error('TIGRE:OS_ASD_POCS:InvalidInput','Invalid Init option')
+            end
+            
             % % % % % % % ERROR
         case 'initimg'
             if default
