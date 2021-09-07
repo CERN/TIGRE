@@ -29,8 +29,6 @@ dataset_number=-1;
 for ii=1:2:length(varargin)
     if strcmpi('dataset_number',varargin{ii})
         dataset_number=varargin{ii+1};
-        varargin(ii+1)=[];
-        varargin(ii)=[];
         break;
     end
 end

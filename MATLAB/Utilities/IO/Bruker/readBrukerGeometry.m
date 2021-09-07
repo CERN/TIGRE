@@ -23,7 +23,7 @@ else
     
     if ~isempty(xtekctText{2}(strcmpi('Number of connected scans', xtekctText{1})))
         if dataset_number==-1
-            error('This folder contains many datasets, please select which one to load with BrukerDataLoader(..., dataset_number)');
+            error('This folder contains many datasets, please select which one to load with BrukerDataLoader(...,`dataset_number`, dataset_number)');
         end
         matching=[];
         for ii=1:length(file)
@@ -57,15 +57,26 @@ geo.nDetector=[str2double(xtekctText{2}(strcmpi('Number of Columns', xtekctText{
 % Size of pixels in the detector
 geo.dDetector=[str2double(xtekctText{2}(strcmpi('Camera Pixel Size (um)', xtekctText{1})))/1000;
     str2double(xtekctText{2}(strcmpi('Camera Pixel Size (um)', xtekctText{1})))/1000];
+
+camera_binning=cell2mat(xtekctText{2}(strcmpi('Camera binning', xtekctText{1})));
+if ~isempty(camera_binning)
+    geo.dDetector(1)=geo.dDetector(1)*str2double(camera_binning(1));
+    geo.dDetector(2)=geo.dDetector(2)*str2double(camera_binning(3));
+end
+
 xyratio= str2double(xtekctText{2}(strcmpi('CameraXYRatio', xtekctText{1})));
 if ~isempty(xyratio)
-    geo.dDetector(2)=geo.dDetector(2)*xyratio;
+    % try again
+    xyratio= str2double(xtekctText{2}(strcmpi('Camera X/Y Ratio', xtekctText{1})));
+    if ~isempty(xyratio)
+        geo.dDetector(2)=geo.dDetector(2)/xyratio;
+    end
 end
 % Total size of the detector
 geo.sDetector=geo.nDetector.*geo.dDetector;
 
 %% Offset of the detector:
-geo.offDetector=[0;0];
+geo.offDetector=[0;-(geo.nDetector(2)/2-str2double(xtekctText{2}(strcmpi('Optical Axis (line)', xtekctText{1}))))].*geo.dDetector;
 
 %% Image information
 % Number of pixel in the detector
@@ -85,10 +96,10 @@ geo.DSD=str2double(xtekctText{2}(strcmpi('Camera to Source (mm)', xtekctText{1})
 
 
 % Ignoring prior image information
-mag=geo.DSD/geo.DSO;
-geo.dVoxel=[geo.dDetector(1);geo.dDetector(1);geo.dDetector(2)]/mag;
-geo.nVoxel=[geo.nDetector(1);geo.nDetector(1);geo.nDetector(2)];
-geo.sVoxel=geo.nVoxel.*geo.dVoxel;
+% mag=geo.DSD/geo.DSO;
+% geo.dVoxel=[geo.dDetector(1);geo.dDetector(1);geo.dDetector(2)]/mag;
+% geo.nVoxel=[geo.nDetector(1);geo.nDetector(1);geo.nDetector(2)];
+% geo.sVoxel=geo.nVoxel.*geo.dVoxel;
 
 
 %% Detector offset
@@ -98,9 +109,9 @@ else
     folder=folder_or_file;
 end
 file = dir([folder,'/*.csv']); %
-if ~isempty(file)
-    geo.offDetector=csvread([file(1).folder, '/', file(1).name],5,1).'.*geo.dDetector;
-end
+% if ~isempty(file)
+%     geo.offDetector=csvread([file(1).folder, '/', file(1).name],5,1).'.*geo.dDetector;
+% end
 %% whitelevel
 
 geo.whitelevel=2^str2double(xtekctText{2}(strcmpi('Depth (bits)', xtekctText{1})));

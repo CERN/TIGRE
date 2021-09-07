@@ -24,6 +24,8 @@ function [proj,geo,angles]=loadBrukerProjections(filepath,geo,angles,varargin)
 %           'sampling_step': step to load when loading projections. Default
 %           1. Useful for 'step' loading.
 % 
+%           'dataset number': id of the dataset to load.
+% 
 
 % developed by A. Biguri 
 
@@ -31,7 +33,7 @@ function [proj,geo,angles]=loadBrukerProjections(filepath,geo,angles,varargin)
 %% Parse inputs. 
 
 
-[angles_to_load,index]=parse_inputs(geo,angles,varargin);
+[angles_to_load,index,dataset_number]=parse_inputs(geo,angles,varargin);
 
 % make sure its path
 if filepath(end)~='\' && filepath(end)~='/'
@@ -43,7 +45,9 @@ end
 firstfile = dir([filepath,'/*.tif']); %
 firstfile = firstfile(1).name;
 filename = firstfile(1:end-8);
-
+if dataset_number~=-1
+    filename(end-4)=num2str(dataset_number);
+end
 fprintf("Dataset in: %s \n", filepath);
 
 %% load images
@@ -75,8 +79,8 @@ geo=rmfield(geo,'whitelevel');
 angles=angles_to_load;
 end
 
-function [angles,indices]=parse_inputs(geo,angles,argin)
-opts=     {'sampling','num_angles','sampling_step'};
+function [angles,indices,dataset_number]=parse_inputs(geo,angles,argin)
+opts=     {'sampling','num_angles','sampling_step','dataset_number'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -132,6 +136,12 @@ for ii=1:length(opts)
                sampling_step=1;
             else
                sampling_step=val;
+            end
+        case 'dataset_number'
+            if default
+                dataset_number=-1;
+            else
+                dataset_number=val;
             end
         otherwise
             error(['Invalid input name:', num2str(opt),'\n No such option']);
