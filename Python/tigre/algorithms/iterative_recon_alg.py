@@ -209,9 +209,6 @@ class IterativeReconAlg(object):
             setattr(self, "lq", np.zeros([0, niter]))  # quameasoptslist
         setattr(self, "l2l", np.zeros([1, niter]))  # l2list
 
-        self.lq = np.array([])  # quameasoptslist
-        self.l2l = np.array([])  # l2list
-
     def set_w(self):
         """
         Calculates value of W if this is not given.
