@@ -6,11 +6,6 @@ from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.utilities.im_3d_denoise import im3ddenoise
 
 
-if hasattr(time, "perf_counter"):
-    default_timer = time.perf_counter
-else:
-    default_timer = time.clock
-
 
 class SART(IterativeReconAlg):  # noqa: D101
     __doc__ = (
@@ -93,18 +88,7 @@ class OS_SART_TV(IterativeReconAlg):  # noqa: D101, N801
             if Quameasopts is not None:
                 res_prev = copy.deepcopy(self.res)
             if self.verbose:
-                if i == 0:
-                    print(str(self.name).upper() + " " + "algorithm in progress.")
-                    toc = default_timer()
-                if i == 1:
-                    tic = default_timer()
-
-                    remaining_time = (self.niter - 1) * (tic - toc)
-                    seconds = int(remaining_time)
-                    print(
-                        "Estimated time until completion : "
-                        + time.strftime("%H:%M:%S", time.gmtime(seconds))
-                    )
+                self._estimate_time_until_completion(i)
 
             getattr(self, self.dataminimizing)()
             # print("run_main_iter: gpuids = {}", self.gpuids)

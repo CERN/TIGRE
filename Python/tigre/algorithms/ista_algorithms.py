@@ -10,11 +10,6 @@ from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.utilities.im_3d_denoise import im3ddenoise
 
 
-if hasattr(time, "perf_counter"):
-    default_timer = time.perf_counter
-else:
-    default_timer = time.clock
-
 
 class FISTA(IterativeReconAlg):
     """
@@ -170,18 +165,8 @@ class FISTA(IterativeReconAlg):
             if Quameasopts is not None:
                 res_prev = copy.deepcopy(self.res)
             if self.verbose:
-                if i == 0:
-                    print(str(self.name).upper() + " " + "algorithm in progress.")
-                    toc = default_timer()
-                if i == 1:
-                    tic = default_timer()
+                self._estimate_time_until_completion(i)
 
-                    remaining_time = (self.niter - 1) * (tic - toc)
-                    seconds = int(remaining_time)
-                    print(
-                        "Estimated time until completion : "
-                        + time.strftime("%H:%M:%S", time.gmtime(seconds))
-                    )
             getattr(self, self.dataminimizing)()
 
             x_rec_old = copy.deepcopy(x_rec)
@@ -215,15 +200,8 @@ class ISTA(FISTA):  # noqa: D101
             if Quameasopts is not None:
                 res_prev = copy.deepcopy(self.res)
             if self.verbose:
-                if i == 0:
-                    print(str(self.name).upper() + " " + "algorithm in progress.")
-                    toc = time.perf_counter()
-                if i == 1:
-                    tic = time.perf_counter()
-                    print(
-                        "Esitmated time until completetion (s): "
-                        + str((self.niter - 1) * (tic - toc))
-                    )
+                self._estimate_time_until_completion(i)
+
             getattr(self, self.dataminimizing)()
 
             self.res = im3ddenoise(self.res, 20, 1.0 / lambdaForTv, self.gpuids)

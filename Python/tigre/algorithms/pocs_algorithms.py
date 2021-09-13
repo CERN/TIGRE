@@ -11,10 +11,6 @@ from tigre.utilities.Ax import Ax
 from tigre.utilities.im3Dnorm import im3DNORM
 
 
-if hasattr(time, "perf_counter"):
-    default_timer = time.perf_counter
-else:
-    default_timer = time.clock
 
 
 class ASD_POCS(IterativeReconAlg):  # noqa: N801
@@ -139,18 +135,7 @@ class ASD_POCS(IterativeReconAlg):  # noqa: N801
         n_iter = 0
         while not stop_criteria:
             if self.verbose:
-                if n_iter == 0:
-                    print("POCS Algorithm in progress.")
-                    toc = default_timer()
-                if n_iter == 1:
-                    tic = default_timer()
-
-                    remaining_time = (self.niter - 1) * (tic - toc)
-                    seconds = int(remaining_time)
-                    print(
-                        "Estimated time until completion : "
-                        + time.strftime("%H:%M:%S", time.gmtime(seconds))
-                    )
+                self._estimate_time_until_completion(n_iter)
 
             res_prev = copy.deepcopy(self.res)
             n_iter += 1
