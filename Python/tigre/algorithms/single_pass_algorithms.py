@@ -95,15 +95,14 @@ def FDK(proj, geo, angles,**kwargs):
         geo.filter = kwargs['filter']
     # Weight
     proj_filt = np.zeros(proj.shape, dtype=np.float32)
-    for ii in range(angles.shape[0]):
-        xv = np.arange((-geo.nDetector[1] / 2) + 0.5,
+    xv = np.arange((-geo.nDetector[1] / 2) + 0.5,
                        1 + (geo.nDetector[1] / 2) - 0.5) * geo.dDetector[1]
-        yv = np.arange((-geo.nDetector[0] / 2) + 0.5,
+    yv = np.arange((-geo.nDetector[0] / 2) + 0.5,
                        1 + (geo.nDetector[0] / 2) - 0.5) * geo.dDetector[0]
-        (yy, xx) = np.meshgrid(xv, yv)
+    (yy, xx) = np.meshgrid(xv, yv)
 
-        w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx ** 2 + yy ** 2))
-        proj_filt[ii] = copy.deepcopy(proj[ii]) * w
+    w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx ** 2 + yy ** 2))
+    np.multiply(proj, w, out=proj_filt)
 
     proj_filt = filtering(
         proj_filt,
@@ -117,6 +116,8 @@ def FDK(proj, geo, angles,**kwargs):
     # }
     # scipy.io.savemat('Tests/Filter_data', m)
     res = Atb(proj_filt, geo, geo.angles, 'FDK')
+
+
     # res = 0
     # res = Atb(proj,geo,angles,'FDK')
     return res
