@@ -1,46 +1,48 @@
+from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from __future__ import absolute_import
+
+import copy
 import os
 import sys
+
 import numpy as np
-import copy
 from tigre.utilities.Atb import Atb
 from tigre.utilities.filtering import filtering
 
 # TODO: this is quite nasty; it would be nice to reorganise file structure
 # later so top level folder is always in path
-currDir = os.path.dirname(os.path.realpath(__file__))
-rootDir = os.path.abspath(os.path.join(currDir, '..'))
-if rootDir not in sys.path:  # add parent dir to paths
-    sys.path.append(rootDir)
+curr_dir = os.path.dirname(os.path.realpath(__file__))
+root_dir = os.path.abspath(os.path.join(curr_dir, ".."))
+if root_dir not in sys.path:  # add parent dir to paths
+    sys.path.append(root_dir)
 
 
-def FDK(proj, geo, angles,**kwargs):
+def FDK(proj, geo, angles, **kwargs):
     """
     solves CT image reconstruction.
 
     :param proj: np.array(dtype=float32),
-     Data input in the form of 3d
+    Data input in the form of 3d
 
     :param geo: tigre.utilities.geometry.Geometry
-     Geometry of detector and image (see examples/Demo code)
+    Geometry of detector and image (see examples/Demo code)
 
     :param angles: np.array(dtype=float32)
-     Angles of projection, shape = (nangles,3) or (nangles,)
+    Angles of projection, shape = (nangles,3) or (nangles,)
 
     :param filter: str
-     Type of filter used for backprojection
-     opts: "shep_logan"
-           "cosine"
-           "hamming"
-           "hann"
+    Type of filter used for backprojection
+    opts: "shep_logan"
+          "cosine"
+          "hamming"
+          "hann"
 
     :param verbose: bool
-     Feedback print statements for algorithm progress
+    Feedback print statements for algorithm progress
 
     :param kwargs: dict
-     keyword arguments
+    keyword arguments
 
     :return: np.array(dtype=float32)
 
@@ -59,7 +61,6 @@ def FDK(proj, geo, angles,**kwargs):
 
     tigre.demos.run() to launch ipython notebook file with examples.
 
-
     --------------------------------------------------------------------
     This file is part of the TIGRE Toolbox
 
@@ -73,26 +74,36 @@ def FDK(proj, geo, angles,**kwargs):
 
     Contact:            tigre.toolbox@gmail.com
     Codes:              https://github.com/CERN/TIGRE/
-  ----------------------------------------------------------------------
-    Coded by:          MATLAB (original code): Ander Biguri
-                       PYTHON : Reuben Lindroos
-
-
+    --------------------------------------------------------------------
+    Coded by:           MATLAB (original code): Ander Biguri
+                        PYTHON : Reuben Lindroos
     """
+    if "niter" in kwargs:
+        kwargs.pop("niter")
+    if "verbose" in kwargs:
+        verbose = kwargs["verbose"]
+    else:
+        verbose = False
 
-    if 'niter' in kwargs:
-        kwargs.pop('niter')
-    if 'verbose' in kwargs:
-        verbose = kwargs['verbose']
-    else: verbose = False
+    if "verbose" in kwargs:
+        verbose = kwargs["verbose"]
+    else:
+        verbose = False
+
+    if "gpuids" in kwargs:
+        gpuids = kwargs["gpuids"]
+    else:
+        gpuids = None
 
     geo = copy.deepcopy(geo)
     geo.check_geo(angles)
     geo.checknans()
-    if 'filter' in kwargs: filter = kwargs['filter']
-    else: filter = None
+    if "filter" in kwargs:
+        filter = kwargs["filter"]
+    else:
+        filter = None
     if filter is not None:
-        geo.filter = kwargs['filter']
+        geo.filter = kwargs["filter"]
     # Weight
     proj_filt = np.zeros(proj.shape, dtype=np.float32)
     xv = np.arange((-geo.nDetector[1] / 2) + 0.5,
@@ -104,44 +115,32 @@ def FDK(proj, geo, angles,**kwargs):
     w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx ** 2 + yy ** 2))
     np.multiply(proj, w, out=proj_filt)
 
-    proj_filt = filtering(
-        proj_filt,
-        geo,
-        angles,
-        parker=False,
-        verbose=verbose)
-    # m = {
-    #     'py_projfilt': proj_filt,
-    #
-    # }
-    # scipy.io.savemat('Tests/Filter_data', m)
-    res = Atb(proj_filt, geo, geo.angles, 'FDK')
+    proj_filt = filtering(proj_filt, geo, angles, parker=False, verbose=verbose)
 
+    res = Atb(proj_filt, geo, geo.angles, "FDK", gpuids=gpuids)
 
-    # res = 0
-    # res = Atb(proj,geo,angles,'FDK')
     return res
 
 
 fdk = FDK
 
 
-def fbp(proj, geo, angles, **kwargs):
-    __doc__ = FDK.__doc__
-    if geo.mode != 'parallel':
+def fbp(proj, geo, angles, **kwargs):  # noqa: D103
+    __doc__ = FDK.__doc__  # noqa: F841
+    if geo.mode != "parallel":
         raise ValueError("Only use FBP for parallel beam. Check geo.mode.")
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
-    if 'verbose' in kwargs:
-        verbose = kwargs['verbose']
-    else: verbose = False
+    if "verbose" in kwargs:
+        verbose = kwargs["verbose"]
+    else:
+        verbose = False
+    if "gpuids" in kwargs:
+        gpuids = kwargs["gpuids"]
+    else:
+        gpuids = None
 
-    proj_filt = filtering(
-        copy.deepcopy(proj),
-        geox,
-        angles,
-        parker=False,
-        verbose=verbose)
-    res = Atb(proj_filt, geo, angles) * geo.DSO / geo.DSD
+    proj_filt = filtering(copy.deepcopy(proj), geox, angles, parker=False, verbose=verbose)
+    res = Atb(proj_filt, geo, angles, gpuids=gpuids) * geo.DSO / geo.DSD
 
     return res

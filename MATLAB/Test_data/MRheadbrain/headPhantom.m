@@ -30,11 +30,11 @@ if nargin==0
 end
 if nargin==1
     if ~isnumeric(varargin{1})
-        error('CBCT:thoraxphantom:invalid input','input is not numerical');     
+        error('TIGRE:headphantom:invalid input','input is not numerical');     
     end
     nsz=max(size(varargin{1}));
     if nsz==2 || nsz>3
-        error('CBCT:thoraxphantom:invalid input','input is not 1x1 or 1x3');
+        error('TIGRE:headphantom:invalid input','input is not 1x1 or 1x3');
     end
     if nsz==1
         sz=[varargin{1},varargin{1},varargin{1}];
@@ -43,7 +43,10 @@ if nargin==1
     end
 end
 % load data
-data=load('head.mat');
+curr_path=mfilename('fullpath');
+data_path=curr_path(1:end-length('/MATLAB/Test_data/MRheadbrain/headPhantom'));
+data_path=[data_path '/Common/data/'];
+data=load([data_path 'head.mat']);
 img=data.img;
 
 % interpolate data to get desired size

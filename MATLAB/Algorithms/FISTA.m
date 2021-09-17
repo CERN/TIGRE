@@ -37,7 +37,7 @@ function [res,qualMeasOut] = FISTA(proj,geo,angles,niter,varargin)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Ander Biguri, Reuben Lindroos
 %--------------------------------------------------------------------------
-[verbose,res,tviter,hyper,lambda,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
+[verbose,res,tviter,hyper,lambda,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,varargin);
 %res = zeros(geo.nVoxel','single');
 measurequality=~isempty(QualMeasOpts);
 
@@ -51,10 +51,10 @@ for ii = 1:niter
     res0 = res;
     if (ii==1);tic;end
     % gradient descent step
-    res = res + bm * 2 * Atb(proj - Ax(res,geo,angles, 'Siddon'), geo, angles, 'matched');
+    res = res + bm * 2 * Atb(proj - Ax(res,geo,angles, 'Siddon', 'gpuids', gpuids), geo, angles, 'matched', 'gpuids', gpuids);
     lambdaforTV = 2* bm* lambda;
     x_recold = x_rec;
-    x_rec = im3DDenoise(res,'TV',tviter,1/lambdaforTV);  
+    x_rec = im3DDenoise(res,'TV',tviter,1/lambdaforTV, 'gpuids', gpuids);  
     told = t;
     t = ( 1+sqrt(1+4*t*t) ) / 2;
     res= x_rec + (told-1)/t * (x_rec - x_recold);
@@ -66,8 +66,8 @@ for ii = 1:niter
     if (ii==1)&&(verbose==1)
         expected_time=toc*niter;
         disp('FISTA');
-        disp(['Expected duration  :    ',secs2hms(expected_time)]);
-        disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
+        disp(['Expected duration   :    ',secs2hms(expected_time)]);
+        disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
     end
     
@@ -75,8 +75,8 @@ end
 
 end
 %% Parse inputs
-function [verbose,f0,tviter,hyper,lambda,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
-opts = {'lambda','init','tviter','verbose','hyper','qualmeas'};
+function [verbose,f0,tviter,hyper,lambda,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,argin)
+opts = {'lambda','init','tviter','verbose','hyper','qualmeas','gpuids'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -175,7 +175,14 @@ for ii=1:length(opts)
                     error('TIGRE:FISTA:InvalidInput','Invalid quality measurement parameters');
                 end
             end
-               
+        % GPU IDs
+        %  =========================================================================
+        case 'gpuids'
+            if default
+                gpuids = GpuIds();
+            else
+                gpuids = val;
+            end
         otherwise
             error('TIGRE:FISTA:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in FISTA()']);
     end

@@ -19,9 +19,14 @@ function [ imgO ] = im3DDenoise( img,type,varargin )
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
-if nargin==4
-   iter=varargin{1};
-   hyper=varargin{2};
+if nargin >= 5
+    [gpuids] = parse_inputs(varargin{3:length(varargin)});
+else
+    gpuids = GpuIds();
+end
+if nargin>=4
+    iter=varargin{1};
+    hyper=varargin{2};
 else
     iter=50;
     hyper=15;
@@ -35,10 +40,10 @@ if strcmp(type,'TV')
 
     img=img./(immax+2*eps);
     if ndims(img)==2
-        imgO=tvDenoise(cat(3,img,img),hyper,iter);
+        imgO=tvDenoise(cat(3,img,img),hyper,iter,gpuids.devices);
         imgO=imgO(:,:,1);
     else
-        imgO=tvDenoise(img,hyper,iter);
+        imgO=tvDenoise(img,hyper,iter,gpuids.devices);
     end
     clear img;
     
@@ -50,4 +55,21 @@ end
 clear img;
 
 end
+
+function [gpuids]=parse_inputs(varargin)
+    %fprintf('parse_inputs0(varargin (%d))\n', length(varargin));
+    if isempty(varargin)
+        gpuids = GpuIds();
+    else
+        % create input parser
+        p=inputParser;
+        % add optional parameters
+        addParameter(p,'gpuids', GpuIds());
+        %execute
+        parse(p,varargin{:});
+        %extract
+        gpuids=p.Results.gpuids;
+    end
+end
+
 

@@ -37,8 +37,10 @@ else
     end
 end
 
+sz = [sz(2), sz(1), sz(3)];
 warning('This file is NOT under BSD license!')
 [p,ellipse]=phantom3dAniso(sz,type);
+p=permute(p, [2,1,3]);
 
 p=single(p);
 % p=[];

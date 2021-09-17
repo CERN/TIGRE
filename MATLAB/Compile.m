@@ -28,7 +28,7 @@ clear all;
 
 mex -setup
 
-
+addpath('./Utilities/Setup');
 
 if ispc
     currentFolder = cd;
@@ -36,75 +36,95 @@ if ispc
     if ~fileExisting
         error(sprintf('mex_CUDA_win64.xml not found. You may need to rename the existing files depending on your MVS version')) ;
     end
-    cudapath=getenv('CUDA_PATH');
-    if isempty(cudapath)
-        error(sprintf('CUDA Path not found. \nAdd the path by writting in MATLAB:\nsetenv(''CUDA_PATH'',''your path'')\nWhere "your path" is C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v8.0, for example')) ;
-    end
 end
+[cudapath, cuda_ver]=locate_cuda();
+if isempty(cudapath)
+    error(sprintf('CUDA Path not found. \nAdd the path by writting in MATLAB:\nsetenv(''CUDA_PATH'',''your path'')\nWhere "your path" is C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2, for example, \nor /usr/local/cuda on linux')) ;
+end
+if ispc
+   setenv('CUDA_PATH',cudapath);
+end
+
+set_cuda_cc_flags(cuda_ver);
+
+rmpath('./Utilities/Setup');
 
 % Compile for x64 or x32
 disp('Compiling TIGRE source...')
 disp('This may take a couple of minutes....')
 
 if ispc
-
+    
     if ~isempty(strfind(computer('arch'),'64'))
-        mex -largeArrayDims ./Source/Ax_mex.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/win64
-        mex -largeArrayDims ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu  ./Source/voxel_backprojection_parallel.cu -outdir ./Mex_files/win64
-        mex -largeArrayDims ./Source/minTV.cpp ./Source/POCS_TV.cu  -outdir ./Mex_files/win64
-        mex -largeArrayDims ./Source/AwminTV.cpp ./Source/POCS_TV2.cu  -outdir ./Mex_files/win64
-        mex -largeArrayDims ./Source/tvDenoise.cpp ./Source/tvdenoising.cu  -outdir ./Mex_files/win64
+        mex -largeArrayDims ./Utilities/cuda_interface/Ax_mex.cpp ../Common/CUDA/ray_interpolated_projection.cu ../Common/CUDA/Siddon_projection.cu ../Common/CUDA/ray_interpolated_projection_parallel.cu ../Common/CUDA/Siddon_projection_parallel.cu ../Common/CUDA/GpuIds.cpp -outdir ./Mex_files/win64
+        mex -largeArrayDims ./Utilities/cuda_interface/Atb_mex.cpp ../Common/CUDA/voxel_backprojection.cu ../Common/CUDA/voxel_backprojection2.cu  ../Common/CUDA/voxel_backprojection_parallel.cu ../Common/CUDA/GpuIds.cpp -outdir ./Mex_files/win64
+        mex -largeArrayDims ./Utilities/cuda_interface/minTV.cpp ../Common/CUDA/POCS_TV.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win64
+        mex -largeArrayDims ./Utilities/cuda_interface/AwminTV.cpp ../Common/CUDA/POCS_TV2.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win64
+        mex -largeArrayDims ./Utilities/cuda_interface/tvDenoise.cpp ../Common/CUDA/tvdenoising.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win64
+        mex -largeArrayDims ./Utilities/cuda_interface/AddNoise.cpp ../Common/CUDA/RandomNumberGenerator.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win64
         mex -largeArrayDims ./Utilities/IO/VarianCBCT/mexReadXim.cpp -outdir ./Mex_files/win64
+        mex -largeArrayDims ./Utilities/GPU/getGpuName_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win64
+        mex -largeArrayDims ./Utilities/GPU/getGpuCount_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win64
     else
-        mex  ./Source/Ax_mex.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/win64
-        mex  ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu  ./Source/voxel_backprojection_parallel.cu -outdir ./Mex_files/win64
-        mex  ./Source/minTV.cpp ./Source/POCS_TV.cu  -outdir ./Mex_files/win32
-        mex  ./Source/AwminTV.cpp ./Source/POCS_TV2.cu  -outdir ./Mex_files/win32
-        mex  ./Source/tvDenoise.cpp ./Source/tvdenoising.cu  -outdir ./Mex_files/win32
+        mex  ./Utilities/cuda_interface/Ax_mex.cpp ../Common/CUDA/ray_interpolated_projection.cu ../Common/CUDA/Siddon_projection.cu ../Common/CUDA/ray_interpolated_projection_parallel.cu ../Common/CUDA/Siddon_projection_parallel.cu ../Common/CUDA/GpuIds.cpp -outdir ./Mex_files/win64
+        mex  ./Utilities/cuda_interface/Atb_mex.cpp ../Common/CUDA/voxel_backprojection.cu ../Common/CUDA/voxel_backprojection2.cu  ../Common/CUDA/voxel_backprojection_parallel.cu -outdir ../Common/CUDA/GpuIds.cpp ./Mex_files/win64
+        mex  ./Utilities/cuda_interface/minTV.cpp ../Common/CUDA/POCS_TV.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win32
+        mex  ./Utilities/cuda_interface/AwminTV.cpp ../Common/CUDA/POCS_TV2.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win32
+        mex  ./Utilities/cuda_interface/tvDenoise.cpp ../Common/CUDA/tvdenoising.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win32
+        mex  ./Utilities/cuda_interface/AddNoise.cpp ../Common/CUDA/RandomNumberGenerator.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win32
         mex  ./Utilities/IO/VarianCBCT/mexReadXim.cpp -outdir ./Mex_files/win32
+        mex  ./Utilities/GPU/getGpuName_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win32
+        mex  ./Utilities/GPU/getGpuCount_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win32
     end
     
 elseif ismac
     if ~isempty(strfind(computer('arch'),'64'))
         disp('compiling for mac 64')
-        mex -largeArrayDims ./Source/Ax_mex.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/mac64
-        mex -largeArrayDims ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu  ./Source/voxel_backprojection_parallel.cu  -outdir ./Mex_files/mac64
-        mex -largeArrayDims ./Source/minTV.cpp ./Source/POCS_TV.cu  -outdir ./Mex_files/mac64
-        mex -largeArrayDims ./Source/AwminTV.cpp ./Source/POCS_TV2.cu  -outdir ./Mex_files/mac64
-        mex -largeArrayDims ./Source/tvDenoise.cpp ./Source/tvdenoising.cu  -outdir ./Mex_files/mac64
+        mex -largeArrayDims ./Utilities/cuda_interface/Ax_mex.cpp ../Common/CUDA/ray_interpolated_projection.cu ../Common/CUDA/Siddon_projection.cu ../Common/CUDA/ray_interpolated_projection_parallel.cu ../Common/CUDA/Siddon_projection_parallel.cu ../Common/CUDA/GpuIds.cpp -outdir ./Mex_files/mac64
+        mex -largeArrayDims ./Utilities/cuda_interface/Atb_mex.cpp ../Common/CUDA/voxel_backprojection.cu ../Common/CUDA/voxel_backprojection2.cu  ../Common/CUDA/voxel_backprojection_parallel.cu ../Common/CUDA/GpuIds.cpp -outdir ./Mex_files/mac64
+        mex -largeArrayDims ./Utilities/cuda_interface/minTV.cpp ../Common/CUDA/POCS_TV.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/mac64
+        mex -largeArrayDims ./Utilities/cuda_interface/AwminTV.cpp ../Common/CUDA/POCS_TV2.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/mac64
+        mex -largeArrayDims ./Utilities/cuda_interface/tvDenoise.cpp ../Common/CUDA/tvdenoising.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/mac64
+        mex -largeArrayDims ./Utilities/cuda_interface/AddNoise.cpp ../Common/CUDA/RandomNumberGenerator.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/mac64
         mex -largeArrayDims ./Utilities/IO/VarianCBCT/mexReadXim.cpp -outdir ./Mex_files/mac64
-
+        mex -largeArrayDims ./Utilities/GPU/getGpuName_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/mac64
+        mex -largeArrayDims ./Utilities/GPU/getGpuCount_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/mac64
     else
-        mex  ./Source/Ax_mex.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/mac32
-        mex  ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu ./Source/voxel_backprojection_parallel.cu  -outdir ./Mex_files/mac32
-        mex  ./Source/minTV.cpp ./Source/POCS_TV.cu  -outdir ./Mex_files/mac32
-        mex  ./Source/AwminTV.cpp ./Source/POCS_TV2.cu  -outdir ./Mex_files/mac32
-        mex  ./Source/tvDenoise.cpp ./Source/tvdenoising.cu  -outdir ./Mex_files/mac32
+        mex  ./Utilities/cuda_interface/Ax_mex.cpp ../Common/CUDA/ray_interpolated_projection.cu ../Common/CUDA/Siddon_projection.cu ../Common/CUDA/ray_interpolated_projection_parallel.cu ../Common/CUDA/Siddon_projection_parallel.cu ../Common/CUDA/GpuIds.cpp -outdir ./Mex_files/mac32
+        mex  ./Utilities/cuda_interface/Atb_mex.cpp ../Common/CUDA/voxel_backprojection.cu ../Common/CUDA/voxel_backprojection2.cu ../Common/CUDA/voxel_backprojection_parallel.cu ../Common/CUDA/GpuIds.cpp -outdir ./Mex_files/mac32
+        mex  ./Utilities/cuda_interface/minTV.cpp ../Common/CUDA/POCS_TV.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/mac32
+        mex  ./Utilities/cuda_interface/AwminTV.cpp ../Common/CUDA/POCS_TV2.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/mac32
+        mex  ./Utilities/cuda_interface/tvDenoise.cpp ../Common/CUDA/tvdenoising.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/mac32
+        mex  ./Utilities/cuda_interface/AddNoise.cpp ../Common/CUDA/RandomNumberGenerator.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/mac32
         mex  ./Utilities/IO/VarianCBCT/mexReadXim.cpp -outdir ./Mex_files/mac32
+        mex  ./Utilities/GPU/getGpuName_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/mac32
+        mex  ./Utilities/GPU/getGpuCount_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/mac32
     end
     
 elseif isunix
     if ~isempty(strfind(computer('arch'),'64'))
-        mex -largeArrayDims ./Source/Ax_mex.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/linux64
-        mex -largeArrayDims ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu  ./Source/voxel_backprojection_parallel.cu  -outdir ./Mex_files/linux64
-        mex -largeArrayDims ./Source/minTV.cpp ./Source/POCS_TV.cu  -outdir ./Mex_files/linux64
-        mex -largeArrayDims ./Source/AwminTV.cpp ./Source/POCS_TV2.cu  -outdir ./Mex_files/linux64
-        mex -largeArrayDims ./Source/tvDenoise.cpp ./Source/tvdenoising.cu  -outdir ./Mex_files/linux64
-        mex  -largeArrayDims ./Utilities/IO/VarianCBCT/mexReadXim.cpp -outdir ./Mex_files/linux64
-
+        mex -largeArrayDims ./Utilities/cuda_interface/Ax_mex.cpp ../Common/CUDA/ray_interpolated_projection.cu ../Common/CUDA/Siddon_projection.cu ../Common/CUDA/ray_interpolated_projection_parallel.cu ../Common/CUDA/Siddon_projection_parallel.cu ../Common/CUDA/GpuIds.cpp -outdir ./Mex_files/linux64
+        mex -largeArrayDims ./Utilities/cuda_interface/Atb_mex.cpp ../Common/CUDA/voxel_backprojection.cu ../Common/CUDA/voxel_backprojection2.cu  ../Common/CUDA/voxel_backprojection_parallel.cu ../Common/CUDA/GpuIds.cpp -outdir ./Mex_files/linux64
+        mex -largeArrayDims ./Utilities/cuda_interface/minTV.cpp ../Common/CUDA/POCS_TV.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/linux64
+        mex -largeArrayDims ./Utilities/cuda_interface/AwminTV.cpp ../Common/CUDA/POCS_TV2.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/linux64
+        mex -largeArrayDims ./Utilities/cuda_interface/tvDenoise.cpp ../Common/CUDA/tvdenoising.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/linux64
+        mex -largeArrayDims ./Utilities/cuda_interface/AddNoise.cpp ../Common/CUDA/RandomNumberGenerator.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/linux64
+        mex -largeArrayDims ./Utilities/IO/VarianCBCT/mexReadXim.cpp -outdir ./Mex_files/linux64
+        mex -largeArrayDims ./Utilities/GPU/getGpuName_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/linux64
+        mex -largeArrayDims ./Utilities/GPU/getGpuCount_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/linux64
     else
-        mex  ./Source/Ax_mex.cpp ./Source/ray_interpolated_projection.cu ./Source/Siddon_projection.cu ./Source/ray_interpolated_projection_parallel.cu ./Source/Siddon_projection_parallel.cu -outdir ./Mex_files/linux32
-        mex  ./Source/Atb_mex.cpp ./Source/voxel_backprojection.cu ./Source/voxel_backprojection2.cu ./Source/voxel_backprojection_parallel.cu  -outdir ./Mex_files/linux32
-        mex  ./Source/minTV.cpp ./Source/POCS_TV.cu  -outdir ./Mex_files/linux32
-        mex  ./Source/AwminTV.cpp ./Source/POCS_TV2.cu  -outdir ./Mex_files/linux32
-        mex  ./Source/tvDenoise.cpp ./Source/tvdenoising.cu  -outdir ./Mex_files/linux32
+        mex  ./Utilities/cuda_interface/Ax_mex.cpp ../Common/CUDA/ray_interpolated_projection.cu ../Common/CUDA/Siddon_projection.cu ../Common/CUDA/ray_interpolated_projection_parallel.cu ../Common/CUDA/Siddon_projection_parallel.cu ../Common/CUDA/GpuIds.cpp -outdir ./Mex_files/linux32
+        mex  ./Utilities/cuda_interface/Atb_mex.cpp ../Common/CUDA/voxel_backprojection.cu ../Common/CUDA/voxel_backprojection2.cu ../Common/CUDA/voxel_backprojection_parallel.cu ../Common/CUDA/GpuIds.cpp -outdir ./Mex_files/linux32
+        mex  ./Utilities/cuda_interface/minTV.cpp ../Common/CUDA/POCS_TV.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/linux32
+        mex  ./Utilities/cuda_interface/AwminTV.cpp ../Common/CUDA/POCS_TV2.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/linux32
+        mex  ./Utilities/cuda_interface/tvDenoise.cpp ../Common/CUDA/tvdenoising.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/linux32
+        mex  ./Utilities/cuda_interface/AddNoise.cpp ../Common/CUDA/RandomNumberGenerator.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/linux32
         mex  -largeArrayDims ./Utilities/IO/VarianCBCT/mexReadXim.cpp -outdir ./Mex_files/linux32
+        mex  ./Utilities/GPU/getGpuName_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/linux32
+        mex  ./Utilities/GPU/getGpuCount_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/linux32
     end
 end
 
-
-
-
-
 disp('')
 disp('Compilation complete')
+
