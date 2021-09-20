@@ -6,5 +6,9 @@ Many contributors have made this possible. Sincere thanks.
 
 ## Features
 
+- Faster filtering for FDK in python
+- Better timing info for python algorithms
 
 ## BugFix
+
+- Fix L2 and quality measure arrays bug
