@@ -122,8 +122,8 @@ def read_Bruker_geometry(filepath, **kwargs):
 
     geometry.dDetector = numpy.array(
         (
+            float(cfg_system["Camera Pixel Size (um)"]) / 1000.0 * binv*ratio,
             float(cfg_system["Camera Pixel Size (um)"]) / 1000.0 * binu,
-            float(cfg_system["Camera Pixel Size (um)"]) / 1000.0 * ratio * binv,
         )
     )
     # Number of pixel in the detector
@@ -163,12 +163,6 @@ def read_Bruker_geometry(filepath, **kwargs):
     geometry.DSO = float(cfg_aq["Object to Source (mm)"])
     geometry.DSD = float(cfg_aq["Camera to Source (mm)"])
 
-    # I dont like the image geometry bruker gives:
-    mag = geometry.DSD / geometry.DSO
-    # geometry.dVoxel=numpy.array((geometry.dVoxel[0],geometry.dVoxel[0],geometry.dVoxel[1]))/mag
-    # geometry.nVoxel=numpy.array((geometry.nDetector[0], geometry.nDetector[1], geometry.nDetector[1]))
-    # geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
-
     geometry.whitelevel = 2 ** int(cfg_aq["Depth (bits)"])
 
     angles = numpy.arange(
@@ -177,6 +171,12 @@ def read_Bruker_geometry(filepath, **kwargs):
         float(cfg_aq["Rotation Step (deg)"]),
     )
     angles = angles[:-1] * numpy.pi / 180
+
+    files = [file for file in os.listdir(folder) if file.endswith(".csv")]
+    if files:
+        offset = numpy.genfromtxt(os.path.join(folder, files[0]), delimiter=',',skip_header=5,dtype=float)
+        offset = numpy.delete(offset, 0, 1) 
+        geometry.offDetector=geometry.offDetector+numpy.fliplr(offset)*(geometry.dDetector/[binv,binu])
 
     return filepath, geometry, angles
 
@@ -189,7 +189,7 @@ def load_Bruker_projections(folder, geometry, angles, **kwargs):
     files = sorted([file for file in os.listdir(folder) if file.lower().endswith(".tif")])
     if dataset_number is not None:
         files = [file for file in files if file[-10:-8] == "{0:0=2d}".format(dataset_number)]
-
+    
     image = Image.open(os.path.join(folder, files[indices[0]]))
     image = numpy.asarray(image).astype(numpy.float32)
     projections = numpy.zeros([len(indices), image.shape[0], image.shape[1]], dtype=numpy.single)
