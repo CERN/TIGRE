@@ -11,10 +11,6 @@ from tigre.utilities.Ax import Ax
 from tigre.utilities.im3Dnorm import im3DNORM
 
 
-if hasattr(time, "perf_counter"):
-    default_timer = time.perf_counter
-else:
-    default_timer = time.clock
 
 
 class ASD_POCS(IterativeReconAlg):  # noqa: N801
@@ -139,18 +135,7 @@ class ASD_POCS(IterativeReconAlg):  # noqa: N801
         n_iter = 0
         while not stop_criteria:
             if self.verbose:
-                if n_iter == 0:
-                    print("POCS Algorithm in progress.")
-                    toc = default_timer()
-                if n_iter == 1:
-                    tic = default_timer()
-
-                    remaining_time = (self.niter - 1) * (tic - toc)
-                    seconds = int(remaining_time)
-                    print(
-                        "Estimated time until completion : "
-                        + time.strftime("%H:%M:%S", time.gmtime(seconds))
-                    )
+                self._estimate_time_until_completion(n_iter)
 
             res_prev = copy.deepcopy(self.res)
             n_iter += 1
@@ -196,7 +181,10 @@ class AwASD_POCS(ASD_POCS):  # noqa: D101, N801
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
         kwargs.update(dict(regularisation="minimizeAwTV"))
-        kwargs.update(dict(blocksize=1))
+        if "blocksize" not in kwargs: 
+            kwargs.update(dict(blocksize=1))
+        else:
+            self.blocksize = 1
         if "delta" not in kwargs:
             self.delta = np.array([-0.005], dtype=np.float32)[0]
         ASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
@@ -214,7 +202,27 @@ class OS_ASD_POCS(ASD_POCS):
 
         if "blocksize" not in kwargs:
             kwargs.update(blocksize=20)
+        else:
+            self.blocksize = kwargs["blocksize"]
         ASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
 
 
 os_asd_pocs = decorator(OS_ASD_POCS, name="os_asd_pocs")
+
+
+class OS_AwASD_POCS(ASD_POCS): 
+    __doc__ = ASD_POCS.__doc__
+
+    def __init__(self, proj, geo, angles, niter, **kwargs):
+
+        kwargs.update(dict(regularisation="minimizeAwTV"))
+        if "blocksize" not in kwargs:
+            kwargs.update(dict(blocksize=20))
+        else:
+            self.blocksize = kwargs["blocksize"]
+        if "delta" not in kwargs:
+            self.delta = np.array([-0.005], dtype=np.float32)[0]
+        ASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
+
+
+os_awasd_pocs = decorator(AwASD_POCS, name="os_awasd_pocs")

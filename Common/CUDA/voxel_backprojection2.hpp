@@ -60,6 +60,5 @@ void splitCTbackprojection(const GpuIds& gpuids,Geometry geo,int nalpha, unsigne
 void computeDeltasCube(Geometry geo, int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S);
 void createGeoArray(unsigned int image_splits, Geometry geo,Geometry* geoArray, unsigned int nangles);
 void freeGeoArray(unsigned int splits,Geometry* geoArray);
-void checkDevices(const GpuIds& gpuids);
 void checkFreeMemory(const GpuIds& gpuids, size_t *mem_GPU_global);
 #endif

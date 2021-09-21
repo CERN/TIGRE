@@ -278,30 +278,17 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
         int deviceCount = gpuids.GetLength();
         cudaCheckErrors("Device query fail");
         if (deviceCount == 0) {
-            mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPUselect","There are no available device(s) that support CUDA\n");
+            mexErrMsgIdAndTxt("minimizeAwTV:POCS_TV2:GPUselect","There are no available device(s) that support CUDA\n");
         }
         //
         // CODE assumes
         // 1.-All available devices are usable by this code
         // 2.-All available devices are equal, they are the same machine (warning thrown)
-        int dev;
-        const int devicenamelength = 256;  // The length 256 is fixed by spec of cudaDeviceProp::name
-        char devicename[devicenamelength];
-        cudaDeviceProp deviceProp;
-        
-        for (dev = 0; dev < deviceCount; dev++) {
-            cudaSetDevice(gpuids[dev]);
-            cudaGetDeviceProperties(&deviceProp, dev);
-            if (dev>0){
-                if (strcmp(devicename,deviceProp.name)!=0){
-                    mexWarnMsgIdAndTxt("minimizeTV:POCS_TV:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n POCS_TV.cu line 277.");
-                    break;
-                }
-            }
-            memset(devicename, 0, devicenamelength);
-            strcpy(devicename, deviceProp.name);
+        // Check the available devices, and if they are the same
+        if (!gpuids.AreEqualDevices()) {
+            mexWarnMsgIdAndTxt("minimizeAwTV:POCS_TV2:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed.");
         }
-        
+        int dev;
         
         // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
         // check free memory
@@ -368,7 +355,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
 
             // Assert
             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
-                mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","Assertion Failed. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
+                mexErrMsgIdAndTxt("minimizeAwTV:POCS_TV2:GPU","Assertion Failed. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
             }
         }
         
@@ -376,7 +363,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
          // Assert
        
         if ((slices_per_split+buffer_length*2)*image_size[0]*image_size[1]* sizeof(float)!= mem_img_each_GPU){
-            mexErrMsgIdAndTxt("minimizeTV:POCS_TV:GPU","Assertion Failed. Memory needed calculation broken! Please tell: ander.biguri@gmail.com\n");
+            mexErrMsgIdAndTxt("minimizeAwTV:POCS_TV2:GPU","Assertion Failed. Memory needed calculation broken! Please tell: ander.biguri@gmail.com\n");
         }
         
         
@@ -394,10 +381,13 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
             cudaSetDevice(gpuids[dev]);
             
             cudaMalloc((void**)&d_image[dev]    , mem_img_each_GPU);
-            cudaMemset(d_image[dev],0           , mem_img_each_GPU);
+            cudaMemset(         d_image[dev],0  , mem_img_each_GPU);
             cudaMalloc((void**)&d_dimgTV[dev]   , mem_img_each_GPU);
+            cudaMemset(         d_dimgTV[dev],0 , mem_img_each_GPU);
             cudaMalloc((void**)&d_norm2[dev]    , slices_per_split*mem_slice_image);
-            cudaMalloc((void**)&d_norm2aux[dev] , mem_auxiliary);
+            cudaMemset(         d_norm2[dev],0  , slices_per_split*mem_slice_image);
+            cudaMalloc((void**)&d_norm2aux[dev]   , mem_auxiliary);
+            cudaMemset(         d_norm2aux[dev],0 , mem_auxiliary);
             cudaCheckErrors("Malloc  error");
             
             
@@ -405,7 +395,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
        unsigned long long buffer_pixels=buffer_length*image_size[0]*image_size[1];
         float* buffer;
         if(splits>1){
-            mexWarnMsgIdAndTxt("minimizeTV:POCS_TV:Image_split","Your image can not be fully split between the available GPUs. The computation of minTV will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
+            mexWarnMsgIdAndTxt("minimizeAwTV:POCS_TV2:Image_split","Your image can not be fully split between the available GPUs. The computation of minTV will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
         }else{
             cudaMallocHost((void**)&buffer,buffer_length*image_size[0]*image_size[1]*sizeof(float));
         }

@@ -11,6 +11,7 @@ struct GpuIds {
     void SetAllGpus(int iTotalDeviceCount);
     int& operator[](int iIndex);
     int operator[](int iIndex) const;
+    bool AreEqualDevices() const;
 };
 #endif
 

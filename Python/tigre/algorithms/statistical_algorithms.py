@@ -9,11 +9,6 @@ from tigre.utilities.Atb import Atb
 from tigre.utilities.Ax import Ax
 
 
-if hasattr(time, "perf_counter"):
-    default_timer = time.perf_counter
-else:
-    default_timer = time.clock
-
 
 class MLEM(IterativeReconAlg):  # noqa: D101
     __doc__ = (
@@ -41,20 +36,8 @@ class MLEM(IterativeReconAlg):  # noqa: D101
     def run_main_iter(self):
         self.res[self.res < 0.0] = 0.0
         for i in range(self.niter):
-            if i == 0:
-                if self.verbose:
-                    print("MLEM Algorithm in progress.")
-                toc = default_timer()
-            if i == 1:
-                tic = default_timer()
-                if self.verbose:
-                    print(
-                        "Esitmated time until completetion (s): {:.4f}".format(
-                            (self.niter - 1) * (tic - toc)
-                        )
-                    )
+            self._estimate_time_until_completion(i)
 
-            #            tic = time.process_time()
             den = Ax(self.res, self.geo, self.angles, "interpolated", gpuids=self.gpuids)
             # toc = time.process_time()
             # print('Ax time: {}'.format(toc-tic))
@@ -65,7 +48,7 @@ class MLEM(IterativeReconAlg):  # noqa: D101
 
             # update
             # tic = time.process_time()
-            img = Atb(auxmlem, self.geo, self.angles, gpuids=self.gpuids) / self.W
+            img = Atb(auxmlem, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids) / self.W
             # toc = time.process_time()
             # print('Atb time: {}'.format(toc-tic))
             # img[img == np.nan] = 0.

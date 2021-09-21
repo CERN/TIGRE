@@ -6,7 +6,7 @@ from _Atb import _Atb_ext
 from .gpu import GpuIds
 
 
-def Atb(projections, geo, angles, krylov="matched", **kwargs):
+def Atb(projections, geo, angles, backprojection_type="FDK", **kwargs):
     if projections.dtype != np.float32:
         raise TypeError("Input data should be float32, not " + str(projections.dtype))
     if not np.isreal(projections).all():
@@ -33,4 +33,4 @@ def Atb(projections, geo, angles, krylov="matched", **kwargs):
     else:
         gpuids = kwargs["gpuids"]
 
-    return _Atb_ext(projections, geox, geox.angles, krylov, geox.mode, gpuids=gpuids)
+    return _Atb_ext(projections, geox, geox.angles, backprojection_type, geox.mode, gpuids=gpuids)
