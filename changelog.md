@@ -8,6 +8,7 @@ Many contributors have made this possible. Sincere thanks.
 
 - Faster filtering for FDK in python
 - Better timing info for python algorithms
+- Bruker Skyscann Data Loader
 
 ## BugFix
 
