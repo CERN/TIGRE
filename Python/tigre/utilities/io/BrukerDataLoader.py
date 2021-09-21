@@ -17,6 +17,8 @@ def BrukerDataLoader(filepath, **kwargs):
     #    These are options in case you don't want to load the entire
     #    dataset, but only particular sets of projections.
     #    The possible arguments are:
+    #         'dataset_number': Some fodlers will have several scans. 
+    #                 Set to 'all' to load all of them, or give a number (starting from 0)
     #         'sampling': type of sampling. default 'equidistant' Can be:
     #                'equidistant': equidistantly sample the entire set
     #                     of angles. 'num_angles' should be set for partial

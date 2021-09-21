@@ -77,6 +77,10 @@ proj,geo, angles  = tigreio.BrukerDataLoader(datafolder)
 
 # the same options for sampling and number of angles that exist for Nikon (avobe) exist for Bruker data loaders. 
 
+# Sometimes a folder will contain more than one dataset. 
+proj,geo, angles  = tigreio.BrukerDataLoader(datafolder,dataset_num='all') # load all of them
+proj,geo, angles  = tigreio.BrukerDataLoader(datafolder,dataset_num=0) # load the first
+
 #%% DICOM data (only tested on Philips Allura)
 
 ######## TODO
