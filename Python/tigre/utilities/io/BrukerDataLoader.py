@@ -10,6 +10,7 @@ from PIL import Image
 from configparser import ConfigParser, Error
 from tigre.utilities.geometry import Geometry
 
+
 def BrukerDataLoader(filepath, **kwargs):
     # BrukerDataLoader(filepath) Loads Bruker Skyscan datasets into TIGRE standard
     #
@@ -17,7 +18,7 @@ def BrukerDataLoader(filepath, **kwargs):
     #    These are options in case you don't want to load the entire
     #    dataset, but only particular sets of projections.
     #    The possible arguments are:
-    #         'dataset_number': Some fodlers will have several scans. 
+    #         'dataset_number': Some fodlers will have several scans.
     #                 Set to 'all' to load all of them, or give a number (starting from 0)
     #         'sampling': type of sampling. default 'equidistant' Can be:
     #                'equidistant': equidistantly sample the entire set
@@ -34,29 +35,34 @@ def BrukerDataLoader(filepath, **kwargs):
     #         'sampling_step': step to load when loading projections.
     #                 Default=1. Useful for 'step' loading.
 
-    dataset_number=kwargs["dataset_number"] if "dataset_number" in kwargs else None
+    dataset_number = kwargs["dataset_number"] if "dataset_number" in kwargs else None
     if dataset_number == "all":
         print("Loading all scans in folder, assuming the same geometry for all \n\n")
         del kwargs["dataset_number"]
-        num_scans=find_number_of_datasets(filepath)
-        angles=[None]*num_scans
-        projections=[None]*num_scans
+        num_scans = find_number_of_datasets(filepath)
+        angles = [None] * num_scans
+        projections = [None] * num_scans
         for scan in range(num_scans):
             print("Loading scan number " + str(scan) + "...\n")
-            folder, geometry, angles[scan] = read_Bruker_geometry( filepath, dataset_number=scan, **kwargs)
-            projections[scan], geometry, angles[scan] = load_Bruker_projections(folder, geometry, angles[scan], dataset_number=scan, **kwargs)
+            folder, geometry, angles[scan] = read_Bruker_geometry(
+                filepath, dataset_number=scan, **kwargs
+            )
+            projections[scan], geometry, angles[scan] = load_Bruker_projections(
+                folder, geometry, angles[scan], dataset_number=scan, **kwargs
+            )
         projections = numpy.concatenate(projections)
         angles = numpy.concatenate(angles)
 
         return projections, geometry, angles
 
     else:
-    
+
         folder, geometry, angles = read_Bruker_geometry(filepath, **kwargs)
         return load_Bruker_projections(folder, geometry, angles, **kwargs)
 
+
 def read_Bruker_geometry(filepath, **kwargs):
-    
+
     # check if input was log file itself, or just the folder
     if filepath.endswith(".log"):
         folder, ini = os.path.split(filepath)
@@ -66,21 +72,25 @@ def read_Bruker_geometry(filepath, **kwargs):
         if not files:
             raise ValueError("No .log file found in folder: " + folder)
 
-        num_scans=find_number_of_datasets(filepath)
+        num_scans = find_number_of_datasets(filepath)
 
         if num_scans is not None:
-            dataset_number=kwargs["dataset_number"] if "dataset_number" in kwargs else None
+            dataset_number = kwargs["dataset_number"] if "dataset_number" in kwargs else None
             if dataset_number is None:
-                raise ValueError("This folder contains many datasets, please select which one to load with BrukerDataLoader(..., dataset_number=a_number)")
+                raise ValueError(
+                    "This folder contains many datasets, please select which one to load with BrukerDataLoader(..., dataset_number=a_number)"
+                )
             if dataset_number >= num_scans:
                 raise ValueError("Dataset number given larger than total number of datasets")
 
             matching = [s for s in files if "{0:0=2d}".format(dataset_number) + ".log" in s]
-            if len(matching)>1:
-                raise AssertionError("More than 1 file for the same dataset found, confused what to do, so I error")
-            ini=matching[0]
+            if len(matching) > 1:
+                raise AssertionError(
+                    "More than 1 file for the same dataset found, confused what to do, so I error"
+                )
+            ini = matching[0]
         else:
-            ini=files[0]
+            ini = files[0]
     # create configureation parser
     cfg = ConfigParser()
     cfg.read(os.path.join(folder, ini))
@@ -100,8 +110,7 @@ def read_Bruker_geometry(filepath, **kwargs):
     except:
         ratio = 1
     # need to verify if this is correct.
-    ratio = 1 
-  
+    ratio = 1
 
     cfg_aq = cfg["Acquisition"]
     try:
@@ -112,29 +121,41 @@ def read_Bruker_geometry(filepath, **kwargs):
         binv = 1
 
     geometry.dDetector = numpy.array(
-        (float(cfg_system["Camera Pixel Size (um)"])/1000.0*binu, float(cfg_system["Camera Pixel Size (um)"])/1000.0*ratio*binv)
+        (
+            float(cfg_system["Camera Pixel Size (um)"]) / 1000.0 * binu,
+            float(cfg_system["Camera Pixel Size (um)"]) / 1000.0 * ratio * binv,
+        )
     )
     # Number of pixel in the detector
-    geometry.nDetector = numpy.array((float(cfg_aq["Number of Rows"]), float(cfg_aq["Number of Columns"])))
-    
+    geometry.nDetector = numpy.array(
+        (float(cfg_aq["Number of Rows"]), float(cfg_aq["Number of Columns"]))
+    )
+
     # Total size of the detector
     geometry.sDetector = geometry.nDetector * geometry.dDetector
     geometry.nDetector = geometry.nDetector.astype(int)
     ## Offset of the detector:
     try:
-        offs = -(geometry.nDetector[0]/2-float(cfg_aq["Optical Axis (line)"]))*geometry.dDetector[0]
+        offs = (
+            -(geometry.nDetector[0] / 2 - float(cfg_aq["Optical Axis (line)"]))
+            * geometry.dDetector[0]
+        )
     except:
         offs = 0.0
 
-    geometry.offDetector = numpy.array(
-        (offs, 0.0)
-    )
-    
+    geometry.offDetector = numpy.array((offs, 0.0))
+
     # Size of each voxel
     geometry.dVoxel = numpy.array(
-        (float(cfg_aq["Image Pixel Size (um)"])/1000, float(cfg_aq["Image Pixel Size (um)"])/1000, float(cfg_aq["Image Pixel Size (um)"])/1000)
+        (
+            float(cfg_aq["Image Pixel Size (um)"]) / 1000,
+            float(cfg_aq["Image Pixel Size (um)"]) / 1000,
+            float(cfg_aq["Image Pixel Size (um)"]) / 1000,
+        )
     )
-    geometry.nVoxel=numpy.array((geometry.nDetector[0], geometry.nDetector[1], geometry.nDetector[1]))
+    geometry.nVoxel = numpy.array(
+        (geometry.nDetector[0], geometry.nDetector[1], geometry.nDetector[1])
+    )
     geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
     geometry.nVoxel = geometry.nVoxel.astype(int)
 
@@ -142,20 +163,23 @@ def read_Bruker_geometry(filepath, **kwargs):
     geometry.DSO = float(cfg_aq["Object to Source (mm)"])
     geometry.DSD = float(cfg_aq["Camera to Source (mm)"])
 
-
     # I dont like the image geometry bruker gives:
-    mag=geometry.DSD/geometry.DSO
-    #geometry.dVoxel=numpy.array((geometry.dVoxel[0],geometry.dVoxel[0],geometry.dVoxel[1]))/mag
-    #geometry.nVoxel=numpy.array((geometry.nDetector[0], geometry.nDetector[1], geometry.nDetector[1]))
-    #geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
+    mag = geometry.DSD / geometry.DSO
+    # geometry.dVoxel=numpy.array((geometry.dVoxel[0],geometry.dVoxel[0],geometry.dVoxel[1]))/mag
+    # geometry.nVoxel=numpy.array((geometry.nDetector[0], geometry.nDetector[1], geometry.nDetector[1]))
+    # geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
 
+    geometry.whitelevel = 2 ** int(cfg_aq["Depth (bits)"])
 
-    geometry.whitelevel=2**int(cfg_aq["Depth (bits)"])
+    angles = numpy.arange(
+        0.0,
+        float(cfg_aq["Number of Files"]) * float(cfg_aq["Rotation Step (deg)"]),
+        float(cfg_aq["Rotation Step (deg)"]),
+    )
+    angles = angles[:-1] * numpy.pi / 180
 
-    angles=numpy.arange(0.0, float(cfg_aq["Number of Files"])*float(cfg_aq["Rotation Step (deg)"]), float(cfg_aq["Rotation Step (deg)"]))
-    angles=angles[:-1]*numpy.pi/180
-   
     return filepath, geometry, angles
+
 
 def load_Bruker_projections(folder, geometry, angles, **kwargs):
 
@@ -164,20 +188,20 @@ def load_Bruker_projections(folder, geometry, angles, **kwargs):
     # load images
     files = sorted([file for file in os.listdir(folder) if file.lower().endswith(".tif")])
     if dataset_number is not None:
-        files=[file for file in files if file[-10:-8] == "{0:0=2d}".format(dataset_number)]
+        files = [file for file in files if file[-10:-8] == "{0:0=2d}".format(dataset_number)]
 
     image = Image.open(os.path.join(folder, files[indices[0]]))
     image = numpy.asarray(image).astype(numpy.float32)
-    projections = numpy.zeros([len(indices),image.shape[0],image.shape[1]],dtype=numpy.single)
-    projections[0,:,:] = -numpy.log(image / float(geometry.whitelevel))
-    index=1
- 
+    projections = numpy.zeros([len(indices), image.shape[0], image.shape[1]], dtype=numpy.single)
+    projections[0, :, :] = -numpy.log(image / float(geometry.whitelevel))
+    index = 1
+
     print("Loading Bruker Skyscan dataset: " + folder)
     for i in tqdm(indices[1:]):
         image = Image.open(os.path.join(folder, files[i]))
         image = numpy.asarray(image).astype(numpy.float32)
-        projections[index,:,:]=(-numpy.log(image / float(geometry.whitelevel)))
-        index=index+1
+        projections[index, :, :] = -numpy.log(image / float(geometry.whitelevel))
+        index = index + 1
     del geometry.whitelevel
 
     return numpy.asarray(projections), geometry, angles
@@ -190,7 +214,7 @@ def parse_inputs(geometry, angles, **kwargs):
     sampling = kwargs["sampling"] if "sampling" in kwargs else "equidistant"
     nangles = int(kwargs["num_angles"]) if "num_angles" in kwargs else len(angles)
     step = int(kwargs["sampling_step"]) if "sampling_step" in kwargs else 1
-    dataset_number=kwargs["dataset_number"] if "dataset_number" in kwargs else None
+    dataset_number = kwargs["dataset_number"] if "dataset_number" in kwargs else None
 
     indices = numpy.arange(0, len(angles))
 
@@ -209,6 +233,7 @@ def parse_inputs(geometry, angles, **kwargs):
 
     return angles, indices, dataset_number
 
+
 def find_number_of_datasets(filepath):
     # check if input was log file itself, or just the folder
     if filepath.endswith(".log"):
@@ -219,12 +244,12 @@ def find_number_of_datasets(filepath):
         if not files:
             raise ValueError("No .log file found in folder: " + folder)
 
-        ini = min(files, key=len) #shortest one is the main one?
+        ini = min(files, key=len)  # shortest one is the main one?
         cfg = ConfigParser()
         cfg.read(os.path.join(folder, ini))
-        cfg_aq=cfg["Acquisition"]
+        cfg_aq = cfg["Acquisition"]
 
-        if cfg.has_option("Acquisition","Number of connected scans"):
-           return int(cfg_aq["Number of connected scans"])
-        else: 
+        if cfg.has_option("Acquisition", "Number of connected scans"):
+            return int(cfg_aq["Number of connected scans"])
+        else:
             return None

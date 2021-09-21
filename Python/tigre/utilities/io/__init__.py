@@ -1,2 +1,2 @@
 from .NikonDataLoader import NikonDataLoader
-from .BrukerDataLoader import BrukerDataLoader 
+from .BrukerDataLoader import BrukerDataLoader

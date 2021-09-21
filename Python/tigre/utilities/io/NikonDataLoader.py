@@ -152,17 +152,17 @@ def loadNikonProjections(folder, geometry, angles, **kwargs):
 
     # load images
     files = sorted([file for file in os.listdir(folder) if file.lower().endswith(".tif")])
-    
+
     image = Image.open(os.path.join(folder, files[indices[0]]))
     image = numpy.asarray(image).astype(numpy.float32)
-    projections = numpy.zeros([len(indices),image.shape[0],image.shape[1]],dtype=numpy.single)
-    projections[0,:,:] = -numpy.log(image / float(geometry.whitelevel))
-    index=1
+    projections = numpy.zeros([len(indices), image.shape[0], image.shape[1]], dtype=numpy.single)
+    projections[0, :, :] = -numpy.log(image / float(geometry.whitelevel))
+    index = 1
     print("Loading Nikon dataset: " + folder)
     for i in tqdm(indices):
         image = Image.open(os.path.join(folder, files[i]))
         image = numpy.asarray(image).astype(numpy.float32)
-        projections[index,:,:]=(-numpy.log(image / float(geometry.whitelevel)))
+        projections[index, :, :] = -numpy.log(image / float(geometry.whitelevel))
         index = index + 1
 
     del geometry.whitelevel
