@@ -7,7 +7,7 @@ import numpy
 from tqdm import tqdm
 
 from PIL import Image
-from configparser import ConfigParser
+from configparser import ConfigParser, Error
 from tigre.utilities.geometry import Geometry
 
 def BrukerDataLoader(filepath, **kwargs):
@@ -91,20 +91,41 @@ def read_Bruker_geometry(filepath, **kwargs):
     ## Detector information
     # Size of pixels in the detector
 
-    geometry.dDetector = numpy.array(
-        (float(cfg_system["Camera Pixel Size (um)"])/1000.0, float(cfg_system["Camera Pixel Size (um)"])/1000.0*float(cfg_system["CameraXYRatio"]))
-    )
+    try:
+        ratio = float(cfg_system["CameraXYRatio"])
+    except KeyError:
+        ratio = float(cfg_system["Camera X/Y Ratio"])
+    except:
+        ratio = 1
+    # need to verify if this is correct.
+    ratio = 1 
+  
 
     cfg_aq = cfg["Acquisition"]
+    try:
+        binu = float(cfg_aq["Camera binning"][0])
+        binv = float(cfg_aq["Camera binning"][2])
+    except:
+        binu = 1
+        binv = 1
+
+    geometry.dDetector = numpy.array(
+        (float(cfg_system["Camera Pixel Size (um)"])/1000.0*binu, float(cfg_system["Camera Pixel Size (um)"])/1000.0*ratio*binv)
+    )
     # Number of pixel in the detector
     geometry.nDetector = numpy.array((float(cfg_aq["Number of Rows"]), float(cfg_aq["Number of Columns"])))
     
     # Total size of the detector
     geometry.sDetector = geometry.nDetector * geometry.dDetector
-
+    geometry.nDetector = geometry.nDetector.astype(int)
     ## Offset of the detector:
+    try:
+        offs = -(geometry.nDetector[0]/2-float(cfg_aq["Optical Axis (line)"]))*geometry.dDetector[0]
+    except:
+        offs = 0.0
+
     geometry.offDetector = numpy.array(
-        (0.0, 0.0)
+        (offs, 0.0)
     )
     
     # Size of each voxel
@@ -113,6 +134,7 @@ def read_Bruker_geometry(filepath, **kwargs):
     )
     geometry.nVoxel=numpy.array((geometry.nDetector[0], geometry.nDetector[1], geometry.nDetector[1]))
     geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
+    geometry.nVoxel = geometry.nVoxel.astype(int)
 
     #% Global geometry
     geometry.DSO = float(cfg_aq["Object to Source (mm)"])
@@ -121,9 +143,9 @@ def read_Bruker_geometry(filepath, **kwargs):
 
     # I dont like the image geometry bruker gives:
     mag=geometry.DSD/geometry.DSO
-    geometry.dVoxel=numpy.array((geometry.dVoxel[0],geometry.dVoxel[0],geometry.dVoxel[1]))/mag
-    geometry.nVoxel=numpy.array((geometry.nDetector[0], geometry.nDetector[1], geometry.nDetector[1]))
-    geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
+    #geometry.dVoxel=numpy.array((geometry.dVoxel[0],geometry.dVoxel[0],geometry.dVoxel[1]))/mag
+    #geometry.nVoxel=numpy.array((geometry.nDetector[0], geometry.nDetector[1], geometry.nDetector[1]))
+    #geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
 
 
     geometry.whitelevel=2**int(cfg_aq["Depth (bits)"])
