@@ -12,3 +12,4 @@ Many contributors have made this possible. Sincere thanks.
 ## BugFix
 
 - Fix L2 and quality measure arrays bug
+- FDK detector offset weights missing a factor of 2

@@ -168,7 +168,7 @@ for ii = 1:geo.nDetector
 end
 
 if(theta<0)
-    w = fliplr(w);
+    w = fliplr(w)*2;
 end
 proj_w=proj;% preallocation
 for ii = 1:size(proj,3)
