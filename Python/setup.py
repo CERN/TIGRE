@@ -482,7 +482,7 @@ setup(
     ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext, gpuUtils_ext, RandomNumberGenerator_ext],
     py_modules=["tigre.py"],
     cmdclass={"build_ext": BuildExtension},
-    install_requires=["Cython", "matplotlib", "numpy", "scipy"],
+    install_requires=["Cython", "matplotlib", "numpy", "scipy", "tqdm"],
     license_files=("LICENSE",),
     license="BSD 3-Clause",
     # since the package has c code, the egg cannot be zipped

@@ -216,13 +216,13 @@ for ii=list
         title(['Detector to Source direction ->X : ',num2str(ii)]);
     end
     drawnow update 
-    
+    pause(0.01)
     if savegif
         
       frame = getframe(fh);
       im = frame2im(frame);
       [imind,cm] = rgb2ind(im,256);
-      if ii == 1;
+      if ii == 1
           imwrite(imind,cm,filename,'gif', 'Loopcount',inf);
       else
           imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',0.1);
