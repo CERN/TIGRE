@@ -43,7 +43,7 @@ end
 %% get filename
 % assuming TIF and 4 digits.
 firstfile = dir([filepath,'/*.tif']); %
-firstfile = firstfile(1).name;
+firstfile = firstfile(2).name;
 filename = firstfile(1:end-8);
 if dataset_number~=-1
     filename(end-4)=num2str(dataset_number);

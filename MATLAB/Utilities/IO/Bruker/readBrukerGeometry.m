@@ -102,8 +102,8 @@ else
 end
 file = dir([folder,'/*.csv']); %
 if ~isempty(file)
-    off=csvread([file(1).folder, '/', file(1).name],5,1).'.*(geo.dDetector./camera_binning')
-    geo.offDetector=geo.offDetector+off(:,2:end)
+    off=csvread([file(1).folder, '/', file(1).name],5,1).'.*(geo.dDetector./camera_binning');
+    geo.offDetector=geo.offDetector+off(:,1:end);
 end
 %% whitelevel
 
