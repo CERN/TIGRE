@@ -234,10 +234,11 @@ class IterativeReconAlg(object):
         Computes value of V parameter if this is not given.
         :return: None
         """
+        block_count = len(self.angleblocks)
         geo = self.geo
-        V = np.ones((self.angleblocks.shape[0], geo.nVoxel[1], geo.nVoxel[2]), dtype=np.float32)
+        V = np.ones((block_count, geo.nVoxel[1], geo.nVoxel[2]), dtype=np.float32)
 
-        for i in range(self.angleblocks.shape[0]):
+        for i in range(block_count):
             if geo.mode != "parallel":
 
                 geox = copy.deepcopy(self.geo)
