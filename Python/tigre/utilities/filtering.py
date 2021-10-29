@@ -69,10 +69,8 @@ def filter(filter, kernel, order, d, verbose=False):
     w = 2 * np.pi * np.arange(len(filt)) / order
 
     if filter in {"ram_lak", None}:
-        if filter is None:
-            if verbose:
-                warnings.warn("no filter selected, using default ram_lak")
-        pass
+        if filter is None and verbose:
+            warnings.warn("no filter selected, using default ram_lak")
     elif filter == "shepp_logan":
         filt[1:] *= np.sin(w[1:] / (2 * d)) / (w[1:] / (2 * d))
     elif filter == "cosine":

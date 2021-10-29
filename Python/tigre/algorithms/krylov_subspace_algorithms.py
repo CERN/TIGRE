@@ -71,9 +71,11 @@ class CGLS(IterativeReconAlg):  # noqa: D101
             avgtoc = default_timer()
             avgtime.append(abs(avgtic - avgtoc))
             for item in self.__dict__:
-                if isinstance(getattr(self, item), np.ndarray):
-                    if np.isnan(getattr(self, item)).any():
-                        raise ValueError("nan found for " + item + " at iteraton " + str(i))
+                if (
+                    isinstance(getattr(self, item), np.ndarray)
+                    and np.isnan(getattr(self, item)).any()
+                ):
+                    raise ValueError("nan found for " + item + " at iteraton " + str(i))
 
             aux = self.proj - tigre.Ax(
                 self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids

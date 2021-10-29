@@ -107,18 +107,9 @@ class FISTA(IterativeReconAlg):
         kwargs.update(dict(blocksize=angles.shape[0]))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         self.lmbda = 0.1
-        if "hyper" not in kwargs:
-            self.__L__ = 2.0e8
-        else:
-            self.__L__ = kwargs["hyper"]
-        if "tviter" not in kwargs:
-            self.__numiter_tv__ = 20
-        else:
-            self.__numiter_tv__ = kwargs["tviter"]
-        if "tvlambda" not in kwargs:
-            self.__lambda__ = 0.1
-        else:
-            self.__lambda__ = kwargs["tvlambda"]
+        self.__L__ = 2.0e8 if "hyper" not in kwargs else kwargs["hyper"]
+        self.__numiter_tv__ = 20 if "tviter" not in kwargs else kwargs["tviter"]
+        self.__lambda__ = 0.1 if "tvlambda" not in kwargs else kwargs["tvlambda"]
         self.__t__ = 1
         self.__bm__ = 1.0 / self.__L__
 
@@ -161,9 +152,7 @@ class FISTA(IterativeReconAlg):
         lambdaForTv = 2 * self.__bm__ * self.__lambda__
         for i in range(self.niter):
 
-            res_prev = None
-            if Quameasopts is not None:
-                res_prev = copy.deepcopy(self.res)
+            res_prev = copy.deepcopy(self.res) if Quameasopts is not None else None
             if self.verbose:
                 self._estimate_time_until_completion(i)
 
@@ -196,9 +185,7 @@ class ISTA(FISTA):  # noqa: D101
         lambdaForTv = 2 * self.__bm__ * self.lmbda
         for i in range(self.niter):
 
-            res_prev = None
-            if Quameasopts is not None:
-                res_prev = copy.deepcopy(self.res)
+            res_prev = copy.deepcopy(self.res) if Quameasopts is not None else None
             if self.verbose:
                 self._estimate_time_until_completion(i)
 
