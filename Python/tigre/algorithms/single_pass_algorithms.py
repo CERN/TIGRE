@@ -82,26 +82,17 @@ def FDK(proj, geo, angles, **kwargs):
         kwargs.pop("niter")
     if "verbose" in kwargs:
         verbose = kwargs["verbose"]
-    else:
-        verbose = False
-
-    if "verbose" in kwargs:
         verbose = kwargs["verbose"]
     else:
         verbose = False
 
-    if "gpuids" in kwargs:
-        gpuids = kwargs["gpuids"]
-    else:
-        gpuids = None
+        verbose = False
 
+    gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
     geo = copy.deepcopy(geo)
     geo.check_geo(angles)
     geo.checknans()
-    if "filter" in kwargs:
-        filter = kwargs["filter"]
-    else:
-        filter = None
+    filter = kwargs["filter"] if "filter" in kwargs else None
     if filter is not None:
         geo.filter = kwargs["filter"]
     # Weight
@@ -117,9 +108,7 @@ def FDK(proj, geo, angles, **kwargs):
 
     proj_filt = filtering(proj_filt, geo, angles, parker=False, verbose=verbose)
 
-    res = Atb(proj_filt, geo, geo.angles, "FDK", gpuids=gpuids)
-
-    return res
+    return Atb(proj_filt, geo, geo.angles, "FDK", gpuids=gpuids)
 
 
 fdk = FDK
@@ -131,16 +120,7 @@ def fbp(proj, geo, angles, **kwargs):  # noqa: D103
         raise ValueError("Only use FBP for parallel beam. Check geo.mode.")
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
-    if "verbose" in kwargs:
-        verbose = kwargs["verbose"]
-    else:
-        verbose = False
-    if "gpuids" in kwargs:
-        gpuids = kwargs["gpuids"]
-    else:
-        gpuids = None
-
+    verbose = kwargs["verbose"] if "verbose" in kwargs else False
+    gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
     proj_filt = filtering(copy.deepcopy(proj), geox, angles, parker=False, verbose=verbose)
-    res = Atb(proj_filt, geo, angles, gpuids=gpuids) * geo.DSO / geo.DSD
-
-    return res
+    return Atb(proj_filt, geo, angles, gpuids=gpuids) * geo.DSO / geo.DSD

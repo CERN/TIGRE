@@ -120,10 +120,7 @@ class ASD_POCS(IterativeReconAlg):  # noqa: N801
             )
         else:
             self.epsilon = kwargs["maxl2err"]
-        if "tviter" not in kwargs:
-            self.numiter_tv = 20
-        else:
-            self.numiter_tv = kwargs["tviter"]
+        self.numiter_tv = 20 if "tviter" not in kwargs else kwargs["tviter"]
         if "regularisation" not in kwargs:
             self.regularisation = "minimizeTV"
         self.beta = self.lmbda
