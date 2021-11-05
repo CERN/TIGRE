@@ -172,7 +172,7 @@ if(theta<0)
 end
 proj_w=proj;% preallocation
 for ii = 1:size(proj,3)
-    proj_w(:,:,ii) = proj(:,:,ii).*w;
+    proj_w(:,:,ii) = proj(:,:,ii).*w*2;
 end
 
 end

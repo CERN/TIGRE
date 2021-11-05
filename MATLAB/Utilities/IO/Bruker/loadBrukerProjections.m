@@ -1,11 +1,11 @@
-function [proj,geo,angles]=loadNikonProjections(filepath,geo,angles,varargin)
-%[proj,angles]=loadNikonProjections(filepath,geo,angles,varargin)
-%   loads Nikon uCT machine projections
+function [proj,geo,angles]=loadBrukerProjections(filepath,geo,angles,varargin)
+%[proj,angles]=loadBrukerProjections(filepath,geo,angles,varargin)
+%   loads Bruker uCT machine projections
 %
-%   loadNikonData(filepath,geo,angles) Loads a dataset given its FILEPATH,
+%   loadBrukerData(filepath,geo,angles) Loads a dataset given its FILEPATH,
 %      a geometry GEO and angles ANGLES (loaded from readXtekctGeometry()) 
 %
-%   loadNikonData(filepath,geo,angles, OPT,VAL,...) uses options and values. 
+%   loadBrukerData(filepath,geo,angles, OPT,VAL,...) uses options and values. 
 %      These are options in case you don't want to load the entire
 %      dataset, but only particular sets of projections. 
 %      The possible options in OPT are:
@@ -24,35 +24,49 @@ function [proj,geo,angles]=loadNikonProjections(filepath,geo,angles,varargin)
 %           'sampling_step': step to load when loading projections. Default
 %           1. Useful for 'step' loading.
 % 
+%           'dataset number': id of the dataset to load.
+% 
 
-% developed by A. Biguri and W. Sun 06.07.2020
+% developed by A. Biguri 
 
 
 %% Parse inputs. 
 
-[angles_to_load,index]=parse_inputs(geo,angles,varargin);
+
+[angles_to_load,index,dataset_number]=parse_inputs(geo,angles,varargin);
 
 % make sure its path
 if filepath(end)~='\' && filepath(end)~='/'
    filepath=[filepath '/']; 
 end
+
 %% get filename
 % assuming TIF and 4 digits.
 firstfile = dir([filepath,'/*.tif']); %
-firstfile = firstfile(1).name;
+firstfile = firstfile(2).name;
 filename = firstfile(1:end-8);
-
+if dataset_number~=-1
+    filename(end-4)=num2str(dataset_number);
+end
 fprintf("Dataset in: %s \n", filepath);
 
 %% load images
 %proj=[];
 l = length(angles_to_load);
-proj = zeros(geo.nDetector(1),geo.nDetector(2),l,'single');
+
+test_image=single(imread([filepath,filename,num2str(index(1)-1,'%04d'),'.tif']));
+if any(size(test_image)~=fliplr(geo.nDetector'))
+    warning('Information in the Log file does not match the projection sizes, chosing projection information');
+    geo.nDetector=fliplr(size(test_image))';
+    geo.sDetector=geo.nDetector.*geo.dDetector;
+end
+
+proj = zeros(geo.nDetector(2),geo.nDetector(1),l,'single');
 for ii=1:length(angles_to_load)
     if(~mod(ii,50))
       fprintf("Loading: %d / %d \n", ii, length(angles_to_load));
     end
-     proj(:,:,ii)=single(imread([filepath,filename,num2str(index(ii),'%04d'),'.tif']));
+     proj(:,:,ii)=single(imread([filepath,filename,num2str(index(ii)-1,'%04d'),'.tif']));
 end
 %% Beer lambert
 if any(proj(:))>single(geo.whitelevel)
@@ -65,8 +79,8 @@ geo=rmfield(geo,'whitelevel');
 angles=angles_to_load;
 end
 
-function [angles,indices]=parse_inputs(geo,angles,argin)
-opts=     {'sampling','num_angles','sampling_step'};
+function [angles,indices,dataset_number]=parse_inputs(geo,angles,argin)
+opts=     {'sampling','num_angles','sampling_step','dataset_number'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -122,6 +136,12 @@ for ii=1:length(opts)
                sampling_step=1;
             else
                sampling_step=val;
+            end
+        case 'dataset_number'
+            if default
+                dataset_number=-1;
+            else
+                dataset_number=val;
             end
         otherwise
             error(['Invalid input name:', num2str(opt),'\n No such option']);

@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 import shutil
+import re
 
 from Cython.Distutils import build_ext
 import numpy
@@ -17,15 +18,16 @@ IS_WINDOWS = sys.platform == "win32"
 
 # Code from https://github.com/pytorch/pytorch/blob/master/torch/utils/cpp_extension.py
 COMPUTE_CAPABILITY_ARGS = [  # '-gencode=arch=compute_20,code=sm_20', #deprecated
-    "-gencode=arch=compute_30,code=sm_30",  # Derecated at CUDA 9.2
+    "-gencode=arch=compute_30,code=sm_30",  # Deprecated at CUDA 9.2
     "-gencode=arch=compute_37,code=sm_37",
     "-gencode=arch=compute_50,code=sm_50",
     "-gencode=arch=compute_52,code=sm_52",
     "-gencode=arch=compute_60,code=sm_60",
     "-gencode=arch=compute_61,code=sm_61",
     "-gencode=arch=compute_70,code=sm_70",
-    "-gencode=arch=compute_75,code=sm_75",
-    "-gencode=arch=compute_86,code=sm_86",  # Only CUDA 11
+    "-gencode=arch=compute_75,code=sm_75",  # From CUDA 10
+    "-gencode=arch=compute_86,code=sm_86",  # From CUDA 11
+    "-gencode=arch=compute_70,code=compute_70", # allows foward compiling
     "--ptxas-options=-v",
     "-c",
     "--default-stream=per-thread",
@@ -100,11 +102,23 @@ def _is_cuda_file(path):
 
 
 CUDA, CUDA_VERSION = locate_cuda()
+
+try:
+    cuda_version = float(CUDA_VERSION)
+except ValueError:
+    cuda_list = re.findall('\d+', CUDA_VERSION)
+    cuda_version = float( str(cuda_list[0] + '.' + cuda_list[1]))
+
 # Cleanup CUDA arguments depedning on the version
-if float(CUDA_VERSION) < 11.0:
+if cuda_version < 11.0:
     COMPUTE_CAPABILITY_ARGS.pop(8)
-elif float(CUDA_VERSION) >= 9.2:
+
+if cuda_version < 10.0:
+    COMPUTE_CAPABILITY_ARGS.pop(7)
+
+if cuda_version > 9.2:
     COMPUTE_CAPABILITY_ARGS.pop(0)
+    
 # Obtain the numpy include directory.  This logic works across numpy versions.
 try:
     NUMPY_INCLUDE = numpy.get_include()
@@ -482,7 +496,7 @@ setup(
     ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext, gpuUtils_ext, RandomNumberGenerator_ext],
     py_modules=["tigre.py"],
     cmdclass={"build_ext": BuildExtension},
-    install_requires=["Cython", "matplotlib", "numpy", "scipy"],
+    install_requires=["Cython", "matplotlib", "numpy", "scipy", "tqdm"],
     license_files=("LICENSE",),
     license="BSD 3-Clause",
     # since the package has c code, the egg cannot be zipped

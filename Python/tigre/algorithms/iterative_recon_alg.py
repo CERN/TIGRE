@@ -199,6 +199,8 @@ class IterativeReconAlg(object):
             self.set_v()
         if not hasattr(self, "res"):
             self.set_res()
+        if self.verbose:
+            self.tic = 0    # preparation for _estimate_time_until_completion()
         # make it list
         if self.Quameasopts is not None:
             self.Quameasopts = (
@@ -208,9 +210,6 @@ class IterativeReconAlg(object):
         else:
             setattr(self, "lq", np.zeros([0, niter]))  # quameasoptslist
         setattr(self, "l2l", np.zeros([1, niter]))  # l2list
-
-        self.lq = np.array([])  # quameasoptslist
-        self.l2l = np.array([])  # l2list
 
     def set_w(self):
         """
@@ -235,10 +234,11 @@ class IterativeReconAlg(object):
         Computes value of V parameter if this is not given.
         :return: None
         """
+        block_count = len(self.angleblocks)
         geo = self.geo
-        V = np.ones((self.angleblocks.shape[0], geo.nVoxel[1], geo.nVoxel[2]), dtype=np.float32)
+        V = np.ones((block_count, geo.nVoxel[1], geo.nVoxel[2]), dtype=np.float32)
 
-        for i in range(self.angleblocks.shape[0]):
+        for i in range(block_count):
             if geo.mode != "parallel":
 
                 geox = copy.deepcopy(self.geo)
@@ -316,18 +316,7 @@ class IterativeReconAlg(object):
             if Quameasopts is not None:
                 res_prev = copy.deepcopy(self.res)
             if self.verbose:
-                if i == 0:
-                    print(str(self.name).upper() + " " + "algorithm in progress.")
-                    toc = default_timer()
-                if i == 1:
-                    tic = default_timer()
-
-                    remaining_time = (self.niter - 1) * (tic - toc)
-                    seconds = int(remaining_time)
-                    print(
-                        "Estimated time until completion : "
-                        + time.strftime("%H:%M:%S", time.gmtime(seconds))
-                    )
+                self._estimate_time_until_completion(i)
 
             getattr(self, self.dataminimizing)()
             self.error_measurement(res_prev, i)
@@ -428,6 +417,20 @@ class IterativeReconAlg(object):
                 parameters.append(item + ": " + str(self.__dict__.get(item)))
 
         return "\n".join(parameters)
+
+    def _estimate_time_until_completion(self, iter):
+        if iter == 0:
+            print(str(self.name).upper() + " " + "algorithm in progress.")
+            self.tic = default_timer()
+        if iter == 1:
+            toc = default_timer()
+
+            remaining_time = (self.niter - 1) * (toc - self.tic)
+            seconds = int(remaining_time)
+            print(
+                "Estimated time until completion : "
+                + time.strftime("%H:%M:%S", time.gmtime(seconds))
+            )
 
 
 def decorator(IterativeReconAlg, name=None, docstring=None):  # noqa: N803

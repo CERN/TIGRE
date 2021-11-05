@@ -10,11 +10,6 @@ from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.utilities.im_3d_denoise import im3ddenoise
 
 
-if hasattr(time, "perf_counter"):
-    default_timer = time.perf_counter
-else:
-    default_timer = time.clock
-
 
 class FISTA(IterativeReconAlg):
     """
@@ -112,18 +107,9 @@ class FISTA(IterativeReconAlg):
         kwargs.update(dict(blocksize=angles.shape[0]))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         self.lmbda = 0.1
-        if "hyper" not in kwargs:
-            self.__L__ = 2.0e8
-        else:
-            self.__L__ = kwargs["hyper"]
-        if "tviter" not in kwargs:
-            self.__numiter_tv__ = 20
-        else:
-            self.__numiter_tv__ = kwargs["tviter"]
-        if "tvlambda" not in kwargs:
-            self.__lambda__ = 0.1
-        else:
-            self.__lambda__ = kwargs["tvlambda"]
+        self.__L__ = 2.0e8 if "hyper" not in kwargs else kwargs["hyper"]
+        self.__numiter_tv__ = 20 if "tviter" not in kwargs else kwargs["tviter"]
+        self.__lambda__ = 0.1 if "tvlambda" not in kwargs else kwargs["tvlambda"]
         self.__t__ = 1
         self.__bm__ = 1.0 / self.__L__
 
@@ -166,22 +152,10 @@ class FISTA(IterativeReconAlg):
         lambdaForTv = 2 * self.__bm__ * self.__lambda__
         for i in range(self.niter):
 
-            res_prev = None
-            if Quameasopts is not None:
-                res_prev = copy.deepcopy(self.res)
+            res_prev = copy.deepcopy(self.res) if Quameasopts is not None else None
             if self.verbose:
-                if i == 0:
-                    print(str(self.name).upper() + " " + "algorithm in progress.")
-                    toc = default_timer()
-                if i == 1:
-                    tic = default_timer()
+                self._estimate_time_until_completion(i)
 
-                    remaining_time = (self.niter - 1) * (tic - toc)
-                    seconds = int(remaining_time)
-                    print(
-                        "Estimated time until completion : "
-                        + time.strftime("%H:%M:%S", time.gmtime(seconds))
-                    )
             getattr(self, self.dataminimizing)()
 
             x_rec_old = copy.deepcopy(x_rec)
@@ -211,19 +185,10 @@ class ISTA(FISTA):  # noqa: D101
         lambdaForTv = 2 * self.__bm__ * self.lmbda
         for i in range(self.niter):
 
-            res_prev = None
-            if Quameasopts is not None:
-                res_prev = copy.deepcopy(self.res)
+            res_prev = copy.deepcopy(self.res) if Quameasopts is not None else None
             if self.verbose:
-                if i == 0:
-                    print(str(self.name).upper() + " " + "algorithm in progress.")
-                    toc = time.perf_counter()
-                if i == 1:
-                    tic = time.perf_counter()
-                    print(
-                        "Esitmated time until completetion (s): "
-                        + str((self.niter - 1) * (tic - toc))
-                    )
+                self._estimate_time_until_completion(i)
+
             getattr(self, self.dataminimizing)()
 
             self.res = im3ddenoise(self.res, 20, 1.0 / lambdaForTv, self.gpuids)
