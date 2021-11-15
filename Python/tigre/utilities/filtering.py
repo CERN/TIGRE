@@ -3,7 +3,7 @@ from __future__ import print_function
 from numpy.core.arrayprint import dtype_is_implied
 from tigre.utilities.parkerweight import parkerweight
 import numpy as np
-from scipy.fftpack  import fft, ifft
+from scipy.fft  import fft, ifft
 
 import warnings
 
