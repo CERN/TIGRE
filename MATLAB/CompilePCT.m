@@ -130,6 +130,21 @@ for i=1:numel(textCell)
 end
 fclose(writeID);
 
+try
+    textCell = readlines('../Common/CUDA/improvedForwardProjections_cone.hpp');
+catch
+   error('Make sure to start the compile script from the correct directory') 
+end
+searchMask = cell2mat(cellfun(@(x) contains(x, '#define vecSizeIn'), textCell','UniformOutput', false))';
+textCell{searchMask} = ['#define vecSizeIn ' num2str(interceps_in)];
+
+writeID = fopen('../Common/CUDA/improvedForwardProjections_cone.hpp', 'w');
+
+for i=1:numel(textCell)
+    fprintf(writeID, '%s\n', textCell{i});
+end
+fclose(writeID);
+
 % CS (within hull)
 textCell = readlines('../Common/CUDA/improvedForwardProjections.hpp');
 searchMask = cell2mat(cellfun(@(x) contains(x, '#define vecSizeCS'), textCell','UniformOutput', false))';
@@ -142,12 +157,34 @@ for i=1:numel(textCell)
 end
 fclose(writeID);
 
+textCell = readlines('../Common/CUDA/improvedForwardProjections_cone.hpp');
+searchMask = cell2mat(cellfun(@(x) contains(x, '#define vecSizeCS'), textCell','UniformOutput', false))';
+textCell{searchMask} = ['#define vecSizeCS ' num2str(interceps_cs)];
+
+writeID = fopen('../Common/CUDA/improvedForwardProjections_cone.hpp', 'w');
+
+for i=1:numel(textCell)
+    fprintf(writeID, '%s\n', textCell{i});
+end
+fclose(writeID);
+
 % SL (behind phantom)
 textCell = readlines('../Common/CUDA/improvedForwardProjections.hpp');
 searchMask = cell2mat(cellfun(@(x) contains(x, '#define vecSizeOut'), textCell','UniformOutput', false))';
 textCell{searchMask} = ['#define vecSizeOut ' num2str(interceps_out)];
 
 writeID = fopen('../Common/CUDA/improvedForwardProjections.hpp', 'w');
+
+for i=1:numel(textCell)
+    fprintf(writeID, '%s\n', textCell{i});
+end
+fclose(writeID);
+
+textCell = readlines('../Common/CUDA/improvedForwardProjections_cone.hpp');
+searchMask = cell2mat(cellfun(@(x) contains(x, '#define vecSizeOut'), textCell','UniformOutput', false))';
+textCell{searchMask} = ['#define vecSizeOut ' num2str(interceps_out)];
+
+writeID = fopen('../Common/CUDA/improvedForwardProjections_cone.hpp', 'w');
 
 for i=1:numel(textCell)
     fprintf(writeID, '%s\n', textCell{i});
@@ -177,20 +214,26 @@ fprintf("Compiling pCT source...\n");
 if isunix
     if ~isempty(strfind(computer('arch'),'64'))
         mex -largeArrayDims ./Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu -outdir ./pCTMexFiles/linux64
+        mex -largeArrayDims ./Utilities/cuda_interface/pCTCubicSpline_cone_mex.cpp ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/linux64
     else
         mex ./Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu -outdir ./pCTMexFiles/linux32
+        mex ./Utilities/cuda_interface/pCTCubicSpline_cone_mex.cpp ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/linux32
     end
 elseif ispc
     if ~isempty(strfind(computer('arch'),'64'))
         mex -largeArrayDims ./Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu -outdir ./pCTMexFiles/win64
+        mex -largeArrayDims ./Utilities/cuda_interface/pCTCubicSpline_cone_mex.cpp ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/win64
     else
         mex ./Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu -outdir ./pCTMexFiles/win32
+        mex ./Utilities/cuda_interface/pCTCubicSpline_cone_mex.cpp ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/win32
     end
 elseif ismac
     if ~isempty(strfind(computer('arch'),'64'))
         mex -largeArrayDims ./Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu -outdir ./pCTMexFiles/mac64
+        mex -largeArrayDims ./Utilities/cuda_interface/pCTCubicSpline_cone_mex.cpp ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/mac64
     else
         mex ./Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu -outdir ./pCTMexFiles/mac32
+        mex ./Utilities/cuda_interface/pCTCubicSpline_cone_mex.cpp ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/mac32
     end
 end
 

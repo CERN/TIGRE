@@ -61,3 +61,6 @@ __device__ int calcInterceptsLinear(float* LinInterceptsVec, float* start, float
 
 
 
+
+
+
