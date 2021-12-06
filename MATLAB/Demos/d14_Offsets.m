@@ -47,7 +47,7 @@ projections=Ax(head,geo,angles,'interpolated');
 %% lets see it
 plotProj(projections,angles);
 
-%% we will skip recosntruction of this tests because the image is outside the detector
+%% we will skip reconstruction of this tests because the image is outside the detector
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

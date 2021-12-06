@@ -1,6 +1,6 @@
 function img=cropCBCT(img,geo)
 %cropCBCT(img,geo) will crop the parts of the iamge that will not have
-% clear information anfter the recosntruction. It sets to zero everything
+% clear information anfter the reconstruction. It sets to zero everything
 % outside the cylinder constrained in the image, and crops a small cone
 % shape on top and bottom of the image.
 %--------------------------------------------------------------------------

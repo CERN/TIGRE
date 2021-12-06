@@ -67,7 +67,7 @@ TIGRE is a GPU-based CT reconstruction software repository that contains a wide 
        
 - Image quality metrics.
 
-- Nikon and Varian scanners data loaders. 
+- Nikon and Varian and Phillips (DICOM) scanner data loaders. 
 
 ## Installation
 
@@ -86,7 +86,7 @@ MATLAB and Python builds are both fully supported.
 
 For answers to frequently asked questions [click here](Frontispiece/FAQ.md).
 
-If you have new question not answered in the FAQ, please [contact us](#contact) or open a  [discussion thread](https://github.com/CERN/TIGRE/discussions).
+If you have new question not answered in the FAQ, please [contact us](#contact), join the [Slack group](#contact) or open a  [discussion thread](https://github.com/CERN/TIGRE/discussions).
 
 ## Gallery
 
@@ -106,7 +106,9 @@ Contact the authors directly at:
 
 [tigre.toolbox@gmail.com](mailto:tigre.toolbox@gmail.com) or [ander.biguri@gmail.com](mailto:ander.biguri@gmail.com)
 
-for any questions/comments or if you want to be added to the mailing list. 
+for any questions/comments or if you want to be added to the mailing list or the Slack team.
+
+The Slack team is a good place for chatting about development and questions about TIGRE. Please send an email to the authors and you will receive an invitation.
 
 ## Licensing
 

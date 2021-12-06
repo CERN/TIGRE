@@ -100,7 +100,7 @@ projections2=Ax(head,geo,angles,'interpolated');
 
 imgnoRot=OS_SART(projections2,geo,angles,50);
 
-% %% Plot to show that indeed the recosntruction is rigth
+% %% Plot to show that indeed the reconstruction is right
 % 
 % 
 % 

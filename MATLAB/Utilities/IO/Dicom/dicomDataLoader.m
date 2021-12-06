@@ -1,5 +1,14 @@
 function [proj,geo,angles,dicomhdr]= dicomDataLoader(filepath)
 
+% This file is a modification of code written for the following article:
+%
+% Hatamikia, S., Biguri, A., Kronreif, G., Kettenbach, J., Russ, T., Furtado, H.,
+% Shiyam Sundar, L.K., Buschmann, M., Unger, E., Figl, M., Georg, D.
+% and Birkfellner, W. (2020), 
+% Optimization for customized trajectories in cone beam computed tomography. 
+% Med. Phys., 47: 4786-4799. https://doi.org/10.1002/mp.14403
+%
+% Please cite it, especially if you are using C-arm CBCT
 
 if ~strcmp(filepath(end),'/') || ~strcmp(filepath(end),'\')
     filepath=[filepath,'/'];

@@ -69,7 +69,7 @@ function [res,errorL2,qualMeasOut]=OS_SART(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 
-[blocksize,lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,angles,varargin);
+[blocksize,lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg, gpuids]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 
 qualMeasOut=zeros(length(QualMeasOpts),niter);
@@ -94,13 +94,13 @@ geoaux.sVoxel([1 2])=geo.sVoxel([1 2])*1.1; % a Bit bigger, to avoid numerical d
 geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon');  %
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon', 'gpuids', gpuids);  %
 W(W<min(geo.dVoxel)/2)=Inf;
 W=1./W;
 
 
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index);
+V=computeV(geo,angles,alphablocks,orig_index, gpuids);
 
 clear A x y dx dz;
 
@@ -164,10 +164,10 @@ for ii=1:niter
         if nesterov
             % The nesterov update is quite similar to the normal update, it
             % just uses this update, plus part of the last one.
-            ynesterov=res +bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{:,jj})),geo,alphablocks{:,jj}));
+            ynesterov=res +bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{:,jj}, 'gpuids', gpuids)),geo,alphablocks{:,jj}, 'gpuids', gpuids));
             res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
         else
-            res=res+lambda* bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{:,jj})),geo,alphablocks{:,jj}));
+            res=res+lambda* bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(res,geo,alphablocks{:,jj}, 'gpuids', gpuids)),geo,alphablocks{:,jj}, 'gpuids', gpuids));
         end
         
         % Non-negativity constrain
@@ -201,7 +201,7 @@ for ii=1:niter
         geo.offDetector=offDetector;
         geo.DSD=DSD;
         geo.rotDetector=rotDetector;
-        errornow=im3Dnorm(proj-Ax(res,geo,angles,'Siddon'),'L2');
+        errornow=im3Dnorm(proj-Ax(res,geo,angles,'Siddon', 'gpuids', gpuids),'L2');
         %     If the error is not minimized
         if ii~=1 && errornow>errorL2(end) % This 1.1 is for multigrid, we need to focus to only that case
             if verbose
@@ -262,8 +262,8 @@ end
 end
 
 %% Parse inputs
-function [block_size,lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'blocksize','lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg'};
+function [block_size,lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg, gpuids]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'blocksize','lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg', 'gpuids'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -394,6 +394,13 @@ for ii=1:length(opts)
             else
                 nonneg=val;
             end
+        case 'gpuids'
+            if default
+                gpuids = GpuIds();
+            else
+                gpuids = val;
+            end
+
         otherwise
             error('TIGRE:OS_SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_SART_CBCT()']);
     end

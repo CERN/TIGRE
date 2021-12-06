@@ -1,7 +1,7 @@
 %% Demo 13: Helical Geometry tests
 %
 %
-% This demo shows an example of TIGRE wirking on Helical scan geometries
+% This demo shows an example of TIGRE working on Helical scan geometries
 %
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -44,7 +44,7 @@ geo.accuracy=0.5;
 
 
 %% Create data+ angles
-angles=linspace(00.0,2*pi,200);
+angles=linspace(00.0,2*pi,100);
 angles=[angles angles angles];
 % Load thorax phatom data
 head=headPhantom(geo.nVoxel); % yes, not the best example data, but It will do.

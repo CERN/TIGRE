@@ -1,0 +1,22 @@
+[flake8]
+max-line-length=100
+docstring-convention=all
+import-order-style=pycharm
+allow-untyped-defs=true
+ignore=
+    P102,B311,W503,E226,S311,
+    # Missing Docstrings
+    D100,D104,D105,D107,
+    # Docstring Whitespace
+    D203,D205,D212,D214,D215,
+    # Docstring Quotes
+    D301,D302,
+    # Docstring Content
+    D4,
+    # Type Annotations
+    ANN002,ANN003,ANN101,ANN102,ANN204,ANN206,
+    # pep8-naming
+    N802,N806,N815,
+exclude=
+    __pycache__,.cache,
+    venv,.venv,

@@ -19,18 +19,39 @@ function img=minimizeTV(img,varargin)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
+if nargin >= 5
+    [gpuids] = parse_inputs(varargin{3:length(varargin)});
+else
+    gpuids = GpuIds();
+end
 if nargin==1
     dtvg=1;
     ng=30;
 else
-    if nargin == 3
+    if nargin == 5
         dtvg=varargin{1};
         ng=varargin{2};
     else
-        error('Wrong amount of inputs, 1 or 3 expected');
+        error('Wrong amount of inputs, 1 or 5 expected');
     end
 end
 
-img=minTV(img,dtvg,ng);
+img=minTV(img,dtvg,ng,gpuids.devices);
 
+end
+
+function [gpuids]=parse_inputs(varargin)
+    %fprintf('parse_inputs0(varargin (%d))\n', length(varargin));
+    if isempty(varargin)
+        gpuids = GpuIds();
+    else
+        % create input parser
+        p=inputParser;
+        % add optional parameters
+        addParameter(p,'gpuids', GpuIds());
+        %execute
+        parse(p,varargin{:});
+        %extract
+        gpuids=p.Results.gpuids;
+    end
 end

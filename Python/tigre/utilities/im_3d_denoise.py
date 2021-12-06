@@ -1,15 +1,21 @@
 import numpy as np
 from _tvdenoising import tvdenoise
 
-def im3ddenoise(img,iter=50,lmbda=15.0):
+from .gpu import GpuIds
+
+
+def im3ddenoise(img, iter=50, lmbda=15.0, gpuids=None):
     imgmin = np.amin(img.ravel())
-    img = img-imgmin
+    img = img - imgmin
     imgmax = np.amax(img.ravel())
-    img = img/imgmax
+    img = img / imgmax
 
-    img = tvdenoise(img,iter,lmbda)
+    if gpuids is None:
+        gpuids = GpuIds()
 
-    img*=imgmax
-    img+=imgmin
+    img = tvdenoise(img, iter, lmbda, gpuids)
+
+    img *= imgmax
+    img += imgmin
 
     return img
