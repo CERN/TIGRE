@@ -265,6 +265,7 @@ class IterativeReconAlg(object):
 
             else:
                 V[i] *= len(self.angleblocks[i])
+        V[V==0.0] = np.inf       
 
         self.V = V
 
