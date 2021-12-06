@@ -21,6 +21,7 @@ if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
         
         V(:,:,ii) = mean(Atb(ones(geo.nDetector(2),geo.nDetector(1),length(auxang),'single'),auxgeo,auxang),3);
     end
+    V(V==0.0)=Inf;
 else
     for ii=1:length(alphablocks)
         V(:,:,ii)=ones(geo.nVoxel(1:2).','single')*length(alphablocks{ii});
