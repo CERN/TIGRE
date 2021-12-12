@@ -105,6 +105,7 @@ class ASD_POCS(IterativeReconAlg):  # noqa: N801
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
         
+        kwargs.update(dict(regularisation="minimizeTV"))
         if "blocksize" not in kwargs:
             kwargs.update(dict(blocksize=1))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)       
