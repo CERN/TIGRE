@@ -1,6 +1,6 @@
 /*-------------------------------------------------------------------------
  * CUDA function for optimized proton CT radiographies
- * The full method is described in Kaser et al.: Integration of proton imaging into the TIGRE toolbox (submitted to IEEE TMI)
+ * The full method is described in Kaser et al.: Integration of proton imaging into the TIGRE toolbox (submitted to ZMP)
  * and based on the method of Collins-Fekete (https://doi.org/10.1088/0031-9155/61/23/8232)
  */
  
@@ -227,34 +227,29 @@ __device__ int MinMax(float* solutions, float a, float b, float c){
 }
 
 
-__device__ int calcInterceptsLinear(float* LinInterceptsVec, float* start, float* stop, float* direction, float pix, int maxIntercep, bool* protFlag){
+__device__ int calcInterceptsLinear(float* LinInterceptsVec, float* start, float* stop, float* direction, float* pix, int maxIntercep, bool* protFlag){
   float boundary;
   int counter = 0;
   int nx, ny;
-  nx = int(abs(stop[0] - start[0])/pix);
-  ny = int(abs(stop[1] - start[1])/pix);
+  nx = int(abs(stop[0] - start[0])/pix[0]);
+  ny = int(abs(stop[1] - start[1])/pix[1]);
     if(nx+ny>=maxIntercep){
         *protFlag = false;
         return 1;}
-    
-  /*for (int ix=0; ix<=nx+ny; ix++){
-  LinInterceptsVec[ix] = 0; //-200+(ix+1)*400/(nx+ny); // --> just for testing purposes...
-    counter++;
-  }*/
   
-  if (int(stop[0]/pix) == int(start[0]/pix) && int(stop[1]/pix) == int(start[1]/pix)) {
+  if (int(stop[0]/pix[0]) == int(start[0]/pix[0]) && int(stop[1]/pix[1]) == int(start[1]/pix[1])) {
   *protFlag = true;
   return 0;
   }
           
-  if (int(stop[0]/pix) != int(start[0]/pix)) {
+  if (int(stop[0]/pix[0]) != int(start[0]/pix[0])) {
     float k = direction[0];
     float d = start[0] - k*start[2];
-    boundary = trunc( ((stop[0] > start[0]) ? stop[0]:start[0])/pix)*pix;
+    boundary = trunc( ((stop[0] > start[0]) ? stop[0]:start[0])/pix[0])*pix[0];
 
     for (int ix=0; ix<nx; ix++){
         if(ix != 0){
-          boundary = boundary - pix;
+          boundary = boundary - pix[0];
         }
         float intercept = (boundary - d) / k;
 
@@ -268,13 +263,13 @@ __device__ int calcInterceptsLinear(float* LinInterceptsVec, float* start, float
     }
   }
 
-  if (int(stop[1]/pix) != int(start[1]/pix)) {
+  if (int(stop[1]/pix[1]) != int(start[1]/pix[1])) {
     float k = direction[1];
     float d = start[1] - k*start[2];
-    boundary = trunc( ((stop[1] > start[1]) ? stop[1]:start[1])/pix)*pix;
+    boundary = trunc( ((stop[1] > start[1]) ? stop[1]:start[1])/pix[1])*pix[1];
     for (int iy=nx; iy<nx+ny; iy++){
         if(iy != nx){
-          boundary = boundary - pix;
+          boundary = boundary - pix[1];
         }
     float intercept = (boundary - d) / k;
     if(intercept > start[2] && intercept < stop[2]){
@@ -302,7 +297,7 @@ __device__ int calcInterceptsLinear(float* LinInterceptsVec, float* start, float
 
 
 __device__ int calcIntercepts(float* InterceptsVec ,float* a, float* b, \
-                      float* c, float* d, float* pos1, float pixelSize, bool* protFlag, int maxIntercep){
+                      float* c, float* d, float* pos1, float* pixelSize, bool* protFlag, int maxIntercep){
                           
             /*Calculates channel Intercepts and the lengths the proton (ion) has spent in the
               corresponding channel.
@@ -374,8 +369,8 @@ __device__ int calcIntercepts(float* InterceptsVec ,float* a, float* b, \
            }
            } 
 
-          nx = int(abs(oneX - zeroX)/pixelSize);
-          ny = int(abs(oneY-zeroY)/pixelSize);
+          nx = int(abs(oneX - zeroX) / pixelSize[0]);
+          ny = int(abs(oneY - zeroY) / pixelSize[1]);
           if (nx + ny == 0) {
           *protFlag = true;
           return 0;
@@ -383,11 +378,11 @@ __device__ int calcIntercepts(float* InterceptsVec ,float* a, float* b, \
 
           if ((nx + ny) <= maxIntercep){ 
           
-              if (int(oneX/pixelSize) != int(zeroX/pixelSize)) {
-                boundary = trunc( ((oneX > zeroX) ? oneX:zeroX)/pixelSize)*pixelSize;
+              if (int(oneX/pixelSize[0]) != int(zeroX/pixelSize[0])) {
+                boundary = trunc( ((oneX > zeroX) ? oneX:zeroX)/pixelSize[0])*pixelSize[0];
                 for (int ix=0; ix<nx; ix++){
                   if(ix != 0){
-                    boundary = boundary - pixelSize;
+                    boundary = boundary - pixelSize[0];
                   }
                   //Start from the largest pixel boundary and propagate to the smallest
                   status = SolvePolynomial(IntercepX, b[0]/a[0], c[0]/a[0], d[0]/a[0] - boundary/a[0]);
@@ -402,11 +397,11 @@ __device__ int calcIntercepts(float* InterceptsVec ,float* a, float* b, \
                 }
               }
 
-                if ( int(oneY/pixelSize) != int(zeroY/pixelSize)) {
-                  boundary = trunc( ((oneY > zeroY) ? oneY:zeroY)/pixelSize)*pixelSize;
+                if ( int(oneY/pixelSize[1]) != int(zeroY/pixelSize[1])) {
+                  boundary = trunc( ((oneY > zeroY) ? oneY:zeroY)/pixelSize[1])*pixelSize[1];
                   for (int iy=0; iy<ny; iy++){ 
                     if(iy != 0){
-                        boundary = boundary - pixelSize;
+                        boundary = boundary - pixelSize[1];
                     }
                     //Start from the largest pixel boundary and propagate to the smallest
                     status = SolvePolynomial(IntercepY, b[1]/a[1], c[1]/a[1], d[1]/a[1] - boundary/a[1]);
@@ -449,7 +444,7 @@ __device__ int calcIntercepts(float* InterceptsVec ,float* a, float* b, \
 
 __global__ void ParticleKernel(float* dhist1, float* dhist2, float* devicePosIn, float* devicePosOut, float* devicedirIn, \
                                float* devicedirOut ,float* p_wepl,int* numOfEntries, int* detectSizeX, int* detectSizeY, \
-                               float* pixelSize, float* detectDistIn, float* detectDistOut, float *ein, float *hull, float *reject){
+                               float* pix, float* detectDistIn, float* detectDistOut, float *ein, float *hull, float *reject){
     /*Calculate Spline Parameters
     c = deviceDirIn / d = devicePosIn (pos0)
     */
@@ -470,12 +465,12 @@ __global__ void ParticleKernel(float* dhist1, float* dhist2, float* devicePosIn,
 
     //Dereference input parameters
     int entries, dSizeX, dSizeY;
-    float pix;
+    // float pix;
     
     entries = *numOfEntries;
     dSizeX = *detectSizeX;
     dSizeY = *detectSizeY;
-    pix = *pixelSize;
+    // pix = *pixelSize;
             
             
     if(hull[3] == 0){
@@ -485,7 +480,7 @@ __global__ void ParticleKernel(float* dhist1, float* dhist2, float* devicePosIn,
             + lenZ*lenZ), 0.5); 
    
     float lambda0, lambda1, ref_wepl;
-    ref_wepl = 0.00244 * powf(*ein, 1.75);
+    ref_wepl = 10 * 0.00244 * powf(*ein, 1.75);
     lambda0 = 1.01 + 0.43 * powf(p_wepl[protonIndex]/ref_wepl, 2);
     lambda1 = 0.99 - 0.46 * powf(p_wepl[protonIndex]/ref_wepl, 2);
 
@@ -543,11 +538,11 @@ __global__ void ParticleKernel(float* dhist1, float* dhist2, float* devicePosIn,
         int indX, indY, linInd;
         float tOld = 0.0;
          if (count==0){ 
-           indX = int(pos1[0]/pix+dimX/2.); // REPLACE: pos1 by pos0
-           indY = int(pos1[1]/pix+dimY/2.);
+           indX = int(pos1[0]/pix[0]+dimX/2.); // REPLACE: pos1 by pos0
+           indY = int(pos1[1]/pix[1]+dimY/2.);
 
            if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY)){ 
-               linInd = indX + indY*(dSizeX);   
+               linInd = indY + indX*(dSizeY);  
                atomicAdd(&dhist1[linInd], p_wepl[protonIndex]);
                atomicAdd(&dhist2[linInd], 1.0f);
            }
@@ -557,12 +552,12 @@ __global__ void ParticleKernel(float* dhist1, float* dhist2, float* devicePosIn,
             for(int i= 0; i<=count; i++){
               lk = (InterceptsVec[i]- tOld)*lenZ;
               if(tOld == 0){
-                indX = int(d[0]/pix +dimX/2);
-                indY = int(d[1]/pix +dimY/2);
-                linInd = indX + indY*(dSizeX);  
+                indX = int(d[0]/pix[0] +dimX/2);
+                indY = int(d[1]/pix[1] +dimY/2);
+                linInd = indY + indX*(dSizeY); 
 
                 if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY)){
-                    linInd = indX + indY*(dSizeX); 
+                    linInd = indY + indX*(dSizeY);
                     atomicAdd(&dhist1[linInd], powf(lk/lenZ,2)*p_wepl[protonIndex]);
                     atomicAdd(&dhist2[linInd], powf(lk/lenZ,2));
                 }
@@ -570,21 +565,21 @@ __global__ void ParticleKernel(float* dhist1, float* dhist2, float* devicePosIn,
 
               }else if(i == count){
                 lk = lenZ - InterceptsVec[i-1]*lenZ;
-                indX = int(pos1[0]/pix +dimX/2);
-                indY = int(pos1[1]/pix +dimY/2);
+                indX = int(pos1[0]/pix[0] +dimX/2);
+                indY = int(pos1[1]/pix[1] +dimY/2);
 
                 if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY)){
-                    linInd = indX + indY*(dSizeX);  
+                    linInd = indY + indX*(dSizeY); 
                     atomicAdd(&dhist1[linInd], powf(lk/lenZ,2)*p_wepl[protonIndex]);
                     atomicAdd(&dhist2[linInd], powf(lk/lenZ,2));
                 }
 
               }else{
-                indX = int(cspline(InterceptsVec[i] - eps, a[0], b[0], c[0], d[0])/pix +dimX/2);
-                indY = int(cspline(InterceptsVec[i] - eps, a[1], b[1], c[1], d[1])/pix +dimY/2);
+                indX = int(cspline(InterceptsVec[i] - eps, a[0], b[0], c[0], d[0])/pix[0] +dimX/2);
+                indY = int(cspline(InterceptsVec[i] - eps, a[1], b[1], c[1], d[1])/pix[1] +dimY/2);
 
                 if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY)){
-                    linInd = indX + indY*(dSizeX);  
+                    linInd = indY + indX*(dSizeY); 
                     atomicAdd(&dhist1[linInd], powf(lk/lenZ,2)*p_wepl[protonIndex]);
                     atomicAdd(&dhist2[linInd], powf(lk/lenZ,2));
                 }
@@ -651,7 +646,7 @@ else{
 
         /* ------------ CUBIC SPLINE PREPARATIONS ---------------- */
         float lambda0, lambda1, ref_wepl;
-        ref_wepl = 0.00244 * powf(*ein, 1.75);
+        ref_wepl = 10 * 0.00244 * powf(*ein, 1.75);
         lambda0 = 1.01 + 0.43 * powf(p_wepl[protonIndex]/ref_wepl, 2);
         lambda1 = 0.99 - 0.46 * powf(p_wepl[protonIndex]/ref_wepl, 2);
 
@@ -714,11 +709,11 @@ else{
 
         // ---------------------------------------- Start with SL from detector to hull
         if (countIn == 0){
-        indX = int(initpos[0]/pix + dimX/2.);
-        indY = int(initpos[1]/pix + dimY/2.);
+        indX = int(initpos[0]/pix[0] + dimX/2.);
+        indY = int(initpos[1]/pix[1] + dimY/2.);
         lk = HullIn[2] - initpos[2];
         if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY)){ 
-           linInd = indX + indY*(dSizeX);   
+           linInd = indY + indX*(dSizeY);  
            atomicAdd(&dhist1[linInd], weight_air_in*powf(lk/lenZ,2)*p_wepl[protonIndex]);
            atomicAdd(&dhist2[linInd], weight_air_in*powf(lk/lenZ,2));
             }
@@ -728,10 +723,10 @@ else{
         for(int i= 0; i<=countIn; i++){
            lk = InterceptsVecIn[i] - tOld;
            if(i == 0){
-             indX = int(initpos[0]/pix + dimX/2.);
-             indY = int(initpos[1]/pix + dimY/2.);
+             indX = int(initpos[0]/pix[0] + dimX/2.);
+             indY = int(initpos[1]/pix[1] + dimY/2.);
              if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY) && (0 < lk) && (lk < (HullIn[2]-initpos[2]))){
-             linInd = indX + indY*(dSizeX);
+             linInd = indY + indX*(dSizeY);
              atomicAdd(&dhist1[linInd], weight_air_in*powf(lk/lenZ,2)*p_wepl[protonIndex]);
              atomicAdd(&dhist2[linInd], weight_air_in*powf(lk/lenZ,2));
              tOld = InterceptsVecIn[i];
@@ -739,20 +734,20 @@ else{
            }
            else if(i == countIn){
              lk = HullIn[2] - InterceptsVecIn[i-1];
-             indX = int(HullIn[0]/pix + dimX/2.);
-             indY = int(HullIn[1]/pix + dimY/2.);
+             indX = int(HullIn[0]/pix[0] + dimX/2.);
+             indY = int(HullIn[1]/pix[1] + dimY/2.);
              if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY) && (0 < lk) && (lk < (HullIn[2]-initpos[2]))){
-             linInd = indX + indY*(dSizeX); 
+             linInd = indY + indX*(dSizeY);
              atomicAdd(&dhist1[linInd], weight_air_in*powf(lk/lenZ,2)*p_wepl[protonIndex]);
              atomicAdd(&dhist2[linInd], weight_air_in*powf(lk/lenZ,2));
              }
            }
 
            else{
-             indX = int(((initdir[0]*(InterceptsVecIn[i]-eps) + (initpos[0] - initdir[0] * initpos[2])))/pix + dimX/2.);
-             indY = int(((initdir[1]*(InterceptsVecIn[i]-eps) + (initpos[1] - initdir[1] * initpos[2])))/pix + dimY/2.);
+             indX = int(((initdir[0]*(InterceptsVecIn[i]-eps) + (initpos[0] - initdir[0] * initpos[2])))/pix[0] + dimX/2.);
+             indY = int(((initdir[1]*(InterceptsVecIn[i]-eps) + (initpos[1] - initdir[1] * initpos[2])))/pix[1] + dimY/2.);
              if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY) && (0 < lk) && (lk < (HullIn[2]-initpos[2]))){
-             linInd = indX + indY*(dSizeX);
+             linInd = indY + indX*(dSizeY);
              atomicAdd(&dhist1[linInd], weight_air_in*powf(lk/lenZ,2)*p_wepl[protonIndex]);
              atomicAdd(&dhist2[linInd], weight_air_in*powf(lk/lenZ,2));
              tOld = InterceptsVecIn[i];
@@ -764,11 +759,11 @@ else{
         
              tOld = 0.0;
              if (countHull==0){ 
-               indX = int(HullIn[0]/pix + dimX/2.); 
-               indY = int(HullIn[1]/pix + dimY/2.);
+               indX = int(HullIn[0]/pix[0] + dimX/2.); 
+               indY = int(HullIn[1]/pix[1] + dimY/2.);
                lk = HullOut[2] - HullIn[2];
                if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY)){ 
-                   linInd = indX + indY*(dSizeX);   
+                   linInd = indY + indX*(dSizeY);  
                    atomicAdd(&dhist1[linInd], weight_water*powf(lk/lenZ,2)*p_wepl[protonIndex]);
                    atomicAdd(&dhist2[linInd], weight_water*powf(lk/lenZ,2));
                }
@@ -777,12 +772,12 @@ else{
                 for(int i= 0; i<=countHull; i++){
                   lk = (InterceptsVecHull[i] - tOld)*(HullOut[2] - HullIn[2]);
                   if(tOld == 0){
-                    indX = int(d[0]/pix + dimX/2.);
-                    indY = int(d[1]/pix + dimY/2.);
-                    linInd = indX + indY*(dSizeX);  
+                    indX = int(d[0]/pix[0] + dimX/2.);
+                    indY = int(d[1]/pix[1] + dimY/2.);
+                    linInd = indY + indX*(dSizeY); 
 
                     if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY) && (0 < lk) && (lk < (HullOut[2]-HullIn[2]))){
-                        linInd = indX + indY*(dSizeX); 
+                        linInd = indY + indX*(dSizeY);
                         atomicAdd(&dhist1[linInd], weight_water*powf(lk/lenZ,2)*p_wepl[protonIndex]);
                         atomicAdd(&dhist2[linInd], weight_water*powf(lk/lenZ,2));
                     }
@@ -790,21 +785,21 @@ else{
 
                   }else if(i == countHull){
                     lk = (HullOut[2] - HullIn[2]) - InterceptsVecHull[i-1]*(HullOut[2] - HullIn[2]);
-                    indX = int(pos1[0]/pix + dimX/2.);
-                    indY = int(pos1[1]/pix + dimY/2.);
+                    indX = int(pos1[0]/pix[0] + dimX/2.);
+                    indY = int(pos1[1]/pix[1] + dimY/2.);
 
                     if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY) && (0 < lk) && (lk < (HullOut[2]-HullIn[2]))){
-                        linInd = indX + indY*(dSizeX);  
+                        linInd = indY + indX*(dSizeY); 
                         atomicAdd(&dhist1[linInd], weight_water*powf(lk/lenZ,2)*p_wepl[protonIndex]);
                         atomicAdd(&dhist2[linInd], weight_water*powf(lk/lenZ,2));
                     }
 
                   }else{
-                    indX = int(cspline(InterceptsVecHull[i] -eps, a[0], b[0], c[0], d[0])/pix + dimX/2.);
-                    indY = int(cspline(InterceptsVecHull[i] -eps, a[1], b[1], c[1], d[1])/pix + dimY/2.);
+                    indX = int(cspline(InterceptsVecHull[i] -eps, a[0], b[0], c[0], d[0])/pix[0] + dimX/2.);
+                    indY = int(cspline(InterceptsVecHull[i] -eps, a[1], b[1], c[1], d[1])/pix[1] + dimY/2.);
 
                     if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY) && (0 < lk) && (lk < (HullOut[2]-HullIn[2]))){
-                        linInd = indX + indY*(dSizeX);  
+                        linInd = indY + indX*(dSizeY); 
                         atomicAdd(&dhist1[linInd], weight_water*powf(lk/lenZ,2)*p_wepl[protonIndex]);
                         atomicAdd(&dhist2[linInd], weight_water*powf(lk/lenZ,2));
                     }
@@ -817,11 +812,11 @@ else{
         // --------------------------- SL from hull to detector
         tOld = HullOut[2];
         if (countOut == 0){
-        indX = int(exitpos[0]/pix + dimX/2.);
-        indY = int(exitpos[1]/pix + dimY/2.);
+        indX = int(exitpos[0]/pix[0] + dimX/2.);
+        indY = int(exitpos[1]/pix[1] + dimY/2.);
         lk = exitpos[2] - HullOut[2];
         if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY)){ 
-           linInd = indX + indY*(dSizeX);   
+           linInd = indY + indX*(dSizeY);  
            atomicAdd(&dhist1[linInd], weight_air_out*powf(lk/lenZ,2)*p_wepl[protonIndex]);
            atomicAdd(&dhist2[linInd], weight_air_out*powf(lk/lenZ,2));
             }
@@ -831,10 +826,10 @@ else{
         for(int i= 0; i<=countOut; i++){
            lk = abs(InterceptsVecOut[i] - tOld);
            if(i == 0){
-             indX = int(HullOut[0]/pix + dimX/2.);
-             indY = int(HullOut[1]/pix + dimY/2.);
+             indX = int(HullOut[0]/pix[0] + dimX/2.);
+             indY = int(HullOut[1]/pix[1] + dimY/2.);
              if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY) && (0 < lk) && (lk < (exitpos[2]-HullOut[2]))){
-             linInd = indX + indY*(dSizeX);   
+             linInd = indY + indX*(dSizeY);  
              atomicAdd(&dhist1[linInd], weight_air_out*powf(lk/lenZ,2)*p_wepl[protonIndex]);
              atomicAdd(&dhist2[linInd], weight_air_out*powf(lk/lenZ,2));
              tOld = InterceptsVecOut[i];
@@ -842,20 +837,20 @@ else{
            }
            else if(i == countOut){
              lk = exitpos[2] - InterceptsVecOut[i-1];
-             indX = int(exitpos[0]/pix + dimX/2.);
-             indY = int(exitpos[1]/pix + dimY/2.);
+             indX = int(exitpos[0]/pix[0] + dimX/2.);
+             indY = int(exitpos[1]/pix[1] + dimY/2.);
              if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY) && (0 < lk) && (lk < (exitpos[2]-HullOut[2]))){
-             linInd = indX + indY*(dSizeX); 
+             linInd = indY + indX*(dSizeY);
              atomicAdd(&dhist1[linInd], weight_air_out*powf(lk/lenZ,2)*p_wepl[protonIndex]);
              atomicAdd(&dhist2[linInd], weight_air_out*powf(lk/lenZ,2));
              }
            }
 
            else{
-             indX = int(((exitdir[0]*(InterceptsVecOut[i]-eps) + (HullOut[0] - exitdir[0] * HullOut[2])))/pix + dimX/2.);
-             indY = int(((exitdir[1]*(InterceptsVecOut[i]-eps) + (HullOut[1] - exitdir[1] * HullOut[2])))/pix + dimY/2.);
+             indX = int(((exitdir[0]*(InterceptsVecOut[i]-eps) + (HullOut[0] - exitdir[0] * HullOut[2])))/pix[0] + dimX/2.);
+             indY = int(((exitdir[1]*(InterceptsVecOut[i]-eps) + (HullOut[1] - exitdir[1] * HullOut[2])))/pix[1] + dimY/2.);
              if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY) && (0 < lk) && (lk < (exitpos[2]-HullOut[2]))){
-             linInd = indX + indY*(dSizeX);
+             linInd = indY + indX*(dSizeY);
              atomicAdd(&dhist1[linInd], weight_air_out*powf(lk/lenZ,2)*p_wepl[protonIndex]);
              atomicAdd(&dhist2[linInd], weight_air_out*powf(lk/lenZ,2));
              tOld = InterceptsVecOut[i];
@@ -899,11 +894,11 @@ else{
         int indX, indY, linInd;
         float tOld = initpos[2];
          if (count==0){ 
-           indX = int(initpos[0]/pix + dimX/2.); 
-           indY = int(initpos[1]/pix + dimY/2.);
+           indX = int(initpos[0]/pix[0] + dimX/2.); 
+           indY = int(initpos[1]/pix[1] + dimY/2.);
 
            if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY)){
-               linInd = indX + indY*(dSizeX);   
+               linInd = indY + indX*(dSizeY);  
                atomicAdd(&dhist1[linInd], weight_air_out*p_wepl[protonIndex]);
                atomicAdd(&dhist2[linInd], weight_air_out*1.0f);
            }
@@ -912,12 +907,12 @@ else{
             for(int i= 0; i<=count; i++){
               lk = InterceptsVec[i] - tOld;
               if(tOld == initpos[2]){
-                indX = int(initpos[0]/pix + dimX/2.);
-                indY = int(initpos[1]/pix + dimY/2.);
-                linInd = indX + indY*(dSizeX);  
+                indX = int(initpos[0]/pix[0] + dimX/2.);
+                indY = int(initpos[1]/pix[1] + dimY/2.);
+                linInd = indY + indX*(dSizeY); 
 
                 if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY) && (0 < lk) && (lk < lenZ)){
-                    linInd = indX + indY*(dSizeX); 
+                    linInd = indY + indX*(dSizeY);
                     atomicAdd(&dhist1[linInd], weight_air_out*powf(lk/lenZ,2)*p_wepl[protonIndex]);
                     atomicAdd(&dhist2[linInd], weight_air_out*powf(lk/lenZ,2));
                 }
@@ -925,21 +920,21 @@ else{
 
               }else if(i == count){
                 lk = exitpos[2] - InterceptsVec[i-1];
-                indX = int(exitpos[0]/pix + dimX/2.);
-                indY = int(exitpos[1]/pix + dimY/2.);
+                indX = int(exitpos[0]/pix[0] + dimX/2.);
+                indY = int(exitpos[1]/pix[1] + dimY/2.);
 
                 if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY) && (0 < lk) && (lk < lenZ)){
-                    linInd = indX + indY*(dSizeX);  
+                    linInd = indY + indX*(dSizeY); 
                     atomicAdd(&dhist1[linInd], weight_air_out*powf(lk/lenZ,2)*p_wepl[protonIndex]);
                     atomicAdd(&dhist2[linInd], weight_air_out*powf(lk/lenZ,2));
                 }
 
               }else{
-                indX = int(((mydir[0]*(InterceptsVec[i]-eps) + (initpos[0] - mydir[0] * (initpos[2]))))/pix+dimX/2.);
-                indY = int(((mydir[1]*(InterceptsVec[i]-eps) + (initpos[1] - mydir[1] * (initpos[2]))))/pix+dimY/2.);
+                indX = int(((mydir[0]*(InterceptsVec[i]-eps) + (initpos[0] - mydir[0] * (initpos[2]))))/pix[0] + dimX/2.);
+                indY = int(((mydir[1]*(InterceptsVec[i]-eps) + (initpos[1] - mydir[1] * (initpos[2]))))/pix[1] + dimY/2.);
 
                 if ((0 <= indX) && (indX < dSizeX) && (0 <= indY) && (indY < dSizeY) && (0 < lk) && (lk < lenZ)){
-                    linInd = indX + indY*(dSizeX);  
+                    linInd = indY + indX*(dSizeY); 
                     atomicAdd(&dhist1[linInd], weight_air_out*powf(lk/lenZ,2)*p_wepl[protonIndex]);
                     atomicAdd(&dhist2[linInd], weight_air_out*powf(lk/lenZ,2));
                 }
@@ -965,7 +960,7 @@ __global__ void sumHist(float* hist, float* histNorm){
 }
 
 __host__ void ParticleProjections(float * outProjection, float* posIn, float* posOut, float* dirIn, float* dirOut, \
-                                  float* p_wepl, int numOfEntries, int detectSizeX, int detectSizeY, float pixelSize, \
+                                  float* p_wepl, int numOfEntries, int detectSizeX, int detectSizeY, float* pixelSize, \
                                   float detectDistIn, float detectDistOut, float ein, float* ch_param){
 
     /*
@@ -1000,7 +995,7 @@ __host__ void ParticleProjections(float * outProjection, float* posIn, float* po
     cudaMalloc( (void**) &dnumEntries, sizeof(int));
     cudaMalloc( (void**) &ddetectorX, sizeof(int));
     cudaMalloc( (void**) &ddetectorY, sizeof(int));
-    cudaMalloc( (void**) &dpixelSize, sizeof(float));
+    cudaMalloc( (void**) &dpixelSize, 2*sizeof(float));
     cudaMalloc( (void**) &dDetectDistIn, sizeof(float));
     cudaMalloc( (void**) &dDetectDistOut, sizeof(float));
     cudaMalloc( (void**) &dEin, sizeof(float));
@@ -1019,7 +1014,7 @@ __host__ void ParticleProjections(float * outProjection, float* posIn, float* po
     cudaMemcpy(dnumEntries, &numOfEntries,sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(ddetectorX, &detectSizeX, sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(ddetectorY, &detectSizeY, sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(dpixelSize, &pixelSize, sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(dpixelSize, pixelSize, 2*sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(dDetectDistIn, &detectDistIn, sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(dDetectDistOut, &detectDistOut, sizeof(float), cudaMemcpyHostToDevice);
     cudaMemcpy(dEin, &ein, sizeof(float), cudaMemcpyHostToDevice);
