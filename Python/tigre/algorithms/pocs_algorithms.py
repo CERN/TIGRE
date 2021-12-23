@@ -322,8 +322,7 @@ class initPCSD(IterativeReconAlg):
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
         
-        # if "blocksize" not in kwargs:
-        #     kwargs.update(dict(blocksize=1))
+        kwargs.update(dict(regularisation="minimizeTV"))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         if "maxl2err" not in kwargs:
             self.epsilon = (
