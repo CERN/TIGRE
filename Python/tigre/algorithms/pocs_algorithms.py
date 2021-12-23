@@ -12,7 +12,7 @@ from tigre.utilities.im3Dnorm import im3DNORM
 
 
 
-class ASD_POCS(IterativeReconAlg):  # noqa: N801
+class initASD_POCS(IterativeReconAlg):  
     """
     ASD_POCS solves the ASD_POCS total variation constrained image in 3D
     tomography
@@ -106,8 +106,8 @@ class ASD_POCS(IterativeReconAlg):  # noqa: N801
 
         
         kwargs.update(dict(regularisation="minimizeTV"))
-        if "blocksize" not in kwargs:
-            kwargs.update(dict(blocksize=1))
+        # if "blocksize" not in kwargs:
+        #     kwargs.update(dict(blocksize=1))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)       
         self.alpha = 0.002 if "alpha" not in kwargs else kwargs["alpha"]
         self.alpha_red = 0.95 if "alpha_red" not in kwargs else kwargs["alpha_red"]
@@ -167,54 +167,72 @@ class ASD_POCS(IterativeReconAlg):  # noqa: N801
                 stop_criteria = True
 
 
+class ASD_POCS(initASD_POCS):
+    __doc__ = initASD_POCS.__doc__
+    
+    def __init__(self, proj, geo, angles, niter, **kwargs):
+        
+        if "blocksize" not in kwargs:
+            kwargs.update(dict(blocksize=1))
+        else:
+            self.blocksize = 1
+            print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
+        initASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
+       
+
 asd_pocs = decorator(ASD_POCS, name="asd_pocs")
 
 
-class AwASD_POCS(ASD_POCS):  
+class AwASD_POCS(initASD_POCS):  
     __doc__ = ("    AwASD_POCS is the Adaptive Weighted TV (edge preserving) version of ASD_POCS\n\n"
                "        :extra kwargs delta: (float)\n"
                "            Control amount of smoothing at edges of the image\n"
-               "            Default delta = -0.005\n") + ASD_POCS.__doc__
+               "            Default delta = -0.005\n") + initASD_POCS.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
+        if "blocksize" not in kwargs:
+            kwargs.update(dict(blocksize=1))
+        else:
+            self.blocksize = 1
+            print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
         kwargs.update(dict(regularisation="minimizeAwTV"))
         self.delta = np.float32(-0.005) if "delta" not in kwargs else kwargs["delta"]      
-        ASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
+        initASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
 
 
 awasd_pocs = decorator(AwASD_POCS, name="awasd_pocs")
 
 
-class OS_ASD_POCS(ASD_POCS):
+class OS_ASD_POCS(initASD_POCS):
     __doc__ = ("    Oriented Subsets version of ASD_POCS \n\n"
-               "    Default blocksize = 20\n") + ASD_POCS.__doc__
+               "    Default blocksize = 20\n") + initASD_POCS.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
-        kwargs.update(dict(regularisation="minimizeTV"))
+#        kwargs.update(dict(regularisation="minimizeTV"))
         self.blocksize = 20 if "blocksize" not in kwargs else kwargs["blocksize"]
-        ASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
+        initASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
 
 
 os_asd_pocs = decorator(OS_ASD_POCS, name="os_asd_pocs")
 
 
-class OS_AwASD_POCS(ASD_POCS): 
+class OS_AwASD_POCS(initASD_POCS): 
     __doc__ = (
         "    Oriented Subsets and Adaptive Weighted TV version of AwASD_POCS\n\n"
         "    Default blocksize = 20\n\n"
         "        :extra kwargs delta: (float)\n"
         "            Control amount of smoothing at edges of the image\n"
         "            Default delta = -0.005\n"
-        ) + ASD_POCS.__doc__
+        ) + initASD_POCS.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
-        kwargs.update(dict(regularisation="minimizeAwTV"))
         self.blocksize = 20 if "blocksize" not in kwargs else kwargs["blocksize"]
+        kwargs.update(dict(regularisation="minimizeAwTV"))
         self.delta = np.float32(-0.005) if "delta" not in kwargs else kwargs["delta"]
-        ASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs) 
+        initASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs) 
 
 
 os_awasd_pocs = decorator(AwASD_POCS, name="os_awasd_pocs")
@@ -222,7 +240,7 @@ os_awasd_pocs = decorator(AwASD_POCS, name="os_awasd_pocs")
 
 
 
-class PCSD(IterativeReconAlg):
+class initPCSD(IterativeReconAlg):
     """
     PCSD solves the reconstruction problem using projection-controlled 
     steepest descent method
@@ -304,8 +322,8 @@ class PCSD(IterativeReconAlg):
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
         
-        if "blocksize" not in kwargs:
-            kwargs.update(dict(blocksize=1))
+        # if "blocksize" not in kwargs:
+        #     kwargs.update(dict(blocksize=1))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         if "maxl2err" not in kwargs:
             self.epsilon = (
@@ -359,51 +377,72 @@ class PCSD(IterativeReconAlg):
                           "     iter = " + str(n_iter) + "\n")
                 stop_criteria = True
 
+
+class PCSD(initPCSD):
+    __doc__ = initPCSD.__doc__
+    
+    def __init__(self, proj, geo, angles, niter, **kwargs):
+
+        if "blocksize" not in kwargs:
+            kwargs.update(dict(blocksize=1))
+        else:
+            self.blocksize = 1
+            print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
+        initPCSD.__init__(self, proj, geo, angles, niter, **kwargs)
+        
+    
 pcsd = decorator(PCSD, name='pcsd')
 
 
-class AwPCSD(PCSD): 
+class AwPCSD(initPCSD): 
     __doc__ = (        
         "    Adaptive Weighted TV (edge preserving) version of PCSD\n\n"
         "    :extra keyword delta: (float)\n"
         "        Controls amount of smoothing at edges of the image \n"
         "        Default -0.005\n"
-        ) + PCSD.__doc__
+        ) + initPCSD.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
+        if "blocksize" not in kwargs:
+            kwargs.update(dict(blocksize=1))
+        else:
+            self.blocksize = 1
+            print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
         kwargs.update(dict(regularisation="minimizeAwTV"))
         self.delta = np.float32(-0.005) if "delta" not in kwargs else kwargs["delta"]
             
-        PCSD.__init__(self, proj, geo, angles, niter, **kwargs)
+        initPCSD.__init__(self, proj, geo, angles, niter, **kwargs)
+        
 
 aw_pcsd = decorator(AwPCSD, name="aw_pcsd")
 
 
-class OS_PCSD(PCSD):
+class OS_PCSD(initPCSD):
     __doc__ = (
         "    Oriented Subsets version of PCSD\n\n"
         "        Default blocksize = 20"
-        ) + PCSD.__doc__
+        ) + initPCSD.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
         kwargs.update(dict(regularisation="minimizeTV"))
         self.blocksize = 20 if "blocksize" not in kwargs else kwargs["blocksize"]
             
-        PCSD.__init__(self, proj, geo, angles, niter, **kwargs)
+        initPCSD.__init__(self, proj, geo, angles, niter, **kwargs)
+        
 
 os_pcsd = decorator(OS_PCSD, name="os_pcsd")
 
 
-class OS_Aw_PCSD(PCSD): 
+class OS_Aw_PCSD(initPCSD): 
     __doc__ = (
         "    Oriented Subsets and Adaptive Weighted TV version of PCSD\n\n"
         "    Default blocksize = 20\n\n"
         "    :extra keyword delta: (float)\n"
         "        Controls amount of smoothing at edges of the image \n"
         "        Default -0.005\n"
-        ) + PCSD.__doc__
+        ) + initPCSD.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
@@ -411,6 +450,10 @@ class OS_Aw_PCSD(PCSD):
         self.blocksize = 20 if "blocksize" not in kwargs else kwargs["blocksize"]
         self.delta = np.float32(-0.005) if "delta" not in kwargs else kwargs["delta"]
             
-        PCSD.__init__(self, proj, geo, angles, niter, **kwargs)
+        initPCSD.__init__(self, proj, geo, angles, niter, **kwargs)
+        
         
 os_aw_pcsd = decorator(OS_Aw_PCSD, name="os_aw_pcsd")
+
+
+
