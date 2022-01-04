@@ -1,6 +1,5 @@
 from __future__ import division
 
-import time
 
 import numpy as np
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
@@ -39,20 +38,11 @@ class MLEM(IterativeReconAlg):  # noqa: D101
             self._estimate_time_until_completion(i)
 
             den = Ax(self.res, self.geo, self.angles, "interpolated", gpuids=self.gpuids)
-            # toc = time.process_time()
-            # print('Ax time: {}'.format(toc-tic))
             den[den == 0.0] = np.inf
             auxmlem = self.proj / den
-            # auxmlem[auxmlem == np.nan] = 0.
-            # auxmlem[auxmlem == np.inf] = 0.
 
             # update
-            # tic = time.process_time()
             img = Atb(auxmlem, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids) / self.W
-            # toc = time.process_time()
-            # print('Atb time: {}'.format(toc-tic))
-            # img[img == np.nan] = 0.
-            # img[img == np.inf] = 0.
 
             self.res = self.res * img
             self.res[self.res < 0.0] = 0.0
