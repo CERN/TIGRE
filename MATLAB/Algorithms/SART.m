@@ -89,7 +89,7 @@ W=1./W;
 W(W>0.1)=0.1;
 
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index,gpuids);
+V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
 clear A x y dx dz;
 %% hyperparameter stuff
@@ -174,7 +174,7 @@ for ii=1:niter
         geo.offDetector=offDetector;
         geo.DSD=DSD;
         geo.rotDetector=rotDetector;
-        errornow=im3Dnorm(proj-Ax(res,geo,angles,'gpuids',gpuids),'L2','gpuids',gpuids);                       % Compute error norm2 of b-Ax
+        errornow=im3Dnorm(proj-Ax(res,geo,angles,'gpuids',gpuids),'L2');                       % Compute error norm2 of b-Ax
         %         If the error is not minimized.
         if  ii~=1 && errornow>errorL2(end)
             if verbose
@@ -185,7 +185,7 @@ for ii=1:niter
         errorL2=[errorL2 errornow];
     end
     
-    if (ii==1 && verbose==1);
+    if (ii==1 && verbose==1)
         expected_time=toc*niter;
         disp('SART');
         disp(['Expected duration   :    ',secs2hms(expected_time)]);

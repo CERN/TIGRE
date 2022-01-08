@@ -65,7 +65,7 @@ function [ f,errorSART,errorTV,errorL2,qualMeasOut] = OS_AwPCSD(proj,geo,angles,
 % Coded by:           Ander Biguri and Manasavee Lohvithee
 %--------------------------------------------------------------------------
 %% parse inputs
-[beta,beta_red,f,ng,verbose,epsilon,delta,blocksize,OrderStrategy,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,f,ng,verbose,epsilon,delta,blocksize,OrderStrategy,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
 
 measurequality=~isempty(QualMeasOpts);
 
@@ -106,12 +106,12 @@ geoaux.sVoxel([1 2])=geo.sVoxel([1 2])*1.1; % a Bit bigger, to avoid numerical d
 geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon');
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index);
+V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
 
 iter=0;
@@ -127,7 +127,7 @@ while ~stop_criteria %POCS
     iter=iter+1;
     
     %Estimation error in the projection domain
-    est_proj=Ax(f,geo,angles,'interpolated');
+    est_proj=Ax(f,geo,angles,'interpolated','gpuids',gpuids);
     delta_p=im3Dnorm(est_proj-proj,'L2');
     
     %Enforcing ART along all projections if squared delta_p > epsilon
@@ -149,7 +149,7 @@ while ~stop_criteria %POCS
                 geo.DSO=DSO(jj);
             end
             
-            f=f+beta* bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,jj).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj})),geo,alphablocks{:,jj}));
+            f=f+beta* bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,jj).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj},'gpuids',gpuids)),geo,alphablocks{:,jj},'gpuids',gpuids));
             
         end
     end
@@ -165,11 +165,11 @@ while ~stop_criteria %POCS
     end
     
     % Compute L2 error of actual image. Ax-b
-    dd=im3Dnorm(Ax(f,geo,angles)-proj,'L2');
+    dd=im3Dnorm(Ax(f,geo,angles,'gpuids',gpuids)-proj,'L2');
     
     
     %Compute errorSART
-    errorSARTnow=im3Dnorm(proj-Ax(f,geo,angles),'L2');
+    errorSARTnow=im3Dnorm(proj-Ax(f,geo,angles,'gpuids',gpuids),'L2');
     errorSART=[errorSART errorSARTnow];
     
     
@@ -185,7 +185,7 @@ while ~stop_criteria %POCS
     %  TV MINIMIZATION
     % =========================================================================
     %  Call GPU to minimize AwTV
-    f=minimizeAwTV(f0,step,ng,delta);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
+    f=minimizeAwTV(f0,step,ng,delta,'gpuids',gpuids);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
     %                                             for ii=1:ng
     %                                                 %delta=-0.00038 for thorax phantom
     %                                                 df=weighted_gradientTVnorm(f,delta);
@@ -196,11 +196,11 @@ while ~stop_criteria %POCS
     dg_vec=(f-f0);
     
     if iter==1
-        delta_p_first=im3Dnorm((Ax(f0,geo,angles,'interpolated'))-proj,'L2');
+        delta_p_first=im3Dnorm((Ax(f0,geo,angles,'interpolated','gpuids',gpuids))-proj,'L2');
     end
     
     %Compute errorTV
-    errorTVnow=im3Dnorm(proj-Ax(f,geo,angles),'L2');
+    errorTVnow=im3Dnorm(proj-Ax(f,geo,angles,'gpuids',gpuids),'L2');
     errorTV=[errorTV errorTVnow];
     
     
@@ -228,7 +228,7 @@ while ~stop_criteria %POCS
     if computeL2
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
-        errornow=im3Dnorm(proj-Ax(f,geo,angles),'L2');                       % Compute error norm2 of b-Ax
+        errornow=im3Dnorm(proj-Ax(f,geo,angles,'gpuids',gpuids),'L2');                       % Compute error norm2 of b-Ax
         % If the error is not minimized.
         if  iter~=1 && errornow>errorL2(end)
             if verbose
@@ -242,7 +242,7 @@ while ~stop_criteria %POCS
     
     if (iter==1 && verbose==1)
         expected_time=toc*maxiter;
-        disp('OS-AwPCSD');
+        disp('OS_AwPCSD');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
@@ -252,8 +252,8 @@ end
 end
 
 
-function [beta,beta_red,f0,ng,verbose,epsilon,delta,block_size,OrderStrategy,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
-opts=     {'lambda','lambda_red','init','tviter','verbose','maxl2err','delta','blocksize','orderstrategy','qualmeas'};
+function [beta,beta_red,f0,ng,verbose,epsilon,delta,block_size,OrderStrategy,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,angles,argin)
+opts=     {'lambda','lambda_red','init','tviter','verbose','maxl2err','delta','blocksize','orderstrategy','qualmeas','nonneg','gpuids'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -393,6 +393,22 @@ for ii=1:length(opts)
                 else
                     error('TIGRE:OS_AwPCSD:InvalidInput','Invalid quality measurement parameters');
                 end
+            end
+        %  Non negative
+        %  =========================================================================
+        case 'nonneg'
+            if default
+                nonneg=true;
+            else
+                nonneg=val;
+            end
+        %  GPU Ids
+        %  =========================================================================
+        case 'gpuids'
+            if default
+                gpuids = GpuIds();
+            else
+                gpuids = val;
             end
         otherwise
             error('TIGRE:OS_AwPCSD:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_AwPCSD()']);

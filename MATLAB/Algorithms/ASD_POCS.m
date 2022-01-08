@@ -96,7 +96,7 @@ W=1./W;
 
 
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index,gpuids);
+V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
 
 
@@ -206,7 +206,7 @@ while ~stop_criteria %POCS
     end
     if (iter==1 && verbose==1)
         expected_time=toc*maxiter;
-        disp('ADS-POCS');
+        disp('ADS_POCS');
         disp(['Expected duration   :    ',secs2hms(expected_time)]);
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
@@ -344,12 +344,16 @@ for ii=1:length(opts)
             else
                 epsilon=val;
             end
+        %  Order strategy
+        %  =========================================================================
         case 'orderstrategy'
             if default
                 OrderStrategy='random';
             else
                 OrderStrategy=val;
             end
+        % Image Quality Measure
+        %  =========================================================================
         case 'qualmeas'
             if default
                 QualMeasOpts={};
@@ -360,12 +364,16 @@ for ii=1:length(opts)
                     error('TIGRE:ASD_POCS:InvalidInput','Invalid quality measurement parameters');
                 end
             end
+        %  Non negative
+        %  =========================================================================
         case 'nonneg'
             if default
                 nonneg=true;
             else
                 nonneg=val;
             end
+        %  GPU Ids
+        %  =========================================================================
         case 'gpuids'
             if default
                 gpuids = GpuIds();
