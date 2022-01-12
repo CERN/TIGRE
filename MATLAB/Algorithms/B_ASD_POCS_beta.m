@@ -113,7 +113,7 @@ W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index,gpuids);
+V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
 clear A x y dx dz;
 
@@ -229,7 +229,7 @@ while ~stop_criteria %POCS
     
     if (iter==1 && verbose==1)
         expected_time=toc*maxiter;
-        disp('B-ADS-POCS-beta');
+        disp('B_ADS_POCS_beta');
         disp(['Expected duration   :    ',secs2hms(expected_time)]);
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
