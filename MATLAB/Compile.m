@@ -26,7 +26,13 @@
 clear all;
 %% Compile
 
-mex -setup
+if ispc 
+    mex -setup:'mex_CUDA_win64.xml'
+elseif ismac
+    mex -setup:'mex_CUDA_maci64.xml'
+elseif isunix    
+    mex -setup:'mex_CUDA_glnxa64.xml'
+end
 
 addpath('./Utilities/Setup');
 
@@ -62,7 +68,7 @@ if ispc
         mex -largeArrayDims ./Utilities/cuda_interface/AwminTV.cpp ../Common/CUDA/POCS_TV2.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win64
         mex -largeArrayDims ./Utilities/cuda_interface/tvDenoise.cpp ../Common/CUDA/tvdenoising.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win64
         mex -largeArrayDims ./Utilities/cuda_interface/AddNoise.cpp ../Common/CUDA/RandomNumberGenerator.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win64
-        mex -largeArrayDims ./Utilities/IO/VarianCBCT/mexReadXim.cpp -outdir ./Mex_files/win64
+        mex -largeArrayDims ./Utilities/IO/VarianCBCT/mexReadXim.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win64
         mex -largeArrayDims ./Utilities/GPU/getGpuName_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win64
         mex -largeArrayDims ./Utilities/GPU/getGpuCount_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win64
     else
@@ -72,7 +78,7 @@ if ispc
         mex  ./Utilities/cuda_interface/AwminTV.cpp ../Common/CUDA/POCS_TV2.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win32
         mex  ./Utilities/cuda_interface/tvDenoise.cpp ../Common/CUDA/tvdenoising.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win32
         mex  ./Utilities/cuda_interface/AddNoise.cpp ../Common/CUDA/RandomNumberGenerator.cu ../Common/CUDA/GpuIds.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win32
-        mex  ./Utilities/IO/VarianCBCT/mexReadXim.cpp -outdir ./Mex_files/win32
+        mex  ./Utilities/IO/VarianCBCT/mexReadXim.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win32
         mex  ./Utilities/GPU/getGpuName_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win32
         mex  ./Utilities/GPU/getGpuCount_mex.cpp ../Common/CUDA/gpuUtils.cu -outdir ./Mex_files/win32
     end
