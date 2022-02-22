@@ -275,7 +275,7 @@ for ii=1:length(opts)
                 beta=1;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:ASD_POCS:InvalidInput','Invalid lambda')
+                    error('TIGRE:ASD_POCS:InvalidInput','Invalid lambda')
                 end
                 beta=val;
             end
