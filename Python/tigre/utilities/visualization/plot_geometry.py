@@ -91,7 +91,7 @@ def plot_geometry(geo,angles=np.linspace(0,2*np.pi,100),pos=0,animate=False,fnam
     # displacement in y for geo.COR
     otj[:,1] += geo.COR   
     if np.ptp(otj,axis=0).any():
-        ax.plot3D(otj[:,0],otj[:,1],otj[:2],color='grey',ls='',marker=".",markersize=2.5,mfc='grey',mec="grey")        
+        ax.plot3D(otj[:,0],otj[:,1],otj[:,2],color='grey',ls='',marker=".",markersize=2.5,mfc='grey',mec="grey")        
     # Cordinates Arrows from origin
     ax.quiver(0,0,0,1,0,0,length=ln,color='r')
     ax.quiver(0,0,0,0,1,0,length=ln,color='b')
