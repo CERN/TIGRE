@@ -3,7 +3,7 @@ import numpy as np
 # Tomosymthesis
 def staticDetectorGeo(geo,angles):
     R = geo.DSD-geo.DSO
-    geo.DSD -= R*(1-np.cos(angles))
+    geo.DSD = geo.DSO + R*np.cos(angles)
     geo.offDetector = np.vstack([0*angles, R*np.sin(angles)]).T
     geo.rotDetector = np.vstack([0*angles, 0*angles, -angles]).T
     geo.angles = np.vstack([angles, 0*angles, 0*angles]).T
@@ -13,9 +13,10 @@ def staticDetectorGeo(geo,angles):
 # Linear scan of source
 def staticDetLinearSourceGeo(geo,s_pos,s_rot=0,d_loc='x',d_rot=0):
     # s_pos: distance along source scanning linear trajectry 
-    #        when s_pos = 0, source is aligned origin and detector centre
-    # s_rot:   rotation angle of the linear trajectry on (x-y) plane 
-    # d_loc: the source location on (x-y) plane when s_pos=0,
+    #        when s_pos = 0, source is aligned to the origin and detector centre
+    # s_rot: rotation angle of the source linear trajectry on (x-y) plane 
+    # d_loc: the source location on (x-y) plane axis (when s_pos=0) 
+    # d_rot: detector rotation angle on x-y plane
     if isinstance(d_loc, str):
         if d_loc not in ['x','X','y','Y','+x','+X','+y','+Y','-x','-X','-y','-Y']: 
             raise Exception('Wrong d_loc option, valid choices are {"x" "y", "-x", "-y"}')
@@ -32,12 +33,12 @@ def staticDetLinearSourceGeo(geo,s_pos,s_rot=0,d_loc='x',d_rot=0):
     else: 
         d_rot = d_rot/180*np.pi 
                
-    ang  = np.arctan2(s_pos*np.cos(s_rot), geo.DSD + s_pos*np.sin(s_rot))
-    dshift = s_pos*np.cos(s_rot)*(geo.DSD-geo.DSO)/geo.DSO
-    geo.offDetector = np.array([ang*0, dshift]).T
+    ang  = np.arctan2(s_pos*np.cos(s_rot), geo.DSO + s_pos*np.sin(s_rot))
+    R = geo.DSD - geo.DSO
+    geo.offDetector = np.array([ang*0, R*np.sin(ang)]).T
     geo.rotDetector = np.array([0*ang, 0*ang, -ang]).T    
     geo.DSO = np.sqrt((s_pos*np.cos(s_rot))**2 + (geo.DSO + s_pos*np.sin(s_rot))**2)
-    geo.DSD = np.sqrt((s_pos*np.cos(s_rot))**2 + (geo.DSD + s_pos*np.sin(s_rot))**2)
+    geo.DSD = geo.DSO + R*np.cos(ang)
     for i in range(len(s_pos)):
         if d_loc[i] in ['y','Y','+y','+Y']:
             ang[i] += np.pi/2 + d_rot[i]
