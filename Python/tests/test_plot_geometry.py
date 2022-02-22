@@ -5,7 +5,7 @@ Created on Sat Feb 19 21:08:27 2022
 @author: liu005
 """
 
-## test    
+## test plot_geometry(), uncomment each plot for test   
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -23,8 +23,8 @@ import tigre
 # geo.offOrigin = np.array([0,0,0]) # (z,y,x)
 # geo.COR=0
 # angles=np.linspace(0,np.pi,100)
-# ax1=tigre.plot_geometry(geo,angles,10,animate=True)  # angle=0, S is at (x=DSO, y=0, z=0)
-# ax1
+# ani1=tigre.plot_geometry(geo,angles,10,animate=True)  # angle=0, S is at (x=DSO, y=0, z=0)
+# ani1
 # # confirm the plot with projection
 # from scipy.io import loadmat
 # head=loadmat('head.mat')['img'].transpose(2,1,0).copy()
@@ -48,8 +48,8 @@ import tigre
 # angles=np.linspace(-60,60,31)/180*np.pi
 # geo = tigre.staticDetectorGeo(geo,angles)
 
-# ani=tigre.plot_geometry(geo,angles,0,animate=True,fname='Tomosynthesis')
-# ani
+# ani2=tigre.plot_geometry(geo,angles,0,animate=True,fname='Tomosynthesis')
+# ani2
 
  
 # ## plot 3, fixed target object and detector positions and orientations, source moving linearly
@@ -58,13 +58,11 @@ import tigre
 # df = np.linspace(-510,510,64)  # source position on 
 # geo.DSO = 750
 # geo.DSD = 1000
-
 # d_loc=['y']*256
-
 # geo, angles = tigre.staticDetLinearSourceGeo(geo,df,0,d_loc=d_loc)
 
-# ani=tigre.plot_geometry(geo, angles, 0, animate=True, fname='Linear_Tomosynthesis')
-# ani
+# ani3=tigre.plot_geometry(geo, angles, 0, animate=True, fname='Linear_Tomosynthesis')
+# ani3
 
 ## plot 4, helical CT
 geo = tigre.geometry_default(high_resolution=False)
@@ -77,4 +75,5 @@ geo.offOrigin = np.zeros((angles.shape[0], 3))
 geo.offOrigin[:, 0] = np.linspace(
     -1024 / 2 + 128, 1024 / 2 - 128, angles.shape[0])
 
-ani = tigre.plot_geometry(geo, angles, 0, animate=True, fname='Helical_CT')
+ani4 = tigre.plot_geometry(geo, angles, 0, animate=True, fname='Helical_CT')
+ani4
