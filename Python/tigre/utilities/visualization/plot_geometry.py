@@ -53,22 +53,25 @@ def plot_geometry(geo,angles=np.linspace(0,2*np.pi,100),pos=0,animate=False,fnam
     scent = np.array([geo.DSO,0*thy,0*thz]).T # source centre (x,y,z) before scan rotation
     for j in range(len(thx)): 
         stj[j,:] = np.matmul(Rs[:,:,j], scent[j,:])  # no offset for source
+    # displacement in y for geo.COR
+    stj[:,1] += geo.COR
     if np.ptp(stj,axis=0).any():
-        ax.plot3D(stj[:,0],stj[:,1],stj[:,2],color='grey',linewidth=1,ls='',marker=".",markersize=2.5,mfc='grey',mec="grey")       
+        ax.plot3D(stj[:,0],stj[:,1],stj[:,2],color='grey',ls='',marker=".",markersize=2.5,mfc='grey',mec="grey")       
     # source centre at pos
     source=ax.scatter(stj[pos,0],stj[pos,1],stj[pos,2],color='r',s=5)
     stext=ax.text(stj[pos,0],stj[pos,1],stj[pos,2]+15,'S',None)
     
     ## detector trajectory: scan -> offset -> rotate
     # detector centre (x,y,z) scan rotation. 
-    # TO DO: geo.COR, add to here?
     dcent = np.array([-geo.DSD+geo.DSO, geo.offDetector[:,1], geo.offDetector[:,0]]).T
     dtj = np.zeros_like(geo.angles)
     for j in range(len(thx)):
         dtj[j,:] = np.matmul(Rs[:,:,j], dcent[j,:]) 
+    # displacement in y for geo.COR
+    dtj[:,1] += geo.COR
     # # detector offset
     if np.ptp(dtj,axis=0).any():
-        ax.plot3D(dtj[:,0],dtj[:,1],dtj[:,2],color='grey',linewidth=1,ls='',marker=".",markersize=2.5,mfc='grey',mec="grey")
+        ax.plot3D(dtj[:,0],dtj[:,1],dtj[:,2],color='grey',ls='',marker=".",markersize=2.5,mfc='grey',mec="grey")
     # detector centre at pos
     det=ax.scatter(dtj[pos,0],dtj[pos,1],dtj[pos,2],color='brown',s=5)
     dtext=ax.text(dtj[pos,0],dtj[pos,1],dtj[pos,2]+15,'D',None)
@@ -84,7 +87,9 @@ def plot_geometry(geo,angles=np.linspace(0,2*np.pi,100),pos=0,animate=False,fnam
     ax.add_collection3d(dcube)
         
     ## origin trajectory. NOTE: offOrigin is in (z,y,x)
-    otj = np.fliplr(geo.offOrigin)
+    otj = np.fliplr(geo.offOrigin).astype(np.float32)
+    # displacement in y for geo.COR
+    otj[:,1] += geo.COR   
     if np.ptp(otj,axis=0).any():
         ax.plot3D(otj[:,0],otj[:,1],otj[:2],color='grey',ls='',marker=".",markersize=2.5,mfc='grey',mec="grey")        
     # Cordinates Arrows from origin
