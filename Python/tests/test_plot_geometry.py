@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Feb 19 21:08:27 2022
-
-@author: liu005
-"""
-
-## test plot_geometry(), uncomment each plot for test   
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -42,27 +34,28 @@ import tigre
 # plt.xlabel('u ->')
 
 
-# # plot 2, check staticDetectorGeo() for tomosymthesis setup
+# plot 2, check staticDetectorGeo() for tomosymthesis setup
 
-# geo = tigre.geometry_default()
-# angles=np.linspace(-60,60,31)/180*np.pi
-# geo = tigre.staticDetectorGeo(geo,angles)
+geo = tigre.geometry_default()
+angles=np.linspace(-60,60,31)/180*np.pi
+geo = tigre.staticDetectorGeo(geo,angles,60)
 
-# ani2=tigre.plot_geometry(geo,angles,0,animate=True,fname='Tomosynthesis')
-# ani2
+ani2=tigre.plot_geometry(geo,angles,0,animate=True,fname='Tomosynthesis')
+ani2
 
  
-# ## plot 3, fixed target object and detector positions and orientations, source moving linearly
+## plot 3, fixed target object and detector positions and orientations, source moving linearly
 
-# geo = tigre.geometry_default()
-# df = np.linspace(-510,510,64)  # source position on 
-# geo.DSO = 750
-# geo.DSD = 1000
-# d_loc=['y']*256
-# geo, angles = tigre.staticDetLinearSourceGeo(geo,df,0,d_loc=d_loc)
+geo = tigre.geometry_default()
+df = np.linspace(-510,510,64)  # source position on 
+geo.DSO = 750
+geo.DSD = 1000
 
-# ani3=tigre.plot_geometry(geo, angles, 0, animate=True, fname='Linear_Tomosynthesis')
-# ani3
+geo, angles = tigre.staticDetLinearSourceGeo(geo,df,10,60)
+
+ani3=tigre.plot_geometry(geo, angles, 0, animate=True, fname='Linear_Tomosynthesis')
+ani3
+
 
 ## plot 4, helical CT
 geo = tigre.geometry_default(high_resolution=False)
