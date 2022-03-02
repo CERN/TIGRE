@@ -54,7 +54,8 @@ def plot_geometry(geo,angles=np.linspace(0,2*np.pi,100),pos=0,animate=False,fnam
     for j in range(len(thx)): 
         stj[j,:] = np.matmul(Rs[:,:,j], scent[j,:])  # no offset for source
     # displacement in y for geo.COR
-    stj[:,1] += geo.COR
+    if hasattr(geo, 'COR'):
+        stj[:,1] += geo.COR
     if np.ptp(stj,axis=0).any():
         ax.plot3D(stj[:,0],stj[:,1],stj[:,2],color='grey',ls='',marker=".",markersize=2.5,mfc='grey',mec="grey")       
     # source centre at pos
@@ -68,7 +69,8 @@ def plot_geometry(geo,angles=np.linspace(0,2*np.pi,100),pos=0,animate=False,fnam
     for j in range(len(thx)):
         dtj[j,:] = np.matmul(Rs[:,:,j], dcent[j,:]) 
     # displacement in y for geo.COR
-    dtj[:,1] += geo.COR
+    if hasattr(geo, 'COR'):
+        dtj[:,1] += geo.COR
     # # detector offset
     if np.ptp(dtj,axis=0).any():
         ax.plot3D(dtj[:,0],dtj[:,1],dtj[:,2],color='grey',ls='',marker=".",markersize=2.5,mfc='grey',mec="grey")
@@ -89,7 +91,8 @@ def plot_geometry(geo,angles=np.linspace(0,2*np.pi,100),pos=0,animate=False,fnam
     ## origin trajectory. NOTE: offOrigin is in (z,y,x)
     otj = np.fliplr(geo.offOrigin).astype(np.float32)
     # displacement in y for geo.COR
-    otj[:,1] += geo.COR   
+    if hasattr(geo, 'COR'):
+        otj[:,1] += geo.COR   
     if np.ptp(otj,axis=0).any():
         ax.plot3D(otj[:,0],otj[:,1],otj[:,2],color='grey',ls='',marker=".",markersize=2.5,mfc='grey',mec="grey")        
     # Cordinates Arrows from origin
