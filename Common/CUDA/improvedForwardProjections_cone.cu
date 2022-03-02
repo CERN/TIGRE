@@ -38,48 +38,6 @@ do { \
 } while (0)
 
 
-
-__device__ float SolveCubicRootCone(float x) {
-   // Find cube roots using the iterative Newton-Raphson method
-   // Only works if we have a positive number so we're implementing a prefactor and taking the root of the absolute value of x
-  float pref;
-  if (x > 0){
-    pref = 1; 
-  }
-  else if(x < 0){
-    pref = -1; 
-    x = fabs(x);
-  }
-  else{
-    return 0.;
-  }
-  float scale = 1.;
-  // Make sure that x is is between 1 and 8 so that our initial guess of 1.5 converges faster (root has to be between 1 and 2)
-  // We have to use a scaling factor to adjust our final result after convergence
-  while (x < 1.0)
-  {
-      x = 8.0*x;
-      scale = 0.5*scale;
-  }
-  while (x > 8.0)
-  {
-      x = x/8.0;
-      scale = scale*2.;
-  }
-  float x_curr = 1.5;   // With the prior preparations this should always be a good guess
-  float x_old = 0.;
-  int reach_lim = 0;
-  while(fabs(x_curr-x_old) > 1e-8){
-    x_old = x_curr;
-    x_curr = x_curr - 1./3. * (x_curr - (x/(x_curr*x_curr)));
-    reach_lim += 1;
-    if (reach_lim >= 10) {break;}
-  }
-  
-return pref*x_curr*scale;
-
-}
-
 __device__ int SolvePolynomialCone(float*x, float a, float b, float c){
     // Calculates real roots of a third-order polynomial function using Vieta's method and Cardano's method
     // We obtain a polynomial of the form x³ + ax² + bx + c = 0 and reduce it to z³+pz+q = 0 
@@ -88,8 +46,8 @@ __device__ int SolvePolynomialCone(float*x, float a, float b, float c){
     float q = 2*a*a*a/27.0 - a*b / 3.0 + c;
     float disc = q*q/4.0 + p*p*p/27.0;
     if(disc > 0){
-        float u = SolveCubicRootCone(-0.5*q + sqrt(disc));
-        float v = SolveCubicRootCone(-0.5*q - sqrt(disc));
+        float u = powf((-0.5*q + sqrt(disc)), 1./3.);
+        float v = powf((-0.5*q - sqrt(disc)), 1./3.);
         x[0] = u + v - a/3.0; // don't forget to substitute back z --> x
         return 1;
     }

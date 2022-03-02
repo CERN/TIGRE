@@ -42,8 +42,6 @@ __device__ int calcIntercepts(float* InterceptsVec ,float*  a, float* b, \
 
 __device__ int SolvePolynomial(float*x, float a, float b, float c);
 
-__device__ float SolveCubicRoot ( float x );
-
 __device__ int MinMax(float* solutions, float a, float b, float c);
 
 __device__ void SimpleSort(float* arr, int size_arr);
@@ -67,8 +65,6 @@ __device__ int calcInterceptsCone(float* InterceptsVec ,float*  a, float* b, \
 
 __device__ int SolvePolynomialCone(float*x, float a, float b, float c);
 
-__device__ float SolveCubicRootCone ( float x );
-
 __device__ void SimpleSortCone(float* arr, int size_arr);
 
 __device__ int MinMaxCone(float* solutions, float a, float b, float c);
@@ -84,6 +80,9 @@ __device__ int calcInterceptsLinearCone(float* LinInterceptsVec, float* start, f
         bool* protFlag, float sourcePos);
 
 #endif
+
+
+
 
 
 
