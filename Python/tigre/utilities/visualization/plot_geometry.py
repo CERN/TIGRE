@@ -132,10 +132,10 @@ def plot_geometry(geo,angles=np.linspace(0,2*np.pi,100),pos=0,animate=False,fnam
     def update(pos,stj,dtj,otj,dverts,overts):
         source.set_offsets(stj[pos,:2])
         source.set_3d_properties(stj[pos,2], 'z')
-        stext.set_position_3d(stj[pos,:]+15)
+        stext.set_position(stj[pos,:2]+15)
         det.set_offsets(dtj[pos,:2])
         det.set_3d_properties(dtj[pos,2], 'z')
-        dtext.set_position_3d(dtj[pos,:]+15)
+        dtext.set_position(dtj[pos,:2]+15)
         cbeam[0].set_data(*zip(stj[pos,:2],dtj[pos,:2]))
         cbeam[0].set_3d_properties((stj[pos,2],dtj[pos,2]),'z')
         for i in range(4):
