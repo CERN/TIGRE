@@ -45,8 +45,8 @@ __device__ int SolvePolynomial(float*x, float a, float b, float c){
     float q = 2*a*a*a/27.0 - a*b / 3.0 + c;
     float disc = q*q/4.0 + p*p*p/27.0;
     if(disc > 0){
-        float u = powf((-0.5*q + sqrt(disc)), 1./3.);
-        float v = powf((-0.5*q - sqrt(disc)), 1./3.);
+        float u = cbrt(-0.5*q + sqrt(disc));
+        float v = cbrt(-0.5*q - sqrt(disc));
         x[0] = u + v - a/3.0; // don't forget to substitute back z --> x
         return 1;
     }
