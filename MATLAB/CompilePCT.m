@@ -180,19 +180,19 @@ if isunix
     if ~isempty(strfind(computer('arch'),'64'))
         mex -largeArrayDims ./Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/linux64
     else
-        mex /Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/linux32
+        mex ./Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/linux32
     end
 elseif ispc
     if ~isempty(strfind(computer('arch'),'64'))
-        mex -largeArrayDims /Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/win64
+        mex -largeArrayDims ./Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/win64
     else
-        mex /Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/win32
+        mex ./Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/win32
     end
 elseif ismac
     if ~isempty(strfind(computer('arch'),'64'))
-        mex -largeArrayDims /Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/mac64
+        mex -largeArrayDims ./Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/mac64
     else
-        mex /Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/mac32
+        mex ./Utilities/cuda_interface/pCTCubicSpline_mex.cpp ../Common/CUDA/improvedForwardProjections.cu ../Common/CUDA/improvedForwardProjections_cone.cu -outdir ./pCTMexFiles/mac32
     end
 end
 
