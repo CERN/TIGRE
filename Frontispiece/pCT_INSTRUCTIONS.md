@@ -2,7 +2,7 @@
 
 ## Introduction  
 
-Cuda code and Matlab top layer to create optimized proton radiographs based on the method of [Collins-Fekete](https://doi.org/10.1088/0031-9155/61/23/8232). 
+Cuda code and Matlab top layer to create optimized proton radiographies based on the method of [Collins-Fekete](https://doi.org/10.1088/0031-9155/61/23/8232). 
 The radiograpies obtained from the code extension are intended to be used as pre-processing step before using the reconstruction algorithms implemented in TIGRE to do a full pCT reconstruction.
 However, the the code could be also used as stand-alone tool for optimized proton radiograpies only.
 
@@ -10,7 +10,7 @@ However, the the code could be also used as stand-alone tool for optimized proto
 
 ### Start up procedure
 
-To use the pCT expansion within the TIGRE framework the CUDA source files have to be compiled. 
+To use the pCT extension within the TIGRE framework, the CUDA source files have to be compiled. 
 Starting from the MATLAB folder within the TIGRE framework, run the following script:
 
 ``` 
@@ -60,7 +60,7 @@ Please click ![here](pct_cuda_toolbox.pdf "pCT toolbox geometry") to find a sket
 Furthermore, a sketch displaying the definition of the detector parameters used within the code extension can be found ![here](pct_cuda_toolbox2.pdf "pCT toolbox detector parameters").
 
 ### Testing data
-A demo script was prepared for the parallel geometry. To check if the code runs properly on your system run the script pCT_demo.m in MATLAB/Demos. A circle should be displayed if everything works correctly.
+A demo script calculating one optimized radiography was prepared for the parallel geometry. To check if the code runs properly on your system run the script pRad_demo.m in MATLAB/Demos. 
 
 ## Debugging notes
 
