@@ -151,7 +151,18 @@ def plot_geometry(geo,angles=np.linspace(0,2*np.pi,100),pos=0,animate=False,fnam
         ani = animation.FuncAnimation(fig, update, len(angles), fargs=(stj,dtj,otj,dverts,overts), interval=100)
         if isinstance(fname, str):
             fname += '_geometry'
-            ani.save('%s.mp4'%(fname),writer='ffmpeg',fps=30)    
+            try:
+                ani.save('%s.gif'%(fname),writer='pillow',fps=30)
+            except ValueError:
+                print('Movie writer "Pillow" unavailable, try "ImageMagick"')
+                try: 
+                    ani.save('%s.gif'%(fname),writer='imagemagick',fps=30)
+                except ValueError:
+                    print('Movie writer "ImageMagick" unavailable, try "ffmpeg"')
+                    try:
+                        ani.save('%s.mp4'%(fname),writer='ffmpeg',fps=30)
+                    except ValueError:
+                        print('Movie writer unavailable, animation not saved.')
         return ani
     else:
         return ax
