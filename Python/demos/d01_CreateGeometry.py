@@ -134,7 +134,6 @@ tigre.plot_geometry(geo)
 # animation
 geo = tigre.geometry_default()  # Default cone beam geometry
 angles=np.linspace(0,np.pi,50)  # half circle
-ani = tigre.plot_geometry(geo,angles,animate=True,fname='d01_Create_Geometry')
-#ani
+ani = tigre.plot_geometry(geo,angles,animate=True,fname='d01_Create_Geometry')  # a *.gif or *.mp4 file will be saved
 
 
