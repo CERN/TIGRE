@@ -162,11 +162,10 @@ def loadNikonProjections(folder, geometry, angles, **kwargs):
     # if we start with index = 1 we get an error
     # use enumerate, it's cleaner
     print("Loading Nikon dataset: " + folder)
-    for index, i in enumerate(tqdm(indices)):
+    for index, i in enumerate(tqdm(indices[1:]),1):
         image = Image.open(os.path.join(folder, files[i]))
         image = numpy.asarray(image).astype(numpy.float32)
         projections[index, :, :] = -numpy.log(image / float(geometry.whitelevel))
-        index = index + 1
 
     del geometry.whitelevel
 
