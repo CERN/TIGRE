@@ -66,3 +66,6 @@ MATLAB/mex_CUDA_win64.xml
 
 # IDE config
 .vscode/
+
+# Miscellaneous
+*.pdf
