@@ -60,7 +60,7 @@ def readXtekctGeometry(filepath):
 
     ## Detector information
     # Number of pixel in the detector
-    geometry.nDetector = numpy.array((float(cfg["DetectorPixelsX"]), float(cfg["DetectorPixelsY"])))
+    geometry.nDetector = numpy.array((int(cfg["DetectorPixelsX"]), int(cfg["DetectorPixelsY"])))
     # Size of pixels in the detector
     geometry.dDetector = numpy.array(
         (float(cfg["DetectorPixelSizeX"]), float(cfg["DetectorPixelSizeY"]))
@@ -75,8 +75,9 @@ def readXtekctGeometry(filepath):
 
     ## Image information
     # Number of voxels for the volume
+    # the algos require these to be integers.
     geometry.nVoxel = numpy.array(
-        (float(cfg["VoxelsX"]), float(cfg["VoxelsY"]), float(cfg["VoxelsZ"]))
+        (int(cfg["VoxelsX"]), int(cfg["VoxelsY"]), int(cfg["VoxelsZ"]))
     )
     # Size of each voxel
     geometry.dVoxel = numpy.array(
@@ -157,13 +158,14 @@ def loadNikonProjections(folder, geometry, angles, **kwargs):
     image = numpy.asarray(image).astype(numpy.float32)
     projections = numpy.zeros([len(indices), image.shape[0], image.shape[1]], dtype=numpy.single)
     projections[0, :, :] = -numpy.log(image / float(geometry.whitelevel))
-    index = 1
+    #Python uses zero-based indexing
+    # if we start with index = 1 we get an error
+    # use enumerate, it's cleaner
     print("Loading Nikon dataset: " + folder)
-    for i in tqdm(indices):
+    for index, i in enumerate(tqdm(indices[1:]),1):
         image = Image.open(os.path.join(folder, files[i]))
         image = numpy.asarray(image).astype(numpy.float32)
         projections[index, :, :] = -numpy.log(image / float(geometry.whitelevel))
-        index = index + 1
 
     del geometry.whitelevel
 
