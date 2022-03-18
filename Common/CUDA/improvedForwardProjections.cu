@@ -438,7 +438,7 @@ __global__ void ParticleKernel(float* dhist1, float* dhist2, float* devicePosIn,
             + lenZ*lenZ);
    
     float lambda0, lambda1, ref_wepl;
-    ref_wepl = 0.00244 * powf(*ein, 1.75);
+    ref_wepl = 10 * 0.00244 * powf(*ein, 1.75);
     lambda0 = 1.01 + 0.43 * (p_wepl[protonIndex]/ref_wepl) * (p_wepl[protonIndex]/ref_wepl);
     lambda1 = 0.99 - 0.46 * (p_wepl[protonIndex]/ref_wepl) * (p_wepl[protonIndex]/ref_wepl);
 
