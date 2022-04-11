@@ -557,11 +557,11 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
                         
                         if (unweighted)
                         {
-                            kernelPixelBackprojectionFDK<false><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]);
+                            kernelPixelBackprojectionFDK<true><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]);
                         }
                         else
                         {
-                            kernelPixelBackprojectionFDK<true><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]);
+                            kernelPixelBackprojectionFDK<false><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]);
                         }
                     }  // END for
                     //////////////////////////////////////////////////////////////////////////////////////
