@@ -19,7 +19,7 @@ function [ img ] = Atb( projections,geo,angles,varargin )
 %% OPtionals
 
 ptype='FDK';
-expectedProjectionTypes = {'FDK','matched'};
+expectedProjectionTypes = {'FDK','matched','unweighted'};
 acceptableOptionName = {'gpuids'};
 
 if nargin > 3
