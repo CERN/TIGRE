@@ -247,6 +247,17 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             
             if (unweighted)
             {
+                // Get Value in the computed (U,V)
+                // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
+            
+#if IS_FOR_MATLAB_TIGRE
+                voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f);
+#else
+                voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,indAlpha+0.5f);
+#endif
+            }
+            else 
+            {
                 weigth=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
 
                 weigth=__frcp_rd(weigth*weigth);
@@ -258,17 +269,6 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
                 voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f)*weigth;
 #else
                 voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,indAlpha+0.5f)*weigth;
-#endif
-            }
-            else 
-            {
-                // Get Value in the computed (U,V)
-                // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
-            
-#if IS_FOR_MATLAB_TIGRE
-                voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f);
-#else
-                voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,indAlpha+0.5f);
 #endif
             }
         }  // END iterating through column of voxels
