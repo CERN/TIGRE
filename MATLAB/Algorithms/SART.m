@@ -56,7 +56,7 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 blocksize=1;
-[lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lambdared,noV,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
 
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
@@ -89,7 +89,9 @@ W=1./W;
 W(W>0.1)=0.1;
 
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
+if ~noV
+    V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
+end
 
 clear A x y dx dz;
 %% hyperparameter stuff
@@ -149,7 +151,11 @@ for ii=1:niter
             ynesterov=res+ bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
             res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
         else
-             res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
+            if ~noV
+                res=res+lambda* Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids);
+            else
+                res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'unweighted','gpuids',gpuids));
+            end
         end
         if nonneg
             res=max(res,0);
@@ -233,8 +239,8 @@ end
 end
 
 
-function [lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg','gpuids'};
+function [lambda,res,lambdared,noV,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'lambda','init','initimg','verbose','lambda_red','nov','qualmeas','orderstrategy','nonneg','gpuids'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -299,6 +305,12 @@ for ii=1:length(opts)
                     error('TIGRE:SART:InvalidInput','Invalid lambda')
                 end
                 lambdared=val;
+            end
+        case 'nov'
+            if default
+                noV=1;
+            else
+                noV=val;
             end
         case 'init'
             res=[];
