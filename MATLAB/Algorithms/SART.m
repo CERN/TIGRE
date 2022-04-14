@@ -19,6 +19,11 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %                  are calculated. Default is false (weights are
 %                  calculated).
 %
+%   'exactw':      Boolean controlling whether the forwardprojection weights
+%                  are calculated using the exact volume geometry, or an 
+%                  extended geometry. Default is false (weights are
+%                  calculated using extended geometry).
+%
 %   'Init':        Describes diferent initialization techniques.
 %                  'none'     : Initializes the image to zeros (default)
 %                  'FDK'      : intializes image to FDK reconstrucition
@@ -60,7 +65,7 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 blocksize=1;
-[lambda,res,lambdared,skipV,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lambdared,skipV,exactW,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
 
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
@@ -83,8 +88,10 @@ end
 % Projection weight, W
 
 geoaux=geo;
-geoaux.sVoxel([1 2])=geo.sDetector([1])*1.1; % a Bit bigger, to avoid numerical division by zero (small number)
-geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
+if ~exactW
+    geoaux.sVoxel([1 2])=geo.sDetector([1])*1.1; % a Bit bigger, to avoid numerical division by zero (small number)
+    geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
+end
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
 W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);  %
@@ -243,8 +250,8 @@ end
 end
 
 
-function [lambda,res,lambdared,skipv,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','init','initimg','verbose','lambda_red','skipv','qualmeas','orderstrategy','nonneg','gpuids'};
+function [lambda,res,lambdared,skipv,exactw,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'lambda','init','initimg','verbose','lambda_red','skipv','exactw','qualmeas','orderstrategy','nonneg','gpuids'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -315,6 +322,12 @@ for ii=1:length(opts)
                 skipv=false;
             else
                 skipv=val;
+            end
+        case 'exactw'
+            if default
+                exactw=false;
+            else
+                exactw=val;
             end
         case 'init'
             res=[];
