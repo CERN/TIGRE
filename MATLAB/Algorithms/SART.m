@@ -15,6 +15,10 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %   'lambda_red':   Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
+%   'skipv':       Boolean controlling whether the backprojection weights
+%                  are calculated. Default is false (weights are
+%                  calculated).
+%
 %   'Init':        Describes diferent initialization techniques.
 %                  'none'     : Initializes the image to zeros (default)
 %                  'FDK'      : intializes image to FDK reconstrucition
@@ -74,9 +78,9 @@ angles_reorder=cell2mat(alphablocks);
 if ~isfield(geo,'rotDetector')
     geo.rotDetector=[0;0;0];
 end
-%% Create weigthing matrices
+%% Create weighting matrices
 
-% Projection weigth, W
+% Projection weight, W
 
 geoaux=geo;
 geoaux.sVoxel([1 2])=geo.sDetector([1])*1.1; % a Bit bigger, to avoid numerical division by zero (small number)
@@ -88,7 +92,7 @@ W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 W(W>0.1)=0.1;
 
-% Back-Projection weigth, V
+% Back-Projection weight, V
 if ~skipV
     V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 end
@@ -290,7 +294,7 @@ for ii=1:length(opts)
         case 'lambda'
             if default
                 lambda=1;
-            elseif ischar(val)&&strcmpi(val,'nesterov');
+            elseif ischar(val)&&strcmpi(val,'nesterov')
                 lambda='nesterov'; %just for lowercase/upercase
             elseif length(val)>1 || ~isnumeric( val)
                 error('TIGRE:SART:InvalidInput','Invalid lambda')
@@ -338,8 +342,8 @@ for ii=1:length(opts)
             if default
                 continue;
             end
-            if exist('initwithimage','var');
-                if isequal(size(val),geo.nVoxel');
+            if exist('initwithimage','var')
+                if isequal(size(val),geo.nVoxel')
                     res=single(val);
                 else
                     error('TIGRE:SART:InvalidInput','Invalid image for initialization');
