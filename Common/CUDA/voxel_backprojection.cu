@@ -241,8 +241,8 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             
             float weigth;
             float realx,realy;
-            realx=-(geo.sVoxelX+geo.dVoxelX)*0.5f  +indX*geo.dVoxelX   +xyzOffset.x;
-            realy=-(geo.sVoxelY+geo.dVoxelY)*0.5f  +indY*geo.dVoxelY   +xyzOffset.y+COR;
+            realx=-(geo.sVoxelX-geo.dVoxelX)*0.5f  +indX*geo.dVoxelX   +xyzOffset.x;
+            realy=-(geo.sVoxelY-geo.dVoxelY)*0.5f  +indY*geo.dVoxelY   +xyzOffset.y+COR;
             
             weigth=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
             
