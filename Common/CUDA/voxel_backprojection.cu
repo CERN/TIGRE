@@ -134,6 +134,7 @@ __constant__ float projSinCosArrayDev[5*PROJ_PER_KERNEL];
 //      Description:    Main FDK backprojection kernel
 //______________________________________________________________________________
 
+template<bool unweighted>
 __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,const int currProjSetNumber, const int totalNoOfProjections, cudaTextureObject_t tex)
 {
     
@@ -244,18 +245,32 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             realx=-(geo.sVoxelX-geo.dVoxelX)*0.5f  +indX*geo.dVoxelX   +xyzOffset.x;
             realy=-(geo.sVoxelY-geo.dVoxelY)*0.5f  +indY*geo.dVoxelY   +xyzOffset.y+COR;
             
-            weigth=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
-            
-            weigth=__frcp_rd(weigth*weigth);
-            
-            // Get Value in the computed (U,V) and multiply by the corresponding weigth.
-            // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
+            if (unweighted)
+            {
+                // Get Value in the computed (U,V)
+                // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             
 #if IS_FOR_MATLAB_TIGRE
-            voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f)*weigth;
+                voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f);
 #else
-            voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,indAlpha+0.5f)*weigth;
+                voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,indAlpha+0.5f);
 #endif
+            }
+            else 
+            {
+                weigth=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
+
+                weigth=__frcp_rd(weigth*weigth);
+
+                // Get Value in the computed (U,V) and multiply by the corresponding weigth.
+                // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
+            
+#if IS_FOR_MATLAB_TIGRE
+                voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f)*weigth;
+#else
+                voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,indAlpha+0.5f)*weigth;
+#endif
+            }
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
@@ -290,7 +305,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
 //      Description:    Main host function for FDK backprojection (invokes the kernel)
 //______________________________________________________________________________
 
-int voxel_backprojection(float  *  projections, Geometry geo, float* result,float const * const alphas, int nalpha, const GpuIds& gpuids)
+int voxel_backprojection(float  *  projections, Geometry geo, float* result,float const * const alphas, int nalpha, const GpuIds& gpuids, bool unweighted)
 {
     // printf("voxel_backprojection(geo.nDetector = %d, %d)\n", geo.nDetecU, geo.nDetecV);
     // printf("geo.nVoxel    = %d, %d, %d\n", geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
@@ -540,7 +555,14 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
                         cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*6*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev*nStreamDevice]);
                         cudaStreamSynchronize(stream[dev*nStreamDevice]);
                         
-                        kernelPixelBackprojectionFDK<<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]);
+                        if (unweighted)
+                        {
+                            kernelPixelBackprojectionFDK<true><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]);
+                        }
+                        else
+                        {
+                            kernelPixelBackprojectionFDK<false><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]);
+                        }
                     }  // END for
                     //////////////////////////////////////////////////////////////////////////////////////
                     // END RB code, Main reconstruction loop: go through projections (rotation angles) and backproject

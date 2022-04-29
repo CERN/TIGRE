@@ -15,6 +15,15 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %   'lambda_red':   Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
+%   'skipv':       Boolean controlling whether the backprojection weights
+%                  are calculated. Default is false (weights are
+%                  calculated).
+%
+%   'exactw':      Boolean controlling whether the forwardprojection weights
+%                  are calculated using the exact volume geometry, or an 
+%                  extended geometry. Default is false (weights are
+%                  calculated using extended geometry).
+%
 %   'Init':        Describes diferent initialization techniques.
 %                  'none'     : Initializes the image to zeros (default)
 %                  'FDK'      : intializes image to FDK reconstrucition
@@ -56,7 +65,7 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 blocksize=1;
-[lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lambdared,skipV,exactW,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
 
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
@@ -74,13 +83,15 @@ angles_reorder=cell2mat(alphablocks);
 if ~isfield(geo,'rotDetector')
     geo.rotDetector=[0;0;0];
 end
-%% Create weigthing matrices
+%% Create weighting matrices
 
-% Projection weigth, W
+% Projection weight, W
 
 geoaux=geo;
-geoaux.sVoxel([1 2])=geo.sDetector([1])*1.1; % a Bit bigger, to avoid numerical division by zero (small number)
-geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
+if ~exactW
+    geoaux.sVoxel([1 2])=geo.sDetector([1])*1.1; % a Bit bigger, to avoid numerical division by zero (small number)
+    geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
+end
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
 W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);  %
@@ -88,8 +99,10 @@ W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 W(W>0.1)=0.1;
 
-% Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
+% Back-Projection weight, V
+if ~skipV
+    V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
+end
 
 clear A x y dx dz;
 %% hyperparameter stuff
@@ -149,7 +162,11 @@ for ii=1:niter
             ynesterov=res+ bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
             res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
         else
-             res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
+            if skipV
+                res=res+lambda* Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'unweighted','gpuids',gpuids);
+            else
+                res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
+            end
         end
         if nonneg
             res=max(res,0);
@@ -233,8 +250,8 @@ end
 end
 
 
-function [lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg','gpuids'};
+function [lambda,res,lambdared,skipv,exactw,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'lambda','init','initimg','verbose','lambda_red','skipv','exactw','qualmeas','orderstrategy','nonneg','gpuids'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -284,7 +301,7 @@ for ii=1:length(opts)
         case 'lambda'
             if default
                 lambda=1;
-            elseif ischar(val)&&strcmpi(val,'nesterov');
+            elseif ischar(val)&&strcmpi(val,'nesterov')
                 lambda='nesterov'; %just for lowercase/upercase
             elseif length(val)>1 || ~isnumeric( val)
                 error('TIGRE:SART:InvalidInput','Invalid lambda')
@@ -299,6 +316,18 @@ for ii=1:length(opts)
                     error('TIGRE:SART:InvalidInput','Invalid lambda')
                 end
                 lambdared=val;
+            end
+        case 'skipv'
+            if default
+                skipv=false;
+            else
+                skipv=val;
+            end
+        case 'exactw'
+            if default
+                exactw=false;
+            else
+                exactw=val;
             end
         case 'init'
             res=[];
@@ -326,8 +355,8 @@ for ii=1:length(opts)
             if default
                 continue;
             end
-            if exist('initwithimage','var');
-                if isequal(size(val),geo.nVoxel');
+            if exist('initwithimage','var')
+                if isequal(size(val),geo.nVoxel')
                     res=single(val);
                 else
                     error('TIGRE:SART:InvalidInput','Invalid image for initialization');

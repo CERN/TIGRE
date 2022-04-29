@@ -78,6 +78,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     if (nrhs != 5) {
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput", "Wrong number of inputs provided");
     }
+    
     ////////////////////////////
     // 5th argument is array of GPU-IDs.
     GpuIds gpuids;
@@ -100,10 +101,13 @@ void mexFunction(int  nlhs , mxArray *plhs[],
      ** 4th argument is matched or un matched.
      */
     bool pseudo_matched=false; // Caled krylov, because I designed it for krylov case....
+    bool unweighted=false;
     /* copy the string data from prhs[0] into a C string input_ buf.    */
     char *krylov = mxArrayToString(prhs[3]);
     if (!strcmp(krylov,"matched")) // if its 0, they are the same
         pseudo_matched=true;
+    else if (!strcmp(krylov,"unweighted")) // if its 0, they are the same
+        unweighted=true;
 
     /*
      ** Third argument: angle of projection.
@@ -355,7 +359,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         if (pseudo_matched){
             voxel_backprojection2(projections,geo,result,angles,nangles, gpuids);
         }else{
-            voxel_backprojection(projections,geo,result,angles,nangles, gpuids);
+            voxel_backprojection(projections,geo,result,angles,nangles, gpuids, unweighted);
         }
     }else{
         voxel_backprojection_parallel(projections,geo,result,angles,nangles, gpuids);
