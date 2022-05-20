@@ -14,6 +14,13 @@
 #include "matrix.h"
 #include "XimPara.hpp"
 
+#define GET_BIT(x,bit) ((x & (1 << bit)) >>bit)
+
+// Purpose: To fast read .xim files 
+// Method: based on ReadXim.m by Fredrik Nordström 2015
+// Date: 2017.07
+// Author: Yi Du, yi.du@hotmail.com
+
 
 int cReadXim(char *XimFullFile, XimPara *XimStr, int *XimImg);
 
@@ -131,11 +138,22 @@ int cReadXim(char *XimFullFile,
 		for (int ii = 0; ii < LookUpTableSize; ii++)
 		{
 			// Load in the 8-bit date
-			//unsigned __int8 tmp = 0;
-			//fread(&tmp, sizeof(unsigned __int8), 1, fid);
-            int tmp = 0;
-			fread(&tmp, sizeof(uint8_T), 1, fid);
+			// Updated: 2021-11-05, Yi Du
+			uint8_T tmp =0;
+			fread(&tmp, 1, 1, fid);
+			int Bit2[4] = { 0 };
+			Bit2[0] = GET_BIT(tmp,0) + GET_BIT(tmp,1) *2;
+			Bit2[1] = GET_BIT(tmp,2) + GET_BIT(tmp,3) *2;
+			Bit2[2] = GET_BIT(tmp,4) + GET_BIT(tmp,5) *2;
+			Bit2[3] = GET_BIT(tmp,6) + GET_BIT(tmp,7) *2;
 			
+			// extract the lookup_table data
+			for (int jj = 0; jj < 4; jj++)
+			{
+				LookUpTable[ii * 4 + jj] = Bit2[jj];
+			}
+
+			/**  Old Code with bug			
 			int Bit2[4] = { 0 };
 
 			// extract the lookup_table data
@@ -147,6 +165,7 @@ int cReadXim(char *XimFullFile,
 				
 				//printf("Index = %d, LookUpTable = %d\n", ii * 4 + jj / 2, LookUpTable[ii * 4 + jj / 2]);
 			}
+			**/			
 		}
 
 		// Skip compressed_pixel_buffer_size: passed
@@ -159,9 +178,10 @@ int cReadXim(char *XimFullFile,
 		int delta = 0;
 		int LUT_Pos = 0;
 
-		// You must be very careful with all data types!!!
+		// Be very careful with all data types!!!
 		int8_T tmp8 = 0;
 		int16_T tmp16 = 0;
+		int32_T tmp32 = 0;
 
 		for (int ImgTag = XimStr->ImgWidth + 1;
 			ImgTag < (XimStr->ImgHeight) * (XimStr->ImgWidth);
@@ -179,7 +199,8 @@ int cReadXim(char *XimFullFile,
 			}
 			else
 			{
-				fread(&delta, sizeof(int32_T), 1, fid);
+				fread(&tmp32, sizeof(int32_T), 1, fid);
+				delta = int(tmp32);
 			}
 			
 			XimImg[ImgTag] = delta + XimImg[ImgTag - 1]

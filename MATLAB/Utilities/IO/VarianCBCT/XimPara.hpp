@@ -3,7 +3,10 @@
 #include <stdio.h>
 #include <iostream>
 
-//typedef struct XimPara
+// Purpose: To fast read .xim files 
+// Method: based on ReadXim.m by Fredrik Nordström 2015
+// Date: 2017.07
+// Author: Yi Du, yi.du@hotmail.com
 
 #ifndef STR_XIM
 #define STR_XIM
@@ -22,7 +25,3 @@ typedef struct XimPara
 }XimPara;
 #endif
 
-//#ifndef cReadXim_FUN
-//#define cReadXim_FUN
-// int cReadXim(char *XimFullFile, XimPara *XimStr, int *XimImg);
-//#endif
