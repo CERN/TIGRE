@@ -15,21 +15,6 @@ miu = BHCalib.object.ac;
 % object thickness look-up table: [bowtie.sl, object_sl]
 calibLUT = zeros(length(BHCalib.bowtie.sl), length(object_sl));
 
-%% Photo flux based calibration
-%{
-% bowtie thickness - > spectrum
-for ii = 1: length(BHCalib.bowtie.sl)    
-    % object thickness -> [min_bowtie_thickness: max_bowtie_thickness]
-    spec = specLUT(ii,:);
-    for jj = 1:length(object_sl)
-        % non-ideal attenuated signal
-        tmp = spec .* exp(-object_sl(jj).* miu);
-        % nonlinear BH projection
-        calibLUT(ii,jj) = -log(sum(tmp)/sum(spec));
-    end
-end
-%}
-
 %% Energy Flux based calibration
 % scintillator energy absorption coefficient
 scintillator_ac = BHCalib.scintillator.ac(1: length(miu));

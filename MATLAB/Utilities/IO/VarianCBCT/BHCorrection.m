@@ -1,4 +1,4 @@
-function [proj_lg, BHCalib] = BHCorrection(datafolder, geo, ScanXML, proj_lg)
+function [proj_lg, BHCalib] = BHCorrection(datafolder, geo, ScanXML, proj_lg,gpuids)
 % Entry Function For BH Correction
 %   Detailed explanation goes here
 
@@ -28,7 +28,7 @@ BHCalib = BH_ObjectCalibLUT(BHCalib);
 % BH correction via reference object (water)
 BHCalib = BH_RemappingFunc(BHCalib);
 
-proj_lg = BH_ObjectRemapping(BHCalib, proj_lg);
+proj_lg = BH_ObjectRemapping(BHCalib, proj_lg, gpuids);
 
 disp('BH correction is done.')
 

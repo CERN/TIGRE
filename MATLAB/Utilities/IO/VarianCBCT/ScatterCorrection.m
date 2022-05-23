@@ -32,9 +32,6 @@ step_dv = mean(diff(dvs));
 % downsampled grid
 [dugd, dvgd] = meshgrid(dus,dvs); %detector
 
-%% Load Scatter Calibration
-% ScCalib = ScCalibFromXML(datafolder);
-
 %% Blk scan
 sBlk = sum(Blk, 3);
 sAirNorm = sum(BlkAirNorm);

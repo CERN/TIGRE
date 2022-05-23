@@ -1,4 +1,4 @@
-function proj = LogNormal(proj, angles, airnorm, Blk, Sec, BlkAirNorm)
+function proj = LogNormal(proj, angles, airnorm, Blk, Sec, BlkAirNorm,gpuids)
 % Log Normalization: 
 % Calculate Logrithmic Projections with AirNorm
 % Tested on TrueBeam 2.5 and 2.7
@@ -39,6 +39,7 @@ end
 toc
 %}
 %% TB version: GPU
+gpuDevice(gpuids.devices(0)+1);
 gproj = gpuArray(single(proj));
 gBlk = gpuArray(Blk);
 % Version = 2.5
@@ -71,5 +72,6 @@ end
 
 proj = gather(gproj);
 % GPU clear
-reset(gpuDevice(1));
+reset(gpuDevice(gpuids.devices(0)+1));
+
 end

@@ -33,21 +33,7 @@ bt_img = zeros(length(xxgd), length(yygd));
 
 %% Fitting to Model Bowtie Profile: 
 [xData, yData] = prepareCurveData(BHCalib.bowtie.uu, BHCalib.bowtie.thickness);
-%{
-%% Fitting Model: first fitting(linear)
-% Set up fittype and options.
-ft = fittype( 'poly1' );
-% Fit model to data.
-[~, gof] = fit( xData, yData, ft );
-if( gof.rsquare < 0.995)
-    disp('It seems that BH correction is not required at all');
-    typein = input('Continue BH correction? Y or N (recommended): ', 's');
-    if(contains(typein, 'n', 'IgnoreCase', true))
-        BHCalib = NaN;
-        return;
-    end
-end
-%}
+
 %% Fitting Model: Smoothing Spline 
 % Set up fittype and options.
 ft = fittype( 'smoothingspline' );
@@ -78,13 +64,6 @@ geo_bt.sVoxel = geo_bt.dVoxel.* geo_bt.nVoxel;
 ulgd = Ax(bt_img3D, geo_bt, 0, 'interpolated');
 clearvars bt_img bt_img3D xxgd yygd
 
-%%
-%{
-% tranverse length vector: mm
-ul = interp1(BHCalib.bowtie.uu, BHCalib.bowtie.thickness, ub);
-% tranverse length grid: mm
-ulgd = repmat(ul, [length(vs), 1]);
-%}
 
 %% bowtie material attenuation look-up table
 [Min, Max] = bounds(ulgd, 'all');

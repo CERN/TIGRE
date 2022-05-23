@@ -13,8 +13,6 @@ cfactor = [];
 for ii=1:ngroup
     tmp = sccalib.CalibrationResults.ObjectScatterModels.ObjectScatterModel{ii}.ObjectScatterFit;
     % Amplitude Factor
-    % unit: cm^2 - > mm^2
-%    A = str2double(tmp.A.Text) / 100;
     % unit: mm - > cm
     A = str2double(tmp.A.Text) / 10;
     % unitless

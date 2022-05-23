@@ -24,12 +24,13 @@ ulgd = repmat(ul, [length(vs), 1]);
 %% bowtie material attenuation look-up table
 [Min, Max] = bounds(ulgd(:));
 % sampling length
-sl = linspace(Min, Max, 100);
+n_samples=100;
+sl = linspace(Min, Max, n_samples);
 % LUT: [sl, miu_bowtie]
-atten_tab = zeros(length(sl), length(BHCalib.bowtie.ac));
+atten_tab = zeros(n_samples, length(BHCalib.bowtie.ac));
 
 % I/I_0 = exp(- length * miu): dependent on incident energy
-for ii = 1:length(sl)
+for ii = 1:n_samples
     atten_tab(ii,:) = exp(-sl(ii).* BHCalib.bowtie.ac');
 end
 

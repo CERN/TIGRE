@@ -1,22 +1,23 @@
 function [proj_lg, geo, angles] = VarianDataLoader(datafolder, varargin)
 % VarianDataLoader: Loads Varian CBCT projection, geomtry and angles data
 %   Optional parameter: Motion lag correction. Default True. 
-%
+%   gpuids: Usable GPUs. Default, the first one.
 % Load all dataset that are needed for reconstruction
 % Tested on TrueBeam 2.0 and 2.7
 % Date: 2021-04-02
 % Author: Yi Du (yi.du@hotmail.com)
 % datafolder = '~/your_data_path/varian/2020-01-01_123456/';
 
-%% GPU initialization
-reset(gpuDevice(1));
 
 %% Input Parser
 % ACDC: acceleration & deceleration correction (default: true)
 % DPS: Detector Point Spread correction (default: true)
 % SC: Scatter Correction (default: true)
 % BH: Beam Hardening correction (default: false, due to Bowtie, BH correction is not required at all.)
-[tag_ACDC, tag_DPS, tag_SC, tag_BH] = parse_inputs(varargin{:});
+[tag_ACDC, tag_DPS, tag_SC, tag_BH, gpuids] = parse_inputs(varargin{:});
+
+%% GPU initialization
+reset(gpuDevice(gpuids.devices(0)+1));
 
 %% Load geometry
 [geo, ScanXML] = GeometryFromXML(datafolder);
@@ -40,7 +41,7 @@ disp('Loading Proj: ')
 % Detector point scatter correction
 if(tag_DPS)
     disp('Proj DPS: ')
-    proj = DetectorPointScatterCorrection(proj, geo, ScCalib);
+    proj = DetectorPointScatterCorrection(proj, geo, ScCalib, gpuids);
 end
 
 %% Load blank scan
@@ -59,14 +60,14 @@ if(tag_SC)
 end
 
 %% Airnorm and Logarithmic Normalization
-proj_lg = LogNormal(proj, angles, airnorm, Blk, Sec, BlkAirNorm);
+proj_lg = LogNormal(proj, angles, airnorm, Blk, Sec, BlkAirNorm, gpuids);
 disp('Log Normalization is completed.')
 % remove anomolies
 proj_lg = EnforcePositive(proj_lg); 
 
 %% Beam Hardening correction is applied (kind of slow)
 if(tag_BH)
-    [proj_lg, ~] = BHCorrection(datafolder, geo, ScanXML, proj_lg);
+    [proj_lg, ~] = BHCorrection(datafolder, geo, ScanXML, proj_lg, gpuids);
 end
 
 %% Remove anomalies
@@ -85,7 +86,7 @@ disp('Data processing is complete! Ready for reconstruction: ')
 end
 
 
-function [tag_ACDC, tag_DPS, tag_SC, tag_BH] = parse_inputs(varargin)
+function [tag_ACDC, tag_DPS, tag_SC, tag_BH, gpuids] = parse_inputs(varargin)
 % create input parser
 p = inputParser;
 % add optional parameters
@@ -95,6 +96,8 @@ addParameter(p,'sc', true);
 % BH performance is very lame for unclear reason
 addParameter(p,'bh', false);
 
+addParameters(p,'gpuids',GpuIds())
+
 %execute
 parse(p,varargin{:});
 %extract
@@ -102,4 +105,5 @@ tag_ACDC=p.Results.acdc;
 tag_DPS=p.Results.dps;
 tag_SC=p.Results.sc;
 tag_BH=p.Results.bh;
+gpuids=p.Results.gpuids;
 end

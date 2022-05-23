@@ -1,8 +1,9 @@
-function proj = DetectorPointScatterCorrection(proj, geo, ScCalib)
+function proj = DetectorPointScatterCorrection(proj, geo, ScCalib, gpuids)
 %% Detector Point Scatter Correction
 % Reference: Improved scatter correction using adaptive scatter kernel superposition
 % Date: 2021-03-26
 % Author: Yi Du (yi.du@hotmail.com)
+
 
 %% Empirical values from reference paper
 % unit: cm-2
@@ -69,6 +70,7 @@ hd = CoverSPR/sum(hd(:)) .* hd;
 
 %% GPU based
 % reset(gpuDevice(1));
+reset(gpuDevice(gpuids.devices(0)+1));
 gproj = gpuArray(single(proj));
 
 %% 2D Convolution with downsampling and upsampling
@@ -98,7 +100,8 @@ end
 
 proj = single(gather(gproj));
 % Reset GPU
-reset(gpuDevice(1));
+reset(gpuDevice(gpuids.devices(0)+1));
+
 
 %% Cutoff for over-correction
 proj(proj<0) = NaN;
