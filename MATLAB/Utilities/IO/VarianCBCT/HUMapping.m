@@ -10,7 +10,12 @@ function HU3D = HUMapping(img3D, Protocol)
 % Author: Yi Du, yi.du@hotmail.com
 
 HU3D = zeros(numel(img3D), 1);
-load('D:\MATLABWorkplace\Ongoing_Projects\Fronc_VarianCBCT\demo_Pixel2HU.mat', 'Pixel2HU');
+if ~ isfile('../../../../Common/data/pixel2HU.mat ')
+    warning('Using DEMO pixel2HU transform. We recommend creating your own and storing it in TIGRE/Common/data/pixel2HU.mat')
+    load('../../../../Common/data/demo_Pixel2HU.mat', 'Pixel2HU');
+else
+    load('../../../../Common/data/Pixel2HU.mat', 'Pixel2HU');
+end
 
 tmp = getfield(Pixel2HU, Protocol);
 
