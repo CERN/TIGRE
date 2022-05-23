@@ -84,6 +84,9 @@ void mexFunction(
     // KVSourceRtn = GantryRtn + 90 deg;
 	double KVSourceRtn = para->GantryRtn + 90;
 	plhs[1] = mxCreateDoubleScalar(KVSourceRtn);
+    
+    double NormChamberReading = para->KVNormChamber * 1.0;
+    plhs[2] = mxCreateDoubleScalar(NormChamberReading);
 
 }
 
@@ -271,7 +274,7 @@ int cReadXim(char *XimFullFile,
 	{
 		int pName_len = 0;
 		// Only load the property name rather than the content
-		char pName[64] = { 0 };
+		char pName[128] = { 0 };
 		int pType = 0;
 		for (int ii = 0; ii < nProperties; ii++)
 		{
@@ -281,13 +284,21 @@ int cReadXim(char *XimFullFile,
 			fread(pName, sizeof(char)* pName_len, 1, fid);
 			// load property data type
 			fread(&pType, sizeof(int), 1, fid);
+
+            //printf("%s\n", pName);
 			
 			// extract the Gantry Rotation Angle
 			if (!strcmp(pName, "GantryRtn"))
 			{
 				fread(&(XimStr->GantryRtn), sizeof(double), 1, fid);
-				break;
+//				continue;
 			}
+            else if(!strcmp(pName, "KVNormChamber"))
+            {
+                //printf("KVNormChamber");
+				fread(&(XimStr->KVNormChamber), sizeof(int), 1, fid);
+				break;                
+            }
 			else
 			{
 				switch (pType)
@@ -313,14 +324,14 @@ int cReadXim(char *XimFullFile,
 				{
 					int skiplen = 0;
 					fread(&skiplen, sizeof(int), 1, fid);
-					fseek(fid, sizeof(double) * skiplen, SEEK_CUR);
+					fseek(fid, sizeof(double) * skiplen /8, SEEK_CUR);
 					break;
 				}
 				case 5:
 				{
 					int skiplen = 0;
 					fread(&skiplen, sizeof(int), 1, fid);
-					fseek(fid, sizeof(int) * skiplen, SEEK_CUR);
+					fseek(fid, sizeof(int) * skiplen /4, SEEK_CUR);
 					break;
 				}
 				break;
@@ -328,7 +339,7 @@ int cReadXim(char *XimFullFile,
 			}
 			// reset all the temporary variables 
 			pName_len = 0;
-			memset(pName, 0, 64*sizeof(char));
+			memset(pName, 0, 128*sizeof(char));
 			pType = 0;
 		}
 

@@ -22,6 +22,7 @@ typedef struct XimPara
 	int Compression_Indicator;		// Data number in Rec Image Matrix
 
 	double GantryRtn;				// Gantry rotation angle
+    int KVNormChamber;          // KV norm chamber reading, date: 2022-05-23
 }XimPara;
 #endif
 
