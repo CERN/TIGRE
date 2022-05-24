@@ -41,7 +41,7 @@ if measurequality
 end
 
 res = max(res,0);
-W=Atb(ones(size(proj),'single'),geo,angles,'gpuids',gpuids);
+W=Atb(ones(size(proj),'single'),geo,angles,'matched','gpuids',gpuids);
 W(W<=0.) = inf;
 
 tic

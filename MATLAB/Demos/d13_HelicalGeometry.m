@@ -44,13 +44,13 @@ geo.accuracy=0.5;
 
 
 %% Create data+ angles
-angles=linspace(00.0,2*pi,100);
-angles=[angles angles angles];
+angles=linspace(0.0,2*pi,100);
+angles=[angles angles angles]; % 3 rotations
 % Load thorax phatom data
 head=headPhantom(geo.nVoxel); % yes, not the best example data, but It will do.
 
-% Thsi makes it helical
-geo.offOrigin(3,:)=linspace(-1024/2+128,1024/2-128,size(angles,2)).';  % about 256^3 images fit int he detector with this size. 
+% This makes it helical
+geo.offOrigin(3,:)=linspace(-1024/2+128,1024/2-128,size(angles,2)).';  % about 256^3 images fit in the detector with this size. 
 geo.offOrigin(1,:)=0;
 geo.offOrigin(2,:)=0;
 
