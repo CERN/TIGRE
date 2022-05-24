@@ -47,7 +47,7 @@ geo.sDetector=geo.nDetector.*geo.dDetector; % total size of the detector    (mm)
 % Image parameters
 geo.nVoxel=[128;128;128];                   % number of voxels              (vx)
 
-% a bit smaller than usual because the demo includes av ery big detector
+% a bit smaller than usual because the demo includes a very big detector
 % angle for showcase
 geo.sVoxel=[256;256;256]/2;                 % total size of the image       (mm)
 

@@ -68,9 +68,9 @@ class FISTA(IterativeReconAlg):
         
     :keyword fista_p: (float)
         Default: 1 for standard FISTA 
-        0.0125 < fista_p <= 0.01 for faster FISTA
+        0.01 < fista_p <= 0.1 for faster FISTA
         
-    :keyword fist_q: (float)
+    :keyword fista_q: (float)
         Default: 1 for standard FISTA 
         0.0 < fista_q <= 1.0 for faster FISTA
 
@@ -174,8 +174,9 @@ class FISTA(IterativeReconAlg):
             t_old = t
             t = (self.__p__ + np.sqrt(self.__q__ + 4 * t ** 2)) / 2
             self.res = x_rec + (t_old - 1) / t * (x_rec - x_rec_old)
-
-            self.error_measurement(res_prev, i)
+            
+            if Quameasopts is not None:
+                self.error_measurement(res_prev, i)
 
 
 fista = decorator(FISTA, name="FISTA")
@@ -203,8 +204,9 @@ class ISTA(FISTA):  # noqa: D101
             getattr(self, self.dataminimizing)()
 
             self.res = im3ddenoise(self.res, 20, 1.0 / lambdaForTv, self.gpuids)
-
-            self.error_measurement(res_prev, i)
+            
+            if Quameasopts is not None:
+                self.error_measurement(res_prev, i)
 
 
 ista = decorator(ISTA, name="ISTA")

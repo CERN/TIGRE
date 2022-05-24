@@ -22,7 +22,7 @@ function [ proj ] = filtering(proj,geo,angles,parker)
 
 if parker
 	proj = permute(ParkerWeight(permute(proj,[2 1 3]),geo,angles,parker),[2 1 3]);
-	diff_angles = diff(angles); angle_step = mean(abs(diff_angles)); % to be used later
+	diff_angles = diff(angles(1,:)); angle_step = mean(abs(diff_angles)); % to be used later
 end 
 
 filt_len = max(64,2^nextpow2(2*geo.nDetector(1)));

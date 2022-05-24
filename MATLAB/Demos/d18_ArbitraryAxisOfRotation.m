@@ -80,6 +80,6 @@ plotProj(projections,(1:100)*pi/180); % angle information not right in the title
 % Note, FDK will not work.
 
 imgSIRT = SIRT(projections,geo, angles,50);
-imgCGLS=CGLS(projections,geo, angles,10);
+imgCGLS = CGLS(projections,geo, angles,10);
 
 plotImg([head imgCGLS imgSIRT] ,'dim',3)

@@ -78,7 +78,7 @@ end
 %% Fourier transform based filtering
 proj = filtering(proj,geo,angles,parker); % Not sure if offsets are good in here
 
-%RMFIELD Remove fields from a structure array.
+% RMFIELD Remove fields from a structure array.
 geo=rmfield(geo,'filter');
 %% backproject
 %%%
@@ -183,7 +183,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('CBCT:FDK:InvalidInput','Invalid number of inputs')
+    error('TIGRE:FDK:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -205,7 +205,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
          if isempty(ind)
-            error('CBCT:FDK:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+            error('TIGRE:FDK:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
         end
         val=argin{jj};
     end
@@ -214,7 +214,7 @@ for ii=1:length(opts)
         case 'parker'
             if default
                 if size(angles,1)==1 || (all(angles(2,:)==0) && all(angles(3,:)==0))
-                    parker=max(angles)-min(angles)<(2*pi-max(diff(angles)));
+                    parker=max(angles(1,:))-min(angles(1,:))<(2*pi-max(diff(angles(1,:))));
                 else
                     parker=false;
                 end
@@ -234,7 +234,7 @@ for ii=1:length(opts)
                 filter='ram-lak';
             else
                 if  ~ischar( val)
-                    error('CBCT:FDK:InvalidInput','Invalid filter')
+                    error('TIGRE:FDK:InvalidInput','Invalid filter')
                 end
                 filter=val;
             end
@@ -246,7 +246,7 @@ for ii=1:length(opts)
             end
        
         otherwise
-            error('CBCT:FDK:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in FDK()']);
+            error('TIGRE:FDK:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in FDK()']);
     end
 end
 end

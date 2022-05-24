@@ -271,23 +271,24 @@ class IterativeReconAlg(object):
         self.res = np.zeros(self.geo.nVoxel, dtype=np.float32)
         init = self.init
         verbose = self.verbose
-        if init == "multigrid":
-            if verbose:
-                print("init multigrid in progress...")
-                print("default blocksize=1 for init_multigrid(OS_SART)")
-            self.res = init_multigrid(self.proj, self.geo, self.angles, alg="SART")
-            if verbose:
-                print("init multigrid complete.")
-        if init == "FDK":
-            self.res = FDK(self.proj, self.geo, self.angles)
+        if isinstance(init, str):
+            if init == "multigrid":
+                if verbose:
+                    print("init multigrid in progress...")
+                    print("default blocksize=1 for init_multigrid(OS_SART)")
+                self.res = init_multigrid(self.proj, self.geo, self.angles, alg="SART")
+                if verbose:
+                    print("init multigrid complete.")
+            if init == "FDK":
+                self.res = FDK(self.proj, self.geo, self.angles)
 
-        if isinstance(init, np.ndarray):
+        elif isinstance(init, np.ndarray):
             if (self.geo.nVoxel == init.shape).all():
-
                 self.res = init
-
             else:
                 raise ValueError("wrong dimension of array for initialisation")
+        elif init is not None:
+            raise ValueError("wrong value for initialisation")
 
     def set_angle_index(self):
         """

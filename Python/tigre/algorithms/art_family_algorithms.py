@@ -16,6 +16,8 @@ class SART(IterativeReconAlg):
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
+        if "blocksize" in kwargs and kwargs['blocksize']>1:
+            print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
         kwargs.update(dict(blocksize=1))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
@@ -33,6 +35,8 @@ class SIRT(IterativeReconAlg):
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
+        if "blocksize" in kwargs and kwargs['blocksize']>1:
+            print('Warning: blocksize is set to {}, please do not specify blocksize for this algorithm'.format(angles.shape[0]))
         kwargs.update(dict(blocksize=angles.shape[0]))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
@@ -50,8 +54,8 @@ class OS_SART(IterativeReconAlg):
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
-        self.blocksize = 20 if 'blocksize' not in kwargs else kwargs["blocksize"]
         
+        self.blocksize = 20 if 'blocksize' not in kwargs else kwargs["blocksize"]       
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
 
@@ -68,6 +72,9 @@ class SART_TV(IterativeReconAlg):
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
+        
+        if "blocksize" in kwargs and kwargs['blocksize']>1:
+            print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
         kwargs.update(dict(blocksize=1))
         self.tvlambda = 50 if 'tvlambda' not in kwargs else kwargs['tvlambda']
         self.tviter = 50 if 'tviter' not in kwargs else kwargs['tviter']
@@ -94,7 +101,8 @@ class SART_TV(IterativeReconAlg):
             getattr(self, self.dataminimizing)()
             # print("run_main_iter: gpuids = {}", self.gpuids)
             self.res = im3ddenoise(self.res, self.tviter, self.tvlambda, self.gpuids)
-            self.error_measurement(res_prev, i)
+            if Quameasopts is not None:
+                self.error_measurement(res_prev, i)
 
 
 sart_tv = decorator(SART_TV, name="sart_tv")
@@ -111,6 +119,7 @@ class OSSART_TV(IterativeReconAlg):
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
+        
         self.blocksize = 20 if 'blocksize' not in kwargs else kwargs['blocksize']
         self.tvlambda = 50 if 'tvlambda' not in kwargs else kwargs['tvlambda']
         self.tviter = 50 if 'tviter' not in kwargs else kwargs['tviter']

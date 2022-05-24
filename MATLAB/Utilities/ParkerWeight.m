@@ -29,7 +29,7 @@ if totangles>=2*pi
    warning('Computing Parker weigths for scanning angle equal or bigger than 2*pi. Consider disabling Parker weigths.') 
 end
 if totangles<pi+2*delta
-    warning('Scanning angles smaller than pi+cone_angle. This is limited angle tomgraphy, there is nosufficient data, thus weigthing for data redundancy is not required.')
+    warning('Scanning angles smaller than pi+cone_angle. This is limited angle tomgraphy, there is no sufficient data, thus weighting for data redundancy is not required.')
 end
 epsilon=max(totangles-(pi+2*delta),0);
 

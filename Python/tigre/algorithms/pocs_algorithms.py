@@ -105,7 +105,7 @@ class initASD_POCS(IterativeReconAlg):
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
         
-        kwargs.update(dict(regularisation="minimizeTV"))
+        # kwargs.update(dict(regularisation="minimizeTV"))
         # if "blocksize" not in kwargs:
         #     kwargs.update(dict(blocksize=1))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)       
@@ -133,8 +133,10 @@ class initASD_POCS(IterativeReconAlg):
                 self._estimate_time_until_completion(n_iter)
 
             res_prev = copy.deepcopy(self.res)
-            n_iter += 1
             getattr(self, self.dataminimizing)()
+            if self.Quameasopts is not None:
+                self.error_measurement(res_prev, n_iter)
+            n_iter += 1
             g = Ax(self.res, self.geo, self.angles, gpuids=self.gpuids)
             dd = im3DNORM(g - self.proj, 2)
             dp_vec = self.res - res_prev
@@ -155,7 +157,7 @@ class initASD_POCS(IterativeReconAlg):
             c = np.dot(dg_vec.reshape(-1,), dp_vec.reshape(-1,)) / max(
                 dg * dp, 1e-6
             )  # reshape ensures no copy is made.
-            if (c < -0.99 and dd <= self.epsilon) or self.beta < 0.005 or n_iter > self.niter:
+            if (c < -0.99 and dd <= self.epsilon) or self.beta < 0.005 or n_iter >= self.niter:
                 if self.verbose:
                     print(
                         "\n"
@@ -172,11 +174,11 @@ class ASD_POCS(initASD_POCS):
     
     def __init__(self, proj, geo, angles, niter, **kwargs):
         
-        if "blocksize" not in kwargs:
-            kwargs.update(dict(blocksize=1))
-        else:
-            self.blocksize = 1
+        if "blocksize" in kwargs and kwargs['blocksize']>1:
             print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
+        kwargs.update(dict(blocksize=1))
+        kwargs.update(dict(regularisation="minimizeTV"))
+        
         initASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
        
 
@@ -191,13 +193,12 @@ class AwASD_POCS(initASD_POCS):
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
-        if "blocksize" not in kwargs:
-            kwargs.update(dict(blocksize=1))
-        else:
-            self.blocksize = 1
+        if "blocksize" in kwargs and kwargs['blocksize']>1:
             print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
+        kwargs.update(dict(blocksize=1))
         kwargs.update(dict(regularisation="minimizeAwTV"))
-        self.delta = np.float32(-0.005) if "delta" not in kwargs else kwargs["delta"]      
+        self.delta = np.float32(-0.005) if "delta" not in kwargs else kwargs["delta"] 
+        
         initASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
 
 
@@ -210,8 +211,9 @@ class OS_ASD_POCS(initASD_POCS):
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
-#        kwargs.update(dict(regularisation="minimizeTV"))
         self.blocksize = 20 if "blocksize" not in kwargs else kwargs["blocksize"]
+        kwargs.update(dict(regularisation="minimizeTV"))
+        
         initASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
 
 
@@ -232,10 +234,11 @@ class OS_AwASD_POCS(initASD_POCS):
         self.blocksize = 20 if "blocksize" not in kwargs else kwargs["blocksize"]
         kwargs.update(dict(regularisation="minimizeAwTV"))
         self.delta = np.float32(-0.005) if "delta" not in kwargs else kwargs["delta"]
+        
         initASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs) 
 
 
-os_awasd_pocs = decorator(AwASD_POCS, name="os_awasd_pocs")
+os_awasd_pocs = decorator(OS_AwASD_POCS, name="os_awasd_pocs")
 
 
 
@@ -322,7 +325,9 @@ class initPCSD(IterativeReconAlg):
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
         
-        kwargs.update(dict(regularisation="minimizeTV"))
+        # if "blocksize" not in kwargs:
+        #     kwargs.update(dict(blocksize=1))
+        #kwargs.update(dict(regularisation="minimizeTV"))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         if "maxl2err" not in kwargs:
             self.epsilon = (
@@ -382,11 +387,11 @@ class PCSD(initPCSD):
     
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
-        if "blocksize" not in kwargs:
-            kwargs.update(dict(blocksize=1))
-        else:
-            self.blocksize = 1
+        if "blocksize" in kwargs and kwargs['blocksize']>1:
             print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
+        kwargs.update(dict(blocksize=1))
+        kwargs.update(dict(regularisation="minimizeTV"))
+        
         initPCSD.__init__(self, proj, geo, angles, niter, **kwargs)
         
     
@@ -403,11 +408,9 @@ class AwPCSD(initPCSD):
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
-        if "blocksize" not in kwargs:
-            kwargs.update(dict(blocksize=1))
-        else:
-            self.blocksize = 1
+        if "blocksize" in kwargs and kwargs['blocksize']>1:
             print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
+        kwargs.update(dict(blocksize=1))
         kwargs.update(dict(regularisation="minimizeAwTV"))
         self.delta = np.float32(-0.005) if "delta" not in kwargs else kwargs["delta"]
             
@@ -425,8 +428,8 @@ class OS_PCSD(initPCSD):
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
-        kwargs.update(dict(regularisation="minimizeTV"))
         self.blocksize = 20 if "blocksize" not in kwargs else kwargs["blocksize"]
+        kwargs.update(dict(regularisation="minimizeTV"))
             
         initPCSD.__init__(self, proj, geo, angles, niter, **kwargs)
         
@@ -445,8 +448,8 @@ class OS_Aw_PCSD(initPCSD):
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
-        kwargs.update(dict(regularisation="minimizeAwTV"))
         self.blocksize = 20 if "blocksize" not in kwargs else kwargs["blocksize"]
+        kwargs.update(dict(regularisation="minimizeAwTV"))
         self.delta = np.float32(-0.005) if "delta" not in kwargs else kwargs["delta"]
             
         initPCSD.__init__(self, proj, geo, angles, niter, **kwargs)
