@@ -133,8 +133,10 @@ class initASD_POCS(IterativeReconAlg):
                 self._estimate_time_until_completion(n_iter)
 
             res_prev = copy.deepcopy(self.res)
-            n_iter += 1
             getattr(self, self.dataminimizing)()
+            if self.Quameasopts is not None:
+                self.error_measurement(res_prev, n_iter)
+            n_iter += 1
             g = Ax(self.res, self.geo, self.angles, gpuids=self.gpuids)
             dd = im3DNORM(g - self.proj, 2)
             dp_vec = self.res - res_prev
@@ -155,7 +157,7 @@ class initASD_POCS(IterativeReconAlg):
             c = np.dot(dg_vec.reshape(-1,), dp_vec.reshape(-1,)) / max(
                 dg * dp, 1e-6
             )  # reshape ensures no copy is made.
-            if (c < -0.99 and dd <= self.epsilon) or self.beta < 0.005 or n_iter > self.niter:
+            if (c < -0.99 and dd <= self.epsilon) or self.beta < 0.005 or n_iter >= self.niter:
                 if self.verbose:
                     print(
                         "\n"
