@@ -57,16 +57,16 @@ geo.offOrigin(2,:)=0;
 % project data
 data=Ax(head,geo,angles);
 
-% Uncomment if you want to see the data
+% % Uncomment if you want to see the data
 % plotProj(data,angles);
-%% Reconstruct Helical
-
-OSSARTimg=OS_SART(data,geo,angles,30);
-% SARTimg=SART(data,geo,angles,30); % takes time
-CGLSimg=CGLS(data,geo,angles,20);
-%% Plot results
-
-% CGLS and SIRT
-plotImg([head, OSSARTimg ,CGLSimg],'Dim',3,'Step',3);
-
+% %% Reconstruct Helical
+% 
+% OSSARTimg=OS_SART(data,geo,angles,30);
+% % SARTimg=SART(data,geo,angles,30); % takes time
+% CGLSimg=CGLS(data,geo,angles,20);
+% %% Plot results
+% 
+% % CGLS and SIRT
+% plotImg([head, OSSARTimg ,CGLSimg],'Dim',3,'Step',3);
+% 
 
