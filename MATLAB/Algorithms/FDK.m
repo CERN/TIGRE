@@ -148,6 +148,7 @@ function [proj_w, w] = preweighting2(proj,geo,theta)
 % Ref: 
 %    Wang, Ge. X-ray micro-CT with a displaced detector array. Medical Physics, 2002,29(7):1634-1636.
 offset = geo.offDetector(1);
+offset = offset + (geo.DSD(1)/geo.DSO(1))*geo.COR(1);
 us = ((-geo.nDetector(1)/2+0.5):1:(geo.nDetector(1)/2-0.5))*geo.dDetector(1) + abs(offset);
 
 us = us * geo.DSO(1)/geo.DSD(1);
