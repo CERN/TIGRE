@@ -1,4 +1,4 @@
-function [res,qualMeasOut] = FISTA(proj,geo,angles,niter,varargin)
+function [res,qualMeasOut] = FISTA(proj,geo,angles,niter,redundancy_weights,varargin)
 % FISTA is a quadratically converging algorithm, modified from FISTA.
 %
 % It is based on the lazy-start FISTA modification in the following work:
@@ -51,17 +51,34 @@ function [res,qualMeasOut] = FISTA(proj,geo,angles,niter,varargin)
 measurequality=~isempty(QualMeasOpts);
 
 qualMeasOut=zeros(length(QualMeasOpts),niter);
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+end
 
 x_rec = res;
 L = hyper;
 bm = 1/L;
 t = 1;
+r = 1/4;
+p = 1;
+q = 1;
 
 for ii = 1:niter
     res0 = res;
     if (ii==1);tic;end
     % gradient descent step
-    res = res + bm * 2 * Atb(proj - Ax(res,geo,angles, 'Siddon', 'gpuids', gpuids), geo, angles, 'matched', 'gpuids', gpuids);
+    if redundancy_weights
+        res = res + bm * 2 * Atb(W_r.*(proj - Ax(res,geo,angles, 'Siddon', 'gpuids', gpuids)), geo, angles, 'matched', 'gpuids', gpuids);
+    else
+        res = res + bm * 2 * Atb(proj - Ax(res,geo,angles, 'Siddon', 'gpuids', gpuids), geo, angles, 'matched', 'gpuids', gpuids);
+    end
     lambdaforTV = 2* bm* lambda;
     x_recold = x_rec;
     x_rec = im3DDenoise(res,'TV',tviter,1/lambdaforTV, 'gpuids', gpuids);  

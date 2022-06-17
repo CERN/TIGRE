@@ -78,7 +78,7 @@ end
 %% Fourier transform based filtering
 proj = filtering(proj,geo,angles,parker); % Not sure if offsets are good in here
 
-% RMFIELD Remove fields from a structure array.
+%RMFIELD Remove fields from a structure array.
 geo=rmfield(geo,'filter');
 %% backproject
 %%%
@@ -94,15 +94,18 @@ function [zproj, zgeo, theta] = zeropadding(proj, geo)
 % ZEROPADDING as preprocessing for preweighting
 zgeo = geo;
 
-padwidth = fix(2*geo.offDetector(1)./geo.dDetector(1));
+offset = geo.offDetector(1);
+offset = offset + (geo.DSD(1) / geo.DSO(1)) * geo.COR(1);
+
+padwidth = fix(2*offset./geo.dDetector(1));
 zgeo.offDetector(1,:) = geo.offDetector(1,:) - padwidth/2 * geo.dDetector(1);
 zgeo.nDetector(1) = abs(padwidth) + geo.nDetector(1);
 zgeo.sDetector(1) = zgeo.nDetector(1) * zgeo.dDetector(1);
 
-theta = (geo.sDetector(1)/2 - abs(geo.offDetector(1)))...
-        * sign(geo.offDetector(1));
+theta = (geo.sDetector(1)/2 - abs(offset))...
+        * sign(offset);
 % Pad on the left size when offset >0
-if(geo.offDetector(1)>0)
+if(offset>0)
     for ii = 1:size(proj,3)
         zproj(:,:,ii) = [zeros(size(proj,1), padwidth), proj(:,:,ii)];
     end
@@ -119,6 +122,7 @@ function [proj_w, w] = preweighting(proj,geo,theta)
 % Ref: 
 %    Wang, Ge. X-ray micro-CT with a displaced detector array. Medical Physics, 2002,29(7):1634-1636.
 offset = geo.offDetector(1);
+offset = offset + (geo.DSD(1) / geo.DSO(1)) * geo.COR(1);
 us = ((-geo.nDetector(1)/2+0.5):1:(geo.nDetector(1)/2-0.5))*geo.dDetector(1) + abs(offset);
 
 abstheta=abs(theta);
@@ -148,7 +152,7 @@ function [proj_w, w] = preweighting2(proj,geo,theta)
 % Ref: 
 %    Wang, Ge. X-ray micro-CT with a displaced detector array. Medical Physics, 2002,29(7):1634-1636.
 offset = geo.offDetector(1);
-offset = offset + (geo.DSD(1)/geo.DSO(1))*geo.COR(1);
+offset = offset + (geo.DSD(1) / geo.DSO(1)) * geo.COR(1);   % added correction
 us = ((-geo.nDetector(1)/2+0.5):1:(geo.nDetector(1)/2-0.5))*geo.dDetector(1) + abs(offset);
 
 us = us * geo.DSO(1)/geo.DSD(1);
@@ -184,7 +188,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('TIGRE:FDK:InvalidInput','Invalid number of inputs')
+    error('CBCT:FDK:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -206,7 +210,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
          if isempty(ind)
-            error('TIGRE:FDK:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+            error('CBCT:FDK:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
         end
         val=argin{jj};
     end
@@ -215,7 +219,7 @@ for ii=1:length(opts)
         case 'parker'
             if default
                 if size(angles,1)==1 || (all(angles(2,:)==0) && all(angles(3,:)==0))
-                    parker=max(angles(1,:))-min(angles(1,:))<(2*pi-max(diff(angles(1,:))));
+                    parker=max(angles)-min(angles)<(2*pi-max(diff(angles)));
                 else
                     parker=false;
                 end
@@ -235,7 +239,7 @@ for ii=1:length(opts)
                 filter='ram-lak';
             else
                 if  ~ischar( val)
-                    error('TIGRE:FDK:InvalidInput','Invalid filter')
+                    error('CBCT:FDK:InvalidInput','Invalid filter')
                 end
                 filter=val;
             end
@@ -247,7 +251,7 @@ for ii=1:length(opts)
             end
        
         otherwise
-            error('TIGRE:FDK:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in FDK()']);
+            error('CBCT:FDK:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in FDK()']);
     end
 end
 end

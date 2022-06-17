@@ -1,4 +1,4 @@
-function [ f,errorSART,errorTV,errorL2,qualMeasOut] = OS_AwPCSD(proj,geo,angles,maxiter,varargin)
+function [ f,errorSART,errorTV,errorL2,qualMeasOut] = OS_AwPCSD(proj,geo,angles,maxiter,redundancy_weights,varargin)
 %OS_AwPCSD solves the reconstruction problem using adaptive-weighted
 %projection-controlled steepest descent method
 %
@@ -113,6 +113,17 @@ W=1./W;
 % Back-Projection weigth, V
 V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+    W = W.*W_r; % include redundancy weighting in W
+end
 
 iter=0;
 offOrigin=geo.offOrigin;
@@ -347,7 +358,7 @@ for ii=1:length(opts)
         %  =========================================================================
         case 'maxl2err'
             if default
-                epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
+                epsilon=im3Dnorm(FDK(proj,geo,angles),'L2')*0.2; %heuristic
             else
                 epsilon=val;
             end

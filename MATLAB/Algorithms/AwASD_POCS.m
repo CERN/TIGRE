@@ -1,4 +1,4 @@
-function [ f,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,varargin)
+function [ f,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,redundancy_weights,varargin)
 %AwASD_POCS Solves the 3D tomography problem using the adaptive-weighted
 %ASD_POCS algorithm which extends from the method ASD_POCS available in the
 %TIGRE toolbox by adding weight equation to better preserve the edge of the
@@ -104,6 +104,17 @@ W=1./W;
 % Back-Projection weigth, V
 V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+    W = W.*W_r; % include redundancy weighting in W
+end
 
 stop_criteria=0;
 iter=0;
@@ -332,7 +343,7 @@ for ii=1:length(opts)
         %  =========================================================================
         case 'maxl2err'
             if default
-                epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
+                epsilon=im3Dnorm(FDK(proj,geo,angles),'L2')*0.2; %heuristic
             else
                 epsilon=val;
             end

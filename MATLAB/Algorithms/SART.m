@@ -1,4 +1,4 @@
-function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
+function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,redundancy_weights,varargin)
 %SART solves Cone Beam CT image reconstruction using Oriented Subsets
 %              Simultaneous Algebraic Reconxtruction Techique algorithm
 %
@@ -90,6 +90,18 @@ W(W>0.1)=0.1;
 
 % Back-Projection weigth, V
 V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
+
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+    W = W.*W_r; % include redundancy weighting in W
+end
 
 clear A x y dx dz;
 %% hyperparameter stuff

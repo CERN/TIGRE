@@ -1,4 +1,4 @@
-function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
+function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,redundancy_weights,varargin)
 % CGLS_CBCT solves the CBCT problem using the conjugate gradient least
 % squares
 % 
@@ -44,10 +44,25 @@ measurequality=~isempty(QualMeasOpts);
 
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+end
+
 % //doi: 10.1088/0031-9155/56/13/004
 
 r=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
-p=Atb(r,geo,angles,'matched','gpuids',gpuids);
+if redundancy_weights
+    p=Atb(W_r .* r,geo,angles,'matched','gpuids',gpuids);
+else
+    p=Atb(r,geo,angles,'matched','gpuids',gpuids);
+end
 gamma=norm(p(:),2)^2;
 
 errorL2=zeros(1,niter);
@@ -77,7 +92,11 @@ for ii=1:niter
     % If step is adecuatem, then continue withg CGLS
     r=r-alpha*q;
     
-    s=Atb(r,geo,angles,'matched','gpuids',gpuids);
+    if redundancy_weights
+        s=Atb(W_r .* r,geo,angles,'matched','gpuids',gpuids);
+    else
+        s=Atb(r,geo,angles,'matched','gpuids',gpuids);
+    end
     gamma1=norm(s(:),2)^2;
     beta=gamma1/gamma;
     gamma=gamma1;
