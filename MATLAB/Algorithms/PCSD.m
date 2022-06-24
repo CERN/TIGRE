@@ -1,4 +1,4 @@
-function [ f,qualMeasOut] = PCSD(proj,geo,angles,maxiter,redundancy_weights,varargin)
+function [ f,qualMeasOut] = PCSD(proj,geo,angles,maxiter,varargin)
 %PCSD solves the reconstruction problem using projection-controlled steepest descent method
 %
 %   PCSD(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem using
@@ -28,6 +28,9 @@ function [ f,qualMeasOut] = PCSD(proj,geo,angles,maxiter,redundancy_weights,vara
 %                  Default is 20% of the FDK L2 norm.
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
+% 'redundancy_weighting': true or false. Default is true. Applies data
+%                         redundancy weighting to projections in the update step
+%                         (relevant for offset detector geometry)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -46,7 +49,7 @@ function [ f,qualMeasOut] = PCSD(proj,geo,angles,maxiter,redundancy_weights,vara
 %--------------------------------------------------------------------------
 
 %% parse inputs
-[beta,beta_red,f,ng,verbose,epsilon,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,f,ng,verbose,epsilon,QualMeasOpts,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,varargin);
 
 measurequality=~isempty(QualMeasOpts);
 
@@ -205,8 +208,8 @@ end
 end
 
 
-function [beta,beta_red,f0,ng,verbose,epsilon,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,angles,argin)
-opts=     {'lambda','lambda_red','init','tviter','verbose','maxl2err','qualmeas','nonneg','gpuids'};
+function [beta,beta_red,f0,ng,verbose,epsilon,QualMeasOpts,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,argin)
+opts=     {'lambda','lambda_red','init','tviter','verbose','maxl2err','qualmeas','nonneg','gpuids','redundancy_weighting'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -331,6 +334,12 @@ for ii=1:length(opts)
                 gpuids = GpuIds();
             else
                 gpuids = val;
+            end
+        case 'redundancy_weighting'
+            if default
+                redundancy_weights = true;
+            else
+                redundancy_weights = val;
             end
         otherwise
             error('TIGRE:PCSD:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in PCSD()']);

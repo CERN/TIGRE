@@ -1,4 +1,4 @@
-function [ f,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,redundancy_weights,varargin)
+function [ f,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 %ASD_POCS Solves the ASD_POCS total variation constrained image in 3D
 % tomography.
 %
@@ -42,6 +42,9 @@ function [ f,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,redundancy_weights
 %                  'random'  : orders them randomply
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
+% 'redundancy_weighting': true or false. Default is true. Applies data
+%                         redundancy weighting to projections in the update step
+%                         (relevant for offset detector geometry)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -63,7 +66,7 @@ function [ f,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,redundancy_weights
 
 %% parse inputs
 blocksize=1;
-[beta,beta_red,f,ng,verbose,alpha,alpha_red,rmax,epsilon,OrderStrategy,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,f,ng,verbose,alpha,alpha_red,rmax,epsilon,OrderStrategy,QualMeasOpts,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
@@ -229,9 +232,9 @@ end
 
 end
 
-function [beta,beta_red,f0,ng,verbose,alpha,alpha_red,rmax,epsilon,OrderStrategy,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,angles,argin)
+function [beta,beta_red,f0,ng,verbose,alpha,alpha_red,rmax,epsilon,OrderStrategy,QualMeasOpts,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,argin)
 
-opts=     {'lambda','lambda_red','init','tviter','verbose','alpha','alpha_red','ratio','maxl2err','orderstrategy','qualmeas','nonneg','gpuids'};
+opts=     {'lambda','lambda_red','init','tviter','verbose','alpha','alpha_red','ratio','maxl2err','orderstrategy','qualmeas','nonneg','gpuids','redundancy_weighting'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -390,6 +393,13 @@ for ii=1:length(opts)
                 gpuids = GpuIds();
             else
                 gpuids = val;
+            end
+        % Data Redundancy weighting
+        case 'redundancy_weighting'
+            if default
+                redundancy_weights = true;
+            else
+                redundancy_weights = val;
             end
         otherwise
             error('TIGRE:ASD_POCS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in ASD_POCS()']);

@@ -1,4 +1,4 @@
-function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,redundancy_weights,varargin)
+function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
 % CGLS_CBCT solves the CBCT problem using the conjugate gradient least
 % squares
 % 
@@ -20,6 +20,9 @@ function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,redundancy_weights,
 %                            image. Not recomended unless you really
 %                            know what you are doing.
 %  'InitImg'    an image for the 'image' initialization. Avoid.
+% 'redundancy_weighting': true or false. Default is true. Applies data
+%                         redundancy weighting to projections in the update step
+%                         (relevant for offset detector geometry)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -39,7 +42,7 @@ function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,redundancy_weights,
 
 %%
 
-[verbose,x,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x,QualMeasOpts,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 
 qualMeasOut=zeros(length(QualMeasOpts),niter);
@@ -116,8 +119,8 @@ end
 
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids'};
+function [verbose,x,QualMeasOpts,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids','redundancy_weighting'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -212,6 +215,12 @@ for ii=1:length(opts)
                 gpuids = GpuIds();
             else
                 gpuids = val;
+            end
+        case 'redundancy_weighting'
+            if default
+                redundancy_weights = true;
+            else
+                redundancy_weights = val;
             end
         otherwise 
             error('TIGRE:CGLS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);
