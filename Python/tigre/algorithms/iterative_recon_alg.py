@@ -9,18 +9,10 @@ from _minTV import minTV
 from tigre.algorithms.single_pass_algorithms import FDK
 from tigre.utilities.Atb import Atb
 from tigre.utilities.Ax import Ax
-from tigre.utilities.Measure_Quality import Measure_Quality
 from tigre.utilities.im3Dnorm import im3DNORM
 from tigre.utilities.init_multigrid import init_multigrid
 from tigre.utilities.order_subsets import order_subsets
-from tigre.utilities.init_multigrid import init_multigrid
 from tigre.utilities.Measure_Quality import Measure_Quality as MQ
-from tigre.utilities.im3Dnorm import im3DNORM
-from tigre.algorithms.single_pass_algorithms import FDK
-from _minTV import minTV
-from _AwminTV import AwminTV
-import time
-import copy
 from tigre.utilities.gpu import GpuIds
 
 """
@@ -174,6 +166,8 @@ class IterativeReconAlg(object):
             "tviter",
             "tvlambda",
             "hyper",
+            "fista_p",
+            "fista_q"
         ]
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
@@ -234,10 +228,11 @@ class IterativeReconAlg(object):
         Computes value of V parameter if this is not given.
         :return: None
         """
+        block_count = len(self.angleblocks)
         geo = self.geo
-        V = np.ones((self.angleblocks.shape[0], geo.nVoxel[1], geo.nVoxel[2]), dtype=np.float32)
+        V = np.ones((block_count, geo.nVoxel[1], geo.nVoxel[2]), dtype=np.float32)
 
-        for i in range(self.angleblocks.shape[0]):
+        for i in range(block_count):
             if geo.mode != "parallel":
 
                 geox = copy.deepcopy(self.geo)
@@ -264,6 +259,7 @@ class IterativeReconAlg(object):
 
             else:
                 V[i] *= len(self.angleblocks[i])
+        V[V==0.0] = np.inf       
 
         self.V = V
 
@@ -275,23 +271,24 @@ class IterativeReconAlg(object):
         self.res = np.zeros(self.geo.nVoxel, dtype=np.float32)
         init = self.init
         verbose = self.verbose
-        if init == "multigrid":
-            if verbose:
-                print("init multigrid in progress...")
-                print("default blocksize=1 for init_multigrid(OS_SART)")
-            self.res = init_multigrid(self.proj, self.geo, self.angles, alg="SART")
-            if verbose:
-                print("init multigrid complete.")
-        if init == "FDK":
-            self.res = FDK(self.proj, self.geo, self.angles)
+        if isinstance(init, str):
+            if init == "multigrid":
+                if verbose:
+                    print("init multigrid in progress...")
+                    print("default blocksize=1 for init_multigrid(OS_SART)")
+                self.res = init_multigrid(self.proj, self.geo, self.angles, alg="SART")
+                if verbose:
+                    print("init multigrid complete.")
+            if init == "FDK":
+                self.res = FDK(self.proj, self.geo, self.angles)
 
-        if isinstance(init, np.ndarray):
+        elif isinstance(init, np.ndarray):
             if (self.geo.nVoxel == init.shape).all():
-
                 self.res = init
-
             else:
                 raise ValueError("wrong dimension of array for initialisation")
+        elif init is not None:
+            raise ValueError("wrong value for initialisation")
 
     def set_angle_index(self):
         """

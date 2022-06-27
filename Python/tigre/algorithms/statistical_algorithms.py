@@ -1,7 +1,6 @@
 from __future__ import division
 
-import time
-
+import copy
 import numpy as np
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
@@ -9,15 +8,15 @@ from tigre.utilities.Atb import Atb
 from tigre.utilities.Ax import Ax
 
 
-
 class MLEM(IterativeReconAlg):  # noqa: D101
     __doc__ = (
-        " MLEM_CBCT solves the CBCT problem using the maximum likelihood expectation maximization\n"
+        " MLEM solves the CBCT problem using the maximum likelihood expectation maximization\n"
         " algorithm\n"
         " \n"
-        "  MLEM_CBCT(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
+        "  MLEM(PROJ,GEO,ANGLES,NITER,INIT) solves the reconstruction problem\n"
         "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
-        "  to the geometry descrived in GEO, using NITER iterations."
+        "  to the geometry descrived in GEO, using NITER iterations. INIT specifies\n"
+        "  starting image, defaut: None (flat image value=1)"
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
@@ -29,33 +28,28 @@ class MLEM(IterativeReconAlg):  # noqa: D101
         if self.init is None:
             self.res += 1.0
 
-        self.W = Atb(np.ones(proj.shape, dtype=np.float32), geo, angles, gpuids=self.gpuids)
+        self.W = Atb(np.ones(proj.shape, dtype=np.float32), geo, angles, backprojection_type="matched", gpuids=self.gpuids)
         self.W[self.W <= 0.0] = np.inf
 
     # Overide
     def run_main_iter(self):
         self.res[self.res < 0.0] = 0.0
         for i in range(self.niter):
+            if self.Quameasopts is not None:
+                res_prev = copy.deepcopy(self.res)
             self._estimate_time_until_completion(i)
 
             den = Ax(self.res, self.geo, self.angles, "interpolated", gpuids=self.gpuids)
-            # toc = time.process_time()
-            # print('Ax time: {}'.format(toc-tic))
             den[den == 0.0] = np.inf
             auxmlem = self.proj / den
-            # auxmlem[auxmlem == np.nan] = 0.
-            # auxmlem[auxmlem == np.inf] = 0.
 
             # update
-            # tic = time.process_time()
-            img = Atb(auxmlem, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids) / self.W
-            # toc = time.process_time()
-            # print('Atb time: {}'.format(toc-tic))
-            # img[img == np.nan] = 0.
-            # img[img == np.inf] = 0.
+            img = Atb(auxmlem, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids) / self.W  
 
             self.res = self.res * img
             self.res[self.res < 0.0] = 0.0
+            if self.Quameasopts is not None:
+                self.error_measurement(res_prev, i)
 
 
 mlem = decorator(MLEM, name="mlem")

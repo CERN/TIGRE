@@ -25,6 +25,7 @@ addpath('./Utilities/Quality_measures');
 addpath('./Utilities/IO/VarianCBCT');
 addpath('./Utilities/IO/Nikon');
 addpath('./Utilities/IO/Dicom');
+addpath('./Utilities/IO/Bruker');
 addpath('./Utilities/GPU');
 
 addpath(genpath('./Test_data'));
@@ -33,20 +34,26 @@ addpath(genpath('./Test_data'));
 if ispc
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/win64');
+        addpath('./pCTMexFiles/win64');
     else
         addpath('./Mex_files/win32');
+        addpath('./pCTMexFiles/win32');
     end
 elseif ismac
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/mac64');
+        addpath('./pCTMexFiles/mac64');
     else
         addpath('./Mex_files/mac32');
+        addpath('./pCTMexFiles/mac32');
     end
 else
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/linux64');
+        addpath('./pCTMexFiles/linux64');
     else
         addpath('./Mex_files/linux32');
+        addpath('./pCTMexFiles/linux32');
     end
 end
     
@@ -62,20 +69,26 @@ addpath('./Third_party_tools/readMHD');
 if ispc
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/win64');
+        addpath('./pCTMexFiles/win64');
     else
         addpath('./Mex_files/win32');
+        addpath('./pCTMexFiles/win32');
     end
 elseif ismac
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/mac64');
+        addpath('./pCTMexFiles/mac64');
     else
         addpath('./Mex_files/mac32');
+        addpath('./pCTMexFiles/mac32');
     end
 else
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/linux64');
+        addpath('./pCTMexFiles/linux64');
     else
         addpath('./Mex_files/linux32');
+        addpath('./pCTMexFiles/linux32');
     end
 end
 

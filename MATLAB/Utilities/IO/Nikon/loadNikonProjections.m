@@ -32,6 +32,10 @@ function [proj,geo,angles]=loadNikonProjections(filepath,geo,angles,varargin)
 
 [angles_to_load,index]=parse_inputs(geo,angles,varargin);
 
+% make sure its path
+if filepath(end)~='\' && filepath(end)~='/'
+   filepath=[filepath '/']; 
+end
 %% get filename
 % assuming TIF and 4 digits.
 firstfile = dir([filepath,'/*.tif']); %

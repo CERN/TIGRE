@@ -94,7 +94,7 @@ W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index,gpuids);
+V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
 %% Iterate
 offOrigin=geo.offOrigin;
@@ -166,7 +166,7 @@ for ii=1:niter
         errorL2=[errorL2 errornow];
     end
     
-    if (ii==1 && verbose==1);
+    if (ii==1 && verbose==1)
         expected_time=toc*niter;
         disp('SART_TV');
         disp(['Expected duration   :    ',secs2hms(expected_time)]);

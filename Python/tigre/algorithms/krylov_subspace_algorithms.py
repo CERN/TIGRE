@@ -1,7 +1,7 @@
 from __future__ import division
 
 import time
-
+import copy
 import numpy as np
 import tigre
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
@@ -18,10 +18,10 @@ else:
 
 class CGLS(IterativeReconAlg):  # noqa: D101
     __doc__ = (
-        " CGLS_CBCT solves the CBCT problem using the conjugate gradient least\n"
+        " CGLS solves the CBCT problem using the conjugate gradient least\n"
         " squares\n"
         " \n"
-        "  CGLS_CBCT(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
+        "  CGLS(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
         "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
         "  to the geometry descrived in GEO, using NITER iterations."
     ) + IterativeReconAlg.__doc__
@@ -62,6 +62,8 @@ class CGLS(IterativeReconAlg):  # noqa: D101
         for i in range(self.niter):
             if self.verbose:
                 self._estimate_time_until_completion(i)
+            if self.Quameasopts is not None:
+                res_prev = copy.deepcopy(self.res)
 
             avgtic = default_timer()
             q = tigre.Ax(self.__p__, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
@@ -71,9 +73,11 @@ class CGLS(IterativeReconAlg):  # noqa: D101
             avgtoc = default_timer()
             avgtime.append(abs(avgtic - avgtoc))
             for item in self.__dict__:
-                if isinstance(getattr(self, item), np.ndarray):
-                    if np.isnan(getattr(self, item)).any():
-                        raise ValueError("nan found for " + item + " at iteraton " + str(i))
+                if (
+                    isinstance(getattr(self, item), np.ndarray)
+                    and np.isnan(getattr(self, item)).any()
+                ):
+                    raise ValueError("nan found for " + item + " at iteraton " + str(i))
 
             aux = self.proj - tigre.Ax(
                 self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids
@@ -105,6 +109,9 @@ class CGLS(IterativeReconAlg):  # noqa: D101
 
             self.__gamma__ = gamma1
             self.__p__ = s + beta * self.__p__
+            if self.Quameasopts is not None:
+                self.error_measurement(res_prev, i)
+
         if self.verbose:
             print(
                 "Average time taken for each iteration for CGLS:"

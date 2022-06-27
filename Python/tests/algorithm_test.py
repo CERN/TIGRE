@@ -80,7 +80,7 @@ class AlgorithmTest(object):
             ).item()
 
         except Exception:
-            resultsdata = dict()
+            resultsdata = {}
         resultsdata.update({self.algorithm: self.testpassed})
         np.save(os.path.join(self.targetdir, resultfilename), resultsdata)
         if not self.testpassed:
@@ -124,9 +124,8 @@ class AlgorithmTest(object):
         if self.algorithm_finished:
             logflist.append("ENDED: " + str(self.timeended) + "\n")
         logflist.append("------------------------------------------------\n")
-        logf = open(os.path.join(self.targetdir, configlogfile), "w")
-        logf.write("".join(logflist))
-        logf.close()
+        with open(os.path.join(self.targetdir, configlogfile), "w") as logf:
+            logf.write("".join(logflist))
 
 
 if __name__ == "__main__":

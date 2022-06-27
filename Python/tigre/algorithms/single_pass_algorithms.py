@@ -3,19 +3,11 @@ from __future__ import division
 from __future__ import print_function
 
 import copy
-import os
-import sys
 
 import numpy as np
 from tigre.utilities.Atb import Atb
 from tigre.utilities.filtering import filtering
 
-# TODO: this is quite nasty; it would be nice to reorganise file structure
-# later so top level folder is always in path
-curr_dir = os.path.dirname(os.path.realpath(__file__))
-root_dir = os.path.abspath(os.path.join(curr_dir, ".."))
-if root_dir not in sys.path:  # add parent dir to paths
-    sys.path.append(root_dir)
 
 
 def FDK(proj, geo, angles, **kwargs):
@@ -78,32 +70,13 @@ def FDK(proj, geo, angles, **kwargs):
     Coded by:           MATLAB (original code): Ander Biguri
                         PYTHON : Reuben Lindroos
     """
-    if "niter" in kwargs:
-        kwargs.pop("niter")
-    if "verbose" in kwargs:
-        verbose = kwargs["verbose"]
-    else:
-        verbose = False
+    verbose = kwargs["verbose"] if "verbose" in kwargs else False
 
-    if "verbose" in kwargs:
-        verbose = kwargs["verbose"]
-    else:
-        verbose = False
-
-    if "gpuids" in kwargs:
-        gpuids = kwargs["gpuids"]
-    else:
-        gpuids = None
-
+    gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
     geo = copy.deepcopy(geo)
     geo.check_geo(angles)
     geo.checknans()
-    if "filter" in kwargs:
-        filter = kwargs["filter"]
-    else:
-        filter = None
-    if filter is not None:
-        geo.filter = kwargs["filter"]
+    geo.filter = kwargs["filter"] if "filter" in kwargs else None
     # Weight
     proj_filt = np.zeros(proj.shape, dtype=np.float32)
     xv = np.arange((-geo.nDetector[1] / 2) + 0.5,
@@ -116,10 +89,8 @@ def FDK(proj, geo, angles, **kwargs):
     np.multiply(proj, w, out=proj_filt)
 
     proj_filt = filtering(proj_filt, geo, angles, parker=False, verbose=verbose)
-
-    res = Atb(proj_filt, geo, geo.angles, "FDK", gpuids=gpuids)
-
-    return res
+    
+    return Atb(proj_filt, geo, geo.angles, "FDK", gpuids=gpuids)
 
 
 fdk = FDK
@@ -131,16 +102,7 @@ def fbp(proj, geo, angles, **kwargs):  # noqa: D103
         raise ValueError("Only use FBP for parallel beam. Check geo.mode.")
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
-    if "verbose" in kwargs:
-        verbose = kwargs["verbose"]
-    else:
-        verbose = False
-    if "gpuids" in kwargs:
-        gpuids = kwargs["gpuids"]
-    else:
-        gpuids = None
-
+    verbose = kwargs["verbose"] if "verbose" in kwargs else False
+    gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
     proj_filt = filtering(copy.deepcopy(proj), geox, angles, parker=False, verbose=verbose)
-    res = Atb(proj_filt, geo, angles, gpuids=gpuids) * geo.DSO / geo.DSD
-
-    return res
+    return Atb(proj_filt, geo, angles, gpuids=gpuids) * geo.DSO / geo.DSD

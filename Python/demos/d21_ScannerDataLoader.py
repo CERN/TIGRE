@@ -11,6 +11,8 @@
 #
 #       Xradia (Zeiss) 
 #
+#       Bruker Skyscan
+#
 #       (not yet, work in progress) Philips (in theory, any DICOM, but only tested in Philips Allura) 
 #
 # Currently we have instructions for generic, Nikon (micro-CT) and Varian
@@ -40,13 +42,13 @@
 import tigre.utilities.io as tigreio
 import tigre.algorithms as algs
 import tigre
-#%% Varan onboard CBCT.
+#%% Varian onboard CBCT.
 
 ###### TODO
 
 #%% Nikon micro-CT
 
-# Similarly, a Nikon dataset can be loaded with the following code:
+# Nikon dataset can be loaded with the following code:
 
 
 datafolder='~/your_data_path/Nikon/Sample_name/'
@@ -66,6 +68,18 @@ proj, geo, angles  = tigreio.NikonDataLoader(datafolder,sampling='continuous',nu
 
 img=algs.ossart(proj,geo,angles,100)
 img=algs.fdk(proj,geo,angles)
+
+
+#%% Brucker Skyscan
+
+datafolder='~/your_data_path/Bruker/Sample_name/'
+proj,geo, angles  = tigreio.BrukerDataLoader(datafolder)
+
+# the same options for sampling and number of angles that exist for Nikon (avobe) exist for Bruker data loaders. 
+
+# Sometimes a folder will contain more than one dataset. 
+proj,geo, angles  = tigreio.BrukerDataLoader(datafolder,dataset_num='all') # load all of them
+proj,geo, angles  = tigreio.BrukerDataLoader(datafolder,dataset_num=0) # load the first
 
 #%% DICOM data (only tested on Philips Allura)
 

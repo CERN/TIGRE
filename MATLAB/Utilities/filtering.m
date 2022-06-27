@@ -22,7 +22,7 @@ function [ proj ] = filtering(proj,geo,angles,parker)
 
 if parker
 	proj = permute(ParkerWeight(permute(proj,[2 1 3]),geo,angles,parker),[2 1 3]);
-	diff_angles = diff(angles); angle_step = mean(abs(diff_angles)); % to be used later
+	diff_angles = diff(angles(1,:)); angle_step = mean(abs(diff_angles)); % to be used later
 end 
 
 filt_len = max(64,2^nextpow2(2*geo.nDetector(1)));
@@ -36,7 +36,7 @@ for ii=1:size(angles,2)
     
     fproj = (zeros(filt_len,geo.nDetector(2),'single'));
     
-    fproj(filt_len/2-geo.nDetector(1)/2+1:filt_len/2+geo.nDetector(1)/2,:) = proj(:,:,ii);
+    fproj(round(filt_len/2-geo.nDetector(1)/2+1):round(filt_len/2+geo.nDetector(1)/2),:) = proj(:,:,ii);
     
     fproj = fft(fproj);   
     
@@ -45,9 +45,9 @@ for ii=1:size(angles,2)
     fproj = (real(ifft(fproj)));
     
     if parker
-   	proj(:,:,ii) = fproj(end/2-geo.nDetector(1)/2+1:end/2+geo.nDetector(1)/2,:)/2/geo.dDetector(1)*(2*pi/  (pi/angle_step)   )/2*(geo.DSD(ii)/geo.DSO(ii));
+        proj(:,:,ii) = fproj(round(end/2-geo.nDetector(1)/2+1):round(end/2+geo.nDetector(1)/2),:)/2/geo.dDetector(1)*(2*pi/  (pi/angle_step)   )/2*(geo.DSD(ii)/geo.DSO(ii));
     else
-    	proj(:,:,ii) = fproj(end/2-geo.nDetector(1)/2+1:end/2+geo.nDetector(1)/2,:)/2/geo.dDetector(1)*(2*pi/  size(angles,2)   )/2*(geo.DSD(ii)/geo.DSO(ii));
+    	proj(:,:,ii) = fproj(round(end/2-geo.nDetector(1)/2+1):round(end/2+geo.nDetector(1)/2),:)/2/geo.dDetector(1)*(2*pi/  size(angles,2)   )/2*(geo.DSD(ii)/geo.DSO(ii));
     end 
     
 end
@@ -56,7 +56,7 @@ proj=permute(proj,[2 1 3]);
 end
 
 function [h, nn] = ramp_flat(n)
-nn = [-(n/2):(n/2-1)]';
+nn = (-(n/2):(n/2-1))';
 h = zeros(size(nn),'single');
 h(n/2+1) = 1 / 4;
 odd = mod(nn,2) == 1;

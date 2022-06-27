@@ -96,7 +96,7 @@ W=1./W;
 
 
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index,gpuids);
+V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
 
 
@@ -135,7 +135,7 @@ while ~stop_criteria %POCS
         %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
         %         f=f+beta*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
         % Enforce positivity
-        f=f+beta* bsxfun(@times,1./V(:,:,index_angles(:,jj)),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
+        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
         % non-negativity constrain
         if nonneg
             f=max(f,0);
@@ -206,7 +206,7 @@ while ~stop_criteria %POCS
     end
     if (iter==1 && verbose==1)
         expected_time=toc*maxiter;
-        disp('ADS-POCS');
+        disp('ADS_POCS');
         disp(['Expected duration   :    ',secs2hms(expected_time)]);
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
@@ -275,7 +275,7 @@ for ii=1:length(opts)
                 beta=1;
             else
                 if length(val)>1 || ~isnumeric( val)
-                    error('CBCT:ASD_POCS:InvalidInput','Invalid lambda')
+                    error('TIGRE:ASD_POCS:InvalidInput','Invalid lambda')
                 end
                 beta=val;
             end
@@ -344,12 +344,16 @@ for ii=1:length(opts)
             else
                 epsilon=val;
             end
+        %  Order strategy
+        %  =========================================================================
         case 'orderstrategy'
             if default
                 OrderStrategy='random';
             else
                 OrderStrategy=val;
             end
+        % Image Quality Measure
+        %  =========================================================================
         case 'qualmeas'
             if default
                 QualMeasOpts={};
@@ -360,12 +364,16 @@ for ii=1:length(opts)
                     error('TIGRE:ASD_POCS:InvalidInput','Invalid quality measurement parameters');
                 end
             end
+        %  Non negative
+        %  =========================================================================
         case 'nonneg'
             if default
                 nonneg=true;
             else
                 nonneg=val;
             end
+        %  GPU Ids
+        %  =========================================================================
         case 'gpuids'
             if default
                 gpuids = GpuIds();

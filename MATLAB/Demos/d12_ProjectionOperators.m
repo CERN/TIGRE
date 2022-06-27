@@ -5,8 +5,8 @@
 %  forward projections will be given.
 % 
 %  While there are 2 backprojectors, these are less different, they just
-%  have different weigths. One of the has a FDK weigth and the other on has
-%  a weigth that makes it matematically very close to the transpose of
+%  have different weigths. One of the has a FDK weigtht and the other on has
+%  a weight that makes it mathematically very close to the transpose of
 %  matrix A.
 %
 %

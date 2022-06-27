@@ -113,7 +113,7 @@ W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 
 % Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index,gpuids);
+V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
 clear A x y dx dz;
 
@@ -152,7 +152,7 @@ while ~stop_criteria %POCS
         %         backprj=Atb(weighted_err,geo,angles(:,jj));            %                     At * W^-1 * (b-Ax)
         %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
         %         f=f+beta*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
-        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
+        f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
         
         % Enforce positivity
         if nonneg
@@ -229,7 +229,7 @@ while ~stop_criteria %POCS
     
     if (iter==1 && verbose==1)
         expected_time=toc*maxiter;
-        disp('B-ADS-POCS-beta');
+        disp('B_ADS_POCS_beta');
         disp(['Expected duration   :    ',secs2hms(expected_time)]);
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
