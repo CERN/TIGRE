@@ -2,7 +2,7 @@ function [geo,angles]=readYXLONGeometry(folder_or_file)
 
 % Developed by A. Biguri and W. Sun
 % W. Sun edited on 06.10.2018 for 3D pro version 5.2.6809.15380 (2018)
-% Modified for YXLON by A. Biguri and R. Philips 
+% Modified for YXLON by A. Biguri
 
 if endsWith(folder_or_file,'.txt')
     % is the txt file itself
