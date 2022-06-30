@@ -47,19 +47,129 @@ def readYXLONGeometry(filepath):
     # W. Sun edited on 06.10.2018 for 3D pro version 5.2.6809.15380 (2018)
     # Modified for YXLON readers by A. Biguri
 
-    if filepath.endswith(".txt"):
-        folder, ini = os.path.split(filepath)
+    # There are 2 types of YXLON datasets that I've seen. 
+    # the ones that have ScannerParameters.xml and the ones that have a txt with the filename as scanner parameters.
+
+    if os.path.isfile(os.path.join(filepath, "ScanParameter.xml")):
+        folder, geometry, angles = __YXLON_xml_geometry(filepath)
     else:
-        folder = filepath
-        files = [file for file in os.listdir(folder) if file.endswith(".txt")]
+        files = [file for file in os.listdir(filepath) if file.endswith(".txt")]
         if not files:
-            raise ValueError("No .txt file found in folder: " + folder)
-        ini = files[0]
+            raise ValueError("No Geometry file found in folder: " + folder)
+
+        folder, geometry, angles = __YXLON_txt_geometry(filepath)
+    return  folder, geometry, angles
+
+def __YXLON_xml_geometry(filepath):
+
+    geometry = Geometry()
+
+    # cone beam scan parameters
+    file = os.path.join(filepath, "ScanParameter.xml")
+    ns = dict([node for _, node in ET.iterparse(file, events=["start-ns"])])
+    tree = ET.parse(file)
+
+    params = tree.getroot().find("ConeBeamScanParameter")
+    if params is None:
+        raise RuntimeError("Cone beam scan parameters not found")
+
+    # projection information
+
+    rotDetector = params.find("DetectorOrientation")
+    if rotDetector is not None:
+        # TODO: handle DetectorOrientation
+        if rotDetector.text.lower() != "original":
+            print("Detector orientation found but ignored!")
+
+    flipDetector = params.find("DetectorFlipDirections")
+    if flipDetector is not None:
+        # TODO: handle DetectorFlipDirections
+        if flipDetector.text.lower() != "none":
+            print("Detector flip direction found but ignored!")
+
+    pitch = params.find("PixelSize")
+    geometry.dDetector = numpy.array(
+        [float(pitch.find("Height").text), float(pitch.find("Width").text)]
+    )
+
+    size = params.find("ProjectionSize")
+    geometry.nDetector = numpy.array([int(size.find("Height").text), int(size.find("Width").text)])
+    geometry.sDetector = geometry.nDetector * geometry.dDetector
+
+    # trajectory information
+
+    trajectory = params.find("ScanTrajectory")
+    if trajectory is None:
+        raise RuntimeError("Unable to identify scan trajectory")
+
+    scan_type = trajectory.attrib["{{{}}}type".format(ns["xsi"])]
+    if scan_type != "CircleTrajectory":
+        raise ValueError("Unsupported trajectory type: " + scan_type)
+
+    geometry.mode = "cone"
+    geometry.filter = None
+    geometry.accuracy = 0.5
+
+    scale = float(trajectory.find("PixelPitch").text)
+    geometry.DSD = scale * float(trajectory.find("Fdd").text)
+    geometry.DSO = scale * float(trajectory.find("Fod").text)
+
+    # TODO: check meaning of offset
+    geometry.COR = -scale * float(trajectory.find("YoCenter").text)
+
+    geometry.offOrigin = numpy.array((0, 0, 0))
+
+    count_proj = int(trajectory.find("NumberOfProjections").text)
+    start_angle = float(trajectory.find("StartAngle").text)
+    range_angle = float(trajectory.find("Rotation").text)
+
+    angles = math.radians(start_angle) - numpy.arange(count_proj) * math.radians(
+        range_angle / count_proj
+    )
+
+    dejustment = params.find("DejustmentParameter")
+    if dejustment is not None:
+
+        offsX = float(dejustment.find("HorizontalDetectorOffset").text)
+        offsY = float(dejustment.find("VerticalDetectorOffset").text)
+        geometry.offDetector = -scale * numpy.array((offsY, offsX))
+
+        # TODO: check meaning of parameters
+        tiltA = math.radians(float(dejustment.find("DetectorTiltA").text))
+        tiltB = math.radians(float(dejustment.find("DetectorTiltB").text))
+        tiltC = math.radians(float(dejustment.find("DetectorTiltC").text))
+        if tiltA != 0 or tiltB != 0 or tiltC != 0:
+            print("Detector tilt found but ignored! Parameter matching unknown, if you have more info email tigre.toolbox@gmail.com")
+
+        geometry.rotDetector = numpy.array((0, 0, 0))
+
+    else:
+        geometry.offDetector = numpy.array((0, 0))
+        geometry.rotDetector = numpy.array((0, 0, 0))
+
+    geometry.nVoxel = numpy.array(
+        (geometry.nDetector[0], geometry.nDetector[1], geometry.nDetector[1])
+    )
+    geometry.sVoxel = (
+        numpy.array((geometry.sDetector[0], geometry.sDetector[1], geometry.sDetector[1]))
+        * geometry.DSO
+        / geometry.DSD
+    )
+    geometry.dVoxel = geometry.sVoxel / geometry.nVoxel
+    geometry.whitelevel = float(2**16-1)
+
+    return filepath, geometry, angles
+
+
+def __YXLON_txt_geometry(filepath):
+
+    files = [file for file in os.listdir(filepath) if file.endswith(".txt")]
+    ini = files[0]
 
     geometry = Geometry()
     geometry.accuracy = 0.5
     binning=1
-    with open(os.path.join(folder, ini)) as tsv:
+    with open(os.path.join(filepath, ini)) as tsv:
         for line in csv.reader(tsv, dialect="excel-tab"): #You can also use delimiter="\t" rather than giving a dialect.
             if not line:
                 continue
@@ -98,7 +208,7 @@ def readYXLONGeometry(filepath):
 
     ## angles
     angles = -numpy.linspace(0,2*numpy.pi,n_angles)
-    return folder, geometry, angles
+    return filepath, geometry, angles
 
 
 def loadYXLONProjections(folder, geometry, angles, **kwargs):
@@ -122,11 +232,23 @@ def loadYXLONProjections(folder, geometry, angles, **kwargs):
         folder= os.path.join(folder,'Projektionen')
     else:
         raise ValueError("Folder with projections not found")
-    files = sorted([file for file in os.listdir(folder) if file.lower().endswith(".raw")])
 
-    image =  numpy.fromfile(os.path.join(folder,  files[indices[0]]), dtype=numpy.uint16)
-    image = numpy.asarray(image).astype(numpy.float32)
-    image = numpy.flipud(numpy.reshape(image,(geometry.nDetector)))
+    files = sorted([file for file in os.listdir(folder) if file.lower().endswith(".raw")])
+    istiff=False
+    if not files:
+        files = sorted([file for file in os.listdir(folder) if file.lower().endswith(".tif") or file.lower().endswith(".tiff")])
+        if not files:
+            raise ValueError("No projection founds with extension .raw or .tif")
+        istiff=True
+    
+    if not istiff:
+        image =  numpy.fromfile(os.path.join(folder,  files[indices[0]]), dtype=numpy.uint16)
+        image = numpy.asarray(image).astype(numpy.float32)
+        image = numpy.flipud(numpy.reshape(image,(geometry.nDetector)))
+    else:
+        image = Image.open(os.path.join(folder, files[indices[0]]))
+        image = numpy.asarray(image).astype(numpy.float32)
+
     projections = numpy.zeros([len(indices), image.shape[0], image.shape[1]], dtype=numpy.single)
     projections[0, :, :] = -numpy.log(image / float(geometry.whitelevel))
     # Python uses zero-based indexing
@@ -134,9 +256,15 @@ def loadYXLONProjections(folder, geometry, angles, **kwargs):
     # use enumerate, it's cleaner
     print("Loading YXLON dataset: " + folder)
     for index, i in enumerate(tqdm(indices[1:]), 1):
-        image =  numpy.fromfile(os.path.join(folder,  files[i]), dtype=numpy.uint16)
-        image = numpy.asarray(image).astype(numpy.float32)
-        image = numpy.flipud(numpy.reshape(image,(geometry.nDetector)))
+
+        if not istiff:
+            image =  numpy.fromfile(os.path.join(folder,  files[i]), dtype=numpy.uint16)
+            image = numpy.asarray(image).astype(numpy.float32)
+            image = numpy.flipud(numpy.reshape(image,(geometry.nDetector)))
+        else:
+            image = Image.open(os.path.join(folder, files[i]))
+            image = numpy.asarray(image).astype(numpy.float32)
+
         projections[index, :, :] = -numpy.log(image / float(geometry.whitelevel))
 
     del geometry.whitelevel
@@ -168,192 +296,4 @@ def parse_inputs(geometry, angles, **kwargs):
 
     return angles, indices
 
-## The code below should also load YXLON scanners, but its unverified by A.Biguri
 
-
-def LoadScan(directory, binning=1, step=1, count=None, average=True, histogram=True, verbose=False):
-
-    geometry, angles = ParseGeometry(directory, verbose)
-
-    if step > 1:
-        angles = angles[::step]
-    if count is not None:
-        angles = angles[:count]
-
-    projections = LoadProjections(
-        os.path.join(directory, "Projections"),
-        binning=binning,
-        count=count,
-        step=step,
-        average=average,
-        histogram=histogram,
-        verbose=verbose,
-    )
-
-    if binning > 1:
-        geometry.dDetector *= binning
-        geometry.nDetector = numpy.array((projections.shape[1], projections.shape[2]))
-
-    geometry.sDetector = geometry.nDetector * geometry.dDetector
-    geometry.nVoxel = numpy.array(
-        (geometry.nDetector[0], geometry.nDetector[1], geometry.nDetector[1])
-    )
-    geometry.sVoxel = (
-        numpy.array((geometry.sDetector[0], geometry.sDetector[1], geometry.sDetector[1]))
-        * geometry.DSO
-        / geometry.DSD
-    )
-    geometry.dVoxel = geometry.sVoxel / geometry.nVoxel
-
-    if verbose:
-        print(geometry, angles, projections.shape, sep="\n\n", end="\n\n")
-
-    return geometry, angles, projections
-
-
-def ParseGeometry(directory, verbose=False):
-
-    geometry = Geometry()
-
-    # cone beam scan parameters
-    file = os.path.join(directory, "ScanParameter.xml")
-    ns = dict([node for _, node in ET.iterparse(file, events=["start-ns"])])
-    tree = ET.parse(file)
-
-    params = tree.getroot().find("ConeBeamScanParameter")
-    if params is None:
-        raise RuntimeError("Cone beam scan parameters not found")
-
-    # projection information
-
-    rotDetector = params.find("DetectorOrientation")
-    if rotDetector is not None:
-        # TODO: handle DetectorOrientation
-        if rotDetector.text.lower() != "original":
-            print("Detector orientation found but ignored!")
-
-    flipDetector = params.find("DetectorFlipDirections")
-    if flipDetector is not None:
-        # TODO: handle DetectorFlipDirections
-        if flipDetector.text.lower() != "none":
-            print("Detector flip direction found but ignored!")
-
-    pitch = params.find("PixelSize")
-    geometry.dDetector = numpy.array(
-        [float(pitch.find("Height").text), float(pitch.find("Width").text)]
-    )
-
-    size = params.find("ProjectionSize")
-    geometry.nDetector = numpy.array([int(size.find("Height").text), int(size.find("Width").text)])
-
-    # trajectory information
-
-    trajectory = params.find("ScanTrajectory")
-    if trajectory is None:
-        raise RuntimeError("Unable to identify scan trajectory")
-
-    scan_type = trajectory.attrib["{{{}}}type".format(ns["xsi"])]
-    if scan_type != "CircleTrajectory":
-        raise ValueError("Unsupported trajectory type: " + scan_type)
-
-    geometry.mode = "cone"
-    geometry.filter = None
-    geometry.accuracy = 0.5
-
-    scale = float(trajectory.find("PixelPitch").text)
-    geometry.DSD = scale * float(trajectory.find("Fdd").text)
-    geometry.DSO = scale * float(trajectory.find("Fod").text)
-
-    # TODO: check meaning of offset
-    offsY = -scale * float(trajectory.find("YoCenter").text)
-    if offsY != 0:
-        print("Object Y-axis center found but ignored!")
-
-    geometry.offOrigin = numpy.array((0, 0, 0))
-
-    count_proj = int(trajectory.find("NumberOfProjections").text)
-    start_angle = float(trajectory.find("StartAngle").text)
-    range_angle = float(trajectory.find("Rotation").text)
-
-    angles = math.radians(start_angle) - numpy.arange(count_proj) * math.radians(
-        range_angle / count_proj
-    )
-
-    dejustment = params.find("DejustmentParameter")
-    if dejustment is not None:
-
-        offsX = float(dejustment.find("HorizontalDetectorOffset").text)
-        offsY = float(dejustment.find("VerticalDetectorOffset").text)
-        geometry.offDetector = -scale * numpy.array((offsY, offsX))
-
-        # TODO: check meaning of parameters
-        tiltA = math.radians(float(dejustment.find("DetectorTiltA").text))
-        tiltB = math.radians(float(dejustment.find("DetectorTiltB").text))
-        tiltC = math.radians(float(dejustment.find("DetectorTiltC").text))
-        if tiltA != 0 or tiltB != 0 or tiltC != 0:
-            print("Detector tilt found but ignored!")
-
-        geometry.rotDetector = numpy.array((0, 0, 0))
-
-    else:
-        geometry.offDetector = numpy.array((0, 0))
-        geometry.rotDetector = numpy.array((0, 0, 0))
-
-    return geometry, angles
-
-
-def BinProjection(array, factor, average=True):
-    if average:
-        if array.shape[0] % factor or array.shape[1] % factor:
-            array = array[
-                : (array.shape[0] // factor) * factor, : (array.shape[1] // factor) * factor
-            ]
-        shape = (array.shape[0] // factor, factor, array.shape[1] // factor, factor)
-        return array.reshape(shape).mean(axis=(-1, 1), dtype=numpy.float32)
-    else:
-        return array[::factor, ::factor]
-
-
-def LoadProjections(
-    directory, binning=1, step=1, count=None, average=True, histogram=True, verbose=False
-):
-
-    projections = []
-
-    files = sorted(
-        [
-            file
-            for file in os.listdir(directory)
-            if file.lower().startswith("projection_") and file.lower().endswith((".tif", ".tiff"))
-        ]
-    )
-
-    if step > 1:
-        files = files[::step]
-    if count is not None:
-        files = files[:count]
-
-    for file in files:
-
-        image = Image.open(os.path.join(directory, file))
-        if verbose:
-            print(file, image.format, image.size, image.mode)
-
-        array = numpy.asarray(image).astype(numpy.float32)
-        if binning > 1:
-            array = BinProjection(array, binning, average)
-
-        # normalization & logarithmization
-        if histogram:
-            hist = numpy.histogram(array, bins="scott")
-            peaks = scipy.signal.find_peaks_cwt(hist[0], numpy.arange(1, len(hist[0]) // 10))
-            peak = peaks[-1]
-            I0 = hist[1][peak]
-        else:
-            I0 = numpy.max(array)
-
-        array = -numpy.log(array / I0)
-
-        projections.append(array)
-
-    return numpy.asarray(projections)
