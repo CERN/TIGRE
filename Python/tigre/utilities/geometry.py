@@ -14,6 +14,13 @@ class Geometry(object):
         self.n_proj = None
         self.angles = None
         self.filter = None
+        self.nVoxel = np.zeros(3)
+        self.dVoxel = np.zeros(3)
+        self.sVoxel = np.zeros(3)
+        self.nDetector = np.zeros(2)
+        self.dDetector = np.zeros(2)
+        self.sDetector = np.zeros(2)
+
 
     def check_geo(self, angles, verbose=False):
         if angles.ndim == 1:

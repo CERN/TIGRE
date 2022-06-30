@@ -30,16 +30,18 @@ geo.nDetector=[str2double(ETCText{1}(strcmp('Number of Detector Elements ', ETCT
     str2double(ETCText{1}(strcmp('Number of Detector Elements ', ETCText{2})))];
 
 % Size of pixels in the detector
-geo.dDetector=[str2double(ETCText{1}(strcmp('3D-XY-Pixel Size [mm]', ETCText{2})));
-    str2double(ETCText{1}(strcmp('3D-XY-Pixel Size [mm]', ETCText{2})))];
+geo.dDetector=[str2double(ETCText{1}(strcmp('2D-Pixel Size [mm]', ETCText{2})));
+    str2double(ETCText{1}(strcmp('2D-Pixel Size [mm]', ETCText{2})))];
 
-geo.dDetector=geo.dDetector.*str2double(ETCText{1}(strcmp('Pixelbinning', ETCText{2})));;
+geo.dDetector=geo.dDetector.*str2double(ETCText{1}(strcmp('Pixelbinning', ETCText{2})));
 % Total size of the detector
 geo.sDetector=geo.nDetector.*geo.dDetector;
 
 %% Image information
-geo.nVoxel=[geo.nDetector(1);geo.nDetector(1);geo.nDetector(2)];
 % geo.nVoxel = [632;640;640];
+geo.nVoxel=[str2double(ETCText{1}(strcmp('Image Dimension', ETCText{2})));
+    str2double(ETCText{1}(strcmp('Image Dimension', ETCText{2})));
+    str2double(ETCText{1}(strcmp('Number of Z-slices', ETCText{2}))) ];
 
 % Size of each pixel
 geo.dVoxel=[str2double(ETCText{1}(strcmp('3D-XY-Pixel Size [mm]', ETCText{2})));
@@ -56,7 +58,7 @@ geo.DSD=str2double(ETCText{1}(strcmp('FDD [mm]', ETCText{2})));
 %extra bits
 geo.offDetector=[0;0];
 geo.offOrigin=[0;0;0];
-geo.COR=0;
+geo.COR=str2double(ETCText{1}(strcmp('Center Offset [mm]', ETCText{2})));;
 
 geo.accuracy=0.5;
 geo.mode='cone';
