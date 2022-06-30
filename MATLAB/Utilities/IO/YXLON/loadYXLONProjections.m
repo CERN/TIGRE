@@ -45,30 +45,43 @@ if ~endsWith(filepath,'Projektionen/') && ~endsWith(filepath,'Projections/')
         if strcmp(contents(ii).name,'Projektionen')
             filepath=[filepath, 'Projektionen/'];
             break
-        elseif strcmp(contents(ii).name,'Projections/')
+        elseif strcmp(contents(ii).name,'Projections')
             filepath=[filepath, 'Projections/'];
             break
         end
     end
 end
 %% get filename
-% assuming TIF and 4 digits.
+% assuming TIF/raw and 4 digits.
+istiff=false;
 firstfile = dir([filepath,'/*.raw']); %
+if isempty(firstfile)
+    firstfile =  dir([filepath,'/*.tif*']);
+    if isempty(firstfile)
+            error("No projection data found")
+    end
+    istiff=true;
+end
 firstfile = firstfile(end).name;
-filename = firstfile(1:end-8);
+filename = firstfile(1:end-8-1*istiff);
 
 fprintf("Dataset in: %s \n", filepath);
 
 %% load images
 %proj=[];
 l = length(angles_to_load);
-proj = zeros(geo.nDetector(1),geo.nDetector(2),l,'single');
+proj = zeros(geo.nDetector(2),geo.nDetector(1),l,'single');
 for ii=1:length(angles_to_load)
     
-    imName=[filepath,'\',filename,num2str(index(ii)-1,'%04d'),'.raw'];
     if(~mod(ii,50))
         fprintf("Loading: %d / %d \n", ii, length(angles_to_load));
     end
+    if istiff
+       imName=[filepath,'\',filename,num2str(index(ii)-1,'%04d'),'.tiff'];
+       proj(:,:,ii)=flipud(single(imread(imName)));
+    else
+       imName=[filepath,'\',filename,num2str(index(ii)-1,'%04d'),'.raw'];
+    
     % Open the required file (read only)
     fileID=fopen(imName,'r');
     if fileID==-1
@@ -78,6 +91,7 @@ for ii=1:length(angles_to_load)
     proj(:,:,ii)=rot90(single(fread(fileID,[geo.nDetector(1),geo.nDetector(2)],'uint16')));
     % Close the file
     fclose(fileID);
+    end
 end
 %% Beer lambert
 if any(proj(:))>single(geo.whitelevel)

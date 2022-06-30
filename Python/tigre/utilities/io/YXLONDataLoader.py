@@ -156,7 +156,7 @@ def __YXLON_xml_geometry(filepath):
         / geometry.DSD
     )
     geometry.dVoxel = geometry.sVoxel / geometry.nVoxel
-    geometry.whitelevel = float(2**16-1)
+    geometry.whitelevel = float(2**params.find("ProjectionBitdepth")-1)
 
     return filepath, geometry, angles
 
