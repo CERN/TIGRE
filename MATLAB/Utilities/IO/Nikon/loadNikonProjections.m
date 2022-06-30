@@ -47,7 +47,7 @@ fprintf("Dataset in: %s \n", filepath);
 %% load images
 %proj=[];
 l = length(angles_to_load);
-proj = zeros(geo.nDetector(1),geo.nDetector(2),l,'single');
+proj = zeros(geo.nDetector(2),geo.nDetector(1),l,'single');
 for ii=1:length(angles_to_load)
     if(~mod(ii,50))
       fprintf("Loading: %d / %d \n", ii, length(angles_to_load));
