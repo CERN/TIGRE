@@ -76,9 +76,7 @@ def readXtekctGeometry(filepath):
     ## Image information
     # Number of voxels for the volume
     # the algos require these to be integers.
-    geometry.nVoxel = numpy.array(
-        (int(cfg["VoxelsX"]), int(cfg["VoxelsY"]), int(cfg["VoxelsZ"]))
-    )
+    geometry.nVoxel = numpy.array((int(cfg["VoxelsX"]), int(cfg["VoxelsY"]), int(cfg["VoxelsZ"])))
     # Size of each voxel
     geometry.dVoxel = numpy.array(
         (float(cfg["VoxelSizeX"]), float(cfg["VoxelSizeY"]), float(cfg["VoxelSizeZ"]))
@@ -158,11 +156,11 @@ def loadNikonProjections(folder, geometry, angles, **kwargs):
     image = numpy.asarray(image).astype(numpy.float32)
     projections = numpy.zeros([len(indices), image.shape[0], image.shape[1]], dtype=numpy.single)
     projections[0, :, :] = -numpy.log(image / float(geometry.whitelevel))
-    #Python uses zero-based indexing
+    # Python uses zero-based indexing
     # if we start with index = 1 we get an error
     # use enumerate, it's cleaner
     print("Loading Nikon dataset: " + folder)
-    for index, i in enumerate(tqdm(indices[1:]),1):
+    for index, i in enumerate(tqdm(indices[1:]), 1):
         image = Image.open(os.path.join(folder, files[i]))
         image = numpy.asarray(image).astype(numpy.float32)
         projections[index, :, :] = -numpy.log(image / float(geometry.whitelevel))
