@@ -79,7 +79,7 @@ W=1./W;
 clear geoaux;
 
 % Back-Projection weigth, V
- V=computeV(geo,angles,{angles},{1:length(angles)},gpuids);
+ V=computeV(geo,angles,{angles},{1:length(angles)},'gpuids',gpuids);
 
 %% hyperparameter stuff
 nesterov=false;
