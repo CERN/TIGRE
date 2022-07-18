@@ -39,8 +39,9 @@ def NikonDataLoader(filepath, **kwargs):
 
 def readXtekctGeometry(filepath):
 
-    # Developed by A. Biguri and W. Sun
+    # Developed by A. Biguri, W. Sun, P Basford
     # W. Sun edited on 06.10.2018 for 3D pro version 5.2.6809.15380 (2018)
+    # P. Basford edited May 2022 for Inspect-X version 6.8 compatibility
 
     if filepath.endswith(".xtekct"):
         folder, ini = os.path.split(filepath)
@@ -90,7 +91,10 @@ def readXtekctGeometry(filepath):
     #%% Global geometry
     geometry.DSO = float(cfg["SrcToObject"])
     geometry.DSD = float(cfg["SrcToDetector"])
-    geometry.COR = -float(cfg["CentreOfRotationTop"])
+    try:
+        geometry.COR = -float(cfg["CentreOfRotationTop"])
+    except KeyError:
+        geometry.COR = -float(cfg["ObjectOffsetX"])
 
     if geometry.COR == 0:
         print(
