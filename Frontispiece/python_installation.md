@@ -45,6 +45,7 @@ A succesfull installation should be able to execute the script at `TIGRE/Python/
 5. Compile libraries
 
 	`cd TIGRE/Python/`  
+	`pip install -r requirements.txt`  
 	`python setup.py install --user`
 
 	Install in this case will make a copy of pytigre to your python distribution. Therefore the `develop` command is more useful when modifying the source files and developing the software. 
@@ -113,6 +114,7 @@ For Ubuntu
 5. Compile libraries
 
 	`cd TIGRE/Python/` 
+	`pip install -r requirements.txt`  
 	`python setup.py install --user`
 
 	Install in this case will make a copy of pytigre to your python distribution. Therefore the `develop` command is more useful when modifying the source files and developing the software. 
