@@ -54,10 +54,6 @@ A succesfull installation should be able to execute the script at `TIGRE/Python/
 
 6. Try demo 3. If it runs succesfully then you are good to go.
 
-**Note:** It is known that the package cannot be imported using a pure Python 3.8 installation, i.e.
-not using a conda environment. Please try a pure installation of Python 3.7 or consider using a
-conda environment.
-
 ## Linux
 
 ### Requirements:
