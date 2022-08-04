@@ -2,3 +2,4 @@ Cython
 matplotlib
 numpy
 scipy
+setuptools

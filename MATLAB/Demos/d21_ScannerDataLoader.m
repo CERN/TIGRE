@@ -9,6 +9,8 @@
 %
 %       Nikon
 %
+%       YXLON     
+%
 %       Xradia (Zeiss)
 %
 %       Philips (in theory, any DICOM, but only tested in Philips Allura)
@@ -78,6 +80,15 @@ datafolder='~/your_data_path/Nikon/Sample_name/';
 
 img=OS_SART(proj,geo,angles,100);
 img=FDK(proj,geo,angles);
+
+
+%% YXLON
+
+% You can replace NikonDataLoader in the avobe code by YXLONDataLoader().
+% the rest of the functionality is the same. 
+
+datafolder='~/your_data_path/YXLON/Sample_name/';
+[proj,geo, angles ] = YXLONDataLoader(datafolder);
 
 %% DICOM data (only tested on Philips Allura)
 

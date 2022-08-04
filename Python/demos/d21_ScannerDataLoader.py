@@ -81,6 +81,14 @@ proj,geo, angles  = tigreio.BrukerDataLoader(datafolder)
 proj,geo, angles  = tigreio.BrukerDataLoader(datafolder,dataset_num='all') # load all of them
 proj,geo, angles  = tigreio.BrukerDataLoader(datafolder,dataset_num=0) # load the first
 
+
+#%% YXLON 
+datafolder='~/your_data_path/YXLON/Sample_name/'
+proj,geo, angles  = tigreio.YXLONDataLoader(datafolder)
+
+# the same options for sampling and number of angles that exist for Nikon (avobe) exist for Bruker data loaders. 
+
+
 #%% DICOM data (only tested on Philips Allura)
 
 ######## TODO

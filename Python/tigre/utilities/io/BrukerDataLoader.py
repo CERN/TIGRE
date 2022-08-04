@@ -122,7 +122,7 @@ def read_Bruker_geometry(filepath, **kwargs):
 
     geometry.dDetector = numpy.array(
         (
-            float(cfg_system["Camera Pixel Size (um)"]) / 1000.0 * binv*ratio,
+            float(cfg_system["Camera Pixel Size (um)"]) / 1000.0 * binv * ratio,
             float(cfg_system["Camera Pixel Size (um)"]) / 1000.0 * binu,
         )
     )
@@ -174,9 +174,13 @@ def read_Bruker_geometry(filepath, **kwargs):
 
     files = [file for file in os.listdir(folder) if file.endswith(".csv")]
     if files:
-        offset = numpy.genfromtxt(os.path.join(folder, files[0]), delimiter=',',skip_header=5,dtype=float)
-        offset = numpy.delete(offset, 0, 1) 
-        geometry.offDetector=geometry.offDetector+numpy.fliplr(offset)*(geometry.dDetector/[binv,binu])
+        offset = numpy.genfromtxt(
+            os.path.join(folder, files[0]), delimiter=",", skip_header=5, dtype=float
+        )
+        offset = numpy.delete(offset, 0, 1)
+        geometry.offDetector = geometry.offDetector + numpy.fliplr(offset) * (
+            geometry.dDetector / [binv, binu]
+        )
 
     return filepath, geometry, angles
 
@@ -189,7 +193,7 @@ def load_Bruker_projections(folder, geometry, angles, **kwargs):
     files = sorted([file for file in os.listdir(folder) if file.lower().endswith(".tif")])
     if dataset_number is not None:
         files = [file for file in files if file[-10:-8] == "{0:0=2d}".format(dataset_number)]
-    
+
     image = Image.open(os.path.join(folder, files[indices[0]]))
     image = numpy.asarray(image).astype(numpy.float32)
     projections = numpy.zeros([len(indices), image.shape[0], image.shape[1]], dtype=numpy.single)
