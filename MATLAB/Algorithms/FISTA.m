@@ -29,9 +29,6 @@ function [res,qualMeasOut] = FISTA(proj,geo,angles,niter,varargin)
 %                parameters. Input should contain a cell array of desired
 %                quality measurement names. Example: {'CC','RMSE','MSSIM'}
 %                These will be computed in each iteration.
-% 'redundancy_weighting': true or false. Default is true. Applies data
-%                         redundancy weighting to projections in the update step
-%                         (relevant for offset detector geometry)
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -49,21 +46,12 @@ function [res,qualMeasOut] = FISTA(proj,geo,angles,niter,varargin)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Ander Biguri, Reuben Lindroos
 %--------------------------------------------------------------------------
-[verbose,res,tviter,hyper,lambda,p,q,QualMeasOpts,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,varargin);
+[verbose,res,tviter,hyper,lambda,p,q,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,varargin);
 %res = zeros(geo.nVoxel','single');
 measurequality=~isempty(QualMeasOpts);
 
 qualMeasOut=zeros(length(QualMeasOpts),niter);
-if redundancy_weights
-    % Data redundancy weighting, W_r implemented using Wang weighting
-    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
-    
-    num_frames = size(proj,3);
-    W_r = redundancy_weighting(geo);
-    W_r = repmat(W_r,[1,1,num_frames]);
-    % disp('Size of redundancy weighting matrix');
-    % disp(size(W_r));
-end
+
 
 x_rec = res;
 L = hyper;
@@ -77,11 +65,8 @@ for ii = 1:niter
     res0 = res;
     if (ii==1);tic;end
     % gradient descent step
-    if redundancy_weights
-        res = res + bm * 2 * Atb(W_r.*(proj - Ax(res,geo,angles, 'Siddon', 'gpuids', gpuids)), geo, angles, 'matched', 'gpuids', gpuids);
-    else
-        res = res + bm * 2 * Atb(proj - Ax(res,geo,angles, 'Siddon', 'gpuids', gpuids), geo, angles, 'matched', 'gpuids', gpuids);
-    end
+    res = res + bm * 2 * Atb(proj - Ax(res,geo,angles, 'Siddon', 'gpuids', gpuids), geo, angles, 'matched', 'gpuids', gpuids);
+    
     lambdaforTV = 2* bm* lambda;
     x_recold = x_rec;
     x_rec = im3DDenoise(res,'TV',tviter,1/lambdaforTV, 'gpuids', gpuids);  
@@ -105,8 +90,8 @@ end
 
 end
 %% Parse inputs
-function [verbose,f0,tviter,hyper,lambda,fista_p,fista_q,QualMeasOpts,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,argin)
-opts = {'lambda','init','tviter','verbose','hyper','fista_p','fista_q','qualmeas','gpuids','redundancy_weighting'};
+function [verbose,f0,tviter,hyper,lambda,fista_p,fista_q,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,argin)
+opts = {'lambda','init','tviter','verbose','hyper','fista_p','fista_q','qualmeas','gpuids'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -232,12 +217,6 @@ for ii=1:length(opts)
                 gpuids = GpuIds();
             else
                 gpuids = val;
-            end
-        case 'redundancy_weighting'
-            if default
-                redundancy_weights = true;
-            else
-                redundancy_weights = val;
             end
         otherwise
             error('TIGRE:FISTA:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in FISTA()']);
