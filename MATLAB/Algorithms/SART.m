@@ -37,6 +37,9 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %                  'random'  : orders them randomply
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
+% 'redundancy_weighting': true or false. Default is true. Applies data
+%                         redundancy weighting to projections in the update step
+%                         (relevant for offset detector geometry)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -56,7 +59,7 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 blocksize=1;
-[lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,varargin);
 
 measurequality=~isempty(QualMeasOpts);
 if nargout>1
@@ -90,6 +93,18 @@ W(W>0.1)=0.1;
 
 % Back-Projection weigth, V
 V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
+
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+    W = W.*W_r; % include redundancy weighting in W
+end
 
 clear A x y dx dz;
 %% hyperparameter stuff
@@ -233,8 +248,8 @@ end
 end
 
 
-function [lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg','gpuids'};
+function [lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg','gpuids','redundancy_weighting'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -284,7 +299,7 @@ for ii=1:length(opts)
         case 'lambda'
             if default
                 lambda=1;
-            elseif ischar(val)&&strcmpi(val,'nesterov');
+            elseif ischar(val)&&strcmpi(val,'nesterov')
                 lambda='nesterov'; %just for lowercase/upercase
             elseif length(val)>1 || ~isnumeric( val)
                 error('TIGRE:SART:InvalidInput','Invalid lambda')
@@ -326,8 +341,8 @@ for ii=1:length(opts)
             if default
                 continue;
             end
-            if exist('initwithimage','var');
-                if isequal(size(val),geo.nVoxel');
+            if exist('initwithimage','var')
+                if isequal(size(val),geo.nVoxel')
                     res=single(val);
                 else
                     error('TIGRE:SART:InvalidInput','Invalid image for initialization');
@@ -360,6 +375,12 @@ for ii=1:length(opts)
                 gpuids = GpuIds();
             else
                 gpuids = val;
+            end
+        case 'redundancy_weighting'
+            if default
+                redundancy_weights = true;
+            else
+                redundancy_weights = val;
             end
         otherwise
             error('TIGRE:SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option']);

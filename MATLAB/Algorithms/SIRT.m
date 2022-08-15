@@ -32,6 +32,9 @@ function [res,errorL2,qualMeasOut]=SIRT(proj,geo,angles,niter,varargin)
 %                  parameters. Input should contain a cell array of desired
 %                  quality measurement names. Example: {'CC','RMSE','MSSIM'}
 %                  These will be computed in each iteration.
+% 'redundancy_weighting': true or false. Default is true. Applies data
+%                         redundancy weighting to projections in the update step
+%                         (relevant for offset detector geometry)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -51,7 +54,7 @@ function [res,errorL2,qualMeasOut]=SIRT(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 
-[lambda,res,lambdared,verbose,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lambdared,verbose,QualMeasOpts,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 
@@ -76,10 +79,25 @@ geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
 W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);  %
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
+
+% disp('Size of W matrix');
+% disp(size(W));
 clear geoaux;
 
 % Back-Projection weigth, V
- V=computeV(geo,angles,{angles},{1:length(angles)},'gpuids',gpuids);
+V=computeV(geo,angles,{angles},{1:length(angles)},'gpuids',gpuids);
+
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+    W = W.*W_r; % include redundancy weighting in W
+end
 
 %% hyperparameter stuff
 nesterov=false;
@@ -201,8 +219,8 @@ end
 end
 
 
-function [lambda,res,lambdared,verbose,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','nonneg','gpuids'};
+function [lambda,res,lambdared,verbose,QualMeasOpts,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','nonneg','gpuids','redundancy_weighting'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -322,6 +340,12 @@ for ii=1:length(opts)
                 gpuids = GpuIds();
             else
                 gpuids = val;
+            end
+        case 'redundancy_weighting'
+            if default
+                redundancy_weights = true;
+            else
+                redundancy_weights = val;
             end
         otherwise
             error('TIGRE:SIRT:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SIRT()']);

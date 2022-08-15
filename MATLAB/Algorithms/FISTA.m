@@ -52,16 +52,21 @@ measurequality=~isempty(QualMeasOpts);
 
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 
+
 x_rec = res;
 L = hyper;
 bm = 1/L;
 t = 1;
+r = 1/4;
+p = 1;
+q = 1;
 
 for ii = 1:niter
     res0 = res;
     if (ii==1);tic;end
     % gradient descent step
     res = res + bm * 2 * Atb(proj - Ax(res,geo,angles, 'Siddon', 'gpuids', gpuids), geo, angles, 'matched', 'gpuids', gpuids);
+    
     lambdaforTV = 2* bm* lambda;
     x_recold = x_rec;
     x_rec = im3DDenoise(res,'TV',tviter,1/lambdaforTV, 'gpuids', gpuids);  

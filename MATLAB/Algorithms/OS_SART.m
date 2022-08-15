@@ -41,6 +41,9 @@ function [res,errorL2,qualMeasOut]=OS_SART(proj,geo,angles,niter,varargin)
 %                  'random'  : orders them randomply
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
+% 'redundancy_weighting': true or false. Default is true. Applies data
+%                         redundancy weighting to projections in the update step
+%                         (relevant for offset detector geometry)
 %
 % OUTPUTS:
 %
@@ -69,7 +72,7 @@ function [res,errorL2,qualMeasOut]=OS_SART(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 
-[blocksize,lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg, gpuids]=parse_inputs(proj,geo,angles,varargin);
+[blocksize,lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 
 qualMeasOut=zeros(length(QualMeasOpts),niter);
@@ -83,7 +86,7 @@ end
 if ~isfield(geo,'rotDetector')
     geo.rotDetector=[0;0;0];
 end
-%% weigth matrices
+%% weight matrices
 % first order the projection angles
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 
@@ -98,9 +101,22 @@ W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);  %
 W(W<min(geo.dVoxel)/2)=Inf;
 W=1./W;
 
-
+% disp('Offset parameter size');
+% disp(size(geo.offDetector));
 % Back-Projection weigth, V
 V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
+
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+    W = W.*W_r; % include redundancy weighting in W
+end
 
 clear A x y dx dz;
 
@@ -262,8 +278,8 @@ end
 end
 
 %% Parse inputs
-function [block_size,lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'blocksize','lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg','gpuids'};
+function [block_size,lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,alpha,argin)
+opts=     {'blocksize','lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg','gpuids','redundancy_weighting'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -400,7 +416,12 @@ for ii=1:length(opts)
             else
                 gpuids = val;
             end
-
+        case 'redundancy_weighting'
+            if default
+                redundancy_weights = true;
+            else
+                redundancy_weights = val;
+            end
         otherwise
             error('TIGRE:OS_SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_SART_CBCT()']);
     end

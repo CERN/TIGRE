@@ -50,6 +50,9 @@ function [ f,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,varargin)
 %                  'random'  : orders them randomply
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
+% 'redundancy_weighting': true or false. Default is true. Applies data
+%                         redundancy weighting to projections in the update step
+%                         (relevant for offset detector geometry)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -68,7 +71,7 @@ function [ f,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,varargin)
 
 %% parse inputs
 blocksize=1;
-[beta,beta_red,f,ng,verbose,alpha,alpha_red,rmax,epsilon,delta,OrderStrategy,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,f,ng,verbose,alpha,alpha_red,rmax,epsilon,delta,OrderStrategy,QualMeasOpts,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts);
 
 if measurequality
@@ -104,6 +107,17 @@ W=1./W;
 % Back-Projection weigth, V
 V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+    W = W.*W_r; % include redundancy weighting in W
+end
 
 stop_criteria=0;
 iter=0;
@@ -213,8 +227,8 @@ end
 
 end
 
-function [beta,beta_red,f0,ng,verbose,alpha,alpha_red,rmax,epsilon,delta,OrderStrategy,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,angles,argin)
-opts=     {'lambda','lambda_red','init','tviter','verbose','alpha','alpha_red','ratio','maxl2err','delta','orderstrategy','qualmeas','nonneg','gpuids'};
+function [beta,beta_red,f0,ng,verbose,alpha,alpha_red,rmax,epsilon,delta,OrderStrategy,QualMeasOpts,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,argin)
+opts=     {'lambda','lambda_red','init','tviter','verbose','alpha','alpha_red','ratio','maxl2err','delta','orderstrategy','qualmeas','nonneg','gpuids','redundancy_weighting'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -332,7 +346,7 @@ for ii=1:length(opts)
         %  =========================================================================
         case 'maxl2err'
             if default
-                epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
+                epsilon=im3Dnorm(FDK(proj,geo,angles),'L2')*0.2; %heuristic
             else
                 epsilon=val;
             end
@@ -378,6 +392,12 @@ for ii=1:length(opts)
                 gpuids = GpuIds();
             else
                 gpuids = val;
+            end
+        case 'redundancy_weighting'
+            if default
+                redundancy_weights = true;
+            else
+                redundancy_weights = val;
             end
         otherwise
             error('TIGRE:AwASD_POCS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in AwASD_POCS()']);
