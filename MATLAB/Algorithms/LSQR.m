@@ -1,7 +1,7 @@
 function [x,errorL2,qualMeasOut]= LSQR(proj,geo,angles,niter,varargin)
 
-% LSQR_CBCT solves the CBCT problem using the conjugate gradient least
-% squares. This is mathematically equivalent to CGLS_CBCT.
+% LSQR_CBCT solves the CBCT problem using LSQR. 
+% This is mathematically equivalent to CGLS_CBCT.
 % 
 %  LSQR_CBCT(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
@@ -69,7 +69,6 @@ end
 u=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
 normr = norm(u(:),2);
 u = u/normr;
-% msl: why is r not notmalized in CGLS? Check.
 
 beta = normr;
 phibar = beta;
