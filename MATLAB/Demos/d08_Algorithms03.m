@@ -63,6 +63,8 @@ noise_projections=addCTnoise(projections);
  
 % use CGLS
 [imgCGLS, errL2CGLS]=CGLS(noise_projections,geo,angles,60);
+% use LSQR
+[imgLSQR, errL2LSQR]=LSQR(noise_projections,geo,angles,60);
 % SIRT for comparison.
 [imgSIRT,errL2SIRT]=SIRT(noise_projections,geo,angles,60);
 
@@ -71,11 +73,12 @@ noise_projections=addCTnoise(projections);
 % We can see that CGLS gets to the same L2 error in less amount of
 % iterations.
 
-plot([errL2SIRT;[errL2CGLS nan(1,length(errL2SIRT)-length(errL2CGLS))]]');
+% 
+plot([errL2SIRT;[errL2CGLS nan(1,length(errL2SIRT)-length(errL2CGLS))];[errL2LSQR nan(1,length(errL2SIRT)-length(errL2LSQR))]]');
 title('L2 error')
-legend('SIRT','CGLS')
+legend('SIRT','CGLS','LSQR')
 
 % plot images
-plotImg([imgCGLS imgSIRT],'Dim','Z','Step',2)
+plotImg([imgLSQR imgCGLS imgSIRT],'Dim','Z','Step',2)
 %plot errors
-plotImg(abs([head-imgCGLS head-imgSIRT]),'Dim','Z','Slice',64)
+plotImg(abs([head-imgLSQR head-imgCGLS head-imgSIRT]),'Dim','Z','Slice',64)
