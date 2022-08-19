@@ -1,13 +1,13 @@
 function [x,errorL2,qualMeasOut]= LSQR(proj,geo,angles,niter,varargin)
 
-% LSQR_CBCT solves the CBCT problem using LSQR. 
-% This is mathematically equivalent to CGLS_CBCT.
+% LSQR solves the CBCT problem using LSQR. 
+% This is mathematically equivalent to CGLS.
 % 
-%  LSQR_CBCT(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
-%   using the projection data PROJ taken over ALPHA angles, corresponding
+%  LSQR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
+%   using the projection data PROJ taken over ANGLES angles, corresponding
 %   to the geometry descrived in GEO, using NITER iterations.
 % 
-%  LSQR_CBCT(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
+%  LSQR(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 % 
 % 
@@ -21,9 +21,6 @@ function [x,errorL2,qualMeasOut]= LSQR(proj,geo,angles,niter,varargin)
 %                            image. Not recomended unless you really
 %                            know what you are doing.
 %  'InitImg'    an image for the 'image' initialization. Avoid.
-% 'redundancy_weighting': true or false. Default is true. Applies data
-%                         redundancy weighting to projections in the update step
-%                         (relevant for offset detector geometry)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -38,29 +35,17 @@ function [x,errorL2,qualMeasOut]= LSQR(proj,geo,angles,niter,varargin)
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
-% Coded by:           Ander Biguri 
+% Coded by:           Malena Sabate Landman, Ander Biguri
 %--------------------------------------------------------------------------
 
 %%
 
-% msl: I assume this x is either an array of 0 of the appropriate
-% dimensions or an initial guess
-
-[verbose,x,QualMeasOpts,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,varargin);
 
 % msl: no idea of what this is. Should I check?
 measurequality=~isempty(QualMeasOpts);
 qualMeasOut=zeros(length(QualMeasOpts),niter);
-if redundancy_weights
-    % Data redundancy weighting, W_r implemented using Wang weighting
-    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
-    
-    num_frames = size(proj,3);
-    W_r = redundancy_weighting(geo);
-    W_r = repmat(W_r,[1,1,num_frames]);
-    % disp('Size of redundancy weighting matrix');
-    % disp(size(W_r));
-end
+
 
 % Paige and Saunders //doi.org/10.1145/355984.355989
 
@@ -73,13 +58,8 @@ u = u/normr;
 beta = normr;
 phibar = beta;
 
-% msl: I have not checked 'redundancy_weights', do they have to do with 
-% mismatched transpose? 
-if redundancy_weights 
-    v=Atb(W_r .* u,geo,angles,'matched','gpuids',gpuids);
-else
-    v=Atb(u,geo,angles,'matched','gpuids',gpuids);
-end
+v=Atb(u,geo,angles,'matched','gpuids',gpuids);
+
 
 alpha = norm(v(:),2); % msl: do we want to check if it is 0? 
 v = v/alpha;
@@ -103,11 +83,7 @@ for ii=1:niter
     u = u / beta;
     
     % (3)(b)
-    if redundancy_weights % msl: Is this right here?
-        v = Atb(W_r .* u,geo,angles,'matched','gpuids',gpuids) - beta*v;
-    else
-        v = Atb(u,geo,angles,'matched','gpuids',gpuids) - beta*v;
-    end
+    v = Atb(u,geo,angles,'matched','gpuids',gpuids) - beta*v;
     alpha = norm(v(:),2);
     v = v / alpha;    
 
@@ -116,7 +92,7 @@ for ii=1:niter
     c = rhobar / rho;
     s = beta / rho;
     theta = s * alpha;
-    rhobar = - c * alpha; % msl: I am overwriting a matlab function, maybe change name
+    rhobar = - c * alpha; 
     phi = c * phibar;
     phibar = s * phibar;
     
@@ -135,7 +111,7 @@ for ii=1:niter
     % msl: I still need to implement this. 
     % msl: There are suggestions on the original paper. Let's talk about it!
     
-    if measurequality % msl: what is this??
+    if measurequality 
         qualMeasOut(:,ii)=Measure_Quality(x0,x,QualMeasOpts);
     end
 
@@ -161,14 +137,14 @@ end
 
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids','redundancy_weighting'};
+function [verbose,x,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids'};
 defaults=ones(length(opts),1);
 
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('TIGRE:CGLS:InvalidInput','Invalid number of inputs')
+    error('TIGRE:LSQR:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -177,7 +153,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('TIGRE:CGLS:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+       error('TIGRE:LSQR:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
     end
 end
 
@@ -192,7 +168,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
         if isempty(ind)
-            error('TIGRE:CGLS:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+            error('TIGRE:LSQR:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
         end
         val=argin{jj};
     end
@@ -217,7 +193,7 @@ for ii=1:length(opts)
                 continue;
             end
             if isempty(x)
-               error('TIGRE:CGLS:InvalidInput','Invalid Init option') 
+               error('TIGRE:LSQR:InvalidInput','Invalid Init option') 
             end
             % % % % % % % ERROR
         case 'initimg'
@@ -228,7 +204,7 @@ for ii=1:length(opts)
                 if isequal(size(val),geo.nVoxel')
                     x=single(val);
                 else
-                    error('TIGRE:CGLS:InvalidInput','Invalid image for initialization');
+                    error('TIGRE:LSQR:InvalidInput','Invalid image for initialization');
                 end
             end
         %  =========================================================================
@@ -239,7 +215,7 @@ for ii=1:length(opts)
                 if iscellstr(val)
                     QualMeasOpts=val;
                 else
-                    error('TIGRE:CGLS:InvalidInput','Invalid quality measurement parameters');
+                    error('TIGRE:LSQR:InvalidInput','Invalid quality measurement parameters');
                 end
             end
          case 'verbose'
@@ -249,7 +225,7 @@ for ii=1:length(opts)
                 verbose=val;
             end
             if ~is2014bOrNewer
-                warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
+                warning('TIGRE:LSQR:Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
         case 'gpuids'
@@ -258,14 +234,8 @@ for ii=1:length(opts)
             else
                 gpuids = val;
             end
-        case 'redundancy_weighting'
-            if default
-                redundancy_weights = true;
-            else
-                redundancy_weights = val;
-            end
         otherwise 
-            error('TIGRE:CGLS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);
+            error('TIGRE:LSQR:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);
     end
 end
 

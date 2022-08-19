@@ -1,12 +1,12 @@
 function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
-% CGLS_CBCT solves the CBCT problem using the conjugate gradient least
+% CGLS solves the CBCT problem using the conjugate gradient least
 % squares
 % 
-%  CGLS_CBCT(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
-%   using the projection data PROJ taken over ALPHA angles, corresponding
+%  CGLS(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
+%   using the projection data PROJ taken over ANGLES angles, corresponding
 %   to the geometry descrived in GEO, using NITER iterations.
 % 
-%  CGLS_CBCT(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
+%  CGLS(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 % 
 % 
@@ -20,9 +20,6 @@ function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
 %                            image. Not recomended unless you really
 %                            know what you are doing.
 %  'InitImg'    an image for the 'image' initialization. Avoid.
-% 'redundancy_weighting': true or false. Default is true. Applies data
-%                         redundancy weighting to projections in the update step
-%                         (relevant for offset detector geometry)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -42,21 +39,11 @@ function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
 
 %%
 
-[verbose,x,QualMeasOpts,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,varargin);
-measurequality=~isempty(QualMeasOpts);
+[verbose,x,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,varargin);
 
+measurequality=~isempty(QualMeasOpts);
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 
-if redundancy_weights
-    % Data redundancy weighting, W_r implemented using Wang weighting
-    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
-    
-    num_frames = size(proj,3);
-    W_r = redundancy_weighting(geo);
-    W_r = repmat(W_r,[1,1,num_frames]);
-    % disp('Size of redundancy weighting matrix');
-    % disp(size(W_r));
-end
 
 % //doi: 10.1088/0031-9155/56/13/004
 
@@ -94,12 +81,8 @@ for ii=1:niter
     end
     % If step is adecuatem, then continue withg CGLS
     r=r-alpha*q;
+    s=Atb(r,geo,angles,'matched','gpuids',gpuids);
     
-    if redundancy_weights
-        s=Atb(W_r .* r,geo,angles,'matched','gpuids',gpuids);
-    else
-        s=Atb(r,geo,angles,'matched','gpuids',gpuids);
-    end
     gamma1=norm(s(:),2)^2;
     beta=gamma1/gamma;
     gamma=gamma1;
@@ -119,8 +102,8 @@ end
 
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids','redundancy_weighting'};
+function [verbose,x,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -215,12 +198,6 @@ for ii=1:length(opts)
                 gpuids = GpuIds();
             else
                 gpuids = val;
-            end
-        case 'redundancy_weighting'
-            if default
-                redundancy_weights = true;
-            else
-                redundancy_weights = val;
             end
         otherwise 
             error('TIGRE:CGLS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);
