@@ -36,7 +36,6 @@ def NikonDataLoader(filepath, **kwargs):
     folder, geometry, angles = readXtekctGeometry(filepath)
     return loadNikonProjections(folder, geometry, angles, **kwargs)
 
-
 def readXtekctGeometry(filepath):
 
     # Developed by A. Biguri, W. Sun, P Basford
@@ -130,14 +129,14 @@ def readXtekctGeometry(filepath):
             for i in range(3):
                 file.readline()
             for line in file:
-                angles.append(math.radians(float(line.split("\t")[1])))
+                angles.append(-math.radians(float(line.split("\t")[1])))
         return folder, geometry, numpy.array(angles)
 
     print("File with definition of angles not found, estimating them from geometry info.")
     n_angles = int(cfg["Projections"])
     angle_step = float(cfg["AngularStep"])
     initial_angle = float(cfg["InitialAngle"])
-    angles = numpy.arange(n_angles) * math.radians(angle_step) + math.radians(initial_angle)
+    angles = -(numpy.arange(n_angles) * math.radians(angle_step) + math.radians(initial_angle))
 
     return folder, geometry, angles
 
