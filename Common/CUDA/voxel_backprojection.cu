@@ -239,22 +239,22 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             u=y+(float)geo.nDetecU*0.5f;
             v=z+(float)geo.nDetecV*0.5f;
             
-            float weigth;
+            float weight;
             float realx,realy;
             realx=-(geo.sVoxelX-geo.dVoxelX)*0.5f  +indX*geo.dVoxelX   +xyzOffset.x;
             realy=-(geo.sVoxelY-geo.dVoxelY)*0.5f  +indY*geo.dVoxelY   +xyzOffset.y+COR;
             
-            weigth=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
+            weight=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
             
-            weigth=__frcp_rd(weigth*weigth);
+            weight=__frcp_rd(weight*weight);
             
-            // Get Value in the computed (U,V) and multiply by the corresponding weigth.
+            // Get Value in the computed (U,V) and multiply by the corresponding weight.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             
 #if IS_FOR_MATLAB_TIGRE
-            voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f)*weigth;
+            voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f)*weight;
 #else
-            voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,indAlpha+0.5f)*weigth;
+            voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,indAlpha+0.5f)*weight;
 #endif
         }  // END iterating through column of voxels
         
