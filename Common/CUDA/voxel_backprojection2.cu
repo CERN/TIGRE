@@ -249,7 +249,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
 #else
             float sample=tex3D<float>(tex, u, v ,indAlpha+0.5f);
 #endif
-            float weigth=0;
+            float weight=0;
             //
             //
             //
@@ -276,11 +276,11 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             + (realS.y-realvoxel.y)*(realS.y-realvoxel.y)
             + (realS.z-realvoxel.z)*(realS.z-realvoxel.z);
             
-            weigth=__fdividef(L*L*L,(DSD*lsq));
-//             weigth=1;
-            // Get Value in the computed (U,V) and multiply by the corresponding weigth.
+            weight=__fdividef(L*L*L,(DSD*lsq));
+//             weight=1;
+            // Get Value in the computed (U,V) and multiply by the corresponding weight.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
-            voxelColumn[colIdx]+=sample* weigth;
+            voxelColumn[colIdx]+=sample* weight;
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
