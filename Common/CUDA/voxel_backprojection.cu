@@ -809,7 +809,7 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     Pz.x=Pz.x-(geo.DSD[i]-geo.DSO[i]);
     //Done for P, now source
     Point3D source;
-    source.x=geo.DSD[i]; //allready offseted for rotation
+    source.x=geo.DSD[i]; //already offseted for rotation
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
     rollPitchYawT(geo,i,&source);
