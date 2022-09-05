@@ -48,11 +48,9 @@ qualMeasOut=zeros(length(QualMeasOpts),niter);
 % //doi: 10.1088/0031-9155/56/13/004
 
 r=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
-if redundancy_weights
-    p=Atb(W_r .* r,geo,angles,'matched','gpuids',gpuids);
-else
-    p=Atb(r,geo,angles,'matched','gpuids',gpuids);
-end
+
+p=Atb(r,geo,angles,'matched','gpuids',gpuids);
+
 gamma=norm(p(:),2)^2;
 
 errorL2=zeros(1,niter);
