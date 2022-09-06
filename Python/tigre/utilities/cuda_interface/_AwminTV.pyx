@@ -48,6 +48,8 @@ def AwminTV(np.ndarray[np.float32_t, ndim=3] src,float alpha = 15.0,int maxiter 
     imgsize[1] = <long> size_img[1]
     imgsize[2] = <long> size_img[0]
 
+    src = np.ascontiguousarray(src)
+
     cdef float* c_src = <float*> src.data
     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
     aw_pocs_tv(c_src, c_imgout, alpha, imgsize, c_maxiter, delta, c_gpuids[0])

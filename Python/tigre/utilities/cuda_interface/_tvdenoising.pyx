@@ -59,6 +59,8 @@ def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lam
     imgsize[1] = <long> size_img[1]
     imgsize[2] = <long> size_img[0]
 
+    src = np.ascontiguousarray(src)
+
     cdef float* c_src = <float*> src.data
     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
     cuda_raise_errors(tvdenoising(c_src, c_imgout, lamda, spacing, imgsize, c_maxiter, c_gpuids[0]))
