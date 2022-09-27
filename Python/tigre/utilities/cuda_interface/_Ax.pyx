@@ -34,7 +34,6 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     if not c_gpuids:
         raise MemoryError()
     
-
     cdef int total_projections = angles.shape[0]
     cdef int nDetectorPixels = <int>geometry.nDetector[0] * <int>geometry.nDetector[1]
 
@@ -50,6 +49,8 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     cdef int i = 0
     for i in range(total_projections):
         c_projections[i] = <float*> &(c_projectionsNonPinned[nDetectorPixels * i])
+
+    angles = np.ascontiguousarray(angles)
 
     cdef float* c_angles = <float*> angles.data
     if not c_angles:
@@ -69,6 +70,8 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     else:
         print("Warning: Unknown mode, using default cone beam")
         cone_beam = True
+
+    img = np.ascontiguousarray(img)
 
     cdef float* c_img = <float*> img.data
     if cone_beam:
