@@ -1,15 +1,15 @@
-function [x,errorL2,qualMeasOut]= LSMR(proj,geo,angles,niter,varargin)
+function [x,residual,qualMeasOut]= LSMR(proj,geo,angles,niter,varargin)
 
-% LSMR_CBCT solves the CBCT problem using LSMR.
+% LSMR solves the CBCT problem using LSMR.
 % 
-%  LSMR_CBCT(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
+%  LSMR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
 %   to the geometry descrived in GEO, using NITER iterations.
 % 
-%  LSMR_CBCT(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
+%  LSMR(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 % 
-% 
+%  'lambda'  Value of parameter lambda, default 0. 
 %  'Init'    Describes diferent initialization techniques.
 %             * 'none'     : Initializes the image to zeros (default)
 %             * 'FDK'      : intializes image to FDK reconstrucition
@@ -20,9 +20,6 @@ function [x,errorL2,qualMeasOut]= LSMR(proj,geo,angles,niter,varargin)
 %                            image. Not recomended unless you really
 %                            know what you are doing.
 %  'InitImg'    an image for the 'image' initialization. Avoid.
-% 'redundancy_weighting': true or false. Default is true. Applies data
-%                         redundancy weighting to projections in the update step
-%                         (relevant for offset detector geometry)
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -41,7 +38,7 @@ function [x,errorL2,qualMeasOut]= LSMR(proj,geo,angles,niter,varargin)
 %--------------------------------------------------------------------------
 %%
 
-[verbose,x,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x,QualMeasOpts,gpuids,lambda]=parse_inputs(proj,geo,angles,varargin);
 
 measurequality=~isempty(QualMeasOpts);
 qualMeasOut=zeros(length(QualMeasOpts),niter);
@@ -53,13 +50,11 @@ qualMeasOut=zeros(length(QualMeasOpts),niter);
 % (1) Initialize 
 u=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
 normr = norm(u(:),2);
-u = u/normr;
-
 beta = normr;
+u = u/beta;
+
 
 v=Atb(u,geo,angles,'matched','gpuids',gpuids);
-
-
 alpha = norm(v(:),2); % msl: do we want to check if it is 0? 
 v = v/alpha;
 
@@ -79,10 +74,10 @@ rhod = 1;
 tautilda = 0;
 thetatilda = 0;
 zeta = 0;
-
+d = 0;
 
 % msl: is this error the residual norm ? 
-errorL2=zeros(1,niter); 
+residual = zeros(1,niter); 
 
 % (2) Start iterations 
 for ii=1:niter
@@ -99,19 +94,20 @@ for ii=1:niter
     alpha = norm(v(:),2);
     v = v / alpha;    
 
-    % (4) Construct and apply rotation Pk
-    rhopre = rho;
-    rho = sqrt(alphabar^2 + beta^2);
-    c = alphabar / rho;
+    % (4) Construct and apply rotation \hat{P}_k
+    alphahat = sqrt(alphabar^2 + lambda^2);
+    chat = alphabar/alphahat;
+    shat = lambda/alphahat;
+
+    % (5) Construct and apply rotation P_k
+    rhopre = rho; 
+    rho = sqrt(alphahat^2 + beta^2);
+    c = alphahat / rho;
     s = beta / rho;
     theta = s * alpha;
     alphabar = c * alpha;
-  
-    % Computing ||r_k||, eqn (3.4) in paper
-    betahat = c * betadd; 
-    betadd = -s * betadd;
 
-    % (5) Construct and apply rotation Pkbar
+    % (6) Construct and apply rotation \bar{P}_k
     thetabar = sbar * rho;
     rhobarpre = rhobar;
     rhobar = sqrt((cbar*rho)^2 + theta^2);
@@ -121,39 +117,44 @@ for ii=1:niter
     zeta = cbar * zetabar; 
     zetabar = -sbar * zetabar;
 
-    % (6) Update h, hbar, x
+    % (7) Update \bar{h}, x, h
     hbar = h - (thetabar*rho/(rhopre*rhobarpre))*hbar;
     x = x + (zeta / (rho*rhobar)) * hbar;
     h = v - (theta / rho) * h;
 
-    % Update estimated quantities of interest.
-    % If k >= 2, construct and apply Ptilda to compute ||r_k||
-    if ii >= 1
-        % eqn (3.5) in paper
-        rhotilda = sqrt(rhod^2 + thetabar^2);
-        ctilda = rhod / rhotilda;
-        stilda = thetabar / rhotilda;
-        thetatildapre = thetatilda;
-        thetatilda = stilda * rhobar;
-        rhod = ctilda * rhobar;
-        betatilda = ctilda * betad + stilda * betahat; % msl: in the orinal paper, but not used
-        betad = -stilda * betad + ctilda * betahat;
-        % Update ttilda by forward substitution
-        tautilda = (zetapre - thetatildapre*tautilda) / rhotilda;
-        taud = (zeta - thetatilda*tautilda) / rhod;
-        % Form ||r_k||
-        gamma_var = (betad - taud)^2 + betadd^2;
-        errorL2(ii) = sqrt(gamma_var);
-        % ||A^T r_k || is just |zetabar|
-    else     
-        % Not sure what to say about errorL2(1) ... 
-        errorL2(ii)=NaN;
-    end
+    % (8) Apply rotation \hat{P}_k, P_k
+    betaacute = chat* betadd;
+    betacheck = - shat* betadd;
 
-    aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids); %expensive, is there any way to check this better?
-    errorL2(ii)=im3Dnorm(aux,'L2');
+    % Computing ||r_k||
+
+    betahat = c * betaacute; 
+    betadd = -s * betaacute;
+
+    % Update estimated quantities of interest.
+    %  (9) If k >= 2, construct and apply \tilde{P} to compute ||r_k||
+    rhotilda = sqrt(rhod^2 + thetabar^2);
+    ctilda = rhod / rhotilda;
+    stilda = thetabar / rhotilda;
+    thetatildapre = thetatilda;
+    thetatilda = stilda * rhobar;
+    rhod = ctilda * rhobar;
+    % betatilda = ctilda * betad + stilda * betahat; % msl: in the orinal paper, but not used
+    betad = -stilda * betad + ctilda * betahat;
+
+    % (10) Update \tilde{t}_k by forward substitution
+    tautilda = (zetapre - thetatildapre*tautilda) / rhotilda;
+    taud = (zeta - thetatilda*tautilda) / rhod;
     
+    % (11) Compute ||r_k||
+    d = d + betacheck^2;
+    gamma_var = d + (betad - taud)^2 + betadd^2;
+    residual(ii) = sqrt(gamma_var);
     
+    % ||A^T r_k || is just |zetabar|
+
+
+  
     % (6) Test for convergence. 
     % msl: I still need to implement this. 
     % msl: There are suggestions on the original paper. Let's talk about it!
@@ -161,16 +162,6 @@ for ii=1:niter
     if measurequality % msl: what is this??
         qualMeasOut(:,ii)=Measure_Quality(x0,x,QualMeasOpts);
     end
-
-%   Does not make sense here, we are minimizing ||A^T rk|| not ||r_k||  
-%     if ii>1 && errorL2(ii)>errorL2(ii-1)  % msl: not checked
-%         % OUT!
-%        x=x-alpha*v;
-%        if verbose
-%           disp(['CGLS stoped in iteration N', num2str(ii),' due to divergence.']) 
-%        end
-%        return; 
-%     end
      
     if (ii==1 && verbose)
         expected_time=toc*niter;   
@@ -185,14 +176,14 @@ end
 
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids','redundancy_weighting'};
+function [verbose,x,QualMeasOpts,gpuids, lambda]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda'};
 defaults=ones(length(opts),1);
 
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('TIGRE:CGLS:InvalidInput','Invalid number of inputs')
+    error('TIGRE:LSMR:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -201,7 +192,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('TIGRE:CGLS:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+       error('TIGRE:LSMR:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
     end
 end
 
@@ -216,7 +207,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
         if isempty(ind)
-            error('TIGRE:CGLS:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+            error('TIGRE:LSMR:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
         end
         val=argin{jj};
     end
@@ -241,7 +232,7 @@ for ii=1:length(opts)
                 continue;
             end
             if isempty(x)
-               error('TIGRE:CGLS:InvalidInput','Invalid Init option') 
+               error('TIGRE:LSMR:InvalidInput','Invalid Init option') 
             end
             % % % % % % % ERROR
         case 'initimg'
@@ -252,7 +243,7 @@ for ii=1:length(opts)
                 if isequal(size(val),geo.nVoxel')
                     x=single(val);
                 else
-                    error('TIGRE:CGLS:InvalidInput','Invalid image for initialization');
+                    error('TIGRE:LSMR:InvalidInput','Invalid image for initialization');
                 end
             end
         %  =========================================================================
@@ -263,7 +254,7 @@ for ii=1:length(opts)
                 if iscellstr(val)
                     QualMeasOpts=val;
                 else
-                    error('TIGRE:CGLS:InvalidInput','Invalid quality measurement parameters');
+                    error('TIGRE:LSMR:InvalidInput','Invalid quality measurement parameters');
                 end
             end
          case 'verbose'
@@ -282,14 +273,14 @@ for ii=1:length(opts)
             else
                 gpuids = val;
             end
-        case 'redundancy_weighting'
+        case 'lambda'
             if default
-                redundancy_weights = true;
+                lambda = 0;
             else
-                redundancy_weights = val;
+                lambda = val;
             end
         otherwise 
-            error('TIGRE:CGLS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);
+            error('TIGRE:LSMR:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in LSMR()']);
     end
 end
 

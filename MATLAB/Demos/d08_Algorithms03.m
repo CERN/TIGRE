@@ -62,23 +62,37 @@ noise_projections=addCTnoise(projections);
 %  'InitImg'    an image for the 'image' initialization. Avoid.
  
 % use CGLS
-[imgCGLS, errL2CGLS]=CGLS(noise_projections,geo,angles,60);
+[imgCGLS, residual_CGLS]=CGLS(noise_projections,geo,angles,60);
 % use LSQR
-[imgLSQR, errL2LSQR]=LSQR(noise_projections,geo,angles,60);
+[imgLSQR, residual_LSQR]=LSQR(noise_projections,geo,angles,60);
+% use LSMR
+[imgLSMR, residual_LSMR]=LSMR(noise_projections,geo,angles,60);
+% use LSMR with a lambda value
+[imgLSMR_lambda, residual_LSMR_lambda]=LSMR(noise_projections,geo,angles,60,'lambda',10);
 % SIRT for comparison.
-[imgSIRT,errL2SIRT]=SIRT(noise_projections,geo,angles,60);
+[imgSIRT, residual_SIRT]=SIRT(noise_projections,geo,angles,60);
 
 %% plot results
 %
 % We can see that CGLS gets to the same L2 error in less amount of
 % iterations.
 
-% 
-plot([errL2SIRT;[errL2CGLS nan(1,length(errL2SIRT)-length(errL2CGLS))];[errL2LSQR nan(1,length(errL2SIRT)-length(errL2LSQR))]]');
-title('L2 error')
-legend('SIRT','CGLS','LSQR')
+len=max([length(residual_LSQR),
+        length(residual_CGLS),
+        length(residual_SIRT), 
+        length(residual_LSMR),
+        length(residual_LSMR_lambda)]);
+
+
+plot([[residual_SIRT nan(1,len-length(residual_SIRT))];
+      [residual_CGLS nan(1,len-length(residual_CGLS))];
+      [residual_LSQR nan(1,len-length(residual_LSQR))];
+      [residual_LSMR nan(1,len-length(residual_LSMR))];
+      [residual_LSMR_lambda nan(1,len-length(residual_LSMR_lambda))]]');
+title('Residual')
+legend('SIRT','CGLS','LSQR','LSMR','LSMR lambda')
 
 % plot images
-plotImg([imgLSQR imgCGLS imgSIRT],'Dim','Z','Step',2)
+plotImg([imgLSQR imgCGLS, imgLSMR, imgLSMR_lambda, imgSIRT],'Dim','Z','Step',2)
 %plot errors
-plotImg(abs([head-imgLSQR head-imgCGLS head-imgSIRT]),'Dim','Z','Slice',64)
+plotImg(abs([head-imgLSQR head-imgCGLS head-imgLSMR head-imgLSMR_lambda head-imgSIRT]),'Dim','Z','Slice',64,'clims',[0, 0.3])
