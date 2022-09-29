@@ -1,4 +1,4 @@
-function [x,errorL2,qualMeasOut]= LSQR(proj,geo,angles,niter,varargin)
+function [x,resL2,qualMeasOut]= LSQR(proj,geo,angles,niter,varargin)
 
 % LSQR solves the CBCT problem using LSQR. 
 % This is mathematically equivalent to CGLS.
@@ -70,7 +70,7 @@ normAtr = beta*alpha; % Do we want this? ||A^T r_k||
 % msl: do we want to check for convergence? In well posed problems it would
 % make sense, not sure now.
 
-errorL2=zeros(1,niter); % msl: is this error the residual norm ? 
+resL2=zeros(1,niter); % msl: is this error the residual norm ? 
 
 % (2) Start iterations 
 for ii=1:niter
@@ -105,7 +105,7 @@ for ii=1:niter
     normr = normr*abs(s);   % ||r_k|| = ||b - A x_k||
                             % Only exact if we do not have orth. loss 
     normAtr = phibar * alpha * abs(c); % msl: Do we want this? ||A^T r_k||
-    errorL2(ii)=normr;
+    resL2(ii)=normr;
     
     % (6) Test for convergence. 
     % msl: I still need to implement this. 
@@ -115,7 +115,7 @@ for ii=1:niter
         qualMeasOut(:,ii)=Measure_Quality(x0,x,QualMeasOpts);
     end
 
-    if ii>1 && errorL2(ii)>errorL2(ii-1)  % msl: not checked
+    if ii>1 && resL2(ii)>resL2(ii-1)  % msl: not checked
         % OUT!
        x=x-alpha*v;
        if verbose

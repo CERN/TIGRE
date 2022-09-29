@@ -1,4 +1,4 @@
-function [x,errorL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
+function [x,resL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
 % CGLS solves the CBCT problem using the conjugate gradient least
 % squares
 % 
@@ -53,7 +53,7 @@ p=Atb(r,geo,angles,'matched','gpuids',gpuids);
 
 gamma=norm(p(:),2)^2;
 
-errorL2=zeros(1,niter);
+resL2=zeros(1,niter);
 for ii=1:niter
     x0 = x;
     if (ii==1 && verbose);tic;end
@@ -63,13 +63,13 @@ for ii=1:niter
     x=x+alpha*p;
     
     aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids); %expensive, is there any way to check this better?
-    errorL2(ii)=im3Dnorm(aux,'L2');
+    resL2(ii)=im3Dnorm(aux,'L2');
     
     if measurequality
         qualMeasOut(:,ii)=Measure_Quality(x0,x,QualMeasOpts);
     end
 
-    if ii>1 && errorL2(ii)>errorL2(ii-1)
+    if ii>1 && resL2(ii)>resL2(ii-1)
         % OUT!
        x=x-alpha*p;
        if verbose

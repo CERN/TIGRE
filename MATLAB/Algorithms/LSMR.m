@@ -1,4 +1,4 @@
-function [x,residual,qualMeasOut]= LSMR(proj,geo,angles,niter,varargin)
+function [x,resL2,qualMeasOut]= LSMR(proj,geo,angles,niter,varargin)
 
 % LSMR solves the CBCT problem using LSMR.
 % 
@@ -77,7 +77,7 @@ zeta = 0;
 d = 0;
 
 % msl: is this error the residual norm ? 
-residual = zeros(1,niter); 
+resL2 = zeros(1,niter); 
 
 % (2) Start iterations 
 for ii=1:niter
@@ -149,7 +149,7 @@ for ii=1:niter
     % (11) Compute ||r_k||
     d = d + betacheck^2;
     gamma_var = d + (betad - taud)^2 + betadd^2;
-    residual(ii) = sqrt(gamma_var);
+    resL2(ii) = sqrt(gamma_var);
     
     % ||A^T r_k || is just |zetabar|
 
