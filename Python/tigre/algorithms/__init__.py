@@ -11,6 +11,7 @@ from .ista_algorithms import fista
 from .ista_algorithms import ista
 from .iterative_recon_alg import iterativereconalg
 from .krylov_subspace_algorithms import cgls
+from .krylov_subspace_algorithms import lsqr
 from .pocs_algorithms import asd_pocs
 from .pocs_algorithms import os_asd_pocs
 from .pocs_algorithms import awasd_pocs
