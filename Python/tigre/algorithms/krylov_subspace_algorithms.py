@@ -305,3 +305,128 @@ class LSMR(IterativeReconAlg):
                 self.error_measurement(res_prev, i)
 
 lsmr = decorator(LSMR, name="lsmr")
+
+class IRN_TV_CGLS(IterativeReconAlg):
+    __doc__ = (
+        " IRN_TV_CGLS solves the CBCT problem using CGLS with TV constraints\n"
+        "  IRN_TV_CGLS(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
+        "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
+        "  to the geometry descrived in GEO, using NITER iterations."
+    ) + IterativeReconAlg.__doc__
+
+    def __init__(self, proj, geo, angles, niter, **kwargs):
+        # Don't precompute V and W.
+        kwargs.update(dict(W=None, V=None))
+        kwargs.update(dict(blocksize=angles.shape[0]))
+        self.re_init_at_iteration = 0
+        IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+
+        self.niter_outer=15 #TODO, make it kwargs.
+    
+    def __build_weights__(self):
+        Dxx=np.copy(self.res)
+        Dyx=np.copy(self.res)
+        Dzx=np.copy(self.res)
+
+        Dxx[0:-2,:,:]=self.res[0:-2,:,:]-self.res[1:-1,:,:]
+        Dyx[:,0:-2,:]=self.res[:,0:-2,:]-self.res[:,1:-1,:]
+        Dzx[:,:,0:-2]=self.res[:,:,0:-2]-self.res[:,:,1:-1]
+ 
+        return (Dxx**2+Dyx**2+Dzx**2+1e-6)**(-1/4)
+
+    def Lx(self,W,img):
+        Dxx=np.copy(img)
+        Dyx=np.copy(img)
+        Dzx=np.copy(img)
+
+        Dxx[0:-2,:,:]=img[0:-2,:,:]-img[1:-1,:,:]
+        Dyx[:,0:-2,:]=img[:,0:-2,:]-img[:,1:-1,:]
+        Dzx[:,:,0:-2]=img[:,:,0:-2]-img[:,:,1:-1]
+
+        return np.stack((W*Dxx,W*Dyx,W*Dzx),axis=-1)
+        
+    def Ltx(self,W,img3):
+        Wx_1 = W * img3[:,:,:,0]
+        Wx_2 = W * img3[:,:,:,1]
+        Wx_3 = W * img3[:,:,:,2]
+
+        DxtWx_1=Wx_1
+        DytWx_2=Wx_2
+        DztWx_3=Wx_3
+        
+        DxtWx_1[1:-2,:,:]=Wx_1[1:-2,:,:]-Wx_1[0:-3,:,:]
+        DxtWx_1[-1,:,:]=-Wx_1[-2,:,:]
+        
+        DytWx_2[:,1:-2,:]=Wx_2[:,1:-2,:]-Wx_2[:,0:-3,:]
+        DytWx_2[:,-1,:]=-Wx_2[:,-2,:]
+        
+        DztWx_3[:,:,1:-2]=Wx_3[:,:,1:-2]-Wx_3[:,:,0:-3]
+        DztWx_3[:,:,-1]=-Wx_3[:,:,-2]
+
+        return DxtWx_1 + DytWx_2 + DztWx_3
+
+    def run_main_iter(self):
+        self.l2l = np.zeros((1, self.niter*self.niter_outer), dtype=np.float32)
+        avgtime = []
+
+        res0=self.res
+        for outer in range(self.niter_outer):
+            if self.verbose:
+                self._estimate_time_until_completion(outer)
+            if self.Quameasopts is not None:
+                res_prev = copy.deepcopy(self.res)
+            avgtic = default_timer()    
+
+
+            W=self.__build_weights__()
+            self.res=res0
+    
+            prox_aux_1 =Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+            prox_aux_2 = self.Lx(W,self.res)*np.sqrt(self.lmbda)
+    
+            r_aux_1 = self.proj - prox_aux_1
+            r_aux_2 = -prox_aux_2
+            #% Malena: changed the format, r_aux_2 is 3
+            #% r = cat(3,r_aux_1, r_aux_2); % Malena: size guide, erase later, N x N x (100 + N-1)
+            p_aux_1 = tigre.Atb(r_aux_1, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
+            p_aux_2 = np.sqrt(self.lmbda)*self.Ltx(W, r_aux_2)
+            p = p_aux_1 + p_aux_2
+
+            gamma=np.linalg.norm(p.ravel(),2)**2
+
+            for i in range(self.niter):
+                res0=self.res
+
+                q_aux_1 = tigre.Ax(p, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+                q_aux_2 = self.Lx(W,p)*np.sqrt(self.lmbda)
+
+                #% q = cat(3, q_aux_1, q_aux_2{1},q_aux_2{2},q_aux_2{3}); % Probably never need to actually do this
+                #% alpha=gamma/norm(q(:),2)^2;
+                alpha=gamma/(np.linalg.norm(q_aux_1.ravel(),2)**2 + np.linalg.norm(q_aux_2[:,:,:,0].ravel(),2)**2 + np.linalg.norm(q_aux_2[:,:,:,1].ravel(),2)**2+np.linalg.norm(q_aux_2[:,:,:,2].ravel(),2)**2)
+                self.res=self.res+alpha*p
+                aux=self.proj-tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+                #% residual norm or the original least squares (not Tikhonov).
+                #% Think if that is what we want of the NE residual
+                self.l2l[0, outer*self.niter+i] = np.linalg.norm(aux.ravel(),2)
+
+              
+                #% If step is adecuate, then continue withg CGLS
+                r_aux_1 = r_aux_1-alpha*q_aux_1
+                r_aux_2=r_aux_2-alpha*q_aux_2
+
+                s_aux_1 = tigre.Atb(r_aux_1, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
+                s_aux_2 =  np.sqrt(self.lmbda) * self.Ltx(W, r_aux_2)
+                s = s_aux_1 + s_aux_2
+
+                gamma1=np.linalg.norm(s.ravel(),2)**2
+                beta=gamma1/gamma
+                gamma=gamma1
+                p=s+beta*p
+
+            avgtoc = default_timer()
+            avgtime.append(abs(avgtic - avgtoc))
+
+            if self.Quameasopts is not None:
+                self.error_measurement(res_prev, outer)
+
+irn_tv_cgls = decorator(IRN_TV_CGLS, name="irn_tv_cgls")

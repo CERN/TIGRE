@@ -43,16 +43,16 @@ function [x_out,resL2,qualMeasOut]= IRN_TV_CGLS(proj,geo,angles,niter,varargin)
 % % Paul Rodriguez and Brendt Wohlberg
 % % 10.1109/ACSSC.2006.354879
 
-[verbose,x0,QualMeasOpts,gpuids,lambda]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x0,QualMeasOpts,gpuids,lambda,niter_outer]=parse_inputs(proj,geo,angles,varargin);
 x=x0;
 
-niter_outer = 15;
 
 measurequality=~isempty(QualMeasOpts);
 qualMeasOut=zeros(length(QualMeasOpts),niter*niter_outer);
 resL2=zeros(1,niter*niter_outer);
 
 for iii = 1:niter_outer
+    if (iii==1 && verbose);tic;end
 
     % weights are N1 x N2 x N3
     W = build_weights (x);
@@ -78,7 +78,6 @@ for iii = 1:niter_outer
 
     for ii=1:niter
         x0 = x;
-        if (ii==1 && verbose);tic;end
 
         q_aux_1 = Ax(p ,geo,angles,'Siddon','gpuids',gpuids);
         q_aux_2 = Lx (W, p)*sqrt(lambda);
@@ -114,16 +113,16 @@ for iii = 1:niter_outer
         gamma=gamma1;
         p=s+beta*p;
 
-        if (iii==1 && ii ==1 && verbose)
-            expected_time=toc*niter*niter_outer;
-            disp('ISN_TV_CGLS');
-            disp(['Expected duration   :    ',secs2hms(expected_time)]);
-            disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
-            disp('');
-        end
 
     end
 
+    if (iii==1 && ii ==1 && verbose)
+        expected_time=toc*niter_outer;
+        disp('ISN_TV_CGLS');
+        disp(['Expected duration   :    ',secs2hms(expected_time)]);
+        disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
+        disp('');
+    end
 end
 end
 % % % Non-sense now, just giving output of the right dimensions
@@ -188,7 +187,7 @@ function out = Ltx (W, x)
     DztWx_3=Wx_3;
     
     DxtWx_1(2:end-1,:,:)=Wx_1(2:end-1,:,:)-Wx_1(1:end-2,:,:);
-    DxtWx_1(end,:,:)=-Wx_2(end-1,:,:);
+    DxtWx_1(end,:,:)=-Wx_1(end-1,:,:);
     
     DytWx_2(:,2:end-1,:)=Wx_2(:,2:end-1,:)-Wx_2(:,1:end-2,:);
     DytWx_2(:,end,:)=-Wx_2(:,end-1,:);
@@ -199,8 +198,8 @@ function out = Ltx (W, x)
     out = DxtWx_1 + DytWx_2 + DztWx_3;
 end
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids,lambda]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda'};
+function [verbose,x,QualMeasOpts,gpuids,lambda,niter_outer]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda','niter_outer'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -256,6 +255,12 @@ for ii=1:length(opts)
             end
             if isempty(x)
                error('TIGRE:IRN_TV_CGLS:InvalidInput','Invalid Init option') 
+            end
+        case 'niter_outer'
+            if default
+                niter_outer=15
+            else
+                niter_outer=val
             end
             % % % % % % % ERROR
         case 'initimg'
