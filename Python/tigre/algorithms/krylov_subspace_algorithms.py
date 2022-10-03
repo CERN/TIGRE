@@ -321,7 +321,6 @@ class IRN_TV_CGLS(IterativeReconAlg):
         self.re_init_at_iteration = 0
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
-        self.niter_outer=15 #TODO, make it kwargs.
     
     def __build_weights__(self):
         Dxx=np.copy(self.res)
@@ -343,12 +342,12 @@ class IRN_TV_CGLS(IterativeReconAlg):
         Dyx[:,0:-2,:]=img[:,0:-2,:]-img[:,1:-1,:]
         Dzx[:,:,0:-2]=img[:,:,0:-2]-img[:,:,1:-1]
 
-        return np.stack((W*Dxx,W*Dyx,W*Dzx),axis=-1)
+        return np.stack((W*Dxx,W*Dyx,W*Dzx),axis=0)
         
     def Ltx(self,W,img3):
-        Wx_1 = W * img3[:,:,:,0]
-        Wx_2 = W * img3[:,:,:,1]
-        Wx_3 = W * img3[:,:,:,2]
+        Wx_1 = W * img3[0,:,:,:]
+        Wx_2 = W * img3[1,:,:,:]
+        Wx_3 = W * img3[2,:,:,:]
 
         DxtWx_1=Wx_1
         DytWx_2=Wx_2
@@ -370,9 +369,13 @@ class IRN_TV_CGLS(IterativeReconAlg):
         avgtime = []
 
         res0=self.res
+   
         for outer in range(self.niter_outer):
             if self.verbose:
+                niter=self.niter
+                self.niter=self.niter_outer
                 self._estimate_time_until_completion(outer)
+                self.niter=niter
             if self.Quameasopts is not None:
                 res_prev = copy.deepcopy(self.res)
             avgtic = default_timer()    
@@ -402,7 +405,7 @@ class IRN_TV_CGLS(IterativeReconAlg):
 
                 #% q = cat(3, q_aux_1, q_aux_2{1},q_aux_2{2},q_aux_2{3}); % Probably never need to actually do this
                 #% alpha=gamma/norm(q(:),2)^2;
-                alpha=gamma/(np.linalg.norm(q_aux_1.ravel(),2)**2 + np.linalg.norm(q_aux_2[:,:,:,0].ravel(),2)**2 + np.linalg.norm(q_aux_2[:,:,:,1].ravel(),2)**2+np.linalg.norm(q_aux_2[:,:,:,2].ravel(),2)**2)
+                alpha=gamma/(np.linalg.norm(q_aux_1.ravel(),2)**2 + np.linalg.norm(q_aux_2[0].ravel(),2)**2 + np.linalg.norm(q_aux_2[1].ravel(),2)**2+np.linalg.norm(q_aux_2[2].ravel(),2)**2)
                 self.res=self.res+alpha*p
                 aux=self.proj-tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
                 #% residual norm or the original least squares (not Tikhonov).
