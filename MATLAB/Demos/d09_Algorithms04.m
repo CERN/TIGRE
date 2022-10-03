@@ -191,6 +191,24 @@ imgBASDPOCSbeta=B_ASD_POCS_beta(noise_projections,geo,angles,50,...
                   
 imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',50);           
 
+
+% IRN_TV_CGLS
+%==========================================================================
+%========================================================================== 
+% MALENA, CAN YOU ADD A SMALL TEXT HERE? EXPLAINING THE ALGORITHM IN 3
+% LINES OR SO
+%
+% 'lambda' hyperparameter in TV norm. It gives the ratio of
+%          importance of the image vs the minimum total variation.
+%          default is 15. Lower means less TV denoising.
+%
+% 'niter_outer' Number of outer iterations. Each outer iteration will
+%               perform niter number of inner iterations, in the example
+%               below, 20.Albeit this seems that it does many more
+%               iterations than the other algorithms, this is an inherently
+%               faster algorithm, both in convergence and time. 
+
+imgIRN_TV_CGLS=IRN_TV_CGLS(noise_projections,geo,angles,20,'lambda',15);
  %% Lets visualize the results
 % Notice the smoother images due to TV regularization.
 %
@@ -198,10 +216,10 @@ imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',50);
 %    
 %     OSC-TV             B-ASD-POCS-beta   SART-TV
 
-plotImg([ imgOSASDPOCS imgBASDPOCSbeta imgSARTTV; head imgOSSART  imgASDPOCS ] ,'Dim','Z','Step',2,'clims',[0 1])
+plotImg([ imgOSASDPOCS imgBASDPOCSbeta imgSARTTV; imgIRN_TV_CGLS imgOSSART  imgASDPOCS ] ,'Dim','Z','Step',2,'clims',[0 1])
  % error
 
-plotImg(abs([ head-imgOSASDPOCS head-imgBASDPOCSbeta head-imgSARTTV;head-head head-imgOSSART  head-imgASDPOCS ]) ,'Dim','Z','Slice',64)
+plotImg(abs([ head-imgOSASDPOCS head-imgBASDPOCSbeta head-imgSARTTV;head-imgIRN_TV_CGLS head-imgOSSART  head-imgASDPOCS ]) ,'Dim','Z','Slice',64,'clims',[0 0.1])
 
 
 

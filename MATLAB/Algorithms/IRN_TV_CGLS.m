@@ -116,7 +116,7 @@ for iii = 1:niter_outer
 
     end
 
-    if (iii==1 && ii ==1 && verbose)
+    if (iii==1 && verbose)
         expected_time=toc*niter_outer;
         disp('ISN_TV_CGLS');
         disp(['Expected duration   :    ',secs2hms(expected_time)]);
@@ -258,9 +258,9 @@ for ii=1:length(opts)
             end
         case 'niter_outer'
             if default
-                niter_outer=15
+                niter_outer=15;
             else
-                niter_outer=val
+                niter_outer=val;
             end
             % % % % % % % ERROR
         case 'initimg'
