@@ -177,6 +177,107 @@ class LSQR(IterativeReconAlg):
            
 lsqr = decorator(LSQR, name="lsqr")
 
+class hybrid_LSQR(IterativeReconAlg): 
+    __doc__ = (
+        " hybrid_LSQR solves the CBCT problem using the hybrid_LSQR\n"
+        "  hybrid_LSQR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
+        "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
+        "  to the geometry descrived in GEO, using NITER iterations."
+    ) + IterativeReconAlg.__doc__
+
+    def __init__(self, proj, geo, angles, niter, **kwargs): 
+        # Don't precompute V and W.
+        kwargs.update(dict(W=None, V=None))
+        kwargs.update(dict(blocksize=angles.shape[0]))
+        self.re_init_at_iteration = 0
+        IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+        # Paige and Saunders //doi.org/10.1145/355984.355989
+
+        # Enumeration as given in the paper for 'Algorithm LSQR'
+
+        # % Initialise matrices
+        self.__U__ = np.zeros((niter+1,np.prod(geo.nDetector)*len(angles)),dtype=np.float32)
+        self.__V__ = np.zeros(niter,(np.prod(geo.nVoxel)),dtype=np.float32)
+        self.__B__ = np.zeros((niter,niter+1),dtype=np.float32); #% Projected matrix
+        self.__proj_rhs__ = np.zeros((niter+1,1),dtype=np.float32); #% Projected right hand side
+
+        # (1) Initialize 
+        self.__u__=self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+        
+        normr = np.linalg.norm(self.__u__.ravel(), 2)
+        self.__u__ = self.__u__/normr
+        self.__U__[0]=self.__u__.ravel()
+
+        self.__beta__ = normr
+        self.__proj_rhs__[0]=normr
+
+
+    def run_main_iter(self):
+        self.l2l = np.zeros((1, self.niter), dtype=np.float32)
+        avgtime = []
+        for i in range(self.niter):
+            if self.verbose:
+                self._estimate_time_until_completion(i)
+            if self.Quameasopts is not None:
+                res_prev = copy.deepcopy(self.res)
+            avgtic = default_timer() 
+
+            v = Atb(self.__u__,self.geo,self.angles,backprojection_type="matched",gpuids=self.gpuids)
+            
+            if i>0:
+                v = np.reshape(v.ravel() - self.__beta__*self.__V__[i-1],v.shape)
+    
+            
+            for j in range(i-1):
+                v=np.reshape(v.ravel()-(self.__V__[j]*v.ravel())*self.__V__[j],v.shape)
+
+   
+            alpha = np.linalg.norm(v.ravel(), 2)
+            v = v/alpha
+            self.__V__[i] = v.ravel()
+
+            #% Update U_{ii+1}
+            self.__u__ = tigre.Ax(v, self.geo, self.angles, "Siddon", gpuids=self.gpuids) - alpha*self.__u__
+            
+            for j in range(i-1):
+                self.__u__=np.reshape(self.__u__ .ravel()-(self.__U__[j]*self.__u__.ravel())*self.__U_[j],self.__u__.shape)
+                
+            
+            self.__beta__  = np.linalg.norm(self.__u__.ravel(), 2)
+            u = u / self.__beta__ 
+            self.__U__[i+1] = self.__u__.ravel()
+
+            #% Update projected matrix
+            self.__B__[i,i] = alpha
+            self.__B__[i,i+i] = self.__beta__ 
+            #% Malena. Proposed update: we should check algorithms breaks; 
+            #% 'if abs(alpha) <= eps || abs(beta) <= eps' - end and save
+
+            #% Solve the projected problem 
+            #% (using the SVD of the small projected matrix)
+            Bk = self.__B__[0:i,0:i+1]
+            Uk, Sk, Vk = np.linalg.svd(Bk)
+            if i==0:
+                Sk = Sk[0,0]
+            else:
+                Sk = np.diag(Sk)
+            
+            rhsk = self.__proj_rhs__[0:i+1]
+            rhskhat = np.matmul(Uk,rhsk) # AB: transpose Uk??
+            
+            Dk = Sk**2 + self.lmbda**2
+            rhskhat = Sk * rhskhat[0:i]
+            yhat = rhskhat[0:i]/Dk
+            y = np.matmul(Vk, yhat)
+
+            self.l2l[i]=np.linalg.norm(rhsk - Bk*y)# % residual norm
+
+            #% Test for convergence. 
+            #% msl: I still need to implement this. 
+            #% msl: There are suggestions on the original paper. Let's talk about it!
+        
+        self.res = self.res + np.reshape(np.matmul(self.__V__,y),self.res.shape)
+
 
 class LSMR(IterativeReconAlg): 
     __doc__ = (
