@@ -1,13 +1,12 @@
-function [x,errorL2,qualMeasOut]= hybrid_LSQR(proj,geo,angles,niter,varargin)
+function [x,resL2,qualMeasOut]= hybrid_LSQR(proj,geo,angles,niter,varargin)
 
-% LSQR solves the CBCT problem using LSQR. 
-% This is mathematically equivalent to CGLS.
+% hybrid_LSQR solves the CBCT problem using LSQR. 
 % 
-%  LSQR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
+%  hybrid_LSQR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ANGLES angles, corresponding
 %   to the geometry descrived in GEO, using NITER iterations.
 % 
-%  LSQR(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
+%  hybrid_LSQR(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 % 
 % 
@@ -40,9 +39,12 @@ function [x,errorL2,qualMeasOut]= hybrid_LSQR(proj,geo,angles,niter,varargin)
 
 %%
 
-[verbose,x0,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x0,QualMeasOpts,gpuids, lambda]=parse_inputs(proj,geo,angles,varargin);
 
-% msl: no idea of what this is. Should I check?
+if isnan(lambda)
+    % GCV
+    lambda=10;
+end
 measurequality=~isempty(QualMeasOpts);
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 
@@ -53,10 +55,10 @@ qualMeasOut=zeros(length(QualMeasOpts),niter);
 reorth = 1;
 
 % Initialise matrices
-U = zeros(prod(size(proj)), niter+1);
-V = zeros(prod(geo.nVoxel), niter); % Malena: Check if prod(geo.nVoxel) is correct
-B = zeros(niter+1,niter); % Projected matrix
-proj_rhs = zeros(niter+1,1); % Projected right hand side
+U = zeros(numel(proj), niter+1,'single');
+V = zeros(prod(geo.nVoxel), niter,'single'); % Malena: Check if prod(geo.nVoxel) is correct
+B = zeros(niter+1,niter,'single'); % Projected matrix
+proj_rhs = zeros(niter+1,1,'single'); % Projected right hand side
 
 % Enumeration as given in the paper for 'Algorithm LSQR'
 % (1) Initialize 
@@ -67,7 +69,7 @@ U(:,1) = u(:);
 
 beta = normr;
 proj_rhs(1) = normr;
-errorL2 = zeros(1,niter);
+resL2 = zeros(1,niter);
 
 % (2) Start iterations 
 for ii=1:niter
@@ -117,55 +119,32 @@ for ii=1:niter
     end
     rhsk = proj_rhs(1:ii+1);
     rhskhat = Uk'*rhsk;
-
-    % Malena: add regularization parameter choices
-    lambda = 10;
     
     Dk = Sk.^2 + lambda^2;
     rhskhat = Sk .* rhskhat(1:ii);
     yhat = rhskhat(1:ii)./Dk;
     y = Vk * yhat;
 
-    errorL2(ii)=norm(rhsk - Bk*y); % residual norm
-    % norm_proj = norm (proj(:),2);
-    % errorL2(ii) = norm(rhsk - Bk*y)/norm_proj; % relative residual norm
+    resL2(ii)=norm(rhsk - Bk*y); % residual norm
 
-    d = V(:,1:ii)*y;
-    x = x0 + reshape(d,size(x0));
-
-
-    % Test for convergence. 
-    % msl: I still need to implement this. 
-    % msl: There are suggestions on the original paper. Let's talk about it!
-    
-    if measurequality 
-        qualMeasOut(:,ii)=Measure_Quality(x0,x,QualMeasOpts);
-    end
-
-    if ii>1 && errorL2(ii)>errorL2(ii-1)  % msl: not checked
-        % OUT!
-       x=x-alpha*v;
-       if verbose
-          disp(['CGLS stoped in iteration N', num2str(ii),' due to divergence.']) 
-       end
-       return; 
-    end
      
     if (ii==1 && verbose)
         expected_time=toc*niter;   
-        disp('LSQR');
+        disp('hybrid LSQR');
         disp(['Expected duration   :    ',secs2hms(expected_time)]);
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);   
         disp('');
      end
 end
+x = x0 + reshape(V(:,1:ii)*y,size(x0));
+
 
 end
 
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids'};
+function [verbose,x,QualMeasOpts,gpuids,lambda]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -233,6 +212,12 @@ for ii=1:length(opts)
                 else
                     error('TIGRE:LSQR:InvalidInput','Invalid image for initialization');
                 end
+            end
+        case 'lambda'
+            if default
+                lambda=NaN;
+            else
+                lambda=val;
             end
         %  =========================================================================
         case 'qualmeas'

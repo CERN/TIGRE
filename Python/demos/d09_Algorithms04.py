@@ -170,8 +170,8 @@ imgOSASDPOCS = algs.os_asd_pocs(
 # ==========================================================================
 # ==========================================================================
 #
-# This is a more edge preserving algorithms than ASD_POCS, in theory.
-# delta is the cuttof vlaue of anromalized edge exponential weight....
+# This is a more edge preserving algorithms than ASD_POCS.
+# delta is the cut-off value of a normalized edge exponential weight....
 # not super clear, but it cotnrols at which point you accept something as real vs noise edge.
 
 imgAWASDPOCS = algs.awasd_pocs(

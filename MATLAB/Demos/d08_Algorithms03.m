@@ -30,7 +30,7 @@ clear;
 close all;
 
 %% Define Geometry
-geo=defaultGeometry('nVoxel',[512,512,512]','nDetector',[512,512]);                     
+geo=defaultGeometry('nVoxel',[256,256,256]','nDetector',[256,256]);                     
 
 %% Load data and generate projections 
 % see previous demo for explanation
@@ -65,6 +65,9 @@ noise_projections=addCTnoise(projections);
 [imgCGLS, residual_CGLS]=CGLS(noise_projections,geo,angles,60);
 % use LSQR
 [imgLSQR, residual_LSQR]=LSQR(noise_projections,geo,angles,60);
+% use hybrid LSQR (note, this algorithm requires tons of memory, 
+% [niter x size(image)] memory. Do not use for large images. 
+[imghLSQR, residual_hLSQR]=hybrid_LSQR(noise_projections,geo,angles,60);
 % use LSMR
 [imgLSMR, residual_LSMR]=LSMR(noise_projections,geo,angles,60);
 % use LSMR with a lambda value
@@ -81,18 +84,20 @@ len=max([length(residual_LSQR),
         length(residual_CGLS),
         length(residual_SIRT), 
         length(residual_LSMR),
-        length(residual_LSMR_lambda)]);
+        length(residual_LSMR_lambda),
+        length(residual_hLSQR)]);
 
 
 plot([[residual_SIRT nan(1,len-length(residual_SIRT))];
       [residual_CGLS nan(1,len-length(residual_CGLS))];
       [residual_LSQR nan(1,len-length(residual_LSQR))];
+      [residual_hLSQR nan(1,len-length(residual_hLSQR))];
       [residual_LSMR nan(1,len-length(residual_LSMR))];
       [residual_LSMR_lambda nan(1,len-length(residual_LSMR_lambda))]]');
 title('Residual')
-legend('SIRT','CGLS','LSQR','LSMR','LSMR lambda')
+legend('SIRT','CGLS','LSQR','hybrid LSQR','LSMR','LSMR lambda')
 
 % plot images
-plotImg([imgLSQR imgCGLS, imgLSMR, imgLSMR_lambda, imgSIRT],'Dim','Z','Step',2)
+plotImg([imgLSQR imgCGLS, imgLSMR;imghLSQR imgLSMR_lambda, imgSIRT],'Dim','Z','Step',2)
 %plot errors
-plotImg(abs([head-imgLSQR head-imgCGLS head-imgLSMR head-imgLSMR_lambda head-imgSIRT]),'Dim','Z','Slice',64,'clims',[0, 0.3])
+plotImg(abs([head-imgLSQR head-imgCGLS head-imgLSMR; head-imghLSQR head-imgLSMR_lambda head-imgSIRT]),'Dim','Z','Slice',64,'clims',[0, 0.3])

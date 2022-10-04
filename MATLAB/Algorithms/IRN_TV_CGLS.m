@@ -118,7 +118,7 @@ for iii = 1:niter_outer
 
     if (iii==1 && verbose)
         expected_time=toc*niter_outer;
-        disp('ISN_TV_CGLS');
+        disp('IRN_TV_CGLS');
         disp(['Expected duration   :    ',secs2hms(expected_time)]);
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
