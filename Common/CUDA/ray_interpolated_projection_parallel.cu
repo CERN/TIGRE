@@ -115,9 +115,9 @@ __global__ void kernelPixelDetector_parallel_interpolated( Geometry geo,
 //         float DSO,
 //         float maxdist){
     
-    unsigned long u = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned long v = blockIdx.y * blockDim.y + threadIdx.y;
-    unsigned long projNumber=threadIdx.z;
+    unsigned long long u = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned long long v = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned long long projNumber=threadIdx.z;
     
     if (u>= geo.nDetecU || v>= geo.nDetecV || projNumber>=PROJ_PER_BLOCK)
         return;
@@ -126,9 +126,9 @@ __global__ void kernelPixelDetector_parallel_interpolated( Geometry geo,
     
     
 #if IS_FOR_MATLAB_TIGRE
-    size_t idx =  (size_t)(u  * geo.nDetecV + v)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+    size_t idx =  (size_t)(u  * (unsigned long long)geo.nDetecV + v)+ projNumber*(unsigned long long)geo.nDetecV *(unsigned long long)geo.nDetecU ;
 #else
-    size_t idx =  (size_t)(v  * geo.nDetecU + u)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+    size_t idx =  (size_t)(v  * (unsigned long long)geo.nDetecU + u)+ projNumber*(unsigned long long)geo.nDetecV *(unsigned long long)geo.nDetecU ;
 #endif
     
     if(indAlpha>=totalNoOfProjections)
@@ -144,8 +144,8 @@ __global__ void kernelPixelDetector_parallel_interpolated( Geometry geo,
     
     
     /////// Get coordinates XYZ of pixel UV
-    int pixelV = geo.nDetecV-v-1;
-    int pixelU = u;
+    unsigned long pixelV = geo.nDetecV-v-1;
+    unsigned long pixelU = u;
     
     
     float vectX,vectY,vectZ;
