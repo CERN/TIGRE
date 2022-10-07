@@ -184,7 +184,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
     
     // Now iterate through projections
 #pragma unroll
-    for(unsigned lonng projNumber=0; projNumber<PROJ_PER_KERNEL; projNumber++)
+    for(unsigned long projNumber=0; projNumber<PROJ_PER_KERNEL; projNumber++)
     {
         // Get the current parameters from parameter arrays in constant memory.
         unsigned long indAlpha = currProjSetNumber*PROJ_PER_KERNEL+projNumber;  // This is the ABSOLUTE projection number in the projection array
