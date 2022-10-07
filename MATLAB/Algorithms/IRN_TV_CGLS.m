@@ -77,7 +77,7 @@ for iii = 1:niter_outer
     gamma=norm(p(:),2)^2;
 
     for ii=1:niter
-        x0 = x;
+        %x0 = x;
 
         q_aux_1 = Ax(p ,geo,angles,'Siddon','gpuids',gpuids);
         q_aux_2 = Lx (W, p)*sqrt(lambda);
@@ -258,7 +258,7 @@ for ii=1:length(opts)
             end
         case 'niter_outer'
             if default
-                niter_outer=15;
+                niter_outer=5;
             else
                 niter_outer=val;
             end
