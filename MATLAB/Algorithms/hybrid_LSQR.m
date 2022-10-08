@@ -1,4 +1,4 @@
-function [x,resL2,qualMeasOut]= hybrid_LSQR(proj,geo,angles,niter,varargin)
+function [x,resL2,lambda_vec, qualMeasOut]= hybrid_LSQR(proj,geo,angles,niter,varargin)
 
 % hybrid_LSQR solves the CBCT problem using LSQR. 
 % 
@@ -33,17 +33,26 @@ function [x,resL2,qualMeasOut]= hybrid_LSQR(proj,geo,angles,niter,varargin)
 %                     https://github.com/CERN/TIGRE/blob/master/LICENSE
 %
 % Contact:            tigre.toolbox@gmail.com
-% Codes:           max(K)   https://github.com/CERN/TIGRE/
+% Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Malena Sabate Landman, Ander Biguri
 %--------------------------------------------------------------------------
 
 %%
 
-[verbose,x0,QualMeasOpts,gpuids, lambda]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x0,QualMeasOpts,gpuids, lambda, NoiseLevel]=parse_inputs(proj,geo,angles,varargin);
+
+%%% PARAMETER CHOICE HIERARCHY: given lambda, DP, GCV
 
 if isnan(lambda)
-    % GCV
-    lambda=10;
+    if isnan(NoiseLevel)
+        RegParam = 'gcv';
+        % Malena: if this is not good, we can use alternative formulations
+    else
+        RegParam = 'discrepit'; 
+        % Malena: if this is slow, we can use an adaptive method 
+    end
+else
+    RegParam = 'given_lambda';
 end
 measurequality=~isempty(QualMeasOpts);
 qualMeasOut=zeros(length(QualMeasOpts),niter);
@@ -59,6 +68,7 @@ U = zeros(numel(proj), niter+1,'single');
 V = zeros(prod(geo.nVoxel), niter,'single'); % Malena: Check if prod(geo.nVoxel) is correct
 B = zeros(niter+1,niter,'single'); % Projected matrix
 proj_rhs = zeros(niter+1,1,'single'); % Projected right hand side
+lambda_vec = zeros(niter,1);
 
 % Enumeration as given in the paper for 'Algorithm LSQR'
 % (1) Initialize 
@@ -119,7 +129,25 @@ for ii=1:niter
     end
     rhsk = proj_rhs(1:ii+1);
     rhskhat = Uk'*rhsk;
-    
+    lsqr_res = abs(rhskhat(ii+1))/normr;
+
+
+    if strcmp(RegParam,'discrepit')
+        eta = 1;
+        if lsqr_res > eta*NoiseLevel 
+            lambda = 0;
+        else
+            lambda = fzero(@(l)discrepancy(l, Bk, rhsk, eta*NoiseLevel), [0, 1e10]);
+        end
+        lambda_vec(ii) = lambda; % We should output this, maybe?
+    elseif strcmp(RegParam,'gcv')
+        lambda = fminbnd(@(l)gcv(l, rhskhat, Sk),  0, double(Sk(1)));
+        % Adapt from IRtools
+        lambda_vec(ii) = lambda; % We should output this, maybe?
+    elseif strcmp(RegParam,'given_lambda') 
+        lambda_vec(ii) = lambda;
+    end
+
     Dk = Sk.^2 + lambda^2;
     rhskhat = Sk .* rhskhat(1:ii);
     yhat = rhskhat(1:ii)./Dk;
@@ -141,10 +169,44 @@ x = x0 + reshape(V(:,1:ii)*y,size(x0));
 
 end
 
+%%% Regularization parameter choices
+
+function out = discrepancy(l, A, b, nnoise)
+n = size(A,2);
+if n == 1
+    out = 0;
+else
+    xl = [A; l*eye(n)]\[b; zeros(n,1)];
+    out = (norm(A*xl -b)/norm(b))^2 - nnoise^2;
+end
+end 
+
+function out = gcv(lambda, bhat, s)
+% GCV for the projected problem - no weights
+% If Bk is the projected matrix and Bk=Uk*Sk*Vk^T
+% lambda is the regularisation parameter
+% bhat is Uk'*bk 
+% s=diag(Sk) 
+
+m = length(bhat);
+n = length(s);
+
+t0 = sum(abs(bhat(n+1:m)).^2);
+
+s2 = abs(s) .^ 2;
+lambda2 = lambda^2;
+
+t1 = lambda2 ./ (s2 + lambda2);
+t2 = abs(bhat(1:n) .* t1) .^2;
+
+out = (sum(t2) + t0) / ((sum(t1)+m-n)^2);
+
+end 
+
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids,lambda]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda'};
+function [verbose,x,QualMeasOpts,gpuids,lambda,NoiseLevel]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda','noiselevel'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -219,6 +281,13 @@ for ii=1:length(opts)
             else
                 lambda=val;
             end
+        case 'noiselevel'
+            if default
+                NoiseLevel=NaN;
+            else
+                NoiseLevel=val;
+            end
+            
         %  =========================================================================
         case 'qualmeas'
             if default
