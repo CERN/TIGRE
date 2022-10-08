@@ -1,4 +1,4 @@
-function [x,errorL2,qualMeasOut]= hybrid_fLSQR_TV(proj,geo,angles,niter,varargin)
+function [x,errorL2,lambda_vec, qualMeasOut]= hybrid_fLSQR_TV(proj,geo,angles,niter,varargin)
 
 % LSQR solves the CBCT problem using LSQR. 
 % This is mathematically equivalent to CGLS.
@@ -40,7 +40,21 @@ function [x,errorL2,qualMeasOut]= hybrid_fLSQR_TV(proj,geo,angles,niter,varargin
 
 %%
 
-[verbose,x0,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x0,QualMeasOpts,gpuids, lambda, NoiseLevel]=parse_inputs(proj,geo,angles,varargin);
+
+%%% PARAMETER CHOICE HIERARCHY: given lambda, DP, GCV
+
+if isnan(lambda)
+    if isnan(NoiseLevel)
+        RegParam = 'gcv';
+        % Malena: if this is not good, we can use alternative formulations
+    else
+        RegParam = 'discrepit'; 
+        % Malena: if this is slow, we can use an adaptive method 
+    end
+else
+    RegParam = 'given_lambda';
+end
 
 % msl: no idea of what this is. Should I check?
 measurequality=~isempty(QualMeasOpts);
@@ -55,6 +69,7 @@ Z = single(zeros(prod(geo.nVoxel), niter)); % Flexible basis
 M = zeros(niter+1,niter); % Projected matrix 1
 T = zeros(niter+1); % Projected matrix 2
 proj_rhs = zeros(niter+1,1); % Projected right hand side
+lambda_vec = zeros(niter,1);
 
 z = zeros(geo.nVoxel');
 
@@ -110,8 +125,8 @@ for ii=1:niter
     % Choose if fixing a tolerance or a number of iterations of both
     % This should maybe be done in single precisions...
     z(:) = mvpE(k_aux, v(:), 'transp');
-    aux_z = lsqr(@(x,tflag) Ltx(W, x, tflag), z(:), [], 25);
-    z(:) = lsqr(@(x,tflag) Lx(W, x, tflag), aux_z, [], 25);
+    aux_z = lsqr(@(x,tflag) Ltx(W, x, tflag), z(:), [], 50);
+    z(:) = lsqr(@(x,tflag) Lx(W, x, tflag), aux_z, [], 50);
     z(:) = mvpE(k_aux, z(:), 'notransp');
 %     z(:) = lsqr(@(x,tflag)mvpEt(k_aux, x, tflag), v(:), [], 25);
 %     z(:) = lsqr(@(x,tflag)mvpE(k_aux, x, tflag), z(:), [], 25);
@@ -137,9 +152,6 @@ for ii=1:niter
     % (using the SVD of the small projected matrix)
     Mk = M(1:ii+1,1:ii);
 
-    % Malena: add regularization parameter choices
-    lambda = 10;
-
     % Prepare the projected regularization term
     WZ = zeros(3*prod(geo.nVoxel),ii);
     for jj=1:ii
@@ -150,8 +162,32 @@ for ii=1:niter
     end
     [~, ZRk] = qr(WZ(:,1:ii), 0);
     ZRksq = ZRk(1:ii,1:ii);
-    MZk = [Mk; lambda*ZRksq];
     rhsk = proj_rhs(1:ii+1);
+    
+    if strcmp(RegParam,'discrepit')
+        eta = 1.01;
+        if discrepancy_Tik(0, Mk, ZRksq, rhsk, eta*NoiseLevel) > 0
+            lambda = 0;
+        else
+            lambda = fzero(@(l)discrepancy_Tik(l, Mk, ZRksq, rhsk, eta*NoiseLevel), [0, 1e10]);
+        end
+        lambda_vec(ii) = lambda; % We should output this, maybe?
+    elseif strcmp(RegParam,'gcv')
+        [Uk,  ~, ~, Ck, Sk] = gsvd(Mk, ZRksq);
+        rhskhat = Uk'*rhsk;
+        if ii==1
+            gammak = Ck(1)/Sk(1);
+        else
+            gammak = sqrt(diag(Ck'*Ck)./diag(Sk'*Sk));
+        end
+        lambda = fminbnd(@(l)gcv(l, rhskhat, gammak),  0, double(gammak(ii)));
+        lambda_vec(ii) = lambda; % We should output this, maybe?
+
+    elseif strcmp(RegParam,'given_lambda')
+        lambda_vec(ii) = lambda;
+    end
+
+    MZk = [Mk; lambda*ZRksq];
     rhsZk = [rhsk; zeros(ii,1)];
     y = MZk\rhsZk;
 
@@ -181,6 +217,41 @@ end
 
 end
 
+%%% Regularization parameter choices
+
+function out = discrepancy_Tik(lambda, A, ZRksq, b, nnoise)
+n = size(A,2);
+if n == 1
+    out = 0;
+else
+    xl = [A; lambda*ZRksq]\[b; zeros(size(ZRksq,1),1)];
+    out = (norm(A*xl - b)/norm(b))^2 - nnoise^2;
+end
+end 
+
+function out = gcv(lambda, bhat, s)
+% GCV for the projected problem - no weights
+% If Bk is the projected matrix and Bk=Uk*Sk*Vk^T
+% lambda is the regularisation parameter
+% bhat is Uk'*bk 
+% s=diag(Sk) 
+
+m = length(bhat);
+n = length(s);
+
+t0 = sum(abs(bhat(n+1:m)).^2);
+
+s2 = abs(s) .^ 2;
+lambda2 = lambda^2;
+
+t1 = lambda2 ./ (s2 + lambda2);
+t2 = abs(bhat(1:n) .* t1) .^2;
+
+out = (sum(t2) + t0) / ((sum(t1)+m-n)^2);
+
+end 
+
+%%%%%%
 
 function W = build_weights ( x)
     % Directional discrete derivatives 
@@ -303,8 +374,8 @@ end
 
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids'};
+function [verbose,x,QualMeasOpts,gpuids, lambda, NoiseLevel]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda','noiselevel'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -373,6 +444,19 @@ for ii=1:length(opts)
                     error('TIGRE:LSQR:InvalidInput','Invalid image for initialization');
                 end
             end
+        case 'lambda'
+            if default
+                lambda=NaN;
+            else
+                lambda=val;
+            end
+        case 'noiselevel'
+            if default
+                NoiseLevel=NaN;
+            else
+                NoiseLevel=val;
+            end
+
         %  =========================================================================
         case 'qualmeas'
             if default
