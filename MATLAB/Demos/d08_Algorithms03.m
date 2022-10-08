@@ -67,12 +67,12 @@ noise_projections=addCTnoise(projections);
 [imgSIRT,errL2SIRT]=SIRT(noise_projections,geo,angles,60);
 
 %% Hybrid methods with different regularisation parameter choices
-[imghLSQR_l10, residual_hLSQR_l10]=hybrid_LSQR(noise_projections,geo,angles,60, 'lambda', 10);
-[imghLSQR_nl002, residual_hLSQR_nl002, lambda_vec_nl002]=hybrid_LSQR(noise_projections,geo,angles,60, 'NoiseLevel', 0.02);
-[imghLSQR_gcv, residual_hLSQR_gcv, lambda_vec_gcv]=hybrid_LSQR(noise_projections,geo,angles,60);
+[imghLSQR_l10, residual_hLSQR_l10]=hybrid_LSQR(noise_projections,geo,angles,30, 'lambda', 10);
+[imghLSQR_nl002, residual_hLSQR_nl002, lambda_vec_nl002]=hybrid_LSQR(noise_projections,geo,angles,30, 'NoiseLevel', 0.02);
+[imghLSQR_gcv, residual_hLSQR_gcv, lambda_vec_gcv]=hybrid_LSQR(noise_projections,geo,angles,30);
 
 % plot images
-plotImg([imghLSQR_l10 imghLSQR_nl10 imghLSQR_gcv],'Dim','Z','Step',2)
+plotImg([imgCGLS imghLSQR_l10 imghLSQR_nl10 imghLSQR_gcv],'Dim','Z','Step',2)
 
 % Look at the parameters
 figure
