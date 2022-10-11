@@ -38,6 +38,8 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
 
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
 
+    angles = np.ascontiguousarray(angles)
+
     cdef float* c_model = <float*> malloc(geometry.nVoxel[0] * geometry.nVoxel[1] * geometry.nVoxel[2] * sizeof(float))
     cdef float* c_angles = <float*> angles.data
 
@@ -57,6 +59,8 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
     else:
         print("Warning: Unknown mode, using default cone beam")
         cone_beam = True
+        
+    projections = np.ascontiguousarray(projections)
 
     cdef float* c_projections = <float*> projections.data
 
