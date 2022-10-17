@@ -1,4 +1,4 @@
-function [x,errorL2,lambda_vec, qualMeasOut]= hybrid_fLSQR_TV(proj,geo,angles,niter,varargin)
+function [x,errorL2, qualMeasOut,lambda_vec]= hybrid_fLSQR_TV(proj,geo,angles,niter,varargin)
 
 % LSQR solves the CBCT problem using LSQR. 
 % This is mathematically equivalent to CGLS.
@@ -34,13 +34,13 @@ function [x,errorL2,lambda_vec, qualMeasOut]= hybrid_fLSQR_TV(proj,geo,angles,ni
 %                     https://github.com/CERN/TIGRE/blob/master/LICENSE
 %
 % Contact:            tigre.toolbox@gmail.com
-% Codes:           max(K)   https://github.com/CERN/TIGRE/
+% Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Malena Sabate Landman, Ander Biguri
 %--------------------------------------------------------------------------
 
 %%
 
-[verbose,x0,QualMeasOpts,gpuids, lambda, NoiseLevel]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x0,QualMeasOpts,gpuids, lambda, NoiseLevel,gt]=parse_inputs(proj,geo,angles,varargin);
 
 %%% PARAMETER CHOICE HIERARCHY: given lambda, DP, GCV
 
@@ -56,14 +56,23 @@ else
     RegParam = 'given_lambda';
 end
 
-% msl: no idea of what this is. Should I check?
-measurequality=~isempty(QualMeasOpts);
+measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
+if ~any(isnan(gt(:)))
+    QualMeasOpts{end+1}='error_norm';
+    x_prev=gt;
+    clear gt
+end
+if nargout<3 && measurequality
+    warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
+    measurequality=false;
+end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
+resL2 = zeros(1,niter);
 
 % Paige and Saunders //doi.org/10.1145/355984.355989
 
 % Initialise matrices
-U = single(zeros(prod(size(proj)), niter+1));
+U = single(zeros(numel(proj), niter+1));
 V = single(zeros(prod(geo.nVoxel), niter)); % Malena: Check if prod(geo.nVoxel) is correct, I want size of object
 Z = single(zeros(prod(geo.nVoxel), niter)); % Flexible basis
 M = zeros(niter+1,niter); % Projected matrix 1
@@ -111,7 +120,9 @@ errorL2 = zeros(1,niter);
 
 % (2) Start iterations 
 for ii=1:niter
-
+    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+       x_prev = x; % only store if necesary
+    end
     if (ii==1 && verbose);tic;end
 
     % Update V, Z, and projected matrix T
@@ -128,8 +139,6 @@ for ii=1:niter
     aux_z = lsqr(@(x,tflag) Ltx(W, x, tflag), z(:), [], 50);
     z(:) = lsqr(@(x,tflag) Lx(W, x, tflag), aux_z, [], 50);
     z(:) = mvpE(k_aux, z(:), 'notransp');
-%     z(:) = lsqr(@(x,tflag)mvpEt(k_aux, x, tflag), v(:), [], 25);
-%     z(:) = lsqr(@(x,tflag)mvpE(k_aux, x, tflag), z(:), [], 25);
     z = single(z);
 
     V(:,ii) = v(:);
@@ -202,13 +211,18 @@ for ii=1:niter
     % msl: I still need to implement this. 
     % msl: There are suggestions on the original paper. Let's talk about it!
     
-    if measurequality 
-        qualMeasOut(:,ii)=Measure_Quality(x0,x,QualMeasOpts);
+    if measurequality
+        qualMeasOut(:,ii)=Measure_Quality(x_prev,x,QualMeasOpts);
     end
-
+    aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
+    resL2(ii)=im3Dnorm(aux,'L2');
+%     if ii>1 && resL2(ii)>resL2(ii-1)
+%         disp(['Algorithm stoped in iteration ', num2str(ii),' due to loss of ortogonality.'])
+%         return;
+%     end
     if (ii==1 && verbose)
         expected_time=toc*niter;   
-        disp('LSQR');
+        disp('hybrid fLSQR TV');
         disp(['Expected duration   :    ',secs2hms(expected_time)]);
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);   
         disp('');
@@ -374,8 +388,8 @@ end
 
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids, lambda, NoiseLevel]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda','noiselevel'};
+function [verbose,x,QualMeasOpts,gpuids, lambda, NoiseLevel,gt]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda','noiselevel','groundtruth'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -483,6 +497,12 @@ for ii=1:length(opts)
                 gpuids = GpuIds();
             else
                 gpuids = val;
+            end
+        case 'groundtruth'
+            if default
+                gt=nan;
+            else
+                gt=val;
             end
         otherwise 
             error('TIGRE:LSQR:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);

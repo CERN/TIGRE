@@ -59,6 +59,9 @@ function [f,qualMeasOut]= OS_AwASD_POCS(proj,geo,angles,maxiter,varargin)
 % 'redundancy_weighting': true or false. Default is true. Applies data
 %                         redundancy weighting to projections in the update step
 %                         (relevant for offset detector geometry)
+%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%                 are requested, to plot their change w.r.t. this known
+%                 data.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -76,8 +79,18 @@ function [f,qualMeasOut]= OS_AwASD_POCS(proj,geo,angles,maxiter,varargin)
 % Coded by:           Ander Biguri and Manasavee Lohvithee
 
 %% parse inputs
-[beta,beta_red,f,ng,verbose,alpha,alpha_red,rmax,epsilon,delta,blocksize,OrderStrategy,QualMeasOpts,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,varargin);
-measurequality=~isempty(QualMeasOpts);
+[beta,beta_red,f,ng,verbose,alpha,alpha_red,rmax,epsilon,delta,blocksize,OrderStrategy,QualMeasOpts,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,varargin);
+measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
+if ~any(isnan(gt(:)))
+    QualMeasOpts{end+1}='error_norm';
+    res_prev=gt;
+    clear gt
+end
+if nargout<2 && measurequality
+    warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
+    measurequality=false;
+end
+qualMeasOut=zeros(length(QualMeasOpts),niter);
 
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 % does detector rotation exists?
@@ -85,7 +98,6 @@ if ~isfield(geo,'rotDetector')
     geo.rotDetector=[0;0;0];
 end
 
-%[proj,geo] = doOffsetWang(proj,geo);
 
 %% Create weigthing matrices for the SART step
 % the reason we do this, instead of calling the SART fucntion is not to
@@ -125,7 +137,10 @@ DSD=geo.DSD;
 DSO=geo.DSO;
 
 while ~stop_criteria %POCS
-    f0=f;
+    % If quality is going to be measured, then we need to save previous image
+    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+        res_prev = f; % only store if necesary
+    end
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;
     
@@ -146,7 +161,9 @@ while ~stop_criteria %POCS
             geo.DSO=DSO(jj);
         end
         f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj},'gpuids',gpuids)),geo,alphablocks{:,jj},'gpuids',gpuids));
-        f(f<0)=0;
+        if nonneg
+            f(f<0)=0;
+        end
     end
     
     geo.offDetector=offDetector;
@@ -155,7 +172,7 @@ while ~stop_criteria %POCS
     geo.DSO=DSO;
     geo.rotDetector=rotDetector;
     if measurequality
-        qualMeasOut(:,iter)=Measure_Quality(f0,f,QualMeasOpts);
+        qualMeasOut(:,iter)=Measure_Quality(res_prev,f,QualMeasOpts);
     end
     
     % compute L2 error of actual image. Ax-b
@@ -201,7 +218,7 @@ while ~stop_criteria %POCS
     %Define c_alpha as in equation 21 in the journal
     c=dot(dg_vec(:),dp_vec(:))/(dg*dp);
     %This c is examined to see if it is close to -1.0
-    %disp(['Iteration = ' num2str(iter) ',   c = ' num2str(c)]);   
+    %disp(['Iteration = ' num2str(iter) ',   c = ' num2str(c)]);
     if (c<-0.99 && dd<=epsilon) || beta<0.005|| iter>maxiter
         if verbose
             disp(['Stopping criteria met']);
@@ -224,8 +241,8 @@ end
 
 end
 
-function [beta,beta_red,f0,ng,verbose,alpha,alpha_red,rmax,epsilon,delta,block_size,OrderStrategy,QualMeasOpts,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,argin)
-opts=     {'lambda','lambda_red','init','tviter','verbose','alpha','alpha_red','ratio','maxl2err','delta','blocksize','orderstrategy','qualmeas','nonneg','gpuids','redundancy_weighting'};
+function [beta,beta_red,f0,ng,verbose,alpha,alpha_red,rmax,epsilon,delta,block_size,OrderStrategy,QualMeasOpts,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,argin)
+opts=     {'lambda','lambda_red','init','tviter','verbose','alpha','alpha_red','ratio','maxl2err','delta','blocksize','orderstrategy','qualmeas','nonneg','gpuids','redundancy_weighting','groundtruth'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -272,8 +289,8 @@ for ii=1:length(opts)
                 warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
-        % Lambda
-        %  =========================================================================
+            % Lambda
+            %  =========================================================================
         case 'lambda'
             if default
                 beta=1;
@@ -283,8 +300,8 @@ for ii=1:length(opts)
                 end
                 beta=val;
             end
-        % Lambda reduction
-        %  =========================================================================
+            % Lambda reduction
+            %  =========================================================================
         case 'lambda_red'
             if default
                 beta_red=0.99;
@@ -294,8 +311,8 @@ for ii=1:length(opts)
                 end
                 beta_red=val;
             end
-        % Initial image
-        %  =========================================================================
+            % Initial image
+            %  =========================================================================
         case 'init'
             if default || strcmp(val,'none')
                 f0=zeros(geo.nVoxel','single');
@@ -306,57 +323,57 @@ for ii=1:length(opts)
                     error('TIGRE:OS_AwASD_POCS:InvalidInput','Invalid init')
                 end
             end
-        % Number of iterations of TV
-        %  =========================================================================
+            % Number of iterations of TV
+            %  =========================================================================
         case 'tviter'
             if default
                 ng=20;
             else
                 ng=val;
             end
-        %  TV hyperparameter
-        %  =========================================================================
+            %  TV hyperparameter
+            %  =========================================================================
         case 'alpha'
             if default
                 alpha=0.002; % 0.2
             else
                 alpha=val;
             end
-        %  TV hyperparameter redution
-        %  =========================================================================
+            %  TV hyperparameter redution
+            %  =========================================================================
         case 'alpha_red'
             if default
                 alpha_red=0.95;
             else
                 alpha_red=val;
             end
-        %  Maximum update ratio
-        %  =========================================================================
+            %  Maximum update ratio
+            %  =========================================================================
         case 'ratio'
             if default
                 rmax=0.95;
             else
                 rmax=val;
             end
-        %  Maximum L2 error to have a "good image"
-        %  =========================================================================
+            %  Maximum L2 error to have a "good image"
+            %  =========================================================================
         case 'maxl2err'
             if default
                 epsilon=im3Dnorm(FDK(proj,geo,angles),'L2')*0.2; %heuristic
             else
                 epsilon=val;
             end
-        %Parameter to control the amount of smoothing for pixels at the
-        %edges
-        %  =========================================================================
+            %Parameter to control the amount of smoothing for pixels at the
+            %edges
+            %  =========================================================================
         case 'delta'
             if default
                 delta=-0.005;
             else
                 delta=val;
             end
-        %  Block size for OS-SART
-        %  =========================================================================
+            %  Block size for OS-SART
+            %  =========================================================================
         case 'blocksize'
             if default
                 block_size=20;
@@ -366,16 +383,16 @@ for ii=1:length(opts)
                 end
                 block_size=val;
             end
-        %  Order strategy
-        %  =========================================================================
+            %  Order strategy
+            %  =========================================================================
         case 'orderstrategy'
             if default
                 OrderStrategy='random';
             else
                 OrderStrategy=val;
             end
-        % Image Quality Measure
-        %  =========================================================================
+            % Image Quality Measure
+            %  =========================================================================
         case 'qualmeas'
             if default
                 QualMeasOpts={};
@@ -403,6 +420,12 @@ for ii=1:length(opts)
                 redundancy_weights = true;
             else
                 redundancy_weights = val;
+            end
+        case 'groundtruth'
+            if default
+                gt=nan;
+            else
+                gt=val;
             end
         otherwise
             error('TIGRE:OS_AwASD_POCS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_AwASD_POCS()']);

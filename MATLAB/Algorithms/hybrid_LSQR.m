@@ -1,15 +1,16 @@
 function [x,resL2,lambda_vec, qualMeasOut]= hybrid_LSQR(proj,geo,angles,niter,varargin)
 
-% hybrid_LSQR solves the CBCT problem using LSQR. 
-% 
+% hybrid_LSQR solves the CBCT problem using LSQR.
+%
 %  hybrid_LSQR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ANGLES angles, corresponding
 %   to the geometry descrived in GEO, using NITER iterations.
-% 
+%
 %  hybrid_LSQR(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
-% 
-% 
+%
+%  'lambda'  Value of parameter lambda, default autocomputed.
+%  'Noiselevel' the expected nosie level, in %, replaces lambda.
 %  'Init'    Describes diferent initialization techniques.
 %             * 'none'     : Initializes the image to zeros (default)
 %             * 'FDK'      : intializes image to FDK reconstrucition
@@ -20,15 +21,18 @@ function [x,resL2,lambda_vec, qualMeasOut]= hybrid_LSQR(proj,geo,angles,niter,va
 %                            image. Not recomended unless you really
 %                            know what you are doing.
 %  'InitImg'    an image for the 'image' initialization. Avoid.
+%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%                 are requested, to plot their change w.r.t. this known
+%                 data.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
-% 
-% Copyright (c) 2015, University of Bath and 
+%
+% Copyright (c) 2015, University of Bath and
 %                     CERN-European Organization for Nuclear Research
 %                     All rights reserved.
 %
-% License:            Open Source under BSD. 
+% License:            Open Source under BSD.
 %                     See the full license at
 %                     https://github.com/CERN/TIGRE/blob/master/LICENSE
 %
@@ -39,7 +43,7 @@ function [x,resL2,lambda_vec, qualMeasOut]= hybrid_LSQR(proj,geo,angles,niter,va
 
 %%
 
-[verbose,x0,QualMeasOpts,gpuids, lambda, NoiseLevel]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x0,QualMeasOpts,gpuids, lambda, NoiseLevel,gt]=parse_inputs(proj,geo,angles,varargin);
 
 %%% PARAMETER CHOICE HIERARCHY: given lambda, DP, GCV
 
@@ -48,15 +52,24 @@ if isnan(lambda)
         RegParam = 'gcv';
         % Malena: if this is not good, we can use alternative formulations
     else
-        RegParam = 'discrepit'; 
-        % Malena: if this is slow, we can use an adaptive method 
+        RegParam = 'discrepit';
+        % Malena: if this is slow, we can use an adaptive method
     end
 else
     RegParam = 'given_lambda';
 end
-measurequality=~isempty(QualMeasOpts);
+measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
+if ~any(isnan(gt(:)))
+    QualMeasOpts{end+1}='error_norm';
+    x_prev=gt;
+    clear gt
+end
+if nargout<3 && measurequality
+    warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
+    measurequality=false;
+end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
-
+resL2 = zeros(1,niter);
 % Paige and Saunders //doi.org/10.1145/355984.355989
 
 % This should be one to avoid loosing orthogonality, but can be switched
@@ -71,7 +84,7 @@ proj_rhs = zeros(niter+1,1,'single'); % Projected right hand side
 lambda_vec = zeros(niter,1);
 
 % Enumeration as given in the paper for 'Algorithm LSQR'
-% (1) Initialize 
+% (1) Initialize
 u = proj-Ax(x0,geo,angles,'Siddon','gpuids',gpuids);
 normr = norm(u(:),2);
 u = u/normr;
@@ -79,13 +92,18 @@ U(:,1) = u(:);
 
 beta = normr;
 proj_rhs(1) = normr;
-resL2 = zeros(1,niter);
 
-% (2) Start iterations 
+% (2) Start iterations
 for ii=1:niter
-
+    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+        if ii==1
+            x_prev=x0;
+        else
+            x_prev =  x0 + reshape(V(:,1:ii)*y,size(x0)); % only store if necesary
+        end
+    end
     if (ii==1 && verbose);tic;end
-
+    
     % Update V_ii
     v = Atb(u,geo,angles,'matched','gpuids',gpuids);
     
@@ -100,7 +118,7 @@ for ii=1:niter
     alpha = norm(v(:),2); % msl: do we want to check if it is 0?
     v = v/alpha;
     V(:,ii) = v(:);
-
+    
     % Update U_{ii+1}
     u = Ax(v,geo,angles,'Siddon','gpuids',gpuids) - alpha*u;
     if reorth % Maybe change to matrix operations!
@@ -111,14 +129,14 @@ for ii=1:niter
     beta = norm(u(:),2);
     u = u / beta;
     U(:,ii+1) = u(:);
-
+    
     % Update projected matrix
     B(ii,ii) = alpha;
     B(ii+1,ii) = beta;
-    % Malena. Proposed update: we should check algorithms breaks; 
+    % Malena. Proposed update: we should check algorithms breaks;
     % 'if abs(alpha) <= eps || abs(beta) <= eps' - end and save
-
-    % Solve the projected problem 
+    
+    % Solve the projected problem
     % (using the SVD of the small projected matrix)
     Bk = B(1:ii+1,1:ii);
     [Uk, Sk, Vk] = svd(Bk);
@@ -130,11 +148,11 @@ for ii=1:niter
     rhsk = proj_rhs(1:ii+1);
     rhskhat = Uk'*rhsk;
     lsqr_res = abs(rhskhat(ii+1))/normr;
-
-
+    
+    
     if strcmp(RegParam,'discrepit')
         eta = 1;
-        if lsqr_res > eta*NoiseLevel 
+        if lsqr_res > eta*NoiseLevel
             lambda = 0;
         else
             lambda = fzero(@(l)discrepancy(l, Bk, rhsk, eta*NoiseLevel), [0, 1e10]);
@@ -144,25 +162,34 @@ for ii=1:niter
         lambda = fminbnd(@(l)gcv(l, rhskhat, Sk),  0, double(Sk(1)));
         % Adapt from IRtools
         lambda_vec(ii) = lambda; % We should output this, maybe?
-    elseif strcmp(RegParam,'given_lambda') 
+    elseif strcmp(RegParam,'given_lambda')
         lambda_vec(ii) = lambda;
     end
-
+    
     Dk = Sk.^2 + lambda^2;
     rhskhat = Sk .* rhskhat(1:ii);
     yhat = rhskhat(1:ii)./Dk;
     y = Vk * yhat;
-
-    resL2(ii)=norm(rhsk - Bk*y); % residual norm
-
-     
+    
+%     resL2(ii)=norm(rhsk - Bk*y); % residual norm
+    x = x0 + reshape(V(:,1:ii)*y,size(x0));
+    if measurequality
+        qualMeasOut(:,ii)=Measure_Quality(x_prev,x,QualMeasOpts);
+    end
+    aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
+    resL2(ii)=im3Dnorm(aux,'L2');
+    if ii>1 && resL2(ii)>resL2(ii-1)
+        disp(['Algorithm stoped in iteration ', num2str(ii),' due to loss of ortogonality.'])
+        return;
+    end
+    
     if (ii==1 && verbose)
-        expected_time=toc*niter;   
+        expected_time=toc*niter;
         disp('hybrid LSQR');
         disp(['Expected duration   :    ',secs2hms(expected_time)]);
-        disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);   
+        disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
-     end
+    end
 end
 x = x0 + reshape(V(:,1:ii)*y,size(x0));
 
@@ -179,14 +206,14 @@ else
     xl = [A; l*eye(n)]\[b; zeros(n,1)];
     out = (norm(A*xl -b)/norm(b))^2 - nnoise^2;
 end
-end 
+end
 
 function out = gcv(lambda, bhat, s)
 % GCV for the projected problem - no weights
 % If Bk is the projected matrix and Bk=Uk*Sk*Vk^T
 % lambda is the regularisation parameter
-% bhat is Uk'*bk 
-% s=diag(Sk) 
+% bhat is Uk'*bk
+% s=diag(Sk)
 
 m = length(bhat);
 n = length(s);
@@ -201,12 +228,12 @@ t2 = abs(bhat(1:n) .* t1) .^2;
 
 out = (sum(t2) + t0) / ((sum(t1)+m-n)^2);
 
-end 
+end
 
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids,lambda,NoiseLevel]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda','noiselevel'};
+function [verbose,x,QualMeasOpts,gpuids,lambda,NoiseLevel,gt]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda','noiselevel','groundtruth'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -221,7 +248,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-       error('TIGRE:LSQR:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]); 
+        error('TIGRE:LSQR:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -229,14 +256,14 @@ for ii=1:length(opts)
     opt=opts{ii};
     default=defaults(ii);
     % if one option isnot default, then extranc value from input
-   if default==0
+    if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
             ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
         end
         if isempty(ind)
-            error('TIGRE:LSQR:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
+            error('TIGRE:LSQR:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -261,7 +288,7 @@ for ii=1:length(opts)
                 continue;
             end
             if isempty(x)
-               error('TIGRE:LSQR:InvalidInput','Invalid Init option') 
+                error('TIGRE:LSQR:InvalidInput','Invalid Init option')
             end
             % % % % % % % ERROR
         case 'initimg'
@@ -288,7 +315,7 @@ for ii=1:length(opts)
                 NoiseLevel=val;
             end
             
-        %  =========================================================================
+            %  =========================================================================
         case 'qualmeas'
             if default
                 QualMeasOpts={};
@@ -299,7 +326,7 @@ for ii=1:length(opts)
                     error('TIGRE:LSQR:InvalidInput','Invalid quality measurement parameters');
                 end
             end
-         case 'verbose'
+        case 'verbose'
             if default
                 verbose=1;
             else
@@ -315,7 +342,13 @@ for ii=1:length(opts)
             else
                 gpuids = val;
             end
-        otherwise 
+        case 'groundtruth'
+            if default
+                gt=nan;
+            else
+                gt=val;
+            end
+        otherwise
             error('TIGRE:LSQR:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);
     end
 end
