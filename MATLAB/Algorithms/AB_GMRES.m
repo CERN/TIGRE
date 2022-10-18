@@ -91,11 +91,11 @@ for k=1:niter
     w(:,k+1)=qk(:)/h(k+1,k);
     y=h(1:k+1,1:k)\(e1*norm(r(:),2));
     if measurequality
-        qualMeasOut(:,k)=Measure_Quality(x0,compute_res(x,w(:,1:end-1),y(1),geo,angles,gpuids) ,QualMeasOpts);
+        qualMeasOut(:,k)=Measure_Quality(x0,compute_res(x,w(:,1:k),y,geo,angles,gpuids) ,QualMeasOpts);
     end
-    
+
     if nargout>1
-        resL2(k)=im3Dnorm(proj-Ax(compute_res(x,w(:,1:end-1),y(1),geo,angles,gpuids),geo,angles,'Siddon','gpuids',gpuids),'L2');
+        resL2(k)=im3Dnorm(proj-Ax(compute_res(x,w(:,1:k),y,geo,angles,gpuids),geo,angles,'Siddon','gpuids',gpuids),'L2');
         if k>1 && resL2(k)>resL2(k-1)
             x=compute_res(x,w(:,1:end-1),y(1),geo,angles,gpuids);
             disp(['Algorithm stoped in iteration ', num2str(k),' due to loss of ortogonality.'])
@@ -112,18 +112,17 @@ for k=1:niter
         disp('');
     end
 end
-x=compute_res(x,w,y(1),geo,angles,gpuids);
+x=compute_res(x,w(:,1:end-1),y,geo,angles,gpuids);
 
 
 
 end
 
 % x is not explicit in this algorith, and its quite expensive to compute
-function x=compute_res(x0,w,y,geo,angles,gpuIds)
+function x=compute_res(x,w,y,geo,angles,gpuIds)
 
-x=x0;
 for ii=1:size(w,2)
-    x=x+Atb(reshape(w(:,ii),geo.nDetector(1),geo.nDetector(2),length(angles)),geo,angles,'matched','gpuIds',gpuIds)*y;
+    x=x+Atb(reshape(w(:,ii),geo.nDetector(1),geo.nDetector(2),length(angles)),geo,angles,'matched','gpuIds',gpuIds)*y(ii);
 end
 
 end

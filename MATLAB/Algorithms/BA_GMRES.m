@@ -63,37 +63,38 @@ resL2=zeros(1,niter);
 % Per Cristian Hansen:
 % GMRES methods for tomographic reconstruction with an unmatched back projector
 
-w=zeros(prod(geo.nVoxel,niter,'single');
+w=zeros(prod(geo.nVoxel),niter+1,'single');
 r=Atb(proj,geo,angles,'matched','gpuids',gpuids)-Atb(Ax(x,geo,angles,'Siddon','gpuids',gpuids),geo,angles,'matched','gpuids',gpuids);
 w(:,1) = r(:)/norm(r(:),2);
 
-e1=zeros(1,niter);
-e1(1)=1;
+h=zeros(niter+1,niter);
 for k=1:niter
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
         x0 = x; % only store if necesary
     end
     if (k==1 && verbose);tic;end
     
-    qk=Atb(Ax(reshape(w(:,k),geo.nVoxel(1),geo.nVoxel(2),geo.nVoxel(3)),geo,angles,'matched',gpuids),geo,angles,'Siddon','gpuids',gpuids);
-    h=zeros(k+1,k);
+    qk=Atb(Ax(reshape(w(:,k),geo.nVoxel.'),geo,angles,'Siddon','gpuids',gpuids),geo,angles,'matched','gpuids',gpuids);
+    e1=zeros(k+1,1);
+    e1(1)=1;
     for ii=1:k
         h(ii,k)=sum(qk(:).*w(:,ii));
         qk(:)=qk(:)-h(ii,k)*w(:,ii);
     end
     h(k+1,k)=norm(qk(:),2);
-    w(:,k)=qk(:)/h(k+1,k);
-    y=h\(e1*norm(r(:),2));
+    w(:,k+1)=qk(:)/h(k+1,k);
+    y=h(1:k+1,1:k)\(e1*norm(r(:),2));
     if measurequality
-        qualMeasOut(:,k)=Measure_Quality(x0,compute_res(x,w(:,1:end-1),y(1),geo,angles) ,QualMeasOpts);
+        qualMeasOut(:,k)=Measure_Quality(x0,compute_res(x,w(:,1:k),y,geo,angles) ,QualMeasOpts);
     end
     
     if nargout>1
-        x=compute_res(x,w(:,1:end-1),y(1),geo,angles) ;
-        aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
+        aux=proj-Ax(compute_res(x,w(:,1:k),y,geo,angles),geo,angles,'Siddon','gpuids',gpuids);
         resL2(k)=im3Dnorm(aux,'L2');
         if k>1 && resL2(k)>resL2(k-1)
+            x=compute_res(x,w(:,1:k),y,geo,angles);
             disp(['Algorithm stoped in iteration ', num2str(k),' due to loss of ortogonality.'])
+            return
         end
         
     end
@@ -106,18 +107,16 @@ for k=1:niter
         disp('');
     end
 end
-x=compute_res(x,w,y(1),geo,angles);
+x=compute_res(x,w(:,end-1),y,geo,angles);
 
 
 
 end
 
-% x is not explicit in this algorith, and its quite expensive to compute
-function x=compute_res(x0,w,y,geo,angles)
+function x=compute_res(x,w,y,geo,angles)
 
-x=x0;
 for ii=1:size(w,2)
-    x=x+reshape(w(:,ii),geo.nVoxel,length(angles))*y;
+    x=x+reshape(w(:,ii),geo.nVoxel.')*y(ii);
 end
 
 end
