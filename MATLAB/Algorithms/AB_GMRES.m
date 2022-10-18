@@ -73,7 +73,7 @@ resL2=zeros(1,niter);
 w=zeros(numel(proj),niter+1,'single');
 r=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
 w(:,1) = r(:)/norm(r(:),2);
-
+h=zeros(niter+1,niter);
 for k=1:niter
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
         x0 = x; % only store if necesary
@@ -83,14 +83,13 @@ for k=1:niter
     qk=Ax(Atb(reshape(w(:,k),geo.nDetector(1),geo.nDetector(2),length(angles)),geo,angles,'matched','gpuids',gpuids),geo,angles,'Siddon','gpuids',gpuids);
     e1=zeros(k+1,1);
     e1(1)=1;
-    h=zeros(k+1,1);
     for ii=1:k
-        h(ii)=sum(qk(:).*w(:,ii));
-        qk(:)=qk(:)-h(ii)*w(:,ii);
+        h(ii,k)=sum(qk(:).*w(:,ii));
+        qk(:)=qk(:)-h(ii,k)*w(:,ii);
     end
-    h(k+1)=norm(qk(:),2);
-    w(:,k+1)=qk(:)/h(k+1);
-    y=h\(e1*norm(r(:),2));
+    h(k+1,k)=norm(qk(:),2);
+    w(:,k+1)=qk(:)/h(k+1,k);
+    y=h(1:k+1,1:k)\(e1*norm(r(:),2));
     if measurequality
         qualMeasOut(:,k)=Measure_Quality(x0,compute_res(x,w(:,1:end-1),y(1),geo,angles,gpuids) ,QualMeasOpts);
     end
