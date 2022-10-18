@@ -70,12 +70,10 @@ resL2=zeros(1,niter);
 % Per Cristian Hansen:
 % GMRES methods for tomographic reconstruction with an unmatched back projector
 
-w=zeros(prod(size(proj)),niter,'single');
+w=zeros(numel(proj),niter+1,'single');
 r=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
 w(:,1) = r(:)/norm(r(:),2);
 
-e1=zeros(1,niter);
-e1(1)=1;
 for k=1:niter
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
         x0 = x; % only store if necesary
@@ -83,24 +81,26 @@ for k=1:niter
     if (k==1 && verbose);tic;end
     
     qk=Ax(Atb(reshape(w(:,k),geo.nDetector(1),geo.nDetector(2),length(angles)),geo,angles,'matched','gpuids',gpuids),geo,angles,'Siddon','gpuids',gpuids);
-    h=zeros(k+1,k);
+    e1=zeros(k+1,1);
+    e1(1)=1;
+    h=zeros(k+1,1);
     for ii=1:k
-        h(ii,k)=sum(qk(:).*w(:,ii));
-        qk(:)=qk(:)-h(ii,k)*w(:,ii);
+        h(ii)=sum(qk(:).*w(:,ii));
+        qk(:)=qk(:)-h(ii)*w(:,ii);
     end
-    h(k+1,k)=norm(qk(:),2);
-    w(:,k)=qk(:)/h(k+1,k);
+    h(k+1)=norm(qk(:),2);
+    w(:,k+1)=qk(:)/h(k+1);
     y=h\(e1*norm(r(:),2));
     if measurequality
         qualMeasOut(:,k)=Measure_Quality(x0,compute_res(x,w(:,1:end-1),y(1),geo,angles,gpuids) ,QualMeasOpts);
     end
     
     if nargout>1
-        x=compute_res(x,w(:,1:end-1),y(1),geo,angles,gpuids) ;
-        aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
-        resL2(k)=im3Dnorm(aux,'L2');
+        resL2(k)=im3Dnorm(proj-Ax(compute_res(x,w(:,1:end-1),y(1),geo,angles,gpuids),geo,angles,'Siddon','gpuids',gpuids),'L2');
         if k>1 && resL2(k)>resL2(k-1)
+            x=compute_res(x,w(:,1:end-1),y(1),geo,angles,gpuids);
             disp(['Algorithm stoped in iteration ', num2str(k),' due to loss of ortogonality.'])
+            return;
         end
         
     end
