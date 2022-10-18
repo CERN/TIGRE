@@ -24,8 +24,13 @@ function [x,resL2,qualMeasOut]= AB_GMRES(proj,geo,angles,niter,varargin)
 %  'groundTruth'  an image as grounf truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
-%  'restart'  true or false. By default the algorithm will restart when
-%             loss of ortogonality is found.
+% 'backprojector' Descrives which backprojector to use
+%
+%                *'FDK': This will use the FDK algorithm as a backprojector
+%                        NOTE: not the backprojector TIGRE calls "FDK", but
+%                        the actual algorithhm
+%                *'matched': (DEFAULT) uses the pseudo-matched backprojectors 
+%
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -45,7 +50,13 @@ function [x,resL2,qualMeasOut]= AB_GMRES(proj,geo,angles,niter,varargin)
 
 %%
 
-[verbose,x,QualMeasOpts,gpuids,gt,restart]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x,QualMeasOpts,gpuids,gt,bp]=parse_inputs(proj,geo,angles,varargin);
+
+if strcmpi(bp,'FDK')
+    backproject=@(proj,geo,angles,gpuids)FDK(proj,geo,angles,'gpuids',gpuids);
+else
+    backproject=@(proj,geo,angles,gpuids)Atb(proj,geo,angles,'matched','gpuids',gpuids);
+end
 
 measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
 if ~any(isnan(gt(:)))
@@ -80,7 +91,7 @@ for k=1:niter
     end
     if (k==1 && verbose);tic;end
     
-    qk=Ax(Atb(reshape(w(:,k),geo.nDetector(1),geo.nDetector(2),length(angles)),geo,angles,'matched','gpuids',gpuids),geo,angles,'Siddon','gpuids',gpuids);
+    qk=Ax(backproject(reshape(w(:,k),geo.nDetector(1),geo.nDetector(2),length(angles)),geo,angles,gpuids),geo,angles,'Siddon','gpuids',gpuids);
     e1=zeros(k+1,1);
     e1(1)=1;
     for ii=1:k
@@ -91,13 +102,13 @@ for k=1:niter
     w(:,k+1)=qk(:)/h(k+1,k);
     y=h(1:k+1,1:k)\(e1*norm(r(:),2));
     if measurequality
-        qualMeasOut(:,k)=Measure_Quality(x0,compute_res(x,w(:,1:k),y,geo,angles,gpuids) ,QualMeasOpts);
+        qualMeasOut(:,k)=Measure_Quality(x0,compute_res(x,w(:,1:k),y,geo,angles,backproject,gpuids) ,QualMeasOpts);
     end
 
     if nargout>1
-        resL2(k)=im3Dnorm(proj-Ax(compute_res(x,w(:,1:k),y,geo,angles,gpuids),geo,angles,'Siddon','gpuids',gpuids),'L2');
+        resL2(k)=im3Dnorm(proj-Ax(compute_res(x,w(:,1:k),y,geo,angles,backproject,gpuids),geo,angles,'Siddon','gpuids',gpuids),'L2');
         if k>1 && resL2(k)>resL2(k-1)
-            x=compute_res(x,w(:,1:end-1),y(1),geo,angles,gpuids);
+            x=compute_res(x,w(:,1:end-1),y(1),geo,angles,backproject,gpuids);
             disp(['Algorithm stoped in iteration ', num2str(k),' due to loss of ortogonality.'])
             return;
         end
@@ -112,24 +123,24 @@ for k=1:niter
         disp('');
     end
 end
-x=compute_res(x,w(:,1:end-1),y,geo,angles,gpuids);
+x=compute_res(x,w(:,1:end-1),y,geo,angles,backproject,gpuids);
 
 
 
 end
 
 % x is not explicit in this algorith, and its quite expensive to compute
-function x=compute_res(x,w,y,geo,angles,gpuIds)
+function x=compute_res(x,w,y,geo,angles,backproject,gpuIds)
 
 for ii=1:size(w,2)
-    x=x+Atb(reshape(w(:,ii),geo.nDetector(1),geo.nDetector(2),length(angles)),geo,angles,'matched','gpuIds',gpuIds)*y(ii);
+    x=x+backproject(reshape(w(:,ii),geo.nDetector(1),geo.nDetector(2),length(angles)),geo,angles,gpuIds)*y(ii);
 end
 
 end
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids,gt,restart]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids','groundtruth','restart'};
+function [verbose,x,QualMeasOpts,gpuids,gt,bp]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids','groundtruth','backprojector'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -231,11 +242,11 @@ for ii=1:length(opts)
             else
                 gt=val;
             end
-        case 'restart'
+        case 'backprojector'
             if default
-                restart=true;
+                bp='matched';
             else
-                restart=val;
+                bp=val;
             end
         otherwise
             error('TIGRE:AB-GMRES:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);

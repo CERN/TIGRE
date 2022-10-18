@@ -24,6 +24,13 @@ function [x,resL2,qualMeasOut]= BA_GMRES(proj,geo,angles,niter,varargin)
 %  'groundTruth'  an image as grounf truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
+% 'backprojector' Descrives which backprojector to use
+%
+%                *'FDK': This will use the FDK algorithm as a backprojector
+%                        NOTE: not the backprojector TIGRE calls "FDK", but
+%                        the actual algorithhm
+%                *'matched': (DEFAULT) uses the pseudo-matched backprojectors 
+%
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -43,7 +50,13 @@ function [x,resL2,qualMeasOut]= BA_GMRES(proj,geo,angles,niter,varargin)
 
 %%
 
-[verbose,x,QualMeasOpts,gpuids,gt]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x,QualMeasOpts,gpuids,gt,bp]=parse_inputs(proj,geo,angles,varargin);
+
+if strcmpi(bp,'FDK')
+    backproject=@(proj,geo,angles,gpuids)FDK(proj,geo,angles,'gpuids',gpuids);
+else
+    backproject=@(proj,geo,angles,gpuids)Atb(proj,geo,angles,'matched','gpuids',gpuids);
+end
 
 measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
 if ~any(isnan(gt(:)))
@@ -64,7 +77,7 @@ resL2=zeros(1,niter);
 % GMRES methods for tomographic reconstruction with an unmatched back projector
 
 w=zeros(prod(geo.nVoxel),niter+1,'single');
-r=Atb(proj,geo,angles,'matched','gpuids',gpuids)-Atb(Ax(x,geo,angles,'Siddon','gpuids',gpuids),geo,angles,'matched','gpuids',gpuids);
+r=backproject(proj,geo,angles,gpuids)-backproject(Ax(x,geo,angles,'Siddon','gpuids',gpuids),geo,angles,gpuids);
 w(:,1) = r(:)/norm(r(:),2);
 
 h=zeros(niter+1,niter);
@@ -74,7 +87,7 @@ for k=1:niter
     end
     if (k==1 && verbose);tic;end
     
-    qk=Atb(Ax(reshape(w(:,k),geo.nVoxel.'),geo,angles,'Siddon','gpuids',gpuids),geo,angles,'matched','gpuids',gpuids);
+    qk=backproject(Ax(reshape(w(:,k),geo.nVoxel.'),geo,angles,'Siddon','gpuids',gpuids),geo,angles,gpuids);
     e1=zeros(k+1,1);
     e1(1)=1;
     for ii=1:k
@@ -85,14 +98,14 @@ for k=1:niter
     w(:,k+1)=qk(:)/h(k+1,k);
     y=h(1:k+1,1:k)\(e1*norm(r(:),2));
     if measurequality
-        qualMeasOut(:,k)=Measure_Quality(x0,compute_res(x,w(:,1:k),y,geo,angles) ,QualMeasOpts);
+        qualMeasOut(:,k)=Measure_Quality(x0,compute_res(x,w(:,1:k),y,geo) ,QualMeasOpts);
     end
     
     if nargout>1
-        aux=proj-Ax(compute_res(x,w(:,1:k),y,geo,angles),geo,angles,'Siddon','gpuids',gpuids);
+        aux=proj-Ax(compute_res(x,w(:,1:k),y,geo),geo,angles,'Siddon','gpuids',gpuids);
         resL2(k)=im3Dnorm(aux,'L2');
         if k>1 && resL2(k)>resL2(k-1)
-            x=compute_res(x,w(:,1:k),y,geo,angles);
+            x=compute_res(x,w(:,1:k),y,geo);
             disp(['Algorithm stoped in iteration ', num2str(k),' due to loss of ortogonality.'])
             return
         end
@@ -107,13 +120,13 @@ for k=1:niter
         disp('');
     end
 end
-x=compute_res(x,w(:,end-1),y,geo,angles);
+x=compute_res(x,w(:,end-1),y,geo);
 
 
 
 end
 
-function x=compute_res(x,w,y,geo,angles)
+function x=compute_res(x,w,y,geo)
 
 for ii=1:size(w,2)
     x=x+reshape(w(:,ii),geo.nVoxel.')*y(ii);
@@ -122,8 +135,8 @@ end
 end
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids,gt]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids','groundtruth'};
+function [verbose,x,QualMeasOpts,gpuids,gt,bp]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids','groundtruth','backprojector'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -224,6 +237,12 @@ for ii=1:length(opts)
                 gt=nan;
             else
                 gt=val;
+            end
+                case 'backprojector'
+            if default
+                bp='matched';
+            else
+                bp=val;
             end
         otherwise
             error('TIGRE:BA-GMRES:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);
