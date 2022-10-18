@@ -32,20 +32,21 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     
     cdef c_GpuIds* c_gpuids = convert_to_c_gpuids(gpuids)
     if not c_gpuids:
-        raise MemoryError()
+        raise MemoryError("Error reading GPU Ids")
     
     cdef int total_projections = angles.shape[0]
-    cdef int nDetectorPixels = <int>geometry.nDetector[0] * <int>geometry.nDetector[1]
+    cdef unsigned long nDetectorPixels = <unsigned long>geometry.nDetector[0] * <int>geometry.nDetector[1]
 
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
     if not c_geometry:
-        raise MemoryError()
+        raise MemoryError("Error reading the geometry")
+    print(nDetectorPixels * total_projections* sizeof(float))
     cdef float* c_projectionsNonPinned = <float*>malloc(nDetectorPixels * total_projections* sizeof(float))
     if not c_projectionsNonPinned:
-        raise MemoryError()
+        raise MemoryError("Error creating memory for projections")
     cdef float** c_projections = <float**> malloc(total_projections * sizeof(float*))
     if not c_projections:
-        raise MemoryError()
+        raise MemoryError("Error creating memory to host projections")
     cdef int i = 0
     for i in range(total_projections):
         c_projections[i] = <float*> &(c_projectionsNonPinned[nDetectorPixels * i])
@@ -54,7 +55,7 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
 
     cdef float* c_angles = <float*> angles.data
     if not c_angles:
-        raise MemoryError()
+        raise MemoryError("Error loading angle data")
     if projection_type == "Siddon" or projection_type == "ray-voxel":
         interpolated = False
     elif projection_type == "interpolated":

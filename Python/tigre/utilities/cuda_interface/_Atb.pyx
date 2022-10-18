@@ -32,7 +32,7 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
 
     cdef c_GpuIds* c_gpuids = convert_to_c_gpuids(gpuids)
     if not c_gpuids:
-        raise MemoryError()
+        raise MemoryError("Error loading gpuIds")
     
     cdef int total_projections = angles.shape[0]
 
