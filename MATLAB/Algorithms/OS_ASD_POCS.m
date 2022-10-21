@@ -87,7 +87,7 @@ if nargout<2 && measurequality
     warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
     measurequality=false;
 end
-qualMeasOut=zeros(length(QualMeasOpts),niter);
+qualMeasOut=zeros(length(QualMeasOpts),maxiter);
 
 % first order the projection angles
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
@@ -135,6 +135,7 @@ while ~stop_criteria %POCS
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
         res_prev = f; % only store if necesary
     end
+    f0=f;
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;
     for jj=1:length(alphablocks)

@@ -1,4 +1,4 @@
-function [x,resL2,lambda_vec, qualMeasOut]= hybrid_LSQR(proj,geo,angles,niter,varargin)
+function [x,resL2, qualMeasOut,lambda_vec]= hybrid_LSQR(proj,geo,angles,niter,varargin)
 
 % hybrid_LSQR solves the CBCT problem using LSQR.
 %
