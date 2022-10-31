@@ -120,7 +120,7 @@ for ii=1:niter
     % If quality is going to be measured, then we need to save previous image
     % THIS TAKES MEMORY!
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
-        res_prev = x; % only store if necesary
+        res_prev = res; % only store if necesary
     end
     % --------- Memory expensive-----------
     %         proj_err=proj-Ax(res,geo,angles);                 %                                 (b-Ax)

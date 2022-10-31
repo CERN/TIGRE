@@ -81,7 +81,7 @@ if nargout<2 && measurequality
     warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
     measurequality=false;
 end
-qualMeasOut=zeros(length(QualMeasOpts),niter);
+qualMeasOut=zeros(length(QualMeasOpts),maxiter);
 
 
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);

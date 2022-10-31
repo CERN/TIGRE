@@ -1,4 +1,4 @@
-function [x_out,resL2,qualMeasOut]= IRN_TV_CGLS(proj,geo,angles,niter,varargin)
+function [x_outer,resL2,qualMeasOut]= IRN_TV_CGLS(proj,geo,angles,niter,varargin)
 % IRN_TV_CGLS solves the IRN_TV_CGLS problem using the conjugate gradient least
 % squares with Total Variation regularization, using an inner outer scheme
 %
@@ -90,7 +90,6 @@ while iter<niter
     p = p_aux_1 + p_aux_2;
     
     gamma=norm(p(:),2)^2;
-    
     while iter<niter %this will be broken by a parameter
         iter=iter+1;
         if measurequality && ~strcmp(QualMeasOpts,'error_norm')
@@ -105,7 +104,6 @@ while iter<niter
         
         
         x=x+alpha*p;
-        x_out=x;
         
         if measurequality
             qualMeasOut(:,iter)=Measure_Quality(x_prev,x,QualMeasOpts);
@@ -119,25 +117,23 @@ while iter<niter
         % difference operations on single precission numbers.
         aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
         resL2(iter)=im3Dnorm(aux,'L2');
-        if mod(iter,niter_break)~=1 && resL2(iter)>resL2(iter-1)
-            % we lost orthogonality, lets restart the algorithm unless the
-            % user asked us not to.
-            iter
-            niter_break
-            % undo bad step.
-            x=x-alpha*p;
-            % if the restart didn't work.
-            if remember==iter || ~restart
-                disp(['Algorithm stoped in iteration ', num2str(iter),' due to loss of ortogonality.'])
-                return;
-            end
-            remember=iter;
-            iter=iter-1;
-            if verbose
-                disp(['Orthogonality lost, restarting at iteration ', num2str(iter) ])
-            end
-            break
-        end
+%         if mod(iter,niter_break)~=1 && resL2(iter)>resL2(iter-1)
+%             % we lost orthogonality, lets restart the algorithm unless the
+%             % user asked us not to.
+%             % undo bad step.
+%             x=x-alpha*p;
+%             % if the restart didn't work.
+%             if remember==iter || ~restart
+%                 disp(['Algorithm stoped in iteration ', num2str(iter),' due to loss of ortogonality.'])
+%                 return;
+%             end
+%             remember=iter;
+%             iter=iter-1;
+%             if verbose
+%                 disp(['Orthogonality lost, restarting at iteration ', num2str(iter) ])
+%             end
+%             break
+%         end
         
         % If step is adecuate, then continue withg CGLS
         r_aux_1 = r_aux_1-alpha*q_aux_1;
@@ -165,6 +161,7 @@ while iter<niter
             disp('');
         end
     end
+    x_outer=x;
     
     
 end
@@ -302,7 +299,7 @@ for ii=1:length(opts)
             end
         case 'niter_outer'
             if default
-                niter_outer=5;
+                niter_outer=10;
             else
                 niter_outer=val;
             end
