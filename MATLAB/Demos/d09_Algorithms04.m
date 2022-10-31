@@ -195,8 +195,7 @@ imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',50);
 % IRN_TV_CGLS
 %==========================================================================
 %========================================================================== 
-% MALENA, CAN YOU ADD A SMALL TEXT HERE? EXPLAINING THE ALGORITHM IN 3
-% LINES OR SO
+% CGLS with TV regularization in an inner/outer iteration scheme
 %
 % 'lambda' hyperparameter in TV norm. It gives the ratio of
 %          importance of the image vs the minimum total variation.
@@ -208,24 +207,36 @@ imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',50);
 %               iterations than the other algorithms, this is an inherently
 %               faster algorithm, both in convergence and time. 
 
-imgIRN_TV_CGLS=IRN_TV_CGLS(noise_projections,geo,angles,20,'lambda',15);
+imgIRN_TV_CGLS=IRN_TV_CGLS(noise_projections,geo,angles,20,'lambda',5,'niter_outer',2);
+% hybrid_fLSQR_TV
+%==========================================================================
+%========================================================================== 
+% flexyble hybrod LSQR. Has TV regularization with reorthogonalization. 
+%
+% 'lambda' hyperparameter in TV norm. It gives the ratio of
+%          importance of the image vs the minimum total variation.
+%          default is 15. Lower means less TV denoising.
+%
+imgflsqr=hybrid_fLSQR_TV(projections,geo,angles,20,'lambda',5);
+
  %% Lets visualize the results
 % Notice the smoother images due to TV regularization.
 %
-%     thorax              OS-SART           ASD-POCS         
+%     head              OS-SART           ASD-POCS         
 %    
-%     OSC-TV             B-ASD-POCS-beta   SART-TV
+%     OS-ASD-POCS       B-ASD-POCS-beta   SART-TV
+%
+%     IRN-TV-CGLS        hybrid-fLSQR       heads
 
-plotImg([ imgOSASDPOCS imgBASDPOCSbeta imgSARTTV; imgIRN_TV_CGLS imgOSSART  imgASDPOCS ] ,'Dim','Z','Step',2,'clims',[0 1])
+plotImg([imgIRN_TV_CGLS imgflsqr  head;
+         imgOSASDPOCS imgBASDPOCSbeta imgSARTTV;
+         head, imgOSSART, imgASDPOCS ] ,'Dim','Z','Step',2,'clims',[0 1])
  % error
-
-plotImg(abs([ head-imgOSASDPOCS head-imgBASDPOCSbeta head-imgSARTTV;head-imgIRN_TV_CGLS head-imgOSSART  head-imgASDPOCS ]) ,'Dim','Z','Slice',64,'clims',[0 0.1])
-
-
-
+plotImg(abs([head-imgIRN_TV_CGLS head-imgflsqr  head-head;
+         head-imgOSASDPOCS head-imgBASDPOCSbeta head-imgSARTTV;
+         head-head, head-imgOSSART, head-imgASDPOCS ]) ,'Dim','Z','Slice',64,'clims',[0 0.1])
 
 %%
-
 % Obligatory XKCD reference: https://xkcd.com/833/
 
 

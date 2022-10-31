@@ -148,6 +148,7 @@ grid on
 set(gcf, 'Color', 'w');
 set(gcf, 'Units', 'Inches', 'Position', [1, 1, 15/1.2, 7/1.2], 'PaperUnits', 'Inches', 'PaperSize', [9/1.2 7/1.2])
 % set(gca,'fontsize',16)
+set(0,'defaultTextInterpreter','tex');
 
 %% Hybrid methods with different regularisation parameter choices
 
@@ -168,3 +169,5 @@ hold on
 plot(lambda_vec_gcv)
 title("lambda vs iteratios")
 legend(["Noise Level", "Generalized Cross Validation"])
+
+%%

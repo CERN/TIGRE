@@ -86,7 +86,7 @@ function [ fres, qualMeasOut ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargi
 %% parse inputs
 blocksize=1;
 
-[beta,beta_red,f,ng,verbose,alpha,alpha_red,rmax,epsilon,bregman,bregman_red,bregman_iter,OrderStrategy,nonneg,QualMeasOpts,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,f,ng,verbose,alpha,alpha_red,rmax,epsilon,bregman,bregman_red,bregman_iter,OrderStrategy,nonneg,QualMeasOpts,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,varargin);
 
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 
@@ -103,7 +103,7 @@ if nargout<2 && measurequality
     warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
     measurequality=false;
 end
-qualMeasOut=zeros(length(QualMeasOpts),niter);
+qualMeasOut=zeros(length(QualMeasOpts),maxiter);
 
 
 % does detector rotation exists?
