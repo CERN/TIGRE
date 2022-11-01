@@ -150,7 +150,8 @@ class IterativeReconAlg(object):
             name="Iterative Reconstruction",
             sup_kw_warning=False,
             gpuids=None,
-            niter_outer=15
+            niter_outer=4,
+            restart=True
         )
         allowed_keywords = [
             "V",

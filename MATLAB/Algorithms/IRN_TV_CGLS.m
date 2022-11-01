@@ -66,7 +66,6 @@ end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 resL2 = zeros(1,niter);
 
-remember=[0];
 iter=0;
 % for iii = 1:niter_outer
 while iter<niter
@@ -117,23 +116,23 @@ while iter<niter
         % difference operations on single precission numbers.
         aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
         resL2(iter)=im3Dnorm(aux,'L2');
-%         if mod(iter,niter_break)~=1 && resL2(iter)>resL2(iter-1)
-%             % we lost orthogonality, lets restart the algorithm unless the
-%             % user asked us not to.
-%             % undo bad step.
-%             x=x-alpha*p;
-%             % if the restart didn't work.
-%             if remember==iter || ~restart
-%                 disp(['Algorithm stoped in iteration ', num2str(iter),' due to loss of ortogonality.'])
-%                 return;
-%             end
-%             remember=iter;
-%             iter=iter-1;
-%             if verbose
-%                 disp(['Orthogonality lost, restarting at iteration ', num2str(iter) ])
-%             end
-%             break
-%         end
+        if mod(iter,niter_break)~=1 && resL2(iter)>resL2(iter-1)
+            % we lost orthogonality, lets restart the algorithm unless the
+            % user asked us not to.
+            % undo bad step.
+            x=x-alpha*p;
+            % if the restart didn't work.
+            if remember==iter || ~restart
+                disp(['Algorithm stoped in iteration ', num2str(iter),' due to loss of ortogonality.'])
+                return;
+            end
+            remember=iter;
+            iter=iter-1;
+            if verbose
+                disp(['Orthogonality lost, restarting at iteration ', num2str(iter) ])
+            end
+            break
+        end
         
         % If step is adecuate, then continue withg CGLS
         r_aux_1 = r_aux_1-alpha*q_aux_1;

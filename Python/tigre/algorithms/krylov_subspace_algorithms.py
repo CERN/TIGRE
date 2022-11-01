@@ -33,12 +33,7 @@ class CGLS(IterativeReconAlg):  # noqa: D101
         self.re_init_at_iteration = 0
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
-        self.__r__ = self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
-        self.__p__ = Atb(self.__r__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
-        p_norm = np.linalg.norm(self.__p__.ravel(), 2)
-        self.__gamma__ = p_norm * p_norm
-
-    def reinitialise_cgls(self):
+    def initialize_algo(self):
         self.__r__ = self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
         self.__p__ = Atb(self.__r__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
         p_norm = np.linalg.norm(self.__p__.ravel(), 2)
@@ -46,8 +41,11 @@ class CGLS(IterativeReconAlg):  # noqa: D101
 
     # Overide
     def run_main_iter(self):
+
         self.l2l = np.zeros((1, self.niter), dtype=np.float32)
         avgtime = []
+
+        self.initialize_algo()
         for i in range(self.niter):
             if self.verbose:
                 self._estimate_time_until_completion(i)
@@ -61,27 +59,20 @@ class CGLS(IterativeReconAlg):  # noqa: D101
             self.res += alpha * self.__p__
             avgtoc = default_timer()
             avgtime.append(abs(avgtic - avgtoc))
-            for item in self.__dict__:
-                if (
-                    isinstance(getattr(self, item), np.ndarray)
-                    and np.isnan(getattr(self, item)).any()
-                ):
-                    raise ValueError("nan found for " + item + " at iteraton " + str(i))
 
-            aux = self.proj - tigre.Ax(
-                self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids
-            )
-            self.l2l[0, i] = np.linalg.norm(aux)
+            self.l2l[0, i] = np.linalg.norm(self.proj - tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
             if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
+                self.res -= alpha * self.__p__
+
                 if self.verbose:
                     print("re-initilization of CGLS called at iteration:" + str(i))
-                if self.re_init_at_iteration + 1 == i:
-                    if self.verbose:
-                        print("Algorithm exited with two consecutive reinitializations.")
+                if self.re_init_at_iteration + 1 == i or not self.restart:
+                    print("CGLS exited due to divergence.")
                     return self.res
-                self.res -= alpha * self.__p__
-                self.reinitialise_cgls()
-                self.re_init_at_iteration = i
+                self.re_init_at_iteration=i
+                i=i-1
+                self.initialize_algo()
+                break
 
             self.__r__ -= alpha * q
             s = tigre.Atb(self.__r__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
@@ -118,6 +109,8 @@ class LSQR(IterativeReconAlg):
         kwargs.update(dict(blocksize=angles.shape[0]))
         self.re_init_at_iteration = 0
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+
+    def initialize_algo(self):
         # Paige and Saunders //doi.org/10.1145/355984.355989
 
         # Enumeration as given in the paper for 'Algorithm LSQR'
@@ -139,6 +132,7 @@ class LSQR(IterativeReconAlg):
     def run_main_iter(self):
         self.l2l = np.zeros((1, self.niter), dtype=np.float32)
         avgtime = []
+        self.initialize_algo()
         for i in range(self.niter):
             if self.verbose:
                 self._estimate_time_until_completion(i)
@@ -174,7 +168,20 @@ class LSQR(IterativeReconAlg):
 
             if self.Quameasopts is not None:
                 self.error_measurement(res_prev, i)
-           
+
+            self.l2l[0, i] = np.linalg.norm(self.proj - tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+            if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
+                self.res -= (phi / rho) * (self.__v__-self.__w__)/((theta / rho))
+                if self.verbose:
+                    print("re-initilization of LSQR called at iteration:" + str(i))
+                if self.re_init_at_iteration + 1 == i or not self.restart:
+                    print("LSQR exited due to divergence.")
+                    return self.res
+                self.re_init_at_iteration=i
+                i=i-1
+                self.initialize_algo()
+                break
+
 lsqr = decorator(LSQR, name="lsqr")
 
 class hybrid_LSQR(IterativeReconAlg): 
@@ -191,15 +198,15 @@ class hybrid_LSQR(IterativeReconAlg):
         kwargs.update(dict(blocksize=angles.shape[0]))
         self.re_init_at_iteration = 0
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+        self.__U__ = np.zeros((self.niter+1,np.prod(self.geo.nDetector)*len(self.angles)),dtype=np.float32)
+        self.__V__ = np.zeros((self.niter,(np.prod(self.geo.nVoxel))),dtype=np.float32)
+        self.__B__ = np.zeros((self.niter,self.niter+1),dtype=np.float32) #% Projected matrix
+        self.__proj_rhs__ = np.zeros((self.niter+1,1),dtype=np.float32) #% Projected right hand side
+
+    def initialize_algo(self):
         # Paige and Saunders //doi.org/10.1145/355984.355989
-
         # Enumeration as given in the paper for 'Algorithm LSQR'
-
         # % Initialise matrices
-        self.__U__ = np.zeros((niter+1,np.prod(geo.nDetector)*len(angles)),dtype=np.float32)
-        self.__V__ = np.zeros(niter,(np.prod(geo.nVoxel)),dtype=np.float32)
-        self.__B__ = np.zeros((niter,niter+1),dtype=np.float32); #% Projected matrix
-        self.__proj_rhs__ = np.zeros((niter+1,1),dtype=np.float32); #% Projected right hand side
 
         # (1) Initialize 
         self.__u__=self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
@@ -215,11 +222,11 @@ class hybrid_LSQR(IterativeReconAlg):
     def run_main_iter(self):
         self.l2l = np.zeros((1, self.niter), dtype=np.float32)
         avgtime = []
+        self.initialize_algo()
         for i in range(self.niter):
             if self.verbose:
                 self._estimate_time_until_completion(i)
-            if self.Quameasopts is not None:
-                res_prev = copy.deepcopy(self.res)
+            
             avgtic = default_timer() 
 
             v = Atb(self.__u__,self.geo,self.angles,backprojection_type="matched",gpuids=self.gpuids)
@@ -240,44 +247,50 @@ class hybrid_LSQR(IterativeReconAlg):
             self.__u__ = tigre.Ax(v, self.geo, self.angles, "Siddon", gpuids=self.gpuids) - alpha*self.__u__
             
             for j in range(i-1):
-                self.__u__=np.reshape(self.__u__ .ravel()-(self.__U__[j]*self.__u__.ravel())*self.__U_[j],self.__u__.shape)
+                self.__u__=np.reshape(self.__u__.ravel()-(self.__U__[j]*self.__u__.ravel())*self.__U__[j],self.__u__.shape)
                 
             
             self.__beta__  = np.linalg.norm(self.__u__.ravel(), 2)
-            u = u / self.__beta__ 
+            self.__u__ = self.__u__ / self.__beta__ 
             self.__U__[i+1] = self.__u__.ravel()
 
             #% Update projected matrix
             self.__B__[i,i] = alpha
-            self.__B__[i,i+i] = self.__beta__ 
+            self.__B__[i,i+1] = self.__beta__ 
             #% Malena. Proposed update: we should check algorithms breaks; 
             #% 'if abs(alpha) <= eps || abs(beta) <= eps' - end and save
 
             #% Solve the projected problem 
             #% (using the SVD of the small projected matrix)
-            Bk = self.__B__[0:i,0:i+1]
-            Uk, Sk, Vk = np.linalg.svd(Bk)
+            Bk = self.__B__[0:i+1,0:i+2]
+            Uk, Sk, Vk = np.linalg.svd(np.transpose(Bk))
+
             if i==0:
-                Sk = Sk[0,0]
-            else:
-                Sk = np.diag(Sk)
+                Sk = Sk[0]
             
-            rhsk = self.__proj_rhs__[0:i+1]
+            rhsk = self.__proj_rhs__[0:i+2]
+   
             rhskhat = np.matmul(Uk,rhsk) # AB: transpose Uk??
-            
             Dk = Sk**2 + self.lmbda**2
-            rhskhat = Sk * rhskhat[0:i]
-            yhat = rhskhat[0:i]/Dk
+
+            rhskhat = Sk * rhskhat[0:i+1,0]
+            yhat = rhskhat[0:i+1]/Dk
             y = np.matmul(Vk, yhat)
+            
 
-            self.l2l[i]=np.linalg.norm(rhsk - Bk*y)# % residual norm
-
+            self.l2l[0, i] = np.linalg.norm(self.proj - tigre.Ax(self.res + np.reshape(np.matmul(np.transpose(self.__V__[0:i+1]),y),self.res.shape), self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+            if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
+                if self.re_init_at_iteration + 1 == i or not self.restart:
+                    print("hybrid LSQR exited due to divergence.")
+                    return  self.res + np.reshape(np.matmul(np.transpose(self.__V__[0:i+1]),y),self.res.shape)
+                
             #% Test for convergence. 
             #% msl: I still need to implement this. 
             #% msl: There are suggestions on the original paper. Let's talk about it!
         
-        self.res = self.res + np.reshape(np.matmul(self.__V__,y),self.res.shape)
+        self.res = self.res + np.reshape(np.matmul(np.transpose(self.__V__),y),self.res.shape)
 
+hybrid_lsqr = decorator(hybrid_LSQR, name="hybrid_lsqr")
 
 class LSMR(IterativeReconAlg): 
     __doc__ = (
@@ -293,6 +306,8 @@ class LSMR(IterativeReconAlg):
         kwargs.update(dict(blocksize=angles.shape[0]))
         self.re_init_at_iteration = 0
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+
+    def initialize_algo(self):
         #% David Chin-Lung Fong and Michael Saunders //doi.org/10.1137/10079687X
         #% Enumeration as given in the paper for 'Algorithm LSMR'
         #% (1) Initialize 
@@ -326,6 +341,7 @@ class LSMR(IterativeReconAlg):
     def run_main_iter(self):
         self.l2l = np.zeros((1, self.niter), dtype=np.float32)
         avgtime = []
+        self.initialize_algo()
         for i in range(self.niter):
             if self.verbose:
                 self._estimate_time_until_completion(i)
@@ -397,7 +413,6 @@ class LSMR(IterativeReconAlg):
             #% (11) Compute ||r_k||
             self.__d__ = self.__d__ + betacheck**2
             gamma_var = self.__d__ + (self.__betad__ - taud)**2 + betadd**2
-            self.l2l[0, i] = np.sqrt(gamma_var)
 
             avgtoc = default_timer()
             avgtime.append(abs(avgtic - avgtoc))
@@ -405,6 +420,18 @@ class LSMR(IterativeReconAlg):
             if self.Quameasopts is not None:
                 self.error_measurement(res_prev, i)
 
+            self.l2l[0, i] = np.linalg.norm(self.proj - tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+            if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
+                self.res -= (self.__zeta__ / (self.__rho__*self.__rhobar__)) * self.__hbar__ 
+                if self.verbose:
+                    print("re-initilization of LSMR called at iteration:" + str(i))
+                if self.re_init_at_iteration + 1 == i or not self.restart:
+                    print("LSMR exited due to divergence.")
+                    return self.res
+                self.re_init_at_iteration=iter
+                iter=iter-1
+                self.initialize_algo()
+                break
 lsmr = decorator(LSMR, name="lsmr")
 
 class IRN_TV_CGLS(IterativeReconAlg):

@@ -142,7 +142,7 @@ while iter<niter
             % user asked us not to.
             
             % undo bad step.
-            x=x-(phi / rho) * w;
+            x=x-(phi / rho) * (v-w)/((theta / rho));
             % if the restart didn't work.
             if remember==iter || ~restart
                 disp(['Algorithm stoped in iteration ', num2str(iter),' due to loss of ortogonality.'])
