@@ -276,10 +276,7 @@ class hybrid_LSQR(IterativeReconAlg):
             yhat = rhskhat[0:i+1]/Dk
             y = np.matmul(np.transpose(Vk), yhat)
 
-            print(Dk)
-            print(yhat)
-            print(Vk)
-            print(y)
+      
 
 
             self.l2l[0, i] = np.linalg.norm(self.proj - tigre.Ax(self.res + np.reshape(np.matmul(np.transpose(self.__V__[0:i+1]),y),self.res.shape), self.geo, self.angles, "Siddon", gpuids=self.gpuids))
