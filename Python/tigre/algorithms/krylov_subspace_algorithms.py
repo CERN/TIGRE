@@ -264,32 +264,36 @@ class hybrid_LSQR(IterativeReconAlg):
             #% (using the SVD of the small projected matrix)
             Bk = self.__B__[0:i+1,0:i+2]
             Uk, Sk, Vk = np.linalg.svd(np.transpose(Bk))
-
+      
             if i==0:
                 Sk = Sk[0]
             
             rhsk = self.__proj_rhs__[0:i+2]
-   
-            rhskhat = np.matmul(Uk,rhsk) # AB: transpose Uk??
+            rhskhat = np.matmul(np.transpose(Uk),rhsk) #
             Dk = Sk**2 + self.lmbda**2
 
             rhskhat = Sk * rhskhat[0:i+1,0]
             yhat = rhskhat[0:i+1]/Dk
-            y = np.matmul(Vk, yhat)
-            
+            y = np.matmul(np.transpose(Vk), yhat)
+
+            print(Dk)
+            print(yhat)
+            print(Vk)
+            print(y)
+
 
             self.l2l[0, i] = np.linalg.norm(self.proj - tigre.Ax(self.res + np.reshape(np.matmul(np.transpose(self.__V__[0:i+1]),y),self.res.shape), self.geo, self.angles, "Siddon", gpuids=self.gpuids))
             if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
                 if self.re_init_at_iteration + 1 == i or not self.restart:
-                    print("hybrid LSQR exited due to divergence.")
+                    print("hybrid LSQR exited due to divergence at iteration "+str(i))
                     return  self.res + np.reshape(np.matmul(np.transpose(self.__V__[0:i+1]),y),self.res.shape)
                 
             #% Test for convergence. 
             #% msl: I still need to implement this. 
             #% msl: There are suggestions on the original paper. Let's talk about it!
-        
+        print(y)
         self.res = self.res + np.reshape(np.matmul(np.transpose(self.__V__),y),self.res.shape)
-
+        return self.res
 hybrid_lsqr = decorator(hybrid_LSQR, name="hybrid_lsqr")
 
 class LSMR(IterativeReconAlg): 
