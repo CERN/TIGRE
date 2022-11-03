@@ -8,7 +8,7 @@ from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.utilities.Atb import Atb
 from tigre.utilities.Ax import Ax
-
+import tigre.algorithms as algs
 
 if hasattr(time, "perf_counter"):
     default_timer = time.perf_counter
@@ -562,3 +562,124 @@ class IRN_TV_CGLS(IterativeReconAlg):
                 self.error_measurement(res_prev, outer)
 
 irn_tv_cgls = decorator(IRN_TV_CGLS, name="irn_tv_cgls")
+
+
+class AB_GMRES(IterativeReconAlg): 
+    __doc__ = (
+        " AB_GMRES solves the CBCT problem using preconditioned GMRES\n"
+        "  AB_GMRES(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
+        "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
+        "  to the geometry descrived in GEO, using NITER iterations."
+    ) + IterativeReconAlg.__doc__
+
+    def __init__(self, proj, geo, angles, niter, **kwargs): 
+            # Don't precompute V and W.
+            kwargs.update(dict(W=None, V=None))
+            kwargs.update(dict(blocksize=angles.shape[0]))
+            self.re_init_at_iteration = 0
+            IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+            backproject=kwargs.get("backprojector","matched")
+            if backproject is "matched":
+                self.backproject=Atb
+            elif backproject is "FDK":
+                self.backproject=algs.fdk
+
+    def __compute_res__(self,x,w,y):
+        y=y.astype(np.float32)
+        for i in range(w.shape[0]):
+            x=x+self.backproject(np.reshape(w[i],self.proj.shape),self.geo,self.angles,gpuids=self.gpuids)*y[i]
+        return x
+
+    def run_main_iter(self):
+
+        self.l2l = np.zeros((1, self.niter), dtype=np.float32)
+        w = np.zeros((self.niter+1,np.prod(self.geo.nDetector)*len(self.angles)),dtype=np.float32)
+        r=self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+        w[0] = r.ravel()/np.linalg.norm(r.ravel(), 2)
+        h=np.zeros((self.niter,self.niter+1),dtype=np.float32)
+        for k in range(self.niter):
+            if self.verbose:
+                self._estimate_time_until_completion(k)
+                
+            qk=Ax(self.backproject(np.reshape(w[k],self.proj.shape),self.geo,self.angles,gpuids=self.gpuids),self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+            e1=np.zeros(k+2)
+            e1[0]=1
+            for i in range(k+1):
+                h[k,i]=sum(qk.ravel()*w[i])
+                qk=qk.ravel()-h[k,i]*w[i]
+            
+            h[k,k+1]=np.linalg.norm(qk.ravel(),2)
+            w[k+1]=qk.ravel()/h[k,k+1]
+            y=np.linalg.lstsq(np.transpose(h[0:k+1,0:k+2]),e1*np.linalg.norm(r.ravel(),2),rcond=None)
+            y=y[0]
+            self.l2l[0, i] = np.linalg.norm((self.proj - tigre.Ax(self.__compute_res__(self.res,w[0:k+1],y),self.geo,self.angles, "Siddon",gpuids=self.gpuids)).ravel(),2)
+            if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
+                if self.re_init_at_iteration + 1 == i or not self.restart:
+                    print("AB-GMRES exited due to divergence at iteration "+str(i))
+                    return  self.__compute_res__(self.res,w[0:k+1],y)
+             
+        self.res=self.__compute_res__(self.res,w[0:-1],y)
+        return self.res
+ab_gmres = decorator(AB_GMRES, name="ab_gmres")
+
+
+
+class BA_GMRES(IterativeReconAlg): 
+    __doc__ = (
+        " BA_GMRES solves the CBCT problem using preconditioned GMRES\n"
+        "  AB_GMRES(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
+        "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
+        "  to the geometry descrived in GEO, using NITER iterations."
+    ) + IterativeReconAlg.__doc__
+
+    def __init__(self, proj, geo, angles, niter, **kwargs): 
+            # Don't precompute V and W.
+            kwargs.update(dict(W=None, V=None))
+            kwargs.update(dict(blocksize=angles.shape[0]))
+            self.re_init_at_iteration = 0
+            IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+            backproject=kwargs.get("backprojector","matched")
+            if backproject is "matched":
+                self.backproject=Atb
+            elif backproject is "FDK":
+                self.backproject=algs.fdk
+
+    def __compute_res__(self,x,w,y):
+        y=y.astype(np.float32)
+        for i in range(w.shape[0]):
+            x=x+np.reshape(w[i],self.res.shape)*y[i]
+        return x
+
+    def run_main_iter(self):
+
+        self.l2l = np.zeros((1, self.niter), dtype=np.float32)
+        w = np.zeros((self.niter+1,(np.prod(self.geo.nVoxel))),dtype=np.float32)
+        r=self.backproject(self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids), self.geo, self.angles, gpuids=self.gpuids)
+        w[0] = r.ravel()/np.linalg.norm(r.ravel(), 2)
+        h=np.zeros((self.niter,self.niter+1),dtype=np.float32)
+
+        for k in range(self.niter):
+            if self.verbose:
+                self._estimate_time_until_completion(k)
+                
+            qk=self.backproject(Ax(np.reshape(w[k],self.res.shape),self.geo,self.angles, "Siddon",gpuids=self.gpuids),self.geo, self.angles, gpuids=self.gpuids)
+            e1=np.zeros(k+2)
+            e1[0]=1
+            for i in range(k+1):
+                h[k,i]=sum(qk.ravel()*w[i])
+                qk=qk.ravel()-h[k,i]*w[i]
+            
+            h[k,k+1]=np.linalg.norm(qk.ravel(),2)
+            w[k+1]=qk.ravel()/h[k,k+1]
+            y=np.linalg.lstsq(np.transpose(h[0:k+1,0:k+2]),e1*np.linalg.norm(r.ravel(),2),rcond=None)
+            y=y[0]
+
+            self.l2l[0, i] = np.linalg.norm((self.proj - tigre.Ax(self.__compute_res__(self.res,w[0:k+1],y), self.geo, self.angles, "Siddon", gpuids=self.gpuids)).ravel(),2)
+            if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
+                if self.re_init_at_iteration + 1 == i or not self.restart:
+                    print("BA-GMRES exited due to divergence at iteration "+str(i))
+                    return  self.__compute_res__(self.res,w[0:k+1],y)
+             
+        self.res=self.__compute_res__(self.res,w[0:-1],y)
+        return self.res
+ba_gmres = decorator(BA_GMRES, name="ba_gmres")

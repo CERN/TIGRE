@@ -15,6 +15,8 @@ from .krylov_subspace_algorithms import lsqr
 from .krylov_subspace_algorithms import hybrid_lsqr
 from .krylov_subspace_algorithms import lsmr
 from .krylov_subspace_algorithms import irn_tv_cgls
+from .krylov_subspace_algorithms import ab_gmres
+from .krylov_subspace_algorithms import ba_gmres
 from .pocs_algorithms import asd_pocs
 from .pocs_algorithms import os_asd_pocs
 from .pocs_algorithms import awasd_pocs
