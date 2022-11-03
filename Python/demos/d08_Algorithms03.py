@@ -81,9 +81,9 @@ imghLSQR, normhL2LSQR = algs.hybrid_lsqr(noise_projections, geo, angles, 30, com
 # AB/BA-GMRES
 imgabgmres, normhabgmres = algs.ab_gmres(noise_projections, geo, angles, 30, computel2=True)
 imgbagmres, normhbagmres = algs.ba_gmres(noise_projections, geo, angles, 30, computel2=True)
-# AB/BA-GMRES with FDK backprojector
-imgabgmresfdk, normhabgmresfdk = algs.ab_gmres(noise_projections, geo, angles, 30, computel2=True,backprojection="FDK")
-imgbagmresfdk, normhbagmresfdk = algs.ba_gmres(noise_projections, geo, angles, 30, computel2=True,backprojection="FDK")
+# # AB/BA-GMRES with FDK backprojector
+imgabgmresfdk, normhabgmresfdk = algs.ab_gmres(noise_projections, geo, angles, 30, computel2=True,backprojector="FDK")
+imgbagmresfdk, normhbagmresfdk = algs.ba_gmres(noise_projections, geo, angles, 30, computel2=True,backprojector="FDK")
 
 
 # SIRT for comparison.

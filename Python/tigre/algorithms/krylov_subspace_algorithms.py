@@ -288,7 +288,7 @@ class hybrid_LSQR(IterativeReconAlg):
             #% Test for convergence. 
             #% msl: I still need to implement this. 
             #% msl: There are suggestions on the original paper. Let's talk about it!
-        print(y)
+        
         self.res = self.res + np.reshape(np.matmul(np.transpose(self.__V__),y),self.res.shape)
         return self.res
 hybrid_lsqr = decorator(hybrid_LSQR, name="hybrid_lsqr")
@@ -577,12 +577,16 @@ class AB_GMRES(IterativeReconAlg):
             kwargs.update(dict(W=None, V=None))
             kwargs.update(dict(blocksize=angles.shape[0]))
             self.re_init_at_iteration = 0
-            IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
-            backproject=kwargs.get("backprojector","matched")
-            if backproject is "matched":
+            if "backprojector" in kwargs:
+                backproject=kwargs.pop("backprojector")
+            else:
+                backproject="matched"
+            if backproject == "matched":
                 self.backproject=Atb
-            elif backproject is "FDK":
+            elif backproject == "FDK":
                 self.backproject=algs.fdk
+            IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+      
 
     def __compute_res__(self,x,w,y):
         y=y.astype(np.float32)
@@ -637,12 +641,15 @@ class BA_GMRES(IterativeReconAlg):
             kwargs.update(dict(W=None, V=None))
             kwargs.update(dict(blocksize=angles.shape[0]))
             self.re_init_at_iteration = 0
-            IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
-            backproject=kwargs.get("backprojector","matched")
-            if backproject is "matched":
+            if "backprojector" in kwargs:
+                backproject=kwargs.pop("backprojector")
+            else:
+                backproject="matched"
+            if backproject == "matched":
                 self.backproject=Atb
-            elif backproject is "FDK":
+            elif backproject == "FDK":
                 self.backproject=algs.fdk
+            IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
     def __compute_res__(self,x,w,y):
         y=y.astype(np.float32)
