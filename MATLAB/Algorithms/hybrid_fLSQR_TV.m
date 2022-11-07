@@ -73,7 +73,7 @@ resL2 = zeros(1,niter);
 
 % Initialise matrices
 U = single(zeros(numel(proj), niter+1));
-V = single(zeros(prod(geo.nVoxel), niter)); % Malena: Check if prod(geo.nVoxel) is correct, I want size of object
+V = single(zeros(prod(geo.nVoxel), niter));
 Z = single(zeros(prod(geo.nVoxel), niter)); % Flexible basis
 M = zeros(niter+1,niter); % Projected matrix 1
 T = zeros(niter+1); % Projected matrix 2
@@ -108,8 +108,8 @@ normr = norm(u(:),2);
 u = u/normr;
 U(:,1) = u(:);
 
-if max(max(max(x0))) == 0
-    W = ones(size(x0));
+if max(x0(:)) == 0
+    W = ones(size(x0),'single');
 else
     W = build_weights (x0);
 end
@@ -200,7 +200,7 @@ for ii=1:niter
     rhsZk = [rhsk; zeros(ii,1)];
     y = MZk\rhsZk;
 
-    errorL2(ii)=norm(rhsk - Mk*y);
+%     errorL2(ii)=norm(rhsk - Mk*y);
 
     d = Z(:,1:ii)*y;
     x = x0 + reshape(d,size(x0)) + xA0;
@@ -215,11 +215,11 @@ for ii=1:niter
         qualMeasOut(:,ii)=Measure_Quality(x_prev,x,QualMeasOpts);
     end
     aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
-    resL2(ii)=im3Dnorm(aux,'L2');
-%     if ii>1 && resL2(ii)>resL2(ii-1)
-%         disp(['Algorithm stoped in iteration ', num2str(ii),' due to loss of ortogonality.'])
-%         return;
-%     end
+    errorL2(ii)=im3Dnorm(aux,'L2');
+    if ii>1 && resL2(ii)>resL2(ii-1)
+        disp(['Algorithm stoped in iteration ', num2str(ii),' due to loss of ortogonality.'])
+        return;
+    end
     if (ii==1 && verbose)
         expected_time=toc*niter;   
         disp('hybrid fLSQR TV');
@@ -372,9 +372,9 @@ end
 
 function out = mvpE(k_aux, x , transp_flag)
 if strcmp(transp_flag,'transp')
-    out = x(:) - k_aux(:)*(ones(size(x(:)))'*x(:));
+    out = x(:) - k_aux(:)*sum(x(:));
 elseif strcmp(transp_flag,'notransp')
-    out = x(:) - ones(size(x(:)))*(k_aux(:)'*x(:));
+    out = x(:) - (k_aux(:)'*x(:));
 end
 end
 

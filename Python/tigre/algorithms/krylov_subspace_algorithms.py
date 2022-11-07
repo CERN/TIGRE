@@ -3,12 +3,15 @@ from __future__ import division
 import time
 import copy
 import numpy as np
+import scipy as sp
 import tigre
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.utilities.Atb import Atb
 from tigre.utilities.Ax import Ax
 import tigre.algorithms as algs
+import scipy.sparse.linalg
+
 
 if hasattr(time, "perf_counter"):
     default_timer = time.perf_counter
@@ -690,3 +693,168 @@ class BA_GMRES(IterativeReconAlg):
         self.res=self.__compute_res__(self.res,w[0:-1],y)
         return self.res
 ba_gmres = decorator(BA_GMRES, name="ba_gmres")
+
+
+class hybrid_fLSQR_TV(IterativeReconAlg): 
+    __doc__ = (
+        " hybrid_fLSQR_TV solves the CBCT problem using preconditioned hybrid flexuble LSQR with TV regularization\n"
+        "  AB_GMRES(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
+        "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
+        "  to the geometry descrived in GEO, using NITER iterations."
+    ) + IterativeReconAlg.__doc__
+
+    def __init__(self, proj, geo, angles, niter, **kwargs): 
+        # Don't precompute V and W.
+        kwargs.update(dict(W=None, V=None))
+        kwargs.update(dict(blocksize=angles.shape[0]))
+        self.re_init_at_iteration = 0
+        IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+        self.__U__ = np.zeros((self.niter+1,np.prod(self.geo.nDetector)*len(self.angles)),dtype=np.float32)
+        self.__V__ = np.zeros((self.niter,(np.prod(self.geo.nVoxel))),dtype=np.float32)
+        self.__Z__ = np.zeros((self.niter,(np.prod(self.geo.nVoxel))),dtype=np.float32)
+
+        self.__M__ = np.zeros((self.niter,self.niter+1),dtype=np.float32) #% Projected matrix
+        self.__T__ = np.zeros((self.niter,self.niter),dtype=np.float32) #% Projected matrix
+        self.__proj_rhs__ = np.zeros((self.niter+1,1),dtype=np.float32) #% Projected right hand side
+    
+
+      
+    def __build_weights__(self):
+        Dxx=np.copy(self.res)
+        Dyx=np.copy(self.res)
+        Dzx=np.copy(self.res)
+
+        Dxx[0:-2,:,:]=self.res[0:-2,:,:]-self.res[1:-1,:,:]
+        Dyx[:,0:-2,:]=self.res[:,0:-2,:]-self.res[:,1:-1,:]
+        Dzx[:,:,0:-2]=self.res[:,:,0:-2]-self.res[:,:,1:-1]
+ 
+        return (Dxx**2+Dyx**2+Dzx**2+1e-6)**(-1/4)
+
+    def Lx(self,W,img):
+        img=np.reshape(img,self.res.shape)
+        Dxx=np.copy(img)
+        Dyx=np.copy(img)
+        Dzx=np.copy(img)
+
+        Dxx[0:-2,:,:]=img[0:-2,:,:]-img[1:-1,:,:]
+        Dyx[:,0:-2,:]=img[:,0:-2,:]-img[:,1:-1,:]
+        Dzx[:,:,0:-2]=img[:,:,0:-2]-img[:,:,1:-1]
+
+        return np.stack((W*Dxx,W*Dyx,W*Dzx),axis=0)
+
+    def Ltx(self,W,img3):
+        img3 =np.reshape(img3,(3,*self.res.shape))
+        Wx_1 = W * img3[0,:,:,:]
+        Wx_2 = W * img3[1,:,:,:]
+        Wx_3 = W * img3[2,:,:,:]
+
+        DxtWx_1=Wx_1
+        DytWx_2=Wx_2
+        DztWx_3=Wx_3
+        
+        DxtWx_1[1:-2,:,:]=Wx_1[1:-2,:,:]-Wx_1[0:-3,:,:]
+        DxtWx_1[-1,:,:]=-Wx_1[-2,:,:]
+        
+        DytWx_2[:,1:-2,:]=Wx_2[:,1:-2,:]-Wx_2[:,0:-3,:]
+        DytWx_2[:,-1,:]=-Wx_2[:,-2,:]
+        
+        DztWx_3[:,:,1:-2]=Wx_3[:,:,1:-2]-Wx_3[:,:,0:-3]
+        DztWx_3[:,:,-1]=-Wx_3[:,:,-2]
+
+        return DxtWx_1 + DytWx_2 + DztWx_3
+
+    def mvT(self,k_aux,x ):
+            return x.ravel() - k_aux.ravel()*np.sum(x.ravel())
+    def mv(self,k_aux,x ):
+            return x.ravel() - np.dot(k_aux.ravel(),x.ravel())
+        
+    def run_main_iter(self):
+        # % Initialise matrices
+
+        # (1) Initialize 
+        u=self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+        
+        k_aux = Ax(np.ones(self.res.shape,dtype=np.float32)/np.sqrt(np.prod(self.geo.nVoxel)), self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+        xA0 = 1/(np.sqrt(np.prod(self.geo.nVoxel))*np.linalg.norm(k_aux.ravel(),2)**2)*np.dot(k_aux.ravel(),u.ravel())
+        xA0 =np.ones(self.res.shape,dtype=np.float32)*xA0
+        
+        k_aux = 1/(np.sqrt(np.prod(self.geo.nVoxel))*np.linalg.norm(k_aux.ravel(),2)**2)*Atb(k_aux, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
+
+        u = u - Ax(xA0, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+
+        normr=np.linalg.norm(u.ravel(),2)
+        u=u/normr
+        self.__U__[0]=u.ravel()
+
+        self.__proj_rhs__[0]=normr
+
+        if np.max(self.res)==0:
+            W=np.ones(self.res.shape,dtype=np.float32)
+        else:
+            W=self.__build_weights__()
+
+        self.l2l = np.zeros((1, self.niter), dtype=np.float32)
+
+        for i in range(self.niter):
+            if self.verbose:
+                self._estimate_time_until_completion(i)
+            v=Atb(u,self.geo,self.angles,backprojection_type="matched", gpuids=self.gpuids)
+            for j in range(i+1):
+                self.__T__[i,j] = np.dot(self.__V__[j],v.ravel())
+                v = v.ravel() - self.__T__[i,j]*self.__V__[j]
+            v=np.reshape(v,self.res.shape)
+            self.__T__[i,i] = np.linalg.norm(v.ravel(),2)
+            v=v/self.__T__[i,i]
+
+            z=self.mvT(k_aux,v)
+
+            L = sp.sparse.linalg.LinearOperator((np.prod(self.res.shape),np.prod(self.res.shape)*3), matvec=lambda x: self.Ltx(W,x).ravel(),rmatvec=lambda x: self.Lx(W,x).ravel())
+            aux_z=sp.sparse.linalg.lsqr(L,z.ravel(),iter_lim=50)
+            L = sp.sparse.linalg.LinearOperator((np.prod(self.res.shape)*3,np.prod(self.res.shape)), matvec=lambda x: self.Lx(W,x).ravel(),rmatvec=lambda x: self.Ltx(W,x).ravel())
+            z=sp.sparse.linalg.lsqr(L,aux_z[0].ravel(),iter_lim=50)
+            z=z[0].astype(np.float32)
+
+            z=self.mv(k_aux,z)
+
+            self.__V__[i]=v.ravel()
+            self.__Z__[i]=z.ravel()
+
+            # Update U and projected matrix M
+            u = Ax(np.reshape(z,self.res.shape), self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+            for j in range(i+1):
+                self.__M__[i,j] = np.dot(self.__U__[j],u.ravel())
+                u = u.ravel() - np.dot(self.__M__[i,j],self.__U__[j])
+            self.__M__[i,i+1]=np.linalg.norm(u.ravel(),2)
+            u=u/self.__M__[i,i+1]
+            u=np.reshape(u,self.proj.shape)
+            self.__U__[i+1]=u.ravel()
+
+            ### Solve the regularized projected problem
+            # (using the DVF of the small projected matrix)
+
+            Mk=self.__M__[0:i+1,0:i+2]
+            # Prepare the projected regularization term
+            WZ=np.zeros((i+1,(3*np.prod(self.geo.nVoxel))),dtype=np.float32)
+            for j in range(i+1):
+                # This can be more efficiently...
+                # DZ can be saved and updated at each iteration
+                WZ[j]=self.Lx(W,self.__Z__[j]).ravel()
+            __,ZRk =sp.linalg.qr(np.transpose(WZ),mode='economic')
+            ZRksq=ZRk[0:i+1,0:i+1]
+            rhsk=self.__proj_rhs__[0:i+2]
+            MZk=np.concatenate((np.transpose(Mk),self.lmbda*ZRksq))
+            rhsZk=np.concatenate((rhsk,np.zeros((i+1,1),dtype=np.float32)))
+            y = np.linalg.lstsq(MZk, rhsZk,rcond=None)
+            print(y[0])
+            d=np.matmul(np.transpose(self.__Z__[0:i+1]),y[0])
+            
+            x = self.res + np.reshape(d,self.res.shape) + xA0
+            self.l2l[0, i] = np.linalg.norm((self.proj - tigre.Ax(x, self.geo, self.angles, "Siddon", gpuids=self.gpuids)).ravel(),2)
+            if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
+                if self.re_init_at_iteration + 1 == i or not self.restart:
+                    print("BA-GMRES exited due to divergence at iteration "+str(i))
+                    return  x
+             
+        return x
+
+hybrid_flsqr_tv = decorator(hybrid_fLSQR_TV, name="hybrid_flsqr_tv")
