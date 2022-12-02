@@ -48,7 +48,7 @@ if dowang
     % for all cases, not just wang?
     [zproj, zgeo] = zeropadding(proj, geo);
     % Preweighting using Wang function
-    proj=zproj.*redundancy_weighting(zgeo);
+    proj=zproj.*redundancy_weighting(zgeo, geo);
     % Replace original proj and geo
     % proj = proj_w;
     geo = zgeo;

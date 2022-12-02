@@ -1,4 +1,4 @@
-function w = redundancy_weighting(geo)
+function w = redundancy_weighting(geo, originalGeo)
 % Preweighting using Wang function
 % Ref: 
 %    Wang, Ge. X-ray micro-CT with a displaced detector array. Medical Physics, 2002,29(7):1634-1636.
@@ -6,17 +6,20 @@ function w = redundancy_weighting(geo)
 if ~isfield(geo,'COR')
     geo.COR=0;
 end
+if nargin == 1
+    originalGeo = geo;
+end
 offset = geo.offDetector(1);
 offset = offset + (geo.DSD(1) / geo.DSO(1)) * geo.COR(1);   % added correction
 us = ((-geo.nDetector(1)/2+0.5):1:(geo.nDetector(1)/2-0.5))*geo.dDetector(1) + abs(offset);
 
 us = us * geo.DSO(1)/geo.DSD(1);
-theta = (geo.sDetector(1)/2 - abs(offset))...
-        * sign(offset);
+theta = (originalGeo.sDetector(1)/2 - abs(originalGeo.offDetector(1)))...
+        * sign(originalGeo.offDetector(1));
 abstheta = abs(theta * geo.DSO(1)/geo.DSD(1));
 
 w = ones([geo.nDetector(2),geo.nDetector(1)]);
-if apply_wang_weights(geo)
+if apply_wang_weights(originalGeo)
     for ii = 1:geo.nDetector
         t = us(ii);
         if(abs(t) <= abstheta)
