@@ -150,6 +150,8 @@ class IterativeReconAlg(object):
             name="Iterative Reconstruction",
             sup_kw_warning=False,
             gpuids=None,
+            niter_outer=4,
+            restart=True
         )
         allowed_keywords = [
             "V",
@@ -167,7 +169,8 @@ class IterativeReconAlg(object):
             "tvlambda",
             "hyper",
             "fista_p",
-            "fista_q"
+            "fista_q",
+            "niter_outer"
         ]
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)

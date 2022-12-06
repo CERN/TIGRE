@@ -31,6 +31,9 @@ function [ f,qualMeasOut] = PCSD(proj,geo,angles,maxiter,varargin)
 % 'redundancy_weighting': true or false. Default is true. Applies data
 %                         redundancy weighting to projections in the update step
 %                         (relevant for offset detector geometry)
+%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%                 are requested, to plot their change w.r.t. this known
+%                 data.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -49,13 +52,19 @@ function [ f,qualMeasOut] = PCSD(proj,geo,angles,maxiter,varargin)
 %--------------------------------------------------------------------------
 
 %% parse inputs
-[beta,beta_red,f,ng,verbose,epsilon,QualMeasOpts,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,f,ng,verbose,epsilon,QualMeasOpts,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,varargin);
 
-measurequality=~isempty(QualMeasOpts);
-
-if measurequality
-    qualMeasOut=zeros(length(QualMeasOpts),maxiter);
+measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
+if ~any(isnan(gt(:)))
+    QualMeasOpts{end+1}='error_norm';
+    res_prev=gt;
+    clear gt
 end
+if nargout<2 && measurequality
+    warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
+    measurequality=false;
+end
+qualMeasOut=zeros(length(QualMeasOpts),niter);
 
 % does detector rotation exists?
 if ~isfield(geo,'rotDetector')
@@ -104,7 +113,10 @@ DSD=geo.DSD;
 DSO=geo.DSO;
 %%
 while ~stop_criteria %POCS
-    f0=f;
+    % If quality is going to be measured, then we need to save previous image
+    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+        res_prev = f; % only store if necesary
+    end
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;
     
@@ -136,7 +148,9 @@ while ~stop_criteria %POCS
     end
     
     %Non-negativity projection on all pixels
-    f=max(f,0);
+    if nonneg
+        f=max(f,0);
+    end
     
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
@@ -144,7 +158,7 @@ while ~stop_criteria %POCS
     geo.DSO=DSO;
     geo.rotDetector=rotDetector;
     if measurequality
-        qualMeasOut(:,iter)=Measure_Quality(f0,f,QualMeasOpts);
+        qualMeasOut(:,iter)=Measure_Quality(res_prev,f,QualMeasOpts);
     end
     
     % Compute L2 error of actual image. Ax-b

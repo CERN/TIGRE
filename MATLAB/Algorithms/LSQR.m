@@ -1,12 +1,13 @@
-function [x,resL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
-% CGLS solves the CBCT problem using the conjugate gradient least
-% squares
+function [x,resL2,qualMeasOut]= LSQR(proj,geo,angles,niter,varargin)
+
+% LSQR solves the CBCT problem using LSQR.
+% This is mathematically equivalent to CGLS.
 %
-%  CGLS(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
+%  LSQR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ANGLES angles, corresponding
 %   to the geometry descrived in GEO, using NITER iterations.
 %
-%  CGLS(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
+%  LSQR(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 %
 %
@@ -20,12 +21,11 @@ function [x,resL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
 %                            image. Not recomended unless you really
 %                            know what you are doing.
 %  'InitImg'    an image for the 'image' initialization. Avoid.
-%
 %  'groundTruth'  an image as grounf truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
 %  'restart'  true or false. By default the algorithm will restart when
-%             loss of ortogonality is found. 
+%             loss of ortogonality is found.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -40,7 +40,7 @@ function [x,resL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
 %
 % Contact:            tigre.toolbox@gmail.com
 % Codes:              https://github.com/CERN/TIGRE/
-% Coded by:           Ander Biguri
+% Coded by:           Malena Sabate Landman, Ander Biguri
 %--------------------------------------------------------------------------
 
 %%
@@ -58,16 +58,33 @@ if nargout<3 && measurequality
     measurequality=false;
 end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
+resL2=zeros(1,niter); 
 
-resL2=zeros(1,niter);
 
-% //doi: 10.1088/0031-9155/56/13/004
+% Paige and Saunders //doi.org/10.1145/355984.355989
+
+% Enumeration as given in the paper for 'Algorithm LSQR'
 iter=0;
 remember=0;
 while iter<niter
-    r=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
-    p=Atb(r,geo,angles,'matched','gpuids',gpuids);
-    gamma=norm(p(:),2)^2;
+    
+    % (1) Initialize
+    u=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
+    normr = norm(u(:),2);
+    u = u/normr;
+    
+    beta = normr;
+    phibar = beta;
+    
+    v=Atb(u,geo,angles,'matched','gpuids',gpuids);
+    
+    
+    alpha = norm(v(:),2); % msl: do we want to check if it is 0?
+    v = v/alpha;
+    rhobar = alpha;
+    w = v;
+    
+    % (2) Start iterations
     for ii=iter:niter
         iter=iter+1;
         if measurequality && ~strcmp(QualMeasOpts,'error_norm')
@@ -75,11 +92,38 @@ while iter<niter
         end
         if (iter==1 && verbose);tic;end
         
-        q=Ax(p,geo,angles,'Siddon','gpuids',gpuids);
-        alpha=gamma/norm(q(:),2)^2;
-        x=x+alpha*p;
+        % (3)(a)
+        u = Ax(v,geo,angles,'Siddon','gpuids',gpuids) - alpha*u;
+        beta = norm(u(:),2);
+        u = u / beta;
         
+        % (3)(b)
+        v = Atb(u,geo,angles,'matched','gpuids',gpuids) - beta*v;
+        alpha = norm(v(:),2);
+        v = v / alpha;
         
+        % (4)(a-g)
+        rho = sqrt(rhobar^2 + beta^2);
+        c = rhobar / rho;
+        s = beta / rho;
+        theta = s * alpha;
+        rhobar = - c * alpha;
+        phi = c * phibar;
+        phibar = s * phibar;
+        
+        % (5) Update x, w
+        x = x + (phi / rho) * w;
+        w = v - (theta / rho) * w;
+        
+        %         % Update estimated quantities of interest.
+        %         % msl: We can also compute cheaply estimates of ||x||, ||A||, cond(A)
+        %         normr = normr*abs(s);   % ||r_k|| = ||b - A x_k||
+        %         % Only exact if we do not have orth. loss
+        %         normAtr = phibar * alpha * abs(c); % msl: Do we want this? ||A^T r_k||
+        
+        % (6) Test for convergence.
+        % msl: I still need to implement this.
+        % msl: There are suggestions on the original paper. Let's talk about it!
         
         if measurequality
             qualMeasOut(:,iter)=Measure_Quality(x0,x,QualMeasOpts);
@@ -95,11 +139,11 @@ while iter<niter
         resL2(iter)=im3Dnorm(aux,'L2');
         if iter>1 && resL2(iter)>resL2(iter-1)
             % we lost orthogonality, lets restart the algorithm unless the
-            % user asked us not to. 
+            % user asked us not to.
             
-            % undo bad step. 
-            x=x-alpha*p; 
-            % if the restart didn't work. 
+            % undo bad step.
+            x=x-(phi / rho) * (v-w)/((theta / rho));
+            % if the restart didn't work.
             if remember==iter || ~restart
                 disp(['Algorithm stoped in iteration ', num2str(iter),' due to loss of ortogonality.'])
                 return;
@@ -107,33 +151,23 @@ while iter<niter
             remember=iter;
             iter=iter-1;
             if verbose
-               disp(['Orthogonality lost, restarting at iteration ', num2str(iter) ])
+                disp(['Orthogonality lost, restarting at iteration ', num2str(iter) ])
             end
-            break  
-            
+            break
         end
-        % If step is adecuate, then continue withg CGLS
-        r=r-alpha*q;
-        s=Atb(r,geo,angles,'matched','gpuids',gpuids);
-        
-        gamma1=norm(s(:),2)^2;
-        beta=gamma1/gamma;
-        gamma=gamma1;
-        p=s+beta*p;
-        
         
         if (iter==1 && verbose)
             expected_time=toc*niter;
-            disp('CGLS');
+            disp('LSQR');
             disp(['Expected duration   :    ',secs2hms(expected_time)]);
             disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
             disp('');
         end
     end
-end
+    
 end
 
-
+end
 %% parse inputs'
 function [verbose,x,QualMeasOpts,gpuids,gt,restart]=parse_inputs(proj,geo,angles,argin)
 opts=     {'init','initimg','verbose','qualmeas','gpuids','groundtruth','restart'};
@@ -142,7 +176,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('TIGRE:CGLS:InvalidInput','Invalid number of inputs')
+    error('TIGRE:LSQR:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -151,7 +185,7 @@ for ii=1:2:nVarargs
     if ~isempty(ind)
         defaults(ind)=0;
     else
-        error('TIGRE:CGLS:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
+        error('TIGRE:LSQR:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
     end
 end
 
@@ -166,7 +200,7 @@ for ii=1:length(opts)
             jj=jj+1;
         end
         if isempty(ind)
-            error('TIGRE:CGLS:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
+            error('TIGRE:LSQR:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
         end
         val=argin{jj};
     end
@@ -191,7 +225,7 @@ for ii=1:length(opts)
                 continue;
             end
             if isempty(x)
-                error('TIGRE:CGLS:InvalidInput','Invalid Init option')
+                error('TIGRE:LSQR:InvalidInput','Invalid Init option')
             end
             % % % % % % % ERROR
         case 'initimg'
@@ -202,7 +236,7 @@ for ii=1:length(opts)
                 if isequal(size(val),geo.nVoxel')
                     x=single(val);
                 else
-                    error('TIGRE:CGLS:InvalidInput','Invalid image for initialization');
+                    error('TIGRE:LSQR:InvalidInput','Invalid image for initialization');
                 end
             end
             %  =========================================================================
@@ -213,7 +247,7 @@ for ii=1:length(opts)
                 if iscellstr(val)
                     QualMeasOpts=val;
                 else
-                    error('TIGRE:CGLS:InvalidInput','Invalid quality measurement parameters');
+                    error('TIGRE:LSQR:InvalidInput','Invalid quality measurement parameters');
                 end
             end
         case 'verbose'
@@ -223,7 +257,7 @@ for ii=1:length(opts)
                 verbose=val;
             end
             if ~is2014bOrNewer
-                warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
+                warning('TIGRE:LSQR:Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
         case 'gpuids'
@@ -245,7 +279,7 @@ for ii=1:length(opts)
                 restart=val;
             end
         otherwise
-            error('TIGRE:CGLS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);
+            error('TIGRE:LSQR:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);
     end
 end
 
