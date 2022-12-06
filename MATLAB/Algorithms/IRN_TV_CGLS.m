@@ -65,7 +65,7 @@ if nargout<3 && measurequality
 end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 resL2 = zeros(1,niter);
-
+remember=0;
 iter=0;
 % for iii = 1:niter_outer
 while iter<niter

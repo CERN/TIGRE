@@ -189,9 +189,19 @@ imgAWASDPOCS = algs.awasd_pocs(
     delta=np.array([-0.005]),
 )
 
+
+ 
+#  IRN-CGLS-TV: CGLS with TV regularization
+# ==========================================================================
+# ==========================================================================
+#
+# Should converge fairly fast to a TV regularized solution
+imgCGLSTV=algs.irn_tv_cgls(noise_projections,geo,angles,10,lmbda=5,niter_outer=2)
+
+
 #%% plot results
 
 # plot images
 tigre.plotimg(
-    np.concatenate([imgAWASDPOCS, imgOSASDPOCS, imgASDPOCS, imgOSSART], axis=1), dim="z", step=2
+    np.concatenate([imgAWASDPOCS, imgOSASDPOCS, imgASDPOCS, imgOSSART, imgCGLSTV], axis=1), dim="z", step=2
 )
