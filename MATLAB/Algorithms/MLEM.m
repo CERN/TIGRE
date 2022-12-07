@@ -16,7 +16,9 @@ function [res,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
 %                parameters. Input should contain a cell array of desired
 %                quality measurement names. Example: {'CC','RMSE','MSSIM'}
 %                These will be computed in each iteration.
-
+%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%                 are requested, to plot their change w.r.t. this known
+%                 data.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -33,30 +35,38 @@ function [res,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Ander Biguri 
 %--------------------------------------------------------------------------
-[verbose,res,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,varargin);
-measurequality=~isempty(QualMeasOpts);
-
-if measurequality
-    qualMeasOut=zeros(length(QualMeasOpts),niter);
+[verbose,res,QualMeasOpts,gpuids,gt]=parse_inputs(proj,geo,angles,varargin);
+measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
+if ~any(isnan(gt(:)))
+    QualMeasOpts{end+1}='error_norm';
+    res_prev=gt;
+    clear gt
 end
+if nargout<2 && measurequality
+    warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
+    measurequality=false;
+end
+qualMeasOut=zeros(length(QualMeasOpts),niter);
+
 
 res = max(res,0);
-W=Atb(ones(size(proj),'single'),geo,angles,'matched','gpuids',gpuids);
-W(W<=0.) = inf;
+% Projection weight, W
+W=computeW(geo,angles,gpuids);
 
-tic
 for ii=1:niter
-    res0 = res;
-    
+    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+        res_prev = res; % only store if necesary
+    end
+    if (ii==1);tic;end
+
     den = Ax(res,geo,angles,'gpuids',gpuids);
     den(den<=0.)=inf;
-    auxMLEM=proj./den;
     
-    imgupdate = Atb(auxMLEM, geo,angles,'matched','gpuids',gpuids)./W;
+    imgupdate = Atb(proj./den, geo,angles,'matched','gpuids',gpuids)./W;
     res = max(res.*imgupdate,0.);
     
     if measurequality
-        qualMeasOut(:,ii)=Measure_Quality(res0,res,QualMeasOpts);
+        qualMeasOut(:,ii)=Measure_Quality(res_prev,res,QualMeasOpts);
     end
     
     if (ii==1)&&(verbose==1)
@@ -71,8 +81,8 @@ end
 end
 
 %% Parse inputs
-function [verbose,f0,QualMeasOpts,gpuids]=parse_inputs(proj,geo,angles,argin)
-opts = {'verbose','init','qualmeas','gpuids'};
+function [verbose,f0,QualMeasOpts,gpuids,gt]=parse_inputs(proj,geo,angles,argin)
+opts = {'verbose','init','qualmeas','gpuids','groundtruth'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -149,6 +159,12 @@ for ii=1:length(opts)
                 gpuids = GpuIds();
             else
                 gpuids = val;
+            end
+        case 'groundtruth'
+            if default
+                gt=nan;
+            else
+                gt=val;
             end
         otherwise
             error('TIGRE:MLEM:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in MLEM()']);

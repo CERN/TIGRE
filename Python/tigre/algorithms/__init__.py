@@ -11,6 +11,13 @@ from .ista_algorithms import fista
 from .ista_algorithms import ista
 from .iterative_recon_alg import iterativereconalg
 from .krylov_subspace_algorithms import cgls
+from .krylov_subspace_algorithms import lsqr
+from .krylov_subspace_algorithms import hybrid_lsqr
+from .krylov_subspace_algorithms import lsmr
+from .krylov_subspace_algorithms import irn_tv_cgls
+from .krylov_subspace_algorithms import hybrid_flsqr_tv
+from .krylov_subspace_algorithms import ab_gmres
+from .krylov_subspace_algorithms import ba_gmres
 from .pocs_algorithms import asd_pocs
 from .pocs_algorithms import os_asd_pocs
 from .pocs_algorithms import awasd_pocs
@@ -41,6 +48,8 @@ __all__ = [
     "os_aw_pcsd",
     "fbp",
     "cgls",
+    "lsqr",
+    "lsmr",
     "fista",
     "ista",
     "mlem",

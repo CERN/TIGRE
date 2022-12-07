@@ -21,21 +21,19 @@ for ii=1:length(QualMeasOpts)
     opt=QualMeasOpts{ii};
    
     switch opt
-        %%%%%%%%RMSE
         case 'RMSE'
          q=RMSE(res_prev,res);
          
-        %%%%%%CC
         case 'CC'
          q=CC(res_prev,res); 
          
-        %%%%%%MSSIM
         case 'MSSIM'
          q=MSSIM(res_prev,res);
          
         case 'UQI'
          q=UQI(res_prev,res);
-         
+        case 'error_norm'
+         q=im3Dnorm(res_prev-res,'L2');
         
     end
     

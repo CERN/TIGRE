@@ -3,6 +3,8 @@ so.*
 *.jpg
 *.bmp
 *.tiff
+*.png
+*.mat
 ## Matlab ignore
 
 *.asv
