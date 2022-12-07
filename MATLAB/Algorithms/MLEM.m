@@ -1,22 +1,23 @@
 function [res,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
-%MLEM solves the tomographic problem by using Maximum Likelihood Expection
-% Maximitation algorithm. 
+%MLEM solves the tomographic problem by using Maximum Likelihood Expectation
+% Maximisation algorithm. 
 %
 %   MLEM(PROJ,GEO,ALPHA,NITER,opt) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
-%   to the geometry descrived in GEO, using NITER iterations.
+%   to the geometry described in GEO, using NITER iterations.
 %
-% 'verbose': get feedback or not. Default: 1
+% 'verbose': Get feedback or not. Default: 1
 %
-% 'init':    Describes diferent initialization techniques.
+% 'init':    Describes different initialization techniques.
 %             •  'none'     : Initializes the image to ones (default)
-%             •  'FDK'      : intializes image to FDK reconstrucition
+%             •  'FDK'      : Initializes image to FDK reconstruction
 %
-% 'QualMeas'     Asks the algorithm for a set of quality measurement
+% 'QualMeas':    Asks the algorithm for a set of quality measurement
 %                parameters. Input should contain a cell array of desired
 %                quality measurement names. Example: {'CC','RMSE','MSSIM'}
 %                These will be computed in each iteration.
-%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%
+% 'groundTruth':  An image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
 %--------------------------------------------------------------------------
@@ -43,26 +44,27 @@ if ~any(isnan(gt(:)))
     clear gt
 end
 if nargout<2 && measurequality
-    warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
+    warning("Image metrics requested but none caught as output. Call the algorithm with 3 outputs to store them")
     measurequality=false;
 end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 
 
 res = max(res,0);
-% Projection weight, W
-W=computeW(geo,angles,gpuids);
+% Back-projection weight, V
+V = Atb(ones(size(proj),'single'),geo,angles,'matched','gpuids',gpuids);
+V(V<=0.) = inf;
 
 for ii=1:niter
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
-        res_prev = res; % only store if necesary
+        res_prev = res; % only store if necessary
     end
     if (ii==1);tic;end
 
     den = Ax(res,geo,angles,'gpuids',gpuids);
     den(den<=0.)=inf;
     
-    imgupdate = Atb(proj./den, geo,angles,'matched','gpuids',gpuids)./W;
+    imgupdate = Atb(proj./den, geo,angles,'matched','gpuids',gpuids)./V;
     res = max(res.*imgupdate,0.);
     
     if measurequality
@@ -87,7 +89,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('TIGRE:FISTA:InvalidInput','Invalid number of inputs')
+    error('TIGRE:MLEM:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -103,7 +105,7 @@ end
 for ii=1:length(opts)
     opt=opts{ii};
     default=defaults(ii);
-    % if one option isnot default, then extranc value from input
+    % if one option is not default, then extract value from input
     if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
