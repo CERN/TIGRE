@@ -36,11 +36,11 @@ def NikonDataLoader(filepath, **kwargs):
     folder, geometry, angles = readXtekctGeometry(filepath)
     return loadNikonProjections(folder, geometry, angles, **kwargs)
 
-
 def readXtekctGeometry(filepath):
 
-    # Developed by A. Biguri and W. Sun
+    # Developed by A. Biguri, W. Sun, P Basford
     # W. Sun edited on 06.10.2018 for 3D pro version 5.2.6809.15380 (2018)
+    # P. Basford edited May 2022 for Inspect-X version 6.8 compatibility
 
     if filepath.endswith(".xtekct"):
         folder, ini = os.path.split(filepath)
@@ -88,7 +88,10 @@ def readXtekctGeometry(filepath):
     #%% Global geometry
     geometry.DSO = float(cfg["SrcToObject"])
     geometry.DSD = float(cfg["SrcToDetector"])
-    geometry.COR = -float(cfg["CentreOfRotationTop"])
+    try:
+        geometry.COR = -float(cfg["CentreOfRotationTop"])
+    except KeyError:
+        geometry.COR = -float(cfg["ObjectOffsetX"])
 
     if geometry.COR == 0:
         print(
@@ -124,14 +127,14 @@ def readXtekctGeometry(filepath):
             for i in range(3):
                 file.readline()
             for line in file:
-                angles.append(math.radians(float(line.split("\t")[1])))
+                angles.append(-math.radians(float(line.split("\t")[1])))
         return folder, geometry, numpy.array(angles)
 
     print("File with definition of angles not found, estimating them from geometry info.")
     n_angles = int(cfg["Projections"])
     angle_step = float(cfg["AngularStep"])
     initial_angle = float(cfg["InitialAngle"])
-    angles = numpy.arange(n_angles) * math.radians(angle_step) + math.radians(initial_angle)
+    angles = -(numpy.arange(n_angles) * math.radians(angle_step) + math.radians(initial_angle))
 
     return folder, geometry, angles
 
