@@ -46,12 +46,10 @@ geo.filter=filter;
 if dowang
     % Zero-padding to avoid FFT-induced aliasing %TODO: should't this be
     % for all cases, not just wang?
-    [zproj, zgeo] = zeropadding(proj, geo);
     % Preweighting using Wang function
-    proj=zproj.*redundancy_weighting(zgeo);
-    % Replace original proj and geo
-    % proj = proj_w;
-    geo = zgeo;
+    proj=proj.*redundancy_weighting(geo);
+    [proj, geo] = zeropadding(proj, geo);
+
 end
 
 if size(geo.offDetector,2)==1

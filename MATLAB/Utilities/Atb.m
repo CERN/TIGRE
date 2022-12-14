@@ -54,7 +54,7 @@ if size(angles,1)==1
 end
 %% geometry
 geo=checkGeo(geo,angles);
-assert(isequal([size(projections,2) size(projections,1)],geo.nDetector.'),'TIGRE:checkGeo:BadGeometry','nVoxel does not match with provided image size');
+assert(isequal([size(projections,2) size(projections,1)],geo.nDetector.'),'TIGRE:checkGeo:BadGeometry','nDetector does not match with provided image size');
 
 %% Thats it, lets call the mex fucntion
 
