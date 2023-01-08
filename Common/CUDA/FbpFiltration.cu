@@ -82,7 +82,7 @@ __global__ void ApplyFilter(cufftComplex* pcfInOut, size_t uiULen, size_t uiVLen
 }
 
 //! Apply filter in the Fourier space
-void apply_filtration(const float* pfIn, size_t uiULen, size_t uiVLen, const float* pfFilter, float* pfOut, const GpuIds& gpuids){
+void apply_filtration (const float* pfIn, size_t uiULen, size_t uiVLen, const float* pfFilter, float* pfOut, const GpuIds& gpuids) {
     // Prepare for MultiGPU
     int deviceCount = gpuids.GetLength();
     cudaCheckErrors("Device query fail");
@@ -101,64 +101,54 @@ void apply_filtration(const float* pfIn, size_t uiULen, size_t uiVLen, const flo
     cudaSetDevice(gpuids[0]);
 
     const size_t uiLen = uiULen * uiVLen;
-    cufftComplex* h_pcfInOut = (cufftComplex*)malloc(uiLen*sizeof(cufftComplex));
-
-    if (!h_pcfInOut) {
-        mexErrMsgIdAndTxt("ApplyFiltration", "apply_filtration fail cudaMallocHost 1");
-    }
-    for (int iV = 0; iV < uiVLen; ++iV) {
-        for (int iU = 0; iU < uiULen; ++iU) {
-            h_pcfInOut[iU+uiULen*iV] = cufftComplex{pfIn[iU+uiULen*iV], 0};
-        }
-    }
-
     const float fULInv = 1./uiULen;
 
-	cufftHandle cudafftPlan;
+    float* d_pfInOut = nullptr;
+    cudaMalloc((void **)&d_pfInOut, uiLen * sizeof(float));
+    cudaCheckErrors("apply_filtration fail cudaMalloc 1");
+    cudaMemcpy(d_pfInOut, pfIn, uiLen* sizeof(float), cudaMemcpyHostToDevice); // Sync only. pfIn is not pinned.
+    cudaCheckErrors("apply_filtration fail cudaMemcpy 1");
+
+    size_t uiBufferSize = (uiULen+1)/2+1;    // Buffer size for R2C. See https://docs.nvidia.com/cuda/cufft/
+
+	cufftHandle cudafftPlanFwd;
+	cufftHandle cudafftPlanInv;
     const int iBatch = uiVLen;
 	cufftResult_t fftresult;
-    fftresult = cufftPlan1d(&cudafftPlan, uiULen, CUFFT_C2C, iBatch);
+    fftresult = cufftPlan1d(&cudafftPlanFwd, uiULen, CUFFT_R2C, iBatch);
     cudafftCheckError(fftresult, "apply_filtration fail cufftPlan1d 1");
-    fftresult = cufftPlan1d(&cudafftPlan, uiULen, CUFFT_C2C, iBatch);
+    fftresult = cufftPlan1d(&cudafftPlanInv, uiULen, CUFFT_C2R, iBatch);
     cudafftCheckError(fftresult, "apply_filtration fail cufftPlan1d 2");
 
-    float*        d_pfFilter = nullptr;
-    cufftComplex* d_pcfInOut = nullptr;
-    cudaMalloc((void **)&d_pcfInOut, uiLen * sizeof(cufftComplex));
-    cudaCheckErrors("apply_filtration fail cudaMalloc 1");
+    float* d_pfFilter = nullptr;
     cudaMalloc((void **)&d_pfFilter, uiULen * sizeof(float));
     cudaCheckErrors("apply_filtration fail cudaMalloc 2");
-    cudaMemcpy(d_pcfInOut, h_pcfInOut, uiLen* sizeof(cufftComplex), cudaMemcpyHostToDevice);
-    cudaCheckErrors("apply_filtration fail cudaMemcpy 1");
     cudaMemcpy(d_pfFilter, pfFilter, uiULen * sizeof(float), cudaMemcpyHostToDevice);
     cudaCheckErrors("apply_filtration fail cudaMemcpy 2");
+
+    cufftComplex* d_pcfWork = nullptr;
+    cudaMalloc((void **)&d_pcfWork, uiBufferSize * uiVLen*sizeof(cufftComplex));
+    cudaCheckErrors("apply_filtration fail cudaMalloc 3");
 
     {
         const int divU = 128;//PIXEL_SIZE_BLOCK;
         const int divV = 1;//PIXEL_SIZE_BLOCK;
         dim3 grid((uiULen+divU-1)/divU,(uiVLen+divV-1)/divV,1);
         dim3 block(divU,divV,1);
-        cufftSetStream(cudafftPlan, 0);
-        fftresult = cufftExecC2C (cudafftPlan, d_pcfInOut, d_pcfInOut, CUFFT_FORWARD);
-        cudafftCheckError(fftresult, "apply_filtration fail cufftExecC2C CUFFT_FORWARD");
-        ApplyFilter<<<grid, block>>>(d_pcfInOut, uiULen, uiVLen, d_pfFilter, fULInv);// Kernel d_pcfInOut = d_pcfInOut * pfFilter / uiULen
-        fftresult = cufftExecC2C (cudafftPlan, d_pcfInOut, d_pcfInOut, CUFFT_INVERSE);
-        cudafftCheckError(fftresult, "apply_filtration fail cufftExecC2C CUFFT_INVERSE");
+        cufftSetStream(cudafftPlanFwd, 0);
+        cufftSetStream(cudafftPlanInv, 0);
+        fftresult = cufftExecR2C (cudafftPlanFwd, d_pfInOut, d_pcfWork);
+        cudafftCheckError(fftresult, "apply_filtration fail cufftExecR2C");
+        ApplyFilter<<<grid, block>>>(d_pcfWork, uiBufferSize, uiVLen, d_pfFilter, fULInv);// Kernel d_pcfInOut = d_pcfInOut * pfFilter / uiULen
+        fftresult = cufftExecC2R (cudafftPlanInv, d_pcfWork, d_pfInOut);
+        cudafftCheckError(fftresult, "apply_filtration fail cufftExecC2R");
     }
-
-    cudaMemcpy(h_pcfInOut, d_pcfInOut, uiLen*sizeof(cufftComplex), cudaMemcpyDeviceToHost);
+    cudaMemcpy(pfOut, d_pfInOut, uiLen*sizeof(float), cudaMemcpyDeviceToHost);
     cudaCheckErrors("apply_filtration fail cudaMemcpy 3");
 
-    cudaFree(d_pcfInOut); d_pcfInOut = nullptr;
+    cudaFree(d_pcfWork); d_pcfWork = nullptr;
+    cudaFree(d_pfInOut); d_pfInOut = nullptr;
     cudaFree(d_pfFilter); d_pfFilter = nullptr;
-
-    cufftSetStream(cudafftPlan, 0);
-    cufftDestroy(cudafftPlan);
-
-    for (int iV = 0; iV < uiVLen; ++iV) {
-        for (int iU = 0; iU < uiULen; ++iU) {
-            pfOut[iU+uiULen*iV] = h_pcfInOut[iU+uiULen*iV].x;
-        }
-    }
-    free(h_pcfInOut); h_pcfInOut = nullptr;
+    cufftDestroy(cudafftPlanFwd);
+    cufftDestroy(cudafftPlanInv);
 }
