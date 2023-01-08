@@ -38,7 +38,7 @@ function [res]=FDK(proj,geo,angles,varargin)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Kyungsang Kim, modified by Ander Biguri, Brandon Nelson 
 %--------------------------------------------------------------------------
-[filter,parker,dowang,gpuids]=parse_inputs(angles,varargin);
+[filter,parker,dowang,usegpufft,gpuids]=parse_inputs(angles,varargin);
 
 geo=checkGeo(geo,angles);
 geo.filter=filter;
@@ -73,7 +73,7 @@ for ii=1:size(angles,2)
     proj(:,:,ii) = proj(:,:,ii).*w';
 end
 %% Fourier transform based filtering
-proj = filtering(proj,geo,angles,parker); % Not sure if offsets are good in here
+proj = filtering(proj,geo,angles,parker,usegpufft); % Not sure if offsets are good in here
 
 % RMFIELD Remove fields from a structure array.
 geo=rmfield(geo,'filter');
@@ -113,9 +113,9 @@ end
 end
 
 
-function [filter, parker, wang, gpuids]=parse_inputs(angles,argin)
+function [filter, parker, wang, usegpufft, gpuids]=parse_inputs(angles,argin)
 
-opts =  {'filter','parker','wang','gpuids'};
+opts =  {'filter','parker','wang','usegpufft','gpuids'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -176,6 +176,12 @@ for ii=1:length(opts)
                 end
                 filter=val;
             end
+        case 'usegpufft'
+            if default
+                usegpufft=true;
+            else
+                usegpufft=val;
+            end            
         case 'gpuids'
             if default
                 gpuids = GpuIds();

@@ -1,4 +1,4 @@
-function [ proj ] = filtering(proj,geo,angles,parker)
+function [ proj ] = filtering(proj,geo,angles,parker,usegpu)
 %FILTERING Summary of this function goes here
 %   Detailed explanation goes here
 %--------------------------------------------------------------------------
@@ -30,19 +30,25 @@ filt_len = max(64,2^nextpow2(2*geo.nDetector(1)));
 
 d = 1; % cut off (0~1)
 [filt] = Filter(geo.filter, ramp_kernel, filt_len, d);
-filt = repmat(filt',[1 geo.nDetector(2)]);
-
+if usegpu
+    filt = filt';
+    gpuids = GpuIds();
+else
+    filt = repmat(filt',[1 geo.nDetector(2)]);
+end
 for ii=1:size(angles,2)
     
     fproj = (zeros(filt_len,geo.nDetector(2),'single'));
     
     fproj(round(filt_len/2-geo.nDetector(1)/2+1):round(filt_len/2+geo.nDetector(1)/2),:) = proj(:,:,ii);
-    
-    fproj = fft(fproj);   
-    
-    fproj = fproj.*filt;
-    
-    fproj = (real(ifft(fproj)));
+
+    if usegpu
+        fproj = ApplyFbpFiltration(fproj, filt, gpuids);
+    else
+        fproj = fft(fproj);   
+        fproj = fproj.*filt;
+        fproj = (real(ifft(fproj)));
+    end
     
     if parker
         proj(:,:,ii) = fproj(round(end/2-geo.nDetector(1)/2+1):round(end/2+geo.nDetector(1)/2),:)/2/geo.dDetector(1)*(2*pi/  (pi/angle_step)   )/2*(geo.DSD(ii)/geo.DSO(ii));
