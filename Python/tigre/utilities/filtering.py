@@ -9,10 +9,11 @@ import warnings
 
 import numpy as np
 from tigre.utilities.parkerweight import parkerweight
+import _FbpFiltration as fbpfiltration
 
 
 # TODO: Fix parker
-def filtering(proj, geo, angles, parker, verbose=False):
+def filtering(proj, geo, angles, parker, verbose=False, use_gpu=True, gpuids=None):
     if parker:
         proj=parkerweight(proj.transpose(0,2,1),geo,angles,parker).transpose(0,2,1)
 
@@ -21,34 +22,44 @@ def filtering(proj, geo, angles, parker, verbose=False):
 
     d=1
     filt=filter(geo.filter,ramp_kernel[0],filt_len,d,verbose=verbose)
-    filt=np.kron(np.ones((np.int64(geo.nDetector[0]),1),dtype=np.float32),filt)
 
     padding = int((filt_len-geo.nDetector[1])//2 )
     scale_factor = (geo.DSD[0]/geo.DSO[0]) * (2 * np.pi/ len(angles)) / ( 4 * geo.dDetector[0] ) 
+    if use_gpu:
+        fproj=np.empty((geo.nDetector[0],filt_len),dtype=np.float32)
+        for idx_proj in range(0,angles.shape[0]):
+            fproj.fill(0)
+            fproj[:,padding:padding+geo.nDetector[1]]=proj[idx_proj]
 
-    #filter 2 projection at a time packing in to complex container
-    fproj=np.empty((geo.nDetector[0],filt_len),dtype=np.complex64)
-    for i in range(0,angles.shape[0]-1,2):
-        fproj.fill(0)
-        fproj.real[:,padding:padding+geo.nDetector[1]]=proj[i]
-        fproj.imag[:,padding:padding+geo.nDetector[1]]=proj[i+1]
+            fproj = fbpfiltration.apply(fproj, filt, gpuids)
 
-        fproj=fft(fproj,axis=1)
-        fproj=fproj*filt
-        fproj=ifft(fproj,axis=1)
+            proj[idx_proj]=fproj[:,padding:padding+geo.nDetector[1]] * scale_factor
+    else:
+        filt=np.kron(np.ones((np.int64(geo.nDetector[0]),1),dtype=np.float32),filt)
 
-        proj[i]=fproj.real[:,padding:padding+geo.nDetector[1]] * scale_factor
-        proj[i+1]=fproj.imag[:,padding:padding+geo.nDetector[1]] * scale_factor
+        #filter 2 projection at a time packing in to complex container
+        fproj=np.empty((geo.nDetector[0],filt_len),dtype=np.complex64)
+        for i in range(0,angles.shape[0]-1,2):
+            fproj.fill(0)
+            fproj.real[:,padding:padding+geo.nDetector[1]]=proj[i]
+            fproj.imag[:,padding:padding+geo.nDetector[1]]=proj[i+1]
 
-    #if odd number of projections filter last solo
-    if angles.shape[0] % 2:
-        fproj.fill(0)
-        fproj.real[:,padding:padding+geo.nDetector[1]]=proj[angles.shape[0]-1]
+            fproj=fft(fproj,axis=1)
+            fproj=fproj*filt
+            fproj=ifft(fproj,axis=1)
 
-        fproj=fft(fproj,axis=1)
-        fproj=fproj*filt
-        fproj=np.real(ifft(fproj,axis=1))     
-        proj[angles.shape[0]-1]=fproj[:,padding:padding+geo.nDetector[1]] * scale_factor
+            proj[i]=fproj.real[:,padding:padding+geo.nDetector[1]] * scale_factor
+            proj[i+1]=fproj.imag[:,padding:padding+geo.nDetector[1]] * scale_factor
+
+        #if odd number of projections filter last solo
+        if angles.shape[0] % 2:
+            fproj.fill(0)
+            fproj.real[:,padding:padding+geo.nDetector[1]]=proj[angles.shape[0]-1]
+
+            fproj=fft(fproj,axis=1)
+            fproj=fproj*filt
+            fproj=np.real(ifft(fproj,axis=1))     
+            proj[angles.shape[0]-1]=fproj[:,padding:padding+geo.nDetector[1]] * scale_factor
 
     return proj
 
