@@ -5,6 +5,8 @@ from tigre.utilities.parkerweight import parkerweight
 import numpy as np
 from scipy.fft  import fft, ifft
 
+import matplotlib.pyplot as plt
+
 import warnings
 
 import numpy as np
@@ -25,14 +27,20 @@ def filtering(proj, geo, angles, parker, verbose=False, use_gpu=True, gpuids=Non
 
     padding = int((filt_len-geo.nDetector[1])//2 )
     scale_factor = (geo.DSD[0]/geo.DSO[0]) * (2 * np.pi/ len(angles)) / ( 4 * geo.dDetector[0] ) 
-    if use_gpu:
+    if use_gpu==2:
+        bundle_size = 32#len(gpuids)
+        n_bundles = (angles.shape[0]+bundle_size-1)//bundle_size
+        for idx_bundle in range(0,n_bundles):
+            bundle_size_actual = bundle_size if idx_bundle != n_bundles-1 else angles.shape[0]-idx_bundle*bundle_size
+            idx_begin = idx_bundle*bundle_size
+            idx_end = idx_bundle*bundle_size+bundle_size_actual
+            proj[idx_begin:idx_end] = fbpfiltration.apply_padding_and_filtering(proj, idx_begin, idx_end, filt, scale_factor, gpuids) 
+    elif use_gpu==1:
         fproj=np.empty((geo.nDetector[0],filt_len),dtype=np.float32)
         for idx_proj in range(0,angles.shape[0]):
             fproj.fill(0)
             fproj[:,padding:padding+geo.nDetector[1]]=proj[idx_proj]
-
             fproj = fbpfiltration.apply(fproj, filt, gpuids)
-
             proj[idx_proj]=fproj[:,padding:padding+geo.nDetector[1]] * scale_factor
     else:
         filt=np.kron(np.ones((np.int64(geo.nDetector[0]),1),dtype=np.float32),filt)

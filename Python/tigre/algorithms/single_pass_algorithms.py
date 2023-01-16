@@ -74,7 +74,7 @@ def FDK(proj, geo, angles, **kwargs):
 
     gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
 
-    use_gpu_for_filtration = kwargs["use_gpu_for_filtration"] if "use_gpu_for_filtration" in kwargs else True
+    use_gpu_for_filtration = kwargs["use_gpu_for_filtration"] if "use_gpu_for_filtration" in kwargs else 2
 
     geo = copy.deepcopy(geo)
     geo.check_geo(angles)
