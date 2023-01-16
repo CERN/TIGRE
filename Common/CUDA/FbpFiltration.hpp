@@ -51,3 +51,4 @@
 #include <cufft.h>
 
 void apply_filtration(const float* pfIn, size_t uiXLen, size_t uiYLen, const float* pfFilter, float* pfOut, const GpuIds& gpuids);
+void apply_filtration2 (const float* pfInAll, size_t uiOffset, size_t uiULen, size_t uiBatch, const float* pfFilter, size_t uiFLen, float fScale, float* pfOut, const GpuIds& gpuids) ;
