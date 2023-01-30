@@ -280,7 +280,7 @@ class IterativeReconAlg(object):
                 if verbose:
                     print("init multigrid complete.")
             if init == "FDK":
-                self.res = FDK(self.proj, self.geo, self.angles)
+                self.res = np.maximum(FDK(self.proj, self.geo, self.angles),0)
 
         elif isinstance(init, np.ndarray):
             if (self.geo.nVoxel == init.shape).all():
