@@ -48,6 +48,7 @@ function [res,qualMeasOut] = FISTA(proj,geo,angles,niter,varargin)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Ander Biguri, Reuben Lindroos
 %--------------------------------------------------------------------------
+
 [verbose,res,tviter,hyper,lambda,p,q,QualMeasOpts,gpuids,gt]=parse_inputs(proj,geo,angles,varargin);
 
 measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
@@ -67,6 +68,7 @@ x_rec = res;
 L = hyper;
 bm = 1/L;
 t = 1;
+
 r = 1/4;
 
 
@@ -101,6 +103,7 @@ end
 
 end
 %% Parse inputs
+
 function [verbose,f0,tviter,hyper,lambda,fista_p,fista_q,QualMeasOpts,gpuids,gt]=parse_inputs(proj,geo,angles,argin)
 opts = {'lambda','init','tviter','verbose','hyper','fista_p','fista_q','qualmeas','gpuids','groundtruth'};
 defaults=ones(length(opts),1);
@@ -189,6 +192,7 @@ for ii=1:length(opts)
             else
                 tviter = val;
             end
+
             % FISTA parameter p
             %  =========================================================================
         case 'fista_p'
@@ -199,6 +203,7 @@ for ii=1:length(opts)
             else
                 fista_q = val;
             end
+
             % Number of iterations of TV
             %  =========================================================================
         case 'fista_q'
@@ -209,6 +214,7 @@ for ii=1:length(opts)
             else
                 fista_q = val;
             end
+
             % Image Quality Measure
             %  =========================================================================
         case 'qualmeas'

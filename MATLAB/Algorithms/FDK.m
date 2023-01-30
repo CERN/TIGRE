@@ -75,7 +75,7 @@ end
 %% Fourier transform based filtering
 proj = filtering(proj,geo,angles,parker); % Not sure if offsets are good in here
 
-%RMFIELD Remove fields from a structure array.
+% RMFIELD Remove fields from a structure array.
 geo=rmfield(geo,'filter');
 %% backproject
 %%%
@@ -121,7 +121,7 @@ defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
 if mod(nVarargs,2)
-    error('CBCT:FDK:InvalidInput','Invalid number of inputs')
+    error('TIGRE:FDK:InvalidInput','Invalid number of inputs')
 end
 
 % check if option has been passed as input
@@ -142,6 +142,7 @@ for ii=1:length(opts)
             ind=find(isequal(opt,lower(argin{jj})));
             jj=jj+1;
         end
+
         if isempty(ind)
             error('CBCT:FDK:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]); 
         end
@@ -169,8 +170,9 @@ for ii=1:length(opts)
             if default
                 filter='ram-lak';
             else
-                if ~ischar(val)
-                    error('CBCT:FDK:InvalidInput','Invalid filter')
+                if  ~ischar( val)
+                    error('TIGRE:FDK:InvalidInput','Invalid filter')
+
                 end
                 filter=val;
             end
@@ -182,7 +184,7 @@ for ii=1:length(opts)
             end
        
         otherwise
-            error('CBCT:FDK:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in FDK()']);
+            error('TIGRE:FDK:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in FDK()']);
     end
 end
 end

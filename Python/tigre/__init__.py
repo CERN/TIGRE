@@ -27,5 +27,6 @@ from .utilities.visualization.plotimg import plotimg, plotImg
 from .utilities.visualization.plot_geometry import plot_geometry
 from .utilities.visualization.plot_angles import plot_angles
 from .utilities.CTnoise import add
-from .utilities.common_geometry import staticDetectorGeo, staticDetLinearSourceGeo
+from .utilities.common_geometry import staticDetectorGeo, staticDetLinearSourceGeo, ArbitrarySourceDetMoveGeo
+
 from . import algorithms

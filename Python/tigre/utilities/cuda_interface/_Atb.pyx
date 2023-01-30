@@ -40,7 +40,8 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
 
     angles = np.ascontiguousarray(angles)
 
-    cdef float* c_model = <float*> malloc(geometry.nVoxel[0] * geometry.nVoxel[1] * geometry.nVoxel[2] * sizeof(float))
+    cdef float* c_model = <float*> malloc( <unsigned long long>geometry.nVoxel[0] * geometry.nVoxel[1] * geometry.nVoxel[2] * sizeof(float))
+
     cdef float* c_angles = <float*> angles.data
 
     # TODO: Error if backprojection_type isn't FDK or matched

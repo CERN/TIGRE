@@ -51,6 +51,7 @@ qualMeasOut=zeros(length(QualMeasOpts),niter);
 
 
 res = max(res,0);
+
 % Back-projection weight, V
 V = Atb(ones(size(proj),'single'),geo,angles,'matched','gpuids',gpuids);
 V(V<=0.) = inf;

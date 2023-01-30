@@ -212,7 +212,7 @@ class Geometry(object):
         parameters.append("Size of each voxel (dVoxel) = " + str(self.dVoxel) + " mm")
 
         parameters.append("-----")
-        if hasattr(self, "offOrigin") and hasattr(self, "offDetector"):
+        if hasattr(self, "offOrigin") or hasattr(self, "offDetector"):
             parameters.append("Offset correction parameters")
             if hasattr(self, "offOrigin"):
                 parameters.append(

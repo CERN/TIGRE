@@ -98,6 +98,8 @@ class plotProj:
                 self.show_plot = False
             else:
                 self.show_plot = True
+        else:
+            self.show_plot = show_plot
         if self.step is None or self.step == 0:
             self.step = 1
         if self.savegif == "":
@@ -160,7 +162,7 @@ class plotProj:
         axis.set_ylabel(self.dimlist[1])
         if self.angles is not None:
             axis.set_title(
-                "{}:{}, alpha={:+.3f} pi".format(self.dimlist[2], i, self.angles[i] / np.pi)
+                "{}:{}, alpha={:+.3f} pi".format(self.dimlist[2], i, self.angles[i,0] / np.pi)
             )
         else:
             axis.set_title(self.dimlist[2] + ":" + str(i))
