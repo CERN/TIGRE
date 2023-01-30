@@ -1,4 +1,4 @@
-function [ f,errorSART,errorTV,errorL2,qualMeasOut] = AwPCSD(proj,geo,angles,maxiter,varargin)
+function [ f,resL2,qualMeasOut] = AwPCSD(proj,geo,angles,maxiter,varargin)
 %AwPCSD solves the reconstruction problem using adaptive-weighted
 %projection-controlled steepest descent method
 %
@@ -36,6 +36,12 @@ function [ f,errorSART,errorTV,errorL2,qualMeasOut] = AwPCSD(proj,geo,angles,max
 %                  small 'delta' give low weights to almost every pixels,
 %                  making the algorithm inefficient in removing noise or
 %                  straking artifacts. Default is -0.00055
+% 'redundancy_weighting': true or false. Default is true. Applies data
+%                         redundancy weighting to projections in the update step
+%                         (relevant for offset detector geometry)
+%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%                 are requested, to plot their change w.r.t. this known
+%                 data.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -53,19 +59,28 @@ function [ f,errorSART,errorTV,errorL2,qualMeasOut] = AwPCSD(proj,geo,angles,max
 % Coded by:           Ander Biguri and Manasavee Lohvithee
 %--------------------------------------------------------------------------
 %% parse inputs
-[beta,beta_red,f,ng,verbose,epsilon,delta,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
-measurequality=~isempty(QualMeasOpts);
+[beta,beta_red,f,ng,verbose,epsilon,delta,QualMeasOpts,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,varargin);
+measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
+if ~any(isnan(gt(:)))
+    QualMeasOpts{end+1}='error_norm';
+    res_prev=gt;
+    clear gt
+end
+if nargout<3 && measurequality
+    warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
+    measurequality=false;
+end
+qualMeasOut=zeros(length(QualMeasOpts),niter);
 
 if nargout>1
     computeL2=true;
 else
     computeL2=false;
 end
-errorL2=[];
+resL2=zeros(1,niter);
 
 
-errorSART=[];
-errorTV=[];
+
 
 % [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 %
@@ -83,19 +98,22 @@ end
 % recompute the weigths every AwASD-POCS iteration, thus effectively doubling
 % the computational time
 % Projection weigth, W
-
-geoaux=geo;
-geoaux.sVoxel([1 2])=geo.sVoxel([1 2])*1.1; % a Bit bigger, to avoid numerical division by zero (small number)
-geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
-geoaux.nVoxel=[2,2,2]'; % accurate enough?
-geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);
-W(W<min(geo.dVoxel)/4)=Inf;
-W=1./W;
+W=computeW(geo,angles,gpuids);
 
 % Back-Projection weigth, V
 V=computeV(geo,angles,num2cell(angles),num2cell(1:length(angles)),'gpuids',gpuids);
 
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+    W = W.*W_r; % include redundancy weighting in W
+end
 %Initialize image.
 %f=zeros(geo.nVoxel','single');
 
@@ -107,6 +125,10 @@ stop_criteria=0;
 DSD=geo.DSD;
 DSO=geo.DSO;
 while ~stop_criteria %POCS
+    % If quality is going to be measured, then we need to save previous image
+    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+        res_prev = f; % only store if necesary
+    end
     f0=f;
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;
@@ -140,23 +162,19 @@ while ~stop_criteria %POCS
     end
     
     %Non-negativity projection on all pixels
-    f=max(f,0);
+    if nonneg
+        f=max(f,0);
+    end
     
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
     
     if measurequality
-        qualMeasOut(:,iter)=Measure_Quality(f0,f,QualMeasOpts);
+        qualMeasOut(:,iter)=Measure_Quality(res_prev,f,QualMeasOpts);
     end
     
     % Compute L2 error of actual image. Ax-b
     dd=im3Dnorm(Ax(f,geo,angles,'gpuids',gpuids)-proj,'L2');
-    
-    
-    %Compute errorSART
-    errorSARTnow=im3Dnorm(proj-Ax(f,geo,angles,'gpuids',gpuids),'L2');
-    errorSART=[errorSART errorSARTnow];
-    
     
     % Compute change in the image after last SART iteration
     dp_vec=(f-f0);
@@ -183,11 +201,6 @@ while ~stop_criteria %POCS
     if iter==1
         delta_p_first=im3Dnorm((Ax(f0,geo,angles,'interpolated','gpuids',gpuids))-proj,'L2');
     end
-    
-    %Compute errorTV
-    errorTVnow=im3Dnorm(proj-Ax(f,geo,angles,'gpuids',gpuids),'L2');
-    errorTV=[errorTV errorTVnow];
-    
     
     % Reduce SART step
     beta=beta*beta_red;
@@ -237,8 +250,8 @@ end
 end
 
 
-function [beta,beta_red,f0,ng,verbose,epsilon,delta,QualMeasOpts,nonneg,gpuids]=parse_inputs(proj,geo,angles,argin)
-opts=     {'lambda','lambda_red','init','tviter','verbose','maxl2err','delta','qualmeas','nonneg','gpuids'};
+function [beta,beta_red,f0,ng,verbose,epsilon,delta,QualMeasOpts,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,argin)
+opts=     {'lambda','lambda_red','init','tviter','verbose','maxl2err','delta','qualmeas','nonneg','gpuids','redundancy_weighting','groundtruth'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -285,8 +298,8 @@ for ii=1:length(opts)
                 warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
-        % Lambda
-        %  =========================================================================
+            % Lambda
+            %  =========================================================================
         case 'lambda'
             if default
                 beta=1;
@@ -296,8 +309,8 @@ for ii=1:length(opts)
                 end
                 beta=val;
             end
-        % Lambda reduction
-        %  =========================================================================
+            % Lambda reduction
+            %  =========================================================================
         case 'lambda_red'
             if default
                 beta_red=0.99;
@@ -307,12 +320,12 @@ for ii=1:length(opts)
                 end
                 beta_red=val;
             end
-        % Initial image
-        %  =========================================================================
+            % Initial image
+            %  =========================================================================
         case 'init'
             if default || strcmp(val,'none')
                 f0=zeros(geo.nVoxel','single');
-
+                
             else
                 if strcmp(val,'FDK')
                     f0=FDK(proj, geo, angles);
@@ -320,33 +333,33 @@ for ii=1:length(opts)
                     error('TIGRE:AwPCSD:InvalidInput','Invalid init')
                 end
             end
-        % Number of iterations of TV
-        %  =========================================================================
+            % Number of iterations of TV
+            %  =========================================================================
         case 'tviter'
             if default
                 ng=20;
             else
                 ng=val;
             end
-        %  Maximum L2 error to have a "good image"
-        %  =========================================================================
+            %  Maximum L2 error to have a "good image"
+            %  =========================================================================
         case 'maxl2err'
             if default
                 epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
             else
                 epsilon=val;
             end
-        %Parameter to control the amount of smoothing for pixels at the
-        %edges
-        %  =========================================================================
+            %Parameter to control the amount of smoothing for pixels at the
+            %edges
+            %  =========================================================================
         case 'delta'
             if default
                 delta=-0.005;
             else
                 delta=val;
             end
-        % Image Quality Measure
-        %  =========================================================================
+            % Image Quality Measure
+            %  =========================================================================
         case 'qualmeas'
             if default
                 QualMeasOpts={};
@@ -357,21 +370,33 @@ for ii=1:length(opts)
                     error('TIGRE:AwPCSD:InvalidInput','Invalid quality measurement parameters');
                 end
             end
-        %  Non negative
-        %  =========================================================================
+            %  Non negative
+            %  =========================================================================
         case 'nonneg'
             if default
                 nonneg=true;
             else
                 nonneg=val;
             end
-        %  GPU Ids
-        %  =========================================================================
+            %  GPU Ids
+            %  =========================================================================
         case 'gpuids'
             if default
                 gpuids = GpuIds();
             else
                 gpuids = val;
+            end
+        case 'redundancy_weighting'
+            if default
+                redundancy_weights = true;
+            else
+                redundancy_weights = val;
+            end
+                case 'groundtruth'
+            if default
+                gt=nan;
+            else
+                gt=val;
             end
         otherwise
             error('TIGRE:AwPCSD:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in AwPCSD()']);

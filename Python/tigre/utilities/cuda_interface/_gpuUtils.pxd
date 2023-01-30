@@ -16,7 +16,7 @@ cdef inline void free_c_gpuids(GpuIds* c_gpuids):
 cdef inline GpuIds* convert_to_c_gpuids(p_gpuids):
     cdef GpuIds* c_gpuids =<GpuIds *>malloc(sizeof(GpuIds))
     if not c_gpuids:
-        MemoryError()
+        MemoryError("Error allocating memory for GPU IDs")
     if p_gpuids is not None:
         c_gpuids.m_iCount = len(p_gpuids)
     else:
@@ -25,7 +25,7 @@ cdef inline GpuIds* convert_to_c_gpuids(p_gpuids):
     if c_gpuids.m_iCount > 0:
         c_gpuids.m_piDeviceIds = <int*>malloc(c_gpuids.m_iCount * sizeof(int))
         if not c_gpuids.m_piDeviceIds:
-            raise MemoryError()
+            raise MemoryError("Error allocating memory for GPU IDs")
         for iI in range(c_gpuids.m_iCount):
             c_gpuids.m_piDeviceIds[iI] = p_gpuids.devices[iI]
     else:

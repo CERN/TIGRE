@@ -170,8 +170,8 @@ imgOSASDPOCS = algs.os_asd_pocs(
 # ==========================================================================
 # ==========================================================================
 #
-# This is a more edge preserving algorithms than ASD_POCS, in theory.
-# delta is the cuttof vlaue of anromalized edge exponential weight....
+# This is a more edge preserving algorithms than ASD_POCS.
+# delta is the cut-off value of a normalized edge exponential weight....
 # not super clear, but it cotnrols at which point you accept something as real vs noise edge.
 
 imgAWASDPOCS = algs.awasd_pocs(
@@ -189,9 +189,19 @@ imgAWASDPOCS = algs.awasd_pocs(
     delta=np.array([-0.005]),
 )
 
+
+ 
+#  IRN-CGLS-TV: CGLS with TV regularization
+# ==========================================================================
+# ==========================================================================
+#
+# Should converge fairly fast to a TV regularized solution
+imgCGLSTV=algs.irn_tv_cgls(noise_projections,geo,angles,10,lmbda=5,niter_outer=2)
+
+
 #%% plot results
 
 # plot images
 tigre.plotimg(
-    np.concatenate([imgAWASDPOCS, imgOSASDPOCS, imgASDPOCS, imgOSSART], axis=1), dim="z", step=2
+    np.concatenate([imgAWASDPOCS, imgOSASDPOCS, imgASDPOCS, imgOSSART, imgCGLSTV], axis=1), dim="z", step=2
 )

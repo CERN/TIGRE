@@ -56,10 +56,6 @@ geo.offOrigin = np.array([0, 0, 0])  # Offset of image from origin   (mm)
 geo.offDetector = np.array([0, 0])  # Offset of Detector            (mm)
 # MAKE SURE THAT THE DETECTOR PIXELS SIZE IN V IS THE SAME AS THE IMAGE!
 
-# Offsets
-geo.offOrigin = np.array([0, 0, 0])  # Offset of image from origin   (mm)
-geo.offDetector = np.array([0, 0])  # Offset of Detector            (mm)
-
 geo.mode = "parallel"
 
 #%% Define angles of projection and load phatom image
@@ -102,10 +98,6 @@ geo.sDetector = geo.nDetector * geo.dDetector  # total size of the detector    (
 geo.offOrigin = np.array([0, 0, 0])  # Offset of image from origin   (mm)
 geo.offDetector = np.array([0, 0])  # Offset of Detector            (mm)
 # MAKE SURE THAT THE DETECTOR PIXELS SIZE IN V IS THE SAME AS THE IMAGE!
-
-# Offsets
-geo.offOrigin = np.array([0, 0, 0])  # Offset of image from origin   (mm)
-geo.offDetector = np.array([0, 0])  # Offset of Detector            (mm)
 
 geo.mode = "cone"
 

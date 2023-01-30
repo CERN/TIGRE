@@ -68,10 +68,26 @@ noise_projections = CTnoise.add(projections, Poisson=1e5, Gaussian=np.array([0, 
 #                            know what you are doing.
 #  'InitImg'    an image for the 'image' initialization. Avoid.
 
-# use CGLS
-imgCGLS, errL2CGLS = algs.cgls(noise_projections, geo, angles, 60, computel2=True)
+# # use CGLS
+imgCGLS, normL2CGLS = algs.cgls(noise_projections, geo, angles, 30, computel2=True)
+# use LSQR
+imgLSQR, normL2LSQR = algs.lsqr(noise_projections, geo, angles, 30, computel2=True)
+# use LSMR
+imgLSMR, normL2LSMR = algs.lsmr(noise_projections, geo, angles, 30, computel2=True,lmbda=0)
+imgLSMR2, normL2LSMR2 = algs.lsmr(noise_projections, geo, angles, 30, computel2=True,lmbda=30)
+# use LSQR
+imghLSQR, normhL2LSQR = algs.hybrid_lsqr(noise_projections, geo, angles, 30, computel2=True)
+
+# AB/BA-GMRES
+imgabgmres, normhabgmres = algs.ab_gmres(noise_projections, geo, angles, 30, computel2=True)
+imgbagmres, normhbagmres = algs.ba_gmres(noise_projections, geo, angles, 30, computel2=True)
+# # AB/BA-GMRES with FDK backprojector
+imgabgmresfdk, normhabgmresfdk = algs.ab_gmres(noise_projections, geo, angles, 30, computel2=True,backprojector="FDK")
+imgbagmresfdk, normhbagmresfdk = algs.ba_gmres(noise_projections, geo, angles, 30, computel2=True,backprojector="FDK")
+
+
 # SIRT for comparison.
-imgSIRT, errL2SIRT = algs.sirt(noise_projections, geo, angles, 60, computel2=True)
+imgSIRT, normL2SIRT = algs.sirt(noise_projections, geo, angles, 60, computel2=True)
 
 #%% plot results
 #
@@ -79,13 +95,14 @@ imgSIRT, errL2SIRT = algs.sirt(noise_projections, geo, angles, 60, computel2=Tru
 # iterations.
 
 
-plt.plot(np.vstack((errL2CGLS[0, :], errL2SIRT[0, :])).T)
+
+plt.plot(np.vstack((normL2CGLS[0, :], normL2SIRT[0, 0:30],normL2LSMR[0, :],normL2LSMR2[0, :],normhL2LSQR[0, :],normhabgmres[0,:],normhbagmres[0,:],normhabgmresfdk[0,:],normhbagmresfdk[0,:])).T)
 plt.title("L2 error")
 plt.xlabel("Iteration")
-plt.ylabel("$ log_{10}(|Ax-b|) $")
-plt.gca().legend(("CGLS", "SIRT"))
+plt.ylabel("$ |Ax-b| $")
+plt.gca().legend(("CGLS", "SIRT","LSMR lambda=0", "LSMR lambda=30","hybrid LSQR","AB-GMRES","BA-GMRES","AB-GMRES FDK","BA-GMRES FDK"))
 plt.show()
 # plot images
-tigre.plotimg(np.concatenate([imgCGLS, imgSIRT], axis=1), dim="z", step=2)
+tigre.plotimg(np.concatenate([np.concatenate([imgCGLS, imgSIRT, imgLSQR,imgabgmres,imgabgmresfdk],axis=1),np.concatenate([imgLSMR, imgLSMR2, imghLSQR,imgbagmres,imgbagmresfdk], axis=1)], axis=2), dim="z", step=2,clims=[0, 2])
 # plot errors
-tigre.plotimg(np.abs(np.concatenate([head - imgCGLS, head - imgSIRT], axis=1)), dim="z", slice=32)
+tigre.plotimg(np.concatenate([np.concatenate([head-imgCGLS, head-imgSIRT, head-imgLSQR, head-imgabgmres, head-imgabgmresfdk],axis=1),np.concatenate([head-imgLSMR, head-imgLSMR2, head-imghLSQR,head-imgbagmres,head-imgbagmresfdk], axis=1)], axis=2), dim="z", slice=32)

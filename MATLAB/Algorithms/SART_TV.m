@@ -1,10 +1,10 @@
-function [res,errorL2,qualMeasOut]=SART_TV(proj,geo,angles,niter,varargin)
+function [res,resL2,qualMeasOut]=SART_TV(proj,geo,angles,niter,varargin)
 % SART_TV solves Cone Beam CT image reconstruction using Oriented Subsets
-%              Simultaneous Algebraic Reconxtruction Techique algorithm
+%              Simultaneous Algebraic Reconstruction Technique algorithm
 %
 %   SART_TV(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
-%   to the geometry descrived in GEO, using NITER iterations.
+%   to the geometry described in GEO, using NITER iterations.
 %
 %   SART_TV(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
@@ -12,23 +12,23 @@ function [res,errorL2,qualMeasOut]=SART_TV(proj,geo,angles,niter,varargin)
 %
 %   'lambda':      Sets the value of the hyperparameter. Default is 1
 %
-%   'lambda_red':   Reduction of lambda.Every iteration
+%   'lambda_red':  Reduction of lambda. Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
-%   'Init':        Describes diferent initialization techniques.
+%   'Init':        Describes different initialization techniques.
 %                  'none'     : Initializes the image to zeros (default)
-%                  'FDK'      : intializes image to FDK reconstrucition
+%                  'FDK'      : Initializes image to FDK reconstruction
 %                  'multigrid': Initializes image by solving the problem in
 %                               small scale and increasing it when relative
 %                               convergence is reached.
 %                  'image'    : Initialization using a user specified
-%                               image. Not recomended unless you really
+%                               image. Not recommended unless you really
 %                               know what you are doing.
-%   'InitImg'      an image for the 'image' initialization. Aviod.
+%   'InitImg'      an image for the 'image' initialization. Avoid.
 %
-%   'TViter'       amoutn of iteration in theTV step. Default 50
+%   'TViter'       number of iterations in the TV step. Default 50
 %
-%   'TVlambda'     hyperparameter in TV iteration. IT gives the ratio of
+%   'TVlambda'     hyperparameter in TV iteration. It gives the ratio of
 %                  importance of the image vs the minimum total variation.
 %                  default is 15. Lower means more TV denoising.
 %
@@ -40,10 +40,16 @@ function [res,errorL2,qualMeasOut]=SART_TV(proj,geo,angles,niter,varargin)
 %                  quality measurement names. Example: {'CC','RMSE','MSSIM'}
 %                  These will be computed in each iteration.
 % 'OrderStrategy'  Chooses the subset ordering strategy. Options are
-%                  'ordered' :uses them in the input order, but divided
-%                  'random'  : orders them randomply
+%                  'ordered' : uses them in the input order, but divided
+%                  'random'  : orders them randomly
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
+% 'redundancy_weighting': true or false. Default is true. Applies data
+%                         redundancy weighting to projections in the update step
+%                         (relevant for offset detector geometry)
+%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%                 are requested, to plot their change w.r.t. this known
+%                 data.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -62,16 +68,25 @@ function [res,errorL2,qualMeasOut]=SART_TV(proj,geo,angles,niter,varargin)
 %--------------------------------------------------------------------------
 
 %% Deal with input parameters
-[lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
-measurequality=~isempty(QualMeasOpts);
+[lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,varargin);
+measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
+if ~any(isnan(gt(:)))
+    QualMeasOpts{end+1}='error_norm';
+    res_prev=gt;
+    clear gt
+end
+if nargout<3 && measurequality
+    warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
+    measurequality=false;
+end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 
+resL2=zeros(1,niter);
 if nargout>1
     computeL2=true;
 else
     computeL2=false;
 end
-errorL2=[];
 
 blocksize=1;
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
@@ -82,19 +97,25 @@ index_angles=cell2mat(orig_index);
 if ~isfield(geo,'rotDetector')
     geo.rotDetector=[0;0;0];
 end
-%% Create weigthing matrices
+%% Create weighting matrices
 
-% Projection weigth, W
-geoaux=geo;
-geoaux.sVoxel([1 2])=geo.DSD-geo.DSO;
-geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
-geoaux.nVoxel=[2,2,2]'; % accurate enough?
-geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);  %
-W(W<min(geo.dVoxel)/4)=Inf;
-W=1./W;
-% Back-Projection weigth, V
+% Projection weight, W
+W=computeW(geo,angles,gpuids);
+
+% Back-Projection weight, V
 V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
+
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+    W = W.*W_r; % include redundancy weighting in W
+end
 
 %% Iterate
 offOrigin=geo.offOrigin;
@@ -107,8 +128,8 @@ for ii=1:niter
     if (ii==1 && verbose==1);tic;end
     % If quality is going to be measured, then we need to save previous image
     % THIS TAKES MEMORY!
-    if measurequality
-        res_prev=res;
+    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+        res_prev = res; % only store if necesary
     end
     
     
@@ -141,7 +162,6 @@ for ii=1:niter
     
     % If quality is being measured
     if measurequality
-        % HERE GOES
         qualMeasOut(:,ii)=Measure_Quality(res,res_prev,QualMeasOpts);
     end
     
@@ -155,15 +175,14 @@ for ii=1:niter
         geo.offDetector=offDetector;
         geo.DSD=DSD;
         geo.rotDetector=rotDetector;
-        errornow=im3Dnorm(proj(:,:,index_angles)-Ax(res,geo,angles,'gpuids',gpuids),'L2');                       % Compute error norm2 of b-Ax
+        resL2(ii)=im3Dnorm(proj(:,:,index_angles)-Ax(res,geo,angles,'gpuids',gpuids),'L2'); % Compute error norm2 of b-Ax
         % If the error is not minimized.
-        if  ii~=1 && errornow>errorL2(end)
+        if  ii~=1 && resL2(ii)>resL2(ii-1)
             if verbose
                 disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
             end
-            return;
+            return
         end
-        errorL2=[errorL2 errornow];
     end
     
     if (ii==1 && verbose==1)
@@ -214,8 +233,8 @@ end
 end
 
 
-function [lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','tviter','tvlambda','orderstrategy','nonneg','gpuids'};
+function [lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,alpha,argin)
+opts={'lambda','init','initimg','verbose','lambda_red','qualmeas','tviter','tvlambda','orderstrategy','nonneg','gpuids','redundancy_weighting','groundtruth'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -236,7 +255,7 @@ end
 for ii=1:length(opts)
     opt=opts{ii};
     default=defaults(ii);
-    % if one option isnot default, then extranc value from input
+    % if one option is not default, then extract value from input
     if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
@@ -266,7 +285,7 @@ for ii=1:length(opts)
             if default
                 lambda=1;
             else
-                if length(val)>1 || ~isnumeric( val)
+                if length(val)>1 || ~isnumeric(val)
                     error('TIGRE:SART_TV:InvalidInput','Invalid lambda')
                 end
                 lambda=val;
@@ -275,7 +294,7 @@ for ii=1:length(opts)
             if default
                 lamdbared=0.99;
             else
-                if length(val)>1 || ~isnumeric( val)
+                if length(val)>1 || ~isnumeric(val)
                     error('TIGRE:SART_TV:InvalidInput','Invalid lambda')
                 end
                 lamdbared=val;
@@ -284,15 +303,19 @@ for ii=1:length(opts)
             res=[];
             if default || strcmp(val,'none')
                 res=zeros(geo.nVoxel','single');
-                continue;
+                continue
+            end
+            if strcmp(val,'FDK')
+                res=FDK(proj,geo,alpha);
+                continue
             end
             if strcmp(val,'multigrid')
                 multigrid=true;
-                continue;
+                continue
             end
             if strcmp(val,'image')
                 initwithimage=1;
-                continue;
+                continue
             end
             if isempty(res)
                 error('TIGRE:SART_TV:InvalidInput','Invalid Init option')
@@ -300,7 +323,7 @@ for ii=1:length(opts)
             % % % % % % % ERROR
         case 'initimg'
             if default
-                continue;
+                continue
             end
             if exist('initwithimage','var')
                 if isequal(size(val),geo.nVoxel')
@@ -338,10 +361,10 @@ for ii=1:length(opts)
                 OrderStrategy=val;
             end
             
-          case 'nonneg'
+        case 'nonneg'
             if default
                 nonneg=true;
-            else 
+            else
                 nonneg=val;
             end
         case 'gpuids'
@@ -350,9 +373,24 @@ for ii=1:length(opts)
             else
                 gpuids = val;
             end
+        case 'redundancy_weighting'
+            if default
+                redundancy_weights = true;
+            else
+                redundancy_weights = val;
+            end
+        case 'groundtruth'
+            if default
+                gt=nan;
+            else
+                gt=val;
+            end
         otherwise
             error('TIGRE:SART_TV:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SART()']);
     end
 end
-if multigrid; res=init_multigrid(proj,geo,alpha,TViter,TVlambda,gpuids); end
+if multigrid
+    res=init_multigrid(proj,geo,alpha,TViter,TVlambda,gpuids);
+end
+
 end

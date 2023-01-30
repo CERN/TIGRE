@@ -32,7 +32,7 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
 
     cdef c_GpuIds* c_gpuids = convert_to_c_gpuids(gpuids)
     if not c_gpuids:
-        raise MemoryError()
+        raise MemoryError("Error loading gpuIds")
     
     cdef int total_projections = angles.shape[0]
 
@@ -40,7 +40,8 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
 
     angles = np.ascontiguousarray(angles)
 
-    cdef float* c_model = <float*> malloc( <unsigned long>geometry.nVoxel[0] * geometry.nVoxel[1] * geometry.nVoxel[2] * sizeof(float))
+    cdef float* c_model = <float*> malloc( <unsigned long long>geometry.nVoxel[0] * geometry.nVoxel[1] * geometry.nVoxel[2] * sizeof(float))
+
     cdef float* c_angles = <float*> angles.data
 
     # TODO: Error if backprojection_type isn't FDK or matched
@@ -59,6 +60,8 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
     else:
         print("Warning: Unknown mode, using default cone beam")
         cone_beam = True
+        
+    projections = np.ascontiguousarray(projections)
 
     cdef float* c_projections = <float*> projections.data
 

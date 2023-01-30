@@ -196,6 +196,3 @@ def rotation_from_vecs(v1, v2):
         # Rodrigues' formula
         return I + K + (K @ K) / (1 + c)    
 
-
-    
-    

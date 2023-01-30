@@ -44,18 +44,20 @@ A succesfull installation should be able to execute the script at `TIGRE/Python/
 
 5. Compile libraries
 
-	`cd TIGRE/Python/`  
-	`python setup.py install --user`
+	```
+	cd TIGRE/Python/  
+	pip install -r requirements.txt --user  
+	python setup.py install --user
+	```
+	**NOTE:** If you are working under the virtual environment that created by `venv` and you want to install TIGRE to it, 
+	you should remove the `--user` option. 
+	With the `--user` option, TIGRE and the other required pakages will be installed to your Python user install directory, not to your virtual environment or system directory.
 
 	Install in this case will make a copy of pytigre to your python distribution. Therefore the `develop` command is more useful when modifying the source files and developing the software. 
 
 	`python setup.py develop --user`
 
 6. Try demo 3. If it runs succesfully then you are good to go.
-
-**Note:** It is known that the package cannot be imported using a pure Python 3.8 installation, i.e.
-not using a conda environment. Please try a pure installation of Python 3.7 or consider using a
-conda environment.
 
 ## Linux
 
@@ -112,8 +114,14 @@ For Ubuntu
 
 5. Compile libraries
 
-	`cd TIGRE/Python/` 
-	`python setup.py install --user`
+	```
+	cd TIGRE/Python/  
+	pip install -r requirements.txt --user  
+	python setup.py install --user
+	```
+	**NOTE:** If you are working under the virtual environment that created by `venv` and you want to install TIGRE to it, 
+	you should remove the `--user` option. 
+	With the `--user` option, TIGRE and the other required pakages will be installed to your Python user install directory, not to your virtual environment or system directory.
 
 	Install in this case will make a copy of pytigre to your python distribution. Therefore the `develop` command is more useful when modifying the source files and developing the software. 
 

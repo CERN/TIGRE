@@ -51,13 +51,13 @@ TIGRE is a GPU-based CT reconstruction software repository that contains a wide 
    
     - **Iterative algorithms**
        
-        - Gradient-based algorithms (SART, OS-SART, SIRT) with multiple tuning parameters (Nesterov acceleration, initialization, parameter reduction, ...)
+        - Gradient-based algorithms (SART, OS-SART, SIRT, ASD-POCS, OS-ASD-POCS, B-ASD-POCS-β, PCSD, AwPCSD, Aw-ASD-POCS) with multiple tuning parameters (Nesterov acceleration, initialization, parameter reduction, ...)
        
-        - Krylov subspace algorithms (CGLS)
+        - Krylov subspace algorithms (CGLS, LSQR, hybrid LSQR, LSMR, IRN-TV-CGLS, hybrid-fLSQR-TV, AB/BA-GMRES)
        
         - Statistical reconstruction (MLEM)
        
-        - Total variation regularization based algorithms: proximal-based (FISTA, SART-TV) and POCS-based (ASD-POCS, OS-ASD-POCS, B-ASD-POCS-β, PCSD, AwPCSD, Aw-ASD-POCS)
+        - Variational methods (FISTA, SART-TV) 
        
 - TV denoising for 3D images.
        

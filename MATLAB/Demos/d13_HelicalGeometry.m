@@ -58,7 +58,7 @@ geo.offOrigin(2,:)=0;
 data=Ax(head,geo,angles);
 
 % Uncomment if you want to see the data
-plotProj(data,angles);
+%plotProj(data,angles);
 %% Reconstruct Helical
  
 OSSARTimg=OS_SART(data,geo,angles,30);
