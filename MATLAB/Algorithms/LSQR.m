@@ -58,7 +58,7 @@ if nargout<3 && measurequality
     measurequality=false;
 end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
-resL2=zeros(1,niter); 
+resL2=zeros(2,niter); 
 
 
 % Paige and Saunders //doi.org/10.1145/355984.355989
@@ -117,7 +117,8 @@ while iter<niter
         
         %         % Update estimated quantities of interest.
         %         % msl: We can also compute cheaply estimates of ||x||, ||A||, cond(A)
-        %         normr = normr*abs(s);   % ||r_k|| = ||b - A x_k||
+                normr = normr*abs(s);   % ||r_k|| = ||b - A x_k||
+                resL2(1,iter)=normr;
         %         % Only exact if we do not have orth. loss
         %         normAtr = phibar * alpha * abs(c); % msl: Do we want this? ||A^T r_k||
         
@@ -136,25 +137,25 @@ while iter<niter
         % numerical issues related to doing several order of magnitude
         % difference operations on single precission numbers.
         aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
-        resL2(iter)=im3Dnorm(aux,'L2');
-        if iter>1 && resL2(iter)>resL2(iter-1)
-            % we lost orthogonality, lets restart the algorithm unless the
-            % user asked us not to.
-            
-            % undo bad step.
-            x=x-(phi / rho) * (v-w)/((theta / rho));
-            % if the restart didn't work.
-            if remember==iter || ~restart
-                disp(['Algorithm stoped in iteration ', num2str(iter),' due to loss of ortogonality.'])
-                return;
-            end
-            remember=iter;
-            iter=iter-1;
-            if verbose
-                disp(['Orthogonality lost, restarting at iteration ', num2str(iter) ])
-            end
-            break
-        end
+        resL2(2,iter)=im3Dnorm(aux,'L2');
+%         if iter>1 && resL2(iter)>resL2(iter-1)
+%             % we lost orthogonality, lets restart the algorithm unless the
+%             % user asked us not to.
+%             
+%             % undo bad step.
+%             x=x-(phi / rho) * (v-w)/((theta / rho));
+%             % if the restart didn't work.
+% %             if remember==iter || ~restart
+% %                 disp(['Algorithm stoped in iteration ', num2str(iter),' due to loss of ortogonality.'])
+% %                 return;
+% %             end
+% %             remember=iter;
+% %             iter=iter-1;
+% %             if verbose
+% %                 disp(['Orthogonality lost, restarting at iteration ', num2str(iter) ])
+% %             end
+% %             break
+%         end
         
         if (iter==1 && verbose)
             expected_time=toc*niter;

@@ -171,17 +171,17 @@ for ii=1:niter
     yhat = rhskhat(1:ii)./Dk;
     y = Vk * yhat;
     
-%     resL2(ii)=norm(rhsk - Bk*y); % residual norm
+   resL2(1,ii)=norm(rhsk - Bk*y); % residual norm
     x = x0 + reshape(V(:,1:ii)*y,size(x0));
     if measurequality
         qualMeasOut(:,ii)=Measure_Quality(x_prev,x,QualMeasOpts);
     end
     aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
-    resL2(ii)=im3Dnorm(aux,'L2');
-    if ii>1 && resL2(ii)>resL2(ii-1)
-        disp(['Algorithm stoped in iteration ', num2str(ii),' due to loss of ortogonality.'])
-        return;
-    end
+    resL2(2,ii)=im3Dnorm(aux,'L2');
+%     if ii>1 && resL2(ii)>resL2(ii-1)
+%         disp(['Algorithm stoped in iteration ', num2str(ii),' due to loss of ortogonality.'])
+%         return;
+%     end
     
     if (ii==1 && verbose)
         expected_time=toc*niter;
