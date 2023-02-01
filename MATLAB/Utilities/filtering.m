@@ -22,7 +22,7 @@ function [ proj ] = filtering(proj,geo,angles,parker,varargin)
 [usegpufft,gpuids]=parse_inputs(varargin);
 
 if parker
-	proj = permute(ParkerWeight(permute(proj,[2 1 3]),geo,angles,parker),[2 1 3]);
+	proj = ParkerWeight(proj,geo,angles,parker);
 	diff_angles = diff(angles(1,:)); angle_step = mean(abs(diff_angles)); % to be used later
 end 
 
@@ -36,6 +36,8 @@ if usegpufft>0
 else
     filt = repmat(filt',[1 geo.nDetector(2)]);
 end
+
+proj=permute(proj,[2 1 3]);
 
 if usegpufft==2
     bundle_size = 32;  %len(gpuids)

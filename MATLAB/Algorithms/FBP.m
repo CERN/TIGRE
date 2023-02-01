@@ -43,7 +43,6 @@ end
 
 %% Weight
 %proj=data
-proj=permute(proj,[2 1 3]);
 
 %% filter
 proj_filt = filtering(proj,geo,angles,parker); % Not sure if offsets are good in here
