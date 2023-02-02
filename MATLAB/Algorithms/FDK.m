@@ -71,7 +71,7 @@ for ii=1:size(angles,2)
     proj(:,:,ii) = w.*proj(:,:,ii);
 end
 %% Fourier transform based filtering
-proj = filtering(proj,geo,angles,parker); % Not sure if offsets are good in here
+proj = filtering(proj,geo,angles,parker, 'usegpufft', usegpufft); % Not sure if offsets are good in here
 
 % RMFIELD Remove fields from a structure array.
 geo=rmfield(geo,'filter');

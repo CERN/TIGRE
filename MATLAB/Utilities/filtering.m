@@ -68,11 +68,13 @@ else
         fproj = (zeros(filt_len,geo.nDetector(2),'single'));
 
         fproj(round(filt_len/2-geo.nDetector(1)/2+1):round(filt_len/2+geo.nDetector(1)/2),:) = proj(:,:,ii);
-
-        fproj = fft(fproj);   
-        fproj = fproj.*filt;
-        fproj = (real(ifft(fproj)));
-
+        if usegpufft==1
+            fproj = ApplyFbpFiltration(fproj, filt, gpuids);
+        else
+            fproj = fft(fproj);   
+            fproj = fproj.*filt;
+            fproj = (real(ifft(fproj)));
+        end
         if parker
             proj(:,:,ii) = fproj(round(end/2-geo.nDetector(1)/2+1):round(end/2+geo.nDetector(1)/2),:)/2/geo.dDetector(1)*(2*pi/  (pi/angle_step)   )/2*(geo.DSD(ii)/geo.DSO(ii));
         else
