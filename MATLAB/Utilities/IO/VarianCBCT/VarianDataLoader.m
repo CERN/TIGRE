@@ -15,10 +15,11 @@ function [proj_lg, geo, angles] = VarianDataLoader(datafolder, varargin)
 % SC: Scatter Correction (default: true)
 % BH: Beam Hardening correction (default: false, due to Bowtie, BH correction is not required at all.)
 [tag_ACDC, tag_DPS, tag_SC, tag_BH, gpuids] = parse_inputs(varargin{:});
-
-%% GPU initialization
-reset(gpuDevice(gpuids.devices(0)+1));
-
+%% Reset GPUs
+for ii=1:length(gpuids)
+    g = gpuDevice(gpuids.devices(ii));
+    reset(g);
+end
 %% Load geometry
 [geo, ScanXML] = GeometryFromXML(datafolder);
 
@@ -50,7 +51,7 @@ disp('Loading Blk: ')
 % Detector point scatter correction
 if(tag_DPS)
     disp('Blk DPS: ')
-    Blk = DetectorPointScatterCorrection(Blk, geo, ScCalib);
+    Blk = DetectorPointScatterCorrection(Blk, geo, ScCalib,gpuids);
 end
 %% Scatter Correction
 if(tag_SC)
@@ -96,7 +97,7 @@ addParameter(p,'sc', true);
 % BH performance is very lame for unclear reason
 addParameter(p,'bh', false);
 
-addParameters(p,'gpuids',GpuIds())
+addParameter(p,'gpuids',GpuIds())
 
 %execute
 parse(p,varargin{:});
