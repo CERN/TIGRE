@@ -143,7 +143,7 @@ def _parse_inputs(size_out, phantom_type):
         nVoxel = [size_out, size_out, size_out]
     elif (type(size_out) == list or type(size_out) == tuple) and len(size_out) == 3:
         nVoxel = [size_out[0], size_out[1], size_out[2]]
-    elif type(size_out) == np.array and np.size(size_out) == 3:
+    elif type(size_out) == np.ndarray and np.size(size_out) == 3:
         nVoxel = [size_out.reshape(-1)[0], size_out.reshape(-1)[1], size_out.reshape(-1)[2]]
     else:
         nVoxel = [128, 128, 128]
