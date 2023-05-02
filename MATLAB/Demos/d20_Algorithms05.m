@@ -44,7 +44,7 @@ noise_projections=addCTnoise(projections);
 %          eigenvalue in the A matrix in the equation Ax-b and Atb. 
 %          Empirical tests show that for, the headphantom object:
 %               
-%               geo.nVoxel = [64,64,64]'    ,      hyper (approx=) 2.e8
+%               geo.nVoxel = [64,64,64]'    ,      hyper (approx=) 2.e6
 %               geo.nVoxel = [512,512,512]' ,      hyper (approx=) 2.e4
 %          Default: 2.e8
 % 'tviter':  Number of iterations of Im3ddenoise to use. Default: 20
@@ -61,7 +61,7 @@ imgFISTA_hyper = FISTA(noise_projections,geo,angles,100,'hyper' ,2.e6);
 imgFISTA_hightv = FISTA(noise_projections,geo,angles,100,'hyper',2.e6,'tviter',100,'lambda',20);
 
 %% Faster converging FISTA
-imgFISTA_mod = FISTA_mod(noise_projections,geo,angles,100,'hyper',2.e6,'tviter',100,'lambda',20);
+imgFISTA_mod = FISTA(noise_projections,geo,angles,100,'hyper',1.e5,'tviter',100,'lambda',20,'fista_q',1/50,'fista_p',1/20);
 
 %% Plot results
 plotImg([imgFISTA_default,imgFISTA_hyper,imgFISTA_hightv,imgFISTA_mod])

@@ -176,7 +176,7 @@ for ii=1:length(opts)
             % ==========================================================
         case 'hyper'
             if default
-                hyper = 2.e8;
+                hyper = 2.e6;
             elseif length(val)>1 || ~isnumeric( val)
                 error('TIGRE:FISTA:InvalidInput','Invalid lambda')
             else
@@ -197,18 +197,18 @@ for ii=1:length(opts)
             %  =========================================================================
         case 'fista_p'
             if default
-                fista_p = 1/50; % standard FISTA, 1/50 for "faster" FISTA
+                fista_p = 1; % standard FISTA, 1/50 for "faster" FISTA
             elseif length(val)>1 || ~isnumeric( val)
                 error('TIGRE:FISTA:InvalidInput','Invalid lambda')
             else
-                fista_q = val;
+                fista_p = val;
             end
 
             % Number of iterations of TV
             %  =========================================================================
         case 'fista_q'
             if default
-                fista_q = 1/20; % standard FISTA, 1/20 for "faster" FISTA
+                fista_q = 1; % standard FISTA, 1/20 for "faster" FISTA
             elseif length(val)>1 || ~isnumeric( val)
                 error('TIGRE:FISTA:InvalidInput','Invalid lambda')
             else
