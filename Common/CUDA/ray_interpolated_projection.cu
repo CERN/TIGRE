@@ -70,7 +70,6 @@ do { \
 } while (0)
     
     
-// Declare the texture reference.
     
 #define MAXTREADS 1024
 #define PROJ_PER_BLOCK 9

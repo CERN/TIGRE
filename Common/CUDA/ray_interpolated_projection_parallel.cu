@@ -66,8 +66,6 @@ do { \
 } while (0)
     
     
-// Declare the texture reference.
-    texture<float, cudaTextureType3D , cudaReadModeElementType> tex;
 
 #define MAXTREADS 1024
 #define PROJ_PER_BLOCK 8
