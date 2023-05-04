@@ -27,6 +27,7 @@ COMPUTE_CAPABILITY_ARGS = [  # '-gencode=arch=compute_20,code=sm_20', #deprecate
     "-gencode=arch=compute_70,code=sm_70",
     "-gencode=arch=compute_75,code=sm_75",  # From CUDA 10
     "-gencode=arch=compute_86,code=sm_86",  # From CUDA 11
+    "-gencode=arch=compute_90,code=sm_90",  # From CUDA 12
     "-gencode=arch=compute_70,code=compute_70", # allows foward compiling
     "--ptxas-options=-v",
     "-c",
@@ -110,14 +111,23 @@ except ValueError:
     cuda_version = float( str(cuda_list[0] + '.' + cuda_list[1]))
 
 # Cleanup CUDA arguments depedning on the version
+
+if cuda_version < 12.0:
+    COMPUTE_CAPABILITY_ARGS.pop(9)
+
 if cuda_version < 11.0:
     COMPUTE_CAPABILITY_ARGS.pop(8)
 
 if cuda_version < 10.0:
     COMPUTE_CAPABILITY_ARGS.pop(7)
 
-if cuda_version > 9.2:
-    COMPUTE_CAPABILITY_ARGS.pop(0)
+
+if cuda_version >= 12.0:
+    del COMPUTE_CAPABILITY_ARGS[0:2]
+elif cuda_version >= 11.0:
+    del COMPUTE_CAPABILITY_ARGS[0:1]
+elif cuda_version >= 11.0:
+    del COMPUTE_CAPABILITY_ARGS[0] 
     
 # Obtain the numpy include directory.  This logic works across numpy versions.
 try:
