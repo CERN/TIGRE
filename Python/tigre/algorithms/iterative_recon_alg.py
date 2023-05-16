@@ -380,7 +380,7 @@ class IterativeReconAlg(object):
         :return: None
         """
 
-        ang_index = self.angle_index[iteration].astype(np.int)
+        ang_index = self.angle_index[iteration].astype(np.int32)
 
         self.res += (
             self.lmbda
