@@ -625,15 +625,14 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     free(proj_split_size);
     
     freeGeoArray(split_image*deviceCount,geoArray);
-        
+#ifndef NO_PINNED_MEMORY     
     if (isHostRegisterSupported & split_image>1){
         cudaHostUnregister(result);
     }
     if (isHostRegisterSupported){
         cudaHostUnregister(projections);
     }
-
-    
+#endif 
     for (int i = 0; i < nStreams; ++i)
         cudaStreamDestroy(stream[i]);
     

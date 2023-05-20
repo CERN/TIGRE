@@ -37,7 +37,7 @@ end
 
 %% FLAGS
 if disable_pinned
-    FLAGS=['-DNO_PINNED'];
+    FLAGS=['-DNO_PINNED_MEMORY'];
 else
     FLAGS=['-DNO_FLAGS'];
 end
