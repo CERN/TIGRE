@@ -13,6 +13,19 @@ import numpy
 from setuptools import setup, find_packages, Extension
 
 
+# Macros for compilation
+define_macros=[("IS_FOR_PYTIGRE", None)]
+no_pinned=False
+if len(sys.argv)>1:
+    if "--no_pinned_memory" in sys.argv[1:] :
+        no_pinned=True
+        sys.argv.pop(sys.argv.index("--no_pinned_memory"))
+    else:
+        raise ValueError("flag not understood, only ---no_pinned_memory accepted")
+ 
+if no_pinned:
+    define_macros.append(("NO_PINNED_MEMORY",None))     
+
 IS_WINDOWS = sys.platform == "win32"
 
 
@@ -359,7 +372,7 @@ Ax_ext = Extension(
         ],
         sdist=sys.argv[1] == "sdist",
     ),
-    define_macros=[("IS_FOR_PYTIGRE", None)],
+    define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
     libraries=["cudart"],
     language="c++",
@@ -383,7 +396,7 @@ Atb_ext = Extension(
         ],
         sdist=sys.argv[1] == "sdist",
     ),
-    define_macros=[("IS_FOR_PYTIGRE", None)],
+    define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
     libraries=["cudart"],
     language="c++",
@@ -405,7 +418,7 @@ tvdenoising_ext = Extension(
         ],
         sdist=sys.argv[1] == "sdist",
     ),
-    define_macros=[("IS_FOR_PYTIGRE", None)],
+    define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
     libraries=["cudart"],
     language="c++",
@@ -427,7 +440,7 @@ minTV_ext = Extension(
         ],
         sdist=sys.argv[1] == "sdist",
     ),
-    define_macros=[("IS_FOR_PYTIGRE", None)],
+    define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
     libraries=["cudart"],
     language="c++",
@@ -448,7 +461,7 @@ AwminTV_ext = Extension(
         ],
         sdist=sys.argv[1] == "sdist",
     ),
-    define_macros=[("IS_FOR_PYTIGRE", None)],
+    define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
     libraries=["cudart"],
     language="c++",
@@ -487,7 +500,7 @@ RandomNumberGenerator_ext = Extension(
         ],
         sdist=sys.argv[1] == "sdist",
     ),
-    define_macros=[("IS_FOR_PYTIGRE", None)],
+    define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
     libraries=["cudart"],
     language="c++",

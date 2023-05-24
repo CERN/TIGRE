@@ -27,7 +27,7 @@ function []=Compile(varargin)
 disable_pinned=false;
 if nargin
     for i=1:length(varargin)
-        if strcmp(varargin{i},'-no_pin_mem')
+        if strcmp(varargin{i},'-no_pinned_mem')
             disable_pinned=true;
         else
             warning('Flags not understood, ignoring');
