@@ -11,7 +11,7 @@ Installation Instructions for MATLAB
    - [Requirements](#requirements-1)
    - [Simple Instructions](#simple-instructions-1)
    - [Step by Step Instructions](#step-by-step-instructions1)
-   
+- [Advanced](#advanced)
    *****
    
 ## Windows
@@ -20,7 +20,7 @@ Installation Instructions for MATLAB
 
 1. MATLAB
 2. Visual Studio (Community or Profesional)
-3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.0](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
+3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.5](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
 4. CUDA Toolkit (9.2 or newer)
 
 Tested on
@@ -28,16 +28,16 @@ Tested on
 | Software        | Version           | 
 | ------------- |:-------------:|
 |**Windows**| 7, 8, 10.|
-|**MATLAB**| 2014b 2016b 2017a 2018b|
-|**CUDA**| 9.2 10|
-|**Visual Studio**| 2010 2013 2015|
+|**MATLAB**|Any MATLAB >2016b|
+|**CUDA**|Any CUDA 9.2>|
+|**Visual Studio**| 2010 2013 2015 2019 2022|
 
 
 
 ### Simple Instructions
 
-1. Install MATLAB, Visual Studio and CUDA
-2. Rename either `mex_CUDA_win64_MVS2013.xml` (Visual Studio 2013 or older) or `mex_CUDA_win64_MVS2015.xml`(Visual Studio 2015 or newer) to `mex_CUDA_win64.xml`
+1. Install MATLAB, Visual Studio and CUDA (Remember to install C++ when isntalling Visual Studio!)
+2. Rename the XML file corresponding to the Visual Studio you have. e.g. `mex_CUDA_win64_MVS2015.xml`(Visual Studio 2015/2017) to `mex_CUDA_win64.xml`
 3. Run `Compile.m`
 
 A succesfull installation should be able to execute the script at `TIGRE/MATLAB/Demos/d03_generateData.m` without errors.
@@ -129,9 +129,9 @@ Tested on
 
 | Software       | Version    | 
 | ------------- |:-------------:|
-| **Ubuntu**|  16.04 17.10| 
-| **MATLAB**|  2017a 2018b| 
-| **CUDA**| 9.2 10.0| 
+| **Ubuntu**|  Any ubuntu 16.04>| 
+| **MATLAB**|  Any MATLAB 2016b>| 
+| **CUDA**| Any Cuda 0.2>| 
 | **gcc**|  6.4.0 7.2.0| 
 
 ### Simple Instructions
@@ -141,7 +141,7 @@ Tested on
 
 A succesfull installation should be able to execute the script at `TIGRE/MATLAB/Demos/d03_generateData.m` without errors.
 
-### Step by Step Instructions:<sup>1</sup>
+### Step by Step Instructions:
 
 1. Install MATLAB
 
@@ -181,4 +181,13 @@ If none of this works, please contact the authors at [tigre.toolbox@gmail.com](m
 
 ****
 
-<sup>1</sup> Testing by the TIGRE team in Linux is limited, thus the step by step instructions are less detailed than expected. Please do [contact us](mailto:ander.biguri@gmail.com) if you are having trouble or would like to contribute to the instructions. 
+## Advanced
+
+If you are doing reconstruction of large datasets, and you want to use swap memory, you will need to deactivate TIGREs pinned memory feature at compile time. This will allow you to use swap memory, but it will make the operators in TIGRE slower, as pinned memory is used for simultaneous memory and compute. 
+
+
+You can do this by calling the `Compile.m` file from the MATLAB command line as `Compile --no_pinned_memory`.
+
+
+
+

@@ -1,13 +1,26 @@
 Installation Instructions for Python
 ======
 
+## Table of contents
+
+- [Windows](#windows)
+   - [Requirements](#requirements)
+   - [Simple Instructions](#simple-instructions)
+   - [Step by Step Instructions](#step-by-step-instructions)
+- [Linux](#linux)
+   - [Requirements](#requirements-1)
+   - [Simple Instructions](#simple-instructions-1)
+   - [Step by Step Instructions](#step-by-step-instructions1)
+- [Optional Code Style Enforcement](#Optional-Code-Style-Enforcement)
+- [Advanced](#advanced)
+   *****
 ## Windows
 
 ### Requirements:
 
-1. Python 3
+1. Python 3.7-3.10
 2. MVS
-3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.0](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
+3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.5](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
 4. CUDA Toolkit
 
 Tested on
@@ -15,8 +28,8 @@ Tested on
 | Software        | Version           | 
 | ------------- |:-------------:|
 |**Windows**| 10 |
-|**Python**| 3.7 3.8 |
-|**CUDA**| 10.1 |
+|**Python**| 3.7 3.8 3.9 3.10|
+|**CUDA**| 9.2>|
 |**MSVC**| 19.24 |
 
 ### Simple Instructions
@@ -63,9 +76,9 @@ A succesfull installation should be able to execute the script at `TIGRE/Python/
 
 ### Requirements:
 
-1. Python 2/Python 3
+1. Python 3
 2. gcc
-3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.0](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
+3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.5](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
 4. CUDA Toolkit
 
 
@@ -73,9 +86,9 @@ Tested on
 
 | Software        | Version           | 
 | ------------- |:-------------:|
-|**Ubuntu**| 16.04 17.10|
-|**Python**| 2.7 3.7 |
-|**CUDA**| 8.0 9.2 10.1 10.2|
+|**Ubuntu**| 16.04>|
+|**Python**| 3.7-3.10|
+|**CUDA**| 9.2>|
 |**gcc**|  7.6.0|
 
 ### Simple Instructions
@@ -90,14 +103,17 @@ A succesfull installation should be able to execute the script at `TIGRE/Python/
 
 For Ubuntu
 
-1. Install python and pip (you can use 2 or 3, example show for 2)
+1. Install python and pip
+
+	Recommended to do it via [Anaconda3](https://docs.anaconda.com/free/anaconda/install/linux/)
 
 	```
 	sudo apt update
 	sudo apt upgrade
-	sudo apt install python2.7 python-pip
+	sudo apt install python3.10 python-pip
 	```
 	
+
 2. Install CUDA
 
    Installing CUDA in linux (specially one with a GUI) can be a challenge. Please follow [NVIDIAs instructions](https://developer.download.nvidia.com/compute/cuda/10.0/Prod/docs/sidebar/CUDA_Installation_Guide_Linux.pdf) carefully.\
@@ -185,3 +201,13 @@ check blanket noqa.......................................................Passed
 ```
 
 **NOTE:** pre-commit may also be manually invoked against *all* files (staged and unstaged) using the `pre-commit run --all-files`. However, some changes made to Python's TIGRE codebase by `black` have been manually reverted for readability reasons and should not be committed in their blackened state.
+
+## Advanced 
+
+If you are doing reconstruction of large datasets, and you want to use swap memory, you will need to deactivate TIGREs pinned memory feature at compile time. This will allow you to use swap memory, but it will make the operators in TIGRE slower, as pinned memory is used for simultaneous memory and compute. 
+
+You can do this by calling the `stup.py` with the flag `--no_pinned_memory`. 
+
+
+
+
