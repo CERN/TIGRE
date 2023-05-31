@@ -16,8 +16,8 @@ from setuptools import setup, find_packages, Extension
 # Macros for compilation
 define_macros=[("IS_FOR_PYTIGRE", None)]
 no_pinned=False
-if len(sys.argv)>1:
-    if "--no_pinned_memory" in sys.argv[1:] :
+if len(sys.argv)>2:
+    if "--no_pinned_memory" in sys.argv[2:] :
         no_pinned=True
         sys.argv.pop(sys.argv.index("--no_pinned_memory"))
     else:
