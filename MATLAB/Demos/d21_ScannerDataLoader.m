@@ -50,6 +50,7 @@
 % change the image parameters, but the detector parameters should stay the
 % same unless you change the projections. 
 
+% Sample data: https://zenodo.org/record/8045749
 datafolder='~/your_data_path/varian/2020-01-01_123456/';
 [proj,geo, angles ] = VarianDataLoader(datafolder);
 [proj,geo, angles ] = VarianDataLoader(datafolder, false); %remove motion lag correction.
