@@ -66,6 +66,7 @@ addpath('./Colormaps');
 addpath('./Third_party_tools/arrow3d'); % 3D shepp-Logan
 addpath('./Third_party_tools/sec2hours');
 addpath('./Third_party_tools/readMHD');
+addpath('./Third_party_tools/Inpaint_nans/');
 
 if ispc
     if ~isempty(strfind(computer('arch'),'64'))

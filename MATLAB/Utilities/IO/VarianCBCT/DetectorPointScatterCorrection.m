@@ -44,15 +44,19 @@ us = us * mm2cm;
 vs = vs * mm2cm;
 
 %% Downsampling
-% about 10 mm in axial direction
-dus = downsample(us, 26);
-% about 4 mm in axial direction
-dvs = downsample(vs, 10);
+% % about 10 mm in axial direction
+% dus = us(1:26:end);
+% % about 4 mm in axial direction
+% dvs = vs(1:10:end);
 
 ds_rate = 8;
-dus = decimate(us, ds_rate);
-dvs = decimate(vs, ds_rate);
-
+if areTheseToolboxesInstalled('Signal Processing Toolbox')   
+    dus = decimate(us, ds_rate);
+    dvs = decimate(vs, ds_rate);
+else
+    dus = us(1:ds_rate:end);
+    dvs = vs(1:ds_rate:end);
+end
 
 %% Grid mesh
 [uu,vv] = meshgrid(us,vs); %detector
@@ -71,7 +75,7 @@ hd = CoverSPR/sum(hd(:)) .* hd;
 %% GPU based
 % reset(gpuDevice(1));
 for ii=1:length(gpuids)
-    g = gpuDevice(gpuids.devices(ii));
+    g = gpuDevice(gpuids.devices(ii)+1);
     reset(g);
 end
 gproj = gpuArray(single(proj));
@@ -104,7 +108,7 @@ end
 proj = single(gather(gproj));
 % Reset GPU
 for ii=1:length(gpuids)
-    g = gpuDevice(gpuids.devices(ii));
+    g = gpuDevice(gpuids.devices(ii)+1);
     reset(g);
 end
 

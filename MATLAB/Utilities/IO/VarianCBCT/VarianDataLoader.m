@@ -17,7 +17,7 @@ function [proj_lg, geo, angles] = VarianDataLoader(datafolder, varargin)
 [tag_ACDC, tag_DPS, tag_SC, tag_BH, gpuids] = parse_inputs(varargin{:});
 %% Reset GPUs
 for ii=1:length(gpuids)
-    g = gpuDevice(gpuids.devices(ii));
+    g = gpuDevice(gpuids.devices(ii)+1);
     reset(g);
 end
 %% Load geometry
@@ -55,7 +55,7 @@ if(tag_DPS)
 end
 %% Scatter Correction
 if(tag_SC)
-    disp('Scatter correction onging: ')
+    disp('Scatter correction starting: ')
     proj = ScatterCorrection(ScCalib, Blk, BlkAirNorm, proj, airnorm, geo);
     disp('Scatter correction is completed.')
 end

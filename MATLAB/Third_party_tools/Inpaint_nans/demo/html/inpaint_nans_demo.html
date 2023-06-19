@@ -1,0 +1,161 @@
+<html xmlns:mwsh="http://www.mathworks.com/namespace/mcode/v1/syntaxhighlight.dtd">
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   
+      <!--
+This HTML is auto-generated from an M-file.
+To make changes, update the M-file and republish this document.
+      -->
+      <title>inpaint_nans_demo</title>
+      <meta name="generator" content="MATLAB 7.0.1">
+      <meta name="date" content="2006-06-28">
+      <meta name="m-file" content="inpaint_nans_demo"><style>
+body {
+  background-color: white;
+  margin:10px;
+}
+h1 {
+  color: #990000; 
+  font-size: x-large;
+}
+h2 {
+  color: #990000;
+  font-size: medium;
+}
+p.footer {
+  text-align: right;
+  font-size: xx-small;
+  font-weight: lighter;
+  font-style: italic;
+  color: gray;
+}
+
+pre.codeinput {
+  margin-left: 30px;
+}
+
+span.keyword {color: #0000FF}
+span.comment {color: #228B22}
+span.string {color: #A020F0}
+span.untermstring {color: #B20000}
+span.syscmd {color: #B28C00}
+
+pre.showbuttons {
+  margin-left: 30px;
+  border: solid black 2px;
+  padding: 4px;
+  background: #EBEFF3;
+}
+
+pre.codeoutput {
+  color: gray;
+  font-style: italic;
+}
+pre.error {
+  color: red;
+}
+
+/* Make the text shrink to fit narrow windows, but not stretch too far in 
+wide windows.  On Gecko-based browsers, the shrink-to-fit doesn't work. */ 
+p,h1,h2,div {
+  /* for MATLAB's browser */
+  width: 600px;
+  /* for Mozilla, but the "width" tag overrides it anyway */
+  max-width: 600px;
+  /* for IE */
+  width:expression(document.body.clientWidth > 620 ? "600px": "auto" );
+}
+
+    </style></head>
+   <body><pre class="codeinput"><span class="comment">% Surface fit artifact removal</span>
+[x,y] = meshgrid(0:.01:1);
+z0 = exp(x+y);
+
+znan = z0;
+znan(20:50,40:70) = NaN;
+znan(30:90,5:10) = NaN;
+znan(70:75,40:90) = NaN;
+
+z = inpaint_nans(znan,3);
+
+<span class="comment">% Comparison to griddata</span>
+k = isnan(znan);
+zk = griddata(x(~k),y(~k),z(~k),x(k),y(k));
+zg = znan;
+zg(k) = zk;
+
+close <span class="string">all</span>
+figure
+surf(z0)
+title <span class="string">'Original surface'</span>
+
+figure
+surf(znan)
+title <span class="string">'Artifacts (large holes) in surface'</span>
+
+figure
+surf(zg)
+title([<span class="string">'Griddata inpainting ('</span>,num2str(sum(isnan(zg(:)))),<span class="string">' NaNs remain)'</span>])
+
+figure
+surf(z)
+title <span class="string">'Inpainted surface'</span>
+
+figure
+surf(zg-z0)
+title <span class="string">'Griddata error surface'</span>
+
+figure
+surf(z-z0)
+title <span class="string">'Inpainting error surface (Note z-axis scale)'</span>
+</pre><img vspace="5" hspace="5" src="inpaint_nans_demo_01.png"> <img vspace="5" hspace="5" src="inpaint_nans_demo_02.png"> <img vspace="5" hspace="5" src="inpaint_nans_demo_03.png"> <img vspace="5" hspace="5" src="inpaint_nans_demo_04.png"> <img vspace="5" hspace="5" src="inpaint_nans_demo_05.png"> <img vspace="5" hspace="5" src="inpaint_nans_demo_06.png"> <p class="footer"><br>
+         Published with MATLAB&reg; 7.0.1<br></p>
+      <!--
+##### SOURCE BEGIN #####
+% Surface fit artifact removal
+[x,y] = meshgrid(0:.01:1);
+z0 = exp(x+y);
+
+znan = z0;
+znan(20:50,40:70) = NaN;
+znan(30:90,5:10) = NaN;
+znan(70:75,40:90) = NaN;
+
+z = inpaint_nans(znan,3);
+
+% Comparison to griddata
+k = isnan(znan);
+zk = griddata(x(~k),y(~k),z(~k),x(k),y(k));
+zg = znan;
+zg(k) = zk;
+
+close all
+figure
+surf(z0)
+title 'Original surface'
+
+figure
+surf(znan)
+title 'Artifacts (large holes) in surface'
+
+figure
+surf(zg)
+title(['Griddata inpainting (',num2str(sum(isnan(zg(:)))),' NaNs remain)'])
+
+figure
+surf(z)
+title 'Inpainted surface'
+
+figure
+surf(zg-z0)
+title 'Griddata error surface'
+
+figure
+surf(z-z0)
+title 'Inpainting error surface (Note z-axis scale)'
+
+
+##### SOURCE END #####
+-->
+   </body>
+</html>

@@ -17,11 +17,15 @@ vs = ((-geo.nDetector(2)/2+0.5):1:(geo.nDetector(2)/2-0.5))*geo.dDetector(2) - o
 %% Downsampling (not used in current version)
 % downsampling rate
 ds_rate = 12;
-% unit: mm
-% Downsampled to about 10 mm in axial direction in Ref
-dus = decimate(us, ds_rate);
-% Downsampled to about 4 mm in transaxial direction in Ref
-dvs = decimate(vs, ds_rate);
+
+if areTheseToolboxesInstalled('Signal Processing Toolbox')   
+    dus = decimate(us, ds_rate);
+    dvs = decimate(vs, ds_rate);
+else
+    dus = us(1:ds_rate:end);
+    dvs = vs(1:ds_rate:end);
+end
+
 
 step_du = mean(diff(dus));
 step_dv = mean(diff(dvs));

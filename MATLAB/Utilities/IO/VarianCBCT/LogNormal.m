@@ -73,7 +73,7 @@ end
 proj = gather(gproj);
 % GPU clear
 for ii=1:length(gpuids)
-    g = gpuDevice(gpuids.devices(ii));
+    g = gpuDevice(gpuids.devices(ii)+1);
     reset(g);
 end
 end

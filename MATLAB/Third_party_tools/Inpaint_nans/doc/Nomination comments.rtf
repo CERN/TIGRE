@@ -1,0 +1,39 @@
+{\rtf1\mac\ansicpg10000\cocoartf102
+{\fonttbl\f0\fswiss\fcharset77 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww10780\viewh13720\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ql\qnatural
+
+\f0\fs24 \cf0 Nomination comments:\
+\
+Inpaint_nans fills a hole in matlab. (Yes, the pun was intentional.) But there\
+is indeed a niche that inpaint_nans falls into.\
+\
+The alternative to inpaint_nans is griddata (interp1 can be used for the 1-d \
+problems) but griddata fails to extrapolate well. Griddata also has serious\
+problems when its data already lies on a grid, due to its use of a Delaunay \
+triangulation. The other serious problem with the use of griddata is the\
+triangulation itself. The shape of the hole to be filled can sometimes result\
+in triangles with a poor aspect ratio (long, thin triangles) which are in turn\
+poor for interpolation. In fact, Griddata can even leave interior points\
+uninterpolated (see the tests.)\
+\
+A future plan for inpaint_nans is to add an option that will use a locally\
+anisotropic membrane model. This will allow better modeling for certain\
+classes of wavy surfaces. I'm also highly tempted to remove method 5.\
+I've never really liked it, having put it in at the request of one user. It has\
+no valid theory behind it in the context of inpaint_nans.\
+\
+In the interest of openness, I'll also say what inpaint_nans does not do. It\
+does not handle non-uniform grids. It is limited by the amount of memory \
+in the size of the arrays it can handle, although some of the methods were\
+explicitly provided to be more memory efficient than others. Inpaint_nans\
+also makes heavy use of sparse matrices, so surprisingly large problems\
+are accessible.\
+\
+Finally, while inpaint_nans does work for 1-d problems, they are not my\
+target. Interp1 (with 'spline' as the method) is as accurate, and should be\
+faster in general.\
+\
+John\
+}
