@@ -38,7 +38,7 @@ function [res]=FDK(proj,geo,angles,varargin)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Kyungsang Kim, modified by Ander Biguri, Brandon Nelson 
 %--------------------------------------------------------------------------
-[filter,parker,dowang,gpuids]=parse_inputs(angles,varargin);
+[filter,parker,dowang,usegpufft,gpuids]=parse_inputs(angles,varargin);
 
 geo=checkGeo(geo,angles);
 geo.filter=filter;
@@ -59,9 +59,7 @@ else
 end
 
 %% Weight
-proj=permute(proj,[2 1 3]);
 for ii=1:size(angles,2)
-    
     us = ((-geo.nDetector(1)/2+0.5):1:(geo.nDetector(1)/2-0.5))*geo.dDetector(1) + offset(1,ii);
     vs = ((-geo.nDetector(2)/2+0.5):1:(geo.nDetector(2)/2-0.5))*geo.dDetector(2) + offset(2,ii);
     [uu,vv] = meshgrid(us,vs); % detector
@@ -70,10 +68,10 @@ for ii=1:size(angles,2)
     w = (geo.DSD(ii))./sqrt((geo.DSD(ii))^2+uu.^2 + vv.^2);
     
     % Multiply the weights with projection data
-    proj(:,:,ii) = proj(:,:,ii).*w';
+    proj(:,:,ii) = w.*proj(:,:,ii);
 end
 %% Fourier transform based filtering
-proj = filtering(proj,geo,angles,parker); % Not sure if offsets are good in here
+proj = filtering(proj,geo,angles,parker, 'usegpufft', usegpufft); % Not sure if offsets are good in here
 
 % RMFIELD Remove fields from a structure array.
 geo=rmfield(geo,'filter');
@@ -113,9 +111,9 @@ end
 end
 
 
-function [filter, parker, wang, gpuids]=parse_inputs(angles,argin)
+function [filter, parker, wang, usegpufft, gpuids]=parse_inputs(angles,argin)
 
-opts =  {'filter','parker','wang','gpuids'};
+opts =  {'filter','parker','wang','usegpufft','gpuids'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -176,6 +174,12 @@ for ii=1:length(opts)
                 end
                 filter=val;
             end
+        case 'usegpufft'
+            if default
+                usegpufft=2;
+            else
+                usegpufft=val;
+            end            
         case 'gpuids'
             if default
                 gpuids = GpuIds();

@@ -509,6 +509,26 @@ RandomNumberGenerator_ext = Extension(
 )
 
 
+FbpFiltration_ext = Extension(
+    "_FbpFiltration",
+    sources=include_headers(
+        [
+            "../Common/CUDA/TIGRE_common.cpp",
+            "../Common/CUDA/FbpFiltration.cu",
+            "../Common/CUDA/GpuIds.cpp",
+            "../Common/CUDA/gpuUtils.cu",
+            "tigre/utilities/cuda_interface/_FbpFiltration.pyx",
+        ],
+        sdist=sys.argv[1] == "sdist",
+    ),
+    define_macros=[("IS_FOR_PYTIGRE", None)],
+    library_dirs=[CUDA["lib64"]],
+    libraries=["cudart", "cufft"],
+    language="c++",
+    runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+)
+
 setup(
     name="pytigre",
     version="2.4.0",
@@ -516,7 +536,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     data_files=[("data", ["../Common/data/head.mat"])],
-    ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext, gpuUtils_ext, RandomNumberGenerator_ext],
+    ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext, gpuUtils_ext, RandomNumberGenerator_ext, FbpFiltration_ext],
     py_modules=["tigre.py"],
     cmdclass={"build_ext": BuildExtension},
     install_requires=["Cython", "matplotlib", "numpy", "scipy", "tqdm"],
