@@ -215,6 +215,8 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     float ax,ay;
     ax=(source.x<pixel1D.x)?  (imin-source.x)/(ray.x+0.000000000001f)  :  (imax-source.x)/(ray.x+0.000000000001f);
     ay=(source.y<pixel1D.y)?  (jmin-source.y)/(ray.y+0.000000000001f)  :  (jmax-source.y)/(ray.y+0.000000000001f);
+    ay = (ray.y==0.0f)? -copysignf(1e11,ax) : ay;
+    ax = (ray.x==0.0f)? -copysignf(1e11,ay) : ax;
 //     az=(source.z<pixel1D.z)?  (kmin-source.z)/ray.z  :  (kmax-source.z)/ray.z;
     
     
@@ -246,6 +248,8 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     i+=0.5f;
     j+=0.5f;
     k+=0.5f;
+    // detector[idx]=aminc;
+    // return;
     for (unsigned long ii=0;ii<Np;ii++){
         if (ax==aminc){
             sum+=(ax-ac)*tex3D<float>(tex, i, j, k);//(ax-ac)*
