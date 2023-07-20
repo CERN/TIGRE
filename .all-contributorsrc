@@ -64,6 +64,19 @@
         "bug",
         "research"
       ]
+    },
+    {
+      "login": "tsadakane",
+      "name": "tsadakane",
+      "avatar_url": "https://avatars.githubusercontent.com/u/40597344?v=4",
+      "profile": "https://github.com/tsadakane",
+      "contributions": [
+        "code",
+        "design",
+        "ideas",
+        "bug",
+        "tutorial"
+      ]
     }
   ],
   "contributorsPerLine": 7,
