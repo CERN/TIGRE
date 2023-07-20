@@ -88,6 +88,16 @@
         "design",
         "tool"
       ]
+    },
+    {
+      "login": "Daveelvt",
+      "name": "Daveelvt",
+      "avatar_url": "https://avatars.githubusercontent.com/u/16086944?v=4",
+      "profile": "https://github.com/Daveelvt",
+      "contributions": [
+        "code",
+        "research"
+      ]
     }
   ],
   "contributorsPerLine": 7,
