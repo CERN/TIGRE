@@ -43,6 +43,16 @@
         "design",
         "ideas"
       ]
+    },
+    {
+      "login": "genusn",
+      "name": "genusn",
+      "avatar_url": "https://avatars.githubusercontent.com/u/25704789?v=4",
+      "profile": "https://github.com/genusn",
+      "contributions": [
+        "code",
+        "bug"
+      ]
     }
   ],
   "contributorsPerLine": 7,
