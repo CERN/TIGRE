@@ -1,6 +1,6 @@
 [![Documentation Status](https://readthedocs.org/projects/tigre/badge/?version=latest)](https://tigre.readthedocs.io/en/latest/?badge=latest)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-5-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 
@@ -146,6 +146,7 @@ Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/yliu88au"><img src="https://avatars.githubusercontent.com/u/75292881?v=4?s=100" width="100px;" alt="yliu88au"/><br /><sub><b>yliu88au</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=yliu88au" title="Code">💻</a> <a href="https://github.com/CERN/TIGRE/issues?q=author%3Ayliu88au" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/reubenlindroos"><img src="https://avatars.githubusercontent.com/u/25688713?v=4?s=100" width="100px;" alt="Reuben Lindroos"/><br /><sub><b>Reuben Lindroos</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=reubenlindroos" title="Code">💻</a> <a href="https://github.com/CERN/TIGRE/issues?q=author%3Areubenlindroos" title="Bug reports">🐛</a> <a href="#design-reubenlindroos" title="Design">🎨</a> <a href="#ideas-reubenlindroos" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/genusn"><img src="https://avatars.githubusercontent.com/u/25704789?v=4?s=100" width="100px;" alt="genusn"/><br /><sub><b>genusn</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=genusn" title="Code">💻</a> <a href="https://github.com/CERN/TIGRE/issues?q=author%3Agenusn" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/yidu-bjcancer"><img src="https://avatars.githubusercontent.com/u/7495679?v=4?s=100" width="100px;" alt="Yi DU"/><br /><sub><b>Yi DU</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=yidu-bjcancer" title="Code">💻</a> <a href="https://github.com/CERN/TIGRE/issues?q=author%3Ayidu-bjcancer" title="Bug reports">🐛</a> <a href="#research-yidu-bjcancer" title="Research">🔬</a></td>
     </tr>
   </tbody>
 </table>
