@@ -1,6 +1,6 @@
 [![Documentation Status](https://readthedocs.org/projects/tigre/badge/?version=latest)](https://tigre.readthedocs.io/en/latest/?badge=latest)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-6-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 
@@ -148,6 +148,7 @@ Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/genusn"><img src="https://avatars.githubusercontent.com/u/25704789?v=4?s=100" width="100px;" alt="genusn"/><br /><sub><b>genusn</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=genusn" title="Code">💻</a> <a href="https://github.com/CERN/TIGRE/issues?q=author%3Agenusn" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/yidu-bjcancer"><img src="https://avatars.githubusercontent.com/u/7495679?v=4?s=100" width="100px;" alt="Yi DU"/><br /><sub><b>Yi DU</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=yidu-bjcancer" title="Code">💻</a> <a href="https://github.com/CERN/TIGRE/issues?q=author%3Ayidu-bjcancer" title="Bug reports">🐛</a> <a href="#research-yidu-bjcancer" title="Research">🔬</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/tsadakane"><img src="https://avatars.githubusercontent.com/u/40597344?v=4?s=100" width="100px;" alt="tsadakane"/><br /><sub><b>tsadakane</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=tsadakane" title="Code">💻</a> <a href="#design-tsadakane" title="Design">🎨</a> <a href="#ideas-tsadakane" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/CERN/TIGRE/issues?q=author%3Atsadakane" title="Bug reports">🐛</a> <a href="#tutorial-tsadakane" title="Tutorials">✅</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://omg.lol/sco1"><img src="https://avatars.githubusercontent.com/u/5323929?v=4?s=100" width="100px;" alt="S. Co1"/><br /><sub><b>S. Co1</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=sco1" title="Code">💻</a> <a href="#design-sco1" title="Design">🎨</a> <a href="#tool-sco1" title="Tools">🔧</a></td>
     </tr>
   </tbody>
 </table>
