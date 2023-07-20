@@ -1,6 +1,6 @@
 [![Documentation Status](https://readthedocs.org/projects/tigre/badge/?version=latest)](https://tigre.readthedocs.io/en/latest/?badge=latest)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 
@@ -143,6 +143,7 @@ Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*
   <tbody>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/AnderBiguri"><img src="https://avatars.githubusercontent.com/u/11854388?v=4?s=100" width="100px;" alt="Biguri"/><br /><sub><b>Biguri</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=AnderBiguri" title="Code">💻</a> <a href="#example-AnderBiguri" title="Examples">💡</a> <a href="#ideas-AnderBiguri" title="Ideas, Planning, & Feedback">🤔</a> <a href="#maintenance-AnderBiguri" title="Maintenance">🚧</a> <a href="#research-AnderBiguri" title="Research">🔬</a> <a href="https://github.com/CERN/TIGRE/pulls?q=is%3Apr+reviewed-by%3AAnderBiguri" title="Reviewed Pull Requests">👀</a> <a href="#tutorial-AnderBiguri" title="Tutorials">✅</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/reubenlindroos"><img src="https://avatars.githubusercontent.com/u/25688713?v=4?s=100" width="100px;" alt="Reuben Lindroos"/><br /><sub><b>Reuben Lindroos</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=reubenlindroos" title="Code">💻</a> <a href="https://github.com/CERN/TIGRE/issues?q=author%3Areubenlindroos" title="Bug reports">🐛</a> <a href="#design-reubenlindroos" title="Design">🎨</a> <a href="#ideas-reubenlindroos" title="Ideas, Planning, & Feedback">🤔</a></td>
     </tr>
   </tbody>
 </table>

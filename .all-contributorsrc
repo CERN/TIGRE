@@ -21,6 +21,18 @@
         "review",
         "tutorial"
       ]
+    },
+    {
+      "login": "reubenlindroos",
+      "name": "Reuben Lindroos",
+      "avatar_url": "https://avatars.githubusercontent.com/u/25688713?v=4",
+      "profile": "https://github.com/reubenlindroos",
+      "contributions": [
+        "code",
+        "bug",
+        "design",
+        "ideas"
+      ]
     }
   ],
   "contributorsPerLine": 7,
