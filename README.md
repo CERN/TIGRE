@@ -1,4 +1,7 @@
 [![Documentation Status](https://readthedocs.org/projects/tigre/badge/?version=latest)](https://tigre.readthedocs.io/en/latest/?badge=latest)
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 
 TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
@@ -134,6 +137,20 @@ Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*
 ## Contributors
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/AnderBiguri"><img src="https://avatars.githubusercontent.com/u/11854388?v=4?s=100" width="100px;" alt="Biguri"/><br /><sub><b>Biguri</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=AnderBiguri" title="Code">💻</a> <a href="#example-AnderBiguri" title="Examples">💡</a> <a href="#ideas-AnderBiguri" title="Ideas, Planning, & Feedback">🤔</a> <a href="#maintenance-AnderBiguri" title="Maintenance">🚧</a> <a href="#research-AnderBiguri" title="Research">🔬</a> <a href="https://github.com/CERN/TIGRE/pulls?q=is%3Apr+reviewed-by%3AAnderBiguri" title="Reviewed Pull Requests">👀</a> <a href="#tutorial-AnderBiguri" title="Tutorials">✅</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 
