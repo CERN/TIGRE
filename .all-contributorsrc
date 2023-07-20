@@ -53,6 +53,17 @@
         "code",
         "bug"
       ]
+    },
+    {
+      "login": "yidu-bjcancer",
+      "name": "Yi DU",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7495679?v=4",
+      "profile": "https://github.com/yidu-bjcancer",
+      "contributions": [
+        "code",
+        "bug",
+        "research"
+      ]
     }
   ],
   "contributorsPerLine": 7,
