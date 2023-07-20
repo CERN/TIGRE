@@ -1,6 +1,6 @@
 [![Documentation Status](https://readthedocs.org/projects/tigre/badge/?version=latest)](https://tigre.readthedocs.io/en/latest/?badge=latest)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 
@@ -152,6 +152,7 @@ Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Daveelvt"><img src="https://avatars.githubusercontent.com/u/16086944?v=4?s=100" width="100px;" alt="Daveelvt"/><br /><sub><b>Daveelvt</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=Daveelvt" title="Code">💻</a> <a href="#research-Daveelvt" title="Research">🔬</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/phernst"><img src="https://avatars.githubusercontent.com/u/9623894?v=4?s=100" width="100px;" alt="phernst"/><br /><sub><b>phernst</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/issues?q=author%3Aphernst" title="Bug reports">🐛</a> <a href="https://github.com/CERN/TIGRE/commits?author=phernst" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
