@@ -77,6 +77,17 @@
         "bug",
         "tutorial"
       ]
+    },
+    {
+      "login": "sco1",
+      "name": "S. Co1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5323929?v=4",
+      "profile": "https://omg.lol/sco1",
+      "contributions": [
+        "code",
+        "design",
+        "tool"
+      ]
     }
   ],
   "contributorsPerLine": 7,
