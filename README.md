@@ -131,6 +131,18 @@ Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*
 [Read the article][4], 
 [Preprint][5]
 
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+
 [1]: LICENSE.txt
 [2]: http://www.linfo.org/bsdlicense.html
 [3]: http://iopscience.iop.org/article/10.1088/2057-1976/2/5/055010
