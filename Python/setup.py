@@ -124,11 +124,11 @@ except ValueError:
     cuda_version = float( str(cuda_list[0] + '.' + cuda_list[1]))
 
 # Cleanup CUDA arguments depedning on the version
-
+cuda_version = 11.0
 if cuda_version < 12.0:
     COMPUTE_CAPABILITY_ARGS.pop(9)
 
-if cuda_version < 11.0:
+if cuda_version <= 11.0:
     COMPUTE_CAPABILITY_ARGS.pop(8)
 
 if cuda_version < 10.0:
@@ -141,7 +141,7 @@ elif cuda_version >= 11.0:
     del COMPUTE_CAPABILITY_ARGS[0:1]
 elif cuda_version >= 11.0:
     del COMPUTE_CAPABILITY_ARGS[0] 
-    
+
 # Obtain the numpy include directory.  This logic works across numpy versions.
 try:
     NUMPY_INCLUDE = numpy.get_include()
