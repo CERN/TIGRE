@@ -97,10 +97,10 @@ if contains(computer('arch'),'64')
     mex('-largeArrayDims', './Utilities/cuda_interface/AwminTV.cpp', '../Common/CUDA/POCS_TV2.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex('-largeArrayDims', './Utilities/cuda_interface/tvDenoise.cpp', '../Common/CUDA/tvdenoising.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex('-largeArrayDims', './Utilities/cuda_interface/AddNoise.cpp', '../Common/CUDA/RandomNumberGenerator.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
-    mex('-largeArrayDims', './Utilities/IO/VarianCBCT/mexReadXim.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex('-largeArrayDims', './Utilities/GPU/getGpuName_mex.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex('-largeArrayDims', './Utilities/GPU/getGpuCount_mex.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
-    
+    mex('-largeArrayDims', './Utilities/IO/VarianCBCT/mexReadXim.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
+
 else
     
     mex( './Utilities/cuda_interface/Ax_mex.cpp', '../Common/CUDA/ray_interpolated_projection.cu', '../Common/CUDA/Siddon_projection.cu', '../Common/CUDA/ray_interpolated_projection_parallel.cu', '../Common/CUDA/Siddon_projection_parallel.cu', '../Common/CUDA/GpuIds.cpp', '-outdir', outdir, FLAGS)
@@ -109,10 +109,10 @@ else
     mex( './Utilities/cuda_interface/AwminTV.cpp', '../Common/CUDA/POCS_TV2.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex( './Utilities/cuda_interface/tvDenoise.cpp', '../Common/CUDA/tvdenoising.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex( './Utilities/cuda_interface/AddNoise.cpp', '../Common/CUDA/RandomNumberGenerator.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
-    mex( './Utilities/IO/VarianCBCT/mexReadXim.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex( './Utilities/GPU/getGpuName_mex.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex('./Utilities/GPU/getGpuCount_mex.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
-    
+    mex( './Utilities/IO/VarianCBCT/mexReadXim.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
+
 end
 
 disp('')
