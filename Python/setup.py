@@ -32,17 +32,23 @@ IS_WINDOWS = sys.platform == "win32"
 
 
 # Code from https://github.com/pytorch/pytorch/blob/master/torch/utils/cpp_extension.py
-COMPUTE_CAPABILITY_ARGS = [  # '-gencode=arch=compute_20,code=sm_20', #deprecated
-    "-gencode=arch=compute_30,code=sm_30",  # Deprecated at CUDA 9.2
-    "-gencode=arch=compute_37,code=sm_37",
-    "-gencode=arch=compute_50,code=sm_50",
-    "-gencode=arch=compute_52,code=sm_52",
-    "-gencode=arch=compute_60,code=sm_60",
-    "-gencode=arch=compute_61,code=sm_61",
-    "-gencode=arch=compute_70,code=sm_70",
-    "-gencode=arch=compute_75,code=sm_75",  # From CUDA 10
-    "-gencode=arch=compute_86,code=sm_86",  # From CUDA 11
-    "-gencode=arch=compute_90,code=sm_90",  # From CUDA 12
+
+CC_COMPATIBILITY_TABLE = [
+    # gencode, code, support_begin, suport_end
+    (20, 20,    1,  1.0),
+    (30, 30,    1, 11.0), 
+    (37, 37,    1, 11.0), 
+    (50, 50,  6.5, 12.0), 
+    (52, 52,  6.5, 999 ), 
+    (60, 60,  8.0, 999 ), 
+    (61, 61,  8.0, 999 ), 
+    (70, 70,  9.0, 999 ), 
+    (75, 75, 10.0, 999 ), # From CUDA 10
+    (86, 86, 11.0, 999 ), # From CUDA 11
+    (90, 90, 12.0, 999 ), # From CUDA 12
+]
+
+COMPUTE_CAPABILITY_ARGS = [
     "-gencode=arch=compute_70,code=compute_70", # allows foward compiling
     "--ptxas-options=-v",
     "-c",
@@ -119,30 +125,23 @@ def _is_cuda_file(path):
 
 CUDA, CUDA_VERSION = locate_cuda()
 
+cuda_version = 11.0
 try:
     cuda_version = float(CUDA_VERSION)
 except ValueError:
     cuda_list = re.findall('\d+', CUDA_VERSION)
     cuda_version = float( str(cuda_list[0] + '.' + cuda_list[1]))
 
-# Cleanup CUDA arguments depedning on the version
-cuda_version = 11.0
-if cuda_version < 12.0:
-    COMPUTE_CAPABILITY_ARGS.pop(9)
-
-if cuda_version <= 11.0:
-    COMPUTE_CAPABILITY_ARGS.pop(8)
-
-if cuda_version < 10.0:
-    COMPUTE_CAPABILITY_ARGS.pop(7)
-
-
-if cuda_version >= 12.0:
-    del COMPUTE_CAPABILITY_ARGS[0:2]
-elif cuda_version >= 11.0:
-    del COMPUTE_CAPABILITY_ARGS[0:1]
-elif cuda_version >= 11.0:
-    del COMPUTE_CAPABILITY_ARGS[0] 
+# Insert CUDA arguments depedning on the version
+for item in CC_COMPATIBILITY_TABLE:
+    support_begin = item[2]
+    support_end   = item[3]
+    if cuda_version < support_begin:
+        continue
+    if cuda_version >= support_end:
+        continue
+    str_arg = f"-gencode=arch=compute_{item[0]},code=sm_{item[1]}"
+    COMPUTE_CAPABILITY_ARGS.insert(0, str_arg)
 
 # Obtain the numpy include directory.  This logic works across numpy versions.
 try:
