@@ -1,9 +1,9 @@
-
+cimport numpy as np
+import numpy as np
+# Import definitions from .pxd files
 from tigre.utilities.cuda_interface._types cimport Geometry as c_Geometry, convert_to_c_geometry, free_c_geometry
 from tigre.utilities.cuda_interface._gpuUtils cimport GpuIds as c_GpuIds, convert_to_c_gpuids, free_c_gpuids
 
-cimport numpy as np
-import numpy as np
 
 # Numpy must be initialized. When using numpy from C or Cython you must
 # _always_ do that, or you will have segfaults
@@ -76,9 +76,9 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
         cuda_raise_errors(voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
 
     cdef np.npy_intp shape[3]
-    shape[0] = <np.npy_intp> geometry.nVoxel[0]
-    shape[1] = <np.npy_intp> geometry.nVoxel[1]
-    shape[2] = <np.npy_intp> geometry.nVoxel[2]
+    shape[0] = <np.npy_intp> (<np.npy_long>(geometry.nVoxel[0]))
+    shape[1] = <np.npy_intp> (<np.npy_long>(geometry.nVoxel[1]))
+    shape[2] = <np.npy_intp> (<np.npy_long>(geometry.nVoxel[2]))
 
     # TODO: Swap axis here could be making a copy
     model = np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_model)
