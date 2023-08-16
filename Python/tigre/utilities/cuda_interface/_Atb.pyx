@@ -1,9 +1,9 @@
-
+cimport numpy as np
+import numpy as np
+# Import definitions from .pxd files
 from tigre.utilities.cuda_interface._types cimport Geometry as c_Geometry, convert_to_c_geometry, free_c_geometry
 from tigre.utilities.cuda_interface._gpuUtils cimport GpuIds as c_GpuIds, convert_to_c_gpuids, free_c_gpuids
 
-cimport numpy as np
-import numpy as np
 
 # Numpy must be initialized. When using numpy from C or Cython you must
 # _always_ do that, or you will have segfaults
