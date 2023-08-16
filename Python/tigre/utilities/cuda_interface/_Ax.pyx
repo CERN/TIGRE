@@ -89,8 +89,9 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
  
     cdef np.npy_intp shape[3]
     shape[0] = <np.npy_intp> total_projections
-    shape[1] = <np.npy_intp> geometry.nDetector[0]
-    shape[2] = <np.npy_intp> geometry.nDetector[1]
+    shape[1] = <np.npy_intp> (<np.npy_long>(geometry.nDetector[0]))
+    shape[2] = <np.npy_intp> (<np.npy_long>(geometry.nDetector[1]))
+
     projections = np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_projectionsNonPinned)
     PyArray_ENABLEFLAGS(projections, np.NPY_OWNDATA)  # Attribute new memory owner
 

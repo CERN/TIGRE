@@ -76,9 +76,9 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
         cuda_raise_errors(voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
 
     cdef np.npy_intp shape[3]
-    shape[0] = <np.npy_intp> geometry.nVoxel[0]
-    shape[1] = <np.npy_intp> geometry.nVoxel[1]
-    shape[2] = <np.npy_intp> geometry.nVoxel[2]
+    shape[0] = <np.npy_intp> (<np.npy_long>(geometry.nVoxel[0]))
+    shape[1] = <np.npy_intp> (<np.npy_long>(geometry.nVoxel[1]))
+    shape[2] = <np.npy_intp> (<np.npy_long>(geometry.nVoxel[2]))
 
     # TODO: Swap axis here could be making a copy
     model = np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_model)
