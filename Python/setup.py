@@ -20,10 +20,6 @@ if len(sys.argv)>2:
     if "--no_pinned_memory" in sys.argv[2:] :
         no_pinned=True
         sys.argv.pop(sys.argv.index("--no_pinned_memory"))
-    elif "--user" in sys.argv[2:]:
-        pass
-    else:
-        raise ValueError("flag not understood, only ---no_pinned_memory accepted")
  
 if no_pinned:
     define_macros.append(("NO_PINNED_MEMORY",None))     
