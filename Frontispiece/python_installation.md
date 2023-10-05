@@ -18,7 +18,7 @@ Installation Instructions for Python
 
 ### Requirements:
 
-1. Python 3.7-3.10
+1. Python 3.7-3.11
 2. MVS
 3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.5](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
 4. CUDA Toolkit
@@ -27,16 +27,18 @@ Tested on
 
 | Software        | Version           | 
 | ------------- |:-------------:|
-|**Windows**| 10 |
-|**Python**| 3.7 3.8 3.9 3.10|
+|**Windows**| 10, 11 |
+|**Python**| 3.7 3.8 3.9 3.10, 3.11|
 |**CUDA**| 9.2>|
 |**MSVC**| 19.24 |
 
 ### Simple Instructions
 
+We stronly recommend using `conda` enviroments and doing the install in one specific for tigre. 
+
 1. Install Python and pip, MSVC and CUDA
 2. run `git clone https://github.com/CERN/TIGRE.git` 
-3. run `python setup.py install --user` in the Python folder. 
+3. run `pip install .` in the Python folder. 
 
 A succesfull installation should be able to execute the script at `TIGRE/Python/example.py`
 
@@ -45,7 +47,7 @@ A succesfull installation should be able to execute the script at `TIGRE/Python/
 1. Install [MS Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/) with Windows SDK.\
    **NOTE:** The User has to have no spaces.
 	
-2. Install Python 3 + pip. You can use a virtual [conda environment](https://www.anaconda.com/) or just a normal python installation.
+2. Install Python 3 + pip. You can use a virtual [conda environment](https://www.anaconda.com/) or just a normal python installation. We strongly recommend the conda enviroments. Activate the enviroment before step 5. 
 
 3. Install [CUDA](https://developer.nvidia.com/cuda-downloads). Make sure the `CUDA_PATH` and `PATH` environment variable are set accordingly.\
   **NOTE:** The User has to have no spaces.
@@ -59,22 +61,21 @@ A succesfull installation should be able to execute the script at `TIGRE/Python/
 
 	```
 	cd TIGRE/Python/  
-	pip install -r requirements.txt --user  
-	python setup.py install --user
+	pip install -r requirements.txt --user   
+	pip install . --user
 	```
-	**NOTE:** If you are working under the virtual environment that created by `venv` and you want to install TIGRE to it, 
+	**NOTE:** If you are working under the virtual environment that created by `venv` or a `conda` enviroment and you want to install TIGRE to it, 
 	you should remove the `--user` option. 
 	With the `--user` option, TIGRE and the other required pakages will be installed to your Python user install directory, not to your virtual environment or system directory.
 
-	Install in this case will make a copy of pytigre to your python distribution. Therefore the `develop` command is more useful when modifying the source files and developing the software. 
-
-	`python setup.py develop --user`
 
 6. Try demo 3. If it runs succesfully then you are good to go.
 
 ## Linux
 
 ### Requirements:
+
+We stronly recommend using `conda` enviroments and doing the install in one specific for tigre. 
 
 1. Python 3
 2. gcc
@@ -87,7 +88,7 @@ Tested on
 | Software        | Version           | 
 | ------------- |:-------------:|
 |**Ubuntu**| 16.04>|
-|**Python**| 3.7-3.10|
+|**Python**| 3.7-3.11|
 |**CUDA**| 9.2>|
 |**gcc**|  7.6.0|
 
@@ -105,7 +106,7 @@ For Ubuntu
 
 1. Install python and pip
 
-	Recommended to do it via [Anaconda3](https://docs.anaconda.com/free/anaconda/install/linux/)
+	Recommended to do it via [Anaconda3](https://docs.anaconda.com/free/anaconda/install/linux/), and not the following. 
 
 	```
 	sudo apt update
@@ -133,22 +134,19 @@ For Ubuntu
 	```
 	cd TIGRE/Python/  
 	pip install -r requirements.txt --user  
-	python setup.py install --user
+	pip install . --user
 	```
 	**NOTE:** If you are working under the virtual environment that created by `venv` and you want to install TIGRE to it, 
 	you should remove the `--user` option. 
 	With the `--user` option, TIGRE and the other required pakages will be installed to your Python user install directory, not to your virtual environment or system directory.
 
-	Install in this case will make a copy of pytigre to your python distribution. Therefore the `develop` command is more useful when modifying the source files and developing the software. 
-
-	`python setup.py develop --user`
 
 6. Try demo 3. If it runs succesfully then you are good to go. 
 
 if this fails, then try:
 
 `export CUDAHOME=yourcudahome`, e.g. default is `export CUDAHOME=/usr/local/cuda`
-`python setup.py install --user`
+`pip install . --user`
 
 **NOTE:** as of November 2020 the pip pytigre is behind the main repo, we recomedn you install it and compile it yourself. Trying to fix that. 
 
@@ -206,7 +204,7 @@ check blanket noqa.......................................................Passed
 
 If you are doing reconstruction of large datasets, and you want to use swap memory, you will need to deactivate TIGREs pinned memory feature at compile time. This will allow you to use swap memory, but it will make the operators in TIGRE slower, as pinned memory is used for simultaneous memory and compute. 
 
-You can do this by calling the `stup.py` with the flag `--no_pinned_memory`. 
+You can do this by calling the `setup.py` with the flag `--no_pinned_memory`. 
 
 
 
