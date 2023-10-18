@@ -21,9 +21,6 @@ def load_head_phantom(number_of_voxels=None):
             break
     if found:
         test_data = scipy.io.loadmat(abs_path)
-        
-    # Loads data in F_CONTIGUOUS MODE (column major), convert to Row major
-    test_data = scipy.io.loadmat(dirname)
 
     # Loads data in F_CONTIGUOUS MODE (column major), convert to Row major
     image = test_data["img"].transpose(2, 1, 0).copy()
