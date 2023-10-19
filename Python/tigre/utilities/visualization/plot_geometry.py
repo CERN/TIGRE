@@ -162,7 +162,7 @@ def plot_geometry(geo, angle=0):
     # Image FOV
     alpha_img = 0.1
     offOrigin = np.array([geo.offOrigin[2], geo.offOrigin[1], geo.offOrigin[0]])
-    mat_rot_xy = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=np.float)
+    mat_rot_xy = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]], dtype=np.float32)
     for idx in range(2):
         img_face_xy = matplotlib.patches.Rectangle(
             (-geo.sVoxel[2] / 2, -geo.sVoxel[1] / 2),  # xy order
@@ -180,7 +180,7 @@ def plot_geometry(geo, angle=0):
             np.array([0, 0, -geo.sVoxel[0] / 2 if idx == 0 else geo.sVoxel[0] / 2]) + offOrigin,
         )
 
-    mat_rot_yz = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]], dtype=np.float)
+    mat_rot_yz = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]], dtype=np.float32)
     for idx in range(2):
         img_face_yz = matplotlib.patches.Rectangle(
             (-geo.sVoxel[1] / 2, -geo.sVoxel[0] / 2),  # xy order
@@ -198,7 +198,7 @@ def plot_geometry(geo, angle=0):
             np.array([-geo.sVoxel[2] / 2 if idx == 0 else geo.sVoxel[2] / 2, 0, 0]) + offOrigin,
         )
 
-    mat_rot_zx = np.array([[0, 1, 0], [0, 0, 1], [1, 0, 0]], dtype=np.float)
+    mat_rot_zx = np.array([[0, 1, 0], [0, 0, 1], [1, 0, 0]], dtype=np.float32)
     for idx in range(2):
         img_face_zx = matplotlib.patches.Rectangle(
             (-geo.sVoxel[0] / 2, -geo.sVoxel[2] / 2),  # xy order
