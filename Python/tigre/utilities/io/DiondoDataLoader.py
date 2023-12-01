@@ -122,7 +122,8 @@ def readDiondoGeometry(filepath):
             "TIGRE doesn't know if the sign of COR is the right one. Consider trying both and reporting to tigre.toolbox@gmail.com."
         )
 
-
+    ## whitelevel
+    geometry.whitelevel = float(2**16-1)
 
     ## angles
     angular_step = -math.radians(360.0/projections) # -ve due to the way it rotates
@@ -152,12 +153,14 @@ def loadDiondoProjections(folder, geometry, angles, height, **kwargs):
     filename_prefix=f"_{height:07.2f}".replace(".",",")
     (pixels_y, pixels_x) = geometry.nDetector
     projection_data = numpy.zeros([len(indices), pixels_y, pixels_x], dtype="<u2")
-    for i in indices:
+    whitelevel = 
+    for i in tqdm(indices):
         filename = f"{filename_prefix}_{i:04d}.raw"
         file_path = Path(projection_folder, filename)
         image = numpy.fromfile(file_path, dtype="uint16") #read data in as 1D array
         image = image.reshape((pixels_y, pixels_x)) # reshape to be image size
-        projection_data[i, :, : ] = image
+        projection_data[i, :, : ] = -numpy.log(image / float(geometry.whitelevel))
+    del geometry.whitelevel
 
     return projection_data, geometry, angles
 
