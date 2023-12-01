@@ -63,7 +63,7 @@ for ii=1:length(angles_to_load)
     proj(:,:,ii)=flipud(permute(reshape(data,[geo.nDetector(1),geo.nDetector(2)]),[2 1]))+1;
 end
 %% Beer lambert
-geo.whitelevel=2^16;
+geo.whitelevel=2^16-1;
 if any(proj(:))>single(geo.whitelevel)
     warning('Changing the Whitelevel value as projection data has higher value than specified in the file');
     geo.whitelevel=max(proj(:)+1);
