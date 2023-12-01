@@ -11,6 +11,8 @@
 %
 %       YXLON     
 %
+%       Diondo
+%  
 %       Xradia (Zeiss)
 %
 %       Philips (in theory, any DICOM, but only tested in Philips Allura)
@@ -90,6 +92,14 @@ img=FDK(proj,geo,angles);
 
 datafolder='~/your_data_path/YXLON/Sample_name/';
 [proj,geo, angles ] = YXLONDataLoader(datafolder);
+
+%% Diondo
+
+% You can replace NikonDataLoader in the avobe code by YXLONDataLoader().
+% the rest of the functionality is the same. 
+
+datafolder='~/your_data_path/Diondo/Sample_name/';
+[proj,geo, angles ] = DiondoDataLoader(datafolder);
 
 %% DICOM data (only tested on Philips Allura)
 
