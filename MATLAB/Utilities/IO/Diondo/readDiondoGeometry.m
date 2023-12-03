@@ -14,10 +14,10 @@ function [geo,angles,height]=loadXMLDiondoGeometry(file)
     
     s = readstruct([file.folder,'\',file.name]);
     
-    if s.ScanParameter.HelixMode ~= 'false'
+    if ~strcmp(s.ScanParameter.HelixMode,'false')
         error("Helix mode reading not implemented")
     end
-    if s.ScanParameter.Laminography ~= 'false'
+    if ~strcmp(s.ScanParameter.Laminography, 'false')
         error("Laminography mode reading not implemented")
     end
 
