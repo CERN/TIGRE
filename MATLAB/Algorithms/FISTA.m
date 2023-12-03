@@ -193,7 +193,10 @@ for ii=1:length(opts)
             % ==========================================================
         case 'hyper'
             if default
-                hyper = 2.e6;
+                disp("Computing operator norm. This may take a while....")
+                lambda=power_methods(geo,angles);
+                disp("Parameter hyper computed, consider inputing it for subsequent calls to the same geometry to save time")
+                disp(['hyper= ',str(lambda)])
             elseif length(val)>1 || ~isnumeric( val)
                 error('TIGRE:FISTA:InvalidInput','Invalid lambda')
             else
