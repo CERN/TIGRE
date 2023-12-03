@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 import xml.etree.ElementTree as ET
 import numpy
+import tqdm
 
 from tigre.utilities.geometry import Geometry
 
@@ -153,7 +154,7 @@ def loadDiondoProjections(folder, geometry, angles, height, **kwargs):
     filename_prefix=f"_{height:07.2f}".replace(".",",")
     (pixels_y, pixels_x) = geometry.nDetector
     projection_data = numpy.zeros([len(indices), pixels_y, pixels_x], dtype="<u2")
-    whitelevel = 
+    whitelevel = 2^16-1
     for i in tqdm(indices):
         filename = f"{filename_prefix}_{i:04d}.raw"
         file_path = Path(projection_folder, filename)
