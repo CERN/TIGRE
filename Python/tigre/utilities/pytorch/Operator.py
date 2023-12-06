@@ -9,34 +9,40 @@ import numpy as np
 class OperatorFunction(torch.autograd.Function):
     @staticmethod
     def forward(x:torch.Tensor, geo, angles:np.ndarray, gpuids:List) -> torch.Tensor:
-        device = x.device
-
-        x = x.detach().cpu().numpy()
-        result = []
-        THREE_D = True
-        if len(x.shape) == 4:
-            THREE_D = False
-        for batch_index in range(x.shape[0]):
-            if THREE_D:
-                result.append(
-                    tigre.Ax(
-                        x[batch_index,0],
-                        geo,
-                        angles,
-                        gpuids = gpuids)
-                    )
-            else:
-                result.append(
-                    tigre.Ax(
-                        x[batch_index],
-                        geo,
-                        angles,
-                        gpuids = gpuids).transpose((1,0,2))
-                    )
-        if THREE_D:
-            return torch.tensor(np.stack(result), requires_grad=True).unsqueeze(1).to(device)
+        
+        # We will allow 2D and 3D (i.e. 4D and 5D tensors)
+        # The code will work for 5D tensors, so if its 4D, lets make it 5D
+        if geo.nVoxel[0]==1: # i.e. if len(x.shape)==4
+            if len(x.shape)!=4:
+                raise ValueError("Dimensions of tensor don't match expected dimensions for a 2D CT case")
+            x.unsqueeze(2) 
         else:
-            return torch.tensor(np.stack(result), requires_grad=True).to(device)
+            if len(x.shape)!=5:
+                raise ValueError("Dimensions of tensor don't match expected dimensions for a 3D CT case")
+            
+        # For now we only support channel-by-channel. 
+        if x.shape(1)!=1:
+            raise NotImplementedError("TIGRE torch operator only accepts 1 channel (for now). Contact the devs if you have a reason to support more")
+
+        device = x.device
+        x = x.detach().cpu().numpy()
+
+        result = np.zeros((x.shape[0],x.shape[1],len(angles)))
+        
+        for batch_index in range(x.shape[0]):
+            result.append(
+                tigre.Ax(
+                    x[batch_index,0],
+                    geo,
+                    angles,
+                    gpuids = gpuids)
+                )
+            
+        # The return will be different depending if its 2D or 3D tomography too. 
+        if geo.nVoxel[0]==1: # i.e. if len(x.shape)==4
+            return torch.tensor(result, requires_grad=True).squeeze(2).to(device)
+        else:
+            return torch.tensor(result, requires_grad=True).to(device)
 
     @staticmethod
     def setup_context(ctx, inputs, output) -> None:
