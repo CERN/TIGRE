@@ -1,13 +1,37 @@
-import numpy as np
-
-import tigre
-import Operator
-from tigre.utilities import sl3d, gpu
+#% DEMO 23: Data Discrepancy Minimisation
+#
+#
+#
+#  We interface TIGRE with PyTorch to perform iterative image reconstruction
+#  by minimising a data-discrepancy term.
+#
+#  This script was tested for 2D CT, but as of 12/12/2023 issues subsist for
+#  3D CT
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# This file is part of the TIGRE Toolbox
+#
+# Copyright (c) 2015, University of Bath and
+#                     CERN-European Organization for Nuclear Research
+#                     All rights reserved.
+#
+# License:            Open Source under BSD.
+#                     See the full license at
+#                     https://github.com/CERN/TIGRE/blob/master/LICENSE
+#
+# Contact:            tigre.toolbox@gmail.com
+# Codes:              https://github.com/CERN/TIGRE/
+# Coded by:           Ander Biguri
+# --------------------------------------------------------------------------
+import argparse
 
 import torch
-
+import numpy as np
 import matplotlib.pyplot as plt
 
+import tigre
+from tigre.utilities import sl3d, gpu
+from tigre.utilities.pytorch import Operators
 
 def get_default_geometry():
     geo = tigre.geometry()
@@ -30,26 +54,35 @@ def get_default_geometry():
     return geo
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--2D', action='store_true')
+    parser.add_argument('--3D', action='store_false')
+    args = parser.parse_args()
+
     plt.style.use('grayscale')
 
-
-    #%% Define angles of projection and load phantom image
+    #%% Define angles of projection
     # define projection angles (in radians)
     angles = np.linspace(0, 2 * np.pi, 50)
-     #%% Set GPU ids (we assume only one GPU is available)
-    gpu_index = 2
+
+    #%% Set GPU ids (we assume only one GPU is available)
+    gpu_index = 0
     gpuids = gpu.getGpuIds()
     gpuids.devices = [gpu_index]
 
-    two_d = False
+    device=f'cuda:{gpu_index}'
+
+    two_d = True
     if two_d:
         geo = get_default_geometry()
-        x = torch.zeros((1,1,256,256), device='cuda:2', requires_grad=True)
-        x_target = torch.from_numpy(np.load('test_phantom_2D.npy').astype(np.float32)[::2,::2])
-        x_target = x_target.to('cuda:2').unsqueeze(0).unsqueeze(0)
+        x = torch.zeros((1,1,256,256), device=device, requires_grad=True)
+        ### TODO : ANDER -> add the phantom data
+        x_target = torch.from_numpy(np.load('/home/valatem/work/ligre/test_phantom_2D.npy').astype(np.float32)[::2,::2])
+        x_target = x_target.to(device).unsqueeze(0).unsqueeze(0)
         plt.matshow(x_target[0,0].detach().cpu())
         plt.savefig(f'x_target.jpg')
         plt.clf()
+
     else:
         #%% Define default geometry
         geo = tigre.geometry_default(high_resolution=False)
@@ -63,10 +96,10 @@ if __name__ == '__main__':
         print(f'Phantom shape: {shepp_phantom.shape}')
         x = torch.zeros(
         size = (1,1)+shepp_phantom.shape,
-        device=f'cuda:{gpu_index}',
+        device=device,
         requires_grad=True
         )
-        x_target = torch.from_numpy(shepp_phantom).to(f'cuda:{gpu_index}').unsqueeze(0).unsqueeze(0)
+        x_target = torch.from_numpy(shepp_phantom).to(device).unsqueeze(0).unsqueeze(0)
         plt.matshow(x_target[0,0,32].detach().cpu())
         plt.savefig(f'x_target.jpg')
         plt.clf()
@@ -74,28 +107,20 @@ if __name__ == '__main__':
     #%% Define torch bindings
     # Perform a L2-loss minimisation of the data discrepancy term
     loss = torch.nn.MSELoss()
-    assert x.size() == x_target.size()
+
     # Define the operator
-    operator = Operator.OperatorModule(geo, angles, gpuids)
+    A = Operators.ForwardOperatorModule(geo, angles, gpuids)
 
     # Define the optimiser
     optimiser = torch.optim.SGD([x], lr=1)
 
-    n_steps = 201
+    n_steps = 10
 
-    '''sinogram = operator(x_target)
-    if two_d:
-        plt.matshow(sinogram[0,0].detach().cpu())
-        plt.savefig(f'measurement.jpg')
-        plt.clf()
-    else:
-        plt.matshow(sinogram[0,0,0].detach().cpu())
-        plt.savefig(f'measurement.jpg')
-        plt.clf()'''
+    sinogram = A(x_target)
 
     for i in range(n_steps):
         optimiser.zero_grad()
-        mse_loss = loss(operator(x), operator(x_target))
+        mse_loss = loss(A(x), sinogram)
         mse_loss.backward()
         optimiser.step()
         print(i, mse_loss.item())
@@ -108,6 +133,3 @@ if __name__ == '__main__':
         plt.matshow(x[0,0,0].detach().cpu())
         plt.savefig(f'reconstruction.jpg')
         plt.clf()
-
-
-
