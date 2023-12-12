@@ -95,6 +95,18 @@ class ForwardOperatorFunction(torch.autograd.Function):
     def forward(x:torch.Tensor, geo, angles:np.ndarray, gpuids:List) -> torch.Tensor:
         device = x.device
 
+        if geo.nVoxel[0]==1: # i.e. if len(x.shape)==4
+            if len(x.shape)!=4:
+                raise ValueError("Dimensions of tensor don't match expected dimensions for a 2D CT case")
+            x.unsqueeze(2)
+        else:
+            if len(x.shape)!=5:
+                raise ValueError("Dimensions of tensor don't match expected dimensions for a 3D CT case")
+
+        # For now we only support channel-by-channel.
+        if x.shape(1)!=1:
+            raise NotImplementedError("TIGRE torch operator only accepts 1 channel (for now). Contact the devs if you have a reason to support more")
+
         x = x.detach().cpu().numpy()
         result = []
         THREE_D = True
