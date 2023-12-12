@@ -27,6 +27,8 @@ addpath('./Utilities/IO/Nikon');
 addpath('./Utilities/IO/Dicom');
 addpath('./Utilities/IO/Bruker');
 addpath('./Utilities/IO/YXLON');
+addpath('./Utilities/IO/Diondo');
+addpath('./Utilities/IO/DXChange');
 addpath('./Utilities/GPU');
 
 addpath(genpath('./Test_data'));
