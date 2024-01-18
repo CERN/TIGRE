@@ -1,9 +1,10 @@
 import numpy as np
 import copy
 from scipy.spatial.transform import Rotation
+from .geometry import Geometry
 
 # Tomosymthesis
-def staticDetectorGeo(geo,angles,rot=0):
+def staticDetectorGeo(geo,angles,rot=0) -> Geometry:
     """
     # angles: angle off the aixs between the source and detector centre (on x-y plane)
     #         when angles=0, the source is perpendicular to the detector
@@ -21,7 +22,7 @@ def staticDetectorGeo(geo,angles,rot=0):
     return ngeo
 
 # Linear scan of source
-def staticDetLinearSourceGeo(geo,s_pos,s_rot=0,rot=0):
+def staticDetLinearSourceGeo(geo,s_pos,s_rot=0,rot=0) -> Geometry:
     """
     # s_pos: distance along source scanning linear trajectry 
     #        when s_pos = 0, source is aligned to the origin and detector centre on x-axis
@@ -55,7 +56,8 @@ def staticDetLinearSourceGeo(geo,s_pos,s_rot=0,rot=0):
     ngeo.angles = np.vstack([ang, 0*ang, 0*ang]).T
     return ngeo
 
-def ArbitrarySourceDetMoveGeo(geo,s_pos,d_pos=None,d_rot=None):
+
+def ArbitrarySourceDetMoveGeo(geo,s_pos,d_pos=None,d_rot=None) -> Geometry:
     """
     # Source and Detector can move arbitrarily while the object is fixed
     #
@@ -134,6 +136,94 @@ def ArbitrarySourceDetMoveGeo(geo,s_pos,d_pos=None,d_rot=None):
     ngeo.angles = s_ang 
     return ngeo
 
+
+def ArbitrarySourceDetectorFixedObject(
+        focal_spot_position_mm: np.ndarray, 
+        detector_center_position_mm: np.ndarray, 
+        detector_line_direction: np.ndarray, 
+        detector_column_direction: np.ndarray,
+        use_center_correction: bool = True) -> Geometry:
+    """
+    geo: Geometry, that gets appended
+    ...
+    detector_rotation_marix: x_axis: (0, 0) -> (0, 1);  y_ais (0, 0) -> (1, 0)
+    """
+
+    # Assumption: CT trajectory has one rotation center.
+    number_of_projection = focal_spot_position_mm.shape[0]
+    
+    
+    if use_center_correction:
+        focal_spot_position_mm = focal_spot_position_mm - trajectory_center_mm
+        detector_center_position_mm = detector_center_position_mm - trajectory_center_mm
+    
+    geometry = Geometry()
+    geometry.mode = 'cone'
+
+    if not use_center_correction:
+        geometry.offOrigin = trajectory_center_mm.reshape((3, ))
+    trajectory_center_mm += 0.
+
+    # source and detector are orthogonal. The angle is rotates the source from the x axis.
+
+    # 1. find nearest point from source detector line to trajectory center
+    source_detector_vector = detector_center_position_mm - focal_spot_position_mm
+    fdd_mm = np.linalg.norm(source_detector_vector, axis=1).reshape((-1, 1))
+    fod_mm = np.zeros_like(fdd_mm)
+    source_detector_direction = source_detector_vector / fdd_mm
+    
+    nearest_point_mm = np.zeros_like(focal_spot_position_mm)
+    detector_offsets_mm = np.zeros((number_of_projection, 2))
+    
+    euler_zyz = np.zeros_like(focal_spot_position_mm)
+    euler_xyz = np.zeros_like(focal_spot_position_mm)
+    first_rot = np.eye(3)
+
+    for i in range(number_of_projection):
+        nearest_point_mm[i] = perpendicular_point_on_line(
+            trajectory_center_mm, focal_spot_position_mm[i], -source_detector_direction[i])
+        fod_mm[i] = np.linalg.norm(nearest_point_mm[i] - focal_spot_position_mm[i])
+
+        # 2. calculate the angle rotation + offset and check it!
+        rotation_matrix = rotation_from_vecs(np.array([1, 0, 0]),-nearest_point_mm[i] +focal_spot_position_mm[i])
+        if i == 0:
+            first_rot = rotation_matrix.T
+            first_rot = np.eye(3)
+        angle = rotation_matrix @ first_rot
+        if not np.isclose(np.linalg.det(rotation_matrix), 1, 0.01):
+            raise ValueError('Rotation matrix must be right handed!')
+        
+        rotation_inverse = Rotation.from_matrix(rotation_matrix.T)
+
+        offsets = rotation_inverse.apply(nearest_point_mm[i])
+        fod_mm[i] += offsets[0]
+        detector_offsets_mm[i, 0] = offsets[2] * 2
+        detector_offsets_mm[i, 1] = offsets[1] * 2
+
+        # calculate the relative rotation of the detector
+        detector_matrix = np.eye(3)
+        detector_matrix[:, 1] = detector_line_direction[i]
+        detector_matrix[:, 2] = detector_column_direction[i]
+        detector_matrix[:, 0] = np.cross(detector_matrix[:, 1], detector_matrix[:, 2])
+
+        if not np.isclose(np.linalg.det(detector_matrix), 1, 0.01):
+            raise ValueError('Rotation matrix must be right handed!')
+        
+        # the rotation is from the angle rotation -> "real" rotation
+        relative_rotation_matrix = rotation_matrix.T @ detector_matrix
+        # relative_rotation_matrix = detector_matrix @ rotation_matrix.T -> wrong
+        relative_rotation = Rotation.from_matrix(relative_rotation_matrix)
+
+        euler_zyz[i] = Rotation.from_matrix(angle).as_euler('zyz', False)
+        euler_xyz[i] = relative_rotation.as_euler('xyz', False) 
+    
+    geometry.DSO = fod_mm
+    geometry.DSD = fdd_mm
+    geometry.offDetector = detector_offsets_mm
+    geometry.rotDetector = euler_xyz
+    geometry.angles = euler_zyz
+    return geometry
+
     
 def euler_from_vecs(a_vec,b_vec,order="xyz"):
     """
@@ -195,4 +285,53 @@ def rotation_from_vecs(v1, v2):
         K = np.array([[0,-v[2],v[1]],[v[2],0,-v[0]],[-v[1],v[0],0]])
         # Rodrigues' formula
         return I + K + (K @ K) / (1 + c)    
+
+
+def perpendicular_point_on_line(point: np.ndarray, line_point: np.ndarray, line_direction: np.ndarray):
+    ap = point - line_point
+    dot_product = np.dot(ap, line_direction)
+    line_squared = np.dot(line_direction, line_direction)
+    return line_point + (dot_product / line_squared) * line_direction
+
+def calculate_trajectory_center_mm(focal_spot_position_mm: np.ndarray, detector_center_position_mm: np.ndarray):
+    number_of_projection = focal_spot_position_mm.shape[0]
+    A = np.zeros((number_of_projection * 6, 5))
+    b = np.zeros((number_of_projection * 6, 1))
+
+    print(f'Calculated FOD / ODD')
+
+    for i in range(0, number_of_projection * 6-1, 6):
+        ii = i // 6
+        source = focal_spot_position_mm[ii]
+        detector = detector_center_position_mm[ii]
+        direction = source - detector
+        direction = direction / np.linalg.norm(direction)
+
+        A[i, :] = np.array([1, 0, 0, direction[0], 0])
+        b[i] = source[0]
+        i=i+1
+
+        A[i, :] = np.array([0, 1, 0, direction[1], 0])
+        b[i] = source[1]
+        i=i+1
+
+        A[i, :] = np.array([0, 0, 1, direction[2], 0])
+        b[i] = source[2]
+        i=i+1
+
+        A[i, :] = np.array([1, 0, 0, 0, -direction[0]])
+        b[i] = detector[0]
+        i=i+1
+
+        A[i, :] = np.array([0, 1, 0, 0, -direction[1]])
+        b[i] = detector[1]
+        i=i+1
+
+        A[i, :] = np.array([0, 0, 1, 0, -direction[2]])
+        b[i] = detector[2]
+        i=i+1            
+    
+    res = np.linalg.lstsq(A, b)
+    trajectory_center_mm = np.array([res[0][0], res[0][1], res[0][2]]).reshape((1, 3))
+    return trajectory_center_mm
 
