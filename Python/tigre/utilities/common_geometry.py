@@ -174,7 +174,6 @@ def ArbitrarySourceDetectorFixedObject(
 
     if not use_center_correction:
         geometry.offOrigin = trajectory_center_mm.reshape((3, ))
-    trajectory_center_mm += 0.
 
     # source and detector are orthogonal. The angle is rotates the source from the x axis.
 
