@@ -154,6 +154,8 @@ def ArbitrarySourceDetectorFixedObject(
     
     
     if use_center_correction:
+        trajectory_center_mm = calculate_trajectory_center_mm(
+            focal_spot_position_mm, detector_center_position_mm)
         focal_spot_position_mm = focal_spot_position_mm - trajectory_center_mm
         detector_center_position_mm = detector_center_position_mm - trajectory_center_mm
     
