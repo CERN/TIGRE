@@ -138,20 +138,31 @@ def ArbitrarySourceDetMoveGeo(geo,s_pos,d_pos=None,d_rot=None) -> Geometry:
 
 
 def ArbitrarySourceDetectorFixedObject(
+        geometry: Geometry,
         focal_spot_position_mm: np.ndarray, 
         detector_center_position_mm: np.ndarray, 
         detector_line_direction: np.ndarray, 
         detector_column_direction: np.ndarray,
+        origin_mm: np.ndarray | None = None,
         use_center_correction: bool = True) -> Geometry:
     """
-    geo: Geometry, that gets appended
-    ...
-    detector_rotation_marix: x_axis: (0, 0) -> (0, 1);  y_ais (0, 0) -> (1, 0)
+    geo: Geometry object
+    focal_spot_position_mm: position of the source, 
+    detector_center_position_mm: position of the detector center, 
+    detector_line_direction: detecor line vector from pixel (0, 0) -> (0, 1), 
+    detector_column_direction: detecor column vector from pixel (0, 0) -> (1, 0),
+    origin_mm: origin of the ct trajectory. The source and detector positions are translated with this value. Defaults to: None.
+    use_center_correction: Calculate an arbiatary origin of the trajectory. Defaults to: True.
     """
 
     # Assumption: CT trajectory has one rotation center.
     number_of_projection = focal_spot_position_mm.shape[0]
     
+    if origin_mm is None:
+        origin_mm = np.zeros((3,))
+
+    focal_spot_position_mm = focal_spot_position_mm - origin_mm
+    detector_center_position_mm = detector_center_position_mm - origin_mm
     
     if use_center_correction:
         trajectory_center_mm = calculate_trajectory_center_mm(
@@ -160,10 +171,6 @@ def ArbitrarySourceDetectorFixedObject(
         detector_center_position_mm = detector_center_position_mm - trajectory_center_mm
     else:
         trajectory_center_mm = np.zeros((3,))
-        
-    
-    geometry = Geometry()
-    geometry.mode = 'cone'
 
     if not use_center_correction:
         geometry.offOrigin = trajectory_center_mm.reshape((3, ))
