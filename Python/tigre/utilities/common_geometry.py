@@ -158,6 +158,9 @@ def ArbitrarySourceDetectorFixedObject(
             focal_spot_position_mm, detector_center_position_mm)
         focal_spot_position_mm = focal_spot_position_mm - trajectory_center_mm
         detector_center_position_mm = detector_center_position_mm - trajectory_center_mm
+    else:
+        trajectory_center_mm = np.zeros((3,))
+        
     
     geometry = Geometry()
     geometry.mode = 'cone'
