@@ -47,7 +47,7 @@ CC_COMPATIBILITY_TABLE = [
 ]
 
 COMPUTE_CAPABILITY_ARGS = [
-    "-gencode=arch=compute_70,code=compute_70", # allows foward compiling
+    "-gencode=arch=compute_70,code=compute_70", # allows forward compiling
     "--ptxas-options=-v",
     "-c",
     "--default-stream=per-thread",
