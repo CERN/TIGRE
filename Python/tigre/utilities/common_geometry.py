@@ -143,7 +143,7 @@ def ArbitrarySourceDetectorFixedObject(
         detector_center_position_mm: np.ndarray, 
         detector_line_direction: np.ndarray, 
         detector_column_direction: np.ndarray,
-        origin_mm: np.ndarray | None = None,
+        origin_mm: np.ndarray = None,
         use_center_correction: bool = True) -> Geometry:
     """
     geo: Geometry object
