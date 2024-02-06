@@ -78,7 +78,7 @@ def filter(filter, kernel, order, d, verbose=False):
     elif filter == "hamming":
         filt[1:] *= 0.54 + 0.46 * np.cos(w[1:] / d)
     elif filter == "hann":
-        filt[1:] *= (1 + np.cos(w[1:]) / d) / 2
+        filt[1:] *= (1 + np.cos(w[1:] / d)) / 2
     else:
         raise ValueError("filter not recognised: " + str(filter))
 
