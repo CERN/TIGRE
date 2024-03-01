@@ -30,6 +30,7 @@ addpath('./Utilities/IO/YXLON');
 addpath('./Utilities/IO/Diondo');
 addpath('./Utilities/IO/DXChange');
 addpath('./Utilities/GPU');
+addpath('./Utilities/DE');
 
 addpath(genpath('./Test_data'));
 
