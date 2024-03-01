@@ -36,7 +36,7 @@ function [material1_proj,material2_proj, angles_out] = DeDecompose(proj_l, angle
 % Load calibrated coefficients for transfer functions
 
 
-[scanner, calibration_pair, model, tolerance,material1,material2] = parse_inputs(varargin{:});
+[scanner, calibration_pair, model, tolerance, material1, material2] = parse_inputs(varargin);
 
 % read NIST database (values in TIGRE)
 fid = fopen('./../../../Common/data/dual_energy_calibrations.json');
@@ -46,7 +46,7 @@ fclose(fid);
 calibration_data = jsondecode(str);
 
 if ~isfield(calibration_data, scanner)
-    error(['Scanner: ', scanner, ' has not calibration data'])
+    error(['Scanner: ', scanner, ' has no calibration data'])
 end
 if ~isfield(calibration_data.(scanner),calibration_pair)
     error(['Calibration pair of energies: ', calibration_pair, ' not found in the scanner data'])
@@ -115,6 +115,7 @@ opts = {'scanner','kVl', 'kVh', 'interpolation', 'tolerance','material1','materi
 defaults=ones(length(opts),1);
 
 % check if option has been passed as input
+nVarargs = length(argin);
 for ii=1:2:nVarargs
     ind=find(ismember(opts,lower(argin{ii})));
     if ~isempty(ind)
@@ -161,7 +162,7 @@ for ii=1:length(opts)
             end
         case 'kVh'
             if default
-                kVh=80;
+                kVh=140;
             else
                 if ~isscalar(val)
                     error('TIGRE:DEDecompose:InvalidInput','KVh must be a scalar')
@@ -170,7 +171,7 @@ for ii=1:length(opts)
             end
         case 'interpolation'
              if default
-                model='linear';
+                model='nearest';
             else
                 if ~ischar( val)
                     error('TIGRE:DEDecompose:InvalidInput','Interpolation must be a string')
