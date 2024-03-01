@@ -1,6 +1,6 @@
-function [Al_thickness,PMMA_thickness, angles_out] = DeDecompose(proj_l, angles_l , proj_h, angles_h, varargin)
+function [material1_proj,material2_proj, angles_out] = DeDecompose(proj_l, angles_l , proj_h, angles_h, varargin)
 %DEDECOMPSE Maps CBCT projections taken at two kVp settings to equivalent
-%thicknesses of Al and PMMA using precalibrated transfer functions.
+%thicknesses of material1 and material2 using precalibrated transfer functions.
 %   Coefficients C and D are the coefficients for the third-degree transfer
 %   functions (may need to be modified for different systems)
 %
@@ -36,12 +36,42 @@ function [Al_thickness,PMMA_thickness, angles_out] = DeDecompose(proj_l, angles_
 % Load calibrated coefficients for transfer functions
 
 
-[calibration, model, tolerance] = parse_inputs(varargin{:});
+[scanner, calibration_pair, model, tolerance,material1,material2] = parse_inputs(varargin{:});
 
-tmp = de_cal.(calibration);
+% read NIST database (values in TIGRE)
+fid = fopen('./../../../Common/data/dual_energy_calibrations.json');
+raw = fread(fid,inf);
+str = char(raw');
+fclose(fid);
+calibration_data = jsondecode(str);
 
-c = tmp.Al;
-d = tmp.PMMA;
+if ~isfield(calibration_data, scanner)
+    error(['Scanner: ', scanner, ' has not calibration data'])
+end
+if ~isfield(calibration_data.(scanner),calibration_pair)
+    error(['Calibration pair of energies: ', calibration_pair, ' not found in the scanner data'])
+end
+materials = fieldnames(calibration_data.(scanner).(calibration_pair));
+
+if ~isfield(calibration_data.(scanner).(calibration_pair),material1)
+    disp([material1, ' not a (yet) supported material in the scanner at the given energies'])
+    disp("Supported materials:")
+    for i=1:len(materials)
+        disp(materials{i})
+    end
+    error("")
+end
+if ~isfield(calibration_data.(scanner).(calibration_pair),material2)
+    disp([material2, ' not a (yet) supported material in the scanner at the given energies'])
+    disp("Supported materials:")
+    for i=1:len(materials)
+        disp(materials{i})
+    end
+    error("")
+end
+
+c = calibration_data.(scanner).(calibration_pair).(material1);
+d = calibration_data.(scanner).(calibration_pair).(material2);
 
 %% check that the projections are the same size
 for n = 1:2
@@ -72,16 +102,16 @@ for k = 1:size(proj_h,3)
         for i = 1:size(proj_h,1)
             H = proj_h(i,j,k);
             L = L_array(i,j);
-            Al_thickness(i,j,k-skipcount) = c(1)*L + c(2)*H + c(3)*(L.^2) + c(4)*L.*H + c(5)*(H.^2) + c(6)*(L.^3) + c(7)*(H.*(L.^2)) + c(8)*(L.*(H.^2)) + c(9)*(H.^3);
-            PMMA_thickness(i,j,k-skipcount) = d(1)*L + d(2)*H + d(3)*(L.^2) + d(4)*L.*H + d(5)*(H.^2) + d(6)*(L.^3) + d(7)*(H.*(L.^2)) + d(8)*(L.*(H.^2)) + d(9)*(H.^3);
+            material1_proj(i,j,k-skipcount) = c(1)*L + c(2)*H + c(3)*(L.^2) + c(4)*L.*H + c(5)*(H.^2) + c(6)*(L.^3) + c(7)*(H.*(L.^2)) + c(8)*(L.*(H.^2)) + c(9)*(H.^3);
+            material2_proj(i,j,k-skipcount) = d(1)*L + d(2)*H + d(3)*(L.^2) + d(4)*L.*H + d(5)*(H.^2) + d(6)*(L.^3) + d(7)*(H.*(L.^2)) + d(8)*(L.*(H.^2)) + d(9)*(H.^3);
             angles_out(k-skipcount) = angles_h(k);
         end
     end
 end
 end
 
-function [scanner,calibration_pair, model, tolerance] = parse_inputs(argin)
-opts = {'scanner','kVl', 'kVh', 'interpolation', 'tolerance'};
+function [scanner,calibration_pair, model, tolerance, material1, material2] = parse_inputs(argin)
+opts = {'scanner','kVl', 'kVh', 'interpolation', 'tolerance','material1','material2'};
 defaults=ones(length(opts),1);
 
 % check if option has been passed as input
@@ -156,6 +186,27 @@ for ii=1:length(opts)
                 end
                 tolerance=val;
             end
+                case 'material1'
+            if default
+                warning('Assuming Al for material1')
+                material1='Al';
+            else
+                if ~ischar( val)
+                    error('TIGRE:DEDecompose:InvalidInput','material1 must be a string')
+                end
+                material1=val;
+             end
+        case 'material2'
+            if default
+                warning('Assuming PMMA for material2')
+                material2='PMMA';
+            else
+                if ~ischar( val)
+                    error('TIGRE:DEDecompose:InvalidInput','material2 must be a string')
+                end
+                material2=val;
+             end
+              
         otherwise
             error('TIGRE:DEDecompose:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in DEDecompose()']);
     end

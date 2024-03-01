@@ -21,12 +21,15 @@ datafolder_high='~/your_data_path/varian/high_kV/2020-01-01_123456/';
 %% Material Decomposition
 % DE-CBCT decomposes the two scans into equivalent thicknesses of two basis
 % materials.  Generally, either Al and PMMA or Iodine and Water are used.
-% The implementation here uses Al and PMMA.
+% The calibration in TIGRE has uses Al and PMM, but other materials are
+% supported if the calibration files are updated with the data (contact
+% developers or make a PR for expanding this)
 %
 % The decomposition procedure defaults to taking scans at 80 and 140 kV.
 % Different energies can be specified using the 'kVl' and 'kVh' tags.
 
-[Al_proj, PMMA_proj, angles] = DeDecompose(proj_l, angles_l, proj_h, angles_h);
+[Al_proj, PMMA_proj, angles] = DeDecompose(proj_l, angles_l, proj_h, angles_h, ... % The following are defaults
+            'scanner','VarianTrueBeam','material1','Al','material2', 'PMMA','kVl', 80, 'kVh', 140);
 
 %% Image construction
 % Equivalent thickness projections can now be used to synthesize various
@@ -34,7 +37,7 @@ datafolder_high='~/your_data_path/varian/high_kV/2020-01-01_123456/';
 % monoenergetic (VM) images.
 
 energy = 60; % keV
-VM_proj = MakeVMproj(Al_proj, PMMA_proj, energy);
+VM_proj = MakeVMproj(Al_proj, PMMA_proj, energy,'material1','Al','material2','PMMA');
 
 VMimg = FDK(VM_proj, geo, angles);
 VMimg = OS_SART(VM_proj, geo, angles, 100);
