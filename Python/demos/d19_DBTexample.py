@@ -32,7 +32,6 @@ import numpy as np
 from numpy import ndarray
 
 
-
 def get_angles(tube_angle: int = 25, num_projections: int = 9) -> ndarray:
     angles = np.linspace(-tube_angle / 2, tube_angle / 2, num_projections)
     return np.radians(angles)
@@ -79,8 +78,7 @@ def get_geometry() -> ConeGeometryDefault:
 
 
 def get_projections(geo: Geometry, angles: ndarray) -> ndarray:
-    # Example of data (CT Head). This is not a true DBT, but it works as an
-    # example in TIGRE. Make sure to use a true tomosynthesis data.
+    # Example data (CT Head). This is not a true DBT, but it works as an example.
     head = sample_loader.load_head_phantom(geo.nVoxel)
     projections = tigre.Ax(head, geo, angles, 'interpolated')
     # NOTE:
@@ -99,13 +97,8 @@ def compare_reconstruction_methods(projections: ndarray, geo: Geometry, angles: 
     tigre.plotimg(np.concatenate([imgFDK, imgOSSART], axis=1), dim="z")
 
 
-def main() -> None:
-    angles = get_angles()
-    geo = get_geometry()
-    geo = staticDetectorGeo(geo, angles)  # Adapt CT geo to DBT
-    projections = get_projections(geo, angles)
-    compare_reconstruction_methods(projections, geo, angles)
-
-
-if __name__ == "__main__":
-    main()
+angles = get_angles()
+geo = get_geometry()
+geo = staticDetectorGeo(geo, angles)  # Adapt CT geo to DBT
+projections = get_projections(geo, angles)
+compare_reconstruction_methods(projections, geo, angles)
