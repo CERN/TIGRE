@@ -44,6 +44,41 @@ end
 %% Compile
 
 if ispc
+    % path to vswhere
+    path_to_vswhere = "c:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe";
+    
+    % Run vswhere to get version string
+    if exist(path_to_vswhere, 'file') == 2
+        [~, vs_version_string] = system('"'+path_to_vswhere+'" -latest -property installationVersion');
+        fprintf('Visual Studio version: %s\n', vs_version_string);
+    else
+        error('Error: vswhere.exe not found');
+    end
+    
+    % Split version string
+    vs_versions = strsplit(vs_version_string, ".");
+    vs_major_version = vs_versions{1, 1};
+    % fprintf('vs_major_version: %s\n', vs_major_version);
+    
+    if strcmp("17", vs_major_version)
+        mex_xml_file="mex_CUDA_win64_MVS2022.xml";
+        fprintf("2022\n");
+    elseif strcmp("16", vs_major_version)
+        mex_xml_file="mex_CUDA_win64_MVS2019.xml";
+        fprintf("2019\n");
+    %elseif strcmp("15", vs_major_version)
+    %    mex_xml_file="mex_CUDA_win64_MVS2017.xml";
+    %    fprintf("2017\n");
+    elseif strcmp("14", vs_major_version)
+        mex_xml_file="mex_CUDA_win64_MVS2015.xml";
+        fprintf("2015\n");
+    elseif strcmp("13", vs_major_version)
+        mex_xml_file="mex_CUDA_win64_MVS2013.xml";
+        fprintf("2013\n");
+    else
+        error("Unknwon version %s\n", vs_major_version);
+    end
+    copyfile(fullfile(pwd, mex_xml_file), 'mex_CUDA_win64.xml');
     mex -setup:'mex_CUDA_win64.xml'
 elseif ismac
     mex -setup:'mex_CUDA_maci64.xml'
