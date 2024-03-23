@@ -25,10 +25,23 @@ function []=Compile(varargin)
 %--------------------------------------------------------------------------
 %% Varargin
 disable_pinned=false;
+mex_xml_file="";
 if nargin
+    skip_next_arg=false;
     for i=1:length(varargin)
+        if skip_next_arg
+            skip_next_arg=false;
+            continue
+        end
         if strcmp(varargin{i},'-no_pinned_mem')
             disable_pinned=true;
+        elseif strcmp(varargin{i},'-mex_xml')
+            if length(varargin)>i
+                mex_xml_file=varargin{i+1};
+                skip_next_arg=true;
+            else
+                error('Error: file name is required for -mex_xml');
+            end
         else
             warning('Flags not understood, ignoring');
         end
@@ -41,8 +54,62 @@ if disable_pinned
 else
     FLAGS=['-DNO_FLAGS'];
 end
-%% Compile
 
+%% Prepare "mex_CUDA_win64.xml" for Windows
+if ispc
+    if strlength(mex_xml_file) == 0
+        % path to vswhere
+        path_to_vswhere = "c:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe";
+        % Run vswhere to get version string
+        if exist(path_to_vswhere, 'file') == 2
+            % VS2017 or later should be installed
+            [~, vs_version_string] = system('"'+path_to_vswhere+'" -latest -property installationVersion');
+            fprintf('Visual Studio version: %s', vs_version_string);
+        else
+            % Look for VS2015 or older
+            if strcmp("", getenv('VS140COMNTOOLS'))==1
+                vs_version_string="14.0.0.0";
+            elseif strcmp("", getenv('VS120COMNTOOLS'))==1
+                vs_version_string="13.0.0.0";
+            else
+                error(['Error: Could not detect Visual Studio.' ...
+                    ' Pleae make sure that Visual Studio 2013 or later' ...
+                    ' and its C/C++ compiler.']);
+            end
+        end
+        
+        % Split version string
+        vs_versions = strsplit(vs_version_string, ".");
+        vs_major_version = vs_versions{1, 1};
+        
+        if strcmp("17", vs_major_version)
+            mex_xml_file="mex_CUDA_win64_MVS2022.xml";
+            vs_version_year="2022";
+        elseif strcmp("16", vs_major_version)
+            mex_xml_file="mex_CUDA_win64_MVS2019.xml";
+            vs_version_year="2019";
+        elseif strcmp("15", vs_major_version)
+            mex_xml_file="mex_CUDA_win64_MVS2017.xml";
+            vs_version_year="2017";
+        elseif strcmp("14", vs_major_version)
+            mex_xml_file="mex_CUDA_win64_MVS2015.xml";
+            vs_version_year="2015";
+        elseif strcmp("13", vs_major_version)
+            mex_xml_file="mex_CUDA_win64_MVS2013.xml";
+            vs_version_year="2013";
+        else
+            error("Unknwon version %s\n", vs_major_version);
+        end
+        fprintf("Visual Studio %s detected\n", vs_version_year);
+    end
+    if exist(fullfile(pwd, mex_xml_file), "file") == 2
+        copyfile(fullfile(pwd, mex_xml_file), 'mex_CUDA_win64.xml', 'f');
+    else
+        error('Error: mex xml file not found');
+    end
+end
+
+%% Compile
 if ispc
     mex -setup:'mex_CUDA_win64.xml'
 elseif ismac
