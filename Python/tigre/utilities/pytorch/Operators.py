@@ -1,0 +1,188 @@
+from typing import List
+
+import tigre
+import torch
+import numpy as np
+
+### Is there a TIGRE geo class? How to access it?
+
+class BackwardOperatorFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(x:torch.Tensor, geo, angles:np.ndarray, gpuids:List) -> torch.Tensor:
+        device = x.device
+        THREE_D = True
+        if len(x.shape) == 4:
+            THREE_D = False
+        if THREE_D:
+            x = x.detach().cpu().numpy().transpose((0,1,3,2,4))
+        else:
+            x = x.detach().cpu().numpy().transpose((0,2,1,3))
+        result = []
+
+        for batch_index in range(x.shape[0]):
+            if THREE_D:
+                result.append(
+                    tigre.Atb(
+                        x[batch_index][0],
+                        geo,
+                        angles,
+                        gpuids = gpuids)
+                    )
+            else:
+                result.append(
+                    tigre.Atb(
+                        x[batch_index],
+                        geo,
+                        angles,
+                        gpuids = gpuids)
+                    )
+
+        if THREE_D:
+            return torch.tensor(np.stack(result), requires_grad=True).unsqueeze(1).to(device)
+        else:
+            return torch.tensor(np.stack(result), requires_grad=True).to(device)
+
+    @staticmethod
+    def setup_context(ctx, inputs, output) -> None:
+        input, geo, angles, gpuids = inputs
+        ctx.geo = geo
+        ctx.angles = angles
+        ctx.gpuids = gpuids
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        device = grad_output.device
+
+        grad_output= grad_output.detach().cpu().numpy()
+        result = []
+        THREE_D = True
+        if len(grad_output.shape) == 4:
+            THREE_D = False
+        for batch_index in range(grad_output.shape[0]):
+            if THREE_D:
+                result.append(
+                    tigre.Ax(
+                        grad_output[batch_index,0],
+                        ctx.geo,
+                        ctx.angles,
+                        gpuids = ctx.gpuids)
+                    )
+            else:
+                result.append(
+                    tigre.Ax(
+                        grad_output[batch_index],
+                        ctx.geo,
+                        ctx.angles,
+                        gpuids = ctx.gpuids).transpose((1,0,2))
+                    )
+        if THREE_D:
+            return torch.tensor(np.stack(result), requires_grad=True).unsqueeze(1).to(device), None, None, None
+        else:
+            return torch.tensor(np.stack(result), requires_grad=True).to(device), None, None, None
+
+class BackwardOperatorModule(torch.nn.Module):
+    def __init__(self, geo, angles, gpuids: List):
+        super(BackwardOperatorModule, self).__init__()
+        self.geo = geo
+        self.angles = angles
+        self.gpuids = gpuids
+
+    def forward(self, x:torch.Tensor):
+        return BackwardOperatorFunction.apply(x, self.geo, self.angles, self.gpuids)
+
+class ForwardOperatorFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(x:torch.Tensor, geo, angles:np.ndarray, gpuids:List) -> torch.Tensor:
+        device = x.device
+
+        if geo.nVoxel[0]==1: # i.e. if len(x.shape)==4
+            if len(x.shape)!=4:
+                raise ValueError("Dimensions of tensor don't match expected dimensions for a 2D CT case")
+            x.unsqueeze(2)
+        else:
+            if len(x.shape)!=5:
+                raise ValueError("Dimensions of tensor don't match expected dimensions for a 3D CT case")
+
+        # For now we only support channel-by-channel.
+        if x.shape(1)!=1:
+            raise NotImplementedError("TIGRE torch operator only accepts 1 channel (for now). Contact the devs if you have a reason to support more")
+
+        x = x.detach().cpu().numpy()
+        result = []
+        THREE_D = True
+        if len(x.shape) == 4:
+            THREE_D = False
+        for batch_index in range(x.shape[0]):
+            if THREE_D:
+                result.append(
+                    tigre.Ax(
+                        x[batch_index,0],
+                        geo,
+                        angles,
+                        gpuids = gpuids)
+                    )
+            else:
+                result.append(
+                    tigre.Ax(
+                        x[batch_index],
+                        geo,
+                        angles,
+                        gpuids = gpuids).transpose((1,0,2))
+                    )
+        if THREE_D:
+            return torch.tensor(np.stack(result), requires_grad=True).unsqueeze(1).to(device)
+        else:
+            return torch.tensor(np.stack(result), requires_grad=True).to(device)
+
+    @staticmethod
+    def setup_context(ctx, inputs, output) -> None:
+        input, geo, angles, gpuids = inputs
+        ctx.geo = geo
+        ctx.angles = angles
+        ctx.gpuids = gpuids
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        device = grad_output.device
+        THREE_D = True
+        if len(grad_output.shape) == 4:
+            THREE_D = False
+        if THREE_D:
+            print(grad_output.size())
+            grad_output = grad_output.detach().cpu().numpy().transpose((0,1,3,2,4))
+        else:
+            grad_output = grad_output.detach().cpu().numpy().transpose((0,2,1,3))
+        result = []
+
+        for batch_index in range(grad_output.shape[0]):
+            if THREE_D:
+                result.append(
+                    tigre.Atb(
+                        grad_output[batch_index][0],
+                        ctx.geo,
+                        ctx.angles,
+                        gpuids = ctx.gpuids)
+                    )
+            else:
+                result.append(
+                    tigre.Atb(
+                        grad_output[batch_index],
+                        ctx.geo,
+                        ctx.angles,
+                        gpuids = ctx.gpuids)
+                    )
+
+        if THREE_D:
+            return torch.tensor(np.stack(result), requires_grad=True).unsqueeze(1).to(device), None, None, None
+        else:
+            return torch.tensor(np.stack(result), requires_grad=True).to(device), None, None, None
+
+class ForwardOperatorModule(torch.nn.Module):
+    def __init__(self, geo, angles, gpuids: List):
+        super(ForwardOperatorModule, self).__init__()
+        self.geo = geo
+        self.angles = angles
+        self.gpuids = gpuids
+
+    def forward(self, x:torch.Tensor):
+        return ForwardOperatorFunction.apply(x, self.geo, self.angles, self.gpuids)
