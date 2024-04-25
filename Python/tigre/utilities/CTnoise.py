@@ -17,7 +17,8 @@ def add(projections, Gaussian=None, Poisson=None):
             )
         if Gaussian.shape != (2,):
             raise ValueError("Gaussian shape should be 1x2, is " + str(Gaussian.shape) + "instead.")
-
+    else:
+        Gaussian = np.array([0, 0.5])
     max_proj = np.max(projections)
     projections = Poisson * np.exp(-projections / max_proj)
 
