@@ -85,7 +85,6 @@ def FDK(proj, geo, angles, **kwargs):
         theta = (geo.sDetector[1] / 2 - abs(geo.offDetector[1])
                  ) * np.sign(geo.offDetector[1])
 
-        print(padwidth, zgeo.nDetector[1], zgeo.offDetector[1], theta)
         if geo.offDetector[1] > 0:
             zproj = np.zeros(
                 (proj.shape[0] , proj.shape[1], proj.shape[2]+ padwidth), dtype=proj.dtype)
@@ -146,7 +145,8 @@ def FDK(proj, geo, angles, **kwargs):
 
 
     if dowang:
-        print('FDK: applying detector offset weights')
+        if verbose:
+            print('FDK: applying detector offset weights')
         # Zero-padding to avoid FFT-induced aliasing
         zproj, zgeo, theta = zeropadding(proj, geo)
         # Preweighting using Wang function to save memory
@@ -156,8 +156,7 @@ def FDK(proj, geo, angles, **kwargs):
         # proj = proj_w;
         geo = zgeo
 
-    print(geo)
-    print(proj.shape)
+    
     geo = copy.deepcopy(geo)
     geo.check_geo(angles)
     geo.checknans()
