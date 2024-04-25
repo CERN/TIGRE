@@ -37,8 +37,7 @@ Tested on
 ### Simple Instructions
 
 1. Install MATLAB, Visual Studio and CUDA (Remember to install C++ when isntalling Visual Studio!)
-2. Rename the XML file corresponding to the Visual Studio you have. e.g. `mex_CUDA_win64_MVS2015.xml`(Visual Studio 2015/2017) to `mex_CUDA_win64.xml`
-3. Run `Compile.m`
+2. Run `Compile.m`
 
 A succesfull installation should be able to execute the script at `TIGRE/MATLAB/Demos/d03_generateData.m` without errors.
 
@@ -86,31 +85,13 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
    
    Make sure that when you run `mex -setup -v` C++ is installed and Visual Studio is selected as the compiler for C/C++
    
-6. Check that MALTAB knows where Visual Studio and CUDA are
-
-   Run the following commands: 
-   
-   - `getenv('CUDA_PATH')`; 
-   - `getenv('VS120COMNTOOLS');` (MVS2013) `getenv('VS140COMNTOOLS');` (MVS2015 or newer)
-   
-   They should return something similar to:
-   
-   - `'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.2'`
-   - `'C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\'`
-   
-   If any of these return empty, your installation of CUDA or Visual Studio did not happen successfully or you did install it in the non-standard way.
-   Either reinstall, or configure this variables (use [`setenv()`](https://uk.mathworks.com/help/matlab/ref/setenv.html)) to point to the correct installation locations. 
-	 
-7. Rename either `mex_CUDA_win64_MVS2013.xml` (Visual Studio 2013 or older) or `mex_CUDA_win64_MVS2015.xml`(Visual Studio 2015 or newer) to `mex_CUDA_win64.xml`
-    
-   
-8. By opening MATLAB on `yourTIGREpath/MATLAB`, execute `Compile.m`
+6. By opening MATLAB on `yourTIGREpath/MATLAB`, execute `Compile.m`
 
    If it fails, try opening `mex_CUDA_win64.xml` with your favourite editor and changing line 125 to link to your local `nvcc` location.
    
-9. Initialize TIGRE by typing `InitTIGRE` on the MATLAB Command Window.
+7. Initialize TIGRE by typing `InitTIGRE` on the MATLAB Command Window.
 
-10. Run file `TIGRE/MATLAB/Demos/d03_generateData.m`. If it successfully executes, you have installed and compiled TIGRE properly.
+8. Run file `TIGRE/MATLAB/Demos/d03_generateData.m`. If it successfully executes, you have installed and compiled TIGRE properly.
 
 
 If none of this works, please contact the authors at [tigre.toolbox@gmail.com](mailto:tigre.toolbox@gmail.com) or [ander.biguri@gmail.com](mailto:ander.biguri@gmail.com)
