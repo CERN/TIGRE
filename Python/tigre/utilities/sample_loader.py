@@ -11,7 +11,8 @@ def load_head_phantom(number_of_voxels=None):
     list_relative_path = [
         "../../../Common/data/head.mat", # Local
         "../../data/head.mat",   # setup.py
-        "../../../../data/head.mat"  # pip 
+        "../../../../data/head.mat",  # pip 
+        "../data/head.mat" 
     ]
     found = False
     for relative_path in list_relative_path:
