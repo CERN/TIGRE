@@ -1,3 +1,4 @@
 include *.txt
 recursive-include tigre/demos *.ipynb
 recursive-include tigre/demos *.mat
+recursive-include tigre/data *.mat
