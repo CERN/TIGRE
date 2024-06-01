@@ -1,6 +1,6 @@
 function [ imgO ] = im3DDenoise( img,type,varargin )
 %IMDENOISE3D removes noise of image with different methods
-%   Currentyl only TV is supported. INput arguments are the iamge, the type
+%   Currentyl only TV is supported. Input arguments are the image, the type
 %   of denoising ('TV' only now) and the parameters for the denoising,
 %   being number of iterations and hyperparameter currently available. 
 %--------------------------------------------------------------------------
@@ -39,6 +39,11 @@ if strcmp(type,'TV')
     immax=max(img(:));
 
     img=img./(immax+2*eps);
+
+    % Generates an error if the data type of img is not single-precision float
+    if ~isa(img, 'single')
+        error('im3DDenoise: Input image of tvDenoise must be single precision');
+    end
     if ndims(img)==2
         imgO=tvDenoise(cat(3,img,img),hyper,iter,gpuids.devices);
         imgO=imgO(:,:,1);
