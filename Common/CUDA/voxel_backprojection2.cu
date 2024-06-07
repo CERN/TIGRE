@@ -739,9 +739,72 @@ void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsign
     }
 }
 
+
+//______________________________________________________________________________
+//
+//      double precision functions for rotating Point3Ddouble coordinates
+//______________________________________________________________________________
+
+void eulerZYZT_double(Geometry geo, Point3Ddouble* point){
+    
+    Point3Ddouble auxPoint;
+    auxPoint.x=point->x;
+    auxPoint.y=point->y;
+    auxPoint.z=point->z;
+
+    // calculate sin and cos of 3 angles (used multiple times)
+    double sin_alpha, cos_alpha, sin_theta, cos_theta, sin_psi, cos_psi;
+    sin_alpha = sin((double)geo.alpha);
+    cos_alpha = cos((double)geo.alpha);
+    sin_theta = sin((double)geo.theta);
+    cos_theta = cos((double)geo.theta);
+    sin_psi = sin((double)geo.psi);
+    cos_psi = cos((double)geo.psi);
+    
+    point->x = auxPoint.x*(cos_psi*cos_theta*cos_alpha-sin_psi*sin_alpha)
+    +auxPoint.y*(-cos_psi*cos_theta*sin_alpha-sin_psi*cos_alpha)
+    +auxPoint.z*cos_psi*sin_theta;
+    point->y = auxPoint.x*(sin_psi*cos_theta*cos_alpha+cos_psi*sin_alpha)
+    +auxPoint.y*(-sin_psi*cos_theta*sin_alpha+cos_psi*cos_alpha)
+    +auxPoint.z*sin_psi*sin_theta;
+    point->z =-auxPoint.x*sin_theta*cos_alpha
+    +auxPoint.y*sin_theta*sin_alpha
+    +auxPoint.z*cos_theta;
+}
+
+void rollPitchYawT_double(Geometry geo,int i, Point3Ddouble* point){
+
+    Point3Ddouble auxPoint;
+    auxPoint.x=point->x;
+    auxPoint.y=point->y;
+    auxPoint.z=point->z;
+
+    // calculate sin and cos of 3 angles (used multiple times)
+    double sin_dRoll, cos_dRoll, sin_dPitch, cos_dPitch, sin_dYaw, cos_dYaw;
+    sin_dRoll = sin((double)geo.dRoll[i]);
+    cos_dRoll = cos((double)geo.dRoll[i]);
+    sin_dPitch = sin((double)geo.dPitch[i]);
+    cos_dPitch = cos((double)geo.dPitch[i]);
+    sin_dYaw = sin((double)geo.dYaw[i]);
+    cos_dYaw = cos((double)geo.dYaw[i]);
+    
+    point->x=cos_dRoll*cos_dPitch*auxPoint.x
+            +sin_dRoll*cos_dPitch*auxPoint.y
+            -sin_dPitch*auxPoint.z;
+    
+    point->y=(cos_dRoll*sin_dPitch*sin_dYaw - sin_dRoll*cos_dYaw)*auxPoint.x
+            +(sin_dRoll*sin_dPitch*sin_dYaw + cos_dRoll*cos_dYaw)*auxPoint.y
+            +cos_dPitch*sin_dYaw*auxPoint.z;
+    
+    point->z=(cos_dRoll*sin_dPitch*cos_dYaw + sin_dRoll*sin_dYaw)*auxPoint.x
+            +(sin_dRoll*sin_dPitch*cos_dYaw - cos_dRoll*sin_dYaw)*auxPoint.y
+            +cos_dPitch*cos_dYaw*auxPoint.z;
+}
+
+
 void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S)
 {
-    Point3D P, Px,Py,Pz;
+    Point3Ddouble P, Px,Py,Pz;
     // Get coords of Img(0,0,0)
     P.x=-(geo.sVoxelX/2-geo.dVoxelX/2)+geo.offOrigX[i];
     P.y=-(geo.sVoxelY/2-geo.dVoxelY/2)+geo.offOrigY[i];
@@ -756,10 +819,10 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     
 // Rotate image around X axis (this is equivalent of rotating the source and detector) RZ RY RZ
     
-    eulerZYZT(geo,&P);
-    eulerZYZT(geo,&Px);
-    eulerZYZT(geo,&Py);
-    eulerZYZT(geo,&Pz);
+    eulerZYZT_double(geo,&P);
+    eulerZYZT_double(geo,&Px);
+    eulerZYZT_double(geo,&Py);
+    eulerZYZT_double(geo,&Pz);
     
     
     
@@ -778,21 +841,21 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     Px.x=Px.x+(geo.DSD[i]-geo.DSO[i]);
     Py.x=Py.x+(geo.DSD[i]-geo.DSO[i]);
     Pz.x=Pz.x+(geo.DSD[i]-geo.DSO[i]);
-    rollPitchYawT(geo,i,&P);
-    rollPitchYawT(geo,i,&Px);
-    rollPitchYawT(geo,i,&Py);
-    rollPitchYawT(geo,i,&Pz);
+    rollPitchYawT_double(geo,i,&P);
+    rollPitchYawT_double(geo,i,&Px);
+    rollPitchYawT_double(geo,i,&Py);
+    rollPitchYawT_double(geo,i,&Pz);
     
     P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
     Px.x=Px.x-(geo.DSD[i]-geo.DSO[i]);
     Py.x=Py.x-(geo.DSD[i]-geo.DSO[i]);
     Pz.x=Pz.x-(geo.DSD[i]-geo.DSO[i]);
     //Done for P, now source
-    Point3D source;
+    Point3Ddouble source;
     source.x=geo.DSD[i]; //already offseted for rotation
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
-    rollPitchYawT(geo,i,&source);
+    rollPitchYawT_double(geo,i,&source);
     
     
     source.x=source.x-(geo.DSD[i]-geo.DSO[i]);//   source.y=source.y-auxOff.y;    source.z=source.z-auxOff.z;
@@ -813,8 +876,8 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     deltaZ->x=Pz.x-P.x;   deltaZ->y=Pz.y-P.y;    deltaZ->z=Pz.z-P.z;
     
     
-    *xyzorigin=P;
-    *S=source;
+    *xyzorigin=P.to_float();
+    *S=source.to_float();
 }  // END computeDeltasCube
 
 void rollPitchYawT(Geometry geo,int i, Point3D* point){
