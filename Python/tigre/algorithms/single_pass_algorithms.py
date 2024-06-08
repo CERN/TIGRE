@@ -70,9 +70,10 @@ def FDK(proj, geo, angles, **kwargs):
                         PYTHON : Reuben Lindroos
     """
     verbose = kwargs["verbose"] if "verbose" in kwargs else False
-
     gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
     dowang = kwargs["dowang"] if "dowang" in kwargs else False
+    # adding groundtruth comparison
+    groundtruth = None if "groundtruth" not in kwargs else kwargs["groundtruth"]
 
     def zeropadding(proj, geo):
         zgeo = copy.deepcopy(geo)
@@ -192,4 +193,6 @@ def fbp(proj, geo, angles, **kwargs):  # noqa: D103
     gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
     proj_filt = filtering(copy.deepcopy(proj), geox,
                           angles, parker=False, verbose=verbose)
+    # adding groundtruth comparison 
+    groundtruth = None if "groundtruth" not in kwargs else kwargs["groundtruth"]
     return Atb(proj_filt, geo, angles, gpuids=gpuids) * geo.DSO / geo.DSD

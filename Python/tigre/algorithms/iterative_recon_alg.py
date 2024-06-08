@@ -92,6 +92,12 @@ class IterativeReconAlg(object):
             OS_SART_TV
             FISTA
 
+            
+    :keyword groundtruth: ()
+        groundtruth image for comparison with the reconstruction.
+        Default is None
+
+
     Usage
     --------
     >>> import numpy as np
@@ -133,6 +139,9 @@ class IterativeReconAlg(object):
         self.angles = angles
         self.geo = geo
         self.niter = niter
+        
+        # adding groundtruth comparison
+        self.groundtruth = None if "groundtruth" not in kwargs else kwargs["groundtruth"]
 
         self.geo.check_geo(angles)
 
