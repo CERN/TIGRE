@@ -739,9 +739,10 @@ void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsign
     }
 }
 
+
 void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S)
 {
-    Point3D P, Px,Py,Pz;
+    Point3Ddouble P, Px,Py,Pz;
     // Get coords of Img(0,0,0)
     P.x=-(geo.sVoxelX/2-geo.dVoxelX/2)+geo.offOrigX[i];
     P.y=-(geo.sVoxelY/2-geo.dVoxelY/2)+geo.offOrigY[i];
@@ -788,7 +789,7 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     Py.x=Py.x-(geo.DSD[i]-geo.DSO[i]);
     Pz.x=Pz.x-(geo.DSD[i]-geo.DSO[i]);
     //Done for P, now source
-    Point3D source;
+    Point3Ddouble source;
     source.x=geo.DSD[i]; //already offseted for rotation
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
@@ -813,31 +814,10 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     deltaZ->x=Pz.x-P.x;   deltaZ->y=Pz.y-P.y;    deltaZ->z=Pz.z-P.z;
     
     
-    *xyzorigin=P;
-    *S=source;
+    *xyzorigin=P.to_float();
+    *S=source.to_float();
 }  // END computeDeltasCube
 
-void rollPitchYawT(Geometry geo,int i, Point3D* point){
-    Point3D auxPoint;
-    auxPoint.x=point->x;
-    auxPoint.y=point->y;
-    auxPoint.z=point->z;
-    
-    point->x=cos(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x
-            +sin(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.y
-            -sin(geo.dPitch[i])*auxPoint.z;
-    
-    
-    point->y=(cos(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) - sin(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.x
-            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) + cos(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y
-            +cos(geo.dPitch[i])*sin(geo.dYaw[i])*auxPoint.z;
-    
-    
-    point->z=(cos(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) + sin(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.x
-            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) - cos(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.y
-            +cos(geo.dPitch[i])*cos(geo.dYaw[i])*auxPoint.z;
-    
-}
 void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
     size_t memfree;
     size_t memtotal;
