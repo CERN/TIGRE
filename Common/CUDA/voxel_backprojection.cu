@@ -759,7 +759,7 @@ void freeGeoArray(unsigned int splits,Geometry* geoArray){
 //      double precision functions for rotating Point3Ddouble coordinates
 //______________________________________________________________________________
 
-void eulerZYZT_double(Geometry geo, Point3Ddouble* point){
+void eulerZYZT(Geometry geo, Point3Ddouble* point){
     
     Point3Ddouble auxPoint;
     auxPoint.x=point->x;
@@ -786,7 +786,7 @@ void eulerZYZT_double(Geometry geo, Point3Ddouble* point){
     +auxPoint.z*cos_theta;
 }
 
-void rollPitchYawT_double(Geometry geo,int i, Point3Ddouble* point){
+void rollPitchYawT(Geometry geo,int i, Point3Ddouble* point){
 
     Point3Ddouble auxPoint;
     auxPoint.x=point->x;
@@ -840,10 +840,10 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     Px.z=P.z;                   Py.z=P.z;                Pz.z=P.z+geo.dVoxelZ;
     
     // Rotate image around X axis (this is equivalent of rotating the source and detector) RZ RY RZ
-    eulerZYZT_double(geo,&P);
-    eulerZYZT_double(geo,&Px);
-    eulerZYZT_double(geo,&Py);
-    eulerZYZT_double(geo,&Pz);
+    eulerZYZT(geo,&P);
+    eulerZYZT(geo,&Px);
+    eulerZYZT(geo,&Py);
+    eulerZYZT(geo,&Pz);
     
     //detector offset
     P.z =P.z-geo.offDetecV[i];            P.y =P.y-geo.offDetecU[i];
@@ -859,10 +859,10 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     Px.x=Px.x+(geo.DSD[i]-geo.DSO[i]);
     Py.x=Py.x+(geo.DSD[i]-geo.DSO[i]);
     Pz.x=Pz.x+(geo.DSD[i]-geo.DSO[i]);
-    rollPitchYawT_double(geo,i,&P);
-    rollPitchYawT_double(geo,i,&Px);
-    rollPitchYawT_double(geo,i,&Py);
-    rollPitchYawT_double(geo,i,&Pz);
+    rollPitchYawT(geo,i,&P);
+    rollPitchYawT(geo,i,&Px);
+    rollPitchYawT(geo,i,&Py);
+    rollPitchYawT(geo,i,&Pz);
     
     P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
     Px.x=Px.x-(geo.DSD[i]-geo.DSO[i]);
@@ -873,7 +873,7 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     source.x=geo.DSD[i]; //already offseted for rotation
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
-    rollPitchYawT_double(geo,i,&source);
+    rollPitchYawT(geo,i,&source);
     
     source.x=source.x-(geo.DSD[i]-geo.DSO[i]);//   source.y=source.y-auxOff.y;    source.z=source.z-auxOff.z;
     
@@ -897,60 +897,6 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     *S=source.to_float();
 }
 
-void eulerZYZT(Geometry geo, Point3D* point){
-    
-    Point3D auxPoint;
-    auxPoint.x=point->x;
-    auxPoint.y=point->y;
-    auxPoint.z=point->z;
-
-    float sin_alpha, cos_alpha, sin_theta, cos_theta, sin_psi, cos_psi;
-    sin_alpha = sin(geo.alpha);
-    cos_alpha = cos(geo.alpha);
-    sin_theta = sin(geo.theta);
-    cos_theta = cos(geo.theta);
-    sin_psi = sin(geo.psi);
-    cos_psi = cos(geo.psi);
-    
-    point->x = auxPoint.x*(cos_psi*cos_theta*cos_alpha-sin_psi*sin_alpha)
-    +auxPoint.y*(-cos_psi*cos_theta*sin_alpha-sin_psi*cos_alpha)
-    +auxPoint.z*cos_psi*sin_theta;
-    point->y = auxPoint.x*(sin_psi*cos_theta*cos_alpha+cos_psi*sin_alpha)
-    +auxPoint.y*(-sin_psi*cos_theta*sin_alpha+cos_psi*cos_alpha)
-    +auxPoint.z*sin_psi*sin_theta;
-    point->z =-auxPoint.x*sin_theta*cos_alpha
-    +auxPoint.y*sin_theta*sin_alpha
-    +auxPoint.z*cos_theta;
-}
-void rollPitchYawT(Geometry geo,int i, Point3D* point){
-    Point3D auxPoint;
-    auxPoint.x=point->x;
-    auxPoint.y=point->y;
-    auxPoint.z=point->z;
-
-    float sin_dRoll, cos_dRoll, sin_dPitch, cos_dPitch, sin_dYaw, cos_dYaw;
-    sin_dRoll = sin(geo.dRoll[i]);
-    cos_dRoll = cos(geo.dRoll[i]);
-    sin_dPitch = sin(geo.dPitch[i]);
-    cos_dPitch = cos(geo.dPitch[i]);
-    sin_dYaw = sin(geo.dYaw[i]);
-    cos_dYaw = cos(geo.dYaw[i]);
-    
-    point->x=cos_dRoll*cos_dPitch*auxPoint.x
-            +sin_dRoll*cos_dPitch*auxPoint.y
-            -sin_dPitch*auxPoint.z;
-    
-    
-    point->y=(cos_dRoll*sin_dPitch*sin_dYaw - sin_dRoll*cos_dYaw)*auxPoint.x
-            +(sin_dRoll*sin_dPitch*sin_dYaw + cos_dRoll*cos_dYaw)*auxPoint.y
-            +cos_dPitch*sin_dYaw*auxPoint.z;
-    
-    
-    point->z=(cos_dRoll*sin_dPitch*cos_dYaw + sin_dRoll*sin_dYaw)*auxPoint.x
-            +(sin_dRoll*sin_dPitch*cos_dYaw - cos_dRoll*sin_dYaw)*auxPoint.y
-            +cos_dPitch*cos_dYaw*auxPoint.z;
-    
-}
 void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
     size_t memfree;
     size_t memtotal;
