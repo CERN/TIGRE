@@ -89,4 +89,21 @@ struct  Geometry {
     float y;
     float z;
 };
+
+struct Point3Ddouble{
+    double x;
+    double y;
+    double z;
+
+    // cast to float member function for "copying" Point3Ddouble to Point3D
+    Point3D to_float()
+    {
+        Point3D castToFloat;
+        castToFloat.x = (float)x;
+        castToFloat.y = (float)y;
+        castToFloat.z = (float)z;
+        return(castToFloat);
+    }
+};
+
 #endif

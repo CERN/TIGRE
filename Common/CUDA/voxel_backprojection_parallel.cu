@@ -507,7 +507,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
 void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D *S)
 {
     
-    Point3D P, Px,Py,Pz;
+    Point3Ddouble P, Px,Py,Pz;
     // Get coords of Img(0,0,0)
     P.x=-(geo.sVoxelX/2-geo.dVoxelX/2)+geo.offOrigX[i];
     P.y=-(geo.sVoxelY/2-geo.dVoxelY/2)+geo.offOrigY[i];
@@ -553,7 +553,7 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
     Pz.x=Pz.x-(geo.DSD[i]-geo.DSO[i]);
     
     
-    Point3D source;
+    Point3Ddouble source;
     source.x=0;
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
@@ -574,8 +574,10 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
     deltaZ->x=Pz.x-P.x;   deltaZ->y=Pz.y-P.y;    deltaZ->z=Pz.z-P.z;
     
     
-    *xyzorigin=P;
-    *S=source;
+    // cast the results from the double precision calculations back to float
+    *xyzorigin=P.to_float();
+    *S=source.to_float();
+
     
 }  // END computeDeltasCube
 void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool alloc)

@@ -674,100 +674,90 @@ void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU
     //End point
     Point3D P,Pu0,Pv0;
     
-    P.x  =-(geo.DSD[i]-geo.DSO[i]);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
-    Pu0.x=-(geo.DSD[i]-geo.DSO[i]);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
-    Pv0.x=-(geo.DSD[i]-geo.DSO[i]);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
-    // Geomtric trasnformations:
+    P.x  =-(geo.DSD[i]-geo.DSO[i]);   P.y  = geo.dDetecU*(-((double)geo.nDetecU/2.0)+0.5);       P.z  = geo.dDetecV*(((double)geo.nDetecV/2.0)-0.5);
+    Pu0.x=0;                          Pu0.y= geo.dDetecU;                                    Pu0.z= 0;
+    Pv0.x=0;                          Pv0.y= 0;                                              Pv0.z= geo.dDetecV*(-1);
+
+    // Geometric transformations:
     // Now we have the Real world (OXYZ) coordinates of the bottom corner and its two neighbours.
-    // The obkjective is to get a position of the detector in a coordinate system where:
+    // The objective is to get a position of the detector in a coordinate system where:
     // 1-units are voxel size (in each direction can be different)
     // 2-The image has the its first voxel at (0,0,0)
     // 3-The image never rotates
-    
+
     // To do that, we need to compute the "deltas" the detector, or "by how much
     // (in new xyz) does the voxels change when and index is added". To do that
     // several geometric steps needs to be changed
-    
+
     //1.Roll,pitch,jaw
     // The detector can have a small rotation.
     // according to
     //"A geometric calibration method for cone beam CT systems" Yang K1, Kwan AL, Miller DF, Boone JM. Med Phys. 2006 Jun;33(6):1695-706.
     // Only the Z rotation will have a big influence in the image quality when they are small.
     // Still all rotations are supported
-    
+
     // To roll pitch jaw, the detector has to be in centered in OXYZ.
-    P.x=0;Pu0.x=0;Pv0.x=0;
-    
+    // NB: do not apply offsets to Pu0 and Pv0: they are directions, and are invariant through translations
+    P.x=0;
+
     // Roll pitch yaw
     rollPitchYaw(geo,i,&P);
     rollPitchYaw(geo,i,&Pu0);
     rollPitchYaw(geo,i,&Pv0);
-    //Now ltes translate the points where they should be:
+    //Now let's translate the points where they should be:
+    // NB: do not apply offsets to Pu0 and Pv0: they are directions, and are invariant through translations
     P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
-    Pu0.x=Pu0.x-(geo.DSD[i]-geo.DSO[i]);
-    Pv0.x=Pv0.x-(geo.DSD[i]-geo.DSO[i]);
-    
+
     //1: Offset detector
-    
-    
+
+
     //S doesnt need to chagne
-    
-    
+
+
     //3: Rotate (around z)!
     Point3D Pfinal, Pfinalu0, Pfinalv0;
     Pfinal.x  =P.x;
     Pfinal.y  =P.y  +geo.offDetecU[i]; Pfinal.z  =P.z  +geo.offDetecV[i];
-    Pfinalu0.x=Pu0.x;
-    Pfinalu0.y=Pu0.y  +geo.offDetecU[i]; Pfinalu0.z  =Pu0.z  +geo.offDetecV[i];
-    Pfinalv0.x=Pv0.x;
-    Pfinalv0.y=Pv0.y  +geo.offDetecU[i]; Pfinalv0.z  =Pv0.z  +geo.offDetecV[i];
-    
+    Pfinalu0 = Pu0;
+    Pfinalv0 = Pv0;
+
     eulerZYZ(geo,&Pfinal);
     eulerZYZ(geo,&Pfinalu0);
     eulerZYZ(geo,&Pfinalv0);
     eulerZYZ(geo,&S);
-    
+
     //2: Offset image (instead of offseting image, -offset everything else)
-    
+    // NB: do not apply offsets to Pfinalu0 and Pfinalv0: they are directions, and are invariant through translations
+
     Pfinal.x  =Pfinal.x-geo.offOrigX[i];     Pfinal.y  =Pfinal.y-geo.offOrigY[i];     Pfinal.z  =Pfinal.z-geo.offOrigZ[i];
-    Pfinalu0.x=Pfinalu0.x-geo.offOrigX[i];   Pfinalu0.y=Pfinalu0.y-geo.offOrigY[i];   Pfinalu0.z=Pfinalu0.z-geo.offOrigZ[i];
-    Pfinalv0.x=Pfinalv0.x-geo.offOrigX[i];   Pfinalv0.y=Pfinalv0.y-geo.offOrigY[i];   Pfinalv0.z=Pfinalv0.z-geo.offOrigZ[i];
     S.x=S.x-geo.offOrigX[i];               S.y=S.y-geo.offOrigY[i];               S.z=S.z-geo.offOrigZ[i];
-    
+
     // As we want the (0,0,0) to be in a corner of the image, we need to translate everything (after rotation);
     Pfinal.x  =Pfinal.x+geo.sVoxelX/2;      Pfinal.y  =Pfinal.y+geo.sVoxelY/2;          Pfinal.z  =Pfinal.z  +geo.sVoxelZ/2;
-    Pfinalu0.x=Pfinalu0.x+geo.sVoxelX/2;    Pfinalu0.y=Pfinalu0.y+geo.sVoxelY/2;        Pfinalu0.z=Pfinalu0.z+geo.sVoxelZ/2;
-    Pfinalv0.x=Pfinalv0.x+geo.sVoxelX/2;    Pfinalv0.y=Pfinalv0.y+geo.sVoxelY/2;        Pfinalv0.z=Pfinalv0.z+geo.sVoxelZ/2;
     S.x      =S.x+geo.sVoxelX/2;          S.y      =S.y+geo.sVoxelY/2;              S.z      =S.z      +geo.sVoxelZ/2;
-    
+
     //4. Scale everything so dVoxel==1
     Pfinal.x  =Pfinal.x/geo.dVoxelX;      Pfinal.y  =Pfinal.y/geo.dVoxelY;        Pfinal.z  =Pfinal.z/geo.dVoxelZ;
     Pfinalu0.x=Pfinalu0.x/geo.dVoxelX;    Pfinalu0.y=Pfinalu0.y/geo.dVoxelY;      Pfinalu0.z=Pfinalu0.z/geo.dVoxelZ;
     Pfinalv0.x=Pfinalv0.x/geo.dVoxelX;    Pfinalv0.y=Pfinalv0.y/geo.dVoxelY;      Pfinalv0.z=Pfinalv0.z/geo.dVoxelZ;
     S.x      =S.x/geo.dVoxelX;          S.y      =S.y/geo.dVoxelY;            S.z      =S.z/geo.dVoxelZ;
-    
-    
+
+
     //mexPrintf("COR: %f \n",geo.COR[i]);
     //5. apply COR. Wherever everything was, now its offesetd by a bit
-    float CORx, CORy;
+    // NB: do not apply offsets to Pfinalu0 and Pfinalv0: they are directions, and are invariant through translations
+    double CORx, CORy;
     CORx=-geo.COR[i]*sin(geo.alpha)/geo.dVoxelX;
     CORy= geo.COR[i]*cos(geo.alpha)/geo.dVoxelY;
     Pfinal.x+=CORx;   Pfinal.y+=CORy;
-    Pfinalu0.x+=CORx;   Pfinalu0.y+=CORy;
-    Pfinalv0.x+=CORx;   Pfinalv0.y+=CORy;
     S.x+=CORx; S.y+=CORy;
-    
+
     // return
-    
+
     *uvorigin=Pfinal;
-    
-    deltaU->x=Pfinalu0.x-Pfinal.x;
-    deltaU->y=Pfinalu0.y-Pfinal.y;
-    deltaU->z=Pfinalu0.z-Pfinal.z;
-    
-    deltaV->x=Pfinalv0.x-Pfinal.x;
-    deltaV->y=Pfinalv0.y-Pfinal.y;
-    deltaV->z=Pfinalv0.z-Pfinal.z;
+
+    *deltaU=Pfinalu0;
+    *deltaV=Pfinalv0;
     
     *source=S;
 }
