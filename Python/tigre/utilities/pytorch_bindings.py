@@ -132,17 +132,15 @@ class ATBFunction(torch.autograd.Function):
             # We then use the fact that DetX = 1 and transpose the output array
             if len(input_dimension) == 4:
                 ax = ax.transpose((1,0,2))
-            result.append(
-                ax
-                )
+            result.append(ax)
         result = torch.tensor(np.stack(result), requires_grad=True).to(device)
         if len(input_dimension) == 5:
             result = result.unsqueeze(1)
         return result, None, None, None
 
-class AX(torch.nn.Module):
+class A(torch.nn.Module):
     def __init__(self, geo, angles, gpuids):
-        super(AX, self).__init__()
+        super(A, self).__init__()
         self.geo = geo
         self.angles = angles
         self.gpuids = gpuids
@@ -150,12 +148,36 @@ class AX(torch.nn.Module):
     def forward(self, x):
         return AXFunction.apply(x, self.geo, self.angles, self.gpuids)
     
-class ATB(torch.nn.Module):
+class At(torch.nn.Module):
     def __init__(self, geo, angles, gpuids):
-        super(ATB, self).__init__()
+        super(At, self).__init__()
         self.geo = geo
         self.angles = angles
         self.gpuids = gpuids
 
     def forward(self, x):
         return ATBFunction.apply(x, self.geo, self.angles, self.gpuids)
+
+
+def create_pytorch_operator(geo, angles, gpuids):
+    return A(geo, angles, gpuids), At(geo, angles, gpuids)
+
+## This may be useful for non-torch stuff, but doesn't work for torch autograd. 
+#  I'll leave it here for now.
+class Operator:
+    def __init__(self, geo, angles, gpuids):
+        super(Operator, self).__init__()
+        self.geo = geo
+        self.angles = angles
+        self.gpuids = gpuids
+        self.ax = A(self.geo, self.angles, self.gpuids)
+        self.atb = At(self.geo, self.angles, self.gpuids)
+
+    def __call__(self, x):
+        return self.forward(x)
+    def forward(self, x):
+        return self.ax(x)
+    def T(self,b):
+        return self.backward(b)
+    def backward(self, b):
+        return self.atb(b)

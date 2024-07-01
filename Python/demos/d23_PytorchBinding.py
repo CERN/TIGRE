@@ -22,7 +22,7 @@ import torch
 
 import numpy as np
 import tigre.utilities.gpu as gpu
-from tigre.utilities.pytorch_bindings import AX, ATB
+from tigre.utilities.pytorch_bindings import A, At
 
 def get_default_3Dgeometry():
     geo = tigre.geometry()
@@ -79,10 +79,10 @@ def test_2D_operators(
     geo = get_default_2Dgeometry()
 
     ### Instanciate the differentiable modules
-    forward_operator = AX(
+    forward_operator = A(
         geo, np.linspace(0, np.pi, 200), TIGRE_GPU_ID
     )
-    backward_operator = ATB(
+    backward_operator = At(
         geo, np.linspace(0, np.pi, 200), TIGRE_GPU_ID
     )
 
@@ -132,10 +132,10 @@ def test_3D_operators(
     geo = get_default_3Dgeometry()
 
     ### Instanciate the differentiable modules
-    forward_operator = AX(
+    forward_operator = A(
         geo, np.linspace(0, np.pi, 200), TIGRE_GPU_ID
     )
-    backward_operator = ATB(
+    backward_operator = At(
         geo, np.linspace(0, np.pi, 200), TIGRE_GPU_ID
     )
 
@@ -170,6 +170,9 @@ def test_3D_operators(
         optimiser.step()
     print('Backward operator tests done!')
 
+
+from tigre.utilities.pytorch_bindings import create_pytorch_operator
+
 if __name__ == '__main__':    
     ### Get GPU id
     listGpuNames = gpu.getGpuNames()
@@ -180,11 +183,22 @@ if __name__ == '__main__':
         for id in range(len(listGpuNames)):
             print("{}: {}".format(id, listGpuNames[id]))
 
-    TIGRE_GPU_ID   = gpu.getGpuIds(listGpuNames[0])
+    TIGRE_GPU_ID   = gpu.getGpuIds(listGpuNames[3])
+    TIGRE_GPU_ID = TIGRE_GPU_ID[3]
     PYTORCH_GPU_ID = TIGRE_GPU_ID.devices[0]
     
-    test_2D_operators()
-    test_3D_operators()
+    print(f'Using GPU {TIGRE_GPU_ID} for TIGRE and GPU {PYTORCH_GPU_ID} for PyTorch')
+
+    geo=get_default_2Dgeometry()
+    angles = np.linspace(0, np.pi, 200)
+    op, opt = create_pytorch_operator(geo, angles, TIGRE_GPU_ID)
+    input_volume = torch.zeros([2,geo.nVoxel[0], geo.nVoxel[1],geo.nVoxel[2]], device=f'cuda:{PYTORCH_GPU_ID}', requires_grad=True)
+    sinogram = op(input_volume)
+    print(f'Input volume: {input_volume.shape}')
+    print(f'Sinogram: {sinogram.shape}')
+    print(f'Output volume: {opt(sinogram).shape}')
+    #test_2D_operators()
+    #test_3D_operators()
 
     
 
