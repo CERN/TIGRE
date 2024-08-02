@@ -112,14 +112,13 @@ def read_Bruker_geometry(filepath, **kwargs):
     # need to verify if this is correct.
     ratio = 1
 
-
+    cfg_aq = cfg["Acquisition"]
     if cfg.has_option("Acquisition", "Resized in image"):
         resizing_correction = float(cfg_aq["Resized in image"])
     else:
         resizing_correction = 1.0
 
  
-    cfg_aq = cfg["Acquisition"]
     try:
         binu = float(cfg_aq["Camera binning"][0])
         binv = float(cfg_aq["Camera binning"][2])
