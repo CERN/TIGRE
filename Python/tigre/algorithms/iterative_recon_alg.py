@@ -92,6 +92,12 @@ class IterativeReconAlg(object):
             OS_SART_TV
             FISTA
 
+            
+    :keyword groundtruth: ()
+        groundtruth image for comparison with the reconstruction.
+        Default is None
+
+
     Usage
     --------
     >>> import numpy as np
@@ -133,6 +139,9 @@ class IterativeReconAlg(object):
         self.angles = angles
         self.geo = geo
         self.niter = niter
+        
+        # adding groundtruth comparison
+        self.groundtruth = None if "groundtruth" not in kwargs else kwargs["groundtruth"]
 
         self.geo.check_geo(angles)
 
@@ -203,6 +212,9 @@ class IterativeReconAlg(object):
             self.Quameasopts = (
                 [self.Quameasopts] if isinstance(self.Quameasopts, str) else self.Quameasopts
             )
+            # appending error_norm is groundtruth is Null
+            if self.groundtruth is not None:
+                self.Quameasopts.append('error_norm')
             setattr(self, "lq", np.zeros([len(self.Quameasopts), niter]))  # quameasoptslist
         else:
             setattr(self, "lq", np.zeros([0, niter]))  # quameasoptslist
@@ -311,7 +323,8 @@ class IterativeReconAlg(object):
         Quameasopts = self.Quameasopts
 
         for i in range(self.niter):
-
+            # init Quameasopts
+            Quameasopts = self.Quameasopts
             res_prev = None
             if Quameasopts is not None:
                 res_prev = copy.deepcopy(self.res)
@@ -357,7 +370,10 @@ class IterativeReconAlg(object):
 
     def error_measurement(self, res_prev, iter):
         if self.Quameasopts is not None:
-            self.lq[:, iter] = MQ(self.res, res_prev, self.Quameasopts)
+            if self.groundtruth is not None:
+                self.lq[:, iter] = MQ(self.res, self.groundtruth, self.Quameasopts)
+            else:
+                self.lq[:, iter] = MQ(self.res, res_prev, self.Quameasopts)
         if self.computel2:
             # compute l2 borm for b-Ax
             errornow = im3DNORM(
@@ -481,3 +497,5 @@ def decorator(IterativeReconAlg, name=None, docstring=None):  # noqa: N803
 
 
 iterativereconalg = decorator(IterativeReconAlg)
+
+# have to find a usecase to groundtruth comparing with matlab
