@@ -92,6 +92,10 @@ class IterativeReconAlg(object):
             OS_SART_TV
             FISTA
 
+    :keyword groundtruth: (np.ndarray, optional)
+        Ground truth image for comparison with the reconstruction.
+        Default is None.
+
     Usage
     --------
     >>> import numpy as np
@@ -134,6 +138,8 @@ class IterativeReconAlg(object):
         self.geo = geo
         self.niter = niter
 
+        self.groundtruth = kwargs.get("groundtruth", None)
+
         self.geo.check_geo(angles)
 
         options = dict(
@@ -167,6 +173,7 @@ class IterativeReconAlg(object):
             "regularisation",
             "tviter",
             "tvlambda",
+            "groundtruth",
             "hyper",
             "fista_p",
             "fista_q",
@@ -203,6 +210,9 @@ class IterativeReconAlg(object):
             self.Quameasopts = (
                 [self.Quameasopts] if isinstance(self.Quameasopts, str) else self.Quameasopts
             )
+            if self.groundtruth is not None:
+                if "error_norm" not in self.Quameasopts:
+                    self.Quameasopts.append("error_norm")
             setattr(self, "lq", np.zeros([len(self.Quameasopts), niter]))  # quameasoptslist
         else:
             setattr(self, "lq", np.zeros([0, niter]))  # quameasoptslist
@@ -356,8 +366,13 @@ class IterativeReconAlg(object):
         return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta, self.gpuids)
 
     def error_measurement(self, res_prev, iter):
+        if self.groundtruth is not None:
+            comparison_img = self.groundtruth
+        else:
+            comparison_img = res_prev
+
         if self.Quameasopts is not None:
-            self.lq[:, iter] = MQ(self.res, res_prev, self.Quameasopts)
+            self.lq[:, iter] = MQ(self.res, comparison_img, self.Quameasopts)
         if self.computel2:
             # compute l2 borm for b-Ax
             errornow = im3DNORM(
