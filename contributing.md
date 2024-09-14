@@ -11,7 +11,7 @@ We actively welcome your pull requests.
 
 1. Fork the repo and create your branch from `master`.
 2. If you've added code that should be tested, add tests.
-3. Add an accurate description of your additions.
+3. Add an ample description of your additions.
 4. Remember to update TIGRE.bib if you are using knowledge from a published scientific article.
 
 ## Issues
