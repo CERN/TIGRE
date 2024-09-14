@@ -4,7 +4,7 @@
  * MATLAB MEX gateway for backprojection
  *
  * This file gets the data from MATLAB, checks it for errors and then
- * parses it to C and calls the relevant C/CUDA fucntions.
+ * parses it to C and calls the relevant C/CUDA functions.
  *
  * CODE by       Ander Biguri
  *
@@ -142,7 +142,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // Now that input is ok, parse it to C data types.
     // NOTE: while Number of dimensions is the size of the matrix in Matlab, the data is 1D row-wise mayor.
     
-    // We need a float image, and, unfortunatedly, the only way of casting it is by value
+    // We need a float image, and, unfortunately, the only way of casting it is by value
 //     const mwSize *size_proj= mxGetDimensions(image); //get size of image
 //     mrows = mxGetM(image);
 //     nangles = mxGetN(image);
@@ -342,11 +342,11 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     // To know which backprojection to call, we also need to know if the rotation is the orthodox/standard circular
     // rotation around the Z axis, or of its something else. This is because the current backprojection for
-    // curcular scans is optimized with a trick that assumes that the voxels in Z direction
-    // on the image are aligned with the axis of rotation, to incearse memory latency.
+    // circular scans is optimized with a trick that assumes that the voxels in Z direction
+    // on the image are aligned with the axis of rotation, to increase memory latency.
     // This however does not apply in arbitrary axis of rotation cases.
     // TODO: test if we really need 2 different codes, or if running the accelerated code
-    // with the worng assumptions will just result in a speed like the non-accelerated code,
+    // with the wrong assumptions will just result in a speed like the non-accelerated code,
     // without sacrificing speedup in the standard case.
     
    

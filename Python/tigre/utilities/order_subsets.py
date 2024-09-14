@@ -49,7 +49,7 @@ def order_subsets(angles, blocksize, mode):
             new_angles = angles[new_index]
             return list(np.array(new_angles, dtype=np.float32)), list(new_index)
         else:
-            raise NameError("mode string not recognised: " + mode)
+            raise NameError("mode string not recognized: " + mode)
 
     # Parse with blocks
     elif blocksize > 1:
@@ -93,4 +93,4 @@ def order_subsets(angles, blocksize, mode):
             block_alpha = [block_alpha[i] for i in new_order]
             return block_alpha, index_alpha
         else:
-            raise NameError("mode string not recognised: " + mode)
+            raise NameError("mode string not recognized: " + mode)

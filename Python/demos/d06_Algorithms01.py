@@ -31,7 +31,7 @@ geo = tigre.geometry_default(high_resolution=False)
 #%% Load data and generate projections
 # define angles
 angles = np.linspace(0, 2 * np.pi, 100)
-# Load thorax phatom data
+# Load thorax phantom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
 # generate projections
 projections = tigre.Ax(head, geo, angles)

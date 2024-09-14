@@ -26,7 +26,7 @@ class CGLS(IterativeReconAlg):  # noqa: D101
         " \n"
         "  CGLS(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
         "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
-        "  to the geometry descrived in GEO, using NITER iterations."
+        "  to the geometry described in GEO, using NITER iterations."
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
@@ -42,7 +42,7 @@ class CGLS(IterativeReconAlg):  # noqa: D101
         p_norm = np.linalg.norm(self.__p__.ravel(), 2)
         self.__gamma__ = p_norm * p_norm
 
-    # Overide
+    # override
     def run_main_iter(self):
 
         self.l2l = np.zeros((1, self.niter), dtype=np.float32)
@@ -103,7 +103,7 @@ class LSQR(IterativeReconAlg):
         " LSQR solves the CBCT problem using the  least squares\n"
         "  LSQR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
         "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
-        "  to the geometry descrived in GEO, using NITER iterations."
+        "  to the geometry described in GEO, using NITER iterations."
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs): 
@@ -192,7 +192,7 @@ class hybrid_LSQR(IterativeReconAlg):
         " hybrid_LSQR solves the CBCT problem using the hybrid_LSQR\n"
         "  hybrid_LSQR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
         "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
-        "  to the geometry descrived in GEO, using NITER iterations."
+        "  to the geometry described in GEO, using NITER iterations."
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs): 
@@ -301,7 +301,7 @@ class LSMR(IterativeReconAlg):
         " LSMR solves the CBCT problem using LSMR\n"
         "  LSMR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
         "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
-        "  to the geometry descrived in GEO, using NITER iterations."
+        "  to the geometry described in GEO, using NITER iterations."
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs): 
@@ -443,7 +443,7 @@ class IRN_TV_CGLS(IterativeReconAlg):
         " IRN_TV_CGLS solves the CBCT problem using CGLS with TV constraints\n"
         "  IRN_TV_CGLS(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
         "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
-        "  to the geometry descrived in GEO, using NITER iterations."
+        "  to the geometry described in GEO, using NITER iterations."
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
@@ -572,7 +572,7 @@ class AB_GMRES(IterativeReconAlg):
         " AB_GMRES solves the CBCT problem using preconditioned GMRES\n"
         "  AB_GMRES(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
         "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
-        "  to the geometry descrived in GEO, using NITER iterations."
+        "  to the geometry described in GEO, using NITER iterations."
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs): 
@@ -636,7 +636,7 @@ class BA_GMRES(IterativeReconAlg):
         " BA_GMRES solves the CBCT problem using preconditioned GMRES\n"
         "  AB_GMRES(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
         "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
-        "  to the geometry descrived in GEO, using NITER iterations."
+        "  to the geometry described in GEO, using NITER iterations."
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs): 
@@ -700,7 +700,7 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
         " hybrid_fLSQR_TV solves the CBCT problem using preconditioned hybrid flexuble LSQR with TV regularization\n"
         "  AB_GMRES(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
         "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
-        "  to the geometry descrived in GEO, using NITER iterations."
+        "  to the geometry described in GEO, using NITER iterations."
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs): 

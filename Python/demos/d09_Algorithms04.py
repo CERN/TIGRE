@@ -14,7 +14,7 @@
 # This Demo is not fully complete, as several algorithms are not shown
 # here, yet are available in TIGRE, namely:
 #
-# - AwASD_POCS:  Edge preserving ASD_POCS (Adaptative weigthed).
+# - AwASD_POCS:  Edge preserving ASD_POCS (Adaptative weighted).
 # - OS_AwASD_POCS: OS-version of the previous algorithm
 # - PCSD: A version of ASD_POCS that heuristically select some of the
 #         parameters, particularly epsilon (maxL2norm)
@@ -53,7 +53,7 @@ geo = tigre.geometry_default(high_resolution=False)
 #%% Load data and generate projections
 # define angles
 angles = np.linspace(0, 2 * np.pi, 100)
-# Load thorax phatom data
+# Load thorax phantom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
 # generate projections
 projections = tigre.Ax(head, geo, angles)
@@ -65,7 +65,7 @@ imgOSSART = algs.ossart(noise_projections, geo, angles, 10)
 
 #%% Total Variation algorithms
 #
-#  ASD-POCS: Adaptative Steeppest Descent-Projection On Convex Subsets
+#  ASD-POCS: Adaptative Steepest Descent-Projection On Convex Subsets
 # Often called POCS
 # ==========================================================================
 # ==========================================================================
@@ -74,8 +74,8 @@ imgOSSART = algs.ossart(noise_projections, geo, angles, 10)
 #  iteration. As the other algorithms the mandatory inputs are projections,
 #  geometry, angles and maximum iterations.
 #
-# ASD-POCS has a veriety of optional arguments, and some of them are crucial
-# to determine the behaviour of the algorithm. The advantage of ASD-POCS is
+# ASD-POCS has a variety of optional arguments, and some of them are crucial
+# to determine the behavior of the algorithm. The advantage of ASD-POCS is
 # the power to create good images from bad data, but it needs a lot of
 # tunning.
 #
@@ -140,11 +140,11 @@ imgASDPOCS = algs.asd_pocs(
 )
 
 
-#  OS_ASD_POCS: Odered Subset-TV algorithm
+#  OS_ASD_POCS: Ordered Subset-TV algorithm
 # ==========================================================================
 # ==========================================================================
 #
-# The logical next step to imporce ASD-POCS is substituting SART with a
+# The logical next step to improve ASD-POCS is substituting SART with a
 # faster algorithm, such as OS-SART
 #
 # The parameters are the same as in ASD-POCS, but also have 'BlockSize'
@@ -172,7 +172,7 @@ imgOSASDPOCS = algs.os_asd_pocs(
 #
 # This is a more edge preserving algorithms than ASD_POCS.
 # delta is the cut-off value of a normalized edge exponential weight....
-# not super clear, but it cotnrols at which point you accept something as real vs noise edge.
+# not super clear, but it controls at which point you accept something as real vs noise edge.
 
 imgAWASDPOCS = algs.awasd_pocs(
     noise_projections,

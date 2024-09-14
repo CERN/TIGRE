@@ -242,7 +242,7 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             
             
             
-            // Get Value in the computed (U,V) and multiply by the corresponding weigth.
+            // Get Value in the computed (U,V) and multiply by the corresponding weight.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
 #if IS_FOR_MATLAB_TIGRE
             voxelColumn[colIdx]+=tex3D<float>(tex, v+0.5f, u+0.5f ,indAlpha+0.5f);
@@ -396,7 +396,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
         int divx,divy,divz;
         
         // RB: Use the optimal (in their tests) block size from paper by Zinsser and Keck (16 in x and 32 in y).
-        // I tried different sizes and shapes of blocks (tiles), but it does not appear to significantly affect trhoughput, so
+        // I tried different sizes and shapes of blocks (tiles), but it does not appear to significantly affect throughput, so
         // let's stick with the values from Zinsser and Keck.
         divx=16;
         divy=32;

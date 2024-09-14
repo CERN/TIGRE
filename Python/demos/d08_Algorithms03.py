@@ -2,7 +2,7 @@
 #
 #
 # In this demo the usage of the the Krylov subspace family is explained.
-# This family of algorithms iterates trhough the eigenvectors of the
+# This family of algorithms iterates through the eigenvectors of the
 # residual (Ax-b) of the problem in descending order, achieving increased
 # convergence rates comparing to SART family.
 #
@@ -39,7 +39,7 @@ geo = tigre.geometry_default(high_resolution=False)
 #%% Load data and generate projections
 # define angles
 angles = np.linspace(0, 2 * np.pi, 100)
-# Load thorax phatom data
+# Load thorax phantom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
 # generate projections
 projections = tigre.Ax(head, geo, angles)
@@ -57,14 +57,14 @@ noise_projections = CTnoise.add(projections, Poisson=1e5, Gaussian=np.array([0, 
 # reccomend not using them. CGLS is already quite fast and using them may
 # lead to divergence.
 # The options are:
-#  'Init'    Describes diferent initialization techniques.
+#  'Init'    Describes different initialization techniques.
 #             -  'none'     : Initializes the image to zeros (default)
-#             -  'FDK'      : intializes image to FDK reconstrucition
+#             -  'FDK'      : initializes image to FDK reconstruction
 #             -  'multigrid': Initializes image by solving the problem in
 #                            small scale and increasing it when relative
 #                            convergence is reached.
 #             -  'image'    : Initialization using a user specified
-#                            image. Not recomended unless you really
+#                            image. Not recommended unless you really
 #                            know what you are doing.
 #  'InitImg'    an image for the 'image' initialization. Avoid.
 

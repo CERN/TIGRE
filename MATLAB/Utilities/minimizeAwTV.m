@@ -1,6 +1,6 @@
 function img=minimizeAwTV(img,varargin)
 %MINIMIZEAWTV MATLAB wrapper for the CUDA steepest descend minimization of 
-% adaptive-weighted TV norm. Note that this does not minimize the TV noise, using the ROF mdoel,
+% adaptive-weighted TV norm. Note that this does not minimize the TV noise, using the ROF model,
 % this minimizes the TV alone. Infinite iterations of this code will lead
 % to a flat image.
 %--------------------------------------------------------------------------

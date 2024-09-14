@@ -1,5 +1,5 @@
 function geo=staticDetectorGeo(geo,angles)
-% This fucntion computes the translation and rotations needed in the system
+% This function computes the translation and rotations needed in the system
 % to desribe a detector that does not move when the source moves.
 R=(geo.DSD-geo.DSO); %Radious of rotation of detector
 geo.DSD=geo.DSD-(R-R*cos(angles));

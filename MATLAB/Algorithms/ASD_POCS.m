@@ -4,7 +4,7 @@ function [ f,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 %
 %   ASD_POCS(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
-%   to the geometry descrived in GEO, using NITER iterations.
+%   to the geometry described in GEO, using NITER iterations.
 %
 %   ASD_POCS(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
@@ -13,23 +13,23 @@ function [ f,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 %   'lambda':      Sets the value of the hyperparameter for the SART iterations.
 %                  Default is 1
 %
-%   'lambdared':   Reduction of lambda.Every iteration
-%                  lambda=lambdared*lambda. Default is 0.99
+%   'lambdared':   Reduction of lambda. Every iteration
+%                  lambda = lambdared * lambda. Default is 0.99
 %
-%   'init':        Describes diferent initialization techniques.
+%   'init':        Describes different initialization techniques.
 %                   •  'none'     : Initializes the image to zeros (default)
 %
-%                   •  'FDK'      : intializes image to FDK reconstrucition
+%                   •  'FDK'      : Initializes image to FDK reconstruction
 %   'TViter':      Defines the amount of TV iterations performed per SART
 %                  iteration. Default is 20
 %
-%   'alpha':       Defines the TV hyperparameter. default is 0.002
+%   'alpha':       Defines the TV hyperparameter. Default is 0.002
 %
 %   'alpha_red':   Defines the reduction rate of the TV hyperparameter
 %
-%   'Ratio':       The maximum allowed image/TV update ration. If the TV
+%   'Ratio':       The maximum allowed image/TV update ratio. If the TV
 %                  update changes the image more than this, the parameter
-%                  will be reduced.default is 0.95
+%                  will be reduced. Default is 0.95
 %   'maxL2err'     Maximum L2 error to accept an image as valid. This
 %                  parameter is crucial for the algorithm, determines at
 %                  what point an image should not be updated further.
@@ -38,14 +38,14 @@ function [ f,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 %                  progress of the algorithm.
 %
 % 'OrderStrategy'  Chooses the subset ordering strategy. Options are
-%                  'ordered' :uses them in the input order, but divided
-%                  'random'  : orders them randomply
+%                  'ordered' : uses them in the input order, but divided
+%                  'random'  : orders them randomly
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
 % 'redundancy_weighting': true or false. Default is true. Applies data
 %                         redundancy weighting to projections in the update step
 %                         (relevant for offset detector geometry)
-%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
 %--------------------------------------------------------------------------
@@ -92,15 +92,15 @@ index_angles=cell2mat(orig_index);
 if ~isfield(geo,'rotDetector')
     geo.rotDetector=[0;0;0];
 end
-%% Create weigthing matrices for the SART step
-% the reason we do this, instead of calling the SART fucntion is not to
-% recompute the weigths every ASD-POCS iteration, thus effectively doubling
+%% Create weighting matrices for the SART step
+% the reason we do this, instead of calling the SART function is not to
+% recompute the weights every ASD-POCS iteration, thus effectively doubling
 % the computational time
 % Projection weight, W
 W=computeW(geo,angles,gpuids);
 
 
-% Back-Projection weigth, V
+% Back-Projection weight, V
 V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
 if redundancy_weights
@@ -127,7 +127,7 @@ DSO=geo.DSO;
 while ~stop_criteria %POCS
     % If quality is going to be measured, then we need to save previous image
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
-        res_prev = f; % only store if necesary
+        res_prev = f; % only store if necessary
     end
     
     f0=f;
@@ -153,8 +153,8 @@ while ~stop_criteria %POCS
         %         proj_err=proj(:,:,jj)-Ax(f,geo,angles(:,jj));          %                                 (b-Ax)
         %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
         %         backprj=Atb(weighted_err,geo,angles(:,jj));            %                     At * W^-1 * (b-Ax)
-        %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
-        %         f=f+beta*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
+        %         weight_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
+        %         f=f+beta*weight_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
         % Enforce positivity
         f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
         % non-negativity constrain

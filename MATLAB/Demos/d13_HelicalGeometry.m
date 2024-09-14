@@ -46,7 +46,7 @@ geo.accuracy=0.5;
 %% Create data+ angles
 angles=linspace(0.0,2*pi,100);
 angles=[angles angles angles]; % 3 rotations
-% Load thorax phatom data
+% Load thorax phantom data
 head=headPhantom(geo.nVoxel); % yes, not the best example data, but It will do.
 
 % This makes it helical

@@ -1,5 +1,5 @@
 function [ tvgrad ] = gradientTVnorm(f,type)
-%GRADIENTTVNORM Computes the gradient of the TV-norm fucntional
+%GRADIENTTVNORM Computes the gradient of the TV-norm functional
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox

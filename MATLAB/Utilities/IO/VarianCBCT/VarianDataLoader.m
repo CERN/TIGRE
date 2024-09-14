@@ -1,5 +1,5 @@
 function [proj_lg, geo, angles] = VarianDataLoader(datafolder, varargin)
-% VarianDataLoader: Loads Varian CBCT projection, geomtry and angles data
+% VarianDataLoader: Loads Varian CBCT projection, geometry and angles data
 %   Optional parameter: Motion lag correction. Default True. 
 %   gpuids: Usable GPUs. Default, the first one.
 % Load all dataset that are needed for reconstruction

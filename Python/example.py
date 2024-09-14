@@ -9,8 +9,8 @@ from tigre.utilities.Measure_Quality import Measure_Quality
 import tigre.utilities.gpu as gpu
 import matplotlib.pyplot as plt
 import os
-### This is just a basic example of very few TIGRE functionallity.
-# We hihgly recomend checking the Demos folder, where most if not all features of tigre are demoed.
+### This is just a basic example of very few TIGRE functionality.
+# We highly recommend checking the Demos folder, where most if not all features of TIGRE are demoed.
 
 listGpuNames = gpu.getGpuNames()
 if len(listGpuNames) == 0:

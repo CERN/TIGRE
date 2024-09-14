@@ -69,7 +69,7 @@ geo.offOrigin =[0;0;0];
 
 % Auxiliary 
 % Variable to define accuracy of 'interpolated' projection
-% It defines the amoutn of samples per voxel.
+% It defines the amount of samples per voxel.
 % Recommended <=0.5          (vx/sample) 
 geo.accuracy=0.5;                           
 

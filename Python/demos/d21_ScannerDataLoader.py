@@ -1,6 +1,6 @@
 ## Demo 21: Loading scanner data to TIGRE. 
 #
-# This demo will demostrate the options for loading scanner data into
+# This demo will demonstrate the options for loading scanner data into
 # TIGRE.
 #
 #   Supported Manufacturers:
@@ -75,7 +75,7 @@ img=algs.fdk(proj,geo,angles)
 datafolder='~/your_data_path/Bruker/Sample_name/'
 proj,geo, angles  = tigreio.BrukerDataLoader(datafolder)
 
-# the same options for sampling and number of angles that exist for Nikon (avobe) exist for Bruker data loaders. 
+# the same options for sampling and number of angles that exist for Nikon (above) exist for Bruker data loaders. 
 
 # Sometimes a folder will contain more than one dataset. 
 proj,geo, angles  = tigreio.BrukerDataLoader(datafolder,dataset_num='all') # load all of them
@@ -86,7 +86,7 @@ proj,geo, angles  = tigreio.BrukerDataLoader(datafolder,dataset_num=0) # load th
 datafolder='~/your_data_path/YXLON/Sample_name/'
 proj,geo, angles  = tigreio.YXLONDataLoader(datafolder)
 
-# the same options for sampling and number of angles that exist for Nikon (avobe) exist for Bruker data loaders. 
+# the same options for sampling and number of angles that exist for Nikon (above) exist for Bruker data loaders. 
 
 
 #%% DICOM data (only tested on Philips Allura)
@@ -97,7 +97,7 @@ proj,geo, angles  = tigreio.YXLONDataLoader(datafolder)
 
 # It is possible that your scanner is not currently supported, or that it
 # simply does not have any way of storing the information (Zeiss Xradia
-# does not store anything but the projecions)
+# does not store anything but the projections)
 
 # if this is the case, the general way of tackling the problem is:
 
@@ -106,7 +106,7 @@ geo=tigre.geometry()
 angles=
 
 # Step 2: Load projections:
-#store in NP array. Use whichever python lirbary will help you get the data loaded. 
+#store in NP array. Use whichever python library will help you get the data loaded. 
 
 
 # Step 3: validate

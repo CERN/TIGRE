@@ -2,7 +2,7 @@
  *
  * CUDA functions for texture-memory interpolation based projection
  *
- * This file has the necesary functions to perform X-ray parallel projection
+ * This file has the necessary functions to perform X-ray parallel projection
  * operation given a geaometry, angles and image. It uses the 3D texture
  * memory linear interpolation to uniformily sample a path to integrate the
  * X-rays.

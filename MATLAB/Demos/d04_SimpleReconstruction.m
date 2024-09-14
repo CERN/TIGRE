@@ -30,7 +30,7 @@ geo=defaultGeometry('nVoxel',[128;128;128]);
 %% Load data and generate projections 
 % define angles
 angles=linspace(0,2*pi,100);
-% Load thorax phatom data
+% Load thorax phantom data
 head=headPhantom(geo.nVoxel);
 % generate projections
 projections=Ax(head,geo,angles,'interpolated');

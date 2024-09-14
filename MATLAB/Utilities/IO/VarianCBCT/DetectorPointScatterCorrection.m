@@ -7,7 +7,7 @@ function proj = DetectorPointScatterCorrection(proj, geo, ScCalib, gpuids)
 
 %% Empirical values from reference paper
 % unit: cm-2
-% a0 = 3.43; (in refrence paper, but incorrect)
+% a0 = 3.43; (in reference paper, but incorrect)
 a0 = 1;
 
 a1 = 0.000309703536035;

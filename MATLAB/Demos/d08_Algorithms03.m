@@ -2,7 +2,7 @@
 %
 %
 % In this demo the usage of the the Krylov subspace family is explained.
-% This family of algorithms iterates trhough the eigenvectors of the
+% This family of algorithms iterates through the eigenvectors of the
 % residual (Ax-b) of the problem in descending order, achieving increased
 % convergence rates comparing to SART family. 
 % 
@@ -150,7 +150,7 @@ set(gcf, 'Units', 'Inches', 'Position', [1, 1, 15/1.2, 7/1.2], 'PaperUnits', 'In
 % set(gca,'fontsize',16)
 set(0,'defaultTextInterpreter','tex');
 
-%% Hybrid methods with different regularisation parameter choices
+%% Hybrid methods with different regularization parameter choices
 
 % you can explicitly defined the parameter in the mathematical terms
 [imghLSQR_l10, residual_hLSQR_l10]=hybrid_LSQR(projections,geo,angles,30, 'lambda', 10);

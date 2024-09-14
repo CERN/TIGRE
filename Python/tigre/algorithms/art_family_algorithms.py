@@ -28,10 +28,10 @@ sart = decorator(SART, name="sart")
 class SIRT(IterativeReconAlg):  
     __doc__ = (
         "SIRT solves Cone Beam CT image reconstruction using \n"
-        "Simultaneous Iterrative Reconxtructive Technique algorithm\n"
+        "Simultaneous Iterative Reconstructive Technique algorithm\n"
         "SIRT(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem\n"
         "using the projection data PROJ taken over ALPHA angles, corresponding\n"
-        "to the geometry descrived in GEO, using NITER iterations.\n"
+        "to the geometry described in GEO, using NITER iterations.\n"
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
@@ -47,10 +47,10 @@ sirt = decorator(SIRT, name="sirt")
 class OS_SART(IterativeReconAlg):  
     __doc__ = (
         "OS_SART solves Cone Beam CT image reconstruction using Oriented Subsets\n"
-        "Simultaneous Algebraic Reconxtruction Techique algorithm\n"
+        "Simultaneous Algebraic Reconstruction Technique algorithm\n"
         "OS_SART(PROJ,GEO,ALPHA,NITER,BLOCKSIZE=20) solves the reconstruction problem\n"
         "using the projection data PROJ taken over ALPHA angles, corresponding\n"
-        "to the geometry descrived in GEO, using NITER iterations.\n"
+        "to the geometry described in GEO, using NITER iterations.\n"
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
@@ -111,10 +111,10 @@ sart_tv = decorator(SART_TV, name="sart_tv")
 class OSSART_TV(IterativeReconAlg):  
     __doc__ = (
         "OSSART_TV solves Cone Beam CT image reconstruction using Oriented Subsets\n"
-        "Simultaneous Algebraic Reconxtruction Technique with TV regularization algorithm\n"
+        "Simultaneous Algebraic Reconstruction Technique with TV regularization algorithm\n"
         "OSSART_TV(PROJ,GEO,ALPHA,NITER,BLOCKSIZE=20,TVLAMBDA=50,TVITER=50) \n"
         "solves the reconstruction problem using the projection data PROJ taken\n"
-        "over ALPHA angles, corresponding to the geometry descrived in GEO,\n"
+        "over ALPHA angles, corresponding to the geometry described in GEO,\n"
         "using NITER iterations.\n"
     ) + IterativeReconAlg.__doc__
 

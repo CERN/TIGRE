@@ -166,7 +166,7 @@ def _parse_inputs(size_out, phantom_type):
 
 
 ###################################
-#  Definetions of Head phantoms:  #
+#  Definitions of Head phantoms:  #
 ###################################
 def kak_slaney():
     """
@@ -226,7 +226,7 @@ def toft_schabel():
     to yield higher contrast in the image.
     It is known as 'Modified Shepp-Logan' of the `phantom` function of "Image Processing Toolbox" for MATLAB
     In [6], it is extended to the 3D version. The parameters are as below.
-    The formula of geometry transfom for this option is the same as of [6] to reproduce the result,
+    The formula of geometry transform for this option is the same as of [6] to reproduce the result,
     while for other options, kak-slaney and yu-ye-wang, it is different.
 
     Ref:

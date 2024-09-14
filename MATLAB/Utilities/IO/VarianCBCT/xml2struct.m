@@ -37,7 +37,7 @@ function [ s ] = xml2struct( file )
         % input is a java xml object
         xDoc = file;
     else
-        %check for existance
+        %check for existence
         if (exist(file,'file') == 0)
             %Perhaps the xml extension was omitted from the file name. Add the
             %extension and try again.

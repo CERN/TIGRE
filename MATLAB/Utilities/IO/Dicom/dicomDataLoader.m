@@ -133,7 +133,7 @@ geo.dVoxel=[geo.dDetector(1);geo.dDetector(1); geo.dDetector(2)]*geo.DSO/geo.DSD
 geo.nVoxel=ceil([geo.nDetector(1)+abs(geo.offDetector(1))/geo.dDetector(1);geo.nDetector(1)+abs(geo.offDetector(1))/geo.dDetector(1);geo.nDetector(2)]);
 geo.sVoxel=geo.nVoxel.*geo.dVoxel;
 
-% this is not strictly necesary, but will make users understand the
+% this is not strictly necessary, but will make users understand the
 % geometry easier.
 % TODO: make PositionerSecondaryAngle not required at all... Need more
 % data. to test

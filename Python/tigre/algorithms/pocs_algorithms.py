@@ -50,7 +50,7 @@ class initASD_POCS(IterativeReconAlg):
     :keyword init: (str)
         Describes different initialization techniques.
             None      : Initializes the image to zeros (default)
-            "FDK"      : intializes image to FDK reconstrucition
+            "FDK"      : initializes image to FDK reconstruction
 
     :keyword verbose:  (Boolean)
         Feedback print statements for algorithm progress
@@ -60,10 +60,10 @@ class initASD_POCS(IterativeReconAlg):
         Chooses the subset ordering strategy. Options are:
             "ordered"        : uses them in the input order, but
                             divided
-            "random"         : orders them randomply
+            "random"         : orders them randomly
             
     :keyword tviter: (int)
-        Number of iterations of minmizeTV to be performed for each iter-
+        Number of iterations of minimizeTV to be performed for each iter-
         ation. Default: 20
 
     :keyword alpha: (float)
@@ -105,7 +105,7 @@ class initASD_POCS(IterativeReconAlg):
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
         
-        # kwargs.update(dict(regularisation="minimizeTV"))
+        # kwargs.update(dict(regularization="minimizeTV"))
         # if "blocksize" not in kwargs:
         #     kwargs.update(dict(blocksize=1))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)       
@@ -146,7 +146,7 @@ class initASD_POCS(IterativeReconAlg):
                 dtvg = self.alpha * dp
 
             res_prev = copy.deepcopy(self.res)
-            self.res = getattr(self, self.regularisation)(self.res, dtvg)
+            self.res = getattr(self, self.regularization)(self.res, dtvg)
             dg_vec = self.res - res_prev
             dg = im3DNORM(dg_vec, 2)
 
@@ -177,7 +177,7 @@ class ASD_POCS(initASD_POCS):
         if "blocksize" in kwargs and kwargs['blocksize']>1:
             print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
         kwargs.update(dict(blocksize=1))
-        kwargs.update(dict(regularisation="minimizeTV"))
+        kwargs.update(dict(regularization="minimizeTV"))
         
         initASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
        
@@ -196,7 +196,7 @@ class AwASD_POCS(initASD_POCS):
         if "blocksize" in kwargs and kwargs['blocksize']>1:
             print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
         kwargs.update(dict(blocksize=1))
-        kwargs.update(dict(regularisation="minimizeAwTV"))
+        kwargs.update(dict(regularization="minimizeAwTV"))
         self.delta = np.float32(-0.005) if "delta" not in kwargs else kwargs["delta"] 
         
         initASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
@@ -212,7 +212,7 @@ class OS_ASD_POCS(initASD_POCS):
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
         self.blocksize = 20 if "blocksize" not in kwargs else kwargs["blocksize"]
-        kwargs.update(dict(regularisation="minimizeTV"))
+        kwargs.update(dict(regularization="minimizeTV"))
         
         initASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
 
@@ -232,7 +232,7 @@ class OS_AwASD_POCS(initASD_POCS):
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
         self.blocksize = 20 if "blocksize" not in kwargs else kwargs["blocksize"]
-        kwargs.update(dict(regularisation="minimizeAwTV"))
+        kwargs.update(dict(regularization="minimizeAwTV"))
         self.delta = np.float32(-0.005) if "delta" not in kwargs else kwargs["delta"]
         
         initASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs) 
@@ -281,7 +281,7 @@ class initPCSD(IterativeReconAlg):
     :keyword init: (str)
         Describes different initialization techniques.
                None      : Initializes the image to zeros (default)
-              "FDK"      : intializes image to FDK reconstrucition
+              "FDK"      : initializes image to FDK reconstruction
 
     :keyword verbose:  (Boolean)
         Feedback print statements for algorithm progress
@@ -291,10 +291,10 @@ class initPCSD(IterativeReconAlg):
         Chooses the subset ordering strategy. Options are:
                  "ordered"        : uses them in the input order, but
                                     divided
-                 "random"         : orders them randomply
+                 "random"         : orders them randomly
                  
     :keyword tviter: (int)
-        Number of iterations of minmizeTV to be performed for each iter-
+        Number of iterations of minimizeTV to be performed for each iter-
         ation. Default: 20
 
     :keyword maxl2err: (float)
@@ -327,7 +327,7 @@ class initPCSD(IterativeReconAlg):
         
         # if "blocksize" not in kwargs:
         #     kwargs.update(dict(blocksize=1))
-        #kwargs.update(dict(regularisation="minimizeTV"))
+        #kwargs.update(dict(regularization="minimizeTV"))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         if "maxl2err" not in kwargs:
             self.epsilon = (
@@ -362,7 +362,7 @@ class initPCSD(IterativeReconAlg):
             dtvg = 1 if n_iter == 1 else d_p / d_p_1st
                 
             res_prev = copy.deepcopy(self.res)
-            self.res = getattr(self, self.regularisation)(self.res, dtvg)
+            self.res = getattr(self, self.regularization)(self.res, dtvg)
             dg_vec = self.res - res_prev
             dg = im3DNORM(dg_vec, 2)
             
@@ -390,7 +390,7 @@ class PCSD(initPCSD):
         if "blocksize" in kwargs and kwargs['blocksize']>1:
             print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
         kwargs.update(dict(blocksize=1))
-        kwargs.update(dict(regularisation="minimizeTV"))
+        kwargs.update(dict(regularization="minimizeTV"))
         
         initPCSD.__init__(self, proj, geo, angles, niter, **kwargs)
         
@@ -411,7 +411,7 @@ class AwPCSD(initPCSD):
         if "blocksize" in kwargs and kwargs['blocksize']>1:
             print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
         kwargs.update(dict(blocksize=1))
-        kwargs.update(dict(regularisation="minimizeAwTV"))
+        kwargs.update(dict(regularization="minimizeAwTV"))
         self.delta = np.float32(-0.005) if "delta" not in kwargs else kwargs["delta"]
             
         initPCSD.__init__(self, proj, geo, angles, niter, **kwargs)
@@ -429,7 +429,7 @@ class OS_PCSD(initPCSD):
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
         self.blocksize = 20 if "blocksize" not in kwargs else kwargs["blocksize"]
-        kwargs.update(dict(regularisation="minimizeTV"))
+        kwargs.update(dict(regularization="minimizeTV"))
             
         initPCSD.__init__(self, proj, geo, angles, niter, **kwargs)
         
@@ -449,7 +449,7 @@ class OS_Aw_PCSD(initPCSD):
     def __init__(self, proj, geo, angles, niter, **kwargs):
 
         self.blocksize = 20 if "blocksize" not in kwargs else kwargs["blocksize"]
-        kwargs.update(dict(regularisation="minimizeAwTV"))
+        kwargs.update(dict(regularization="minimizeAwTV"))
         self.delta = np.float32(-0.005) if "delta" not in kwargs else kwargs["delta"]
             
         initPCSD.__init__(self, proj, geo, angles, niter, **kwargs)

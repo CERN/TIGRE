@@ -129,7 +129,7 @@ legend('SIRT','SART','OS-SART')
 
 %% Compute the parameters for the target image
 % Knowing change of the parameters per iteration can be interesting, but
-% the main use of them would be to compare a ecosntructed image to a given
+% the main use of them would be to compare a reconstructed image to a given
 % known target image. 
 
 disp('UQI for SART,   SIRT,   OS-SART')

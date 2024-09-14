@@ -2,8 +2,8 @@
 %
 %
 %
-%  Some systems have a slight rotation of the detector due to mechanicall
-%  inacuracies. 
+%  Some systems have a slight rotation of the detector due to mechanical
+%  inaccuracies. 
 %
 %  According to the article "A geometric calibration method for cone beam
 %  CT systems" (DOI: 10.1118/1.2198187), only Roll needs to be corrected
@@ -81,7 +81,7 @@ geo.rotDetector=[roll;pitch;yaw];
 
 %% Load data and generate projections 
 % define angles
-% Load thorax phatom data
+% Load thorax phantom data
 head=headPhantom(geo.nVoxel);
 % generate projections
 projections=Ax(head,geo,angles,'interpolated');

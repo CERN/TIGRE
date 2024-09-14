@@ -2,7 +2,7 @@
  *
  * CUDA functions for Steepest descend in POCS-type algorithms.
  *
- * This file will iteratively minimize by stepest descend the total variation
+ * This file will iteratively minimize by steepest descend the total variation
  * of the input image, with the parameters given, using GPUs.
  *
  * CODE by       Ander Biguri
@@ -339,7 +339,7 @@ do { \
 
             // Assert
             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
-                mexErrMsgIdAndTxt("POCS_TV:GPU","Assertion Failed. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
+                mexErrMsgIdAndTxt("POCS_TV:GPU","Assertion Failed. Logic behind splitting flawed! Please tell: ander.biguri@gmail.com\n");
             }
         }
         
