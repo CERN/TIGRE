@@ -243,7 +243,7 @@ do { \
             
             // Assert
             if (mem_GPU_global< 5*mem_img_each_GPU){
-                mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","Bad assert. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
+                mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","Bad assert. Logic behind splitting flawed! Please tell: ander.biguri@gmail.com\n");
             }
         }
         

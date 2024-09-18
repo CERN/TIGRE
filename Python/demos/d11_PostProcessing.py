@@ -34,7 +34,7 @@ geo = tigre.geometry_default(high_resolution=False)
 #%% Load data and generate projections
 # define angles
 angles = np.linspace(0, 2 * np.pi, 100)
-# Load thorax phatom data
+# Load thorax phantom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
 # generate projections
 projections = tigre.Ax(head, geo, angles)
@@ -44,5 +44,5 @@ noise_projections = CTnoise.add(projections, Poisson=1e5, Gaussian=np.array([0, 
 #%% Some recon, FDK for example
 imgFDK = algs.fdk(projections, geo, angles)
 
-# TODO, these are not implemented/accesible in python TIGRE
+# TODO, these are not implemented/accessible in python TIGRE
 # Issues #270 #271

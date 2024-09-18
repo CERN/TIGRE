@@ -15,8 +15,8 @@ class MLEM(IterativeReconAlg):  # noqa: D101
         " \n"
         "  MLEM(PROJ,GEO,ANGLES,NITER,INIT) solves the reconstruction problem\n"
         "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
-        "  to the geometry descrived in GEO, using NITER iterations. INIT specifies\n"
-        "  starting image, defaut: None (flat image value=1)"
+        "  to the geometry described in GEO, using NITER iterations. INIT specifies\n"
+        "  starting image, default: None (flat image value=1)"
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
@@ -31,7 +31,7 @@ class MLEM(IterativeReconAlg):  # noqa: D101
         self.W = Atb(np.ones(proj.shape, dtype=np.float32), geo, angles, backprojection_type="matched", gpuids=self.gpuids)
         self.W[self.W <= 0.0] = np.inf
 
-    # Overide
+    # override
     def run_main_iter(self):
         self.res[self.res < 0.0] = 0.0
         for i in range(self.niter):

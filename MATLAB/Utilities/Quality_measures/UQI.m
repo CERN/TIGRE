@@ -20,7 +20,7 @@ function [uqi]=UQI(real,res)
 % Coded by:           Manasavee Lohvithee
 %--------------------------------------------------------------------------
 
-%% Refferences
+%% References
 % UQI in X-rays:
 %Ref: Few-view cone-beam CT reconstruction with deformed prior image
 %doi: 10.1118/1.4901265

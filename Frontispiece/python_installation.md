@@ -34,20 +34,20 @@ Tested on
 
 ### Simple Instructions
 
-We stronly recommend using `conda` enviroments and doing the install in one specific for tigre. 
+We strongly recommend using `conda` environments and doing the install in one specific for tigre. 
 
 1. Install Python and pip, MSVC and CUDA
 2. run `git clone https://github.com/CERN/TIGRE.git` 
 3. run `pip install .` in the Python folder. 
 
-A succesfull installation should be able to execute the script at `TIGRE/Python/example.py`
+A successful installation should be able to execute the script at `TIGRE/Python/example.py`
 
 ### Step by Step Instructions:
 
 1. Install [MS Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/) with Windows SDK.\
    **NOTE:** The User has to have no spaces.
 	
-2. Install Python 3 + pip. You can use a virtual [conda environment](https://www.anaconda.com/) or just a normal python installation. We strongly recommend the conda enviroments. Activate the enviroment before step 5. 
+2. Install Python 3 + pip. You can use a virtual [conda environment](https://www.anaconda.com/) or just a normal python installation. We strongly recommend the conda environments. Activate the environment before step 5. 
 
 3. Install [CUDA](https://developer.nvidia.com/cuda-downloads). Make sure the `CUDA_PATH` and `PATH` environment variable are set accordingly.\
   **NOTE:** The User has to have no spaces.
@@ -64,18 +64,18 @@ A succesfull installation should be able to execute the script at `TIGRE/Python/
 	pip install -r requirements.txt --user   
 	pip install . --user
 	```
-	**NOTE:** If you are working under the virtual environment that created by `venv` or a `conda` enviroment and you want to install TIGRE to it, 
+	**NOTE:** If you are working under the virtual environment that created by `venv` or a `conda` environment and you want to install TIGRE to it, 
 	you should remove the `--user` option. 
-	With the `--user` option, TIGRE and the other required pakages will be installed to your Python user install directory, not to your virtual environment or system directory.
+	With the `--user` option, TIGRE and the other required packages will be installed to your Python user install directory, not to your virtual environment or system directory.
 
 
-6. Try demo 3. If it runs succesfully then you are good to go.
+6. Try demo 3. If it runs successfully then you are good to go.
 
 ## Linux
 
 ### Requirements:
 
-We stronly recommend using `conda` enviroments and doing the install in one specific for tigre. 
+We strongly recommend using `conda` environments and doing the install in one specific for tigre. 
 
 1. Python 3
 2. gcc
@@ -98,7 +98,7 @@ Tested on
 2. run `git clone https://github.com/CERN/TIGRE.git` 
 3. run `python setup.py install --user` in the Python folder. 
 
-A succesfull installation should be able to execute the script at `TIGRE/Python/example.py`
+A successful installation should be able to execute the script at `TIGRE/Python/example.py`
 
 ### Step by Step Instructions:
 
@@ -138,20 +138,20 @@ For Ubuntu
 	```
 	**NOTE:** If you are working under the virtual environment that created by `venv` and you want to install TIGRE to it, 
 	you should remove the `--user` option. 
-	With the `--user` option, TIGRE and the other required pakages will be installed to your Python user install directory, not to your virtual environment or system directory.
+	With the `--user` option, TIGRE and the other required packages will be installed to your Python user install directory, not to your virtual environment or system directory.
 
 
-6. Try demo 3. If it runs succesfully then you are good to go. 
+6. Try demo 3. If it runs successfully then you are good to go. 
 
 if this fails, then try:
 
 `export CUDAHOME=yourcudahome`, e.g. default is `export CUDAHOME=/usr/local/cuda`
 `pip install . --user`
 
-**NOTE:** as of November 2020 the pip pytigre is behind the main repo, we recomedn you install it and compile it yourself. Trying to fix that. 
+**NOTE:** as of November 2020 the pip pytigre is behind the main repo, we recommend you install it and compile it yourself. Trying to fix that. 
 
 ## Optional Code Style Enforcement
-Optional linting dependences are provided to enforce the prevailing codestyle in the Python component of the TIGRE library.
+Optional linting dependencies are provided to enforce the prevailing codestyle in the Python component of the TIGRE library.
 
 The primary linting packages utilized are:
   * [black](https://black.readthedocs.io/en/stable/) for automatic code formatting

@@ -2,7 +2,7 @@
  *
  * CUDA functions for ray-voxel intersection based projection
  *
- * This file has the necesary fucntiosn to perform X-ray parallel projection
+ * This file has the necessary fucntiosn to perform X-ray parallel projection
  * operation given a geaometry, angles and image. It usesthe so-called
  * Jacobs algorithm to compute efficiently the length of the x-rays over
  * voxel space. Its called Siddon because Jacobs algorithm its just a small

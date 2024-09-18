@@ -255,7 +255,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             //
             // IMPORTANT: The weights are almost 50% of the computational time. Is there a way of speeding this up??
             //
-            //Real coordinates of Voxel. Instead of reverting the tranformation, its less math (faster) to compute it from the indexes.
+            //Real coordinates of Voxel. Instead of reverting the transformation, its less math (faster) to compute it from the indexes.
             Point3D realvoxel;
             
             realvoxel.x=realvoxel_init.x+indX*geo.dVoxelX;
@@ -495,7 +495,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                     
                     int divx,divy,divz;
                     // RB: Use the optimal (in their tests) block size from paper by Zinsser and Keck (16 in x and 32 in y).
-                    // I tried different sizes and shapes of blocks (tiles), but it does not appear to significantly affect trhoughput, so
+                    // I tried different sizes and shapes of blocks (tiles), but it does not appear to significantly affect throughput, so
                     // let's stick with the values from Zinsser and Keck.
                     divx=16;
                     divy=32;

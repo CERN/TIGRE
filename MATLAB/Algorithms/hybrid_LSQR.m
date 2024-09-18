@@ -4,24 +4,24 @@ function [x,resL2, qualMeasOut,lambda_vec]= hybrid_LSQR(proj,geo,angles,niter,va
 %
 %  hybrid_LSQR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ANGLES angles, corresponding
-%   to the geometry descrived in GEO, using NITER iterations.
+%   to the geometry described in GEO, using NITER iterations.
 %
 %  hybrid_LSQR(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 %
 %  'lambda'  Value of parameter lambda, default autocomputed.
 %  'Noiselevel' the expected nosie level, in %, replaces lambda.
-%  'Init'    Describes diferent initialization techniques.
+%  'Init'    Describes different initialization techniques.
 %             * 'none'     : Initializes the image to zeros (default)
-%             * 'FDK'      : intializes image to FDK reconstrucition
+%             * 'FDK'      : initializes image to FDK reconstruction
 %             * 'multigrid': Initializes image by solving the problem in
 %                            small scale and increasing it when relative
 %                            convergence is reached.
 %             * 'image'    : Initialization using a user specified
-%                            image. Not recomended unless you really
+%                            image. Not recommended unless you really
 %                            know what you are doing.
 %  'InitImg'    an image for the 'image' initialization. Avoid.
-%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
 %--------------------------------------------------------------------------
@@ -99,7 +99,7 @@ for ii=1:niter
         if ii==1
             x_prev=x0;
         else
-            x_prev =  x0 + reshape(V(:,1:ii)*y,size(x0)); % only store if necesary
+            x_prev =  x0 + reshape(V(:,1:ii)*y,size(x0)); % only store if necessary
         end
     end
     if (ii==1 && verbose);tic;end
@@ -211,7 +211,7 @@ end
 function out = gcv(lambda, bhat, s)
 % GCV for the projected problem - no weights
 % If Bk is the projected matrix and Bk=Uk*Sk*Vk^T
-% lambda is the regularisation parameter
+% lambda is the regularization parameter
 % bhat is Uk'*bk
 % s=diag(Sk)
 

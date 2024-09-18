@@ -116,7 +116,7 @@ The Slack team is a good place for chatting about development and questions abou
 ## Licensing
 
 The creation of TIGRE was supported by the University of Bath and CERN. It is released under the BSD License, meaning you can use and modify the software freely.  However, you **must** cite the original authors.
-For more information read [the licence file][1] or the [BSD License Definition][2].
+For more information read [the license file][1] or the [BSD License Definition][2].
 
 If you use TIGRE, please reference the following papers:
 

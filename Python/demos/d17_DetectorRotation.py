@@ -2,8 +2,8 @@
 #
 #
 #
-#  Some systems have a slight rotation of the detector due to mechanicall
-#  inacuracies.
+#  Some systems have a slight rotation of the detector due to mechanical
+#  inaccuracies.
 #
 #  According to the article "A geometric calibration method for cone beam
 #  CT systems" (DOI: 10.1118/1.2198187), only Roll needs to be corrected
@@ -52,7 +52,7 @@ yaw = 0.7 * np.linspace(0, 1, len(angles))
 geo.rotDetector = np.array(np.vstack([roll, pitch, yaw])).T
 
 #%%
-# Load thorax phatom data
+# Load thorax phantom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
 # generate projections
 projections = tigre.Ax(head, geo, angles)

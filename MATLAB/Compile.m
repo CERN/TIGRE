@@ -1,5 +1,5 @@
 function []=Compile(varargin)
-% This file will compile all the necesary mex files for TIGRE to work. You
+% This file will compile all the necessary mex files for TIGRE to work. You
 % need CUDA nvcc installed in your PC and setup with MATLAB mex.
 %
 %
@@ -73,7 +73,7 @@ if ispc
                 vs_version_string="13.0.0.0";
             else
                 error(['Error: Could not detect Visual Studio.' ...
-                    ' Pleae make sure that Visual Studio 2013 or later' ...
+                    ' Please make sure that Visual Studio 2013 or later' ...
                     ' and its C/C++ compiler.']);
             end
         end
@@ -129,7 +129,7 @@ if ispc
 end
 [cudapath, cuda_ver]=locate_cuda();
 if isempty(cudapath)
-    error(sprintf('CUDA Path not found. \nAdd the path by writting in MATLAB:\nsetenv(''CUDA_PATH'',''your path'')\nWhere "your path" is C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2, for example, \nor /usr/local/cuda on linux')) ;
+    error(sprintf('CUDA Path not found. \nAdd the path by writing in MATLAB:\nsetenv(''CUDA_PATH'',''your path'')\nWhere "your path" is C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2, for example, \nor /usr/local/cuda on linux')) ;
 end
 if ispc
     setenv('CUDA_PATH',cudapath);

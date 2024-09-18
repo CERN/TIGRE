@@ -59,7 +59,7 @@ TV regularization
 	 - IRN-CGLS-TV
 	 - hybrid-fLSQR-TV
 	 
-**Were do I start?**: LSQR. If LSQR doesn't provide stable solutions, BA-GMRES and AB-GMRES are supposed to fix that, but they require many copies (one per iteration) of the iamge, so they are very memory consuming. For regularized solutions, IRN-CGLS-TV, as the hybrid-fLSQR-TV only works for very small images,
+**Were do I start?**: LSQR. If LSQR doesn't provide stable solutions, BA-GMRES and AB-GMRES are supposed to fix that, but they require many copies (one per iteration) of the image, so they are very memory consuming. For regularized solutions, IRN-CGLS-TV, as the hybrid-fLSQR-TV only works for very small images,
 it requires large computational and memory resources. 
    
  

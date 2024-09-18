@@ -1,12 +1,12 @@
 #%% DEMO 12: Understanding different Forward projections
 #
 #
-#  In this more advanced demo, an explanation of the differecne between the
+#  In this more advanced demo, an explanation of the difference between the
 #  forward projections will be given.
 #
 #  While there are 2 backprojectors, these are less different, they just
-#  have different weigths. One of the has a FDK weigth and the other on has
-#  a weigth that makes it matematically very close to the transpose of
+#  have different weights. One of the has a FDK weight and the other on has
+#  a weight that makes it mathematically very close to the transpose of
 #  matrix A.
 #
 #
@@ -56,7 +56,7 @@ interptime = time.time() - start_time
 start_time = time.time()
 projray = tigre.Ax(head, geo, angles, "Siddon")
 raytime = time.time() - start_time
-# It is relatively clear that discretization artefacts appear with the
+# It is relatively clear that discretization artifacts appear with the
 # ray-voxel approach (middle one)
 tigre.plotproj(np.concatenate([np.abs(projInterp - projray), projray, projInterp], axis=1), angles)
 # But also the ray voxel approach is faster (more obvious at bigger sizes)
@@ -85,7 +85,7 @@ projInterp3001 = tigre.Ax(head, geo, angles, "interpolated")
 
 # the error varies, at big accuracy values because interpolated option
 # samples too few, but at small values because ray-voxel creates
-# discretization artefacts
+# discretization artifacts
 # ---------------------------------------------------------------------
 
 # However It looks like while there is a big difference between the biggest
@@ -107,10 +107,10 @@ tigre.plotproj(
 )
 
 
-# lets test the all accuracys against the smalles geo.accuracy value
+# lets test the all accuracies against the smallest geo.accuracy value
 # ---------------------------------------------------------------------
 #
-# Observe the colorbars. Note that themaximum value of the projection is
+# Observe the colorbars. Note that the maximum value of the projection is
 # around 60~, meaning a value of error of 14, is very relevant, while a
 # value of error of 0.1 is less.
 

@@ -104,7 +104,7 @@ void mexFunction(int nlhs, mxArray *plhs[],
         fGaussMu    = (float)mxGetScalar(prhs[1]);
         fGaussSigma = (float)mxGetScalar(prhs[2]);
     } else if (nrhs>4) {
-        mexErrMsgIdAndTxt("CBCT:CUDA:RNG", "Too many imput argumets");
+        mexErrMsgIdAndTxt("CBCT:CUDA:RNG", "Too many input arguments");
     }
     /////////////// First input argumet.
     // First input should be an array, whose elements are lambda.

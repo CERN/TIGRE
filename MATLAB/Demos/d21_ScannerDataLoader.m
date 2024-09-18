@@ -1,6 +1,6 @@
 %% Demo 21: Loading scanner data to TIGRE. 
 %
-% This demo will demostrate the options for loading scanner data into
+% This demo will demonstrate the options for loading scanner data into
 % TIGRE.
 %
 %   Supported Manufacturers:
@@ -47,7 +47,7 @@
 % If you have a Varian scanner that saves data in XIM format, the following
 % code will be able to load your dataset. 
 %
-% If you have a recosntructed image, it will take the geometry from there,
+% If you have a rreconstructed image, it will take the geometry from there,
 % but if you don't, it will estimate appropiate geometry. You can always
 % change the image parameters, but the detector parameters should stay the
 % same unless you change the projections. 
@@ -87,7 +87,7 @@ img=FDK(proj,geo,angles);
 
 %% YXLON
 
-% You can replace NikonDataLoader in the avobe code by YXLONDataLoader().
+% You can replace NikonDataLoader in the above code by YXLONDataLoader().
 % the rest of the functionality is the same. 
 
 datafolder='~/your_data_path/YXLON/Sample_name/';
@@ -95,7 +95,7 @@ datafolder='~/your_data_path/YXLON/Sample_name/';
 
 %% Diondo
 
-% You can replace NikonDataLoader in the avobe code by YXLONDataLoader().
+% You can replace NikonDataLoader in the above code by YXLONDataLoader().
 % the rest of the functionality is the same. 
 
 datafolder='~/your_data_path/Diondo/Sample_name/';
@@ -121,7 +121,7 @@ img=FDK(proj,geo,angles);
 
 % It is possible that your scanner is not currently supported, or that it
 % simply does not have any way of storing the information (Zeiss Xradia
-% does not store anything but the projecions)
+% does not store anything but the projections)
 
 % if this is the case, the general way of tackling the problem is:
 

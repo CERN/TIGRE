@@ -35,7 +35,7 @@ geo = tigre.geometry_default(high_resolution=False)
 #%% Load data and generate projections
 # define angles
 angles = np.linspace(0, 2 * np.pi, 100)
-# Load thorax phatom data
+# Load thorax phantom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
 # generate projections
 projections = tigre.Ax(head, geo, angles)
@@ -134,7 +134,7 @@ plt.show()
 
 #%% Compute the parameters for the target image
 # Knowing change of the parameters per iteration can be interesting, but
-# the main use of them would be to compare a ecosntructed image to a given
+# The main use of them would be to compare a reconstructed image to a given
 # known target image.
 
 sart_uqi = MQ(head, imgSART, ["UQI"])

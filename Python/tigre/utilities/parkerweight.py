@@ -31,13 +31,13 @@ def parkerweight(proj, geo, angles, q):
 
     if totangles > 2 * np.pi:
         warnings.warn(
-            "Computing Parker weigths for scanning angle equal or bigger than 2*pi "
-            "Consider disabling Parker weigths."
+            "Computing Parker weights for scanning angle equal or bigger than 2*pi "
+            "Consider disabling Parker weights."
         )
     if totangles < np.pi + 2 * delta:
         warnings.warn(
-            "Scanning angles smaller than pi+cone_angle. This is limited angle tomgraphy, \n"
-            "there is nosufficient data, thus weigthing for data redundancy is not required."
+            "Scanning angles smaller than pi+cone_angle. This is limited angle tomography, \n"
+            "there is no sufficient data, thus weighting for data redundancy is not required."
         )
     epsilon = max(totangles - (np.pi + 2 * delta), 0)
 

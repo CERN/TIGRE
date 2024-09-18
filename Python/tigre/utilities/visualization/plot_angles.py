@@ -24,7 +24,7 @@ class PlotAngles:
     Parameters
     ------------
         angle_blocks: List of subsets of extended (alpha, theta, psi) angles.
-        angle_index: List of subsets of indeces of angles.
+        angle_index: List of subsets of indexes of angles.
         savegif: Specify file name to create a gif file.
         show_plot: Set False not to display the plot.
         figsize: figsize to be passed to plt.figure()

@@ -9,7 +9,7 @@ function [h]=arrow3d(x,y,z,head_frac,radii,radii2,colr)
 %           arrow, e.g.:  x=[x_start, x_end]; y=[y_start, y_end];z=[z_start,z_end];
 %       head_frac = fraction of the arrow length where the head should  start
 %       radii = radius of the arrow
-%       radii2 = radius of the arrow head (defult = radii*2)
+%       radii2 = radius of the arrow head (default = radii*2)
 %       colr =   color of the arrow, can be string of the color name, or RGB vector  (default='blue')
 %
 % The output is the handle of the surfaceplot graphics object.

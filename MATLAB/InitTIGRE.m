@@ -101,11 +101,11 @@ if ispc
     [user, sys]=memory;
     
     if sys.PhysicalMemory.Total<9000000000 % 8Gb
-        warning('Your Computer has 8Gb or less of RAM memory. Using image sizes of higher than 512^3 is not recomended (most likely not possible)')
+        warning('Your Computer has 8Gb or less of RAM memory. Using image sizes of higher than 512^3 is not recommended (most likely not possible)')
     end
     
     if sys.PhysicalMemory.Total<2500000000 % 2Gb
-        warning('Your Computer has 2Gb or less of RAM memory. Using image sizes of higher than 256^3 is not recomended (most likely not possible)')
+        warning('Your Computer has 2Gb or less of RAM memory. Using image sizes of higher than 256^3 is not recommended (most likely not possible)')
     end
 else
     warning('TIGRE needs a big amount of memory, be careful when running big images.')

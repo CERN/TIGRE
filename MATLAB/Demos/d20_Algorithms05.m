@@ -5,7 +5,7 @@
 %  Total variation algorithms try to minimize the variation (gradient) of the
 %  image, assuming its piecewise smooth, as most things in nature are (i.e.
 %  human body). FISTA attempts to perform this with much faster convergence
-%  than sandard gradient algorithms such as SIRT.
+%  than standard gradient algorithms such as SIRT.
 % 
 % 
 %--------------------------------------------------------------------------

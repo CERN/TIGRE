@@ -5,7 +5,7 @@ function [ fres, qualMeasOut ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargi
 %
 %   B_ASD_POCS_beta(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
-%   to the geometry descrived in GEO, using NITER iterations.
+%   to the geometry described in GEO, using NITER iterations.
 %
 %   B_ASD_POCS_beta(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
@@ -17,10 +17,10 @@ function [ fres, qualMeasOut ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargi
 %   'lambdared':   Reduction of lambda.Every  iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
-%       'init':    Describes diferent initialization techniques.
+%       'init':    Describes different initialization techniques.
 %                   •  'none'     : Initializes the image to zeros(default)
 
-%                   •  'FDK'      : intializes image to FDK reconstrucition
+%                   •  'FDK'      : initializes image to FDK reconstruction
 %
 %   'TViter':      Defines the amount of TV iterations performed per SART
 %                  iteration. Default is 20
@@ -55,13 +55,13 @@ function [ fres, qualMeasOut ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargi
 %
 % 'OrderStrategy'  Chooses the subset ordering strategy. Options are
 %                  'ordered' :uses them in the input order, but divided
-%                  'random'  : orders them randomply
+%                  'random'  : orders them randomly
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
 % 'redundancy_weighting': true or false. Default is true. Applies data
 %                         redundancy weighting to projections in the update step
 %                         (relevant for offset detector geometry)
-%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
 %--------------------------------------------------------------------------
@@ -110,16 +110,16 @@ qualMeasOut=zeros(length(QualMeasOpts),maxiter);
 if ~isfield(geo,'rotDetector')
     geo.rotDetector=[0;0;0];
 end
-%% Create weigthing matrices for the SART step
-% the reason we do this, instead of calling the SART fucntion is not to
-% recompute the weigths every ASD-POCS iteration, thus effectively doubling
+%% Create weighting matrices for the SART step
+% the reason we do this, instead of calling the SART function is not to
+% recompute the weights every ASD-POCS iteration, thus effectively doubling
 % the computational time
-% Projection weigth, W
+% Projection weight, W
 
 % Projection weight, W
 W=computeW(geo,angles,gpuids);
 
-% Back-Projection weigth, V
+% Back-Projection weight, V
 V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 if redundancy_weights
     % Data redundancy weighting, W_r implemented using Wang weighting
@@ -148,7 +148,7 @@ DSO=geo.DSO;
 while ~stop_criteria %POCS
     % If quality is going to be measured, then we need to save previous image
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
-        res_prev = f; % only store if necesary
+        res_prev = f; % only store if necessary
     end
     f0=f;
     if (iter==0 && verbose==1);tic;end
@@ -172,8 +172,8 @@ while ~stop_criteria %POCS
         %         proj_err=proj(:,:,jj)-Ax(f,geo,angles(:,jj));          %                                 (b-Ax)
         %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
         %         backprj=Atb(weighted_err,geo,angles(:,jj));            %                     At * W^-1 * (b-Ax)
-        %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
-        %         f=f+beta*weigth_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
+        %         weight_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
+        %         f=f+beta*weight_backprj;                          % x= x + lambda * V * At * W^-1 * (b-Ax)
         f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(f,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
         
         % Enforce positivity

@@ -1,7 +1,7 @@
 function img=minimizeTV(img,varargin)
-%MINIMIZETV MATLAB wrapper for the CUDA stepest descend minimization of TV
+%MINIMIZETV MATLAB wrapper for the CUDA steepest descend minimization of TV
 % norm. Note that this does not minimize the TV noise, using the ROF model,
-% this minimizes the TV alone, using gradient desced. 
+% This minimizes the TV alone, using gradient descent.
 % Infinite iterations of this code will lead to a flat image.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------

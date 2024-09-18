@@ -15,11 +15,11 @@ function [proj,geo,angles]=loadNikonProjections(filepath,geo,angles,varargin)
 %                       loading of the data. 
 %                  'step': sample the entire set of projections every
 %                         'sampling_step' angles.
-%                  'continous': Load the first 'num_angles' amount of
+%                  'continuous': Load the first 'num_angles' amount of
 %                             angles only.
 %
 %           'num_angles': Number of total angles to load. Default all of
-%                    them. Useful for 'equidistant' and 'continous' loading
+%                    them. Useful for 'equidistant' and 'continuous' loading
 %
 %           'sampling_step': step to load when loading projections. Default
 %           1. Useful for 'step' loading.

@@ -38,7 +38,7 @@ imgFDK=FDK(noise_projections,geo,angles);
 %% Postprocessing
 %
 %  Currently the postprocessing steps in TIGRE are limited, but there are 2
-%  fucntions you can use
+%  functions you can use
 %
 % im3Ddenoise : Denoises a 3D image, using Total Variation denoising.
 %

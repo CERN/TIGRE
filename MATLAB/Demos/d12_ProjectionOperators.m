@@ -1,11 +1,11 @@
 %% DEMO 12: Understanding different Forward projections
 %
 %
-%  In this more advanced demo, an explanation of the differecne between the
+%  In this more advanced demo, an explanation of the difference between the
 %  forward projections will be given.
 % 
 %  While there are 2 backprojectors, these are less different, they just
-%  have different weigths. One of the has a FDK weigtht and the other on has
+%  have different weights. One of the has a FDK weightt and the other on has
 %  a weight that makes it mathematically very close to the transpose of
 %  matrix A.
 %
@@ -53,7 +53,7 @@ interptime=toc;
 tic
 projray   =Ax(shepp,geo,0,'Siddon');
 raytime=toc;
-% It is relatively clear that discretization artefacts appear with the
+% It is relatively clear that discretization artifacts appear with the
 % ray-voxel approach
 plotProj([projInterp projray abs(projInterp-projray)],0);
 % But also the ray voxel approach is faster (more obvious at bigger sizes)
@@ -84,7 +84,7 @@ projInterp3001=Ax(shepp,geo,0,'interpolated');
 
 % the error varies, at big accuracy values because interpolated option
 % samples too few, but at small values because ray-voxel creates
-% discretization artefacts
+% discretization artifacts
 % ---------------------------------------------------------------------
 
 % However It looks like while there is a big difference between the biggest
@@ -94,10 +94,10 @@ plotProj([abs(projInterp02-projray) abs(projInterp3005-projray) abs(projInterp30
       
 disp('Press enter to continue')
 pause    
-% lets test the all accuracys against the smalles geo.accuracy value
+% lets test the all accuracies against the smallest geo.accuracy value
 % ---------------------------------------------------------------------
 %
-% Observe the colorbars. Note that themaximum value of the projection is
+% Observe the colorbars. Note that the maximum value of the projection is
 % around 60~, meaning a value of error of 14, is very relevant, while a
 % value of error of 0.1 is less.
 plotProj(abs(projInterp3-projInterp3001),0);

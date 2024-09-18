@@ -18,7 +18,7 @@ def BrukerDataLoader(filepath, **kwargs):
     #    These are options in case you don't want to load the entire
     #    dataset, but only particular sets of projections.
     #    The possible arguments are:
-    #         'dataset_number': Some fodlers will have several scans.
+    #         'dataset_number': Some folders will have several scans.
     #                 Set to 'all' to load all of them, or give a number (starting from 0)
     #         'sampling': type of sampling. default 'equidistant' Can be:
     #                'equidistant': equidistantly sample the entire set
@@ -26,11 +26,11 @@ def BrukerDataLoader(filepath, **kwargs):
     #                     loading of the data.
     #                'step': sample the entire set of projections every
     #                       'sampling_step' angles.
-    #                'continous': Load the first 'num_angles' amount of
+    #                'continuous': Load the first 'num_angles' amount of
     #                           angles only.
     #
     #         'num_angles': Number of total angles to load. Default all of
-    #                  them. Useful for 'equidistant' and 'continous' loading
+    #                  them. Useful for 'equidistant' and 'continuous' loading
     #
     #         'sampling_step': step to load when loading projections.
     #                 Default=1. Useful for 'step' loading.

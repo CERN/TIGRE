@@ -5,20 +5,20 @@ function [x,errorL2, qualMeasOut,lambda_vec]= hybrid_fLSQR_TV(proj,geo,angles,ni
 % 
 %  LSQR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ANGLES angles, corresponding
-%   to the geometry descrived in GEO, using NITER iterations.
+%   to the geometry described in GEO, using NITER iterations.
 % 
 %  LSQR(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 % 
 % 
-%  'Init'    Describes diferent initialization techniques.
+%  'Init'    Describes different initialization techniques.
 %             * 'none'     : Initializes the image to zeros (default)
-%             * 'FDK'      : intializes image to FDK reconstrucition
+%             * 'FDK'      : initializes image to FDK reconstruction
 %             * 'multigrid': Initializes image by solving the problem in
 %                            small scale and increasing it when relative
 %                            convergence is reached.
 %             * 'image'    : Initialization using a user specified
-%                            image. Not recomended unless you really
+%                            image. Not recommended unless you really
 %                            know what you are doing.
 %  'InitImg'    an image for the 'image' initialization. Avoid.
 %--------------------------------------------------------------------------
@@ -121,7 +121,7 @@ errorL2 = zeros(1,niter);
 % (2) Start iterations 
 for ii=1:niter
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
-       x_prev = x; % only store if necesary
+       x_prev = x; % only store if necessary
     end
     if (ii==1 && verbose);tic;end
 
@@ -246,7 +246,7 @@ end
 function out = gcv(lambda, bhat, s)
 % GCV for the projected problem - no weights
 % If Bk is the projected matrix and Bk=Uk*Sk*Vk^T
-% lambda is the regularisation parameter
+% lambda is the regularization parameter
 % bhat is Uk'*bk 
 % s=diag(Sk) 
 

@@ -51,7 +51,7 @@ class Geometry(object):
         included_attribs_indx = [hasattr(self, attrib) for attrib in mandatory_attribs]
         if not all(included_attribs_indx):
             raise AttributeError(
-                "following manditory fields "
+                "following mandatory fields "
                 "missing from geometry:"
                 + str([attrib for attrib in mandatory_attribs if not hasattr(self, attrib)])
             )
@@ -112,10 +112,10 @@ class Geometry(object):
     def checknans(self):
         for attrib in self.__dict__:
             if str(getattr(self, attrib)) == "nan":
-                raise ValueError("nan found for Geometry abbtribute:" + attrib)
+                raise ValueError("nan found for Geometry attribute:" + attrib)
             elif type(getattr(self, attrib)) == np.ndarray:
                 if np.isnan(getattr(self, attrib)).all():
-                    raise ValueError("Nan found in Geometry abbtribute:" + attrib)
+                    raise ValueError("Nan found in Geometry attribute:" + attrib)
 
     def cast_to_single(self):
         """
@@ -332,4 +332,4 @@ def geometry(mode="cone", nVoxel=None, default=False, high_resolution=True):
     if mode == "parallel":
         return ParallelGeo(nVoxel)
     else:
-        raise ValueError("mode: " + mode + " not recognised.")
+        raise ValueError("mode: " + mode + " not recognized.")

@@ -1,5 +1,5 @@
 function [VM_proj] = MakeVMproj(material1_proj, material2_proj, energy, varargin)
-%MAKEVMPROJ Synethesizes VM projections from basis material thickness
+%MAKEVMPROJ Synthesizes VM projections from basis material thickness
 %projections.
 %   
 %   Coded by: Andrew Keeler

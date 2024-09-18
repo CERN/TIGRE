@@ -31,7 +31,7 @@ geo = tigre.geometry_default(high_resolution=False)
 #%% Load data and generate projections
 # define angles
 angles = np.linspace(0, 2 * np.pi, 100)
-# Load thorax phatom data
+# Load thorax phantom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
 # generate projections
 projections = tigre.Ax(head, geo, angles)
@@ -137,7 +137,7 @@ imgSART, qualitySART = algs.sart(
 blcks = 10
 # 'OrderStrategy':  Chooses the subset ordering strategy. Options are
 #                  'ordered' :uses them in the input order, but divided
-#                  'random'  : orders them randomply
+#                  'random'  : orders them randomly
 #                  'angularDistance': chooses the next subset with the
 #                                     biggest angular distance with the
 #                                     ones used.  (default)
@@ -175,7 +175,7 @@ plt.show()
 
 #%% plot the results
 
-# It is clear that SART will get to better results for the same amoutn of
+# It is clear that SART will get to better results for the same amount of
 # iterations, however, it takes x7 more time to run.
 
 # SART

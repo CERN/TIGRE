@@ -14,7 +14,7 @@
 % This Demo is not fully complete, as several algorithms are not shown
 % here, yet are available in TIGRE, namely:
 %
-% - AwASD_POCS:  Edge preserving ASD_POCS (Adaptative weigthed).
+% - AwASD_POCS:  Edge preserving ASD_POCS (Adaptative weighted).
 % - OS_AwASD_POCS: OS-version of the previous algorithm
 % - PCSD: A version of ASD_POCS that heuristically select some of the
 %         parameters, particularly epsilon (maxL2norm)
@@ -57,7 +57,7 @@ noise_projections=addCTnoise(projections);
 
 %% Total Variation algorithms
 %
-%  ASD-POCS: Adaptative Steeppest Descent-Projection On Convex Subsets
+%  ASD-POCS: Adaptative Steepest Descent-Projection On Convex Subsets
 % Often called POCS-TV
 %==========================================================================
 %==========================================================================
@@ -66,8 +66,8 @@ noise_projections=addCTnoise(projections);
 %  iteration. As the other algorithms the mandatory inputs are projections,
 %  geometry, angles and maximum iterations.
 %
-% ASD-POCS has a veriety of optional arguments, and some of them are crucial
-% to determine the behaviour of the algorithm. The advantage of ASD-POCS is
+% ASD-POCS has a variety of optional arguments, and some of them are crucial
+% to determine the behavior of the algorithm. The advantage of ASD-POCS is
 % the power to create good images from bad data, but it needs a lot of
 % tunning. 
 %
@@ -121,11 +121,11 @@ imgASDPOCS=ASD_POCS(noise_projections,geo,angles,50,...
 
 
                  
-%  OS_ASD_POCS: Odered Subset-TV algorithm
+%  OS_ASD_POCS: Ordered Subset-TV algorithm
 %==========================================================================
 %==========================================================================
 %
-% The logical next step to imporce ASD-POCS is substituting SART with a
+% The logical next step to improve ASD-POCS is substituting SART with a
 % faster algorithm, such as OS-SART
 %
 % The parameters are the same as in ASD-POCS, but also have 'BlockSize' and
@@ -182,7 +182,7 @@ imgBASDPOCSbeta=B_ASD_POCS_beta(noise_projections,geo,angles,50,...
 %
 %
 %  
-%   'TViter'       amoutn of iteration in theTV step. Default 50
+%   'TViter'       amount of iteration in theTV step. Default 50
 % 
 %   'TVlambda'     hyperparameter in TV iteration. IT gives the ratio of
 %                  importance of the image vs the minimum total variation.

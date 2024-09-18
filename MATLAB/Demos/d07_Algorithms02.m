@@ -116,7 +116,7 @@ qualmeas={'RMSE'};
 blcks=8;
 % 'OrderStrategy':  Chooses the subset ordering strategy. Options are
 %                  'ordered' :uses them in the input order, but divided
-%                  'random'  : orders them randomply
+%                  'random'  : orders them randomly
 %                  'angularDistance': chooses the next subset with the 
 %                                     biggest angular distance with the
 %                                     ones used.  (default)
@@ -142,7 +142,7 @@ ylabel('$ log_{10}(RMSE) $','interpreter','latex')
 
 %% plot the results
 
-% It is clear that SART will get to better results for the same amoutn of
+% It is clear that SART will get to better results for the same amount of
 % iterations, however, it takes x7 more time to run.
 
 % SART 

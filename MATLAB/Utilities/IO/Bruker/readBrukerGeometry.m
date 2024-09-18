@@ -43,7 +43,7 @@ else
     filename=file(id).name;
     fid=fopen([folder_or_file,'/',filename]);
 end
-% check if it was oppened right
+% check if it was opened right
 if(fid==-1)
     error('Wrong file path');
 end

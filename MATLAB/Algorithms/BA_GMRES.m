@@ -5,30 +5,30 @@ function [x,resL2,qualMeasOut]= BA_GMRES(proj,geo,angles,niter,varargin)
 %
 %  BA_GMRES(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ANGLES angles, corresponding
-%   to the geometry descrived in GEO, using NITER iterations.
+%   to the geometry described in GEO, using NITER iterations.
 %
 %  BA_GMRES(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 %
 %
-%  'Init'    Describes diferent initialization techniques.
+%  'Init'    Describes different initialization techniques.
 %             * 'none'     : Initializes the image to zeros (default)
-%             * 'FDK'      : intializes image to FDK reconstrucition
+%             * 'FDK'      : initializes image to FDK reconstruction
 %             * 'multigrid': Initializes image by solving the problem in
 %                            small scale and increasing it when relative
 %                            convergence is reached.
 %             * 'image'    : Initialization using a user specified
-%                            image. Not recomended unless you really
+%                            image. Not recommended unless you really
 %                            know what you are doing.
 %  'InitImg'    an image for the 'image' initialization. Avoid.
-%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
 % 'backprojector' Descrives which backprojector to use
 %
 %                *'FDK': This will use the FDK algorithm as a backprojector
 %                        NOTE: not the backprojector TIGRE calls "FDK", but
-%                        the actual algorithhm
+%                        the actual algorithm
 %                *'matched': (DEFAULT) uses the pseudo-matched backprojectors 
 %
 %--------------------------------------------------------------------------
@@ -83,7 +83,7 @@ w(:,1) = r(:)/norm(r(:),2);
 h=zeros(niter+1,niter);
 for k=1:niter
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
-        x0 = x; % only store if necesary
+        x0 = x; % only store if necessary
     end
     if (k==1 && verbose);tic;end
     

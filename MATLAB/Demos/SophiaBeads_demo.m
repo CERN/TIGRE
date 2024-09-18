@@ -13,7 +13,7 @@
 % not licensed under the BSD license, be aware.
 %
 % Additionally, if you use the dataset or the codes, they have each of them
-% their own bilbiography, that you need to reference, as per their own
+% their own bibliography, that you need to reference, as per their own
 % requirements. 
 
 % cite as:
@@ -45,7 +45,7 @@
 % 2.- Open SophiaBeads.m in the codes and replace pathname and filename (in
 %     lines 13-14 by the data path and name you chosen
 %
-% 3.- In line 27 add the followinh code:     break; 
+% 3.- In line 27 add the following code:     break; 
 %
 % 4.- Run SophiaBeads.m
 %
@@ -64,7 +64,7 @@ geo.sDetector=geo.nDetector.*geo.dDetector;
 
 % Image parameters
 geo.nVoxel=geom.voxels.';  % this is the datasheets standard size, but its 
-% very big size and most ocmputers will not be able to run it. We redefine
+% very big size and most computers will not be able to run it. We redefine
 % it in the next line, but feel free to use the original
 geo.nVoxel=[500 500 200].';
 geo.sVoxel=[geom.voxel_size.*geom.voxels].'; 

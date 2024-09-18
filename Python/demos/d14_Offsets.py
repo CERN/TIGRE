@@ -1,7 +1,7 @@
 #%% DEMO 14:  Playing with offsets
 #
 #
-# In this demo we show how to change offsets to either the iamge or the
+# In this demo we show how to change offsets to either the image or the
 # detector, and the flexibility of it.
 #
 #
@@ -46,7 +46,7 @@ geo.accuracy = 0.5
 # see previous demo for explanation
 angles = np.linspace(0, 2 * np.pi, 100)
 
-# Load thorax phatom data
+# Load thorax phantom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
 projections = tigre.Ax(head, geo, angles)
 
