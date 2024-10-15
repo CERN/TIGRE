@@ -134,6 +134,7 @@ for ii=1:niter
     if nesterov
         % The nesterov update is quite similar to the normal update, it
         % just uses this update, plus part of the last one.
+        ynesterov_prev = ynesterov;
         ynesterov=res + bsxfun(@times,1./V,Atb(W.*(proj-Ax(res,geo,angles,'gpuids',gpuids)),geo,angles,'gpuids',gpuids));
         res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
     else
