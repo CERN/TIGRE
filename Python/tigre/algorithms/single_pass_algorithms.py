@@ -72,7 +72,7 @@ def FDK(proj, geo, angles, **kwargs):
     verbose = kwargs["verbose"] if "verbose" in kwargs else False
 
     gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
-    dowang = kwargs["dowang"] if "dowang" in kwargs else False
+    dowang = kwargs["dowang"] if "dowang" in kwargs else True
 
     def zeropadding(proj, geo):
         zgeo = copy.deepcopy(geo)
@@ -90,7 +90,7 @@ def FDK(proj, geo, angles, **kwargs):
                 (proj.shape[0] , proj.shape[1], proj.shape[2]+ padwidth), dtype=proj.dtype)
             for ii in range(proj.shape[0]):
                 zproj[ii,:, :] = np.concatenate(
-                    (np.zeros((proj.shape[1], padwidth)), proj[:, :, ii]), axis=1)
+                    (np.zeros((proj.shape[1], padwidth)), proj[ii,:,:]), axis=1)
         else:
             zproj = np.zeros(
                 (proj.shape[0] , proj.shape[1] , proj.shape[2]+ abs(padwidth)), dtype=proj.dtype)
