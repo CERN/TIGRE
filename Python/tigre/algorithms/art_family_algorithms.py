@@ -127,5 +127,26 @@ class OSSART_TV(IterativeReconAlg):
 
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
+   # Override
+    def run_main_iter(self):
+        """
+        Goes through the main iteration for the given configuration.
+        :return: None
+        """
+        Quameasopts = self.Quameasopts
+
+        for i in range(self.niter):
+
+            res_prev = None
+            if Quameasopts is not None:
+                res_prev = copy.deepcopy(self.res)
+            if self.verbose:
+                self._estimate_time_until_completion(i)
+            
+            getattr(self, self.dataminimizing)()
+            # print("run_main_iter: gpuids = {}", self.gpuids)
+            self.res = im3ddenoise(self.res, self.tviter, self.tvlambda, self.gpuids)
+            if Quameasopts is not None:
+                self.error_measurement(res_prev, i)
 
 ossart_tv = decorator(OSSART_TV, name="ossart_tv")
