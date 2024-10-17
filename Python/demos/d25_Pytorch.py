@@ -24,46 +24,6 @@ import numpy as np
 import tigre.utilities.gpu as gpu
 from tigre.utilities.pytorch_bindings import A, At
 
-def get_default_3Dgeometry():
-    geo = tigre.geometry()
-    # Geometry
-    geo.DSD = 1536  # Distance Source Detector      (mm) #type:ignore
-    geo.DSO = 1000  # Distance Source Origin        (mm) #type:ignore
-    # Image parameters
-    geo.nVoxel = np.array([256, 256, 256])  # number of voxels              (vx)
-    geo.sVoxel = np.array([256, 256, 256])  # total size of the image       (mm)
-    geo.dVoxel = geo.sVoxel / geo.nVoxel  # size of each voxel            (mm)
-    # Detector parameters
-    geo.nDetector = np.array([256,256])  # number of pixels              (px)
-    geo.dDetector = np.array([geo.dVoxel[0], 1])  # size of each pixel            (mm)
-    geo.sDetector = geo.nDetector * geo.dDetector  # total size of the detector    (mm) #type:ignore
-    # Offsets
-    geo.offOrigin = np.array([0, 0, 0])  # Offset of image from origin   (mm)
-    geo.offDetector = np.array([0, 0])  # Offset of Detector            (mm)
-    # MAKE SURE THAT THE DETECTOR PIXELS SIZE IN V IS THE SAME AS THE IMAGE!
-    geo.mode = "parallel"
-    return geo
-
-def get_default_2Dgeometry():
-    geo = tigre.geometry()
-    # Geometry
-    geo.DSD = 1536  # Distance Source Detector      (mm) #type:ignore
-    geo.DSO = 1000  # Distance Source Origin        (mm) #type:ignore
-    # Image parameters
-    geo.nVoxel = np.array([1, 256, 256])  # number of voxels              (vx)
-    geo.sVoxel = np.array([1, 256, 256])  # total size of the image       (mm)
-    geo.dVoxel = geo.sVoxel / geo.nVoxel  # size of each voxel            (mm)
-    # Detector parameters
-    geo.nDetector = np.array([1, 512])  # number of pixels              (px)
-    geo.dDetector = np.array([geo.dVoxel[0], 0.8])  # size of each pixel            (mm)
-    geo.sDetector = geo.nDetector * geo.dDetector  # total size of the detector    (mm) #type:ignore
-    # Offsets
-    geo.offOrigin = np.array([0, 0, 0])  # Offset of image from origin   (mm)
-    geo.offDetector = np.array([0, 0])  # Offset of Detector            (mm)
-    # MAKE SURE THAT THE DETECTOR PIXELS SIZE IN V IS THE SAME AS THE IMAGE!
-    geo.mode = "parallel"
-    return geo
-
 def test_2D_operators(
         n_iterations = 5
     ):
@@ -76,7 +36,7 @@ def test_2D_operators(
     target_volume = torch.ones((2,1,256,256), device=f'cuda:{PYTORCH_GPU_ID}', requires_grad=True)
     
     ### Instanciate the geometry
-    geo = get_default_2Dgeometry()
+    geo =tigre.geometry(mode="fan",nVoxel=np.array([1,256, 256]))
 
     ### Instanciate the differentiable modules
     forward_operator = A(
@@ -129,7 +89,7 @@ def test_3D_operators(
     target_volume = torch.ones((2,1,256,256,256), device=f'cuda:{PYTORCH_GPU_ID}', requires_grad=True)
     
     ### Instanciate the geometry
-    geo = get_default_3Dgeometry()
+    geo = tigre.geometry(mode="cone",nVoxel=np.array([256,256,256]))
 
     ### Instanciate the differentiable modules
     forward_operator = A(

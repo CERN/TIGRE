@@ -331,5 +331,7 @@ def geometry(mode="cone", nVoxel=None, default=False, high_resolution=True):
             return Geometry()
     if mode == "parallel":
         return ParallelGeo(nVoxel)
+    if mode == "fan":
+        return tigre.fan_geometry_default(high_resolution, nVoxel)
     else:
         raise ValueError("mode: " + mode + " not recognised.")

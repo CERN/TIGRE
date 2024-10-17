@@ -20,6 +20,7 @@ if hasattr(os, "add_dll_directory"):
 
 from .utilities.geometry import geometry
 from .utilities.geometry_default import ConeGeometryDefault as geometry_default
+from .utilities.geometry_default import FanGeometryDefault as fan_geometry_default
 from .utilities.Ax import Ax
 from .utilities.Atb import Atb
 from .utilities.visualization.plotproj import plotproj, plotProj, plotSinogram
