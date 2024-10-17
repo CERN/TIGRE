@@ -143,7 +143,9 @@ def FDK(proj, geo, angles, **kwargs):
 
         return proj_w, w
 
-
+    if not any(geo.offDetector):
+        dowang = False
+        
     if dowang:
         if verbose:
             print('FDK: applying detector offset weights')
