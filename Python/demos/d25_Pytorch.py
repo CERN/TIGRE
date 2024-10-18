@@ -147,13 +147,14 @@ if __name__ == '__main__':
     TIGRE_GPU_ID = TIGRE_GPU_ID[3]
     PYTORCH_GPU_ID = TIGRE_GPU_ID.devices[0]
     print(f'Using GPU {TIGRE_GPU_ID} for TIGRE and GPU {PYTORCH_GPU_ID} for PyTorch')
-    PYTORCH_GPU_ID = 2 
+    PYTORCH_GPU_ID = 3 
     #geo=get_default_2Dgeometry()
     geo = tigre.geometry(mode="fan")
     angles = np.linspace(0, np.pi, 200)
     op, opt = create_pytorch_operator(geo, angles, TIGRE_GPU_ID)
     input_volume = torch.zeros([2,geo.nVoxel[0], geo.nVoxel[1],geo.nVoxel[2]], device=f'cuda:{PYTORCH_GPU_ID}', requires_grad=True)
     sinogram = op(input_volume)
+    #sinogram = torch.zeros([2,1, len(angles), geo.nDetector[1]], device=f'cuda:{PYTORCH_GPU_ID}', requires_grad=True)
     print(f'Input volume: {input_volume.shape}')
     print(f'Sinogram: {sinogram.shape}')
     print(f'Output volume: {opt(sinogram).shape}')
