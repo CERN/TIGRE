@@ -91,7 +91,8 @@ class ATBFunction(torch.autograd.Function):
                     angles,
                     gpuids = gpuids)
             result.append(atb)
-        result = torch.tensor(np.stack(result), requires_grad=True).to(device)
+        result = torch.tensor(np.stack(result), requires_grad=True)
+     
 
         if len(input_dimension) == 5:
             result = result.unsqueeze(1)

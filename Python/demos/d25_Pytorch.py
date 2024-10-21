@@ -135,30 +135,26 @@ from tigre.utilities.pytorch_bindings import create_pytorch_operator
 
 if __name__ == '__main__':    
     ### Get GPU id
+    torch.cuda.set_device(3)
     listGpuNames = gpu.getGpuNames()
-    if len(listGpuNames) == 0:
-        print("Error: No gpu found")
-        raise RuntimeError('There needs to be a GPU')
-    else:
-        for id in range(len(listGpuNames)):
-            print("{}: {}".format(id, listGpuNames[id]))
 
     TIGRE_GPU_ID   = gpu.getGpuIds(listGpuNames[3])
     TIGRE_GPU_ID = TIGRE_GPU_ID[3]
     PYTORCH_GPU_ID = TIGRE_GPU_ID.devices[0]
+    PYTORCH_GPU_ID = 3
+
     print(f'Using GPU {TIGRE_GPU_ID} for TIGRE and GPU {PYTORCH_GPU_ID} for PyTorch')
-    PYTORCH_GPU_ID = 3 
     #geo=get_default_2Dgeometry()
     geo = tigre.geometry(mode="fan")
     angles = np.linspace(0, np.pi, 200)
     op, opt = create_pytorch_operator(geo, angles, TIGRE_GPU_ID)
     input_volume = torch.zeros([2,geo.nVoxel[0], geo.nVoxel[1],geo.nVoxel[2]], device=f'cuda:{PYTORCH_GPU_ID}', requires_grad=True)
     sinogram = op(input_volume)
-    #sinogram = torch.zeros([2,1, len(angles), geo.nDetector[1]], device=f'cuda:{PYTORCH_GPU_ID}', requires_grad=True)
+    sinogram = torch.zeros([2,1, len(angles), geo.nDetector[1]], device=f'cuda:{PYTORCH_GPU_ID}', requires_grad=True)
     print(f'Input volume: {input_volume.shape}')
     print(f'Sinogram: {sinogram.shape}')
     print(f'Output volume: {opt(sinogram).shape}')
-    #test_2D_operators()
+    test_2D_operators()
     #test_3D_operators()
 
     

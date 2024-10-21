@@ -581,7 +581,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
     }
     cudaCheckErrors("cudaFree  fail");
 #endif
-    cudaDeviceReset();
+    //cudaDeviceReset();
     return 0;
 }
 
