@@ -4,7 +4,6 @@ from __future__ import print_function
 import inspect
 
 import numpy as np
-import numpy.matlib as matlib
 import tigre
 
 
@@ -141,16 +140,16 @@ class Geometry(object):
         old_attrib = getattr(self, attrib)
 
         if type(old_attrib) in [float, int, np.float32, np.float64, np.int32]:
-            new_attrib = matlib.repmat(old_attrib, 1, angles.shape[0])[0]
+            new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
             setattr(self, attrib, new_attrib)
 
         elif type(old_attrib) == np.ndarray:
             if old_attrib.ndim == 1:
                 if old_attrib.shape in [(3,), (2,)] and attrib not in ["DSD", "DSO", "COR"]:
-                    new_attrib = matlib.repmat(old_attrib, angles.shape[0], 1)
+                    new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
                     setattr(self, attrib, new_attrib)
                 elif old_attrib.shape in [(1,)]:
-                    new_attrib = matlib.repmat(old_attrib, angles.shape[0], 1)
+                    new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
                     setattr(self, attrib, new_attrib)
                 elif old_attrib.shape == (angles.shape[0],):
                     pass
