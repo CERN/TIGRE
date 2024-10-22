@@ -3,7 +3,7 @@
  * MATLAB MEX gateway for projection
  *
  * This file gets the data from MATLAB, checks it for errors and then
- * parses it to C and calls the relevant C/CUDA fucntions.
+ * parses it to C and calls the relevant C/CUDA functions.
  *
  * CODE by       Ander Biguri
  *
@@ -129,7 +129,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 
     // Now that input is ok, parse it to C data types.
     float  *  img = static_cast<float  *>(mxGetData(image));
-    // We need a float image, and, unfortunatedly, the only way of casting it is by value
+    // We need a float image, and, unfortunately, the only way of casting it is by value
     const mwSize *size_img= mxGetDimensions(image); //get size of image
     
     

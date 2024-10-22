@@ -37,7 +37,7 @@ geo.offDetector=[0; geo.sDetector(2)/2];    % Offset of Detector            (mm)
 % Auxiliary
 geo.accuracy=0.5;                           % Variable to define accuracy of
 % 'interpolated' projection
-% It defines the amoutn of
+% It defines the amount of
 % samples per voxel.
 % Recommended <=0.5             (vx/sample)
 % Optional Parameters

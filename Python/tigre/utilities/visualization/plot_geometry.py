@@ -33,7 +33,7 @@ TRANS_DEFAULT = np.array([0, 0, 0])
 
 def pathpatch_2d_to_3d_affine(pathpatch, mat_rot=ROT_DEFAULT, vec_trans=TRANS_DEFAULT):
     """
-    Transforms a 2D Patch to a 3D patch using the affine tranform
+    Transforms a 2D Patch to a 3D patch using the affine transform
     of the given rotation matrix and translation vector.
     The pathpatch is assumed to be on the plane Z = 0.
     """

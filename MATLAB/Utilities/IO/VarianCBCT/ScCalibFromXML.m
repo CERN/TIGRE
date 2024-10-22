@@ -38,7 +38,7 @@ fclose(fidtmp);
 %% Export as struct
 tmp = xml2struct(tmpfilename);
 ScCalibXML = tmp.Calibration;
-% delete temperary file
+% delete temporary file
 delete(tmpfilename);
 
 end

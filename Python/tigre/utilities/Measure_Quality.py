@@ -58,7 +58,7 @@ def Measure_Quality(res_prev, res, QualMeasOpts):  # noqa: N803
             mean_res_p = res_prev.mean()
             mean_res = res.mean()
             if mean_res == 0 and mean_res_p == 0:
-                raise ValueError("Initialising with 0 matrix not valid")
+                raise ValueError("Initializing with 0 matrix not valid")
             # Luminance Comparison
 
             K1 = 0.01  # K1 is a small constant <<1
@@ -92,7 +92,7 @@ def Measure_Quality(res_prev, res, QualMeasOpts):  # noqa: N803
             varres_p = np.var(res_prev)
             varres = np.var(res)
             if mean_res == 0 and mean_res_p == 0:
-                raise ValueError("Initialising with 0 matrix not valid")
+                raise ValueError("Initializing with 0 matrix not valid")
             # Covariance
             cova = np.sum((res - mean_res) * (res_prev - mean_res_p)) / (N - 1)
             front = (2 * cova) / (varres + varres_p)

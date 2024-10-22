@@ -17,7 +17,7 @@ img3D_f = img3D;
 
 %% slice by slice
 for ii = 1:size(img3D,3)    
-    % Cartisan to Polar
+    % Cartesian to Polar
     imP = ImToPolar(img3D(:,:,ii), 0, 1, imgSize, imgSize);
     sum_over_col = sum(imP,2);
     

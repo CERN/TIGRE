@@ -243,7 +243,7 @@ do { \
             
             // Assert
             if (mem_GPU_global< 5*mem_img_each_GPU){
-                mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","Bad assert. Logic behind spliting flawed! Please tell: ander.biguri@gmail.com\n");
+                mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","Bad assert. Logic behind splitting flawed! Please tell: ander.biguri@gmail.com\n");
             }
         }
         
@@ -402,6 +402,8 @@ do { \
                     for (dev = 0; dev < deviceCount; dev++){   
                         cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+1]);
+                        // Sometimes the last_chunk is smaller than the other ones, and thus if we don't reset the memory to zero, we'll gave ghosts residual data in the variable
+                        cudaMemsetAsync(d_u[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]); 
                         cudaMemcpyAsync(d_u [dev] +offset_device[dev], h_u +offset_host[dev],  bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
                        
                     }
@@ -409,25 +411,32 @@ do { \
                     for (dev = 0; dev < deviceCount; dev++){   
                         cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+2]);
+                        // Sometimes the last_chunk is smaller than the other ones, and thus if we don't reset the memory to zero, we'll gave ghosts residual data in the variable
+                        cudaMemsetAsync(d_px[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]); 
                         cudaMemcpyAsync(d_px[dev]+offset_device[dev], h_px+offset_host[dev],  bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+2]);
                        
                     }
                     for (dev = 0; dev < deviceCount; dev++){   
                         cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+3]);
+                        // Sometimes the last_chunk is smaller than the other ones, and thus if we don't reset the memory to zero, we'll gave ghosts residual data in the variable
+                        cudaMemsetAsync(d_py[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]); 
                         cudaMemcpyAsync(d_py[dev] +offset_device[dev], h_py+offset_host[dev],  bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+3]);
                         
                     }
                     for (dev = 0; dev < deviceCount; dev++){   
                         cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+4]);
+                        // Sometimes the last_chunk is smaller than the other ones, and thus if we don't reset the memory to zero, we'll gave ghosts residual data in the variable
+                        cudaMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]); 
                         cudaMemcpyAsync(d_pz[dev] +offset_device[dev], h_pz+offset_host[dev],  bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+4]);
                         
                     } 
                     for (dev = 0; dev < deviceCount; dev++){   
-
-                        
+                        cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+1]);
+                         // Sometimes the last_chunk is smaller than the other ones, and thus if we don't reset the memory to zero, we'll gave ghosts residual data in the variable
+                        cudaMemsetAsync(d_src[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]); 
                         cudaMemcpyAsync(d_src[dev]+offset_device[dev], src +offset_host[dev],  bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
                         
 

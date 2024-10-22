@@ -1,6 +1,6 @@
 function plotImg(img,varargin)
 % PLOTIMG plots a 3D image in slices
-%   PLOTIMG(IMG) plots 3D image IMG looping thourgh X axis (first
+%   PLOTIMG(IMG) plots 3D image IMG looping through X axis (first
 %   dimension)
 %   PLOTIMG(IMG,OPT,VAL,...) uses options and values for plotting. The
 %   possible options in OPT are:
@@ -8,20 +8,20 @@ function plotImg(img,varargin)
 %   'Step':     Sets the step size between slice and slice. Step is 1 by
 %               default.
 %   
-%   'Dim':      Sets the dimensions in which the function iterates trhough.
+%   'Dim':      Sets the dimensions in which the function iterates through.
 %               Default is 1 or 'X', possibilities are 2,3 or 'Y','Z' 
 %               respectively. 
 %   
 %   'Savegif':  With an string in VAL, saves the image as .gif with
 %               VAL as filename
 %   'Colormap': Sets the colormap. Possible values for VAL are the names of
-%               the stadard MATLAB colormaps, the names in the perceptually 
+%               the standard MATLAB colormaps, the names in the perceptually 
 %               uniform colormaps tool or a custom colormap, being this last 
 %               one a 3xN matrix. Default is GRAY
 %   'Clims':    a 2x1 matrix setting the upper and lower limits of the
 %               colors. The default computes the lower and upper percentile
 %               of data, in 1% and 99% and sets the limits to that.
-%   'Slice'     Plots a single slice of the data. Overwrittes Step.
+%   'Slice'     Plots a single slice of the data. Overwrites Step.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox

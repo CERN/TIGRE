@@ -35,7 +35,7 @@ import tigre.algorithms as algs
 # HERE COMES THE TRICK.
 #
 # 1- Make the detector Nx1 (instead of 1)
-# 2- Make the image NxMx1  (isntead of 1)
+# 2- Make the image NxMx1  (instead of 1)
 
 geo = tigre.geometry()
 # VARIABLE                                   DESCRIPTION                    UNITS
@@ -58,7 +58,7 @@ geo.offDetector = np.array([0, 0])  # Offset of Detector            (mm)
 
 geo.mode = "parallel"
 
-#%% Define angles of projection and load phatom image
+#%% Define angles of projection and load phantom image
 
 angles = np.linspace(0, 2 * np.pi, 100)
 head = sample_loader.load_head_phantom(geo.nVoxel)
@@ -100,7 +100,7 @@ geo.offDetector = np.array([0, 0])  # Offset of Detector            (mm)
 
 geo.mode = "cone"
 
-#%% Define angles of projection and load phatom image
+#%% Define angles of projection and load phantom image
 
 angles = np.linspace(0, 2 * np.pi, 100)
 head = sample_loader.load_head_phantom(geo.nVoxel)

@@ -64,7 +64,7 @@ class IterativeReconAlg(object):
     :keyword init: (str)
         Describes different initialization techniques.
                None      : Initializes the image to zeros (default)
-              "FDK"      : intializes image to FDK reconstrucition
+              "FDK"      : initializes image to FDK reconstruction
 
     :keyword verbose:  (Boolean)
         Feedback print statements for algorithm progress
@@ -74,7 +74,7 @@ class IterativeReconAlg(object):
         Chooses the subset ordering strategy. Options are:
                  "ordered"        : uses them in the input order, but
                                     divided
-                 "random"         : orders them randomply
+                 "random"         : orders them randomly
 
     :keyword tviter: (int)
         For algorithms that make use of a tvdenoising step in their
@@ -164,7 +164,7 @@ class IterativeReconAlg(object):
             "rmax",
             "maxl2err",
             "delta",
-            "regularisation",
+            "regularization",
             "tviter",
             "tvlambda",
             "hyper",
@@ -182,7 +182,7 @@ class IterativeReconAlg(object):
                         print(
                             "Warning: "
                             + kw
-                            + " not recognised as default parameter for instance of IterativeReconAlg."  # noqa: E501
+                            + " not recognized as default parameter for instance of IterativeReconAlg."  # noqa: E501
                         )
         if self.angles.ndim == 1:
             a1 = self.angles
@@ -268,7 +268,7 @@ class IterativeReconAlg(object):
 
     def set_res(self):
         """
-        Calulates initial value for res if this is not given.
+        Calculates initial value for res if this is not given.
         :return: None
         """
         self.res = np.zeros(self.geo.nVoxel, dtype=np.float32)
@@ -290,9 +290,9 @@ class IterativeReconAlg(object):
             if (self.geo.nVoxel == init.shape).all():
                 self.res = init
             else:
-                raise ValueError("wrong dimension of array for initialisation")
+                raise ValueError("wrong dimension of array for initialization")
         elif init is not None:
-            raise ValueError("wrong value for initialisation")
+            raise ValueError("wrong value for initialization")
 
     def set_angle_index(self):
         """
@@ -449,7 +449,7 @@ def decorator(IterativeReconAlg, name=None, docstring=None):  # noqa: N803
     --------
     >>> import tigre
     >>> from tigre.demos.Test_data.data_loader import load_head_phantom
-    >>> geo = tigre.geometry_defaut(high_resolution=False)
+    >>> geo = tigre.geometry_default(high_resolution=False)
     >>> src = load_head_phantom(number_of_voxels=geo.nVoxel)
     >>> proj = Ax(src,geo,angles)
     >>> angles = np.linspace(0,2*np.pi,100)

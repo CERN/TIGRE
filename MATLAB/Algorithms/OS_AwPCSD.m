@@ -16,10 +16,10 @@ function [ f,resL2,qualMeasOut] = OS_AwPCSD(proj,geo,angles,maxiter,varargin)
 %   'lambdared':   Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
-%       'init':    Describes diferent initialization techniques.
+%       'init':    Describes different initialization techniques.
 %                   •  'none'     : Initializes the image to zeros(default)
 
-%                   •  'FDK'      : intializes image to FDK reconstrucition
+%                   •  'FDK'      : initializes image to FDK reconstruction
 %
 %   'TViter':      Defines the amount of TV iterations performed per SART
 %                  iteration. Default is 20
@@ -45,13 +45,13 @@ function [ f,resL2,qualMeasOut] = OS_AwPCSD(proj,geo,angles,maxiter,varargin)
 %                  then OS-SART becomes SIRT. Default is 20.
 % 'OrderStrategy'  Chooses the subset ordering strategy. Options are
 %                  'ordered' :uses them in the input order, but divided
-%                  'random'  : orders them randomply
+%                  'random'  : orders them randomly
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
 % 'redundancy_weighting': true or false. Default is true. Applies data
 %                         redundancy weighting to projections in the update step
 %                         (relevant for offset detector geometry)
-%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
 %--------------------------------------------------------------------------
@@ -106,16 +106,16 @@ if ~isfield(geo,'rotDetector')
     geo.rotDetector=[0;0;0];
 end
 
-%% Create weigthing matrices for the SART step
-% the reason we do this, instead of calling the SART fucntion is not to
-% recompute the weigths every AwASD-POCS iteration, thus effectively doubling
+%% Create weighting matrices for the SART step
+% the reason we do this, instead of calling the SART function is not to
+% recompute the weights every AwASD-POCS iteration, thus effectively doubling
 % the computational time
-% Projection weigth, W
+% Projection weight, W
 
 % Projection weight, W
 W=computeW(geo,angles,gpuids);
 
-% Back-Projection weigth, V
+% Back-Projection weight, V
 V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
 if redundancy_weights
@@ -140,7 +140,7 @@ DSO=geo.DSO;
 while ~stop_criteria %POCS
     % If quality is going to be measured, then we need to save previous image
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
-        res_prev = f; % only store if necesary
+        res_prev = f; % only store if necessary
     end
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;

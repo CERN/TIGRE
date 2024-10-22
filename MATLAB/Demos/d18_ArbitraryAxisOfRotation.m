@@ -2,7 +2,7 @@
 %
 %
 %
-% Some modenr CT geometires are starting to be a bit more complex, one of
+% Some modern CT geometries are starting to be a bit more complex, one of
 % the common things being arbitrary axis of rotation i.e. the detector and the
 % source can move not in a circular path, but in a "spherical" path. 
 %

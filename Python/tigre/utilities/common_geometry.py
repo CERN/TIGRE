@@ -6,7 +6,7 @@ from .geometry import Geometry
 # Tomosymthesis
 def staticDetectorGeo(geo,angles,rot=0) -> Geometry:
     """
-    # angles: angle off the aixs between the source and detector centre (on x-y plane)
+    # angles: angle off the axis between the source and detector centre (on x-y plane)
     #         when angles=0, the source is perpendicular to the detector
     # rot: rotation of both source and detector around origin
     """
@@ -24,10 +24,10 @@ def staticDetectorGeo(geo,angles,rot=0) -> Geometry:
 # Linear scan of source
 def staticDetLinearSourceGeo(geo,s_pos,s_rot=0,rot=0) -> Geometry:
     """
-    # s_pos: distance along source scanning linear trajectry 
-    #        when s_pos = 0, source is aligned to the origin and detector centre on x-axis
-    # s_rot: rotation angle between the source linear trajectry and detector on (looking from top on x-y plane, anticlock-wise) 
-    # rot: source and detector rotation angle around the origin (looking from top on x-y plane, anit-clockwise) 
+    # s_pos: distance along source scanning linear trajectory 
+    #        when s_pos = 0, source is aligned to the origin and detector center on x-axis
+    # s_rot: rotation angle between the source linear trajectory and detector (looking from top on x-y plane, anticlockwise)
+    # rot: source and detector rotation angle around the origin (looking from top on x-y plane, anticlockwise) 
     """
     ngeo = copy.deepcopy(geo)
     if np.isscalar(s_rot):
@@ -149,10 +149,10 @@ def ArbitrarySourceDetectorFixedObject(
     geo: Geometry object
     focal_spot_position_mm: position of the source, 
     detector_center_position_mm: position of the detector center, 
-    detector_line_direction: detecor line vector from pixel (0, 0) -> (0, 1), 
-    detector_column_direction: detecor column vector from pixel (0, 0) -> (1, 0),
+    detector_line_direction: detector line vector from pixel (0, 0) -> (0, 1), 
+    detector_column_direction: detector column vector from pixel (0, 0) -> (1, 0),
     origin_mm: origin of the ct trajectory. The source and detector positions are translated with this value. Defaults to: None.
-    use_center_correction: Calculate an arbiatary origin of the trajectory. Defaults to: True.
+    use_center_correction: Calculate an arbitrary origin of the trajectory. Defaults to: True.
     """
 
     # Assumption: CT trajectory has one rotation center.

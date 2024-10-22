@@ -47,7 +47,7 @@ function [res,resL2,qualMeasOut]=SART_TV(proj,geo,angles,niter,varargin)
 % 'redundancy_weighting': true or false. Default is true. Applies data
 %                         redundancy weighting to projections in the update step
 %                         (relevant for offset detector geometry)
-%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
 %--------------------------------------------------------------------------
@@ -129,7 +129,7 @@ for ii=1:niter
     % If quality is going to be measured, then we need to save previous image
     % THIS TAKES MEMORY!
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
-        res_prev = res; % only store if necesary
+        res_prev = res; % only store if necessary
     end
     
     
@@ -152,8 +152,8 @@ for ii=1:niter
         %         proj_err=proj(:,:,jj)-Ax(res,geo,angles(:,jj));     %                                 (b-Ax)
         %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
         %         backprj=Atb(weighted_err,geo,angles(:,jj));         %                     At * W^-1 * (b-Ax)
-        %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
-        %         res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
+        %         weight_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
+        %         res=res+lambda*weight_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
         res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
         if nonneg
             res=max(res,0);

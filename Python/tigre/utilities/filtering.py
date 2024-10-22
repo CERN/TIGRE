@@ -80,7 +80,7 @@ def filter(filter, kernel, order, d, verbose=False):
     elif filter == "hann":
         filt[1:] *= (1 + np.cos(w[1:] / d)) / 2
     else:
-        raise ValueError("filter not recognised: " + str(filter))
+        raise ValueError("filter not recognized: " + str(filter))
 
     filt[w > np.pi * d] = 0
     filt = np.hstack((filt, filt[1:-1][::-1]))

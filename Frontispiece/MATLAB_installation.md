@@ -19,7 +19,7 @@ Installation Instructions for MATLAB
 ### Requirements:
 
 1. MATLAB
-2. Visual Studio (Community or Profesional)
+2. Visual Studio (Community or Professional)
 3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.5](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
 4. CUDA Toolkit (9.2 or newer)
 
@@ -36,10 +36,10 @@ Tested on
 
 ### Simple Instructions
 
-1. Install MATLAB, Visual Studio and CUDA (Remember to install C++ when isntalling Visual Studio!)
+1. Install MATLAB, Visual Studio and CUDA (Remember to install C++ when installing Visual Studio!)
 2. Run `Compile.m`
 
-A succesfull installation should be able to execute the script at `TIGRE/MATLAB/Demos/d03_generateData.m` without errors.
+A successful installation should be able to execute the script at `TIGRE/MATLAB/Demos/d03_generateData.m` without errors.
 
 
 
@@ -49,12 +49,12 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 
 2. Install CUDA
 
-   Any version avobe 9.2 has been tested, however its recommended to get the latests version as possible, for performance and support.\
+   Any version above 9.2 has been tested, however its recommended to get the latests version as possible, for performance and support.\
    [CUDA download link](https://developer.nvidia.com/cuda-downloads)\
    [Detailed installation guide](https://developer.download.nvidia.com/compute/cuda/10.0/Prod/docs/sidebar/CUDA_Installation_Guide_Windows.pdf)\
    **NOTE**: In windows at least, the User has to have no spaces. 
    
-3. Install Visiual Studio
+3. Install Visual Studio
 
    **Make sure you install C++**.\
    [Download link for the latest version](https://visualstudio.microsoft.com/downloads/)\
@@ -64,7 +64,7 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 4. Download TIGRE
 
    If you are using git, run: `git clone https://github.com/CERN/TIGRE.git`\
-   Manually [download zip file](https://github.com/CERN/TIGRE/archive/master.zip) oherwise.
+   Manually [download zip file](https://github.com/CERN/TIGRE/archive/master.zip) otherwise.
 
 5. Test the correct configuration of Visual Studio 
 
@@ -81,13 +81,13 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
    Note the last 3 **Yes**. If those are not there it means that you do not have installed C++ on step 3 of this tutorial.\
    To fix:\
    -go to `Control panel>Add or remove programs -> Visual studio community 20XX -> modify`\
-   -`Lanugages -> Visual C++`
+   -`Languages -> Visual C++`
    
    Make sure that when you run `mex -setup -v` C++ is installed and Visual Studio is selected as the compiler for C/C++
    
 6. By opening MATLAB on `yourTIGREpath/MATLAB`, execute `Compile.m`
 
-   If it fails, try opening `mex_CUDA_win64.xml` with your favourite editor and changing line 125 to link to your local `nvcc` location.
+   If it fails, try opening `mex_CUDA_win64.xml` with your favorite editor and changing line 125 to link to your local `nvcc` location.
    
 7. Initialize TIGRE by typing `InitTIGRE` on the MATLAB Command Window.
 
@@ -120,7 +120,7 @@ Tested on
 1. Install MATLAB, gcc and CUDA
 2. Run `Compile.m`
 
-A succesfull installation should be able to execute the script at `TIGRE/MATLAB/Demos/d03_generateData.m` without errors.
+A successful installation should be able to execute the script at `TIGRE/MATLAB/Demos/d03_generateData.m` without errors.
 
 ### Step by Step Instructions:
 
@@ -139,12 +139,12 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 4. Download TIGRE
 
    If you are using git, run: `git clone https://github.com/CERN/TIGRE.git`\
-   Manually [download zip file](https://github.com/CERN/TIGRE/archive/master.zip) oherwise.
+   Manually [download zip file](https://github.com/CERN/TIGRE/archive/master.zip) otherwise.
    
 5. Make sure your terminal knows where CUDA is.
 
    For Ubuntu:
-   - Using your favourite test editor, open ~/.bashrc. e.g. `gedit ~/.bashrc`.
+   - Using your favorite test editor, open ~/.bashrc. e.g. `gedit ~/.bashrc`.
    - Append to the file the following lines:
      ```
 	 export LD_LIBRARY_PATH=/usr/local/cuda/lib64

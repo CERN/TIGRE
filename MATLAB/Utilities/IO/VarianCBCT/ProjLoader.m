@@ -4,10 +4,10 @@ function [proj, angles, airnorm] = ProjLoader(datafolder,varargin)
 % .xim files are exported under service mode, as a single .zip file
 % Once unzipped, all relevant files are organized under the same root folder
 % Input:
-%       datafolder    : root folder of the upzipped files,
+%       datafolder    : root folder of the unzipped files,
 %                       or the subfolder Acquisitions where all xim files are stored
-%       thd           : 0(default), no motion lag correcion
-%                       thd,  motion correcion threadhold
+%       thd           : 0(default), no motion lag correction
+%                       thd,  motion correction threshold
 % Output:
 %       proj          : .xim pixel_images frame by frame
 %       angles        : KVSourceRtn at each frame

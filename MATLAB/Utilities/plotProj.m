@@ -9,7 +9,7 @@ function plotProj(proj,alpha,varargin)
 %           Posible options in OPTS are:
 % 
 %   'Colormap': Sets the colormap. Possible values for VAL are the names of
-%               the stadard MATLAB colormaps, the names in the perceptually 
+%               the standard MATLAB colormaps, the names in the perceptually 
 %               uniform colormaps tool or a custom colormap, being this last 
 %               one a 3xN matrix. Default is GRAY
 %   'Clims':    a 2x1 matrix setting the upper and lower limits of the

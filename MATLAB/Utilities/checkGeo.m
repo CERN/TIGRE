@@ -13,7 +13,7 @@ fnames=fieldnames(geo);
 unknown=~ismember(fnames,allfields);
 % there must be not unknown variables
 % TODO: Do we really want to enforce this? Perhaps just a warning?
-assert(~sum(unknown),'TIGRE:checkGeo:BadGeometry',['The following fields are not known by TIGRE:\n' strjoin(fnames(unknown)),'\nMake sure you have not misspelled any field or introduced unnecesary fields.'])
+assert(~sum(unknown),'TIGRE:checkGeo:BadGeometry',['The following fields are not known by TIGRE:\n' strjoin(fnames(unknown)),'\nMake sure you have not misspelled any field or introduced unnecessary fields.'])
 
 
 

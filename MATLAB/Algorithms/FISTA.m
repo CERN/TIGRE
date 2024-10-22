@@ -13,9 +13,9 @@ function [res,resL2,qualMeasOut] = FISTA(proj,geo,angles,niter,varargin)
 %               geo.nVoxel = [64,64,64]'    ,      hyper (approx=) 2.e8
 %               geo.nVoxel = [512,512,512]' ,      hyper (approx=) 2.e4
 %          Default: 2.e8
-% 'init':    Describes diferent initialization techniques.
+% 'init':    Describes different initialization techniques.
 %             •  'none'     : Initializes the image to zeros (default)
-%             •  'FDK'      : intializes image to FDK reconstrucition
+%             •  'FDK'      : initializes image to FDK reconstruction
 % 'tviter':  Number of iterations of Im3ddenoise to use. Default: 20
 % 'lambda':  Multiplier for the tvlambda used, which is proportional to
 %            L (hyper). Default: 0.1
@@ -29,7 +29,7 @@ function [res,resL2,qualMeasOut] = FISTA(proj,geo,angles,niter,varargin)
 %                parameters. Input should contain a cell array of desired
 %                quality measurement names. Example: {'CC','RMSE','MSSIM'}
 %                These will be computed in each iteration.
-%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
 %--------------------------------------------------------------------------
@@ -81,7 +81,7 @@ r = 1/4;
 
 for ii = 1:niter
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
-        res_prev = res; % only store if necesary
+        res_prev = res; % only store if necessary
     end
     if (ii==1);tic;end
     % gradient descent step

@@ -4,23 +4,23 @@ function [x_outer,resL2,qualMeasOut]= IRN_TV_CGLS(proj,geo,angles,niter,varargin
 %
 %  IRN_TV_CGLS(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ANGLES angles, corresponding
-%   to the geometry descrived in GEO, using NITER iterations.
+%   to the geometry described in GEO, using NITER iterations.
 %
 %  IRN_TV_CGLS(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 %
 %  'lambda'  Value of regularization parameter lambda, default 10.
-%  'Init'    Describes diferent initialization techniques.
+%  'Init'    Describes different initialization techniques.
 %             * 'none'     : Initializes the image to zeros (default)
-%             * 'FDK'      : intializes image to FDK reconstrucition
+%             * 'FDK'      : initializes image to FDK reconstruction
 %             * 'multigrid': Initializes image by solving the problem in
 %                            small scale and increasing it when relative
 %                            convergence is reached.
 %             * 'image'    : Initialization using a user specified
-%                            image. Not recomended unless you really
+%                            image. Not recommended unless you really
 %                            know what you are doing.
 %  'InitImg'    an image for the 'image' initialization. Avoid.
-%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
 %  'restart'  true or false. By default the algorithm will restart when
@@ -92,7 +92,7 @@ while iter<niter
     while iter<niter %this will be broken by a parameter
         iter=iter+1;
         if measurequality && ~strcmp(QualMeasOpts,'error_norm')
-            x_prev = x; % only store if necesary
+            x_prev = x; % only store if necessary
         end
         q_aux_1 = Ax(p ,geo,angles,'Siddon','gpuids',gpuids);
         q_aux_2 = Lx (W, p)*sqrt(lambda);

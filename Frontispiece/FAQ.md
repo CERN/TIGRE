@@ -28,7 +28,7 @@ or a similar line in the `setup.py` file for python.
 COMPFLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_61,code=sm_61 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_86,code=sm_86 --default-stream per-thread  --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"
  ```
 
-**Q: TIGRE succesfully compiles but I get `texture memory fail` when I run the code**
+**Q: TIGRE successfully compiles but I get `texture memory fail` when I run the code**
 
 *A: It is likely you are running on a GPU that has compute capability older than 3.5, which is not supported.\
 

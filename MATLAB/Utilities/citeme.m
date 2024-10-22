@@ -1,5 +1,5 @@
 function  citeme( func_name ,bib)
-%CITEME(FUCTIONAME) gives the bilbiografic reference of the fucntion being
+%CITEME(FUCTIONAME) gives the bibliographic reference of the function being
 % used.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------

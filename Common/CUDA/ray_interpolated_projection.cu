@@ -2,7 +2,7 @@
  *
  * CUDA functions for texture-memory interpolation based projection
  *
- * This file has the necesary fucntiosn to perform X-ray CBCT projection
+ * This file has the necessary fucntiosn to perform X-ray CBCT projection
  * operation given a geaometry, angles and image. It uses the 3D texture
  * memory linear interpolation to uniformily sample a path to integrate the
  * X-rays.
@@ -489,7 +489,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
             projection_this_block=min(nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK, //the remaining angles that this GPU had to do (almost never PROJ_PER_BLOCK)
                                       nangles-proj_global);                              //or whichever amount is left to finish all (this is for the last GPU)
 
-            cudaDeviceSynchronize(); //Not really necesary, but just in case, we los nothing. 
+            cudaDeviceSynchronize(); //Not really necessary, but just in case, we los nothing. 
             cudaCheckErrors("Error at copying the last set of projections out (or in the previous copy)");
             cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(noOfKernelCalls%2))+dev*2], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
         }
@@ -832,7 +832,7 @@ void checkFreeMemory(const GpuIds& gpuids, size_t *mem_GPU_global){
         cudaMemGetInfo(&memfree,&memtotal);
         if(dev==0) *mem_GPU_global=memfree;
         if(memfree<memtotal/2){
-            mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+            mexErrMsgIdAndTxt("ray_interpolated_projection:ax:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
         }
         cudaCheckErrors("Check mem error");
         *mem_GPU_global=(memfree<*mem_GPU_global)?memfree:*mem_GPU_global;

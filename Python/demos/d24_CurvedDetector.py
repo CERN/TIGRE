@@ -1,7 +1,6 @@
-#%% Demo 11: Postprocessing
+#%% Demo 23: Curved detector
 #
-# This demo demonstrates the available postprocessing tools in TIGRE.by calling the "Measure_Quality.m" function with detailed description.
-#
+# This demo higlights the curved detector processing.
 #
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -17,7 +16,7 @@
 #
 # Contact:            tigre.toolbox@gmail.com
 # Codes:              https://github.com/CERN/TIGRE/
-# Coded by:           Manasavee Lohvithee
+# Coded by:           Ander Biguri
 # --------------------------------------------------------------------------
 #%%Initialize
 import tigre
@@ -25,24 +24,16 @@ import numpy as np
 from tigre.utilities import sample_loader
 from tigre.utilities import CTnoise
 import tigre.algorithms as algs
-from matplotlib import pyplot as plt
-
 
 #%% Geometry
 geo = tigre.geometry_default(high_resolution=False)
 
-#%% Load data and generate projections
-# define angles
-angles = np.linspace(0, 2 * np.pi, 100)
-# Load thorax phantom data
-head = sample_loader.load_head_phantom(geo.nVoxel)
-# generate projections
-projections = tigre.Ax(head, geo, angles)
-# add noise
-noise_projections = CTnoise.add(projections, Poisson=1e5, Gaussian=np.array([0, 10]))
+# If you have a curved detector, currently the only way to process it is to "flatten" the detector. 
+from tigre.utilities.curved_detector import flatten_detector
 
-#%% Some recon, FDK for example
-imgFDK = algs.fdk(projections, geo, angles)
+proj= ...
+# You can change the oversample value to create denser (and thus more accurate) flat projections, in exchange for computational time at recon
+proj = flatten_detector(proj,geo,oversample=1)
 
-# TODO, these are not implemented/accessible in python TIGRE
-# Issues #270 #271
+
+# Now just use as if proj came from flat panel detectors. 

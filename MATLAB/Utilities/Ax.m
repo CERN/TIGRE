@@ -66,7 +66,7 @@ if (s(2)~=0 || s(3)~=0) && (strcmp(ptype,'Siddon')||strcmp(ptype,'ray-voxel')) &
 end
 
 
-%% Thats it, lets call the mex fucntion
+%% Thats it, lets call the mex function
 %% TODO: When Ax_mex accepts class-objects, gpuids itself will be passed.
 projections=Ax_mex(img,geo,angles,ptype, gpuids.devices);
 

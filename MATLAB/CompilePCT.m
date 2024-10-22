@@ -163,7 +163,7 @@ addpath('./Utilities/Setup');
 mex -setup
 [cudapath, cuda_ver]=locate_cuda();
 if isempty(cudapath)
-    error(sprintf('CUDA Path not found. \nAdd the path by writting in MATLAB:\nsetenv(''CUDA_PATH'',''your path'')\nWhere "your path" is C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2, for example, \nor /usr/local/cuda on linux')) ;
+    error(sprintf('CUDA Path not found. \nAdd the path by writing in MATLAB:\nsetenv(''CUDA_PATH'',''your path'')\nWhere "your path" is C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v11.2, for example, \nor /usr/local/cuda on linux')) ;
 end
 if ispc
    setenv('CUDA_PATH',cudapath);

@@ -56,7 +56,7 @@ end
 geo=checkGeo(geo,angles);
 assert(isequal([size(projections,2) size(projections,1)],geo.nDetector.'),'TIGRE:checkGeo:BadGeometry','nDetector does not match with provided image size');
 
-%% Thats it, lets call the mex fucntion
+%% Thats it, lets call the mex function
 
 img=Atb_mex(projections,geo,angles,ptype, gpuids.devices);
 

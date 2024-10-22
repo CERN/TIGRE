@@ -61,7 +61,7 @@ Compile again, and you save up to 0.3s per GPU, per CUDA call. This can be signi
  
  6. Recompile and time again. Find the appropriate `PROJ_PER_KERNEL` and `VOXEL_PER_THREAD` for your GPU, System and image size
  
-## All algoritms (Ax)
+## All algorithms (Ax)
 
 **Expected acceleration is not more than 10%**, likely 0%. So change it if time is really critical to you. The steps show how to improve FDK backprojection, similar steps are needed for matched backprojector.
 

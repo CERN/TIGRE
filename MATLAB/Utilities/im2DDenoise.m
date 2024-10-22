@@ -1,6 +1,6 @@
 function img = im2DDenoise(img, type, kernelsize)
 %img2DDenoise removes noise of image with 2D kernel-based methods
-%   Currentyl only median and average filter is supported.
+%   Currently only median and average filter is supported.
 %       type: 'median' or 'average'
 %       kernelsize: filter kernel size
 %--------------------------------------------------------------------------

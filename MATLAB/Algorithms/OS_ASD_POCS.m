@@ -4,7 +4,7 @@ function [ fres, qualMeasOut ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
 %
 %   OS_ASD_POCS(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
-%   to the geometry descrived in GEO, using NITER iterations.
+%   to the geometry described in GEO, using NITER iterations.
 %
 %   OS_ASD_POCS(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
@@ -16,11 +16,11 @@ function [ fres, qualMeasOut ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
 %   'lambdared':   Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
-%   'Init':        Describes diferent initialization techniques.
+%   'Init':        Describes different initialization techniques.
 %                   •  'none'     : Initializes the image to zeros (default)
-%                   •  'FDK'      : intializes image to FDK reconstrucition
+%                   •  'FDK'      : initializes image to FDK reconstruction
 %                   •  'image'    : Initialization using a user specified
-%                                   image. Not recomended unless you really
+%                                   image. Not recommended unless you really
 %                                   know what you are doing.
 %   'InitImg'      an image for the 'image' initialization. Avoid.
 %   'TViter':      Defines the amount of TV iterations performed per SART
@@ -42,7 +42,7 @@ function [ fres, qualMeasOut ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
 %                  then OS-SART becomes SIRT. Default is 20.
 % 'OrderStrategy'  Chooses the subset ordering strategy. Options are
 %                  'ordered' :uses them in the input order, but divided
-%                  'random'  : orders them randomply
+%                  'random'  : orders them randomly
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
 %   'QualMeas'     Asks the algorithm for a set of quality measurement
@@ -55,7 +55,7 @@ function [ fres, qualMeasOut ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
 % 'redundancy_weighting': true or false. Default is true. Applies data
 %                         redundancy weighting to projections in the update step
 %                         (relevant for offset detector geometry)
-%  'groundTruth'  an image as grounf truth, to be used if quality measures
+%  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
 %--------------------------------------------------------------------------
@@ -96,16 +96,16 @@ if ~isfield(geo,'rotDetector')
 end
 
 
-%% Create weigthing matrices for the SART step
-% the reason we do this, instead of calling the SART fucntion is not to
-% recompute the weigths every ASD-POCS iteration, thus effectively doubling
+%% Create weighting matrices for the SART step
+% the reason we do this, instead of calling the SART function is not to
+% recompute the weights every ASD-POCS iteration, thus effectively doubling
 % the computational time
 
 
-% Projection weigth, W
+% Projection weight, W
 % Projection weight, W
 W=computeW(geo,angles,gpuids);
-% Back-Projection weigth, V
+% Back-Projection weight, V
 
 V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
@@ -133,7 +133,7 @@ DSO=geo.DSO;
 while ~stop_criteria %POCS
     % If quality is going to be measured, then we need to save previous image
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
-        res_prev = f; % only store if necesary
+        res_prev = f; % only store if necessary
     end
     f0=f;
     if (iter==0 && verbose==1);tic;end
@@ -161,8 +161,8 @@ while ~stop_criteria %POCS
         %         proj_err=proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj},'interpolated'); %                                 (b-Ax)
         %         weighted_err=W(:,:,orig_index{jj}).*proj_err;                                 %                          W^-1 * (b-Ax)
         %         backprj=Atb(weighted_err,geo,alphablocks{:,jj},'FDK');                          %                     At * W^-1 * (b-Ax)
-        %         weigth_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
-        %         f=f+beta*weigth_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
+        %         weight_backprj=bsxfun(@times,1./sum(V(:,:,orig_index{jj}),3),backprj);        %                 V * At * W^-1 * (b-Ax)
+        %         f=f+beta*weight_backprj;                                                % x= x + lambda * V * At * W^-1 * (b-Ax)
         f=f+beta* bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj},'gpuids',gpuids)),geo,alphablocks{:,jj},'gpuids',gpuids));
         
         % Non-negativity constrain

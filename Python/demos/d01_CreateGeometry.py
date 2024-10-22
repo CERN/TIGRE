@@ -63,7 +63,7 @@ import numpy as np
 #           -rotDetector:   3x1 or 3xN array with the rotation in roll-pitch-yaw of the detector
 #%% Example
 #
-# Lets create a geomtry object
+# Lets create a geometry object
 geo = tigre.geometry()
 # VARIABLE                                   DESCRIPTION                    UNITS
 # -------------------------------------------------------------------------------------
@@ -87,7 +87,7 @@ geo.offDetector = np.array([0, 0])  # Offset of Detector            (mm)
 # Auxiliary
 geo.accuracy = 0.5  # Variable to define accuracy of
 # 'interpolated' projection
-# It defines the amoutn of
+# It defines the amount of
 # samples per voxel.
 # Recommended <=0.5             (vx/sample)
 

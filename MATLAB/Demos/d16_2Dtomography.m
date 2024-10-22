@@ -57,11 +57,11 @@ geo.offDetector=[0; 0];
 % Auxiliary 
 geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/sample)
 geo.mode='parallel';
-%% Define angles of projection and load phatom image
+%% Define angles of projection and load phantom image
 
 angles=linspace(0,2*pi,100);
-phatom=single(phantom('Modified Shepp-Logan',geo.nVoxel(1)));
-projections=Ax(phatom,geo,angles);
+phantom=single(phantom('Modified Shepp-Logan',geo.nVoxel(1)));
+projections=Ax(phantom,geo,angles);
 %% recosntruct
 
 imgOSSART=OS_SART(projections,geo,angles,40);
@@ -101,12 +101,12 @@ geo.offDetector=[0; 0];
 % Auxiliary 
 geo.accuracy=0.5;                           % Accuracy of FWD proj          (vx/sample)
 geo.mode='cone';
-%% Define angles of projection and load phatom image
+%% Define angles of projection and load phantom image
 
 angles=linspace(0,2*pi,100);
-phatom=single(phantom('Modified Shepp-Logan',geo.nVoxel(1)));
-% phatom=cat(3,phatom,phatom);
-projections=Ax(phatom,geo,angles,'interpolated');
+phantom=single(phantom('Modified Shepp-Logan',geo.nVoxel(1)));
+% phantom=cat(3,phantom,phantom);
+projections=Ax(phantom,geo,angles,'interpolated');
 %% recosntruct
 
 imgOSSART=OS_SART(projections,geo,angles,40);

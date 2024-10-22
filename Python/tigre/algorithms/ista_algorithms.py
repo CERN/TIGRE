@@ -14,7 +14,7 @@ class FISTA(IterativeReconAlg):
     """
     Solves the reconstruction problem
     using the projection data PROJ taken over ALPHA angles, correspond-
-    ing to the geometry descrived in GEO, using NITER iterations.
+    ing to the geometry described in GEO, using NITER iterations.
 
     Parameters
     ----------
@@ -46,7 +46,7 @@ class FISTA(IterativeReconAlg):
     :keyword init: (str)
         Describes different initialization techniques.
               "none"     : Initializes the image to zeros (default)
-              "FDK"      : intializes image to FDK reconstrucition
+              "FDK"      : initializes image to FDK reconstruction
               
     :keyword verbose:  (Boolean)
         Feedback print statements for algorithm progress
@@ -124,7 +124,7 @@ class FISTA(IterativeReconAlg):
         self.__p__ = 1 if "fista_p" not in kwargs else kwargs["fista_p"]
         self.__q__ = 1 if "fista_q" not in kwargs else kwargs["fista_q"]
 
-    # overide update_image from iterative recon alg to remove W.
+    # override update_image from iterative recon alg to remove W.
     def update_image(self, geo, angle, iteration):
         """
         VERBOSE:
