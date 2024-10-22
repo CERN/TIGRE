@@ -141,7 +141,6 @@ if __name__ == '__main__':
     TIGRE_GPU_ID   = gpu.getGpuIds(listGpuNames[3])
     TIGRE_GPU_ID = TIGRE_GPU_ID[3]
     PYTORCH_GPU_ID = TIGRE_GPU_ID.devices[0]
-    PYTORCH_GPU_ID = 3
 
     print(f'Using GPU {TIGRE_GPU_ID} for TIGRE and GPU {PYTORCH_GPU_ID} for PyTorch')
     #geo=get_default_2Dgeometry()

@@ -66,9 +66,9 @@ class AXFunction(torch.autograd.Function):
         return volume_output, None, None, None, None
     
 class A(torch.nn.Module):
-    def __init__(self, geo:Geometry, gpuids:List[str]):
+    def __init__(self, geo:Geometry, angles, gpuids:List[str]):
         super(A, self).__init__()
-        assert geo.angles is not None, 'Initialise the angles'
+        geo.angles = angles
         self.geo = geo
         self.gpuids = gpuids
         self.volume_dimension   = geo.nVoxel.tolist()
@@ -137,9 +137,9 @@ class ATBFunction(torch.autograd.Function):
         return sinogram_output, None, None, None, None
     
 class At(torch.nn.Module):
-    def __init__(self, geo:Geometry, gpuids:List[str]):
+    def __init__(self, geo:Geometry, angles:np.array, gpuids:List[str]):
         super(At, self).__init__()
-        assert geo.angles is not None, 'Initialise the angles'
+        geo.angles = angles
         self.geo = geo
         self.gpuids = gpuids
         self.volume_dimension   = geo.nVoxel.tolist()
@@ -147,3 +147,31 @@ class At(torch.nn.Module):
 
     def forward(self, x:torch.Tensor):
         return ATBFunction.apply(x, self.geo, self.gpuids, self.volume_dimension, self.sinogram_dimension)
+    
+
+
+
+
+def create_pytorch_operator(geo, angles, gpuids):
+    return A(geo, angles, gpuids), At(geo, angles, gpuids)
+
+
+
+## This may be useful for non-torch stuff, but doesn't work for torch autograd. 
+#  I'll leave it here for now.
+class Operator:
+    def __init__(self, geo, angles, gpuids):
+        super(Operator, self).__init__()
+        self.geo = geo
+        self.angles = angles
+        self.gpuids = gpuids
+        self.ax = A(self.geo, self.angles, self.gpuids)
+        self.atb = At(self.geo, self.angles, self.gpuids)
+    def __call__(self, x):
+        return self.forward(x)
+    def forward(self, x):
+        return self.ax(x)
+    def T(self,b):
+        return self.backward(b)
+    def backward(self, b):
+        return self.atb(b)
