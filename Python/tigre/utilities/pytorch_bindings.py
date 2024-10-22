@@ -152,7 +152,9 @@ class At(torch.nn.Module):
 
 
 
-def create_pytorch_operator(geo, angles, gpuids):
+def create_pytorch_operator(geo, angles, gpuids=None):
+    if gpuids is None:
+        gpuids = [str(i) for i in range(torch.cuda.device_count())]
     return A(geo, angles, gpuids), At(geo, angles, gpuids)
 
 

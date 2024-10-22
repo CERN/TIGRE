@@ -31,5 +31,5 @@ def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
         gpuids = GpuIds()
     else:
         gpuids = kwargs["gpuids"]
-
+    
     return _Ax_ext(img, geox, geox.angles, projection_type, geox.mode, gpuids=gpuids)

@@ -129,14 +129,15 @@ class FanGeometryDefault(Geometry):
             # -------------------------------------------------------------------------------------
             self.DSD = 1536.0  # Distance Source Detector      (mm)
             self.DSO = 1000.0  # Distance Source Origin        (mm)
-            # Detector parameters
-            self.nDetector = np.array((nVoxel[0], nVoxel[1]))  # (V,U) number of pixels        (px)
-            self.dDetector = np.array([0.8, 0.8])  # size of each pixel            (mm)
-            self.sDetector = self.dDetector * self.nDetector  # total size of the detector    (mm)
+            
             # Image parameters
             self.nVoxel = np.array((nVoxel))  # number of voxels              (vx)
             self.sVoxel = np.array((256, 256, 256))  # total size of the image       (mm)
             self.dVoxel = self.sVoxel / self.nVoxel  # size of each voxel            (mm)
+            # Detector parameters
+            self.nDetector = np.array((nVoxel[0], nVoxel[1]))  # (V,U) number of pixels        (px)
+            self.sDetector = self.sVoxel[1:]*self.DSD/self.DSO
+            self.dDetector = self.sDetector / self.nDetector  # size of each pixel            (mm)
             # Offsets
             self.offOrigin = np.array((0, 0, 0))  # Offset of image from origin   (mm)
             self.offDetector = np.array((0, 0))  # Offset of Detector            (mm)
