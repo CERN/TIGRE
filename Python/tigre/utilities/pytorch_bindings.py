@@ -1,184 +1,149 @@
-import tigre
-
-import torch
+from typing import List
+from tigre.utilities.geometry import Geometry
+import torch 
+import tigre 
 import numpy as np
+
+import itertools
 
 class AXFunction(torch.autograd.Function):
     @staticmethod
     def forward(
-        input_tensor:torch.Tensor, 
-        geo, 
-        angles, 
-        gpuids
-        ):
-        input_dimension = input_tensor.size()
-        device = input_tensor.device
-        input_tensor = input_tensor.detach().cpu().numpy()
-        assert input_dimension[1] == 1, f'The input tensor has a its first dimension equal to {input_dimension[1]}. Currently, only tensors with channel dimension = 1 are supported.'
-        if len(input_dimension) == 5:
-            input_tensor = input_tensor.squeeze(1)
-        result = []
-        for batch_index in range(input_tensor.shape[0]):
-            ### This is a hack.
-            ### TIGRE expects an array of shape [NVoxDepth, NVoxHeight, NVoxWidth]
-            ### Pytorch provides an array of shape 
-            #   -> [BatchSize, NChannels = 1, NVoxHeight, NVoxWidth] for 2D Tomography
-            #   -> [BatchSize, NChannels = 1, NVoxDepth, NVoxHeight, NVoxWidth] for 3D Tomography
-            # How we handle 2D case: we assume the channel dimension (=1) for PyTorch is the NVoxDepth (=1) dimension for TIGRE
-            # How we handle 3D case: we squeeze the input tensor to remove the channels dimension 
-            ax:np.ndarray = tigre.Ax(
-                    input_tensor[batch_index], 
-                    geo,
-                    angles,
-                    gpuids = gpuids)
-            # Ax returns an array of size [N_angles, DetX, DetY]
-            # For 2D, DetX = 1, and we want to output a tensor of size [BatchSize, NChannels = 1, N_angles, DetY]
-            # We then use the fact that DetX = 1 and transpose the output array
-            if len(input_dimension) == 4:
-                ax = ax.transpose((1,0,2))
-            result.append(
-                ax
-                )
-        result = torch.tensor(np.stack(result), requires_grad=True).to(device)
-        if len(input_dimension) == 5:
-            result = result.unsqueeze(1)
-        return result
+        volume_input:torch.Tensor, 
+        geo : Geometry,
+        gpuids : List[str],
+        volume_dimension : List,
+        sinogram_dimension : List
+        ) -> torch.Tensor:
+        """AXFunction is an autograd function that performs a forward operation
+        and preserves the gradients.
 
+        Args:
+            volume_input (torch.Tensor): input volume tensor
+            geo (Geometry): geometry
+            gpuids (List[str]): gpus on which to perform the computations
+            volume_dimension (List): integers describing the volume dimension
+            sinogram_dimension (List): integers describing the volume dimension
+
+        Returns:
+            torch.Tensor: sinogram
+        """
+        device = volume_input.device
+        
+        ### Might be good to add a check
+        extra_dimensions = len(volume_input.size()) - 3
+        
+        extra_dims = list(volume_input.size()[:extra_dimensions])
+        sinogram_output = volume_input.new_empty((extra_dims + sinogram_dimension), dtype=torch.float32) # type:ignore
+
+        volume_input = volume_input.detach().cpu().numpy()  
+        for subspace in itertools.product(*[range(dim_size) for dim_size in extra_dims]):
+            sinogram_output[subspace] = torch.from_numpy(
+                tigre.Ax(volume_input[subspace],geo, geo.angles, gpuids = gpuids)).to(device)
+        return sinogram_output
+    
     @staticmethod
     def setup_context(ctx, inputs, output):
-        input, geo, angles, gpuids = inputs
+        input, geo, gpuids, volume_dimension, sinogram_dimension = inputs
         ctx.geo = geo
-        ctx.angles = angles
+        ctx.volume_dimension = volume_dimension
         ctx.gpuids = gpuids
-
+        
     @staticmethod
-    def backward(ctx, grad_output:torch.Tensor):
+    def backward(ctx, grad_output:torch.Tensor): #type:ignore
         device = grad_output.device
-        input_dimension = grad_output.size()
-        grad_output : np.ndarray= grad_output.detach().cpu().numpy()
-        if len(input_dimension) == 5:
-            grad_output = grad_output.squeeze(1)
-        elif len(input_dimension) == 4:
-            grad_output = grad_output.transpose((0,2,1,3))
-        result = []
-        for batch_index in range(grad_output.shape[0]):
-            atb : np.ndarray = tigre.Atb(
-                    grad_output[batch_index],
-                    ctx.geo,
-                    ctx.angles,
-                    gpuids = ctx.gpuids)
-            result.append(atb)
-        result = torch.tensor(np.stack(result), requires_grad=True).to(device)
-        if len(input_dimension) == 5:
-            result = result.unsqueeze(1)
-        return result, None, None, None
+        
+        extra_dimensions = len(grad_output.size()) - 3
+        
+        extra_dims = list(grad_output.size()[:extra_dimensions])
+        volume_output = grad_output.new_empty((extra_dims + ctx.volume_dimension), dtype=torch.float32) # type:ignore
+        
+        grad_output : np.ndarray = grad_output.detach().cpu().numpy()        
+        for subspace in itertools.product(*[range(dim_size) for dim_size in extra_dims]):
+            volume_output[subspace] = torch.from_numpy(
+                tigre.Atb(grad_output[subspace], ctx.geo, ctx.geo.angles, gpuids = ctx.gpuids)).to(device)
+        
+        return volume_output, None, None, None, None
     
+class A(torch.nn.Module):
+    def __init__(self, geo:Geometry, gpuids:List[str]):
+        super(A, self).__init__()
+        assert geo.angles is not None, 'Initialise the angles'
+        self.geo = geo
+        self.gpuids = gpuids
+        self.volume_dimension   = geo.nVoxel.tolist()
+        self.sinogram_dimension = [len(geo.angles)] + geo.nDetector.tolist()
+
+    def forward(self, x:torch.Tensor):
+        return AXFunction.apply(x, self.geo, self.gpuids, self.volume_dimension, self.sinogram_dimension)
+
 class ATBFunction(torch.autograd.Function):
     @staticmethod
-    def forward(input_tensor:torch.Tensor, geo, angles, gpuids):
-        device = input_tensor.device
-        input_dimension = input_tensor.size()
-        input_tensor:np.ndarray = input_tensor.detach().cpu().numpy()
-        if len(input_dimension) == 5:
-            input_tensor = input_tensor.squeeze(1)
-        elif len(input_dimension) == 4:
-            input_tensor = input_tensor.transpose((0,2,1,3))
-        result = []
-        for batch_index in range(input_tensor.shape[0]):
-            atb : np.ndarray = tigre.Atb(
-                    input_tensor[batch_index],
-                    geo,
-                    angles,
-                    gpuids = gpuids)
-            result.append(atb)
-        result = torch.tensor(np.stack(result), requires_grad=True)
-     
+    def forward(
+        sinogram_input:torch.Tensor, 
+        geo : Geometry,
+        gpuids : List[str],
+        volume_dimension : List,
+        sinogram_dimension : List
+        ) -> torch.Tensor:
+        """AXFunction is an autograd function that performs a forward operation
+        and preserves the gradients.
 
-        if len(input_dimension) == 5:
-            result = result.unsqueeze(1)
+        Args:
+            sinogram_input (torch.Tensor): input sinogram tensor
+            geo (Geometry): geometry
+            gpuids (List[str]): gpus on which to perform the computations
+            volume_dimension (List): integers describing the volume dimension
+            sinogram_dimension (List): integers describing the volume dimension
 
-        return result
+        Returns:
+            torch.Tensor: volume
+        """
+        device = sinogram_input.device
+        
+        ### Might be good to add a check
+        extra_dimensions = len(sinogram_input.size()) - 3
+        
+        extra_dims = list(sinogram_input.size()[:extra_dimensions])
+        volume_output = sinogram_input.new_empty((extra_dims + volume_dimension), dtype=torch.float32) # type:ignore
 
+        sinogram_input = sinogram_input.detach().cpu().numpy()  
+        for subspace in itertools.product(*[range(dim_size) for dim_size in extra_dims]):
+            volume_output[subspace] = torch.from_numpy(
+                tigre.Atb(sinogram_input[subspace],geo, geo.angles, gpuids = gpuids)).to(device)
+        return volume_output
+    
     @staticmethod
     def setup_context(ctx, inputs, output):
-        input, geo, angles, gpuids = inputs
+        input, geo, gpuids, volume_dimension, sinogram_dimension = inputs
         ctx.geo = geo
-        ctx.angles = angles
+        ctx.sinogram_dimension = sinogram_dimension
         ctx.gpuids = gpuids
-
+        
     @staticmethod
-    def backward(ctx, grad_output:torch.Tensor):
-        input_dimension = grad_output.size()
+    def backward(ctx, grad_output:torch.Tensor): #type:ignore
         device = grad_output.device
-        grad_output = grad_output.detach().cpu().numpy()
-        assert input_dimension[1] == 1, f'The input tensor has a its first dimension equal to {input_dimension[1]}. Currently, only tensors with channel dimension = 1 are supported.'
-        if len(input_dimension) == 5:
-            grad_output = grad_output.squeeze(1)
-        result = []
-        for batch_index in range(grad_output.shape[0]):
-            ### This is a hack.
-            ### TIGRE expects an array of shape [NVoxDepth, NVoxHeight, NVoxWidth]
-            ### Pytorch provides an array of shape 
-            #   -> [BatchSize, NChannels = 1, NVoxHeight, NVoxWidth] for 2D Tomography
-            #   -> [BatchSize, NChannels = 1, NVoxDepth, NVoxHeight, NVoxWidth] for 3D Tomography
-            # How we handle 2D case: we assume the channel dimension (=1) for PyTorch is the NVoxDepth (=1) dimension for TIGRE
-            # How we handle 3D case: we squeeze the input tensor to remove the channels dimension 
-            ax:np.ndarray = tigre.Ax(
-                    grad_output[batch_index], 
-                    ctx.geo,
-                    ctx.angles,
-                    gpuids = ctx.gpuids)
-            # Ax returns an array of size [N_angles, DetX, DetY]
-            # For 2D, DetX = 1, and we want to output a tensor of size [BatchSize, NChannels = 1, N_angles, DetY]
-            # We then use the fact that DetX = 1 and transpose the output array
-            if len(input_dimension) == 4:
-                ax = ax.transpose((1,0,2))
-            result.append(ax)
-        result = torch.tensor(np.stack(result), requires_grad=True).to(device)
-        if len(input_dimension) == 5:
-            result = result.unsqueeze(1)
-        return result, None, None, None
-
-class A(torch.nn.Module):
-    def __init__(self, geo, angles, gpuids):
-        super(A, self).__init__()
-        self.geo = geo
-        self.angles = angles
-        self.gpuids = gpuids
-
-    def forward(self, x):
-        return AXFunction.apply(x, self.geo, self.angles, self.gpuids)
+        
+        extra_dimensions = len(grad_output.size()) - 3
+        
+        extra_dims = list(grad_output.size()[:extra_dimensions])
+        sinogram_output = grad_output.new_empty((extra_dims + ctx.sinogram_dimension), dtype=torch.float32) # type:ignore
+        
+        grad_output : np.ndarray = grad_output.detach().cpu().numpy()        
+        for subspace in itertools.product(*[range(dim_size) for dim_size in extra_dims]):
+            sinogram_output[subspace] = torch.from_numpy(
+                tigre.Ax(grad_output[subspace], ctx.geo, ctx.geo.angles, gpuids = ctx.gpuids)).to(device)
+        
+        return sinogram_output, None, None, None, None
     
 class At(torch.nn.Module):
-    def __init__(self, geo, angles, gpuids):
+    def __init__(self, geo:Geometry, gpuids:List[str]):
         super(At, self).__init__()
+        assert geo.angles is not None, 'Initialise the angles'
         self.geo = geo
-        self.angles = angles
         self.gpuids = gpuids
+        self.volume_dimension   = geo.nVoxel.tolist()
+        self.sinogram_dimension = [len(geo.angles)] + geo.nDetector.tolist()
 
-    def forward(self, x):
-        return ATBFunction.apply(x, self.geo, self.angles, self.gpuids)
-
-
-def create_pytorch_operator(geo, angles, gpuids):
-    return A(geo, angles, gpuids), At(geo, angles, gpuids)
-
-## This may be useful for non-torch stuff, but doesn't work for torch autograd. 
-#  I'll leave it here for now.
-class Operator:
-    def __init__(self, geo, angles, gpuids):
-        super(Operator, self).__init__()
-        self.geo = geo
-        self.angles = angles
-        self.gpuids = gpuids
-        self.ax = A(self.geo, self.angles, self.gpuids)
-        self.atb = At(self.geo, self.angles, self.gpuids)
-
-    def __call__(self, x):
-        return self.forward(x)
-    def forward(self, x):
-        return self.ax(x)
-    def T(self,b):
-        return self.backward(b)
-    def backward(self, b):
-        return self.atb(b)
+    def forward(self, x:torch.Tensor):
+        return ATBFunction.apply(x, self.geo, self.gpuids, self.volume_dimension, self.sinogram_dimension)
