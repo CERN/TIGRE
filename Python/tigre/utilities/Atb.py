@@ -33,4 +33,8 @@ def Atb(projections, geo, angles, backprojection_type="FDK", **kwargs):
     else:
         gpuids = kwargs["gpuids"]
 
+    # if we have more GPUs than slices to compute, reduce the amount of GPUs. 
+    if geo.nVoxel[0]< len(gpuids):
+        gpuids.devices = list(gpuids.devices[0:geo.nVoxel[0]])
+
     return _Atb_ext(projections, geox, geox.angles, backprojection_type, geox.mode, gpuids=gpuids)

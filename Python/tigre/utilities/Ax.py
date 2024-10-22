@@ -32,4 +32,8 @@ def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
     else:
         gpuids = kwargs["gpuids"]
 
+    # if we have more GPUs than projections to compute, reduce the amount of GPUs. 
+    if len(angles) < len(gpuids):
+        gpuids.devices = list(gpuids.devices[0:len(angles)])
+
     return _Ax_ext(img, geox, geox.angles, projection_type, geox.mode, gpuids=gpuids)
