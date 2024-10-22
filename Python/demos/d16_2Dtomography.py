@@ -63,7 +63,6 @@ geo.mode = "parallel"
 angles = np.linspace(0, 2 * np.pi, 100)
 head = sample_loader.load_head_phantom(geo.nVoxel)
 projections = tigre.Ax(head, geo, angles)
-
 tigre.plotSinogram(projections, 0)
 #%% recosntruct
 
