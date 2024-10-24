@@ -194,7 +194,7 @@ def fbp(proj, geo, angles, **kwargs):  # noqa: D103
     gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
     proj_filt = filtering(copy.deepcopy(proj), geox,
                           angles, parker=False, verbose=verbose)
-    if isinstance(geo.DSO, int):
+    if not isinstance(geo.DSO, np.ndarray):
         return Atb(proj_filt, geo, angles, gpuids=gpuids)* geo.DSO / geo.DSD
     else:
         return Atb(proj_filt, geo, angles, gpuids=gpuids)* geo.DSO[0] / geo.DSD[0]
