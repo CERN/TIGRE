@@ -74,7 +74,9 @@ for ii= 1:size(proj,3)
     proj(:,:,ii)=-log(proj(:,:,ii)/single(2^16));
 end
 geo=rmfield(geo,'whitelevel');
-%%
+if isfield(geo,'offOrigin')
+    geo.offOrigin = geo.offOrigin(:,index);
+end
 angles=angles_to_load;
 end
 
