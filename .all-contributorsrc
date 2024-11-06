@@ -118,6 +118,16 @@
         "research",
         "code"
       ]
+    },
+    {
+      "login": "Emvlt",
+      "name": "Emilien Valat",
+      "avatar_url": "https://avatars.githubusercontent.com/u/46785587?v=4",
+      "profile": "https://emilienvalat.net/",
+      "contributions": [
+        "research",
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
