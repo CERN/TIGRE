@@ -404,8 +404,7 @@ void cpy_from_host(float* device_array,float* host_array,
                 // d_src is the original image, with no change.
                 if (splits>1 & i>0){
 
-                    for (dev = 0; dev < deviceCount; dev++){
-                       
+                    for (dev = 0; dev < deviceCount; dev++){ 
                         is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
                         is_first_chunk=!(sp*deviceCount+dev);
                         cudaSetDevice(gpuids[dev]);
@@ -414,37 +413,39 @@ void cpy_from_host(float* device_array,float* host_array,
                         cpy_from_host(d_u[dev],h_u,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+1],  is_first_chunk,  is_last_chunk, image_size);
                     }
 
-                    for (dev = 0; dev < deviceCount; dev++){   
+                    for (dev = 0; dev < deviceCount; dev++){ 
+                        is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
+                        is_first_chunk=!(sp*deviceCount+dev);
                         cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+2]);
-                        // Sometimes the last_chunk is smaller than the other ones, and thus if we don't reset the memory to zero, we'll gave ghosts residual data in the variable
-                        cudaMemsetAsync(d_px[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]); 
-                        cudaMemcpyAsync(d_px[dev]+offset_device[dev], h_px+offset_host[dev],  bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+2]);
-                       
+                        if (is_last_chunk) {cudaMemsetAsync(d_px[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+2]);}
+                        cpy_from_host(d_px[dev],h_px,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+2],  is_first_chunk,  is_last_chunk, image_size);
                     }
-                    for (dev = 0; dev < deviceCount; dev++){   
+                    for (dev = 0; dev < deviceCount; dev++){ 
+                        is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
+                        is_first_chunk=!(sp*deviceCount+dev);
                         cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+3]);
-                        // Sometimes the last_chunk is smaller than the other ones, and thus if we don't reset the memory to zero, we'll gave ghosts residual data in the variable
-                        cudaMemsetAsync(d_py[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]); 
-                        cudaMemcpyAsync(d_py[dev] +offset_device[dev], h_py+offset_host[dev],  bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+3]);
-                        
+                        if (is_last_chunk) {cudaMemsetAsync(d_py[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+3]);}
+                        cpy_from_host(d_py[dev],h_py,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+3],  is_first_chunk,  is_last_chunk, image_size);
                     }
-                    for (dev = 0; dev < deviceCount; dev++){   
+                    for (dev = 0; dev < deviceCount; dev++){ 
+                        is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
+                        is_first_chunk=!(sp*deviceCount+dev);
                         cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+4]);
-                        // Sometimes the last_chunk is smaller than the other ones, and thus if we don't reset the memory to zero, we'll gave ghosts residual data in the variable
-                        cudaMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]); 
-                        cudaMemcpyAsync(d_pz[dev] +offset_device[dev], h_pz+offset_host[dev],  bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+4]);
-                        
-                    } 
-                    for (dev = 0; dev < deviceCount; dev++){   
+                        if (is_last_chunk) {cudaMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+4]);}
+                        cpy_from_host(d_pz[dev],h_pz,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+4],  is_first_chunk,  is_last_chunk, image_size);
+                    }
+                    for (dev = 0; dev < deviceCount; dev++){ 
+                        is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
+                        is_first_chunk=!(sp*deviceCount+dev);
                         cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+1]);
-                         // Sometimes the last_chunk is smaller than the other ones, and thus if we don't reset the memory to zero, we'll gave ghosts residual data in the variable
-                        cudaMemsetAsync(d_src[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]); 
-                        cudaMemcpyAsync(d_src[dev]+offset_device[dev], src +offset_host[dev],  bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
+                        if (is_last_chunk) {cudaMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]);}
+                        cpy_from_host(d_src[dev],src,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+1],  is_first_chunk,  is_last_chunk, image_size);
                     }
+
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         cudaDeviceSynchronize();
