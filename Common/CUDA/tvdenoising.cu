@@ -660,15 +660,14 @@ void cpy_from_host(float* device_array,float* host_array,
     // so we need to copy the edge slice into the buffer
     if(is_first_chunk){
         for (unsigned int j=0;j<buffer_length;j++){
-            cudaMemcpyAsync(device_array+pixels_per_slice*j, host_array+pixels_per_slice*j, pixels_per_slice*sizeof(float), cudaMemcpyHostToDevice,stream);
-        }
+            cudaMemcpyAsync(device_array+pixels_per_slice*j, host_array+pixels_per_slice*(buffer_length-j), pixels_per_slice*sizeof(float), cudaMemcpyHostToDevice,stream); 
+        }       
     }
     if(is_last_chunk){  
 
         for (unsigned int j=0;j<buffer_length;j++){
-            cudaMemcpyAsync(device_array+bytes_device+pixels_per_slice*j, host_array+pixels_per_slice*(image_size[2]-buffer_length+j), pixels_per_slice*sizeof(float), cudaMemcpyHostToDevice,stream);
+           cudaMemcpyAsync(device_array+bytes_device+pixels_per_slice*j, host_array+pixels_per_slice*(image_size[2]-j-2), pixels_per_slice*sizeof(float), cudaMemcpyHostToDevice,stream);
         }
-
     }
     cudaStreamSynchronize(stream);
     cudaMemcpyAsync(device_array +offset_device, host_array +offset_host,  bytes_device*sizeof(float), cudaMemcpyHostToDevice,stream);
