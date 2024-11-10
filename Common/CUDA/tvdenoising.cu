@@ -70,6 +70,14 @@ void cpy_from_host(float* device_array,float* host_array,
                    cudaStream_t stream, bool is_first_chunk, bool is_last_chunk,const long* image_size);  
     
     
+    __global__ void multiplyArrayScalar(float* vec,float scalar,const size_t n)
+    {
+        unsigned long long i = (blockIdx.x * blockDim.x) + threadIdx.x;
+        for(; i<n; i+=gridDim.x*blockDim.x) {
+            vec[i]*=scalar;
+        }
+    }
+
     __device__ __inline__
             float divergence(const float* pz, const float* py, const float* px,
             long z, long y, long x, long depth, long rows, long cols,
@@ -436,6 +444,10 @@ void cpy_from_host(float* device_array,float* host_array,
                         cudaStreamSynchronize(stream[dev*nStream_device+4]);
                         if (is_last_chunk) {cudaMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+4]);}
                         cpy_from_host(d_pz[dev],h_pz,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+4],  is_first_chunk,  is_last_chunk, image_size);
+                        // Z derivative must be negated in sign to keep Neumman conditions
+                        multiplyArrayScalar<<<60,MAXTREADS,0,stream[dev*nStream_device+4]>>>(d_pz[dev],             -1,  pixels_per_slice*bytes_device[dev]);    
+                        multiplyArrayScalar<<<60,MAXTREADS,0,stream[dev*nStream_device+4]>>>(d_pz[dev]+bytes_device[dev],-1,  pixels_per_slice*bytes_device[dev]);    
+                
                     }
                     for (dev = 0; dev < deviceCount; dev++){ 
                         is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
