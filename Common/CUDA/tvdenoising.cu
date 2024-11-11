@@ -445,9 +445,12 @@ void cpy_from_host(float* device_array,float* host_array,
                         if (is_last_chunk) {cudaMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+4]);}
                         cpy_from_host(d_pz[dev],h_pz,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+4],  is_first_chunk,  is_last_chunk, image_size);
                         // Z derivative must be negated in sign to keep Neumman conditions
-                        multiplyArrayScalar<<<60,MAXTREADS,0,stream[dev*nStream_device+4]>>>(d_pz[dev],             -1,  pixels_per_slice*bytes_device[dev]);    
-                        multiplyArrayScalar<<<60,MAXTREADS,0,stream[dev*nStream_device+4]>>>(d_pz[dev]+bytes_device[dev],-1,  pixels_per_slice*bytes_device[dev]);    
-                
+                        if (is_first_chunk){
+                            multiplyArrayScalar<<<60,MAXTREADS,0,stream[dev*nStream_device+4]>>>(d_pz[dev],             -1,  pixels_per_slice*bytes_device[dev]);    
+                        }
+                        if (is_last_chunk){
+                            multiplyArrayScalar<<<60,MAXTREADS,0,stream[dev*nStream_device+4]>>>(d_pz[dev]+bytes_device[dev],-1,  pixels_per_slice*bytes_device[dev]);    
+                        }
                     }
                     for (dev = 0; dev < deviceCount; dev++){ 
                         is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
