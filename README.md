@@ -1,6 +1,6 @@
 [![Documentation Status](https://readthedocs.org/projects/tigre/badge/?version=latest)](https://tigre.readthedocs.io/en/latest/?badge=latest)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-11-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-12-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 
@@ -155,6 +155,7 @@ Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/phernst"><img src="https://avatars.githubusercontent.com/u/9623894?v=4?s=100" width="100px;" alt="phernst"/><br /><sub><b>phernst</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/issues?q=author%3Aphernst" title="Bug reports">🐛</a> <a href="https://github.com/CERN/TIGRE/commits?author=phernst" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/malena-sabate"><img src="https://avatars.githubusercontent.com/u/83228154?v=4?s=100" width="100px;" alt="malena-sabate"/><br /><sub><b>malena-sabate</b></sub></a><br /><a href="#research-malena-sabate" title="Research">🔬</a> <a href="https://github.com/CERN/TIGRE/commits?author=malena-sabate" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://emilienvalat.net/"><img src="https://avatars.githubusercontent.com/u/46785587?v=4?s=100" width="100px;" alt="Emilien Valat"/><br /><sub><b>Emilien Valat</b></sub></a><br /><a href="#research-Emvlt" title="Research">🔬</a> <a href="https://github.com/CERN/TIGRE/commits?author=Emvlt" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/zezisme"><img src="https://avatars.githubusercontent.com/u/40331996?v=4?s=100" width="100px;" alt="zez666"/><br /><sub><b>zez666</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/issues?q=author%3Azezisme" title="Bug reports">🐛</a> <a href="https://github.com/CERN/TIGRE/commits?author=zezisme" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
