@@ -388,13 +388,17 @@ void cpy_from_host(float* device_array,float* host_array,
                 // copy data to the GPU if we are just starting
                 if(i==0){
                     for (dev = 0; dev < deviceCount; dev++){
+                        is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
+                        is_first_chunk=!(sp*deviceCount+dev);
+
                         cudaSetDevice(gpuids[dev]);
-                        cudaMemcpyAsync(d_src[dev]+offset_device[dev], src+offset_host[dev]  , bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
+                        if (is_last_chunk) {cudaMemsetAsync(d_src[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]);}
+                        cpy_from_host(d_src[dev],src,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+1],  is_first_chunk,  is_last_chunk, image_size);
                     }
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
-                        // All these are async
-                        cudaMemcpyAsync(d_u[dev]  +offset_device[dev], d_src[dev]+offset_device[dev], bytes_device[dev]*sizeof(float), cudaMemcpyDeviceToDevice,stream[dev*nStream_device+1]);
+
+                        cudaMemcpyAsync(d_u[dev], d_src[dev], mem_img_each_GPU, cudaMemcpyDeviceToDevice,stream[dev*nStream_device+1]);
                         cudaMemsetAsync(d_px[dev], 0, mem_img_each_GPU,stream[dev*nStream_device]);
                         cudaMemsetAsync(d_py[dev], 0, mem_img_each_GPU,stream[dev*nStream_device]);
                         cudaMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device]);
