@@ -15,11 +15,11 @@ function [proj,geo,angles]=loadNikonProjections(filepath,geo,angles,varargin)
 %                       loading of the data. 
 %                  'step': sample the entire set of projections every
 %                         'sampling_step' angles.
-%                  'continous': Load the first 'num_angles' amount of
+%                  'continuous': Load the first 'num_angles' amount of
 %                             angles only.
 %
 %           'num_angles': Number of total angles to load. Default all of
-%                    them. Useful for 'equidistant' and 'continous' loading
+%                    them. Useful for 'equidistant' and 'continuous' loading
 %
 %           'sampling_step': step to load when loading projections. Default
 %           1. Useful for 'step' loading.
@@ -32,6 +32,10 @@ function [proj,geo,angles]=loadNikonProjections(filepath,geo,angles,varargin)
 
 [angles_to_load,index]=parse_inputs(geo,angles,varargin);
 
+% make sure its path
+if filepath(end)~='\' && filepath(end)~='/'
+   filepath=[filepath '/']; 
+end
 %% get filename
 % assuming TIF and 4 digits.
 firstfile = dir([filepath,'/*.tif']); %
@@ -43,7 +47,7 @@ fprintf("Dataset in: %s \n", filepath);
 %% load images
 %proj=[];
 l = length(angles_to_load);
-proj = zeros(geo.nDetector(1),geo.nDetector(2),l,'single');
+proj = zeros(geo.nDetector(2),geo.nDetector(1),l,'single');
 for ii=1:length(angles_to_load)
     if(~mod(ii,50))
       fprintf("Loading: %d / %d \n", ii, length(angles_to_load));

@@ -25,7 +25,12 @@ addpath('./Utilities/Quality_measures');
 addpath('./Utilities/IO/VarianCBCT');
 addpath('./Utilities/IO/Nikon');
 addpath('./Utilities/IO/Dicom');
+addpath('./Utilities/IO/Bruker');
+addpath('./Utilities/IO/YXLON');
+addpath('./Utilities/IO/Diondo');
+addpath('./Utilities/IO/DXChange');
 addpath('./Utilities/GPU');
+addpath('./Utilities/DE');
 
 addpath(genpath('./Test_data'));
 
@@ -33,20 +38,26 @@ addpath(genpath('./Test_data'));
 if ispc
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/win64');
+        addpath('./pCTMexFiles/win64');
     else
         addpath('./Mex_files/win32');
+        addpath('./pCTMexFiles/win32');
     end
 elseif ismac
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/mac64');
+        addpath('./pCTMexFiles/mac64');
     else
         addpath('./Mex_files/mac32');
+        addpath('./pCTMexFiles/mac32');
     end
 else
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/linux64');
+        addpath('./pCTMexFiles/linux64');
     else
         addpath('./Mex_files/linux32');
+        addpath('./pCTMexFiles/linux32');
     end
 end
     
@@ -58,24 +69,31 @@ addpath('./Colormaps');
 addpath('./Third_party_tools/arrow3d'); % 3D shepp-Logan
 addpath('./Third_party_tools/sec2hours');
 addpath('./Third_party_tools/readMHD');
+addpath('./Third_party_tools/Inpaint_nans/');
 
 if ispc
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/win64');
+        addpath('./pCTMexFiles/win64');
     else
         addpath('./Mex_files/win32');
+        addpath('./pCTMexFiles/win32');
     end
 elseif ismac
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/mac64');
+        addpath('./pCTMexFiles/mac64');
     else
         addpath('./Mex_files/mac32');
+        addpath('./pCTMexFiles/mac32');
     end
 else
     if ~isempty(strfind(computer('arch'),'64'))
         addpath('./Mex_files/linux64');
+        addpath('./pCTMexFiles/linux64');
     else
         addpath('./Mex_files/linux32');
+        addpath('./pCTMexFiles/linux32');
     end
 end
 
@@ -83,11 +101,11 @@ if ispc
     [user, sys]=memory;
     
     if sys.PhysicalMemory.Total<9000000000 % 8Gb
-        warning('Your Computer has 8Gb or less of RAM memory. Using image sizes of higher than 512^3 is not recomended (most likely not possible)')
+        warning('Your Computer has 8Gb or less of RAM memory. Using image sizes of higher than 512^3 is not recommended (most likely not possible)')
     end
     
     if sys.PhysicalMemory.Total<2500000000 % 2Gb
-        warning('Your Computer has 2Gb or less of RAM memory. Using image sizes of higher than 256^3 is not recomended (most likely not possible)')
+        warning('Your Computer has 2Gb or less of RAM memory. Using image sizes of higher than 256^3 is not recommended (most likely not possible)')
     end
 else
     warning('TIGRE needs a big amount of memory, be careful when running big images.')

@@ -1,4 +1,4 @@
-function [ f,errorSART,errorTV,errorL2,qualMeasOut] = OS_AwPCSD(proj,geo,angles,maxiter,varargin)
+function [ f,resL2,qualMeasOut] = OS_AwPCSD(proj,geo,angles,maxiter,varargin)
 %OS_AwPCSD solves the reconstruction problem using adaptive-weighted
 %projection-controlled steepest descent method
 %
@@ -16,10 +16,10 @@ function [ f,errorSART,errorTV,errorL2,qualMeasOut] = OS_AwPCSD(proj,geo,angles,
 %   'lambdared':   Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
-%       'init':    Describes diferent initialization techniques.
+%       'init':    Describes different initialization techniques.
 %                   •  'none'     : Initializes the image to zeros(default)
 
-%                   •  'FDK'      : intializes image to FDK reconstrucition
+%                   •  'FDK'      : initializes image to FDK reconstruction
 %
 %   'TViter':      Defines the amount of TV iterations performed per SART
 %                  iteration. Default is 20
@@ -45,9 +45,15 @@ function [ f,errorSART,errorTV,errorL2,qualMeasOut] = OS_AwPCSD(proj,geo,angles,
 %                  then OS-SART becomes SIRT. Default is 20.
 % 'OrderStrategy'  Chooses the subset ordering strategy. Options are
 %                  'ordered' :uses them in the input order, but divided
-%                  'random'  : orders them randomply
+%                  'random'  : orders them randomly
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
+% 'redundancy_weighting': true or false. Default is true. Applies data
+%                         redundancy weighting to projections in the update step
+%                         (relevant for offset detector geometry)
+%  'groundTruth'  an image as ground truth, to be used if quality measures
+%                 are requested, to plot their change w.r.t. this known
+%                 data.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -65,20 +71,25 @@ function [ f,errorSART,errorTV,errorL2,qualMeasOut] = OS_AwPCSD(proj,geo,angles,
 % Coded by:           Ander Biguri and Manasavee Lohvithee
 %--------------------------------------------------------------------------
 %% parse inputs
-[beta,beta_red,f,ng,verbose,epsilon,delta,blocksize,OrderStrategy,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,f,ng,verbose,epsilon,delta,blocksize,OrderStrategy,QualMeasOpts,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,varargin);
 
-measurequality=~isempty(QualMeasOpts);
-
+measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
+if ~any(isnan(gt(:)))
+    QualMeasOpts{end+1}='error_norm';
+    res_prev=gt;
+    clear gt
+end
+if nargout<3 && measurequality
+    warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
+    measurequality=false;
+end
+qualMeasOut=zeros(length(QualMeasOpts),niter);
+resL2=zeros(1,niter);
 if nargout>1
     computeL2=true;
 else
     computeL2=false;
 end
-errorL2=[];
-
-
-errorSART=[];
-errorTV=[];
 
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 %
@@ -95,24 +106,29 @@ if ~isfield(geo,'rotDetector')
     geo.rotDetector=[0;0;0];
 end
 
-%% Create weigthing matrices for the SART step
-% the reason we do this, instead of calling the SART fucntion is not to
-% recompute the weigths every AwASD-POCS iteration, thus effectively doubling
+%% Create weighting matrices for the SART step
+% the reason we do this, instead of calling the SART function is not to
+% recompute the weights every AwASD-POCS iteration, thus effectively doubling
 % the computational time
-% Projection weigth, W
+% Projection weight, W
 
-geoaux=geo;
-geoaux.sVoxel([1 2])=geo.sVoxel([1 2])*1.1; % a Bit bigger, to avoid numerical division by zero (small number)
-geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
-geoaux.nVoxel=[2,2,2]'; % accurate enough?
-geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon');
-W(W<min(geo.dVoxel)/4)=Inf;
-W=1./W;
+% Projection weight, W
+W=computeW(geo,angles,gpuids);
 
-% Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index);
+% Back-Projection weight, V
+V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
 
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+    W = W.*W_r; % include redundancy weighting in W
+end
 
 iter=0;
 offOrigin=geo.offOrigin;
@@ -122,12 +138,15 @@ stop_criteria=0;
 DSD=geo.DSD;
 DSO=geo.DSO;
 while ~stop_criteria %POCS
-    f0=f;
+    % If quality is going to be measured, then we need to save previous image
+    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+        res_prev = f; % only store if necessary
+    end
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;
     
     %Estimation error in the projection domain
-    est_proj=Ax(f,geo,angles,'interpolated');
+    est_proj=Ax(f,geo,angles,'interpolated','gpuids',gpuids);
     delta_p=im3Dnorm(est_proj-proj,'L2');
     
     %Enforcing ART along all projections if squared delta_p > epsilon
@@ -149,29 +168,24 @@ while ~stop_criteria %POCS
                 geo.DSO=DSO(jj);
             end
             
-            f=f+beta* bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,jj).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj})),geo,alphablocks{:,jj}));
+            f=f+beta* bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,jj).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj},'gpuids',gpuids)),geo,alphablocks{:,jj},'gpuids',gpuids));
             
         end
     end
     
     %Non-negativity projection on all pixels
-    f=max(f,0);
-    
+    if nonneg
+        f=max(f,0);
+    end
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
     
     if measurequality
-        qualMeasOut(:,iter)=Measure_Quality(f0,f,QualMeasOpts);
+        qualMeasOut(:,iter)=Measure_Quality(res_prev,f,QualMeasOpts);
     end
     
     % Compute L2 error of actual image. Ax-b
-    dd=im3Dnorm(Ax(f,geo,angles)-proj,'L2');
-    
-    
-    %Compute errorSART
-    errorSARTnow=im3Dnorm(proj-Ax(f,geo,angles),'L2');
-    errorSART=[errorSART errorSARTnow];
-    
+    dd=im3Dnorm(Ax(f,geo,angles,'gpuids',gpuids)-proj,'L2');
     
     % Compute change in the image after last SART iteration
     dp_vec=(f-f0);
@@ -185,7 +199,7 @@ while ~stop_criteria %POCS
     %  TV MINIMIZATION
     % =========================================================================
     %  Call GPU to minimize AwTV
-    f=minimizeAwTV(f0,step,ng,delta);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
+    f=minimizeAwTV(f0,step,ng,delta,'gpuids',gpuids);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
     %                                             for ii=1:ng
     %                                                 %delta=-0.00038 for thorax phantom
     %                                                 df=weighted_gradientTVnorm(f,delta);
@@ -196,13 +210,8 @@ while ~stop_criteria %POCS
     dg_vec=(f-f0);
     
     if iter==1
-        delta_p_first=im3Dnorm((Ax(f0,geo,angles,'interpolated'))-proj,'L2');
+        delta_p_first=im3Dnorm((Ax(f0,geo,angles,'interpolated','gpuids',gpuids))-proj,'L2');
     end
-    
-    %Compute errorTV
-    errorTVnow=im3Dnorm(proj-Ax(f,geo,angles),'L2');
-    errorTV=[errorTV errorTVnow];
-    
     
     % Reduce SART step
     beta=beta*beta_red;
@@ -228,21 +237,21 @@ while ~stop_criteria %POCS
     if computeL2
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
-        errornow=im3Dnorm(proj-Ax(f,geo,angles),'L2');                       % Compute error norm2 of b-Ax
+        resL2(ii)=im3Dnorm(proj-Ax(f,geo,angles,'gpuids',gpuids),'L2');                       % Compute error norm2 of b-Ax
         % If the error is not minimized.
-        if  iter~=1 && errornow>errorL2(end)
+        if  iter~=1 && resL2(ii)>resL2(ii-1)
             if verbose
                 disp(['Convergence criteria met, exiting on iteration number:', num2str(iter)]);
             end
             return;
         end
-        errorL2=[errorL2 errornow];
+        
     end
     
     
     if (iter==1 && verbose==1)
         expected_time=toc*maxiter;
-        disp('OS-AwPCSD');
+        disp('OS_AwPCSD');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
         disp(['Expected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
@@ -252,8 +261,8 @@ end
 end
 
 
-function [beta,beta_red,f0,ng,verbose,epsilon,delta,block_size,OrderStrategy,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
-opts=     {'lambda','lambda_red','init','tviter','verbose','maxl2err','delta','blocksize','orderstrategy','qualmeas'};
+function [beta,beta_red,f0,ng,verbose,epsilon,delta,block_size,OrderStrategy,QualMeasOpts,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,argin)
+opts=     {'lambda','lambda_red','init','tviter','verbose','maxl2err','delta','blocksize','orderstrategy','qualmeas','nonneg','gpuids','redundancy_weighting','groundtruth'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -300,8 +309,8 @@ for ii=1:length(opts)
                 warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
-        % Lambda
-        %  =========================================================================
+            % Lambda
+            %  =========================================================================
         case 'lambda'
             if default
                 beta=1;
@@ -311,8 +320,8 @@ for ii=1:length(opts)
                 end
                 beta=val;
             end
-        % Lambda reduction
-        %  =========================================================================
+            % Lambda reduction
+            %  =========================================================================
         case 'lambda_red'
             if default
                 beta_red=0.99;
@@ -322,12 +331,12 @@ for ii=1:length(opts)
                 end
                 beta_red=val;
             end
-        % Initial image
-        %  =========================================================================
+            % Initial image
+            %  =========================================================================
         case 'init'
             if default || strcmp(val,'none')
                 f0=zeros(geo.nVoxel','single');
-
+                
             else
                 if strcmp(val,'FDK')
                     f0=FDK(proj, geo, angles);
@@ -335,35 +344,35 @@ for ii=1:length(opts)
                     error('TIGRE:MLEM:InvalidInput','Invalid init')
                 end
             end
-        % Number of iterations of TV
-        %  =========================================================================
+            % Number of iterations of TV
+            %  =========================================================================
         case 'tviter'
             if default
                 ng=20;
             else
                 ng=val;
             end
-        %  Maximum L2 error to have a "good image"
-        %  =========================================================================
+            %  Maximum L2 error to have a "good image"
+            %  =========================================================================
         case 'maxl2err'
             if default
-                epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
+                epsilon=im3Dnorm(FDK(proj,geo,angles),'L2')*0.2; %heuristic
             else
                 epsilon=val;
             end
-        %  =========================================================================
-        %  Parameter to control the amount of smoothing for pixels at the
-        %  edges
-        %  =========================================================================
+            %  =========================================================================
+            %  Parameter to control the amount of smoothing for pixels at the
+            %  edges
+            %  =========================================================================
         case 'delta'
             if default
                 delta=-0.005;
             else
                 delta=val;
             end
-        %  =========================================================================
-        %  Block size for OS-SART
-        %  =========================================================================
+            %  =========================================================================
+            %  Block size for OS-SART
+            %  =========================================================================
         case 'blocksize'
             if default
                 block_size=20;
@@ -373,18 +382,18 @@ for ii=1:length(opts)
                 end
                 block_size=val;
             end
-        %  Order strategy
-        %  =========================================================================
+            %  Order strategy
+            %  =========================================================================
         case 'orderstrategy'
             if default
                 OrderStrategy='random';
             else
                 OrderStrategy=val;
             end
-        %  =========================================================================
-        %  Image Quality Measure
-        %  =========================================================================
-       case 'qualmeas'
+            %  =========================================================================
+            %  Image Quality Measure
+            %  =========================================================================
+        case 'qualmeas'
             if default
                 QualMeasOpts={};
             else
@@ -393,6 +402,34 @@ for ii=1:length(opts)
                 else
                     error('TIGRE:OS_AwPCSD:InvalidInput','Invalid quality measurement parameters');
                 end
+            end
+            %  Non negative
+            %  =========================================================================
+        case 'nonneg'
+            if default
+                nonneg=true;
+            else
+                nonneg=val;
+            end
+            %  GPU Ids
+            %  =========================================================================
+        case 'gpuids'
+            if default
+                gpuids = GpuIds();
+            else
+                gpuids = val;
+            end
+        case 'redundancy_weighting'
+            if default
+                redundancy_weights = true;
+            else
+                redundancy_weights = val;
+            end
+        case 'groundtruth'
+            if default
+                gt=nan;
+            else
+                gt=val;
             end
         otherwise
             error('TIGRE:OS_AwPCSD:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_AwPCSD()']);

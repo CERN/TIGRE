@@ -1,4 +1,4 @@
-function proj=addCTnoise(proj,varargin)
+function proj=addCTnoise(proj, varargin)
 %ADDCTNOISE adds realistic noise to CT projections
 %   addCTnoise(PROJ):  adds Poisson and Gaussian noise to the input data.
 %
@@ -7,7 +7,7 @@ function proj=addCTnoise(proj,varargin)
 %   'Poisson' : changes the average photon count for Poisson noise. Default
 %               value is 1e5
 %   'Gaussian': changes the mean and standard deviation of the electronic
-%               Gaussian noise. Default value is [0 10]
+%               Gaussian noise. Default value is [0 0.5]
 %
 % The computation of the noise projection follows
 % Adaptive-weighted total variation minimization for sparse data toward low-dose x-ray computed tomography image reconstruction
@@ -33,8 +33,8 @@ function proj=addCTnoise(proj,varargin)
 %% parse inputs
 
 
-opts=     {'Poisson','Gaussian'};
-defaults= [   1  ,  1 ];
+opts=     {'Poisson','Gaussian', 'Implementation'};
+defaults= [   1  ,  1  ,  1 ];
 
 % Check inputs
 nVarargs = length(varargin);
@@ -71,7 +71,7 @@ for ii=1:length(opts)
                     I0=max(proj(:))/5;
                 end
             else
-                if ~isscalar(val);error('CBCT:addnoise:WorngInput','Input to Poisson should be scalar');end
+                if ~isscalar(val);error('CBCT:addnoise:WrongInput','Input to Poisson should be scalar');end
                 I0=val;
             end
             
@@ -81,12 +81,20 @@ for ii=1:length(opts)
                 m=0;
                 sigma=0.5;
             else
-                if (size(val,2)~=2);error('CBCT:addnoise:WorngInput','Input to Gaussian should be 1x2');end
+                if (size(val,2)~=2);error('CBCT:addnoise:WrongInput','Input to Gaussian should be 1x2');end
                 m=val(1);
                 sigma=val(2);
             end
+        
+        case 'Implementation'
+            if default
+                implementation='cuda';
+            else
+                implementation=val;
+            end
+            
         otherwise
-            error('CBCT:addnoise:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in OS_SART_CBCT()']);
+            error('CBCT:addnoise:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in addCTnoise()']);
     end
 end
 
@@ -95,20 +103,24 @@ end
 Im=I0*exp(-proj/max(proj(:)));
 
 % Photon noise + electronic noise
-if areTheseToolboxesInstalled({'MATLAB','Image Processing Toolbox'})
-    Im=imnoise(Im/I0,'poisson')*I0;
-    Im=imnoise(Im/I0,'gaussian',m,sigma/I0)*I0;
-elseif areTheseToolboxesInstalled({'MATLAB','Statistics Toolbox'}) || areTheseToolboxesInstalled({'MATLAB','Statistics and Machine Learning Toolbox'})
-    Im=poissrnd(Im)+randn(size(Im)).*sigma + m;
-else
-    warning(['You don''t have Statistic toolbox, so poisson random noise is not available in MATLAB.',...
-        java.lang.System.getProperty('line.separator').char,...
-        'If you want to add that noise, use the following command:',...
-        java.lang.System.getProperty('line.separator').char,...
-        'Im=poissonrandom(I0*exp(-proj)); Im(Im<0)=1e-6; proj=single(log(I0./Im));',...
-        java.lang.System.getProperty('line.separator').char,...,
-        'With I0 ~ 10000'])
-    Im=randn(size(Im)).*sigma + m; % this one is slower
+if strcmp(implementation, 'matlab')
+    if areTheseToolboxesInstalled({'MATLAB','Image Processing Toolbox'})
+        %disp('Using Image Processing Toolbox');
+        Im=imnoise(Im/I0,'poisson')*I0;
+        Im=imnoise(Im/I0,'gaussian',m,sigma/I0)*I0;
+    elseif areTheseToolboxesInstalled({'MATLAB','Statistics Toolbox'}) || areTheseToolboxesInstalled({'MATLAB','Statistics and Machine Learning Toolbox'})
+        %disp('Using Statistics Toolbox');
+        Im=poissrnd(Im)+randn(size(Im)).*sigma + m;
+    else
+        warning(['You don''t have Image Processing Toolbox nor Statistic Toolbox.',...
+            java.lang.System.getProperty('line.separator').char,...
+            'CUDA version is used.']);
+        %disp('Using CUDA ..');
+        Im=AddNoise(Im, m, sigma);
+    end
+else % if implementation == 'cuda'
+    %disp('Using CUDA');
+    Im=AddNoise(Im, m, sigma);
 end
 Im(Im<=0)=1e-6;
 proj=single(log(I0./Im))*max(proj(:));

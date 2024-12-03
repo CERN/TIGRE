@@ -15,7 +15,7 @@ function data=ParkerWeight(data,geo,angles,q)
 %   publisher={American Association of Physicists in Medicine}
 % }
 if length(unique(geo.DSD))>1
-   warning('Parker weigths not supported for varying geo.DSD, mean(geo.DSD) is used.') % mean(DSD) might be better than DSD(1) for varying DSD
+   warning('Parker weights not supported for varying geo.DSD, mean(geo.DSD) is used.') % mean(DSD) might be better than DSD(1) for varying DSD
 end
 
 alpha = atan([-geo.sDetector(1)/2+geo.dDetector(1)/2:geo.dDetector(1):geo.sDetector(1)/2-geo.dDetector(1)/2]/mean(geo.DSD));
@@ -26,10 +26,10 @@ end
 delta = abs(alpha(end)-alpha(1))/2;
 totangles=abs(angles(end)-angles(1));
 if totangles>=2*pi
-   warning('Computing Parker weigths for scanning angle equal or bigger than 2*pi. Consider disabling Parker weigths.') 
+   warning('Computing Parker weights for scanning angle equal or bigger than 2*pi. Consider disabling Parker weights.') 
 end
 if totangles<pi+2*delta
-    warning('Scanning angles smaller than pi+cone_angle. This is limited angle tomgraphy, there is nosufficient data, thus weigthing for data redundancy is not required.')
+    warning('Scanning angles smaller than pi+cone_angle. This is limited angle tomography, there is no sufficient data, thus weighting for data redundancy is not required.')
 end
 epsilon=max(totangles-(pi+2*delta),0);
 

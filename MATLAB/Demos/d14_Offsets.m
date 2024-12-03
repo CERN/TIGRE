@@ -1,7 +1,7 @@
 %% DEMO 14:  Playing with offsets
 %
 %
-% In this demo we show how to change offsets to either the iamge or the
+% In this demo we show how to change offsets to either the image or the
 % detector, and the flexibility of it.
 % 
 % 

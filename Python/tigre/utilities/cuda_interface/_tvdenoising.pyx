@@ -47,7 +47,7 @@ def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lam
     size_img[1]= <np.npy_intp> src.shape[1]
     size_img[2]= <np.npy_intp> src.shape[2]
 
-    cdef float* c_imgout = <float*> malloc(size_img[0] *size_img[1] *size_img[2]* sizeof(float))
+    cdef float* c_imgout = <float*> malloc(<unsigned long>size_img[0] *size_img[1] *size_img[2]* sizeof(float))
 
     cdef float spacing[3]
     spacing[0]=<float> 1
@@ -58,6 +58,8 @@ def tvdenoise(np.ndarray[np.float32_t, ndim=3] src, int maxiter = 100, float lam
     imgsize[0] = <long> size_img[2]
     imgsize[1] = <long> size_img[1]
     imgsize[2] = <long> size_img[0]
+
+    src = np.ascontiguousarray(src)
 
     cdef float* c_src = <float*> src.data
     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter

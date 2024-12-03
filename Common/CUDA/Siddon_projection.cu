@@ -2,7 +2,7 @@
  *
  * CUDA functions for ray-voxel intersection based projection
  *
- * This file has the necesary fucntiosn to perform X-ray CBCT projection
+ * This file has the necessary fucntiosn to perform X-ray CBCT projection
  * operation given a geaometry, angles and image. It usesthe so-called
  * Jacobs algorithm to compute efficiently the length of the x-rays over
  * voxel space.
@@ -114,20 +114,20 @@ __global__ void kernelPixelDetector( Geometry geo,
         cudaTextureObject_t tex){
     
     
-    unsigned long u = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned long v = blockIdx.y * blockDim.y + threadIdx.y;
-    unsigned long projNumber=threadIdx.z;
+    unsigned long long u = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned long long v = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned long long projNumber=threadIdx.z;
     
     
     if (u>= geo.nDetecU || v>= geo.nDetecV || projNumber>=PROJ_PER_BLOCK)
         return;
     
 #if IS_FOR_MATLAB_TIGRE
-    size_t idx =  (size_t)(u * geo.nDetecV + v)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+    size_t idx =  (size_t)(u * (unsigned long long)geo.nDetecV + v)+ projNumber*(unsigned long long)geo.nDetecV *(unsigned long long)geo.nDetecU ;
 #else
-    size_t idx =  (size_t)(v * geo.nDetecU + u)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+    size_t idx =  (size_t)(v * (unsigned long long)geo.nDetecU + u)+ projNumber*(unsigned long long)geo.nDetecV *(unsigned long long)geo.nDetecU ;
 #endif
-    int indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array (for a given GPU)
+    unsigned long indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array (for a given GPU)
 
     if(indAlpha>=totalNoOfProjections)
         return;
@@ -138,8 +138,8 @@ __global__ void kernelPixelDetector( Geometry geo,
     Point3D source = projParamsArrayDev[4*projNumber+3];
     
     /////// Get coordinates XYZ of pixel UV
-    int pixelV = geo.nDetecV-v-1;
-    int pixelU = u;
+    unsigned long pixelV = geo.nDetecV-v-1;
+    unsigned long pixelU = u;
     Point3D pixel1D;
     pixel1D.x=(uvOrigin.x+pixelU*deltaU.x+pixelV*deltaV.x);
     pixel1D.y=(uvOrigin.y+pixelU*deltaU.y+pixelV*deltaV.y);
@@ -220,11 +220,11 @@ __global__ void kernelPixelDetector( Geometry geo,
        
     
     // get index of first intersection. eq (26) and (19)
-    int i,j,k;
+    unsigned long i,j,k;
     float aminc=fminf(fminf(ax,ay),az);
-    i=(int)floorf(source.x+ (aminc+am)*0.5f*ray.x);
-    j=(int)floorf(source.y+ (aminc+am)*0.5f*ray.y);
-    k=(int)floorf(source.z+ (aminc+am)*0.5f*ray.z);
+    i=(unsigned long)floorf(source.x+ (aminc+am)*0.5f*ray.x);
+    j=(unsigned long)floorf(source.y+ (aminc+am)*0.5f*ray.y);
+    k=(unsigned long)floorf(source.z+ (aminc+am)*0.5f*ray.z);
     // Initialize
     float ac=am;
     //eq (28), unit anlges
@@ -240,12 +240,12 @@ __global__ void kernelPixelDetector( Geometry geo,
     
     float maxlength=__fsqrt_rd(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
     float sum=0.0f;
-    unsigned int Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections
+    unsigned long Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
     i+=0.5f;
     j+=0.5f;
     k+=0.5f;
-    for (unsigned int ii=0;ii<Np;ii++){
+    for (unsigned long ii=0;ii<Np;ii++){
         if (ax==aminc){
             sum+=(ax-ac)*tex3D<float>(tex, i, j, k);
             i=i+iu;
@@ -279,26 +279,11 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
     // CODE assumes
     // 1.-All available devices are usable by this code
     // 2.-All available devices are equal, they are the same machine (warning thrown)
-    int dev;
-    const int devicenamelength = 256;  // The length 256 is fixed by spec of cudaDeviceProp::name
-    char devicename[devicenamelength];
-    cudaDeviceProp deviceProp;
-    
-    for (dev = 0; dev < deviceCount; dev++) {
-        cudaSetDevice(gpuids[dev]);
-        cudaGetDeviceProperties(&deviceProp, dev);
-        if (dev>0){
-            if (strcmp(devicename,deviceProp.name)!=0){
-                mexWarnMsgIdAndTxt("Ax:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 275.");
-                break;
-            }
-        }
-        memset(devicename, 0, devicenamelength);
-        strcpy(devicename, deviceProp.name);
+    // Check the available devices, and if they are the same
+    if (!gpuids.AreEqualDevices()) {
+        mexWarnMsgIdAndTxt("Ax:Siddon_projection:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed.");
     }
-    
-    
-    
+    int dev;
     
     // Check free memory
     size_t mem_GPU_global;
@@ -357,9 +342,11 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
 #endif
     // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to
     // pin the memory is greater than the lost time in Synchronously launching the memcpys. This is only worth it when the image is too big.
+#ifndef NO_PINNED_MEMORY
     if (isHostRegisterSupported & (splits>1 |deviceCount>1)){
         cudaHostRegister(img, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float),cudaHostRegisterPortable);
     }
+#endif
     cudaCheckErrors("Error pinning memory");
 
     
@@ -546,7 +533,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
             projection_this_block=min(nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK, //the remaining angles that this GPU had to do (almost never PROJ_PER_BLOCK)
                                       nangles-proj_global);                              //or whichever amount is left to finish all (this is for the last GPU)
 
-            cudaDeviceSynchronize(); //Not really necesary, but just in case, we los nothing. 
+            cudaDeviceSynchronize(); //Not really necessary, but just in case, we los nothing. 
             cudaCheckErrors("Error at copying the last set of projections out (or in the previous copy)");
             cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(noOfKernelCalls%2))+dev*2], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
         }
@@ -588,13 +575,13 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
     
     for (int i = 0; i < nStreams; ++i)
         cudaStreamDestroy(stream[i]) ;
-    
+#ifndef NO_PINNED_MEMORY
     if (isHostRegisterSupported & (splits>1 |deviceCount>1)){
         cudaHostUnregister(img);
     }
     cudaCheckErrors("cudaFree  fail");
-    
-    cudaDeviceReset();
+#endif
+    //cudaDeviceReset();
     return 0;
 }
 
@@ -687,100 +674,90 @@ void computeDeltas_Siddon(Geometry geo,int i, Point3D* uvorigin, Point3D* deltaU
     //End point
     Point3D P,Pu0,Pv0;
     
-    P.x  =-(geo.DSD[i]-geo.DSO[i]);   P.y  = geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       P.z  = geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
-    Pu0.x=-(geo.DSD[i]-geo.DSO[i]);   Pu0.y= geo.dDetecU*(1-((float)geo.nDetecU/2)+0.5);       Pu0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-0);
-    Pv0.x=-(geo.DSD[i]-geo.DSO[i]);   Pv0.y= geo.dDetecU*(0-((float)geo.nDetecU/2)+0.5);       Pv0.z= geo.dDetecV*(((float)geo.nDetecV/2)-0.5-1);
-    // Geomtric trasnformations:
+    P.x  =-(geo.DSD[i]-geo.DSO[i]);   P.y  = geo.dDetecU*(-((double)geo.nDetecU/2.0)+0.5);       P.z  = geo.dDetecV*(((double)geo.nDetecV/2.0)-0.5);
+    Pu0.x=0;                          Pu0.y= geo.dDetecU;                                    Pu0.z= 0;
+    Pv0.x=0;                          Pv0.y= 0;                                              Pv0.z= geo.dDetecV*(-1);
+
+    // Geometric transformations:
     // Now we have the Real world (OXYZ) coordinates of the bottom corner and its two neighbours.
-    // The obkjective is to get a position of the detector in a coordinate system where:
+    // The objective is to get a position of the detector in a coordinate system where:
     // 1-units are voxel size (in each direction can be different)
     // 2-The image has the its first voxel at (0,0,0)
     // 3-The image never rotates
-    
+
     // To do that, we need to compute the "deltas" the detector, or "by how much
     // (in new xyz) does the voxels change when and index is added". To do that
     // several geometric steps needs to be changed
-    
+
     //1.Roll,pitch,jaw
     // The detector can have a small rotation.
     // according to
     //"A geometric calibration method for cone beam CT systems" Yang K1, Kwan AL, Miller DF, Boone JM. Med Phys. 2006 Jun;33(6):1695-706.
     // Only the Z rotation will have a big influence in the image quality when they are small.
     // Still all rotations are supported
-    
+
     // To roll pitch jaw, the detector has to be in centered in OXYZ.
-    P.x=0;Pu0.x=0;Pv0.x=0;
-    
+    // NB: do not apply offsets to Pu0 and Pv0: they are directions, and are invariant through translations
+    P.x=0;
+
     // Roll pitch yaw
     rollPitchYaw(geo,i,&P);
     rollPitchYaw(geo,i,&Pu0);
     rollPitchYaw(geo,i,&Pv0);
-    //Now ltes translate the points where they should be:
+    //Now let's translate the points where they should be:
+    // NB: do not apply offsets to Pu0 and Pv0: they are directions, and are invariant through translations
     P.x=P.x-(geo.DSD[i]-geo.DSO[i]);
-    Pu0.x=Pu0.x-(geo.DSD[i]-geo.DSO[i]);
-    Pv0.x=Pv0.x-(geo.DSD[i]-geo.DSO[i]);
-    
+
     //1: Offset detector
-    
-    
+
+
     //S doesnt need to chagne
-    
-    
+
+
     //3: Rotate (around z)!
     Point3D Pfinal, Pfinalu0, Pfinalv0;
     Pfinal.x  =P.x;
     Pfinal.y  =P.y  +geo.offDetecU[i]; Pfinal.z  =P.z  +geo.offDetecV[i];
-    Pfinalu0.x=Pu0.x;
-    Pfinalu0.y=Pu0.y  +geo.offDetecU[i]; Pfinalu0.z  =Pu0.z  +geo.offDetecV[i];
-    Pfinalv0.x=Pv0.x;
-    Pfinalv0.y=Pv0.y  +geo.offDetecU[i]; Pfinalv0.z  =Pv0.z  +geo.offDetecV[i];
-    
+    Pfinalu0 = Pu0;
+    Pfinalv0 = Pv0;
+
     eulerZYZ(geo,&Pfinal);
     eulerZYZ(geo,&Pfinalu0);
     eulerZYZ(geo,&Pfinalv0);
     eulerZYZ(geo,&S);
-    
+
     //2: Offset image (instead of offseting image, -offset everything else)
-    
+    // NB: do not apply offsets to Pfinalu0 and Pfinalv0: they are directions, and are invariant through translations
+
     Pfinal.x  =Pfinal.x-geo.offOrigX[i];     Pfinal.y  =Pfinal.y-geo.offOrigY[i];     Pfinal.z  =Pfinal.z-geo.offOrigZ[i];
-    Pfinalu0.x=Pfinalu0.x-geo.offOrigX[i];   Pfinalu0.y=Pfinalu0.y-geo.offOrigY[i];   Pfinalu0.z=Pfinalu0.z-geo.offOrigZ[i];
-    Pfinalv0.x=Pfinalv0.x-geo.offOrigX[i];   Pfinalv0.y=Pfinalv0.y-geo.offOrigY[i];   Pfinalv0.z=Pfinalv0.z-geo.offOrigZ[i];
     S.x=S.x-geo.offOrigX[i];               S.y=S.y-geo.offOrigY[i];               S.z=S.z-geo.offOrigZ[i];
-    
+
     // As we want the (0,0,0) to be in a corner of the image, we need to translate everything (after rotation);
     Pfinal.x  =Pfinal.x+geo.sVoxelX/2;      Pfinal.y  =Pfinal.y+geo.sVoxelY/2;          Pfinal.z  =Pfinal.z  +geo.sVoxelZ/2;
-    Pfinalu0.x=Pfinalu0.x+geo.sVoxelX/2;    Pfinalu0.y=Pfinalu0.y+geo.sVoxelY/2;        Pfinalu0.z=Pfinalu0.z+geo.sVoxelZ/2;
-    Pfinalv0.x=Pfinalv0.x+geo.sVoxelX/2;    Pfinalv0.y=Pfinalv0.y+geo.sVoxelY/2;        Pfinalv0.z=Pfinalv0.z+geo.sVoxelZ/2;
     S.x      =S.x+geo.sVoxelX/2;          S.y      =S.y+geo.sVoxelY/2;              S.z      =S.z      +geo.sVoxelZ/2;
-    
+
     //4. Scale everything so dVoxel==1
     Pfinal.x  =Pfinal.x/geo.dVoxelX;      Pfinal.y  =Pfinal.y/geo.dVoxelY;        Pfinal.z  =Pfinal.z/geo.dVoxelZ;
     Pfinalu0.x=Pfinalu0.x/geo.dVoxelX;    Pfinalu0.y=Pfinalu0.y/geo.dVoxelY;      Pfinalu0.z=Pfinalu0.z/geo.dVoxelZ;
     Pfinalv0.x=Pfinalv0.x/geo.dVoxelX;    Pfinalv0.y=Pfinalv0.y/geo.dVoxelY;      Pfinalv0.z=Pfinalv0.z/geo.dVoxelZ;
     S.x      =S.x/geo.dVoxelX;          S.y      =S.y/geo.dVoxelY;            S.z      =S.z/geo.dVoxelZ;
-    
-    
+
+
     //mexPrintf("COR: %f \n",geo.COR[i]);
     //5. apply COR. Wherever everything was, now its offesetd by a bit
-    float CORx, CORy;
+    // NB: do not apply offsets to Pfinalu0 and Pfinalv0: they are directions, and are invariant through translations
+    double CORx, CORy;
     CORx=-geo.COR[i]*sin(geo.alpha)/geo.dVoxelX;
     CORy= geo.COR[i]*cos(geo.alpha)/geo.dVoxelY;
     Pfinal.x+=CORx;   Pfinal.y+=CORy;
-    Pfinalu0.x+=CORx;   Pfinalu0.y+=CORy;
-    Pfinalv0.x+=CORx;   Pfinalv0.y+=CORy;
     S.x+=CORx; S.y+=CORy;
-    
+
     // return
-    
+
     *uvorigin=Pfinal;
-    
-    deltaU->x=Pfinalu0.x-Pfinal.x;
-    deltaU->y=Pfinalu0.y-Pfinal.y;
-    deltaU->z=Pfinalu0.z-Pfinal.z;
-    
-    deltaV->x=Pfinalv0.x-Pfinal.x;
-    deltaV->y=Pfinalv0.y-Pfinal.y;
-    deltaV->z=Pfinalv0.z-Pfinal.z;
+
+    *deltaU=Pfinalu0;
+    *deltaV=Pfinalv0;
     
     *source=S;
 }

@@ -1,4 +1,7 @@
 [![Documentation Status](https://readthedocs.org/projects/tigre/badge/?version=latest)](https://tigre.readthedocs.io/en/latest/?badge=latest)
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-12-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 
 TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
@@ -51,13 +54,13 @@ TIGRE is a GPU-based CT reconstruction software repository that contains a wide 
    
     - **Iterative algorithms**
        
-        - Gradient-based algorithms (SART, OS-SART, SIRT) with multiple tuning parameters (Nesterov acceleration, initialization, parameter reduction, ...)
+        - Gradient-based algorithms (SART, OS-SART, SIRT, ASD-POCS, OS-ASD-POCS, B-ASD-POCS-β, PCSD, AwPCSD, Aw-ASD-POCS) with multiple tuning parameters (Nesterov acceleration, initialization, parameter reduction, ...)
        
-        - Krylov subspace algorithms (CGLS)
+        - Krylov subspace algorithms (CGLS, LSQR, hybrid LSQR, LSMR, IRN-TV-CGLS, hybrid-fLSQR-TV, AB/BA-GMRES)
        
         - Statistical reconstruction (MLEM)
        
-        - Total variation regularization based algorithms: proximal-based (FISTA, SART-TV) and POCS-based (ASD-POCS, OS-ASD-POCS, B-ASD-POCS-β, PCSD, AwPCSD, Aw-ASD-POCS)
+        - Variational methods (FISTA, SART-TV) 
        
 - TV denoising for 3D images.
        
@@ -113,7 +116,7 @@ The Slack team is a good place for chatting about development and questions abou
 ## Licensing
 
 The creation of TIGRE was supported by the University of Bath and CERN. It is released under the BSD License, meaning you can use and modify the software freely.  However, you **must** cite the original authors.
-For more information read [the licence file][1] or the [BSD License Definition][2].
+For more information read [the license file][1] or the [BSD License Definition][2].
 
 If you use TIGRE, please reference the following papers:
 
@@ -130,6 +133,45 @@ Boardman, Mark Mavrogordato, Manjit Dosanjh, Steven Hancock, Thomas Blumensath*
 **Journal of Parallel and Distributed Computing**
 [Read the article][4], 
 [Preprint][5]
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/AnderBiguri"><img src="https://avatars.githubusercontent.com/u/11854388?v=4?s=100" width="100px;" alt="Biguri"/><br /><sub><b>Biguri</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=AnderBiguri" title="Code">💻</a> <a href="#example-AnderBiguri" title="Examples">💡</a> <a href="#ideas-AnderBiguri" title="Ideas, Planning, & Feedback">🤔</a> <a href="#maintenance-AnderBiguri" title="Maintenance">🚧</a> <a href="#research-AnderBiguri" title="Research">🔬</a> <a href="https://github.com/CERN/TIGRE/pulls?q=is%3Apr+reviewed-by%3AAnderBiguri" title="Reviewed Pull Requests">👀</a> <a href="#tutorial-AnderBiguri" title="Tutorials">✅</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/yliu88au"><img src="https://avatars.githubusercontent.com/u/75292881?v=4?s=100" width="100px;" alt="yliu88au"/><br /><sub><b>yliu88au</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=yliu88au" title="Code">💻</a> <a href="https://github.com/CERN/TIGRE/issues?q=author%3Ayliu88au" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/reubenlindroos"><img src="https://avatars.githubusercontent.com/u/25688713?v=4?s=100" width="100px;" alt="Reuben Lindroos"/><br /><sub><b>Reuben Lindroos</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=reubenlindroos" title="Code">💻</a> <a href="https://github.com/CERN/TIGRE/issues?q=author%3Areubenlindroos" title="Bug reports">🐛</a> <a href="#design-reubenlindroos" title="Design">🎨</a> <a href="#ideas-reubenlindroos" title="Ideas, Planning, & Feedback">🤔</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/genusn"><img src="https://avatars.githubusercontent.com/u/25704789?v=4?s=100" width="100px;" alt="genusn"/><br /><sub><b>genusn</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=genusn" title="Code">💻</a> <a href="https://github.com/CERN/TIGRE/issues?q=author%3Agenusn" title="Bug reports">🐛</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/yidu-bjcancer"><img src="https://avatars.githubusercontent.com/u/7495679?v=4?s=100" width="100px;" alt="Yi DU"/><br /><sub><b>Yi DU</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=yidu-bjcancer" title="Code">💻</a> <a href="https://github.com/CERN/TIGRE/issues?q=author%3Ayidu-bjcancer" title="Bug reports">🐛</a> <a href="#research-yidu-bjcancer" title="Research">🔬</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/tsadakane"><img src="https://avatars.githubusercontent.com/u/40597344?v=4?s=100" width="100px;" alt="tsadakane"/><br /><sub><b>tsadakane</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=tsadakane" title="Code">💻</a> <a href="#design-tsadakane" title="Design">🎨</a> <a href="#ideas-tsadakane" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/CERN/TIGRE/issues?q=author%3Atsadakane" title="Bug reports">🐛</a> <a href="#tutorial-tsadakane" title="Tutorials">✅</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://omg.lol/sco1"><img src="https://avatars.githubusercontent.com/u/5323929?v=4?s=100" width="100px;" alt="S. Co1"/><br /><sub><b>S. Co1</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=sco1" title="Code">💻</a> <a href="#design-sco1" title="Design">🎨</a> <a href="#tool-sco1" title="Tools">🔧</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Daveelvt"><img src="https://avatars.githubusercontent.com/u/16086944?v=4?s=100" width="100px;" alt="Daveelvt"/><br /><sub><b>Daveelvt</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/commits?author=Daveelvt" title="Code">💻</a> <a href="#research-Daveelvt" title="Research">🔬</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/phernst"><img src="https://avatars.githubusercontent.com/u/9623894?v=4?s=100" width="100px;" alt="phernst"/><br /><sub><b>phernst</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/issues?q=author%3Aphernst" title="Bug reports">🐛</a> <a href="https://github.com/CERN/TIGRE/commits?author=phernst" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/malena-sabate"><img src="https://avatars.githubusercontent.com/u/83228154?v=4?s=100" width="100px;" alt="malena-sabate"/><br /><sub><b>malena-sabate</b></sub></a><br /><a href="#research-malena-sabate" title="Research">🔬</a> <a href="https://github.com/CERN/TIGRE/commits?author=malena-sabate" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://emilienvalat.net/"><img src="https://avatars.githubusercontent.com/u/46785587?v=4?s=100" width="100px;" alt="Emilien Valat"/><br /><sub><b>Emilien Valat</b></sub></a><br /><a href="#research-Emvlt" title="Research">🔬</a> <a href="https://github.com/CERN/TIGRE/commits?author=Emvlt" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/zezisme"><img src="https://avatars.githubusercontent.com/u/40331996?v=4?s=100" width="100px;" alt="zez666"/><br /><sub><b>zez666</b></sub></a><br /><a href="https://github.com/CERN/TIGRE/issues?q=author%3Azezisme" title="Bug reports">🐛</a> <a href="https://github.com/CERN/TIGRE/commits?author=zezisme" title="Code">💻</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
 
 [1]: LICENSE.txt
 [2]: http://www.linfo.org/bsdlicense.html

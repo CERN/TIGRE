@@ -1,6 +1,11 @@
 function [geo, ScanXML, ReconXML] = GeometryFromXML(datafolder,varargin)
+% Purpose: 
+%   1) load scan and reconstruction geometry from .xml files
+%   2) generate geo for TIGRE
 % Dependence: xml2struct.m
 % Date: 2020-03-28
+% Author: Yi Du, yi.du@hotmail.com
+
 if nargin>1
     load_geo=varargin{1}~=0;
 else
@@ -24,7 +29,7 @@ end
 % Cone-beam CT scenario
 geo.mode = 'cone';
 
-% in geo, only 14 predefined fields can allowed
+% in geo, only 14 predefined fields are allowed, hard-coded in TIGRE
 % determine arc/fan in FDK
 %{ 
 % Circular Trajectory: Full/Half
@@ -57,13 +62,14 @@ geo.sDetector = geo.nDetector.*geo.dDetector;
 
 % Offset of Detector           (mm)
 offset = str2double(ScanXML.Acquisitions.ImagerLat.Text);
-geo.offDetector = [offset; 0 ];
+% offset orientation in VarianCBCT is opposite to TIGRE
+geo.offDetector = [offset * (-1); 0 ];
 % Offset of image from origin  (mm) 
-geo.offOrigin =[0;0;0];                                  
+geo.offOrigin =[0;0;0];           
 
 % Auxiliary 
 % Variable to define accuracy of 'interpolated' projection
-% It defines the amoutn of samples per voxel.
+% It defines the amount of samples per voxel.
 % Recommended <=0.5          (vx/sample) 
 geo.accuracy=0.5;                           
 

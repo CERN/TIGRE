@@ -1,8 +1,8 @@
 ##% Demo 5: How to use plotting functions
 #
-# This demo will demostrate the options for plotting projection and images
+# This demo will demonstrate the options for plotting projection and images
 # on TIGRE. The functions have been in previous demos, but in here an
-# exaustive explanation and usage of them is given.
+# exhaustive explanation and usage of them is given.
 #
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -33,7 +33,7 @@ geo = tigre.geometry_default(high_resolution=False)
 #%% Load data and generate projections
 # define angles
 angles = np.linspace(0, 2 * np.pi, 100)
-# Load thorax phatom data
+# Load thorax phantom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
 # generate projections
 projections = tigre.Ax(head, geo, angles)
@@ -74,7 +74,7 @@ clims = [0, 200]
 
 giffilename = "demo5projections.gif"
 
-# 'Slice': allows to plot a single projection .Will overwrite the behaviour
+# 'Slice': allows to plot a single projection .Will overwrite the behavior
 # of 'Step'
 slice = 5
 
@@ -123,7 +123,7 @@ clims = [0, 1]
 
 giffilename = "demo5image.gif"
 
-# 'Slice': allows to plot a single slice .Will overwrite the behaviour
+# 'Slice': allows to plot a single slice .Will overwrite the behavior
 # of 'Step'
 slice = 64
 

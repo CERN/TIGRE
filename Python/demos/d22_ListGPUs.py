@@ -1,5 +1,5 @@
+import tigre
 from tigre.utilities import gpu
-
 # List the names of installed GPUs
 print("Querying installed GPU names")
 listDeviceNames = gpu.getGpuNames()  # noqa: N816
@@ -22,16 +22,19 @@ print("\t gpuids: {}".format(gpuids))
 
 # If all the GPUs you have are the same and you are going to use them all, you don't add anything to
 # the existing code.
-# Your code will look like
-#    projections=Ax(head,geo,angles,'interpolated');
-#    imgFDK=FDK(noise_projections,geo,angles);
-#    imgOSSART=OS_SART(noise_projections,geo,angles,niter);
-# or you can write like
-#    gpuids = GpuIds();
-#    projections=Ax(head,geo,angles,'interpolated', 'gpuids', gpuids);
-#    imgFDK=FDK(noise_projections,geo,angles, 'gpuids', gpuids);
-#    imgOSSART=OS_SART(noise_projections,geo,angles,niter, 'gpuids', gpuids);
-#
+# Your code will look like:
+
+# projections=tigre.Ax(head,geo,angles)
+# imgFDK=tigre.fdk(noise_projections,geo,angles)
+# imgOSSART=tigre.fdk.os_sart(noise_projections,geo,angles,niter)
+
+# or you can write like:
+
+# projections=tigre.Ax(head,geo,angles,gpuids=gpuids)
+# imgFDK=tigre.fdk(noise_projections,geo,angles,gpuids=gpuids)
+# imgOSSART=tigre.fdk.os_sart(noise_projections,geo,angles,niter,gpuids=gpuids)
+
+
 # In the case where you have multiple types of GPUs installed or you are going to limit the number
 # of GPUs for a specific process, you can specify the GPUs using a GpuIds object.
 # For example, if you have four 'GeForce RTX 2080 Ti' and a 'GeForce GTX 1060 6GB' and you are going
@@ -47,3 +50,5 @@ print(gpuids)
 
 gpuids2080 = gpu.GpuIds("GeForce RTX 2080 Ti")
 print(gpuids2080)
+
+

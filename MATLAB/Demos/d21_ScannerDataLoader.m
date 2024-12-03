@@ -1,6 +1,6 @@
 %% Demo 21: Loading scanner data to TIGRE. 
 %
-% This demo will demostrate the options for loading scanner data into
+% This demo will demonstrate the options for loading scanner data into
 % TIGRE.
 %
 %   Supported Manufacturers:
@@ -9,6 +9,10 @@
 %
 %       Nikon
 %
+%       YXLON     
+%
+%       Diondo
+%  
 %       Xradia (Zeiss)
 %
 %       Philips (in theory, any DICOM, but only tested in Philips Allura)
@@ -43,11 +47,12 @@
 % If you have a Varian scanner that saves data in XIM format, the following
 % code will be able to load your dataset. 
 %
-% If you have a recosntructed image, it will take the geometry from there,
+% If you have a rreconstructed image, it will take the geometry from there,
 % but if you don't, it will estimate appropiate geometry. You can always
 % change the image parameters, but the detector parameters should stay the
 % same unless you change the projections. 
 
+% Sample data: https://zenodo.org/record/8045749
 datafolder='~/your_data_path/varian/2020-01-01_123456/';
 [proj,geo, angles ] = VarianDataLoader(datafolder);
 [proj,geo, angles ] = VarianDataLoader(datafolder, false); %remove motion lag correction.
@@ -79,6 +84,23 @@ datafolder='~/your_data_path/Nikon/Sample_name/';
 img=OS_SART(proj,geo,angles,100);
 img=FDK(proj,geo,angles);
 
+
+%% YXLON
+
+% You can replace NikonDataLoader in the above code by YXLONDataLoader().
+% the rest of the functionality is the same. 
+
+datafolder='~/your_data_path/YXLON/Sample_name/';
+[proj,geo, angles ] = YXLONDataLoader(datafolder);
+
+%% Diondo
+
+% You can replace NikonDataLoader in the above code by YXLONDataLoader().
+% the rest of the functionality is the same. 
+
+datafolder='~/your_data_path/Diondo/Sample_name/';
+[proj,geo, angles ] = DiondoDataLoader(datafolder);
+
 %% DICOM data (only tested on Philips Allura)
 
 % As with the other loaders, this can be simply done with:
@@ -99,7 +121,7 @@ img=FDK(proj,geo,angles);
 
 % It is possible that your scanner is not currently supported, or that it
 % simply does not have any way of storing the information (Zeiss Xradia
-% does not store anything but the projecions)
+% does not store anything but the projections)
 
 % if this is the case, the general way of tackling the problem is:
 

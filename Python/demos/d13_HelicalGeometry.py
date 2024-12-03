@@ -33,7 +33,7 @@ geo = tigre.geometry_default(high_resolution=False)
 angles = np.linspace(0, 2 * np.pi, 100)
 angles = np.hstack([angles, angles, angles])  # loop 3 times
 
-# Load thorax phatom data
+# Load thorax phantom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
 
 # This makes it helical

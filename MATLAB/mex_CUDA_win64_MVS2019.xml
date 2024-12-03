@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<config
+    Name="NVIDIA CUDA Compiler"
+    ShortName="nvcc"
+    Manufacturer="NVIDIA"
+    Version="9.2"
+    Language="CUDA"
+    Priority="A"
+    Location="$NVCC" >
+    <Details
+        CompilerExecutable="$COMPILER"
+        CompilerDefines="$COMPDEFINES"
+        CompilerFlags="$COMPFLAGS"
+        OptimizationFlags="$OPTIMFLAGS"
+        DebugFlags="$DEBUGFLAGS"
+        IncludeFlags="$INCLUDE"
+        LinkerExecutable="$LINKER"
+        LinkerFlags="$LINKFLAGS"
+        LinkerLibraries="$LINKLIBS"
+        LinkerOptimizationFlags="$LINKOPTIMFLAGS"
+        LinkerDebugFlags="$LINKDEBUGFLAGS"
+        CommandLineShell="$VCVARSALLDIR\VCVARSALL.BAT "
+        CommandLineShellArg=" amd64 "
+        CompilerDefineFormatter="--compiler-options=/D%s"
+        LinkerLibrarySwitchFormatter="lib%s.lib;%s.lib"
+        LinkerPathFormatter="/LIBPATH:%s"
+        LibrarySearchPath="$$LIB;$$LIBPATH;$$PATH;$$INCLUDE;$MATLABROOT\extern\lib\$ARCH\microsoft"    />
+    <!-- Switch guide: http://msdn.microsoft.com/en-us/library/fwkeyyhe(v=vs.71).aspx -->
+    <vars
+        CMDLINE100="$COMPILER -c $COMPFLAGS $OPTIM $COMPDEFINES $INCLUDE $SRC -o $OBJ"
+        CMDLINE200="$LINKER $LINKFLAGS $LINKTYPE $LINKOPTIM $LINKEXPORT $LINKLIBS $OBJS /out:$EXE"
+        CMDLINE250="mt -outputresource:$EXE;2 -manifest $MANIFEST"
+        CMDLINE300="del $OBJ $EXP $LIB $MANIFEST $ILK"
+        
+        COMPILER="nvcc"
+        COMPFLAGS="-gencode=arch=compute_35,code=sm_35 -gencode=arch=compute_50,code=sm_50 -gencode=arch=compute_52,code=sm_52 -gencode=arch=compute_61,code=sm_61 -gencode=arch=compute_70,code=sm_70 -gencode=arch=compute_75,code=sm_75 -gencode=arch=compute_86,code=sm_86 --default-stream per-thread  --ptxas-options=-v --compiler-options=/c,/GR,/W3,/EHs,/nologo,/MD"
+        COMPDEFINES="--compiler-options=/D_CRT_SECURE_NO_DEPRECATE,/D_SCL_SECURE_NO_DEPRECATE,/D_SECURE_SCL=0,$MATLABMEX"
+        MATLABMEX="/DMATLAB_MEX_FILE"
+        OPTIMFLAGS="--compiler-options=/O2,/Oy-,/DNDEBUG"
+        INCLUDE="-I&quot;$MATLABROOT\extern\include&quot; -I&quot;$MATLABROOT\simulink\include&quot; -I&quot;..\Common&quot;"
+        DEBUGFLAGS="--compiler-options=/Z7"
+        
+        LINKER="link"
+        LINKFLAGS="/nologo /manifest"
+        LINKTYPE="/DLL "
+        LINKEXPORT="/EXPORT:mexFunction"
+        LINKLIBS="/LIBPATH:&quot;$MATLABROOT\extern\lib\$ARCH\microsoft&quot; libmx.lib libmex.lib libmat.lib cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib  ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib"
+        LINKDEBUGFLAGS="/debug /PDB:&quot;$TEMPNAME$LDEXT.pdb&quot;"
+        LINKOPTIMFLAGS=""
+        OBJEXT=".obj"
+        LDEXT=".mexw64"
+        SETENV="set COMPILER=$COMPILER 
+        set COMPFLAGS=$COMPFLAGS $COMPDEFINES 
+        set OPTIMFLAGS=$OPTIMFLAGS 
+        set DEBUGFLAGS=$DEBUGFLAGS 
+        set LINKER=$LINKER 
+        set LINKFLAGS=$LINKFLAGS /export:%ENTRYPOINT% $LINKTYPE $LINKLIBS $LINKEXPORT 
+        set LINKDEBUGFLAGS=/debug /PDB:&quot;%OUTDIR%%MEX_NAME%$LDEXT.pdb&quot; 
+        set NAME_OUTPUT=/out:&quot;%OUTDIR%%MEX_NAME%%MEX_EXT%&quot;"
+    />
+    <client>
+        <engine
+            LINKLIBS="$LINKLIBS libeng.lib"
+            LINKEXPORT=""
+            LINKEXPORTVER=""
+            LDEXT=".exe"
+            LINKTYPE=""
+            MATLABMEX=""
+        />
+        <mbuild
+            CMDLINE100="$COMPILER /c $COMPFLAGS $OPTIM $COMPDEFINES $INCLUDE $SRC /Fo$OBJ"
+            CMDLINE200="$LINKER $LINKFLAGS $LINKTYPE $LINKOPTIM $LINKEXPORT $OBJS $LINKLIBS /out:$EXE"
+            CMDLINE250="$MTCMDLINE"
+            CMDLINE300="del $MANIFEST &quot;$TEMPNAME.map&quot; "
+            LINKFLAGS="/nologo /manifest"
+            LINKLIBS="/MACHINE:AMD64 /LIBPATH:&quot;$MATLABROOT\extern\lib\$ARCH\microsoft&quot; mclmcrrt.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib"
+            INCLUDE="-I&quot;$MATLABROOT\extern\include&quot; -I&quot;$MATLABROOT\extern\include\$ARCH&quot;"
+            COMPFLAGS="-MD -Zp8 -GR -W3 -EHsc- -Zc:wchar_t- -nologo"
+            COMPDEFINES="/DMSVC /DIBMPC /D_CRT_SECURE_NO_DEPRECATE"
+            OPTIMFLAGS="-O2 -DNDEBUG"
+            LINKEXPORT=""
+            LINKEXPORTVER=""
+            LDEXT=".exe"
+            MATLABMEX=""
+            MTCMDLINE="mt -outputresource:$EXE;1 -manifest $MANIFEST"
+            LINKTYPE=""
+            LINKDEBUGFLAGS="/debug /PDB:&quot;$TEMPNAME.pdb&quot;"
+        />
+        
+        <mbuild_com
+            CMDLINE000="copy &quot;$MATLABROOT\extern\include\$ARCH\mwcomutil.tlb&quot; ."
+            CMDLINE001="midl /nologo /$ARCH $COMPINCLUDE /D NDEBUG /out &quot;$OUTDIR&quot; mwcomtypes.idl"
+            CMDLINE002="midl /nologo /$ARCH $COMPINCLUDE /D NDEBUG /out &quot;$OUTDIR&quot; &quot;$COMIDL&quot;"
+            CMDLINE100="$COMPILER $COMPFLAGS $OPTIM $COMPDEFINES $INCLUDE $COMPINCLUDE $SRC /Fo$OBJ"
+            CMDLINE150="rc /fo &quot;$RESFILE&quot; &quot;$RCFILE&quot;"
+            CMDLINE250="mt -outputresource:$EXE;2 -manifest $MANIFEST"
+            CMDLINE275="&quot;$MATLABROOT\runtime\$ARCH\mwregsvr.exe&quot; $EXE"
+            CMDLINE300="del $MANIFEST mwcomutil.tlb &quot;$RESFILE&quot;"
+            
+            OUTDIR="."
+            INCLUDE="$INCLUDE -I&quot;$OUTDIR&quot; -I&quot;$MATLABROOT\extern\include\$ARCH&quot;"
+            COMPFLAGS="/c /GR /W3 /EHsc- -Zc:wchar_t /nologo /MT"
+            COMPDEFINES="/DMSVC /DIBMPC /D_CRT_SECURE_NO_DEPRECATE"
+            COMPINCLUDE="-I&quot;$MATLABROOT\extern\include&quot;"
+            
+            LINKEXPORT="/DLL /def:&quot;$DEFFILE&quot;"
+            LINKEXPORTVER="/DLL /def:&quot;$DEFFILE&quot;"
+            LINKLIBS="/MACHINE:AMD64 $LINKLIBS mclmcrrt.lib $MCLMAINLIB_MS &quot;$RESFILE&quot;"
+            LDEXT=".dll"
+            USERONLY=""
+            LINKTYPE=""
+            MATLABMEX=""
+        />
+    </client>
+    <locationFinder>
+        <VCROOT>
+            <or>
+				<and>
+					<envVarExists name="ProgramFiles(x86)" />
+					<fileExists name="$$\Microsoft Visual Studio\Installer\vswhere.exe" />
+					<cmdReturns name="&quot;$$\\vswhere.exe&quot; -version &quot;[16.0,17.0)&quot; -products Microsoft.VisualStudio.Product.Enterprise -property installationPath -format value" />
+					<cmdReturns name="set &quot;vcroot=$$&quot;&amp;for /f &quot;delims= &quot; %a in ('type &quot;$$\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt&quot;') do @if exist &quot;$$\VC\Tools\MSVC\%a\bin\HostX64\x64\cl.exe&quot; call echo %vcroot%" />
+				</and>
+				<and>
+					<envVarExists name="ProgramFiles(x86)" />
+					<fileExists name="$$\Microsoft Visual Studio\Installer\vswhere.exe" />
+					<cmdReturns name="&quot;$$\\vswhere.exe&quot; -version &quot;[16.0,17.0)&quot; -products Microsoft.VisualStudio.Product.Professional -property installationPath -format value" />
+					<cmdReturns name="set &quot;vcroot=$$&quot;&amp;for /f &quot;delims= &quot; %a in ('type &quot;$$\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt&quot;') do @if exist &quot;$$\VC\Tools\MSVC\%a\bin\HostX64\x64\cl.exe&quot; call echo %vcroot%" />
+				</and>
+				<and>
+					<envVarExists name="ProgramFiles(x86)" />
+					<fileExists name="$$\Microsoft Visual Studio\Installer\vswhere.exe" />
+					<cmdReturns name="&quot;$$\\vswhere.exe&quot; -version &quot;[16.0,17.0)&quot; -products Microsoft.VisualStudio.Product.Community -property installationPath -format value" />
+					<cmdReturns name="set &quot;vcroot=$$&quot;&amp;for /f &quot;delims= &quot; %a in ('type &quot;$$\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt&quot;') do @if exist &quot;$$\VC\Tools\MSVC\%a\bin\HostX64\x64\cl.exe&quot; call echo %vcroot%" />
+				</and>
+			</or>
+        </VCROOT>
+        <SDKROOT>
+            <or>
+                <hklmExists path="SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0" name="InstallationFolder" />
+                <hkcuExists path="SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0" name="InstallationFolder" />
+                <hklmExists path="SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\v10.0" name="InstallationFolder" />
+                <hkcuExists path="SOFTWARE\Wow6432Node\Microsoft\Microsoft SDKs\Windows\v10.0" name="InstallationFolder" />
+            </or>
+        </SDKROOT>
+        <VSINSTALLDIR>
+            <or>
+				<and>
+					<envVarExists name="ProgramFiles(x86)" />
+					<fileExists name="$$\Microsoft Visual Studio\Installer\vswhere.exe" />
+					<cmdReturns name="&quot;$$\\vswhere.exe&quot; -version &quot;[16.0,17.0)&quot; -products Microsoft.VisualStudio.Product.Enterprise -property installationPath -format value" />
+				</and>
+				<and>
+					<envVarExists name="ProgramFiles(x86)" />
+					<fileExists name="$$\Microsoft Visual Studio\Installer\vswhere.exe" />
+					<cmdReturns name="&quot;$$\\vswhere.exe&quot; -version &quot;[16.0,17.0)&quot; -products Microsoft.VisualStudio.Product.Professional -property installationPath -format value" />
+				</and>
+				<and>
+					<envVarExists name="ProgramFiles(x86)" />
+					<fileExists name="$$\Microsoft Visual Studio\Installer\vswhere.exe" />
+					<cmdReturns name="&quot;$$\\vswhere.exe&quot; -version &quot;[16.0,17.0)&quot; -products Microsoft.VisualStudio.Product.Community -property installationPath -format value" />
+				</and>
+			</or>
+        </VSINSTALLDIR>
+        <VCINSTALLDIR>
+            <or>
+				<and>
+					<envVarExists name="ProgramFiles(x86)" />
+					<fileExists name="$$\Microsoft Visual Studio\Installer\vswhere.exe" />
+					<cmdReturns name="&quot;$$\\vswhere.exe&quot; -version &quot;[16.0,17.0)&quot; -products Microsoft.VisualStudio.Product.Enterprise -property installationPath -format value" />
+					<cmdReturns name="set &quot;vcroot=$$&quot;&amp;for /f &quot;delims= &quot; %a in ('type &quot;$$\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt&quot;') do @if exist &quot;$$\VC\Tools\MSVC\%a\bin\HostX64\x64\cl.exe&quot; call echo %vcroot%\VC\Tools\MSVC\%a" />
+				</and>
+				<and>
+					<envVarExists name="ProgramFiles(x86)" />
+					<fileExists name="$$\Microsoft Visual Studio\Installer\vswhere.exe" />
+					<cmdReturns name="&quot;$$\\vswhere.exe&quot; -version &quot;[16.0,17.0)&quot; -products Microsoft.VisualStudio.Product.Professional -property installationPath -format value" />
+					<cmdReturns name="set &quot;vcroot=$$&quot;&amp;for /f &quot;delims= &quot; %a in ('type &quot;$$\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt&quot;') do @if exist &quot;$$\VC\Tools\MSVC\%a\bin\HostX64\x64\cl.exe&quot; call echo %vcroot%\VC\Tools\MSVC\%a" />
+				</and>
+				<and>
+					<envVarExists name="ProgramFiles(x86)" />
+					<fileExists name="$$\Microsoft Visual Studio\Installer\vswhere.exe" />
+					<cmdReturns name="&quot;$$\\vswhere.exe&quot; -version &quot;[16.0,17.0)&quot; -products Microsoft.VisualStudio.Product.Community -property installationPath -format value" />
+					<cmdReturns name="set &quot;vcroot=$$&quot;&amp;for /f &quot;delims= &quot; %a in ('type &quot;$$\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt&quot;') do @if exist &quot;$$\VC\Tools\MSVC\%a\bin\HostX64\x64\cl.exe&quot; call echo %vcroot%\VC\Tools\MSVC\%a" />
+				</and>
+			</or>
+        </VCINSTALLDIR>
+        <VCVARSALLDIR>
+            <or>
+				<and>
+					<envVarExists name="ProgramFiles(x86)" />
+					<fileExists name="$$\Microsoft Visual Studio\Installer\vswhere.exe" />
+					<cmdReturns name="&quot;$$\\vswhere.exe&quot; -version &quot;[16.0,17.0)&quot; -products Microsoft.VisualStudio.Product.Enterprise -property installationPath -format value" />
+					<fileExists name="$$\VC\Auxiliary\Build\vcvarsall.bat" />
+					<dirExists name="$$"/>
+				</and>
+				<and>
+					<envVarExists name="ProgramFiles(x86)" />
+					<fileExists name="$$\Microsoft Visual Studio\Installer\vswhere.exe" />
+					<cmdReturns name="&quot;$$\\vswhere.exe&quot; -version &quot;[16.0,17.0)&quot; -products Microsoft.VisualStudio.Product.Professional -property installationPath -format value" />
+					<fileExists name="$$\VC\Auxiliary\Build\vcvarsall.bat" />
+					<dirExists name="$$"/>
+				</and>
+				<and>
+					<envVarExists name="ProgramFiles(x86)" />
+					<fileExists name="$$\Microsoft Visual Studio\Installer\vswhere.exe" />
+					<cmdReturns name="&quot;$$\\vswhere.exe&quot; -version &quot;[16.0,17.0)&quot; -products Microsoft.VisualStudio.Product.Community -property installationPath -format value" />
+					<fileExists name="$$\VC\Auxiliary\Build\vcvarsall.bat" />
+					<dirExists name="$$"/>
+				</and>
+			</or>
+        </VCVARSALLDIR>
+        <KITSROOT>
+            <or>
+                <hklmExists path="SOFTWARE\Wow6432Node\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                <hkcuExists path="SOFTWARE\Wow6432Node\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                <hklmExists path="SOFTWARE\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                <hkcuExists path="SOFTWARE\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                
+            </or>
+        </KITSROOT>
+        <SDKVERSION>
+            <and>
+                <or>
+                    <hklmExists path="SOFTWARE\Wow6432Node\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                    <hkcuExists path="SOFTWARE\Wow6432Node\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                    <hklmExists path="SOFTWARE\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                    <hkcuExists path="SOFTWARE\Microsoft\Windows Kits\Installed Roots" name="KitsRoot10" />
+                    
+                </or>
+                <!-- For each folder inside '<KITSROOT>\include' check for 'ucrt' and if exists return that folder name -->
+                <cmdReturns name="echo off&amp;set &quot;sdkversion=&quot;&amp;(for /f %a IN ('dir &quot;$$\include\&quot; /b /ad-h /on') do ( @if exist &quot;$$\include\%a\ucrt\&quot; set &quot;sdkversion=%a&quot; ))&amp;call echo %sdkversion%" />
+            </and>
+        </SDKVERSION>
+        <CUDA_LIB_PATH>
+            <or>
+                <and>
+                    <envVarExists name="CUDA_LIB_PATH"/>
+                    <fileExists name="$$\cudart.lib" />
+                    <dirExists name="$$" />
+                </and>
+                <and>
+                    <envVarExists name="CUDA_PATH"/>
+                    <fileExists name="$$\lib\x64\cudart.lib" />
+                    <dirExists name="$$" />
+                </and>
+            </or>
+        </CUDA_LIB_PATH>
+        <CUDA_BIN_PATH>
+            <or>
+                <and>
+                    <envVarExists name="CUDA_BIN_PATH"/>
+                    <fileExists name="$$\nvcc.exe" />
+                    <dirExists name="$$" />
+                </and>
+                <and>
+                    <envVarExists name="CUDA_PATH"/>
+                    <fileExists name="$$\bin\nvcc.exe" />
+                    <dirExists name="$$" />
+                </and>
+                <and>
+                    <envVarExists name="MW_NVCC_PATH"/>
+                    <fileExists name="$$\nvcc.exe" />
+                    <dirExists name="$$" />
+                </and>
+                <and>
+                    <fileExists name="C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.2\bin\nvcc.exe" />
+                    <dirExists name="$$" />
+                </and>
+            </or>
+        </CUDA_BIN_PATH>
+    </locationFinder>
+    <env
+        PATH="$CUDA_BIN_PATH;$VCINSTALLDIR\bin\HostX64\x64\;$VCROOT\Common7\IDE\VC\vcpackages;$VCROOT\Common7\IDE;$VCROOT\Common7\Tools;$SDKROOT\Bin\$SDKVERSION\x64;$SDKROOT\Bin\$SDKVERSION\x86;$SDKROOT\Bin\x64;$SDKROOT\Bin\x86;"
+        INCLUDE="$VCINSTALLDIR\include;$VCINSTALLDIR\atlmfc\include;$KITSROOT\include\$SDKVERSION\ucrt;$KITSROOT\include\$SDKVERSION\shared;$KITSROOT\include\$SDKVERSION\um;$KITSROOT\include\$SDKVERSION\winrt;$MATLABROOT\extern\include;$MATLABROOT\toolbox\distcomp\gpu\extern\include"
+        LIB="$VCINSTALLDIR\lib\x64;$VCINSTALLDIR\atlmfc\lib\x64;$KITSROOT\Lib\$SDKVERSION\ucrt\x64;$KITSROOT\lib\$SDKVERSION\um\x64;$MATLABROOT\lib\$ARCH;$CUDA_LIB_PATH"
+        LIBPATH="$VCINSTALLDIR\lib\x64;$VCINSTALLDIR\atlmfc\lib\x64"
+    />
+</config>

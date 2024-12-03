@@ -94,7 +94,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         maxIter=100;
         lambda=15.0f;
     } else if (nrhs==2){
-        mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising", "Only 1 TV hyperparemter inputed");
+        mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising", "Only 1 TV hyperparameter inputted");
     } else if (nrhs==3 || nrhs==4){
         size_t mrows = mxGetM(prhs[1]);
         size_t ncols = mxGetN(prhs[1]);
@@ -109,7 +109,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         lambda= (float)(mxGetScalar(prhs[1]));
         maxIter=(int)round(mxGetScalar(prhs[2]));
     } else if (nrhs>4) {
-        mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising", "Too many imput argumets");
+        mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising", "Too many input arguments");
     }
     ////////////////////////// First input.
     // First input should be x from (Ax=b), or the image.
@@ -122,7 +122,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     }
     // Now that input is ok, parse it to C data types.
     float  *  img = static_cast<float  *>(mxGetData(image));
-    // We need a float image, and, unfortunatedly, the only way of casting it is by value
+    // We need a float image, and, unfortunately, the only way of casting it is by value
     const mwSize *size_img= mxGetDimensions(image); //get size of image
     
     //////////////

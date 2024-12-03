@@ -4,7 +4,7 @@
  * MATLAB MEX gateway for Total variation minimization via Steepest descend
  *
  * This file gets the data from MATLAB, checks it for errors and then 
- * parses it to C and calls the relevant C/CUDA fucntions.
+ * parses it to C and calls the relevant C/CUDA functions.
  *
  * CODE by       Ander Biguri
  *
@@ -61,7 +61,7 @@ Codes  : https://github.com/CERN/TIGRE
 void mexFunction(int  nlhs , mxArray *plhs[],
         int nrhs, mxArray const *prhs[])
 {
-///////// First check if the amount of imputs is right.    
+///////// First check if the amount of inputs is right.    
     int maxIter;
     float alpha;
     GpuIds gpuids;
@@ -91,7 +91,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         maxIter=100;
         alpha=15.0f;
     } else if (nrhs==2){
-       mexErrMsgIdAndTxt("err", "Only 1 POCS hyperparemter inputed");
+       mexErrMsgIdAndTxt("err", "Only 1 POCS hyperparameter inputted");
     } else if (nrhs==4 || nrhs==5){
         size_t mrows = mxGetM(prhs[1]);
         size_t ncols = mxGetN(prhs[1]);
@@ -106,7 +106,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         alpha= (float)(mxGetScalar(prhs[1]));
         maxIter=(int)floor(mxGetScalar(prhs[2])+0.5);
     } else {
-       mexErrMsgIdAndTxt("err", "Too many imput argumets");
+       mexErrMsgIdAndTxt("err", "Too many input arguments");
     }
     float delta=(float)(mxGetScalar(prhs[3]));
 ////////////////////////// First input.

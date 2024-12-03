@@ -1,5 +1,6 @@
 cimport numpy as np
 import numpy as np
+# Import definitions from .pxd files
 from tigre.utilities.cuda_interface._types cimport Geometry as c_Geometry, convert_to_c_geometry, free_c_geometry
 from tigre.utilities.cuda_interface._gpuUtils cimport GpuIds as c_GpuIds, convert_to_c_gpuids, free_c_gpuids
 
@@ -32,28 +33,29 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     
     cdef c_GpuIds* c_gpuids = convert_to_c_gpuids(gpuids)
     if not c_gpuids:
-        raise MemoryError()
+        raise MemoryError("Error reading GPU Ids")
     
-
     cdef int total_projections = angles.shape[0]
-    cdef int nDetectorPixels = <int>geometry.nDetector[0] * <int>geometry.nDetector[1]
+    cdef unsigned long nDetectorPixels = <unsigned long>geometry.nDetector[0] * <int>geometry.nDetector[1]
 
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
     if not c_geometry:
-        raise MemoryError()
+        raise MemoryError("Error reading the geometry")
     cdef float* c_projectionsNonPinned = <float*>malloc(nDetectorPixels * total_projections* sizeof(float))
     if not c_projectionsNonPinned:
-        raise MemoryError()
+        raise MemoryError("Error creating memory for projections")
     cdef float** c_projections = <float**> malloc(total_projections * sizeof(float*))
     if not c_projections:
-        raise MemoryError()
+        raise MemoryError("Error creating memory to host projections")
     cdef int i = 0
     for i in range(total_projections):
         c_projections[i] = <float*> &(c_projectionsNonPinned[nDetectorPixels * i])
 
+    angles = np.ascontiguousarray(angles)
+
     cdef float* c_angles = <float*> angles.data
     if not c_angles:
-        raise MemoryError()
+        raise MemoryError("Error loading angle data")
     if projection_type == "Siddon" or projection_type == "ray-voxel":
         interpolated = False
     elif projection_type == "interpolated":
@@ -70,6 +72,8 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
         print("Warning: Unknown mode, using default cone beam")
         cone_beam = True
 
+    img = np.ascontiguousarray(img)
+
     cdef float* c_img = <float*> img.data
     if cone_beam:
         if not interpolated:
@@ -85,8 +89,9 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
  
     cdef np.npy_intp shape[3]
     shape[0] = <np.npy_intp> total_projections
-    shape[1] = <np.npy_intp> geometry.nDetector[0]
-    shape[2] = <np.npy_intp> geometry.nDetector[1]
+    shape[1] = <np.npy_intp> (<np.npy_long>(geometry.nDetector[0]))
+    shape[2] = <np.npy_intp> (<np.npy_long>(geometry.nDetector[1]))
+
     projections = np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_projectionsNonPinned)
     PyArray_ENABLEFLAGS(projections, np.NPY_OWNDATA)  # Attribute new memory owner
 

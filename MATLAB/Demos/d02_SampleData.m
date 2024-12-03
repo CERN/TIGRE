@@ -63,4 +63,11 @@ head=headPhantom(geo.nVoxel); %default is 128^3
 plotImg(head,'Dim','Z');
 citeme('headPhantom')
 
+%% Real data
 
+% SophiaBeads_demo.m shows how to download and use the Sophia Beads
+% micro-CT dataset
+
+% The following repository contains a Varian dataset that can be loaded
+% with the code in demo 21.
+% https://zenodo.org/record/8045749

@@ -24,7 +24,7 @@ clear;
 close all;
 %% Geometry
 geo=defaultGeometry();
-%% Define angles of projection and load phatom image
+%% Define angles of projection and load phantom image
 
 % define projection angles (in radians)
 angles=linspace(0,2*pi,100);
@@ -40,7 +40,7 @@ projections=Ax(head,geo,angles,'interpolated');
 % electronic noise of the detector ('Gaussian').
 %
 % 'Poisson' is related to the maximum photon count in the detector. 1e5 is
-% a standard clinical nuber, reduce it for more noise
+% a standard clinical number, reduce it for more noise
 % 'Gaussian' is related to possible electronic noise in the detector. mean
 % of 0 and std of 10 is common in clinical scenario. Increase std for more
 % noise.

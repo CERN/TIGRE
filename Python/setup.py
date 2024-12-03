@@ -6,26 +6,49 @@ import re
 import subprocess
 import sys
 import shutil
+import re
 
 from Cython.Distutils import build_ext
 import numpy
 from setuptools import setup, find_packages, Extension
 
 
+# Macros for compilation
+define_macros=[("IS_FOR_PYTIGRE", None)]
+no_pinned=False
+if len(sys.argv)>2:
+    if "--no_pinned_memory" in sys.argv[2:] :
+        no_pinned=True
+        sys.argv.pop(sys.argv.index("--no_pinned_memory"))
+ 
+if no_pinned:
+    define_macros.append(("NO_PINNED_MEMORY",None))     
+
 IS_WINDOWS = sys.platform == "win32"
 
 
 # Code from https://github.com/pytorch/pytorch/blob/master/torch/utils/cpp_extension.py
-COMPUTE_CAPABILITY_ARGS = [  # '-gencode=arch=compute_20,code=sm_20', #deprecated
-    "-gencode=arch=compute_30,code=sm_30",  # Derecated at CUDA 9.2
-    "-gencode=arch=compute_37,code=sm_37",
-    "-gencode=arch=compute_50,code=sm_50",
-    "-gencode=arch=compute_52,code=sm_52",
-    "-gencode=arch=compute_60,code=sm_60",
-    "-gencode=arch=compute_61,code=sm_61",
-    "-gencode=arch=compute_70,code=sm_70",
-    "-gencode=arch=compute_75,code=sm_75",
-    "-gencode=arch=compute_86,code=sm_86",  # Only CUDA 11
+
+CC_COMPATIBILITY_TABLE = [
+    # gencode, code, support_begin, suport_end
+    (20, 20,    1,  1.0),
+    (30, 30,    1, 11.0), 
+    (35, 35,    1, 12.0),
+    (37, 37,    1, 12.0), 
+    (50, 50,  6.5, 999), 
+    (52, 52,  6.5, 999 ), 
+    (60, 60,  8.0, 999 ), 
+    (61, 61,  8.0, 999 ), 
+    (70, 70,  9.0, 999 ), 
+    (75, 75, 10.0, 999 ), # From CUDA 10
+    (80, 80, 11.0, 999 ), # From CUDA 11.0
+    (86, 86, 11.1, 999 ), # From CUDA 11.1
+    (87, 87, 11.5, 999 ), 
+    (90, 90, 11.8, 999 ), # From CUDA 12
+]
+
+COMPUTE_CAPABILITY_ARGS = [
+    "-gencode=arch=compute_70,code=compute_70", # allows forward compiling
     "--ptxas-options=-v",
     "-c",
     "--default-stream=per-thread",
@@ -100,11 +123,25 @@ def _is_cuda_file(path):
 
 
 CUDA, CUDA_VERSION = locate_cuda()
-# Cleanup CUDA arguments depedning on the version
-if float(CUDA_VERSION) < 11.0:
-    COMPUTE_CAPABILITY_ARGS.pop(8)
-elif float(CUDA_VERSION) >= 9.2:
-    COMPUTE_CAPABILITY_ARGS.pop(0)
+
+cuda_version = 11.0
+try:
+    cuda_version = float(CUDA_VERSION)
+except ValueError:
+    cuda_list = re.findall('\d+', CUDA_VERSION)
+    cuda_version = float( str(cuda_list[0] + '.' + cuda_list[1]))
+
+# Insert CUDA arguments depedning on the version
+for item in CC_COMPATIBILITY_TABLE:
+    support_begin = item[2]
+    support_end   = item[3]
+    if cuda_version < support_begin:
+        continue
+    if cuda_version >= support_end:
+        continue
+    str_arg = f"-gencode=arch=compute_{item[0]},code=sm_{item[1]}"
+    COMPUTE_CAPABILITY_ARGS.insert(0, str_arg)
+
 # Obtain the numpy include directory.  This logic works across numpy versions.
 try:
     NUMPY_INCLUDE = numpy.get_include()
@@ -329,13 +366,11 @@ Ax_ext = Extension(
             "../Common/CUDA/ray_interpolated_projection.cu",
             "../Common/CUDA/ray_interpolated_projection_parallel.cu",
             "../Common/CUDA/GpuIds.cpp",
-            "tigre/utilities/cuda_interface/_types.pxd",
-            "tigre/utilities/cuda_interface/_gpuUtils.pxd",
             "tigre/utilities/cuda_interface/_Ax.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
     ),
-    define_macros=[("IS_FOR_PYTIGRE", None)],
+    define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
     libraries=["cudart"],
     language="c++",
@@ -354,12 +389,11 @@ Atb_ext = Extension(
             "../Common/CUDA/voxel_backprojection_parallel.cu",
             "../Common/CUDA/GpuIds.cpp",
             "../Common/CUDA/gpuUtils.cu",
-            "tigre/utilities/cuda_interface/_types.pxd",
             "tigre/utilities/cuda_interface/_Atb.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
     ),
-    define_macros=[("IS_FOR_PYTIGRE", None)],
+    define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
     libraries=["cudart"],
     language="c++",
@@ -368,51 +402,69 @@ Atb_ext = Extension(
 )
 
 
-tvdenoising_ext = Extension('_tvdenoising',
-                            sources=include_headers(['../Common/CUDA/TIGRE_common.cpp',
-                                                     '../Common/CUDA/tv_proximal.cu',
-                                                     '../Common/CUDA/GpuIds.cpp',
-                                                     '../Common/CUDA/gpuUtils.cu',
-                                                     'tigre/utilities/cuda_interface/_types.pxd',
-                                                     'tigre/utilities/cuda_interface/_tvdenoising.pyx'],
-                                                    sdist=sys.argv[1] == "sdist"),
-                            define_macros=[('IS_FOR_PYTIGRE', None)],
-                            library_dirs=[CUDA['lib64']],
-                            libraries=['cudart'],
-                            language='c++',
-                            runtime_library_dirs=[CUDA['lib64']] if not IS_WINDOWS else None,
-                            include_dirs=[NUMPY_INCLUDE, CUDA['include'], '../Common/CUDA/'])
+tvdenoising_ext = Extension(
+    "_tvdenoising",
+    sources=include_headers(
+        [
+            "../Common/CUDA/TIGRE_common.cpp",
+            "../Common/CUDA/tv_proximal.cu",
+            "../Common/CUDA/GpuIds.cpp",
+            "../Common/CUDA/gpuUtils.cu",
+            "tigre/utilities/cuda_interface/_types.pxd",
+            "tigre/utilities/cuda_interface/_tvdenoising.pyx",
+        ],
+        sdist=sys.argv[1] == "sdist",
+    ),
+    define_macros=define_macros,
+    library_dirs=[CUDA["lib64"]],
+    libraries=["cudart"],
+    language="c++",
+    runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+)
 
 
-minTV_ext = Extension('_minTV',
-                      sources=include_headers(['../Common/CUDA/TIGRE_common.cpp',
-                                               '../Common/CUDA/GD_TV.cu',
-                                               '../Common/CUDA/GpuIds.cpp',
-                                               '../Common/CUDA/gpuUtils.cu',
-                                               'tigre/utilities/cuda_interface/_types.pxd',
-                                               'tigre/utilities/cuda_interface/_minTV.pyx'],
-                                              sdist=sys.argv[1] == "sdist"),
-                      define_macros=[('IS_FOR_PYTIGRE', None)],
-                      library_dirs=[CUDA['lib64']],
-                      libraries=['cudart'],
-                      language='c++',
-                      runtime_library_dirs=[CUDA['lib64']] if not IS_WINDOWS else None,
-                      include_dirs=[NUMPY_INCLUDE, CUDA['include'], '../Common/CUDA/'])
+minTV_ext = Extension(
+    "_minTV",
+    sources=include_headers(
+        [
+            "../Common/CUDA/TIGRE_common.cpp",
+            "../Common/CUDA/GD_TV.cu",
+            "../Common/CUDA/GpuIds.cpp",
+            "../Common/CUDA/gpuUtils.cu",
+            "tigre/utilities/cuda_interface/_types.pxd",
+            "tigre/utilities/cuda_interface/_minTV.pyx",
+        ],
+        sdist=sys.argv[1] == "sdist",
+    ),
+    define_macros=define_macros,
+    library_dirs=[CUDA["lib64"]],
+    libraries=["cudart"],
+    language="c++",
+    runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+)
 
 
-AwminTV_ext = Extension('_AwminTV',
-                        sources=include_headers(['../Common/CUDA/TIGRE_common.cpp',
-                                                 '../Common/CUDA/GD_AwTV.cu',
-                                                 '../Common/CUDA/GpuIds.cpp',
-                                                 '../Common/CUDA/gpuUtils.cu',
-                                                 'tigre/utilities/cuda_interface/_AwminTV.pyx'],
-                                                sdist=sys.argv[1] == "sdist"),
-                        define_macros=[('IS_FOR_PYTIGRE', None)],
-                        library_dirs=[CUDA['lib64']],
-                        libraries=['cudart'],
-                        language='c++',
-                        runtime_library_dirs=[CUDA['lib64']] if not IS_WINDOWS else None,
-                        include_dirs=[NUMPY_INCLUDE, CUDA['include'], '../Common/CUDA/'])
+AwminTV_ext = Extension(
+    "_AwminTV",
+    sources=include_headers(
+        [
+            "../Common/CUDA/TIGRE_common.cpp",
+            "../Common/CUDA/GD_AwTV.cu",
+            "../Common/CUDA/GpuIds.cpp",
+            "../Common/CUDA/gpuUtils.cu",
+            "tigre/utilities/cuda_interface/_AwminTV.pyx",
+        ],
+        sdist=sys.argv[1] == "sdist",
+    ),
+    define_macros=define_macros,
+    library_dirs=[CUDA["lib64"]],
+    libraries=["cudart"],
+    language="c++",
+    runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+)
 
 
 gpuUtils_ext = Extension(
@@ -420,7 +472,6 @@ gpuUtils_ext = Extension(
     sources=include_headers(
         [
             "../Common/CUDA/gpuUtils.cu",
-            "tigre/utilities/cuda_interface/_gpuUtils.pxd",
             "tigre/utilities/cuda_interface/_gpuUtils.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
@@ -432,17 +483,39 @@ gpuUtils_ext = Extension(
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
 )
 
+
+RandomNumberGenerator_ext = Extension(
+    "_RandomNumberGenerator",
+    sources=include_headers(
+        [
+            "../Common/CUDA/TIGRE_common.cpp",
+            "../Common/CUDA/RandomNumberGenerator.cu",
+            "../Common/CUDA/GpuIds.cpp",
+            "../Common/CUDA/gpuUtils.cu",
+            "tigre/utilities/cuda_interface/_randomNumberGenerator.pyx",
+        ],
+        sdist=sys.argv[1] == "sdist",
+    ),
+    define_macros=define_macros,
+    library_dirs=[CUDA["lib64"]],
+    libraries=["cudart"],
+    language="c++",
+    runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+)
+
+
 setup(
     name="pytigre",
-    version="2.1.0",
+    version="2.4.0",
     author="Ander Biguri, Reuben Lindroos, Sam Loescher",
     packages=find_packages(),
     include_package_data=True,
     data_files=[("data", ["../Common/data/head.mat"])],
-    ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext, gpuUtils_ext],
+    ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext, gpuUtils_ext, RandomNumberGenerator_ext],
     py_modules=["tigre.py"],
     cmdclass={"build_ext": BuildExtension},
-    install_requires=["Cython", "matplotlib", "numpy", "scipy"],
+    install_requires=["Cython", "matplotlib", "numpy", "scipy", "tqdm"],
     license_files=("LICENSE",),
     license="BSD 3-Clause",
     # since the package has c code, the egg cannot be zipped

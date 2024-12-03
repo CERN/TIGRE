@@ -4,6 +4,7 @@ from __future__ import with_statement
 import os
 import math
 import numpy
+from tqdm import tqdm
 
 from PIL import Image
 from configparser import ConfigParser
@@ -23,11 +24,11 @@ def NikonDataLoader(filepath, **kwargs):
     #                     loading of the data.
     #                'step': sample the entire set of projections every
     #                       'sampling_step' angles.
-    #                'continous': Load the first 'num_angles' amount of
+    #                'continuous': Load the first 'num_angles' amount of
     #                           angles only.
     #
     #         'num_angles': Number of total angles to load. Default all of
-    #                  them. Useful for 'equidistant' and 'continous' loading
+    #                  them. Useful for 'equidistant' and 'continuous' loading
     #
     #         'sampling_step': step to load when loading projections.
     #                 Default=1. Useful for 'step' loading.
@@ -35,11 +36,11 @@ def NikonDataLoader(filepath, **kwargs):
     folder, geometry, angles = readXtekctGeometry(filepath)
     return loadNikonProjections(folder, geometry, angles, **kwargs)
 
-
 def readXtekctGeometry(filepath):
 
-    # Developed by A. Biguri and W. Sun
+    # Developed by A. Biguri, W. Sun, P Basford
     # W. Sun edited on 06.10.2018 for 3D pro version 5.2.6809.15380 (2018)
+    # P. Basford edited May 2022 for Inspect-X version 6.8 compatibility
 
     if filepath.endswith(".xtekct"):
         folder, ini = os.path.split(filepath)
@@ -59,7 +60,7 @@ def readXtekctGeometry(filepath):
 
     ## Detector information
     # Number of pixel in the detector
-    geometry.nDetector = numpy.array((float(cfg["DetectorPixelsX"]), float(cfg["DetectorPixelsY"])))
+    geometry.nDetector = numpy.array((int(cfg["DetectorPixelsX"]), int(cfg["DetectorPixelsY"])))
     # Size of pixels in the detector
     geometry.dDetector = numpy.array(
         (float(cfg["DetectorPixelSizeX"]), float(cfg["DetectorPixelSizeY"]))
@@ -74,9 +75,8 @@ def readXtekctGeometry(filepath):
 
     ## Image information
     # Number of voxels for the volume
-    geometry.nVoxel = numpy.array(
-        (float(cfg["VoxelsX"]), float(cfg["VoxelsY"]), float(cfg["VoxelsZ"]))
-    )
+    # the algos require these to be integers.
+    geometry.nVoxel = numpy.array((int(cfg["VoxelsX"]), int(cfg["VoxelsY"]), int(cfg["VoxelsZ"])))
     # Size of each voxel
     geometry.dVoxel = numpy.array(
         (float(cfg["VoxelSizeX"]), float(cfg["VoxelSizeY"]), float(cfg["VoxelSizeZ"]))
@@ -88,7 +88,10 @@ def readXtekctGeometry(filepath):
     #%% Global geometry
     geometry.DSO = float(cfg["SrcToObject"])
     geometry.DSD = float(cfg["SrcToDetector"])
-    geometry.COR = -float(cfg["CentreOfRotationTop"])
+    try:
+        geometry.COR = -float(cfg["CentreOfRotationTop"])
+    except KeyError:
+        geometry.COR = -float(cfg["ObjectOffsetX"])
 
     if geometry.COR == 0:
         print(
@@ -124,14 +127,14 @@ def readXtekctGeometry(filepath):
             for i in range(3):
                 file.readline()
             for line in file:
-                angles.append(math.radians(float(line.split("\t")[1])))
+                angles.append(-math.radians(float(line.split("\t")[1])))
         return folder, geometry, numpy.array(angles)
 
     print("File with definition of angles not found, estimating them from geometry info.")
     n_angles = int(cfg["Projections"])
     angle_step = float(cfg["AngularStep"])
     initial_angle = float(cfg["InitialAngle"])
-    angles = numpy.arange(n_angles) * math.radians(angle_step) + math.radians(initial_angle)
+    angles = -(numpy.arange(n_angles) * math.radians(angle_step) + math.radians(initial_angle))
 
     return folder, geometry, angles
 
@@ -151,13 +154,19 @@ def loadNikonProjections(folder, geometry, angles, **kwargs):
 
     # load images
     files = sorted([file for file in os.listdir(folder) if file.lower().endswith(".tif")])
-    projections = []
 
-    for i in indices:
-        # TODO: progress output
+    image = Image.open(os.path.join(folder, files[indices[0]]))
+    image = numpy.asarray(image).astype(numpy.float32)
+    projections = numpy.zeros([len(indices), image.shape[0], image.shape[1]], dtype=numpy.single)
+    projections[0, :, :] = -numpy.log(image / float(geometry.whitelevel))
+    # Python uses zero-based indexing
+    # if we start with index = 1 we get an error
+    # use enumerate, it's cleaner
+    print("Loading Nikon dataset: " + folder)
+    for index, i in enumerate(tqdm(indices[1:]), 1):
         image = Image.open(os.path.join(folder, files[i]))
         image = numpy.asarray(image).astype(numpy.float32)
-        projections.append(-numpy.log(image / float(geometry.whitelevel)))
+        projections[index, :, :] = -numpy.log(image / float(geometry.whitelevel))
 
     del geometry.whitelevel
 

@@ -4,7 +4,6 @@ from __future__ import print_function
 import inspect
 
 import numpy as np
-import numpy.matlib as matlib
 import tigre
 
 
@@ -14,6 +13,13 @@ class Geometry(object):
         self.n_proj = None
         self.angles = None
         self.filter = None
+        self.nVoxel = np.zeros(3)
+        self.dVoxel = np.zeros(3)
+        self.sVoxel = np.zeros(3)
+        self.nDetector = np.zeros(2)
+        self.dDetector = np.zeros(2)
+        self.sDetector = np.zeros(2)
+
 
     def check_geo(self, angles, verbose=False):
         if angles.ndim == 1:
@@ -44,7 +50,7 @@ class Geometry(object):
         included_attribs_indx = [hasattr(self, attrib) for attrib in mandatory_attribs]
         if not all(included_attribs_indx):
             raise AttributeError(
-                "following manditory fields "
+                "following mandatory fields "
                 "missing from geometry:"
                 + str([attrib for attrib in mandatory_attribs if not hasattr(self, attrib)])
             )
@@ -105,10 +111,10 @@ class Geometry(object):
     def checknans(self):
         for attrib in self.__dict__:
             if str(getattr(self, attrib)) == "nan":
-                raise ValueError("nan found for Geometry abbtribute:" + attrib)
+                raise ValueError("nan found for Geometry attribute:" + attrib)
             elif type(getattr(self, attrib)) == np.ndarray:
                 if np.isnan(getattr(self, attrib)).all():
-                    raise ValueError("Nan found in Geometry abbtribute:" + attrib)
+                    raise ValueError("Nan found in Geometry attribute:" + attrib)
 
     def cast_to_single(self):
         """
@@ -133,17 +139,17 @@ class Geometry(object):
         """
         old_attrib = getattr(self, attrib)
 
-        if type(old_attrib) in [float, int, np.float32, np.float64]:
-            new_attrib = matlib.repmat(old_attrib, 1, angles.shape[0])[0]
+        if type(old_attrib) in [float, int, np.float32, np.float64, np.int32]:
+            new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
             setattr(self, attrib, new_attrib)
 
         elif type(old_attrib) == np.ndarray:
             if old_attrib.ndim == 1:
                 if old_attrib.shape in [(3,), (2,)] and attrib not in ["DSD", "DSO", "COR"]:
-                    new_attrib = matlib.repmat(old_attrib, angles.shape[0], 1)
+                    new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
                     setattr(self, attrib, new_attrib)
                 elif old_attrib.shape in [(1,)]:
-                    new_attrib = matlib.repmat(old_attrib, angles.shape[0], 1)
+                    new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
                     setattr(self, attrib, new_attrib)
                 elif old_attrib.shape == (angles.shape[0],):
                     pass
@@ -205,7 +211,7 @@ class Geometry(object):
         parameters.append("Size of each voxel (dVoxel) = " + str(self.dVoxel) + " mm")
 
         parameters.append("-----")
-        if hasattr(self, "offOrigin") and hasattr(self, "offDetector"):
+        if hasattr(self, "offOrigin") or hasattr(self, "offDetector"):
             parameters.append("Offset correction parameters")
             if hasattr(self, "offOrigin"):
                 parameters.append(
@@ -324,5 +330,7 @@ def geometry(mode="cone", nVoxel=None, default=False, high_resolution=True):
             return Geometry()
     if mode == "parallel":
         return ParallelGeo(nVoxel)
+    if mode == "fan":
+        return tigre.fan_geometry_default(high_resolution, nVoxel)
     else:
-        raise ValueError("mode: " + mode + " not recognised.")
+        raise ValueError("mode: " + mode + " not recognized.")

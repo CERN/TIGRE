@@ -8,10 +8,9 @@ from tigre.utilities import sample_loader
 from tigre.utilities.Measure_Quality import Measure_Quality
 import tigre.utilities.gpu as gpu
 import matplotlib.pyplot as plt
-
-### This is just a basic example of very few TIGRE functionallity.
-# We hihgly recomend checking the Demos folder, where most if not all features of tigre are demoed.
-
+import os
+### This is just a basic example of very few TIGRE functionality.
+# We highly recommend checking the Demos folder, where most if not all features of TIGRE are demoed.
 
 listGpuNames = gpu.getGpuNames()
 if len(listGpuNames) == 0:
@@ -30,13 +29,13 @@ geo.dDetector = np.array([0.8, 0.8]) * 2  # size of each pixel            (mm)
 geo.sDetector = geo.dDetector * geo.nDetector
 # print(geo)
 
-nangles = 100
+nangles = 128
 angles = np.linspace(0, 2 * np.pi, nangles, endpoint=False, dtype=np.float32)
 
 # Prepare projection data
 head = sample_loader.load_head_phantom(geo.nVoxel)
 proj = tigre.Ax(head, geo, angles, gpuids=gpuids)
-
+test = tigre.Atb(proj,geo,angles,backprojection_type="matched",gpuids=gpuids)
 # Reconstruct
 niter = 20
 fdkout = algs.fdk(proj, geo, angles, gpuids=gpuids)
@@ -62,3 +61,4 @@ axes[2, 1].imshow(ossart[:, :, geo.nVoxel[2] // 2])
 plt.show()
 # tigre.plotProj(proj)
 # tigre.plotImg(fdkout)
+

@@ -17,7 +17,7 @@ else
     filename=file(1).name;
     fid=fopen([folder_or_file,'/',filename]);
 end
-% check if it was oppened right
+% check if it was opened right
 if(fid==-1)
     error('Wrong file path');
 end
@@ -94,9 +94,9 @@ if ~isempty(file_angles)
 end
 
 warning('File with definition of angles not found, estimating them from geometri info.')
-anlge_step=str2double(xtekctText{2}(strcmp('AngularStep', xtekctText{1})));
+angle_step=str2double(xtekctText{2}(strcmp('AngularStep', xtekctText{1})));
 initial_angle=str2double(xtekctText{2}(strcmp('InitialAngle', xtekctText{1})));
 n_angles=str2double(xtekctText{2}(strcmp('Projections', xtekctText{1})));
-angles=(initial_angle:anlge_step:(initial_angle-anlge_step+360))*pi/180;
+angles=initial_angle:angle_step*pi/180:(initial_angle+(n_angles-1)*angle_step)*pi/180;
 assert(size(angles,2)==n_angles,'Assertion failed: Inconsistent data detected. Number of projections and angle information do not match\n');
 

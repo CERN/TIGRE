@@ -5,7 +5,7 @@
 #  Total variation algorithms try to minimize the variation (gradient) of the
 #  image, assuming its piecewise smooth, as most things in nature are (i.e.
 #  human body). FISTA attempts to perform this with much faster convergence
-#  than sandard gradient algorithms such as SIRT.
+#  than standard gradient algorithms such as SIRT.
 #
 #
 # --------------------------------------------------------------------------
@@ -38,7 +38,7 @@ geo = tigre.geometry_default(high_resolution=False)
 #%% Load data and generate projections
 # define angles
 angles = np.linspace(0, 2 * np.pi, 100)
-# Load thorax phatom data
+# Load thorax phantom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
 # generate projections
 projections = tigre.Ax(head, geo, angles)

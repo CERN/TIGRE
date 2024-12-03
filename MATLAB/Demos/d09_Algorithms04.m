@@ -14,7 +14,7 @@
 % This Demo is not fully complete, as several algorithms are not shown
 % here, yet are available in TIGRE, namely:
 %
-% - AwASD_POCS:  Edge preserving ASD_POCS (Adaptative weigthed).
+% - AwASD_POCS:  Edge preserving ASD_POCS (Adaptative weighted).
 % - OS_AwASD_POCS: OS-version of the previous algorithm
 % - PCSD: A version of ASD_POCS that heuristically select some of the
 %         parameters, particularly epsilon (maxL2norm)
@@ -57,7 +57,7 @@ noise_projections=addCTnoise(projections);
 
 %% Total Variation algorithms
 %
-%  ASD-POCS: Adaptative Steeppest Descent-Projection On Convex Subsets
+%  ASD-POCS: Adaptative Steepest Descent-Projection On Convex Subsets
 % Often called POCS-TV
 %==========================================================================
 %==========================================================================
@@ -66,8 +66,8 @@ noise_projections=addCTnoise(projections);
 %  iteration. As the other algorithms the mandatory inputs are projections,
 %  geometry, angles and maximum iterations.
 %
-% ASD-POCS has a veriety of optional arguments, and some of them are crucial
-% to determine the behaviour of the algorithm. The advantage of ASD-POCS is
+% ASD-POCS has a variety of optional arguments, and some of them are crucial
+% to determine the behavior of the algorithm. The advantage of ASD-POCS is
 % the power to create good images from bad data, but it needs a lot of
 % tunning. 
 %
@@ -121,11 +121,11 @@ imgASDPOCS=ASD_POCS(noise_projections,geo,angles,50,...
 
 
                  
-%  OS_ASD_POCS: Odered Subset-TV algorithm
+%  OS_ASD_POCS: Ordered Subset-TV algorithm
 %==========================================================================
 %==========================================================================
 %
-% The logical next step to imporce ASD-POCS is substituting SART with a
+% The logical next step to improve ASD-POCS is substituting SART with a
 % faster algorithm, such as OS-SART
 %
 % The parameters are the same as in ASD-POCS, but also have 'BlockSize' and
@@ -182,7 +182,7 @@ imgBASDPOCSbeta=B_ASD_POCS_beta(noise_projections,geo,angles,50,...
 %
 %
 %  
-%   'TViter'       amoutn of iteration in theTV step. Default 50
+%   'TViter'       amount of iteration in theTV step. Default 50
 % 
 %   'TVlambda'     hyperparameter in TV iteration. IT gives the ratio of
 %                  importance of the image vs the minimum total variation.
@@ -191,23 +191,52 @@ imgBASDPOCSbeta=B_ASD_POCS_beta(noise_projections,geo,angles,50,...
                   
 imgSARTTV=SART_TV(noise_projections,geo,angles,50,'TViter',100,'TVlambda',50);           
 
+
+% IRN_TV_CGLS
+%==========================================================================
+%========================================================================== 
+% CGLS with TV regularization in an inner/outer iteration scheme
+%
+% 'lambda' hyperparameter in TV norm. It gives the ratio of
+%          importance of the image vs the minimum total variation.
+%          default is 15. Lower means less TV denoising.
+%
+% 'niter_outer' Number of outer iterations. Each outer iteration will
+%               perform niter number of inner iterations, in the example
+%               below, 20.Albeit this seems that it does many more
+%               iterations than the other algorithms, this is an inherently
+%               faster algorithm, both in convergence and time. 
+
+imgIRN_TV_CGLS=IRN_TV_CGLS(noise_projections,geo,angles,20,'lambda',5,'niter_outer',2);
+% hybrid_fLSQR_TV
+%==========================================================================
+%========================================================================== 
+% flexyble hybrod LSQR. Has TV regularization with reorthogonalization. 
+%
+% 'lambda' hyperparameter in TV norm. It gives the ratio of
+%          importance of the image vs the minimum total variation.
+%          default is 15. Lower means less TV denoising.
+%
+imgflsqr=hybrid_fLSQR_TV(projections,geo,angles,20,'lambda',5);
+
  %% Lets visualize the results
 % Notice the smoother images due to TV regularization.
 %
-%     thorax              OS-SART           ASD-POCS         
+%     head              OS-SART           ASD-POCS         
 %    
-%     OSC-TV             B-ASD-POCS-beta   SART-TV
+%     OS-ASD-POCS       B-ASD-POCS-beta   SART-TV
+%
+%     IRN-TV-CGLS        hybrid-fLSQR       heads
 
-plotImg([ imgOSASDPOCS imgBASDPOCSbeta imgSARTTV; head imgOSSART  imgASDPOCS ] ,'Dim','Z','Step',2,'clims',[0 1])
+plotImg([imgIRN_TV_CGLS imgflsqr  head;
+         imgOSASDPOCS imgBASDPOCSbeta imgSARTTV;
+         head, imgOSSART, imgASDPOCS ] ,'Dim','Z','Step',2,'clims',[0 1])
  % error
-
-plotImg(abs([ head-imgOSASDPOCS head-imgBASDPOCSbeta head-imgSARTTV;head-head head-imgOSSART  head-imgASDPOCS ]) ,'Dim','Z','Slice',64)
-
-
-
+plotImg(abs([head-imgIRN_TV_CGLS head-imgflsqr  head-head;
+         head-imgOSASDPOCS head-imgBASDPOCSbeta head-imgSARTTV;
+         head-head, head-imgOSSART, head-imgASDPOCS ]) ,'Dim','Z','Slice',64,'clims',[0 0.1])
 
 %%
-
 % Obligatory XKCD reference: https://xkcd.com/833/
 
 

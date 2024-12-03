@@ -7,7 +7,7 @@
 3. Pass the gpuids instance to Tigre functions.
 """
 import _gpuUtils as gpuUtils
-
+import copy
 
 class GpuIds(object):
     """
@@ -37,7 +37,10 @@ class GpuIds(object):
             "devices": self.devices,
         }
         return dictTemp.__str__()
-
+    def __getitem__(self, key):
+        single_gpu = copy.deepcopy(self)
+        single_gpu.devices = [self.devices[key]]
+        return single_gpu
 
 def getGpuNames():
     """Returns a list of all installed GPUs."""

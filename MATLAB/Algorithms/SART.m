@@ -1,10 +1,10 @@
-function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
-%SART solves Cone Beam CT image reconstruction using Oriented Subsets
-%              Simultaneous Algebraic Reconxtruction Techique algorithm
+function [res,resL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
+% SART solves Cone Beam CT image reconstruction using Oriented Subsets
+%              Simultaneous Algebraic Reconstruction Technique algorithm
 %
 %   SART(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
-%   to the geometry descrived in GEO, using NITER iterations.
+%   to the geometry described in GEO, using NITER iterations.
 %
 %   SART(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
@@ -12,19 +12,19 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %
 %   'lambda':      Sets the value of the hyperparameter. Default is 1
 %
-%   'lambda_red':   Reduction of lambda.Every iteration
+%   'lambda_red':  Reduction of lambda. Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
-%   'Init':        Describes diferent initialization techniques.
+%   'Init':        Describes different initialization techniques.
 %                  'none'     : Initializes the image to zeros (default)
-%                  'FDK'      : intializes image to FDK reconstrucition
+%                  'FDK'      : Initializes image to FDK reconstruction
 %                  'multigrid': Initializes image by solving the problem in
 %                               small scale and increasing it when relative
 %                               convergence is reached.
 %                  'image'    : Initialization using a user specified
-%                               image. Not recomended unless you really
+%                               image. Not recommended unless you really
 %                               know what you are doing.
-%   'InitImg'      an image for the 'image' initialization. Aviod.
+%   'InitImg'      an image for the 'image' initialization. Avoid.
 %
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
@@ -33,10 +33,16 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %                  quality measurement names. Example: {'CC','RMSE','MSSIM'}
 %                  These will be computed in each iteration.
 % 'OrderStrategy'  Chooses the subset ordering strategy. Options are
-%                  'ordered' :uses them in the input order, but divided
-%                  'random'  : orders them randomply
+%                  'ordered' : uses them in the input order, but divided
+%                  'random'  : orders them randomly
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
+% 'redundancy_weighting': true or false. Default is true. Applies data
+%                         redundancy weighting to projections in the update step
+%                         (relevant for offset detector geometry)
+%  'groundTruth'  an image as ground truth, to be used if quality measures
+%                 are requested, to plot their change w.r.t. this known
+%                 data.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -56,15 +62,26 @@ function [res,errorL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 blocksize=1;
-[lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,angles,varargin);
+[lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,varargin);
 
-measurequality=~isempty(QualMeasOpts);
+measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
+if ~any(isnan(gt(:)))
+    QualMeasOpts{end+1}='error_norm';
+    res_prev=gt;
+    clear gt
+end
+if nargout<3 && measurequality
+    warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
+    measurequality=false;
+end
+qualMeasOut=zeros(length(QualMeasOpts),niter);
+
+resL2=zeros(1,niter);
 if nargout>1
     computeL2=true;
 else
     computeL2=false;
 end
-errorL2=[];
 
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 index_angles=cell2mat(orig_index);
@@ -74,22 +91,27 @@ angles_reorder=cell2mat(alphablocks);
 if ~isfield(geo,'rotDetector')
     geo.rotDetector=[0;0;0];
 end
-%% Create weigthing matrices
+%% Create weighting matrices
 
-% Projection weigth, W
+% Projection weight, W
 
-geoaux=geo;
-geoaux.sVoxel([1 2])=geo.sDetector([1])*1.1; % a Bit bigger, to avoid numerical division by zero (small number)
-geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
-geoaux.nVoxel=[2,2,2]'; % accurate enough?
-geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);  %
-W(W<min(geo.dVoxel)/4)=Inf;
-W=1./W;
-W(W>0.1)=0.1;
+% Projection weight, W
+W=computeW(geo,angles,gpuids);
 
-% Back-Projection weigth, V
-V=computeV(geo,angles,alphablocks,orig_index,gpuids);
+% Back-Projection weight, V
+V=computeV(geo,angles,alphablocks,orig_index,'gpuids',gpuids);
+
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+    W = W.*W_r; % include redundancy weighting in W
+end
 
 clear A x y dx dz;
 %% hyperparameter stuff
@@ -112,8 +134,8 @@ for ii=1:niter
     if (ii==1 && verbose==1);tic;end
     % If quality is going to be measured, then we need to save previous image
     % THIS TAKES MEMORY!
-    if measurequality
-        res_prev=res;
+    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+        res_prev = res; % only store if necessary
     end
     
     % reorder angles
@@ -139,17 +161,18 @@ for ii=1:niter
         %         proj_err=proj(:,:,jj)-Ax(res,geo,angles(jj));       %                                 (b-Ax)
         %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
         %         backprj=Atb(weighted_err,geo,angles(jj));           %                     At * W^-1 * (b-Ax)
-        %         weigth_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
-        %         res=res+lambda*weigth_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
+        %         weight_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
+        %         res=res+lambda*weight_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
         %------------------------------------
         %--------- Memory cheap(er)-----------
         if nesterov
             % The nesterov update is quite similar to the normal update, it
             % just uses this update, plus part of the last one.
-            ynesterov=res+ bsxfun(@times,1./V(:,:,index_angles(:,jj)),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
+            ynesterov_prev = ynesterov;
+            ynesterov=res+ bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
             res=(1-gamma)*ynesterov+gamma*ynesterov_prev;
         else
-             res=res+lambda* bsxfun(@times,1./V(:,:,index_angles(:,jj)),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
+            res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
         end
         if nonneg
             res=max(res,0);
@@ -158,7 +181,6 @@ for ii=1:niter
     
     % If quality is being measured
     if measurequality
-        % HERE GOES
         qualMeasOut(:,ii)=Measure_Quality(res,res_prev,QualMeasOpts);
     end
     
@@ -174,18 +196,17 @@ for ii=1:niter
         geo.offDetector=offDetector;
         geo.DSD=DSD;
         geo.rotDetector=rotDetector;
-        errornow=im3Dnorm(proj-Ax(res,geo,angles,'gpuids',gpuids),'L2','gpuids',gpuids);                       % Compute error norm2 of b-Ax
-        %         If the error is not minimized.
-        if  ii~=1 && errornow>errorL2(end)
+        resL2(ii)=im3Dnorm(proj-Ax(res,geo,angles,'gpuids',gpuids),'L2'); % Compute error norm2 of b-Ax
+        % If the error is not minimized.
+        if  ii~=1 && resL2(ii)>resL2(ii-1)
             if verbose
                 disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
             end
-            return;
+            return
         end
-        errorL2=[errorL2 errornow];
     end
     
-    if (ii==1 && verbose==1);
+    if (ii==1 && verbose==1)
         expected_time=toc*niter;
         disp('SART');
         disp(['Expected duration   :    ',secs2hms(expected_time)]);
@@ -233,8 +254,8 @@ end
 end
 
 
-function [lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids]=parse_inputs(proj,geo,alpha,argin)
-opts=     {'lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg','gpuids'};
+function [lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,alpha,argin)
+opts={'lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg','gpuids','redundancy_weighting','groundtruth'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -255,7 +276,7 @@ end
 for ii=1:length(opts)
     opt=opts{ii};
     default=defaults(ii);
-    % if one option isnot default, then extranc value from input
+    % if one option is not default, then extract value from input
     if default==0
         ind=double.empty(0,1);jj=1;
         while isempty(ind)
@@ -284,9 +305,9 @@ for ii=1:length(opts)
         case 'lambda'
             if default
                 lambda=1;
-            elseif ischar(val)&&strcmpi(val,'nesterov');
-                lambda='nesterov'; %just for lowercase/upercase
-            elseif length(val)>1 || ~isnumeric( val)
+            elseif ischar(val)&&strcmpi(val,'nesterov')
+                lambda='nesterov'; % just for lowercase/uppercase
+            elseif length(val)>1 || ~isnumeric(val)
                 error('TIGRE:SART:InvalidInput','Invalid lambda')
             else
                 lambda=val;
@@ -295,7 +316,7 @@ for ii=1:length(opts)
             if default
                 lambdared=1;
             else
-                if length(val)>1 || ~isnumeric( val)
+                if length(val)>1 || ~isnumeric(val)
                     error('TIGRE:SART:InvalidInput','Invalid lambda')
                 end
                 lambdared=val;
@@ -304,19 +325,19 @@ for ii=1:length(opts)
             res=[];
             if default || strcmp(val,'none')
                 res=zeros(geo.nVoxel','single');
-                continue;
+                continue
             end
             if strcmp(val,'FDK')
                 res=FDK(proj,geo,alpha);
-                continue;
+                continue
             end
             if strcmp(val,'multigrid')
                 res=init_multigrid(proj,geo,alpha);
-                continue;
+                continue
             end
             if strcmp(val,'image')
-                initwithimage=1;     % it is used (10 lines below)
-                continue;
+                initwithimage=1; % it is used (10 lines below)
+                continue
             end
             if isempty(res)
                 error('TIGRE:SART:InvalidInput','Invalid Init option')
@@ -324,10 +345,10 @@ for ii=1:length(opts)
             % % % % % % % ERROR
         case 'initimg'
             if default
-                continue;
+                continue
             end
-            if exist('initwithimage','var');
-                if isequal(size(val),geo.nVoxel');
+            if exist('initwithimage','var')
+                if isequal(size(val),geo.nVoxel')
                     res=single(val);
                 else
                     error('TIGRE:SART:InvalidInput','Invalid image for initialization');
@@ -360,6 +381,18 @@ for ii=1:length(opts)
                 gpuids = GpuIds();
             else
                 gpuids = val;
+            end
+        case 'redundancy_weighting'
+            if default
+                redundancy_weights = true;
+            else
+                redundancy_weights = val;
+            end
+        case 'groundtruth'
+            if default
+                gt=nan;
+            else
+                gt=val;
             end
         otherwise
             error('TIGRE:SART:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option']);

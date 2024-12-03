@@ -11,7 +11,7 @@ Installation Instructions for MATLAB
    - [Requirements](#requirements-1)
    - [Simple Instructions](#simple-instructions-1)
    - [Step by Step Instructions](#step-by-step-instructions1)
-   
+- [Advanced](#advanced)
    *****
    
 ## Windows
@@ -19,8 +19,8 @@ Installation Instructions for MATLAB
 ### Requirements:
 
 1. MATLAB
-2. Visual Studio (Community or Profesional)
-3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.0](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
+2. Visual Studio (Community or Professional)
+3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.5](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
 4. CUDA Toolkit (9.2 or newer)
 
 Tested on
@@ -28,19 +28,18 @@ Tested on
 | Software        | Version           | 
 | ------------- |:-------------:|
 |**Windows**| 7, 8, 10.|
-|**MATLAB**| 2014b 2016b 2017a 2018b|
-|**CUDA**| 9.2 10|
-|**Visual Studio**| 2010 2013 2015|
+|**MATLAB**|Any MATLAB >2016b|
+|**CUDA**|Any CUDA 9.2>|
+|**Visual Studio**| 2010 2013 2015 2019 2022|
 
 
 
 ### Simple Instructions
 
-1. Install MATLAB, Visual Studio and CUDA
-2. Rename either `mex_CUDA_win64_MVS2013.xml` (Visual Studio 2013 or older) or `mex_CUDA_win64_MVS2015.xml`(Visual Studio 2015 or newer) to `mex_CUDA_win64.xml`
-3. Run `Compile.m`
+1. Install MATLAB, Visual Studio and CUDA (Remember to install C++ when installing Visual Studio!)
+2. Run `Compile.m`
 
-A succesfull installation should be able to execute the script at `TIGRE/MATLAB/Demos/d03_generateData.m` without errors.
+A successful installation should be able to execute the script at `TIGRE/MATLAB/Demos/d03_generateData.m` without errors.
 
 
 
@@ -50,12 +49,12 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 
 2. Install CUDA
 
-   Any version avobe 9.2 has been tested, however its recommended to get the latests version as possible, for performance and support.\
+   Any version above 9.2 has been tested, however its recommended to get the latests version as possible, for performance and support.\
    [CUDA download link](https://developer.nvidia.com/cuda-downloads)\
    [Detailed installation guide](https://developer.download.nvidia.com/compute/cuda/10.0/Prod/docs/sidebar/CUDA_Installation_Guide_Windows.pdf)\
    **NOTE**: In windows at least, the User has to have no spaces. 
    
-3. Install Visiual Studio
+3. Install Visual Studio
 
    **Make sure you install C++**.\
    [Download link for the latest version](https://visualstudio.microsoft.com/downloads/)\
@@ -65,7 +64,7 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 4. Download TIGRE
 
    If you are using git, run: `git clone https://github.com/CERN/TIGRE.git`\
-   Manually [download zip file](https://github.com/CERN/TIGRE/archive/master.zip) oherwise.
+   Manually [download zip file](https://github.com/CERN/TIGRE/archive/master.zip) otherwise.
 
 5. Test the correct configuration of Visual Studio 
 
@@ -82,35 +81,17 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
    Note the last 3 **Yes**. If those are not there it means that you do not have installed C++ on step 3 of this tutorial.\
    To fix:\
    -go to `Control panel>Add or remove programs -> Visual studio community 20XX -> modify`\
-   -`Lanugages -> Visual C++`
+   -`Languages -> Visual C++`
    
    Make sure that when you run `mex -setup -v` C++ is installed and Visual Studio is selected as the compiler for C/C++
    
-6. Check that MALTAB knows where Visual Studio and CUDA are
+6. By opening MATLAB on `yourTIGREpath/MATLAB`, execute `Compile.m`
 
-   Run the following commands: 
+   If it fails, try opening `mex_CUDA_win64.xml` with your favorite editor and changing line 125 to link to your local `nvcc` location.
    
-   - `getenv('CUDA_PATH')`; 
-   - `getenv('VS120COMNTOOLS');` (MVS2013) `getenv('VS140COMNTOOLS');` (MVS2015 or newer)
-   
-   They should return something similar to:
-   
-   - `'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.2'`
-   - `'C:\Program Files (x86)\Microsoft Visual Studio 14.0\Common7\Tools\'`
-   
-   If any of these return empty, your installation of CUDA or Visual Studio did not happen successfully or you did install it in the non-standard way.
-   Either reinstall, or configure this variables (use [`setenv()`](https://uk.mathworks.com/help/matlab/ref/setenv.html)) to point to the correct installation locations. 
-	 
-7. Rename either `mex_CUDA_win64_MVS2013.xml` (Visual Studio 2013 or older) or `mex_CUDA_win64_MVS2015.xml`(Visual Studio 2015 or newer) to `mex_CUDA_win64.xml`
-    
-   
-8. By opening MATLAB on `yourTIGREpath/MATLAB`, execute `Compile.m`
+7. Initialize TIGRE by typing `InitTIGRE` on the MATLAB Command Window.
 
-   If it fails, try opening `mex_CUDA_win64.xml` with your favourite editor and changing line 125 to link to your local `nvcc` location.
-   
-9. Initialize TIGRE by typing `InitTIGRE` on the MATLAB Command Window.
-
-10. Run file `TIGRE/MATLAB/Demos/d03_generateData.m`. If it successfully executes, you have installed and compiled TIGRE properly.
+8. Run file `TIGRE/MATLAB/Demos/d03_generateData.m`. If it successfully executes, you have installed and compiled TIGRE properly.
 
 
 If none of this works, please contact the authors at [tigre.toolbox@gmail.com](mailto:tigre.toolbox@gmail.com) or [ander.biguri@gmail.com](mailto:ander.biguri@gmail.com)
@@ -129,9 +110,9 @@ Tested on
 
 | Software       | Version    | 
 | ------------- |:-------------:|
-| **Ubuntu**|  16.04 17.10| 
-| **MATLAB**|  2017a 2018b| 
-| **CUDA**| 9.2 10.0| 
+| **Ubuntu**|  Any ubuntu 16.04>| 
+| **MATLAB**|  Any MATLAB 2016b>| 
+| **CUDA**| Any Cuda 0.2>| 
 | **gcc**|  6.4.0 7.2.0| 
 
 ### Simple Instructions
@@ -139,9 +120,9 @@ Tested on
 1. Install MATLAB, gcc and CUDA
 2. Run `Compile.m`
 
-A succesfull installation should be able to execute the script at `TIGRE/MATLAB/Demos/d03_generateData.m` without errors.
+A successful installation should be able to execute the script at `TIGRE/MATLAB/Demos/d03_generateData.m` without errors.
 
-### Step by Step Instructions:<sup>1</sup>
+### Step by Step Instructions:
 
 1. Install MATLAB
 
@@ -158,12 +139,12 @@ A succesfull installation should be able to execute the script at `TIGRE/MATLAB/
 4. Download TIGRE
 
    If you are using git, run: `git clone https://github.com/CERN/TIGRE.git`\
-   Manually [download zip file](https://github.com/CERN/TIGRE/archive/master.zip) oherwise.
+   Manually [download zip file](https://github.com/CERN/TIGRE/archive/master.zip) otherwise.
    
 5. Make sure your terminal knows where CUDA is.
 
    For Ubuntu:
-   - Using your favourite test editor, open ~/.bashrc. e.g. `gedit ~/.bashrc`.
+   - Using your favorite test editor, open ~/.bashrc. e.g. `gedit ~/.bashrc`.
    - Append to the file the following lines:
      ```
 	 export LD_LIBRARY_PATH=/usr/local/cuda/lib64
@@ -181,4 +162,13 @@ If none of this works, please contact the authors at [tigre.toolbox@gmail.com](m
 
 ****
 
-<sup>1</sup> Testing by the TIGRE team in Linux is limited, thus the step by step instructions are less detailed than expected. Please do [contact us](mailto:ander.biguri@gmail.com) if you are having trouble or would like to contribute to the instructions. 
+## Advanced
+
+If you are doing reconstruction of large datasets, and you want to use swap memory, you will need to deactivate TIGREs pinned memory feature at compile time. This will allow you to use swap memory, but it will make the operators in TIGRE slower, as pinned memory is used for simultaneous memory and compute. 
+
+
+You can do this by calling the `Compile.m` file from the MATLAB command line as `Compile --no_pinned_memory`.
+
+
+
+

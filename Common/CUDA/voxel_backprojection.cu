@@ -153,10 +153,10 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
      * const float sinalpha,
      * const float cosalpha){
      */
-    unsigned long indY = blockIdx.y * blockDim.y + threadIdx.y;
-    unsigned long indX = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned long long indY = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned long long indX = blockIdx.x * blockDim.x + threadIdx.x;
     // unsigned long startIndZ = blockIdx.z * blockDim.z + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
-    unsigned long startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
+    unsigned long long startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     //Make sure we don't go out of bounds
     if (indX>=geo.nVoxelX || indY>=geo.nVoxelY || startIndZ>=geo.nVoxelZ)
         return;
@@ -167,27 +167,27 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
     // First we need to copy the curent 3D volume values from the column to our auxiliary array so that we can then
     // work on them (update them by computing values from multiple projections) locally - avoiding main memory reads/writes
     
-    int colIdx;
+    unsigned long colIdx;
 #pragma unroll
     for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
     {
-        unsigned long indZ = startIndZ + colIdx;
+        unsigned long long indZ = startIndZ + colIdx;
         // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
         // be trying to copy the out of bounds values back to the 3D volume anyway (bounds checks will be done in the final loop where the updated values go back to the main volume)
         if(indZ>=geo.nVoxelZ)
             break;   // break the loop.
         
-        unsigned long long idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
+        unsigned long long idx =indZ*(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY+indY*(unsigned long long)geo.nVoxelX + indX;
         voxelColumn[colIdx] = image[idx];   // Read the current volume value that we'll update by computing values from MULTIPLE projections (not just one)
         // We'll be updating the local (register) variable, avoiding reads/writes from the slow main memory.
     }  // END copy 3D volume voxels to local array
     
     // Now iterate through projections
 #pragma unroll
-    for(int projNumber=0; projNumber<PROJ_PER_KERNEL; projNumber++)
+    for(unsigned long projNumber=0; projNumber<PROJ_PER_KERNEL; projNumber++)
     {
         // Get the current parameters from parameter arrays in constant memory.
-        int indAlpha = currProjSetNumber*PROJ_PER_KERNEL+projNumber;  // This is the ABSOLUTE projection number in the projection array
+        unsigned long indAlpha = currProjSetNumber*PROJ_PER_KERNEL+projNumber;  // This is the ABSOLUTE projection number in the projection array
         
         // Our currImageVal will be updated by hovewer many projections we had left in the "remainder" - that's OK.
         if(indAlpha>=totalNoOfProjections)
@@ -211,7 +211,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
 #pragma unroll
         for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
         {
-            unsigned long indZ = startIndZ + colIdx;
+            unsigned long long indZ = startIndZ + colIdx;
             
             // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
             // be trying to copy the out of bounds values anyway (bounds checks will be done in the final loop where the values go to the main volume)
@@ -239,22 +239,22 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             u=y+(float)geo.nDetecU*0.5f;
             v=z+(float)geo.nDetecV*0.5f;
             
-            float weigth;
+            float weight;
             float realx,realy;
-            realx=-(geo.sVoxelX+geo.dVoxelX)*0.5f  +indX*geo.dVoxelX   +xyzOffset.x;
-            realy=-(geo.sVoxelY+geo.dVoxelY)*0.5f  +indY*geo.dVoxelY   +xyzOffset.y+COR;
+            realx=-(geo.sVoxelX-geo.dVoxelX)*0.5f  +indX*geo.dVoxelX   +xyzOffset.x;
+            realy=-(geo.sVoxelY-geo.dVoxelY)*0.5f  +indY*geo.dVoxelY   +xyzOffset.y+COR;
             
-            weigth=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
+            weight=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
             
-            weigth=__frcp_rd(weigth*weigth);
+            weight=__frcp_rd(weight*weight);
             
-            // Get Value in the computed (U,V) and multiply by the corresponding weigth.
+            // Get Value in the computed (U,V) and multiply by the corresponding weight.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             
 #if IS_FOR_MATLAB_TIGRE
-            voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f)*weigth;
+            voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f)*weight;
 #else
-            voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,indAlpha+0.5f)*weigth;
+            voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,indAlpha+0.5f)*weight;
 #endif
         }  // END iterating through column of voxels
         
@@ -264,13 +264,13 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
 #pragma unroll
     for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
     {
-        unsigned long indZ = startIndZ + colIdx;
+        unsigned long long indZ = startIndZ + colIdx;
         // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
         // be trying to copy the out of bounds values back to the 3D volume anyway (bounds checks will be done in the final loop where the values go to the main volume)
         if(indZ>=geo.nVoxelZ)
             break;   // break the loop.
         
-        unsigned long long idx =indZ*geo.nVoxelX*geo.nVoxelY+indY*geo.nVoxelX + indX;
+        unsigned long long idx =indZ*(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY+indY*(unsigned long long)geo.nVoxelX + indX;
         image[idx] = voxelColumn[colIdx];   // Read the current volume value that we'll update by computing values from MULTIPLE projections (not just one)
         // We'll be updating the local (register) variable, avoiding reads/writes from the slow main memory.
         // According to references (Papenhausen), doing = is better than +=, since += requires main memory read followed by a write.
@@ -295,19 +295,22 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     // printf("voxel_backprojection(geo.nDetector = %d, %d)\n", geo.nDetecU, geo.nDetecV);
     // printf("geo.nVoxel    = %d, %d, %d\n", geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
     
-    
-
     // Prepare for MultiGPU
     int deviceCount = gpuids.GetLength();
     cudaCheckErrors("Device query fail");
     if (deviceCount == 0) {
         mexErrMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","There are no available device(s) that support CUDA\n");
     }
-    
+
+    // CODE assumes
+    // 1.-All available devices are usable by this code
+    // 2.-All available devices are equal, they are the same machine (warning thrown)
     // Check the available devices, and if they are the same
+    if (!gpuids.AreEqualDevices()) {
+        mexWarnMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed.");
+    }
+
     int dev;
-    checkDevices(gpuids);
-    
     // Split the CT problem
     unsigned int split_image;
     unsigned int split_projections;
@@ -324,12 +327,14 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
 #endif
     // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to
     // pin the memory is greater than the lost time in Synchronously launching the memcpys. This is only worth it when the image is too big.
+#ifndef NO_PINNED_MEMORY    
     if (isHostRegisterSupported & (split_image>1 |deviceCount>1)){
         cudaHostRegister(result, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float),cudaHostRegisterPortable);
     }
-//     if (isHostRegisterSupported ){
-//         cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
-//     }
+    if (isHostRegisterSupported ){ 
+        cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable); 
+    } 
+#endif
     cudaCheckErrors("Error pinning memory");
     
     
@@ -464,7 +469,7 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
                     
                     int divx,divy,divz;
                     // RB: Use the optimal (in their tests) block size from paper by Zinsser and Keck (16 in x and 32 in y).
-                    // I tried different sizes and shapes of blocks (tiles), but it does not appear to significantly affect trhoughput, so
+                    // I tried different sizes and shapes of blocks (tiles), but it does not appear to significantly affect throughput, so
                     // let's stick with the values from Zinsser and Keck.
                     divx=16;
                     divy=32;
@@ -594,47 +599,26 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     free(proj_split_size);
     
     freeGeoArray(split_image*deviceCount,geoArray);
-    
+#ifndef NO_PINNED_MEMORY        
     if (isHostRegisterSupported & (split_image>1 |deviceCount>1)){
         cudaHostUnregister(result);
     }
-//     if (isHostRegisterSupported){
-//         cudaHostUnregister(projections);
-//     }
-//     
+    if (isHostRegisterSupported){
+        cudaHostUnregister(projections);
+    }
+#endif
     
     for (int i = 0; i < nStreams; ++i)
         cudaStreamDestroy(stream[i]);
     
     cudaCheckErrors("cudaFree fail");
     
-    cudaDeviceReset(); // For the Nvidia Visual Profiler
+    //cudaDeviceReset(); // For the Nvidia Visual Profiler
     return 0;
     
 }  // END voxel_backprojection
 //
-void checkDevices(const GpuIds& gpuids){
-    // CODE assumes
-    // 1.-All available devices are usable by this code
-    // 2.-All available devices are equal, they are the same machine (warning thrown)
-    int dev;
-    int deviceCount = gpuids.GetLength();
-    const int devicenamelength = 256;  // The length 256 is fixed by spec of cudaDeviceProp::name
-    char devicename[devicenamelength];
-    cudaDeviceProp deviceProp;
-    for (dev = 0; dev < deviceCount; dev++) {
-        cudaSetDevice(gpuids[dev]);
-        cudaGetDeviceProperties(&deviceProp, dev);
-        if (dev>0){
-            if (strcmp(devicename,deviceProp.name)!=0){
-                mexWarnMsgIdAndTxt("Atb:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 275.");
-                break;
-            }
-        }
-        memset(devicename, 0, devicenamelength);
-        strcpy(devicename, deviceProp.name);
-    }
-}
+
 void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
     
     
@@ -768,6 +752,69 @@ void freeGeoArray(unsigned int splits,Geometry* geoArray){
     }
     free(geoArray);
 }
+
+
+//______________________________________________________________________________
+//
+//      double precision functions for rotating Point3Ddouble coordinates
+//______________________________________________________________________________
+
+void eulerZYZT(Geometry geo, Point3Ddouble* point){
+    
+    Point3Ddouble auxPoint;
+    auxPoint.x=point->x;
+    auxPoint.y=point->y;
+    auxPoint.z=point->z;
+
+    // calculate sin and cos of 3 angles (used multiple times)
+    double sin_alpha, cos_alpha, sin_theta, cos_theta, sin_psi, cos_psi;
+    sin_alpha = sin((double)geo.alpha);
+    cos_alpha = cos((double)geo.alpha);
+    sin_theta = sin((double)geo.theta);
+    cos_theta = cos((double)geo.theta);
+    sin_psi = sin((double)geo.psi);
+    cos_psi = cos((double)geo.psi);
+    
+    point->x = auxPoint.x*(cos_psi*cos_theta*cos_alpha-sin_psi*sin_alpha)
+    +auxPoint.y*(-cos_psi*cos_theta*sin_alpha-sin_psi*cos_alpha)
+    +auxPoint.z*cos_psi*sin_theta;
+    point->y = auxPoint.x*(sin_psi*cos_theta*cos_alpha+cos_psi*sin_alpha)
+    +auxPoint.y*(-sin_psi*cos_theta*sin_alpha+cos_psi*cos_alpha)
+    +auxPoint.z*sin_psi*sin_theta;
+    point->z =-auxPoint.x*sin_theta*cos_alpha
+    +auxPoint.y*sin_theta*sin_alpha
+    +auxPoint.z*cos_theta;
+}
+
+void rollPitchYawT(Geometry geo,int i, Point3Ddouble* point){
+
+    Point3Ddouble auxPoint;
+    auxPoint.x=point->x;
+    auxPoint.y=point->y;
+    auxPoint.z=point->z;
+
+    // calculate sin and cos of 3 angles (used multiple times)
+    double sin_dRoll, cos_dRoll, sin_dPitch, cos_dPitch, sin_dYaw, cos_dYaw;
+    sin_dRoll = sin((double)geo.dRoll[i]);
+    cos_dRoll = cos((double)geo.dRoll[i]);
+    sin_dPitch = sin((double)geo.dPitch[i]);
+    cos_dPitch = cos((double)geo.dPitch[i]);
+    sin_dYaw = sin((double)geo.dYaw[i]);
+    cos_dYaw = cos((double)geo.dYaw[i]);
+    
+    point->x=cos_dRoll*cos_dPitch*auxPoint.x
+            +sin_dRoll*cos_dPitch*auxPoint.y
+            -sin_dPitch*auxPoint.z;
+    
+    point->y=(cos_dRoll*sin_dPitch*sin_dYaw - sin_dRoll*cos_dYaw)*auxPoint.x
+            +(sin_dRoll*sin_dPitch*sin_dYaw + cos_dRoll*cos_dYaw)*auxPoint.y
+            +cos_dPitch*sin_dYaw*auxPoint.z;
+    
+    point->z=(cos_dRoll*sin_dPitch*cos_dYaw + sin_dRoll*sin_dYaw)*auxPoint.x
+            +(sin_dRoll*sin_dPitch*cos_dYaw - cos_dRoll*sin_dYaw)*auxPoint.y
+            +cos_dPitch*cos_dYaw*auxPoint.z;
+}
+
 //______________________________________________________________________________
 //
 //      Function:       computeDeltasCube
@@ -779,27 +826,24 @@ void freeGeoArray(unsigned int splits,Geometry* geoArray){
 void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S)
 {
     
-    Point3D P, Px,Py,Pz;
+    // initialize points with double precision
+    Point3Ddouble P, Px,Py,Pz;
+
     // Get coords of Img(0,0,0)
     P.x=-(geo.sVoxelX/2-geo.dVoxelX/2)+geo.offOrigX[i];
     P.y=-(geo.sVoxelY/2-geo.dVoxelY/2)+geo.offOrigY[i];
     P.z=-(geo.sVoxelZ/2-geo.dVoxelZ/2)+geo.offOrigZ[i];
     
-    // Get coors from next voxel in each direction
-    Px.x=P.x+geo.dVoxelX;      Py.x=P.x;                Pz.x=P.x;
+    // Get coords from next voxel in each direction
+    Px.x=P.x+geo.dVoxelX;       Py.x=P.x;                Pz.x=P.x;
     Px.y=P.y;                   Py.y=P.y+geo.dVoxelY;    Pz.y=P.y;
     Px.z=P.z;                   Py.z=P.z;                Pz.z=P.z+geo.dVoxelZ;
     
-    
-    
-// Rotate image around X axis (this is equivalent of rotating the source and detector) RZ RY RZ
-    
+    // Rotate image around X axis (this is equivalent of rotating the source and detector) RZ RY RZ
     eulerZYZT(geo,&P);
     eulerZYZT(geo,&Px);
     eulerZYZT(geo,&Py);
     eulerZYZT(geo,&Pz);
-    
-    
     
     //detector offset
     P.z =P.z-geo.offDetecV[i];            P.y =P.y-geo.offDetecU[i];
@@ -808,7 +852,6 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     Pz.z =Pz.z-geo.offDetecV[i];          Pz.y =Pz.y-geo.offDetecU[i];
     
     //Detector Roll pitch Yaw
-    //
     //
     // first, we need to offset everything so (0,0,0) is the center of the detector
     // Only X is required for that
@@ -826,12 +869,11 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     Py.x=Py.x-(geo.DSD[i]-geo.DSO[i]);
     Pz.x=Pz.x-(geo.DSD[i]-geo.DSO[i]);
     //Done for P, now source
-    Point3D source;
-    source.x=geo.DSD[i]; //allready offseted for rotation
+    Point3Ddouble source;
+    source.x=geo.DSD[i]; //already offseted for rotation
     source.y=-geo.offDetecU[i];
     source.z=-geo.offDetecV[i];
     rollPitchYawT(geo,i,&source);
-    
     
     source.x=source.x-(geo.DSD[i]-geo.DSO[i]);//   source.y=source.y-auxOff.y;    source.z=source.z-auxOff.z;
     
@@ -850,49 +892,11 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     deltaY->x=Py.x-P.x;   deltaY->y=Py.y-P.y;    deltaY->z=Py.z-P.z;
     deltaZ->x=Pz.x-P.x;   deltaZ->y=Pz.y-P.y;    deltaZ->z=Pz.z-P.z;
     
-    
-    *xyzorigin=P;
-    *S=source;
+    // cast the results from the double precision calculations back to float
+    *xyzorigin=P.to_float();
+    *S=source.to_float();
 }
 
-void eulerZYZT(Geometry geo, Point3D* point){
-    
-    Point3D auxPoint;
-    auxPoint.x=point->x;
-    auxPoint.y=point->y;
-    auxPoint.z=point->z;
-    
-    point->x = auxPoint.x*(cos(geo.psi)*cos(geo.theta)*cos(geo.alpha)-sin(geo.psi)*sin(geo.alpha))
-    +auxPoint.y*(-cos(geo.psi)*cos(geo.theta)*sin(geo.alpha)-sin(geo.psi)*cos(geo.alpha))
-    +auxPoint.z*cos(geo.psi)*sin(geo.theta);
-    point->y = auxPoint.x*(sin(geo.psi)*cos(geo.theta)*cos(geo.alpha)+cos(geo.psi)*sin(geo.alpha))
-    +auxPoint.y*(-sin(geo.psi)*cos(geo.theta)*sin(geo.alpha)+cos(geo.psi)*cos(geo.alpha))
-    +auxPoint.z*sin(geo.psi)*sin(geo.theta);
-    point->z =-auxPoint.x*sin(geo.theta)*cos(geo.alpha)
-    +auxPoint.y*sin(geo.theta)*sin(geo.alpha)
-    +auxPoint.z*cos(geo.theta);
-}
-void rollPitchYawT(Geometry geo,int i, Point3D* point){
-    Point3D auxPoint;
-    auxPoint.x=point->x;
-    auxPoint.y=point->y;
-    auxPoint.z=point->z;
-    
-    point->x=cos(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.x
-            +sin(geo.dRoll[i])*cos(geo.dPitch[i])*auxPoint.y
-            -sin(geo.dPitch[i])*auxPoint.z;
-    
-    
-    point->y=(cos(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) - sin(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.x
-            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*sin(geo.dYaw[i]) + cos(geo.dRoll[i])*cos(geo.dYaw[i]))*auxPoint.y
-            +cos(geo.dPitch[i])*sin(geo.dYaw[i])*auxPoint.z;
-    
-    
-    point->z=(cos(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) + sin(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.x
-            +(sin(geo.dRoll[i])*sin(geo.dPitch[i])*cos(geo.dYaw[i]) - cos(geo.dRoll[i])*sin(geo.dYaw[i]))*auxPoint.y
-            +cos(geo.dPitch[i])*cos(geo.dYaw[i])*auxPoint.z;
-    
-}
 void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
     size_t memfree;
     size_t memtotal;
@@ -903,7 +907,7 @@ void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
         cudaMemGetInfo(&memfree,&memtotal);
         if(dev==0) *mem_GPU_global=memfree;
         if(memfree<memtotal/2){
-            mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+            mexErrMsgIdAndTxt("voxel_backprojection:Atb:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
         }
         cudaCheckErrors("Check mem error");
         

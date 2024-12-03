@@ -15,9 +15,9 @@ function [ f,qualMeasOut] = PCSD(proj,geo,angles,maxiter,varargin)
 %   'lambdared':   Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
-%       'init':    Describes diferent initialization techniques.
+%       'init':    Describes different initialization techniques.
 %                   •  'none'     : Initializes the image to zeros (default)
-%                   •  'FDK'      : intializes image to FDK reconstrucition
+%                   •  'FDK'      : initializes image to FDK reconstruction
 %
 %   'TViter':      Defines the amount of TV iterations performed per SART
 %                  iteration. Default is 20
@@ -28,6 +28,12 @@ function [ f,qualMeasOut] = PCSD(proj,geo,angles,maxiter,varargin)
 %                  Default is 20% of the FDK L2 norm.
 %   'Verbose'      1 or 0. Default is 1. Gives information about the
 %                  progress of the algorithm.
+% 'redundancy_weighting': true or false. Default is true. Applies data
+%                         redundancy weighting to projections in the update step
+%                         (relevant for offset detector geometry)
+%  'groundTruth'  an image as ground truth, to be used if quality measures
+%                 are requested, to plot their change w.r.t. this known
+%                 data.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -46,37 +52,54 @@ function [ f,qualMeasOut] = PCSD(proj,geo,angles,maxiter,varargin)
 %--------------------------------------------------------------------------
 
 %% parse inputs
-[beta,beta_red,f,ng,verbose,epsilon,QualMeasOpts]=parse_inputs(proj,geo,angles,varargin);
+[beta,beta_red,f,ng,verbose,epsilon,QualMeasOpts,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,varargin);
 
-measurequality=~isempty(QualMeasOpts);
-
-if measurequality
-    qualMeasOut=zeros(length(QualMeasOpts),maxiter);
+measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
+if ~any(isnan(gt(:)))
+    QualMeasOpts{end+1}='error_norm';
+    res_prev=gt;
+    clear gt
 end
+if nargout<2 && measurequality
+    warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
+    measurequality=false;
+end
+qualMeasOut=zeros(length(QualMeasOpts),niter);
 
 % does detector rotation exists?
 if ~isfield(geo,'rotDetector')
     geo.rotDetector=[0;0;0];
 end
 
-%% Create weigthing matrices for the SART step
-% the reason we do this, instead of calling the SART fucntion is not to
-% recompute the weigths every AwASD-POCS iteration, thus effectively doubling
+%% Create weighting matrices for the SART step
+% the reason we do this, instead of calling the SART function is not to
+% recompute the weights every AwASD-POCS iteration, thus effectively doubling
 % the computational time
-% Projection weigth, W
+% Projection weight, W
 
 geoaux=geo;
 geoaux.sVoxel([1 2])=geo.sVoxel([1 2])*1.1; % a Bit bigger, to avoid numerical division by zero (small number)
 geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
 geoaux.nVoxel=[2,2,2]'; % accurate enough?
 geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon');
+W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);
 W(W<min(geo.dVoxel)/4)=Inf;
 W=1./W;
 
 % Compute V
-V=computeV(geo,angles,num2cell(angles),num2cell(1:length(angles)));
+V=computeV(geo,angles,num2cell(angles),num2cell(1:length(angles)),'gpuids',gpuids);
 
+if redundancy_weights
+    % Data redundancy weighting, W_r implemented using Wang weighting
+    % reference: https://iopscience.iop.org/article/10.1088/1361-6560/ac16bc
+    
+    num_frames = size(proj,3);
+    W_r = redundancy_weighting(geo);
+    W_r = repmat(W_r,[1,1,num_frames]);
+    % disp('Size of redundancy weighting matrix');
+    % disp(size(W_r));
+    W = W.*W_r; % include redundancy weighting in W
+end
 
 %Initialize image.
 %f=zeros(geo.nVoxel','single');
@@ -90,12 +113,15 @@ DSD=geo.DSD;
 DSO=geo.DSO;
 %%
 while ~stop_criteria %POCS
-    f0=f;
+    % If quality is going to be measured, then we need to save previous image
+    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+        res_prev = f; % only store if necessary
+    end
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;
     
     %Estimation error in the projection domain
-    est_proj=Ax(f,geo,angles,'interpolated');
+    est_proj=Ax(f,geo,angles,'interpolated','gpuids',gpuids);
     delta_p=im3Dnorm(est_proj-proj,'L2');
     
     %Enforcing ART along all projections if squared delta_p > epsilon
@@ -116,13 +142,15 @@ while ~stop_criteria %POCS
             if size(DSO,2)==size(angles,2)
                 geo.DSO=DSO(jj);
             end
-            f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(f,geo,angles(:,jj))),geo,angles(:,jj)));
+            f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,jj)-Ax(f,geo,angles(:,jj),'gpuids',gpuids)),geo,angles(:,jj),'gpuids',gpuids));
             
         end
     end
     
     %Non-negativity projection on all pixels
-    f=max(f,0);
+    if nonneg
+        f=max(f,0);
+    end
     
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
@@ -130,11 +158,11 @@ while ~stop_criteria %POCS
     geo.DSO=DSO;
     geo.rotDetector=rotDetector;
     if measurequality
-        qualMeasOut(:,iter)=Measure_Quality(f0,f,QualMeasOpts);
+        qualMeasOut(:,iter)=Measure_Quality(res_prev,f,QualMeasOpts);
     end
     
     % Compute L2 error of actual image. Ax-b
-    dd=im3Dnorm(Ax(f,geo,angles)-proj,'L2');
+    dd=im3Dnorm(Ax(f,geo,angles,'gpuids',gpuids)-proj,'L2');
     % Compute change in the image after last SART iteration
     dp_vec=(f-f0);
     
@@ -147,7 +175,7 @@ while ~stop_criteria %POCS
     %  TV MINIMIZATION
     % =========================================================================
     %  Call GPU to minimize TV
-    f=minimizeTV(f0,step,ng);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
+    f=minimizeTV(f0,step,ng,'gpuids',gpuids);    %   This is the MATLAB CODE, the functions are sill in the library, but CUDA is used nowadays
     %                                             for ii=1:ng
     %                                                 %delta=-0.00038 for thorax phantom
     %                                                 df=weighted_gradientTVnorm(f,delta);
@@ -159,7 +187,7 @@ while ~stop_criteria %POCS
     dg_vec=(f-f0);
     
     if iter==1
-        delta_p_first=im3Dnorm((Ax(f0,geo,angles,'interpolated'))-proj,'L2');
+        delta_p_first=im3Dnorm((Ax(f0,geo,angles,'interpolated','gpuids',gpuids))-proj,'L2');
     end
     
     % Reduce SART step
@@ -194,8 +222,8 @@ end
 end
 
 
-function [beta,beta_red,f0,ng,verbose,epsilon,QualMeasOpts]=parse_inputs(proj,geo,angles,argin)
-opts=     {'lambda','lambda_red','init','tviter','verbose','maxl2err','qualmeas'};
+function [beta,beta_red,f0,ng,verbose,epsilon,QualMeasOpts,nonneg,gpuids,redundancy_weights]=parse_inputs(proj,geo,angles,argin)
+opts=     {'lambda','lambda_red','init','tviter','verbose','maxl2err','qualmeas','nonneg','gpuids','redundancy_weighting'};
 defaults=ones(length(opts),1);
 % Check inputs
 nVarargs = length(argin);
@@ -304,6 +332,28 @@ for ii=1:length(opts)
                 else
                     error('TIGRE:PCSD:InvalidInput','Invalid quality measurement parameters');
                 end
+            end
+        %  Non negative
+        %  =========================================================================
+        case 'nonneg'
+            if default
+                nonneg=true;
+            else
+                nonneg=val;
+            end
+        %  GPU Ids
+        %  =========================================================================
+        case 'gpuids'
+            if default
+                gpuids = GpuIds();
+            else
+                gpuids = val;
+            end
+        case 'redundancy_weighting'
+            if default
+                redundancy_weights = true;
+            else
+                redundancy_weights = val;
             end
         otherwise
             error('TIGRE:PCSD:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in PCSD()']);

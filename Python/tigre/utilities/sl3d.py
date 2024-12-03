@@ -143,7 +143,7 @@ def _parse_inputs(size_out, phantom_type):
         nVoxel = [size_out, size_out, size_out]
     elif (type(size_out) == list or type(size_out) == tuple) and len(size_out) == 3:
         nVoxel = [size_out[0], size_out[1], size_out[2]]
-    elif type(size_out) == np.array and np.size(size_out) == 3:
+    elif type(size_out) == np.ndarray and np.size(size_out) == 3:
         nVoxel = [size_out.reshape(-1)[0], size_out.reshape(-1)[1], size_out.reshape(-1)[2]]
     else:
         nVoxel = [128, 128, 128]
@@ -166,7 +166,7 @@ def _parse_inputs(size_out, phantom_type):
 
 
 ###################################
-#  Definetions of Head phantoms:  #
+#  Definitions of Head phantoms:  #
 ###################################
 def kak_slaney():
     """
@@ -226,7 +226,7 @@ def toft_schabel():
     to yield higher contrast in the image.
     It is known as 'Modified Shepp-Logan' of the `phantom` function of "Image Processing Toolbox" for MATLAB
     In [6], it is extended to the 3D version. The parameters are as below.
-    The formula of geometry transfom for this option is the same as of [6] to reproduce the result,
+    The formula of geometry transform for this option is the same as of [6] to reproduce the result,
     while for other options, kak-slaney and yu-ye-wang, it is different.
 
     Ref:

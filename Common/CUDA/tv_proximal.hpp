@@ -53,4 +53,5 @@ void tvdenoising(float* src, float* dst, float lambda,
                  const float* spacing,const long* image_size, int maxIter, const GpuIds& gpuids);
 void checkFreeMemory(const GpuIds& gpuids, size_t *mem_GPU_global);
 
+
 #endif

@@ -2,7 +2,7 @@
  *
  * CUDA functions for texture-memory interpolation based projection
  *
- * This file has the necesary fucntiosn to perform X-ray CBCT projection
+ * This file has the necessary fucntiosn to perform X-ray CBCT projection
  * operation given a geaometry, angles and image. It uses the 3D texture
  * memory linear interpolation to uniformily sample a path to integrate the
  * X-rays.
@@ -70,7 +70,6 @@ do { \
 } while (0)
     
     
-// Declare the texture reference.
     
 #define MAXTREADS 1024
 #define PROJ_PER_BLOCK 9
@@ -122,20 +121,20 @@ template<bool sphericalrotation>
         const int totalNoOfProjections,
         cudaTextureObject_t tex){
     
-    unsigned long  u = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned long  v = blockIdx.y * blockDim.y + threadIdx.y;
-    unsigned long projNumber=threadIdx.z;
+    unsigned long long u = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned long long v = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned long long projNumber=threadIdx.z;
     
     if (u>= geo.nDetecU || v>= geo.nDetecV || projNumber>=PROJ_PER_BLOCK)
         return;
     
 #if IS_FOR_MATLAB_TIGRE
-    size_t idx =  (size_t)(u * geo.nDetecV + v)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+    size_t idx =  (size_t)(u * (unsigned long long)geo.nDetecV + v)+ projNumber*(unsigned long long)geo.nDetecV *(unsigned long long)geo.nDetecU ;
 #else
-    size_t idx =  (size_t)(v * geo.nDetecU + u)+ (size_t)projNumber*geo.nDetecV *geo.nDetecU ;
+    size_t idx =  (size_t)(v * (unsigned long long)geo.nDetecU + u)+ projNumber*(unsigned long long)geo.nDetecV *(unsigned long long)geo.nDetecU ;
 #endif
 
-    int indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array
+    unsigned long indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array
     
     if(indAlpha>=totalNoOfProjections)
         return;
@@ -151,8 +150,8 @@ template<bool sphericalrotation>
     
     
     /////// Get coordinates XYZ of pixel UV
-    int pixelV = geo.nDetecV-v-1;
-    int pixelU = u;
+    unsigned long pixelV = geo.nDetecV-v-1;
+    unsigned long pixelU = u;
     
     
     float vectX,vectY,vectZ;
@@ -221,24 +220,12 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     //
     // CODE assumes
     // 1.-All available devices are usable by this code
-    // 2.-All available devices are equal, they are the same machine (warning trhown)
-    int dev;
-    const int devicenamelength = 256;  // The length 256 is fixed by spec of cudaDeviceProp::name
-    char devicename[devicenamelength];
-    cudaDeviceProp deviceProp;
-    
-    for (dev = 0; dev < deviceCount; dev++) {
-        cudaSetDevice(gpuids[dev]);
-        cudaGetDeviceProperties(&deviceProp, dev);
-        if (dev>0){
-            if (strcmp(devicename,deviceProp.name)!=0){
-                mexWarnMsgIdAndTxt("Ax:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed. \n Siddon_projection.cu line 275.");
-                break;
-            }
-        }
-        memset(devicename, 0, devicenamelength);
-        strcpy(devicename, deviceProp.name);
+    // 2.-All available devices are equal, they are the same machine (warning thrown)
+    // Check the available devices, and if they are the same
+    if (!gpuids.AreEqualDevices()) {
+        mexWarnMsgIdAndTxt("Ax:Interpolated_projection:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed.");
     }
+    int dev;
     
     // Check free memory
     size_t mem_GPU_global;
@@ -301,11 +288,13 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
 #endif
     // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to
     // pin the memory is greater than the lost time in Synchronously launching the memcpys. This is only worth it when the image is too big.
+   
+#ifndef NO_PINNED_MEMORY
     if (isHostRegisterSupported & splits>1){
         cudaHostRegister(img, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float),cudaHostRegisterPortable);
     }
     cudaCheckErrors("Error pinning memory");
-    
+#endif
     Point3D source, deltaU, deltaV, uvOrigin;
     
     Point3D* projParamsArrayHost = 0;
@@ -500,7 +489,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
             projection_this_block=min(nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK, //the remaining angles that this GPU had to do (almost never PROJ_PER_BLOCK)
                                       nangles-proj_global);                              //or whichever amount is left to finish all (this is for the last GPU)
 
-            cudaDeviceSynchronize(); //Not really necesary, but just in case, we los nothing. 
+            cudaDeviceSynchronize(); //Not really necessary, but just in case, we los nothing. 
             cudaCheckErrors("Error at copying the last set of projections out (or in the previous copy)");
             cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(noOfKernelCalls%2))+dev*2], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
         }
@@ -547,10 +536,11 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     
     for (int i = 0; i < nStreams; ++i)
         cudaStreamDestroy(stream[i]) ;
-    
+#ifndef NO_PINNED_MEMORY
     if (isHostRegisterSupported & splits>1){
         cudaHostUnregister(img);
     }
+#endif
     cudaCheckErrors("cudaFree  fail");
     
 //     cudaDeviceReset();
@@ -842,7 +832,7 @@ void checkFreeMemory(const GpuIds& gpuids, size_t *mem_GPU_global){
         cudaMemGetInfo(&memfree,&memtotal);
         if(dev==0) *mem_GPU_global=memfree;
         if(memfree<memtotal/2){
-            mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+            mexErrMsgIdAndTxt("ray_interpolated_projection:ax:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
         }
         cudaCheckErrors("Check mem error");
         *mem_GPU_global=(memfree<*mem_GPU_global)?memfree:*mem_GPU_global;

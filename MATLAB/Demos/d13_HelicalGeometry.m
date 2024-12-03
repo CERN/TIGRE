@@ -44,13 +44,13 @@ geo.accuracy=0.5;
 
 
 %% Create data+ angles
-angles=linspace(00.0,2*pi,100);
-angles=[angles angles angles];
-% Load thorax phatom data
+angles=linspace(0.0,2*pi,100);
+angles=[angles angles angles]; % 3 rotations
+% Load thorax phantom data
 head=headPhantom(geo.nVoxel); % yes, not the best example data, but It will do.
 
-% Thsi makes it helical
-geo.offOrigin(3,:)=linspace(-1024/2+128,1024/2-128,size(angles,2)).';  % about 256^3 images fit int he detector with this size. 
+% This makes it helical
+geo.offOrigin(3,:)=linspace(-1024/2+128,1024/2-128,size(angles,2)).';  % about 256^3 images fit in the detector with this size. 
 geo.offOrigin(1,:)=0;
 geo.offOrigin(2,:)=0;
 
@@ -58,15 +58,14 @@ geo.offOrigin(2,:)=0;
 data=Ax(head,geo,angles);
 
 % Uncomment if you want to see the data
-% plotProj(data,angles);
+%plotProj(data,angles);
 %% Reconstruct Helical
-
+ 
 OSSARTimg=OS_SART(data,geo,angles,30);
 % SARTimg=SART(data,geo,angles,30); % takes time
-CGLSimg=CGLS(data,geo,angles,20);
-%% Plot results
-
+CGLSimg=CGLS(data,geo,angles,20); %% Plot results
+ 
 % CGLS and SIRT
 plotImg([head, OSSARTimg ,CGLSimg],'Dim',3,'Step',3);
-
+ 
 

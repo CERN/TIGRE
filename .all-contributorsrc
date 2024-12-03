@@ -1,0 +1,149 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "AnderBiguri",
+      "name": "Biguri",
+      "avatar_url": "https://avatars.githubusercontent.com/u/11854388?v=4",
+      "profile": "https://github.com/AnderBiguri",
+      "contributions": [
+        "code",
+        "example",
+        "ideas",
+        "maintenance",
+        "research",
+        "review",
+        "tutorial"
+      ]
+    },
+    {
+      "login": "yliu88au",
+      "name": "yliu88au",
+      "avatar_url": "https://avatars.githubusercontent.com/u/75292881?v=4",
+      "profile": "https://github.com/yliu88au",
+      "contributions": [
+        "code",
+        "bug"
+      ]
+    },
+    {
+      "login": "reubenlindroos",
+      "name": "Reuben Lindroos",
+      "avatar_url": "https://avatars.githubusercontent.com/u/25688713?v=4",
+      "profile": "https://github.com/reubenlindroos",
+      "contributions": [
+        "code",
+        "bug",
+        "design",
+        "ideas"
+      ]
+    },
+    {
+      "login": "genusn",
+      "name": "genusn",
+      "avatar_url": "https://avatars.githubusercontent.com/u/25704789?v=4",
+      "profile": "https://github.com/genusn",
+      "contributions": [
+        "code",
+        "bug"
+      ]
+    },
+    {
+      "login": "yidu-bjcancer",
+      "name": "Yi DU",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7495679?v=4",
+      "profile": "https://github.com/yidu-bjcancer",
+      "contributions": [
+        "code",
+        "bug",
+        "research"
+      ]
+    },
+    {
+      "login": "tsadakane",
+      "name": "tsadakane",
+      "avatar_url": "https://avatars.githubusercontent.com/u/40597344?v=4",
+      "profile": "https://github.com/tsadakane",
+      "contributions": [
+        "code",
+        "design",
+        "ideas",
+        "bug",
+        "tutorial"
+      ]
+    },
+    {
+      "login": "sco1",
+      "name": "S. Co1",
+      "avatar_url": "https://avatars.githubusercontent.com/u/5323929?v=4",
+      "profile": "https://omg.lol/sco1",
+      "contributions": [
+        "code",
+        "design",
+        "tool"
+      ]
+    },
+    {
+      "login": "Daveelvt",
+      "name": "Daveelvt",
+      "avatar_url": "https://avatars.githubusercontent.com/u/16086944?v=4",
+      "profile": "https://github.com/Daveelvt",
+      "contributions": [
+        "code",
+        "research"
+      ]
+    },
+    {
+      "login": "phernst",
+      "name": "phernst",
+      "avatar_url": "https://avatars.githubusercontent.com/u/9623894?v=4",
+      "profile": "https://github.com/phernst",
+      "contributions": [
+        "bug",
+        "code"
+      ]
+    },
+    {
+      "login": "malena-sabate",
+      "name": "malena-sabate",
+      "avatar_url": "https://avatars.githubusercontent.com/u/83228154?v=4",
+      "profile": "https://github.com/malena-sabate",
+      "contributions": [
+        "research",
+        "code"
+      ]
+    },
+    {
+      "login": "Emvlt",
+      "name": "Emilien Valat",
+      "avatar_url": "https://avatars.githubusercontent.com/u/46785587?v=4",
+      "profile": "https://emilienvalat.net/",
+      "contributions": [
+        "research",
+        "code"
+      ]
+    },
+    {
+      "login": "zezisme",
+      "name": "zez666",
+      "avatar_url": "https://avatars.githubusercontent.com/u/40331996?v=4",
+      "profile": "https://github.com/zezisme",
+      "contributions": [
+        "bug",
+        "code"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "skipCi": true,
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "projectName": "TIGRE",
+  "projectOwner": "CERN"
+}

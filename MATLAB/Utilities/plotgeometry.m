@@ -1,6 +1,6 @@
 function h=plotgeometry(geo,angle)
 %PLOTGEOMETRY(GEO,ANGLE) plots a simplified version of the CBCT geometry with the
-% given geomerty GEO and angle ANGLE. If angle is nnot Give, 0 will be chosen.
+% given geomerty GEO and angle ANGLE. If angle is not given, 0 will be chosen.
 % 
 % h=PLOTGEOMETRY(...) will return the figure handle 
 %--------------------------------------------------------------------------
