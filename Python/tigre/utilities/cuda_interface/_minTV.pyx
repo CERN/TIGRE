@@ -27,7 +27,7 @@ cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
     void PyArray_CLEARFLAGS(np.ndarray arr, int flags)
 
-cdef extern from "POCS_TV.hpp":
+cdef extern from "GD_TV.hpp":
     cdef void pocs_tv(float* img, float* dst, float alpha, long* image_size, int maxiter, c_GpuIds gpuids)
 
 

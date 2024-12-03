@@ -55,7 +55,7 @@ Codes  : https://github.com/CERN/TIGRE
 #include <tmwtypes.h>
 #include <mex.h>
 #include <matrix.h>
-#include <CUDA/POCS_TV.hpp>
+#include <CUDA/GD_TV.hpp>
 #include <CUDA/GpuIds.hpp>
 #include <CUDA/gpuUtils.hpp>
 void mexFunction(int  nlhs , mxArray *plhs[],
@@ -73,7 +73,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         }
         size_t uiGpuCount = mxGetN(prhs[3]);
         if (uiGpuCount == 0) {
-            mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","4th parameter must be a row vector.");
+            mexErrMsgIdAndTxt( "TIGRE:minTV","4th parameter must be a row vector.");
             return;
         }
         int* piGpuIds = (int*)mxGetData(prhs[3]);
