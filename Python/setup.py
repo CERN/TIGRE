@@ -505,7 +505,7 @@ RandomNumberGenerator_ext = Extension(
 
 setup(
     name="pytigre",
-    version="2.4.0",
+    version="3.0.0",
     author="Ander Biguri, Reuben Lindroos, Sam Loescher",
     packages=find_packages(),
     include_package_data=True,
