@@ -407,9 +407,10 @@ tvdenoising_ext = Extension(
     sources=include_headers(
         [
             "../Common/CUDA/TIGRE_common.cpp",
-            "../Common/CUDA/tvdenoising.cu",
+            "../Common/CUDA/tv_proximal.cu",
             "../Common/CUDA/GpuIds.cpp",
             "../Common/CUDA/gpuUtils.cu",
+            "tigre/utilities/cuda_interface/_types.pxd",
             "tigre/utilities/cuda_interface/_tvdenoising.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
@@ -428,9 +429,10 @@ minTV_ext = Extension(
     sources=include_headers(
         [
             "../Common/CUDA/TIGRE_common.cpp",
-            "../Common/CUDA/POCS_TV.cu",
+            "../Common/CUDA/GD_TV.cu",
             "../Common/CUDA/GpuIds.cpp",
             "../Common/CUDA/gpuUtils.cu",
+            "tigre/utilities/cuda_interface/_types.pxd",
             "tigre/utilities/cuda_interface/_minTV.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
@@ -449,7 +451,7 @@ AwminTV_ext = Extension(
     sources=include_headers(
         [
             "../Common/CUDA/TIGRE_common.cpp",
-            "../Common/CUDA/POCS_TV2.cu",
+            "../Common/CUDA/GD_AwTV.cu",
             "../Common/CUDA/GpuIds.cpp",
             "../Common/CUDA/gpuUtils.cu",
             "tigre/utilities/cuda_interface/_AwminTV.pyx",

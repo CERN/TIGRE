@@ -54,8 +54,8 @@
 #define MAXTHREADS 1024
 #define MAX_BUFFER 60
 
-#include "POCS_TV.hpp"
-#include "gpuUtils.hpp"
+#include "GD_AwTV.hpp"
+
 
 
 
@@ -65,7 +65,7 @@ do { \
         if (__err != cudaSuccess) { \
                 mexPrintf("%s \n",msg);\
                 cudaDeviceReset();\
-                mexErrMsgIdAndTxt("POCS_TV:GPU",cudaGetErrorString(__err));\
+                mexErrMsgIdAndTxt("CBCT:CUDA:GD_TV",cudaGetErrorString(__err));\
         } \
 } while (0)
     
@@ -115,7 +115,7 @@ do { \
     }
     
     __global__ void gradientTV(const float* f, float* dftv,
-            long depth, long rows, long cols){
+            long depth, long rows, long cols,const float delta){
         unsigned long x = threadIdx.x + blockIdx.x * blockDim.x;
         unsigned long y = threadIdx.y + blockIdx.y * blockDim.y;
         unsigned long z = threadIdx.z + blockIdx.z * blockDim.z;
@@ -134,10 +134,31 @@ do { \
         gradient(f,dfk ,z+1,y  ,x  , depth,rows,cols);
         float eps=0.00000001; //% avoid division by zero
         
-        dftv[idx]=(df[0]+df[1]+df[2])/(sqrt(df[0] *df[0] +df[1] *df[1] +df[2] *df[2])+eps)
-        -dfi[2]/(sqrt(dfi[0]*dfi[0]+dfi[1]*dfi[1]+dfi[2]*dfi[2]) +eps)     // I wish I coudl precompute this, but if I do then Id need to recompute the gradient.
-        -dfj[1]/(sqrt(dfj[0]*dfj[0]+dfj[1]*dfj[1]+dfj[2]*dfj[2]) +eps)
-        -dfk[0]/(sqrt(dfk[0]*dfk[0]+dfk[1]*dfk[1]+dfk[2]*dfk[2]) +eps);
+        float wx=__expf(-(df[0]/delta)*(df[0]/delta));
+        float wy=__expf(-(df[1]/delta)*(df[1]/delta));
+        float wz=__expf(-(df[2]/delta)*(df[2]/delta));
+        
+        float wxi=__expf(-(dfi[0]/delta)*(dfi[0]/delta));
+        float wyi=__expf(-(dfi[1]/delta)*(dfi[1]/delta));
+        float wzi=__expf(-(dfi[2]/delta)*(dfi[2]/delta));
+        
+        float wxj=__expf(-(dfj[0]/delta)*(dfj[0]/delta));
+        float wyj=__expf(-(dfj[1]/delta)*(dfj[1]/delta));
+        float wzj=__expf(-(dfj[2]/delta)*(dfj[2]/delta));
+        
+        float wxk=__expf(-(dfk[0]/delta)*(dfk[0]/delta));
+        float wyk=__expf(-(dfk[1]/delta)*(dfk[1]/delta));
+        float wzk=__expf(-(dfk[2]/delta)*(dfk[2]/delta));
+
+        
+        // this hsould do the trick I think
+        
+        dftv[idx]=(wx*df[0]+wy*df[1]+wz*df[2])/(sqrt(wx*df[0] *df[0] +wy*df[1] *df[1] +wz*df[2] *df[2])+eps)
+        -wzi*dfi[2]/(sqrt(wxi*dfi[0]*dfi[0]+wyi*dfi[1]*dfi[1]+wzi*dfi[2]*dfi[2]) +eps)     // I wish I coudl precompute this, but if I do then Id need to recompute the gradient.
+        -wyj*dfj[1]/(sqrt(wxj*dfj[0]*dfj[0]+wyj*dfj[1]*dfj[1]+wzj*dfj[2]*dfj[2]) +eps)
+        -wxk*dfk[0]/(sqrt(wxk*dfk[0]*dfk[0]+wyk*dfk[1]*dfk[1]+wzk*dfk[2]*dfk[2]) +eps);
+        
+    
         return;
         
     }
@@ -252,16 +273,12 @@ do { \
     
     
 // main function
-    void pocs_tv(float* img,float* dst,float alpha,const long* image_size, int maxIter, const GpuIds& gpuids){
-        
-        
-       
-        
+void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int maxIter,const float delta, const GpuIds& gpuids){
         // Prepare for MultiGPU
         int deviceCount = gpuids.GetLength();
         cudaCheckErrors("Device query fail");
         if (deviceCount == 0) {
-            mexErrMsgIdAndTxt("POCS_TV:GPU","There are no available device(s) that support CUDA\n");
+            mexErrMsgIdAndTxt("minimizeAwTV:GD_AwTV:GPUselect","There are no available device(s) that support CUDA\n");
         }
         //
         // CODE assumes
@@ -269,13 +286,12 @@ do { \
         // 2.-All available devices are equal, they are the same machine (warning thrown)
         // Check the available devices, and if they are the same
         if (!gpuids.AreEqualDevices()) {
-            mexWarnMsgIdAndTxt("minimizeTV:POCS_TV:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed.");
+            mexWarnMsgIdAndTxt("minimizeAwTV:GD_AwTV:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed.");
         }
-        
         int dev;
         
         // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
-
+        // check free memory
         size_t mem_GPU_global;
         checkFreeMemory(gpuids, &mem_GPU_global);
 
@@ -296,9 +312,9 @@ do { \
         
         // if it is a thin problem (no need to split), just use one GPU
         if (image_size[2]<4){deviceCount=1;}
-
+        
         unsigned int splits=1; // if the number does not fit in an uint, you have more serious trouble than this.
-        if(mem_GPU_global> 3*mem_size_image+3*(deviceCount-1)*mem_slice_image*buffer_length+mem_auxiliary){
+        if(mem_GPU_global> 3*mem_size_image+3*(deviceCount-1)*mem_slice_image*buffer_length+mem_auxiliary) {
             // We only need to split if we have extra GPUs
             slices_per_split=(image_size[2]+deviceCount-1)/deviceCount;
             mem_img_each_GPU=mem_slice_image*((slices_per_split+buffer_length*2));
@@ -307,12 +323,12 @@ do { \
             size_t mem_free=mem_GPU_global-mem_auxiliary;
             
             splits=(unsigned int)(ceil(((float)(3*mem_size_image)/(float)(deviceCount))/mem_free));
-            // Now, there is an overhead here, as each splits should have 2 slices more, to accoutn for overlap of images.
+            // Now, there is an overhead here, as each splits should have 2 slices more, to account for overlap of images.
             // lets make sure these 2 slices fit, if they do not, add 1 to splits.
             slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits);
             mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
             
-            // if the new stuff does not fit in the GPU, it measn we are in the edge case where adding that extra slice will overflow memory
+            // if the new stuff does not fit in the GPU, it means we are in the edge case where adding that extra slice will overflow memory
             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
                 // one more split should do the job, as its an edge case.
                 splits++;
@@ -339,7 +355,7 @@ do { \
 
             // Assert
             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
-                mexErrMsgIdAndTxt("POCS_TV:GPU","Assertion Failed. Logic behind splitting flawed! Please tell: ander.biguri@gmail.com\n");
+                mexErrMsgIdAndTxt("minimizeAwTV:GD_AwTV:GPU","Assertion Failed. Logic behind splitting flawed! Please tell: ander.biguri@gmail.com\n");
             }
         }
         
@@ -347,7 +363,7 @@ do { \
          // Assert
        
         if ((slices_per_split+buffer_length*2)*image_size[0]*image_size[1]* sizeof(float)!= mem_img_each_GPU){
-            mexErrMsgIdAndTxt("POCS_TV:GPU","Assertion Failed. Memory needed calculation broken! Please tell: ander.biguri@gmail.com\n");
+            mexErrMsgIdAndTxt("minimizeAwTV:GD_AwTV:GPU","Assertion Failed. Memory needed calculation broken! Please tell: ander.biguri@gmail.com\n");
         }
         
         
@@ -379,7 +395,7 @@ do { \
        unsigned long long buffer_pixels=buffer_length*image_size[0]*image_size[1];
         float* buffer;
         if(splits>1){
-            mexWarnMsgIdAndTxt("minimizeTV:POCS_TV:Image_split","Your image can not be fully split between the available GPUs. The computation of minTV will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
+            mexWarnMsgIdAndTxt("minimizeAwTV:GD_AwTV:Image_split","Your image can not be fully split between the available GPUs. The computation of minTV will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
         }else{
             cudaMallocHost((void**)&buffer,buffer_length*image_size[0]*image_size[1]*sizeof(float));
         }
@@ -499,7 +515,7 @@ do { \
                         
                         // I don't understand why I need to store 2 layers to compute correctly with 1 buffer. The bounding checks should
                         // be enough but they are not.
-                        gradientTV<<<gridGrad, blockGrad,0,stream[dev*nStream_device]>>>(d_image[dev],d_dimgTV[dev],(long)(curr_slices+buffer_length*2-1), image_size[1],image_size[0]);
+                        gradientTV<<<gridGrad, blockGrad,0,stream[dev*nStream_device]>>>(d_image[dev],d_dimgTV[dev],(long)(curr_slices+buffer_length*2-1), image_size[1],image_size[0],delta);
                         
                     }
                     
@@ -672,25 +688,20 @@ do { \
         }
         for (int i = 0; i < nStreams; ++i)
            cudaStreamDestroy(stream[i]) ;
-        
-        for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(gpuids[dev]);
-            cudaDeviceSynchronize();
-        }
         cudaCheckErrors("Memory free");
-        cudaDeviceReset();
+//         cudaDeviceReset();
     }
         
-void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
+void checkFreeMemory(const GpuIds& gpuids, size_t *mem_GPU_global){
         size_t memfree;
         size_t memtotal;
-        int deviceCount = gpuids.GetLength();
+        const int deviceCount = gpuids.GetLength();
         for (int dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(gpuids[dev]);
             cudaMemGetInfo(&memfree,&memtotal);
             if(dev==0) *mem_GPU_global=memfree;
             if(memfree<memtotal/2){
-                mexErrMsgIdAndTxt("POCS_TV:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+                mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
             }
             cudaCheckErrors("Check mem error");
             

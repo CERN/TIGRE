@@ -54,7 +54,7 @@ Codes  : https://github.com/CERN/TIGRE
 #include <tmwtypes.h>
 #include <mex.h>
 #include <matrix.h>
-#include <CUDA/tvdenoising.hpp>
+#include <CUDA/tv_proximal.hpp>
 #include <CUDA/GpuIds.hpp>
 #include <CUDA/gpuUtils.hpp>
 /**
