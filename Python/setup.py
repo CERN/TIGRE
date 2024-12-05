@@ -402,16 +402,15 @@ Atb_ext = Extension(
 )
 
 
-tvdenoising_ext = Extension(
-    "_tvdenoising",
+tv_proximal_ext = Extension(
+    "_tv_proximal",
     sources=include_headers(
         [
             "../Common/CUDA/TIGRE_common.cpp",
             "../Common/CUDA/tv_proximal.cu",
             "../Common/CUDA/GpuIds.cpp",
             "../Common/CUDA/gpuUtils.cu",
-            "tigre/utilities/cuda_interface/_types.pxd",
-            "tigre/utilities/cuda_interface/_tvdenoising.pyx",
+            "tigre/utilities/cuda_interface/_tv_proximal.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
     ),
@@ -432,7 +431,6 @@ minTV_ext = Extension(
             "../Common/CUDA/GD_TV.cu",
             "../Common/CUDA/GpuIds.cpp",
             "../Common/CUDA/gpuUtils.cu",
-            "tigre/utilities/cuda_interface/_types.pxd",
             "tigre/utilities/cuda_interface/_minTV.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
@@ -512,7 +510,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     data_files=[("data", ["../Common/data/head.mat"])],
-    ext_modules=[Ax_ext, Atb_ext, tvdenoising_ext, minTV_ext, AwminTV_ext, gpuUtils_ext, RandomNumberGenerator_ext],
+    ext_modules=[Ax_ext, Atb_ext, tv_proximal_ext, minTV_ext, AwminTV_ext, gpuUtils_ext, RandomNumberGenerator_ext],
     py_modules=["tigre.py"],
     cmdclass={"build_ext": BuildExtension},
     install_requires=["Cython", "matplotlib", "numpy", "scipy", "tqdm"],
