@@ -1,5 +1,5 @@
 import numpy as np
-from _tvdenoising import tvdenoise
+from _tv_proximal import tvdenoise
 
 from .gpu import GpuIds
 
