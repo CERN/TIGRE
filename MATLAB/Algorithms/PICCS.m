@@ -199,7 +199,7 @@ while ~stop_criteria %POCS
     end
     if (iter==1 && verbose==1)
         expected_time=toc*maxiter;
-        disp('ADS-POCS');
+        disp('PICCS');
         disp(['Expected duration  :    ',secs2hms(expected_time)]);
         disp(['Exected finish time:    ',datestr(datetime('now')+seconds(expected_time))]);
         disp('');
