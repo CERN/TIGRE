@@ -192,6 +192,8 @@ def fbp(proj, geo, angles, **kwargs):  # noqa: D103
     geox.check_geo(angles)
     verbose = kwargs["verbose"] if "verbose" in kwargs else False
     gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
+    geo.filter = kwargs["filter"] if "filter" in kwargs else None
+    
     proj_filt = filtering(copy.deepcopy(proj), geox,
                           angles, parker=False, verbose=verbose)
     if not isinstance(geo.DSO, np.ndarray):
