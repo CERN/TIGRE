@@ -23,7 +23,7 @@ function img=cropCBCT(img,geo)
 % Tangent is equal, cropRadious:
 cropR=(geo.sDetector(1)/2*geo.DSO)/geo.DSD;
 %maximum distance from O
-maxD=min(geo.nVoxel-1)/2;
+maxD=min(geo.nVoxel(1:2)-1)/2;
 
 % Crop radious will be theminimum of them
 cropR=min([cropR/geo.dVoxel(1) maxD]);

@@ -612,12 +612,14 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
             cudaFreeArray(d_cuArrTex[i*deviceCount+dev]);
         }
     }
-
+    free(d_cuArrTex);
+    free(texProj);
 
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(gpuids[dev]);
         cudaFree(dimage[dev]);
     }
+    free(dimage);
     
     cudaFreeHost(projSinCosArray2Host);
     cudaFreeHost(projParamsArray2Host);

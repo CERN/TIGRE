@@ -78,8 +78,8 @@ if nargout<3 && measurequality
     warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
     measurequality=false;
 end
-qualMeasOut=zeros(length(QualMeasOpts),niter);
-resL2=zeros(1,niter);
+qualMeasOut=zeros(length(QualMeasOpts),maxiter);
+resL2=zeros(1,maxiter);
 if nargout>1
     computeL2=true;
 else

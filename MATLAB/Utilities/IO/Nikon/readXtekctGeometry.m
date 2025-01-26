@@ -54,6 +54,9 @@ geo.offOrigin=[0;0;0];
 geo.DSO=str2double(xtekctText{2}(strcmp('SrcToObject', xtekctText{1})));
 geo.DSD=str2double(xtekctText{2}(strcmp('SrcToDetector', xtekctText{1})));
 geo.COR=-str2double(xtekctText{2}(strcmp('CentreOfRotationTop', xtekctText{1})));
+if isempty(geo.COR)
+    geo.COR=0;
+end
 if (geo.COR==0)
     warning('Centre of Rotation seems to be zero. Make sure that it is true and that the machine did not omit that information.');
 else

@@ -482,18 +482,21 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     free(partial_projection);
     free(proj_split_size);
         
-  bool two_buffers_used=((((nalpha+split_projections-1)/split_projections)+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL)>1;
-  for(unsigned int i=0; i<2;i++){ // 2 buffers (if needed, maybe only 1)
-      if (!two_buffers_used && i==1)
-          break;            
-          cudaDestroyTextureObject(texProj[i]);
-          cudaFreeArray(d_cuArrTex[i]);
-  }
+    bool two_buffers_used=((((nalpha+split_projections-1)/split_projections)+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL)>1;
+    for(unsigned int i=0; i<2;i++){ // 2 buffers (if needed, maybe only 1)
+        if (!two_buffers_used && i==1)
+            break;            
+            cudaDestroyTextureObject(texProj[i]);
+            cudaFreeArray(d_cuArrTex[i]);
+    }
+    free(texProj);
+    
+    free(d_cuArrTex);
     cudaFreeHost(projSinCosArrayHostParallel);
     cudaFreeHost(projParamsArrayHostParallel);
     
     cudaFree(dimage);
-     if (isHostRegisterSupported){
+    if (isHostRegisterSupported){
         cudaHostUnregister(projections);
     }
     for (int i = 0; i < nStreams; ++i)

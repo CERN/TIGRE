@@ -24,7 +24,8 @@ def FDK(proj, geo, angles, **kwargs):
 
     :param filter: str
     Type of filter used for backprojection
-    opts: "shep_logan"
+    opts: "ram_lak" (default)
+          "shep_logan"
           "cosine"
           "hamming"
           "hann"
@@ -193,7 +194,7 @@ def fbp(proj, geo, angles, **kwargs):  # noqa: D103
     verbose = kwargs["verbose"] if "verbose" in kwargs else False
     gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
     geo.filter = kwargs["filter"] if "filter" in kwargs else None
-    
+
     proj_filt = filtering(copy.deepcopy(proj), geox,
                           angles, parker=False, verbose=verbose)
     if not isinstance(geo.DSO, np.ndarray):
