@@ -28,6 +28,8 @@ application, do not hesitate to [contact us](#contact) or open a  [discussion th
  - [TIGRE features](#features)
  
  - [Installation instructions](#installation)
+
+ - [Getting started](#getting-started)
  
  - [FAQ](#faq)
   
@@ -84,6 +86,12 @@ MATLAB and Python builds are both fully supported.
 
 - [Tune TIGRE for machine. Tricks to slightly speed up the code](Frontispiece/Tune_TIGRE.md)
 
+
+## Getting started
+
+Once TIGRE in installed, we strongly suggest you have a look at the Demos folder for each of the languages, [MATLAB](https://github.com/CERN/TIGRE/tree/master/MATLAB/Demos) or [Python](https://github.com/CERN/TIGRE/tree/master/Python). 
+
+There is no documentation page for TIGRE (other than the function documentation), but all features are descrived and demonstrated with working code in the demos. They also serve as a tutorial of each feature. We strongly recommend you explore the first 4 demos for the basic TIGRE functionality, and look at the following ones for more advanced geometry or reconstruction functions. 
 
 ## FAQ
 
