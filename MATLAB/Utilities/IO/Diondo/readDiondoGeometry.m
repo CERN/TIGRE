@@ -7,6 +7,8 @@ function [geo,angles]=readDiondoGeometry(folder)
 file = dir([folder, '\*.xml']);
 if ~isempty(file)
     [geo,angles]=loadXMLDiondoGeometry(file);
+else
+    error("No file found")
 end
 end
 

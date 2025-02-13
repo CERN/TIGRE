@@ -1,4 +1,4 @@
-function [proj,geo]=flatten_detector(proj,geo)
+function [flattened_proj,geo]=flatten_detector(proj,geo)
     % This function creates projections on a flat panel detector from a curved
     
     % Check if 'oversample' is provided, otherwise set to default value of 1
@@ -24,7 +24,7 @@ function [proj,geo]=flatten_detector(proj,geo)
     total_detector_size = tan(arclength / 2) * geo.DSD * 2;
 
     % Calculate the equal distance detector positions on the plane detector
-    if mod(orig_num_detectors,2) 
+    if mod(size(proj, 2),2) 
         % Odd number of detectors - one on the centreline
         detectors = detector_size:detector_size:(total_detector_size / 2);
         detectors = [-fliplr(detectors), 0, detectors];
