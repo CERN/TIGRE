@@ -1,7 +1,7 @@
 
 #include "gpuUtils.hpp"
-#include <hip/hip_runtime_api.h>
-#include <hip/hip_runtime.h>
+#include <cuda_runtime_api.h>
+#include <cuda.h>
 #include <string.h>
 #include <stdio.h>
 
@@ -34,11 +34,11 @@ int GetGpuIdArray(const char* kacGPUName, int* piDeviceIds, int iIdCountMax, cha
         return iCudaDeviceCount;
     }
 
-    hipError_t err;
-    hipDeviceProp_t propDevice;
+    cudaError_t err;
+    cudaDeviceProp propDevice;
     int nMatch = 0;
     for (int iId = 0; iId < iCudaDeviceCount; ++iId) {
-        err = hipGetDeviceProperties(&propDevice, iId);
+        err = cudaGetDeviceProperties(&propDevice, iId);
         iMessagePos += sprintf(pcMessage + iMessagePos, "propDevice.name = %s\n", propDevice.name);
         if (strcmp(propDevice.name, kacGPUName) == 0) {
             piDeviceIds[nMatch] = iId;
@@ -55,16 +55,16 @@ int GetGpuIdArray(const char* kacGPUName, int* piDeviceIds, int iIdCountMax, cha
 
 void GetGpuName(int iDeviceId, char* pcName) {
     memset(pcName, 0, 128);
-    hipError_t err;
-    hipDeviceProp_t propDevice;
+    cudaError_t err;
+    cudaDeviceProp propDevice;
     int id = iDeviceId;
-    err = hipGetDeviceProperties(&propDevice, id);
+    err = cudaGetDeviceProperties(&propDevice, id);
     memcpy(pcName, propDevice.name, strlen(propDevice.name)*sizeof(char));
 }
 
 
 int GetGpuCount() {
     int iCudaDeviceCount = 0;
-    hipGetDeviceCount(&iCudaDeviceCount);
+    cudaGetDeviceCount(&iCudaDeviceCount);
     return iCudaDeviceCount;
 }
