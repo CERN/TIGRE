@@ -61,7 +61,6 @@ A successful installation should be able to execute the script at `TIGRE/Python/
 
 	```
 	cd TIGRE/Python/  
-	pip install -r requirements.txt --user   
 	pip install . --user
 	```
 	**NOTE:** If you are working under the virtual environment that created by `venv` or a `conda` environment and you want to install TIGRE to it, 
@@ -96,7 +95,7 @@ Tested on
 
 1. Install python, gcc, pip and CUDA
 2. run `git clone https://github.com/CERN/TIGRE.git` 
-3. run `python setup.py install --user` in the Python folder. 
+3. run `pip install .` in the Python folder. 
 
 A successful installation should be able to execute the script at `TIGRE/Python/example.py`
 
@@ -133,7 +132,6 @@ For Ubuntu
 
 	```
 	cd TIGRE/Python/  
-	pip install -r requirements.txt --user  
 	pip install . --user
 	```
 	**NOTE:** If you are working under the virtual environment that created by `venv` and you want to install TIGRE to it, 
@@ -160,11 +158,7 @@ The primary linting packages utilized are:
 Multiple installation options have been provided:
 
 ### `pip` Installation
-#### Option 1: `requirements_dev.txt`
-A `requirements_dev` file is located in Tigre's `Python` directory. These dependencies can be installed using `pip install -r requirements_dev.txt --user` while in the `Python` directory.
-
-#### Option 2: `setup.py`
-Dev dependencies may also be installed using the `lint` extras defined in `setup.py`. These dependencies can be installed using `pip install .[lint] --user` while in the `Python` directory.
+A `dev` dependency group is included in the `pyproject.toml` file. Use `pip install --group dev .` to install those dependencies. 
 
 ### pre-commit
 Linting dependencies are also provided as a [pre-commit](https://pre-commit.com/) configuration. With the pre-commit hooks installed, code will be linted prior to commit, preventing code from being committed that fails linting. By default, these hooks are only run against staged files.

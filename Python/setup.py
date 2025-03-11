@@ -107,7 +107,7 @@ def locate_cuda():
     cudaconfig = {
         "home": cuda_home,
         "include": pjoin(cuda_home, "include"),
-        "lib64": pjoin(cuda_home, pjoin("lib", "x64") if IS_WINDOWS else "lib64"),
+        "lib64": pjoin(cuda_home, pjoin("lib", "x64") if IS_WINDOWS else "lib"),
     }
     if not all([os.path.exists(v) for v in cudaconfig.values()]):
         raise EnvironmentError(
@@ -504,18 +504,12 @@ RandomNumberGenerator_ext = Extension(
 
 
 setup(
-    name="pytigre",
-    version="3.0.0",
-    author="Ander Biguri, Reuben Lindroos, Sam Loescher",
     packages=find_packages(),
     include_package_data=True,
     data_files=[("data", ["../Common/data/head.mat"])],
     ext_modules=[Ax_ext, Atb_ext, tv_proximal_ext, minTV_ext, AwminTV_ext, gpuUtils_ext, RandomNumberGenerator_ext],
     py_modules=["tigre.py"],
     cmdclass={"build_ext": BuildExtension},
-    install_requires=["Cython", "matplotlib", "numpy", "scipy", "tqdm"],
-    license_files=("LICENSE",),
-    license="BSD 3-Clause",
     # since the package has c code, the egg cannot be zipped
     zip_safe=False,
 )

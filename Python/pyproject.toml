@@ -2,4 +2,40 @@
 line-length = 100
 
 [build-system]
-requires = ["setuptools", "wheel", "Cython", "numpy"]
+requires = [
+	"setuptools", 
+	"wheel", 
+	"Cython", 
+	"numpy",
+	]
+build-backend = "setuptools.build_meta"
+
+[project]
+name="pytigre"
+version="3.0.0"
+dependencies = [
+	"matplotlib",
+	"numpy>=1.20.0",
+	"scipy",
+	"h5py",
+	"tqdm"
+]
+authors=[
+	{name = "Ander Biguri"},
+	{name = "Reuben Lindroos"}, 
+	{name = "Sam Loescher"},
+]
+license={text="BSD 3-Clause"}
+requires-python = ">=3.7,<=3.11"
+
+[dependency-groups]
+dev = [
+	"black~=20.8b1",
+	"flake8~=3.8",
+	"flake8-annotations~=2.5",
+	"flake8-bugbear~=20.11",
+	"flake8-docstrings~=1.5",
+	"flake8-import-order~=0.18",
+	"pep8-naming~=0.11",
+	"pre-commit~=2.10",
+]
