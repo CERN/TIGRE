@@ -20,7 +20,7 @@ if len(sys.argv)>2:
     if "--no_pinned_memory" in sys.argv[2:] :
         no_pinned=True
         sys.argv.pop(sys.argv.index("--no_pinned_memory"))
- 
+
 if no_pinned:
     define_macros.append(("NO_PINNED_MEMORY",None))     
 
@@ -48,10 +48,10 @@ CC_COMPATIBILITY_TABLE = [
 ]
 
 COMPUTE_CAPABILITY_ARGS = [
-    "-gencode=arch=compute_70,code=compute_70", # allows forward compiling
-    "--ptxas-options=-v",
+    #"-gencode=arch=compute_70,code=compute_70",  # allows forward compiling
+    #"--ptxas-options=-v",
     "-c",
-    "--default-stream=per-thread",
+    #"--default-stream=per-thread",
 ]
 
 
@@ -65,13 +65,14 @@ def get_cuda_version(cuda_home):
                 return version_str.split(" ")[2][:4]
         else:
             version_str = subprocess.check_output(
-                [os.path.join(cuda_home, "bin", "nvcc"), "--version"]
+                [os.path.join(cuda_home, "bin", "hipcc"), "--version"]
             )
             version_str = str(version_str).replace("\n", "").replace("\r", "")
             idx = version_str.find("release")
             return version_str[idx + len("release ") : idx + len("release ") + 4]
     except:
-        raise RuntimeError("Cannot read cuda version file")
+        pass
+        #raise RuntimeError("Cannot read cuda version file")
 
 
 def locate_cuda():
@@ -81,16 +82,16 @@ def locate_cuda():
     and values giving the absolute path to each directory.
 
     Starts by looking for the CUDA_HOME or CUDA_PATH env variable. If not found, everything
-    is based on finding 'nvcc' in the PATH.
+    is based on finding 'hipcc' in the PATH.
     """
     # Guess #1
-    cuda_home = os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH")
+    cuda_home = os.environ.get("CUDA_HOME") or os.environ.get("CUDA_PATH") or os.environ.get("HIP_PATH")
     if cuda_home is None:
         # Guess #2
         try:
             which = "where" if IS_WINDOWS else "which"
-            nvcc = subprocess.check_output([which, "nvcc"]).decode().rstrip("\r\n")
-            cuda_home = os.path.dirname(os.path.dirname(nvcc))
+            hipcc = subprocess.check_output([which, "hipcc"]).decode().rstrip("\r\n")
+            cuda_home = os.path.dirname(os.path.dirname(hipcc))
         except subprocess.CalledProcessError:
             # Guess #3
             if IS_WINDOWS:
@@ -124,24 +125,24 @@ def _is_cuda_file(path):
 
 CUDA, CUDA_VERSION = locate_cuda()
 
-cuda_version = 11.0
-try:
-    cuda_version = float(CUDA_VERSION)
-except ValueError:
-    cuda_list = re.findall('\d+', CUDA_VERSION)
-    cuda_version = float( str(cuda_list[0] + '.' + cuda_list[1]))
-
-# Insert CUDA arguments depedning on the version
-for item in CC_COMPATIBILITY_TABLE:
-    support_begin = item[2]
-    support_end   = item[3]
-    if cuda_version < support_begin:
-        continue
-    if cuda_version >= support_end:
-        continue
-    str_arg = f"-gencode=arch=compute_{item[0]},code=sm_{item[1]}"
-    COMPUTE_CAPABILITY_ARGS.insert(0, str_arg)
-
+#cuda_version = 11.0
+#try:
+    #cuda_version = float(CUDA_VERSION)
+#except ValueError:
+    #cuda_list = re.findall("\d+", CUDA_VERSION)
+    #cuda_version = float(str(cuda_list[0] + "." + cuda_list[1]))
+#
+## Insert CUDA arguments depedning on the version
+#for item in CC_COMPATIBILITY_TABLE:
+    #support_begin = item[2]
+    #support_end = item[3]
+    #if cuda_version < support_begin:
+        ##continue
+    #if cuda_version >= support_end:
+        #continue
+    #str_arg = f"-gencode=arch=compute_{item[0]},code=sm_{item[1]}"
+    #COMPUTE_CAPABILITY_ARGS.insert(0, str_arg)
+#
 # Obtain the numpy include directory.  This logic works across numpy versions.
 try:
     NUMPY_INCLUDE = numpy.get_include()
@@ -153,10 +154,10 @@ COMMON_MSVC_FLAGS = ["/MD", "/wd4819", "/EHsc"]
 
 
 COMMON_NVCC_FLAGS = [
-    "-D__CUDA_NO_HALF_OPERATORS__",
-    "-D__CUDA_NO_HALF_CONVERSIONS__",
-    "-D__CUDA_NO_HALF2_OPERATORS__",
-    "--expt-relaxed-constexpr",
+    #"-D__CUDA_NO_HALF_OPERATORS__",
+    #"-D__CUDA_NO_HALF_CONVERSIONS__",
+    #"-D__CUDA_NO_HALF2_OPERATORS__",
+    #"--expt-relaxed-constexpr",
 ]
 
 
@@ -211,18 +212,20 @@ class BuildExtension(build_ext):
         def unix_wrap_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
             # Copy before we make any modifications.
             cflags = copy.deepcopy(extra_postargs)
+            cflags.append("-D__HIP_PLATFORM_AMD__")
             try:
                 original_compiler = self.compiler.compiler_so
                 if _is_cuda_file(src):
-                    nvcc = _join_cuda_home("bin", "nvcc")
-                    if not isinstance(nvcc, list):
-                        nvcc = [nvcc]
-                    self.compiler.set_executable("compiler_so", nvcc)
+                    hipcc = _join_cuda_home("bin", "hipcc")
+                    if not isinstance(hipcc, list):
+                        hipcc = [hipcc]
+                    self.compiler.set_executable("compiler_so", hipcc)
+                    self.compiler.set_executable("compiler", hipcc)
                     if isinstance(cflags, dict):
-                        cflags = cflags["nvcc"]
+                        cflags = cflags["hipcc"]
                     cflags = (
                         COMMON_NVCC_FLAGS
-                        + ["--compiler-options", "'-fPIC'"]
+                        + ["-fPIC"]
                         + cflags
                         + COMPUTE_CAPABILITY_ARGS
                     )
@@ -237,6 +240,7 @@ class BuildExtension(build_ext):
             finally:
                 # Put the original compiler back in place.
                 self.compiler.set_executable("compiler_so", original_compiler)
+                self.compiler.set_executable("compiler", original_compiler)
 
         def win_wrap_compile(
             sources,
@@ -269,9 +273,9 @@ class BuildExtension(build_ext):
                     src = src_list[0]
                     obj = obj_list[0]
                     if _is_cuda_file(src):
-                        nvcc = _join_cuda_home("bin", "nvcc")
+                        hipcc = _join_cuda_home("bin", "hipcc")
                         if isinstance(cflags, dict):
-                            cflags = cflags["nvcc"]
+                            cflags = cflags["hipcc"]
                         elif not isinstance(cflags, list):
                             cflags = []
 
@@ -287,7 +291,7 @@ class BuildExtension(build_ext):
                             elif len(macro) == 1:
                                 cflags += ["--undefine-macro", macro[0]]
 
-                        cmd = [nvcc, "-c", src, "-o", obj] + include_list + cflags
+                        cmd = [hipcc, "-c", src, "-o", obj] + include_list + cflags
                     elif isinstance(cflags, dict):
                         cflags = COMMON_MSVC_FLAGS  # + self.cflags['cxx']
                         cmd += cflags
@@ -372,7 +376,7 @@ Ax_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
@@ -395,7 +399,7 @@ Atb_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
@@ -416,7 +420,7 @@ tv_proximal_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
@@ -437,7 +441,7 @@ minTV_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
@@ -458,7 +462,7 @@ AwminTV_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
@@ -475,7 +479,7 @@ gpuUtils_ext = Extension(
         sdist=sys.argv[1] == "sdist",
     ),
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
@@ -496,10 +500,10 @@ RandomNumberGenerator_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64", "hiprand"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
-    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"],"../Common/CUDA/"],
 )
 
 

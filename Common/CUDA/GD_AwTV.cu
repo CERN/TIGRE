@@ -542,7 +542,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                         size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
                         
                         hipStreamSynchronize(stream[dev*nStream_device+1]);
-                        reduceNorm2 << <dimgridRed, dimblockRed, MAXTHREADS*sizeof(float),stream[dev*nStream_device]>> >(d_norm2[dev], d_norm2aux[dev], total_pixels);
+                        reduceNorm2 <<<dimgridRed, dimblockRed, MAXTHREADS*sizeof(float),stream[dev*nStream_device]>>>(d_norm2[dev], d_norm2aux[dev], total_pixels);
                         
                     }
                     for (dev = 0; dev < deviceCount; dev++){
@@ -553,7 +553,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                         size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
 
                         if (dimgridRed > 1) {
-                            reduceSum << <1, dimblockRed, MAXTHREADS*sizeof(float),stream[dev*nStream_device] >> >(d_norm2aux[dev], d_norm2[dev], dimgridRed);
+                            reduceSum <<<1, dimblockRed, MAXTHREADS*sizeof(float),stream[dev*nStream_device]>>>(d_norm2aux[dev], d_norm2[dev], dimgridRed);
                             hipStreamSynchronize(stream[dev*nStream_device]);
                             hipMemcpyAsync(&sumnorm2[dev], d_norm2[dev], sizeof(float), hipMemcpyDeviceToHost,stream[dev*nStream_device+1]);
                         }

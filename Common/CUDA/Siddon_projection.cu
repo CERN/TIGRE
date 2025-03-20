@@ -230,16 +230,16 @@ __global__ void kernelPixelDetector( Geometry geo,
     float ac=am;
     //eq (28), unit anlges
     float axu,ayu,azu;
-    axu=__frcp_rd(fabsf(ray.x));
-    ayu=__frcp_rd(fabsf(ray.y));
-    azu=__frcp_rd(fabsf(ray.z));
+    axu=__frcp_rn(fabsf(ray.x));
+    ayu=__frcp_rn(fabsf(ray.y));
+    azu=__frcp_rn(fabsf(ray.z));
     // eq(29), direction of update
     float iu,ju,ku;
     iu=(source.x< pixel1D.x)? 1.0f : -1.0f;
     ju=(source.y< pixel1D.y)? 1.0f : -1.0f;
     ku=(source.z< pixel1D.z)? 1.0f : -1.0f;
     
-    float maxlength=__fsqrt_rd(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
+    float maxlength=__fsqrt_rn(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
     float sum=0.0f;
     unsigned long Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
@@ -601,7 +601,7 @@ void CreateTexture(const GpuIds& gpuids,const float* imagedata,Geometry geo,hipA
             //hipArray Descriptor
             hipChannelFormatDesc channelDesc = hipCreateChannelDesc<float>();
             //cuda Array
-            hipMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent);
+            hipMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent, 0);
         }
     }
     for (unsigned int dev = 0; dev < num_devices; dev++){

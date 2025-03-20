@@ -247,7 +247,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             
             weight=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
             
-            weight=__frcp_rd(weight*weight);
+            weight=__frcp_rn(weight*weight);
             
             // Get Value in the computed (U,V) and multiply by the corresponding weight.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
@@ -680,7 +680,7 @@ void CreateTexture(const GpuIds& gpuids, float* projectiondata,Geometry geo,hipA
             //hipArray Descriptor
             hipChannelFormatDesc channelDesc = hipCreateChannelDesc<float>();
             //cuda Array
-            hipMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent);
+            hipMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent, 0);
             
         }
     }

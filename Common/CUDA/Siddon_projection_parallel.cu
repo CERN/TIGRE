@@ -491,7 +491,7 @@ void CreateTextureParallel(float* image,Geometry geo,hipArray** d_cuArrTex, hipT
     //hipArray Descriptor
     hipChannelFormatDesc channelDesc = hipCreateChannelDesc<float>();
     //cuda Array
-    hipMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent);
+    hipMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent, 0);
 
 
         hipMemcpy3DParms copyParams = {0};

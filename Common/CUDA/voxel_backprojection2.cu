@@ -272,7 +272,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             realD.y=-realDaux.x*sinalpha  + realDaux.y*cosalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
             float L,lsq;
             
-            L = __fsqrt_rd( (realS.x-realD.x)*(realS.x-realD.x)+ (realS.y-realD.y)*(realS.y-realD.y)+ (realD.z)*(realD.z)); // Sz=0 always.
+            L = __fsqrt_rn( (realS.x-realD.x)*(realS.x-realD.x)+ (realS.y-realD.y)*(realS.y-realD.y)+ (realD.z)*(realD.z)); // Sz=0 always.
             lsq =  (realS.x-realvoxel.x)*(realS.x-realvoxel.x)
             + (realS.y-realvoxel.y)*(realS.y-realvoxel.y)
             + (realS.z-realvoxel.z)*(realS.z-realvoxel.z);
@@ -665,7 +665,7 @@ void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,hip
             //hipArray Descriptor
             hipChannelFormatDesc channelDesc = hipCreateChannelDesc<float>();
             //cuda Array
-            hipMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent);
+            hipMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent, 0);
             
         }
     }

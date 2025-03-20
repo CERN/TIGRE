@@ -162,7 +162,7 @@ template<bool sphericalrotation>
     P.z=(uvOrigin.z+pixelU*deltaU.z+pixelV*deltaV.z);
     
     // Length is the ray length in normalized space
-    float length=__fsqrt_rd((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z));
+    float length=__fsqrt_rn((source.x-P.x)*(source.x-P.x)+(source.y-P.y)*(source.y-P.y)+(source.z-P.z)*(source.z-P.z));
     //now legth is an integer of Nsamples that are required on this line
     length=ceilf(__fdividef(length,geo.accuracy));//Divide the directional vector by an integer
     vectX=__fdividef(P.x -source.x,length);
@@ -561,7 +561,7 @@ void CreateTextureInterp(const GpuIds& gpuids,const float* imagedata,Geometry ge
             
             hipChannelFormatDesc channelDesc = hipCreateChannelDesc<float>();
             //cuda Array
-            hipMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent);
+            hipMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent, 0);
             cudaCheckErrors("Texture memory allocation fail");
         }
         

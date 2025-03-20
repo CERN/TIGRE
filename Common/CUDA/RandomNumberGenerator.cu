@@ -48,7 +48,8 @@
 #include <stdlib.h>
 #include <hip/hip_runtime.h>
 #include <hiprand/hiprand_kernel.h>
-#include <hiprand.h>
+#include <hiprand/hiprand.h>
+#include <hiprand/hiprand.h>
 
 #include "gpuUtils.hpp"
 #include "RandomNumberGenerator.hpp"

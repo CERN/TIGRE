@@ -595,7 +595,7 @@ void CreateTextureParallel(float* projectiondata,Geometry geo,hipArray** d_cuArr
         hipChannelFormatDesc channelDesc = hipCreateChannelDesc<float>();
         //cuda Array
         if (alloc){
-        hipMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent);
+        hipMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent, 0);
         cudaCheckErrors("Texture memory allocation fail");
         }
         hipMemcpy3DParms copyParams = {0};
