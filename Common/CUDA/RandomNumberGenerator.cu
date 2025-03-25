@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /*-------------------------------------------------------------------------
  *
  * CUDA functions for random number generator
@@ -45,40 +46,41 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <cuda.h>
-#include <curand_kernel.h>
-#include <curand.h>
+#include <hip/hip_runtime.h>
+#include <hiprand/hiprand_kernel.h>
+#include <hiprand/hiprand.h>
+#include <hiprand/hiprand.h>
 
 #include "gpuUtils.hpp"
 #include "RandomNumberGenerator.hpp"
 
 #define cudaCheckErrors(msg) \
 do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
+        hipError_t __err = hipGetLastError(); \
+        if (__err != hipSuccess) { \
                 mexPrintf("%s \n",msg);\
-                cudaDeviceReset();\
-                mexErrMsgIdAndTxt("RandomNumberGenerator:",cudaGetErrorString(__err));\
+                hipDeviceReset();\
+                mexErrMsgIdAndTxt("RandomNumberGenerator:",hipGetErrorString(__err));\
         } \
 } while (0)
 
 
-__global__ void setup_kernel(curandState *state) {
+__global__ void setup_kernel(hiprandState *state) {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     /* Each thread gets same seed, a different sequence number, no offset */
-    curand_init(1234, idx, 0, &state[idx]);
+    hiprand_init(1234, idx, 0, &state[idx]);
 }
 
-__global__ void GeneratePoisson(curandState *state, const float* pfIn, size_t uiLen, float* pfOut) {
+__global__ void GeneratePoisson(hiprandState *state, const float* pfIn, size_t uiLen, float* pfOut) {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     /* Copy state to local memory for efficiency */
-    curandState localState = state[idx];
+    hiprandState localState = state[idx];
     int iIter = (uiLen + blockDim.x*gridDim.x - 1)/(blockDim.x*gridDim.x);
     for (int iI = 0; iI < iIter; ++iI) {
         size_t uiPos = (size_t)blockDim.x*gridDim.x*iI+idx;
         if (uiPos < uiLen) {
             /* Poisson */
-            unsigned int uiPoisson = curand_poisson(&localState, pfIn[uiPos]);
+            unsigned int uiPoisson = hiprand_poisson(&localState, pfIn[uiPos]);
             pfOut[uiPos] = (float)uiPoisson;
         }
     }
@@ -86,7 +88,7 @@ __global__ void GeneratePoisson(curandState *state, const float* pfIn, size_t ui
     state[idx] = localState;
 }
 
-__global__ void GeneratePoissonAddGaussian(curandState *state,
+__global__ void GeneratePoissonAddGaussian(hiprandState *state,
                         const float* pfIn,
                         size_t uiLen, 
                         float fGaussMu,
@@ -95,15 +97,15 @@ __global__ void GeneratePoissonAddGaussian(curandState *state,
 {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     /* Copy state to local memory for efficiency */
-    curandState localState = state[idx];
+    hiprandState localState = state[idx];
     int iIter = (uiLen + blockDim.x*gridDim.x - 1)/(blockDim.x*gridDim.x);
     for (int iI = 0; iI < iIter; ++iI) {
         size_t uiPos = (size_t)blockDim.x*gridDim.x*iI+idx;
         if (uiPos < uiLen) {
             /* Poisson */
-            unsigned int uiPoisson = curand_poisson(&localState, pfIn[uiPos]);
+            unsigned int uiPoisson = hiprand_poisson(&localState, pfIn[uiPos]);
             /* Gaussian */
-            float fNormal = curand_normal(&localState) * fGaussSigma + fGaussMu;
+            float fNormal = hiprand_normal(&localState) * fGaussSigma + fGaussMu;
             pfOut[uiPos] = fNormal + (float)uiPoisson;
         }
     }
@@ -127,31 +129,31 @@ void poisson_1d(const float* pfIn, size_t uiLen, float* pfOut, const GpuIds& gpu
     // printf("poisson_1d(pfIn = %p, uiLen = %zd, pfOut = %p)\n", pfIn, uiLen, pfOut);
     float* d_pfIn = nullptr;
     float* d_pfOut = nullptr;
-    cudaMalloc((void **)&d_pfIn, uiLen * sizeof(float));
-    cudaCheckErrors("poisson_1d fail cudaMalloc 1");
-    cudaMalloc((void **)&d_pfOut, uiLen * sizeof(float));
-    cudaCheckErrors("poisson_1d fail cudaMalloc 2");
-    cudaMemcpy(d_pfIn, pfIn, uiLen*sizeof(float), cudaMemcpyHostToDevice);
-    cudaCheckErrors("poisson_1d fail cudaMemcpy 1");
+    hipMalloc((void **)&d_pfIn, uiLen * sizeof(float));
+    cudaCheckErrors("poisson_1d fail hipMalloc 1");
+    hipMalloc((void **)&d_pfOut, uiLen * sizeof(float));
+    cudaCheckErrors("poisson_1d fail hipMalloc 2");
+    hipMemcpy(d_pfIn, pfIn, uiLen*sizeof(float), hipMemcpyHostToDevice);
+    cudaCheckErrors("poisson_1d fail hipMemcpy 1");
 
     // float fMin, fMax;
     // GetMinMax(pfIn, uiLen, fMin, fMax);
     // printf("fMin, fMax = %f, %f\n", fMin, fMax);
-    curandState *curandStates = nullptr;
+    hiprandState *curandStates = nullptr;
     const int kiBlockDim = 1024;  // Threads per Block
     const int kiGridDim = 64;//(uiLen+kiBlockDim-1)/kiBlockDim;
-    cudaMalloc((void **)&curandStates, kiGridDim * kiBlockDim * sizeof(curandState));
-    cudaCheckErrors("poisson_1d fail cudaMalloc 3");
+    hipMalloc((void **)&curandStates, kiGridDim * kiBlockDim * sizeof(hiprandState));
+    cudaCheckErrors("poisson_1d fail hipMalloc 3");
     setup_kernel<<<kiGridDim, kiBlockDim>>>(curandStates);
     GeneratePoisson<<<kiGridDim, kiBlockDim>>>(curandStates, d_pfIn, uiLen, d_pfOut);
-    cudaMemcpy(pfOut, d_pfOut, uiLen*sizeof(float), cudaMemcpyDeviceToHost);
-    cudaCheckErrors("poisson_1d fail cudaMemcpy 2");
+    hipMemcpy(pfOut, d_pfOut, uiLen*sizeof(float), hipMemcpyDeviceToHost);
+    cudaCheckErrors("poisson_1d fail hipMemcpy 2");
     // GetMinMax(pfOut, uiLen, fMin, fMax);
     // printf("fMin, fMax = %f, %f\n", fMin, fMax);
     
-    cudaFree(d_pfIn); d_pfIn = nullptr;
-    cudaFree(d_pfOut); d_pfOut = nullptr;
-    cudaFree(curandStates); curandStates = nullptr;
+    hipFree(d_pfIn); d_pfIn = nullptr;
+    hipFree(d_pfOut); d_pfOut = nullptr;
+    hipFree(curandStates); curandStates = nullptr;
 }
 
 void poisson_gaussian_1d(const float* pfIn,
@@ -164,30 +166,30 @@ void poisson_gaussian_1d(const float* pfIn,
     // printf("poisson_gaussian_1d(pfIn = %p, uiLen = %zd, fGaussMu = %+f, fGaussSigma = %f, pfOut = %p)\n", pfIn, uiLen, fGaussMu, fGaussSigma, pfOut);
     float* d_pfIn = nullptr;
     float* d_pfOut = nullptr;
-    cudaMalloc((void **)&d_pfIn, uiLen * sizeof(float));
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMalloc 1");
-    cudaMalloc((void **)&d_pfOut, uiLen * sizeof(float));
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMalloc 2");
-    cudaMemcpy(d_pfIn, pfIn, uiLen*sizeof(float), cudaMemcpyHostToDevice);
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMemcpy 1");
+    hipMalloc((void **)&d_pfIn, uiLen * sizeof(float));
+    cudaCheckErrors("poisson_gaussian_1d fail hipMalloc 1");
+    hipMalloc((void **)&d_pfOut, uiLen * sizeof(float));
+    cudaCheckErrors("poisson_gaussian_1d fail hipMalloc 2");
+    hipMemcpy(d_pfIn, pfIn, uiLen*sizeof(float), hipMemcpyHostToDevice);
+    cudaCheckErrors("poisson_gaussian_1d fail hipMemcpy 1");
 
     // float fMin, fMax;
     // GetMinMax(pfIn, uiLen, fMin, fMax);
     // printf("fMin, fMax = %f, %f\n", fMin, fMax);
-    curandState *curandStates = nullptr;
+    hiprandState *curandStates = nullptr;
     const int kiBlockDim = 64;  // Threads per Block
     const int kiGridDim = 64;//(uiLen+kiBlockDim-1)/kiBlockDim;
-    cudaMalloc((void **)&curandStates, kiGridDim * kiBlockDim * sizeof(curandState));
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMalloc 3");
+    hipMalloc((void **)&curandStates, kiGridDim * kiBlockDim * sizeof(hiprandState));
+    cudaCheckErrors("poisson_gaussian_1d fail hipMalloc 3");
     setup_kernel<<<kiGridDim, kiBlockDim>>>(curandStates);
     GeneratePoissonAddGaussian<<<kiGridDim, kiBlockDim>>>(curandStates, d_pfIn, uiLen, fGaussMu, fGaussSigma, d_pfOut);
-    cudaMemcpy(pfOut, d_pfOut, uiLen*sizeof(float), cudaMemcpyDeviceToHost);
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMemcpy 2");
+    hipMemcpy(pfOut, d_pfOut, uiLen*sizeof(float), hipMemcpyDeviceToHost);
+    cudaCheckErrors("poisson_gaussian_1d fail hipMemcpy 2");
     // GetMinMax(pfOut, uiLen, fMin, fMax);
     // printf("fMin, fMax = %f, %f\n", fMin, fMax);
 
 
-    cudaFree(d_pfIn); d_pfIn = nullptr;
-    cudaFree(d_pfOut); d_pfOut = nullptr;
-    cudaFree(curandStates); curandStates = nullptr;
+    hipFree(d_pfIn); d_pfIn = nullptr;
+    hipFree(d_pfOut); d_pfOut = nullptr;
+    hipFree(curandStates); curandStates = nullptr;
 }

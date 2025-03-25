@@ -1,4 +1,4 @@
-#define CUDA_SUCCESS 0
+#define hipSuccess 0
 #define ERR_CUDA 1
 
 #define ERR_NO_CAPABLE_DEVICES 2

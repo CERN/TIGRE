@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /*-------------------------------------------------------------------------
  *
  * CUDA function for backrpojection  for parallel beam
@@ -46,8 +47,8 @@
 
 #define  PI_2 1.57079632679489661923
 #include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include <hip/hip_runtime_api.h>
+#include <hip/hip_runtime.h>
 #include "voxel_backprojection.hpp"
 #include "voxel_backprojection_parallel.hpp"
 
@@ -57,10 +58,10 @@
 // https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
 #define cudaCheckErrors(msg) \
 do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
+        hipError_t __err = hipGetLastError(); \
+        if (__err != hipSuccess) { \
                 mexPrintf("%s \n",msg);\
-                mexErrMsgIdAndTxt("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
+                mexErrMsgIdAndTxt("CBCT:CUDA:Atb",hipGetErrorString(__err));\
         } \
 } while (0)
     
@@ -92,7 +93,7 @@ do { \
      *
      *
      **/
-void CreateTextureParallel( float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool allocate);
+void CreateTextureParallel( float* projectiondata,Geometry geo,hipArray** d_cuArrTex,unsigned int nangles, hipTextureObject_t *texImage,hipStream_t* stream, bool allocate);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
@@ -135,7 +136,7 @@ __constant__ float projSinCosArrayDevParallel[3*PROJ_PER_KERNEL];
 //      Description:    Main FDK backprojection kernel
 //______________________________________________________________________________
 
-__global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* image,const int currProjSetNumber, const int totalNoOfProjections,cudaTextureObject_t tex)
+__global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* image,const int currProjSetNumber, const int totalNoOfProjections,hipTextureObject_t tex)
 {
     
     // Old kernel call signature:
@@ -286,9 +287,9 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
 int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* result,float const * const alphas, int nalpha, const GpuIds& gpuids)
 {
     if (gpuids.GetLength() == 0) {
-        cudaSetDevice(0);
+        hipSetDevice(0);
     } else {
-        cudaSetDevice(gpuids[0]);
+        hipSetDevice(gpuids[0]);
     }
     
     /*
@@ -298,10 +299,10 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     //If it is the first time, lets make sure our image is zeroed.
     int nStreamDevice=2;
     int nStreams=nStreamDevice;
-    cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));;
+    hipStream_t* stream=(hipStream_t*)malloc(nStreams*sizeof(hipStream_t));;
     
     for (int i = 0; i < nStreamDevice; ++i){
-        cudaStreamCreate(&stream[i]);
+        hipStreamCreate(&stream[i]);
         
         
     }
@@ -310,10 +311,10 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
     int isHostRegisterSupported = 0;
 #if CUDART_VERSION >= 9020
-    cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
+    hipDeviceGetAttribute(&isHostRegisterSupported,hipDeviceAttributeHostRegisterSupported,gpuids[0]);
 #endif
     if (isHostRegisterSupported){
-        cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
+        hipHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),hipHostRegisterPortable);
     }
     cudaCheckErrors("Error pinning memory");
     
@@ -321,22 +322,22 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     // Allocate result image memory
     size_t num_bytes = geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ * sizeof(float);
     float* dimage;
-    cudaMalloc((void**)&dimage, num_bytes);
-    cudaMemset(dimage,0,num_bytes);
-    cudaCheckErrors("cudaMalloc fail");
+    hipMalloc((void**)&dimage, num_bytes);
+    hipMemset(dimage,0,num_bytes);
+    cudaCheckErrors("hipMalloc fail");
     
     
     Point3D* projParamsArrayHostParallel;
-    cudaMallocHost((void**)&projParamsArrayHostParallel,6*PROJ_PER_KERNEL*sizeof(Point3D));
+    hipHostMalloc((void**)&projParamsArrayHostParallel,6*PROJ_PER_KERNEL*sizeof(Point3D));
     float* projSinCosArrayHostParallel;
-    cudaMallocHost((void**)&projSinCosArrayHostParallel,3*PROJ_PER_KERNEL*sizeof(float));
+    hipHostMalloc((void**)&projSinCosArrayHostParallel,3*PROJ_PER_KERNEL*sizeof(float));
     
     
     // Texture buffer objects
-    cudaTextureObject_t *texProj;
-    cudaArray **d_cuArrTex;
-    texProj =(cudaTextureObject_t*)malloc(2*sizeof(cudaTextureObject_t));
-    d_cuArrTex =(cudaArray**)malloc(2*sizeof(cudaArray*));
+    hipTextureObject_t *texProj;
+    hipArray **d_cuArrTex;
+    texProj =(hipTextureObject_t*)malloc(2*sizeof(hipTextureObject_t));
+    d_cuArrTex =(hipArray**)malloc(2*sizeof(hipArray*));
 
     
     
@@ -389,7 +390,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
                 (proj_block_split<2));// Only allocate if its the first 2 calls
         
   
-        cudaStreamSynchronize(stream[0+1]);
+        hipStreamSynchronize(stream[0+1]);
         
         
 
@@ -464,9 +465,9 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
             
             // Copy the prepared parameter arrays to constant memory to make it available for the kernel
             
-            cudaMemcpyToSymbolAsync(projSinCosArrayDevParallel, projSinCosArrayHostParallel, sizeof(float)*3*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[0]);
-            cudaMemcpyToSymbolAsync(projParamsArrayDevParallel, projParamsArrayHostParallel, sizeof(Point3D)*6*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[0]);
-            cudaStreamSynchronize(stream[0]);
+            hipMemcpyToSymbolAsync(HIP_SYMBOL(projSinCosArrayDevParallel), projSinCosArrayHostParallel, sizeof(float)*3*PROJ_PER_KERNEL,0,hipMemcpyHostToDevice,stream[0]);
+            hipMemcpyToSymbolAsync(HIP_SYMBOL(projParamsArrayDevParallel), projParamsArrayHostParallel, sizeof(Point3D)*6*PROJ_PER_KERNEL,0,hipMemcpyHostToDevice,stream[0]);
+            hipStreamSynchronize(stream[0]);
 
             kernelPixelBackprojection_parallel<<<grid,block,0,stream[0]>>>(geo,dimage,i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)]);
         }  // END for
@@ -475,9 +476,9 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
         // END Main reconstruction loop: go through projections (rotation angles) and backproject
         //////////////////////////////////////////////////////////////////////////////////////
     }
-    cudaDeviceSynchronize();
-    cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
-    cudaCheckErrors("cudaMemcpy result fail");
+    hipDeviceSynchronize();
+    hipMemcpy(result, dimage, num_bytes, hipMemcpyDeviceToHost);
+    cudaCheckErrors("hipMemcpy result fail");
     
     free(partial_projection);
     free(proj_split_size);
@@ -486,23 +487,23 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     for(unsigned int i=0; i<2;i++){ // 2 buffers (if needed, maybe only 1)
         if (!two_buffers_used && i==1)
             break;            
-            cudaDestroyTextureObject(texProj[i]);
-            cudaFreeArray(d_cuArrTex[i]);
+            hipDestroyTextureObject(texProj[i]);
+            hipFreeArray(d_cuArrTex[i]);
     }
     free(texProj);
     
     free(d_cuArrTex);
-    cudaFreeHost(projSinCosArrayHostParallel);
-    cudaFreeHost(projParamsArrayHostParallel);
+    hipHostFree(projSinCosArrayHostParallel);
+    hipHostFree(projParamsArrayHostParallel);
     
-    cudaFree(dimage);
+    hipFree(dimage);
     if (isHostRegisterSupported){
-        cudaHostUnregister(projections);
+        hipHostUnregister(projections);
     }
     for (int i = 0; i < nStreams; ++i)
-        cudaStreamDestroy(stream[i]);
+        hipStreamDestroy(stream[i]);
 
-//     cudaDeviceReset();
+//     hipDeviceReset();
     return 0;
     
 }  // END voxel_backprojection
@@ -583,45 +584,45 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
 
     
 }  // END computeDeltasCube
-void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, bool alloc)
+void CreateTextureParallel(float* projectiondata,Geometry geo,hipArray** d_cuArrTex,unsigned int nangles, hipTextureObject_t *texImage,hipStream_t* stream, bool alloc)
 {
-        //cudaArray Descriptor
+        //hipArray Descriptor
 #if IS_FOR_MATLAB_TIGRE
-        const cudaExtent extent =make_cudaExtent(geo.nDetecV, geo.nDetecU, nangles);
+        const hipExtent extent =make_hipExtent(geo.nDetecV, geo.nDetecU, nangles);
 #else
-        const cudaExtent extent =make_cudaExtent(geo.nDetecU, geo.nDetecV, nangles);
+        const hipExtent extent =make_hipExtent(geo.nDetecU, geo.nDetecV, nangles);
 #endif
-        cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
+        hipChannelFormatDesc channelDesc = hipCreateChannelDesc<float>();
         //cuda Array
         if (alloc){
-        cudaMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent);
+        hipMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent, 0);
         cudaCheckErrors("Texture memory allocation fail");
         }
-        cudaMemcpy3DParms copyParams = {0};
+        hipMemcpy3DParms copyParams = {0};
         
         
         //Array creation
-        copyParams.srcPtr   = make_cudaPitchedPtr((void *)projectiondata, extent.width*sizeof(float), extent.width, extent.height);
+        copyParams.srcPtr   = make_hipPitchedPtr((void *)projectiondata, extent.width*sizeof(float), extent.width, extent.height);
         copyParams.dstArray = d_cuArrTex[0];
         copyParams.extent   = extent;
-        copyParams.kind     = cudaMemcpyHostToDevice;
-        cudaMemcpy3DAsync(&copyParams,stream[0+1]);
+        copyParams.kind     = hipMemcpyHostToDevice;
+        hipMemcpy3DAsync(&copyParams,stream[0+1]);
         cudaCheckErrors("Texture memory data copy fail");
         //Array creation End
         
-        cudaResourceDesc    texRes;
-        memset(&texRes, 0, sizeof(cudaResourceDesc));
-        texRes.resType = cudaResourceTypeArray;
+        hipResourceDesc    texRes;
+        memset(&texRes, 0, sizeof(hipResourceDesc));
+        texRes.resType = hipResourceTypeArray;
         texRes.res.array.array  = d_cuArrTex[0];
-        cudaTextureDesc     texDescr;
-        memset(&texDescr, 0, sizeof(cudaTextureDesc));
+        hipTextureDesc     texDescr;
+        memset(&texDescr, 0, sizeof(hipTextureDesc));
         texDescr.normalizedCoords = false;
-        texDescr.filterMode = cudaFilterModeLinear;
-        texDescr.addressMode[0] = cudaAddressModeBorder;
-        texDescr.addressMode[1] = cudaAddressModeBorder;
-        texDescr.addressMode[2] = cudaAddressModeBorder;
-        texDescr.readMode = cudaReadModeElementType;
-        cudaCreateTextureObject(&texImage[0], &texRes, &texDescr, NULL);
+        texDescr.filterMode = hipFilterModeLinear;
+        texDescr.addressMode[0] = hipAddressModeBorder;
+        texDescr.addressMode[1] = hipAddressModeBorder;
+        texDescr.addressMode[2] = hipAddressModeBorder;
+        texDescr.readMode = hipReadModeElementType;
+        hipCreateTextureObject(&texImage[0], &texRes, &texDescr, NULL);
         cudaCheckErrors("Texture object creation fail");
     
 }

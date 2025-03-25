@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /*-------------------------------------------------------------------------
  *
  * CUDA functions for ray-voxel intersection based projection
@@ -50,24 +51,24 @@
 
 
 #include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include <hip/hip_runtime_api.h>
+#include <hip/hip_runtime.h>
 #include "Siddon_projection_parallel.hpp"
 #include "TIGRE_common.hpp"
 #include <math.h>
 
 #define cudaCheckErrors(msg) \
 do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
+        hipError_t __err = hipGetLastError(); \
+        if (__err != hipSuccess) { \
                 mexPrintf("%s \n",msg);\
-                mexErrMsgIdAndTxt("TIGRE:CUDA:Ax",cudaGetErrorString(__err));\
+                mexErrMsgIdAndTxt("TIGRE:CUDA:Ax",hipGetErrorString(__err));\
         } \
 } while (0)
     
     
 // Declare the texture reference.
-void CreateTextureParallel(float* image,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,cudaStream_t* stream);
+void CreateTextureParallel(float* image,Geometry geo,hipArray** d_cuArrTex, hipTextureObject_t *texImage,hipStream_t* stream);
 
 
 #define MAXTREADS 1024
@@ -105,7 +106,7 @@ __constant__ Point3D projParamsArrayDev[4*PROJ_PER_BLOCK];  // Dev means it is o
 
 
 __global__ void kernelPixelDetector_parallel( Geometry geo,
-        float* detector, const int currProjSetNumber, const int totalNoOfProjections, cudaTextureObject_t tex){
+        float* detector, const int currProjSetNumber, const int totalNoOfProjections, hipTextureObject_t tex){
     
     unsigned long long u = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned long long v = blockIdx.y * blockDim.y + threadIdx.y;
@@ -282,23 +283,23 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
     size_t num_bytes = (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)PROJ_PER_BLOCK* (size_t)sizeof(float);
     float** dProjection=(float **)malloc(2*sizeof(float *));
     for (int i = 0; i < 2; ++i){
-        cudaMalloc((void**)&dProjection[i],   num_bytes);
-        cudaCheckErrors("cudaMalloc projections fail");
+        hipMalloc((void**)&dProjection[i],   num_bytes);
+        cudaCheckErrors("hipMalloc projections fail");
     }
     int nStreams=2;
-    cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
+    hipStream_t* stream=(hipStream_t*)malloc(nStreams*sizeof(hipStream_t));
     
     for (int i = 0; i < 2; ++i){
-        cudaStreamCreate(&stream[i]);
+        hipStreamCreate(&stream[i]);
     }
     
     
         
     // Texture object variables
-    cudaTextureObject_t *texImg = 0;
-    cudaArray **d_cuArrTex = 0;
-    texImg =(cudaTextureObject_t*)malloc(1*sizeof(cudaTextureObject_t));
-    d_cuArrTex =(cudaArray**)malloc(1*sizeof(cudaArray*));
+    hipTextureObject_t *texImg = 0;
+    hipArray **d_cuArrTex = 0;
+    texImg =(hipTextureObject_t*)malloc(1*sizeof(hipTextureObject_t));
+    d_cuArrTex =(hipArray**)malloc(1*sizeof(hipArray*));
     
     CreateTextureParallel(img,geo,&d_cuArrTex[0], &texImg   [0],stream);
     cudaCheckErrors("Texture allocation fail");
@@ -310,7 +311,7 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
     
     
     Point3D* projParamsArrayHost;
-    cudaMallocHost((void**)&projParamsArrayHost,4*PROJ_PER_BLOCK*sizeof(Point3D));
+    hipHostMalloc((void**)&projParamsArrayHost,4*PROJ_PER_BLOCK*sizeof(Point3D));
 
     // 16x16 gave the best performance empirically
     // Funnily that makes it compatible with most GPUs.....
@@ -349,36 +350,36 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
 
          }
          
-         cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*4*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[0]);
-         cudaStreamSynchronize(stream[0]);
+         hipMemcpyToSymbolAsync(HIP_SYMBOL(projParamsArrayDev), projParamsArrayHost, sizeof(Point3D)*4*PROJ_PER_BLOCK,0,hipMemcpyHostToDevice,stream[0]);
+         hipStreamSynchronize(stream[0]);
          kernelPixelDetector_parallel<<<numBlocks,threadsPerBlock,0,stream[0]>>>(geo,dProjection[(int)i%2==0],i,nangles,texImg[0]);
          // copy result to host
          if (i>0)
-             cudaMemcpyAsync(result[i*PROJ_PER_BLOCK-PROJ_PER_BLOCK],dProjection[(int)i%2!=0], num_bytes, cudaMemcpyDeviceToHost,stream[1]);
+             hipMemcpyAsync(result[i*PROJ_PER_BLOCK-PROJ_PER_BLOCK],dProjection[(int)i%2!=0], num_bytes, hipMemcpyDeviceToHost,stream[1]);
     }
-    cudaDeviceSynchronize();
+    hipDeviceSynchronize();
     
     int lastangles=nangles-(i-1)*PROJ_PER_BLOCK;
-    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK],dProjection[(int)(i-1)%2==0], lastangles*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[1]);
+    hipMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK],dProjection[(int)(i-1)%2==0], lastangles*geo.nDetecV*geo.nDetecU*sizeof(float), hipMemcpyDeviceToHost,stream[1]);
 
     
 
-    cudaDestroyTextureObject(texImg[0]);
-    cudaFreeArray(d_cuArrTex[0]);
+    hipDestroyTextureObject(texImg[0]);
+    hipFreeArray(d_cuArrTex[0]);
     free(texImg); texImg = 0;
     free(d_cuArrTex); d_cuArrTex = 0;
     cudaCheckErrors("Unbind  fail");
-    cudaFree(dProjection[0]);
-    cudaFree(dProjection[1]);
+    hipFree(dProjection[0]);
+    hipFree(dProjection[1]);
     free(dProjection);
-    cudaFreeHost(projParamsArrayHost);
-    cudaCheckErrors("cudaFree d_imagedata fail");
+    hipHostFree(projParamsArrayHost);
+    cudaCheckErrors("hipFree d_imagedata fail");
     
     
     for (int i = 0; i < 2; ++i){
-      cudaStreamDestroy(stream[i]);
+      hipStreamDestroy(stream[i]);
     }
-//     cudaDeviceReset();
+//     hipDeviceReset();
     return 0;
 }
 
@@ -482,41 +483,41 @@ void computeDeltas_Siddon_parallel(Geometry geo, float angles,int i, Point3D* uv
     
     *source=S2;
 }
-void CreateTextureParallel(float* image,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,cudaStream_t* stream){    //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+void CreateTextureParallel(float* image,Geometry geo,hipArray** d_cuArrTex, hipTextureObject_t *texImage,hipStream_t* stream){    //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
     
     
-    const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
+    const hipExtent extent = make_hipExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
   
-    //cudaArray Descriptor
-    cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
+    //hipArray Descriptor
+    hipChannelFormatDesc channelDesc = hipCreateChannelDesc<float>();
     //cuda Array
-    cudaMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent);
+    hipMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent, 0);
 
 
-        cudaMemcpy3DParms copyParams = {0};
+        hipMemcpy3DParms copyParams = {0};
         //Array creation
-        copyParams.srcPtr   = make_cudaPitchedPtr((void *)image, extent.width*sizeof(float), extent.width, extent.height);
+        copyParams.srcPtr   = make_hipPitchedPtr((void *)image, extent.width*sizeof(float), extent.width, extent.height);
         copyParams.dstArray = d_cuArrTex[0];
         copyParams.extent   = extent;
-        copyParams.kind     = cudaMemcpyHostToDevice;
-        cudaMemcpy3DAsync(&copyParams,stream[1]);
+        copyParams.kind     = hipMemcpyHostToDevice;
+        hipMemcpy3DAsync(&copyParams,stream[1]);
     
 
     //Array creation End
 
-        cudaResourceDesc    texRes;
-        memset(&texRes, 0, sizeof(cudaResourceDesc));
-        texRes.resType = cudaResourceTypeArray;
+        hipResourceDesc    texRes;
+        memset(&texRes, 0, sizeof(hipResourceDesc));
+        texRes.resType = hipResourceTypeArray;
         texRes.res.array.array  = d_cuArrTex[0];
-        cudaTextureDesc     texDescr;
-        memset(&texDescr, 0, sizeof(cudaTextureDesc));
+        hipTextureDesc     texDescr;
+        memset(&texDescr, 0, sizeof(hipTextureDesc));
         texDescr.normalizedCoords = false;
-        texDescr.filterMode = cudaFilterModePoint;
-        texDescr.addressMode[0] = cudaAddressModeBorder;
-        texDescr.addressMode[1] = cudaAddressModeBorder;
-        texDescr.addressMode[2] = cudaAddressModeBorder;
-        texDescr.readMode = cudaReadModeElementType;
-        cudaCreateTextureObject(&texImage[0], &texRes, &texDescr, NULL);
+        texDescr.filterMode = hipFilterModePoint;
+        texDescr.addressMode[0] = hipAddressModeBorder;
+        texDescr.addressMode[1] = hipAddressModeBorder;
+        texDescr.addressMode[2] = hipAddressModeBorder;
+        texDescr.readMode = hipReadModeElementType;
+        hipCreateTextureObject(&texImage[0], &texRes, &texDescr, NULL);
     
 }
 

@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /*-------------------------------------------------------------------------
  *
  * MATLAB MEX  functions for TV image denoising. Check inputs and parses
@@ -57,17 +58,17 @@
 #include "tv_proximal.hpp"
 #define cudaCheckErrors(msg) \
 do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
-                cudaDeviceReset();\
+        hipError_t __err = hipGetLastError(); \
+        if (__err != hipSuccess) { \
+                hipDeviceReset();\
                 mexPrintf("%s \n",msg);\
-                        mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising",cudaGetErrorString(__err));\
+                        mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising",hipGetErrorString(__err));\
         } \
 } while (0)
 void cpy_from_host(float* device_array,float* host_array, 
                    unsigned long long bytes_device,unsigned long long offset_device,unsigned long long offset_host, 
                    unsigned long long pixels_per_slice, unsigned int buffer_length, 
-                   cudaStream_t stream, bool is_first_chunk, bool is_last_chunk,const long* image_size);  
+                   hipStream_t stream, bool is_first_chunk, bool is_last_chunk,const long* image_size);  
     
     
     __global__ void multiplyArrayScalar(float* vec,float scalar,const size_t n)
@@ -263,11 +264,11 @@ void cpy_from_host(float* device_array,float* host_array,
         // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
         int isHostRegisterSupported = 0;
 #if CUDART_VERSION >= 9020
-        cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
+        hipDeviceGetAttribute(&isHostRegisterSupported,hipDeviceAttributeHostRegisterSupported,gpuids[0]);
 #endif
         if (isHostRegisterSupported & splits>1){
-            cudaHostRegister(src ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
-            cudaHostRegister(dst ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
+            hipHostRegister(src ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),hipHostRegisterPortable);
+            hipHostRegister(dst ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),hipHostRegisterPortable);
         }
         cudaCheckErrors("Error pinning memory");
         
@@ -282,21 +283,21 @@ void cpy_from_host(float* device_array,float* host_array,
             if (buffer_length<maxIter){ // if we do only 1 big iter, they are not needed.
                 mexWarnMsgIdAndTxt("tvDenoise:tvdenoising:Memory","TV dneoising requires 5 times the image memory. Your GPU(s) do not have the required memory.\n This memory will be attempted to allocate on the CPU, Whic may fail or slow the computation by a very significant amount.\n If you want to kill the execution: CTRL+C");
                 
-                cudaMallocHost((void**)&h_px,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+                hipHostMalloc((void**)&h_px,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
                 
-                cudaMallocHost((void**)&h_py,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+                hipHostMalloc((void**)&h_py,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
                 
-                cudaMallocHost((void**)&h_pz,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+                hipHostMalloc((void**)&h_pz,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
             }
             h_u=dst;
         }else{
-            cudaMallocHost((void**)&buffer_u,  pixels_per_slice*sizeof(float));
-            cudaMallocHost((void**)&buffer_px, pixels_per_slice*sizeof(float));
-            cudaMallocHost((void**)&buffer_py, pixels_per_slice*sizeof(float));
-            cudaMallocHost((void**)&buffer_pz, pixels_per_slice*sizeof(float));
+            hipHostMalloc((void**)&buffer_u,  pixels_per_slice*sizeof(float));
+            hipHostMalloc((void**)&buffer_px, pixels_per_slice*sizeof(float));
+            hipHostMalloc((void**)&buffer_py, pixels_per_slice*sizeof(float));
+            hipHostMalloc((void**)&buffer_pz, pixels_per_slice*sizeof(float));
             
         }
         // We should be good to go memory wise.
@@ -310,31 +311,31 @@ void cpy_from_host(float* device_array,float* host_array,
         
         //Malloc
         for(dev=0;dev<deviceCount;dev++){
-            cudaSetDevice(gpuids[dev]);
+            hipSetDevice(gpuids[dev]);
             // F
-            cudaMalloc((void**)&d_src[dev], mem_img_each_GPU);
+            hipMalloc((void**)&d_src[dev], mem_img_each_GPU);
             // U
-            cudaMalloc((void**)&d_u [dev],  mem_img_each_GPU);
+            hipMalloc((void**)&d_u [dev],  mem_img_each_GPU);
             // PX
-            cudaMalloc((void**)&d_px[dev],  mem_img_each_GPU);
+            hipMalloc((void**)&d_px[dev],  mem_img_each_GPU);
             // PY
-            cudaMalloc((void**)&d_py[dev],  mem_img_each_GPU);
+            hipMalloc((void**)&d_py[dev],  mem_img_each_GPU);
             // PZ
-            cudaMalloc((void**)&d_pz[dev],  mem_img_each_GPU);
+            hipMalloc((void**)&d_pz[dev],  mem_img_each_GPU);
         }
-        cudaDeviceSynchronize();
+        hipDeviceSynchronize();
         cudaCheckErrors("Malloc  error");
         
         
         // Create streams
         int nStream_device=5;
         int nStreams=deviceCount*nStream_device;
-        cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
+        hipStream_t* stream=(hipStream_t*)malloc(nStreams*sizeof(hipStream_t));
         
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(gpuids[dev]);
+            hipSetDevice(gpuids[dev]);
             for (int i = 0; i < nStream_device; ++i){
-                cudaStreamCreate(&stream[i+dev*nStream_device]);
+                hipStreamCreate(&stream[i+dev*nStream_device]);
             }
         }
         cudaCheckErrors("Stream creation fail");
@@ -391,23 +392,23 @@ void cpy_from_host(float* device_array,float* host_array,
                         is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
                         is_first_chunk=!(sp*deviceCount+dev);
 
-                        cudaSetDevice(gpuids[dev]);
-                        if (is_last_chunk) {cudaMemsetAsync(d_src[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]);}
+                        hipSetDevice(gpuids[dev]);
+                        if (is_last_chunk) {hipMemsetAsync(d_src[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]);}
                         cpy_from_host(d_src[dev],src,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+1],  is_first_chunk,  is_last_chunk, image_size);
                     }
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
+                        hipSetDevice(gpuids[dev]);
 
-                        cudaMemcpyAsync(d_u[dev], d_src[dev], mem_img_each_GPU, cudaMemcpyDeviceToDevice,stream[dev*nStream_device+1]);
-                        cudaMemsetAsync(d_px[dev], 0, mem_img_each_GPU,stream[dev*nStream_device]);
-                        cudaMemsetAsync(d_py[dev], 0, mem_img_each_GPU,stream[dev*nStream_device]);
-                        cudaMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device]);
+                        hipMemcpyAsync(d_u[dev], d_src[dev], mem_img_each_GPU, hipMemcpyDeviceToDevice,stream[dev*nStream_device+1]);
+                        hipMemsetAsync(d_px[dev], 0, mem_img_each_GPU,stream[dev*nStream_device]);
+                        hipMemsetAsync(d_py[dev], 0, mem_img_each_GPU,stream[dev*nStream_device]);
+                        hipMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device]);
                     }
 
                     // Sync
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
-                        cudaDeviceSynchronize();
+                        hipSetDevice(gpuids[dev]);
+                        hipDeviceSynchronize();
                     }
                     cudaCheckErrors("Memcpy failure");
                     
@@ -419,34 +420,34 @@ void cpy_from_host(float* device_array,float* host_array,
                     for (dev = 0; dev < deviceCount; dev++){ 
                         is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
                         is_first_chunk=!(sp*deviceCount+dev);
-                        cudaSetDevice(gpuids[dev]);
-                        cudaStreamSynchronize(stream[dev*nStream_device+1]);
-                        if (is_last_chunk) {cudaMemsetAsync(d_u[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]);}
+                        hipSetDevice(gpuids[dev]);
+                        hipStreamSynchronize(stream[dev*nStream_device+1]);
+                        if (is_last_chunk) {hipMemsetAsync(d_u[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]);}
                         cpy_from_host(d_u[dev],h_u,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+1],  is_first_chunk,  is_last_chunk, image_size);
                     }
 
                     for (dev = 0; dev < deviceCount; dev++){ 
                         is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
                         is_first_chunk=!(sp*deviceCount+dev);
-                        cudaSetDevice(gpuids[dev]);
-                        cudaStreamSynchronize(stream[dev*nStream_device+2]);
-                        if (is_last_chunk) {cudaMemsetAsync(d_px[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+2]);}
+                        hipSetDevice(gpuids[dev]);
+                        hipStreamSynchronize(stream[dev*nStream_device+2]);
+                        if (is_last_chunk) {hipMemsetAsync(d_px[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+2]);}
                         cpy_from_host(d_px[dev],h_px,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+2],  is_first_chunk,  is_last_chunk, image_size);
                     }
                     for (dev = 0; dev < deviceCount; dev++){ 
                         is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
                         is_first_chunk=!(sp*deviceCount+dev);
-                        cudaSetDevice(gpuids[dev]);
-                        cudaStreamSynchronize(stream[dev*nStream_device+3]);
-                        if (is_last_chunk) {cudaMemsetAsync(d_py[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+3]);}
+                        hipSetDevice(gpuids[dev]);
+                        hipStreamSynchronize(stream[dev*nStream_device+3]);
+                        if (is_last_chunk) {hipMemsetAsync(d_py[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+3]);}
                         cpy_from_host(d_py[dev],h_py,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+3],  is_first_chunk,  is_last_chunk, image_size);
                     }
                     for (dev = 0; dev < deviceCount; dev++){ 
                         is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
                         is_first_chunk=!(sp*deviceCount+dev);
-                        cudaSetDevice(gpuids[dev]);
-                        cudaStreamSynchronize(stream[dev*nStream_device+4]);
-                        if (is_last_chunk) {cudaMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+4]);}
+                        hipSetDevice(gpuids[dev]);
+                        hipStreamSynchronize(stream[dev*nStream_device+4]);
+                        if (is_last_chunk) {hipMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+4]);}
                         cpy_from_host(d_pz[dev],h_pz,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+4],  is_first_chunk,  is_last_chunk, image_size);
                         // Z derivative must be negated in sign to keep Neumman conditions
                         if (is_first_chunk){
@@ -459,15 +460,15 @@ void cpy_from_host(float* device_array,float* host_array,
                     for (dev = 0; dev < deviceCount; dev++){ 
                         is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
                         is_first_chunk=!(sp*deviceCount+dev);
-                        cudaSetDevice(gpuids[dev]);
-                        cudaStreamSynchronize(stream[dev*nStream_device+1]);
-                        if (is_last_chunk) {cudaMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]);}
+                        hipSetDevice(gpuids[dev]);
+                        hipStreamSynchronize(stream[dev*nStream_device+1]);
+                        if (is_last_chunk) {hipMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]);}
                         cpy_from_host(d_src[dev],src,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+1],  is_first_chunk,  is_last_chunk, image_size);
                     }
 
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
-                        cudaDeviceSynchronize();
+                        hipSetDevice(gpuids[dev]);
+                        hipDeviceSynchronize();
                         cudaCheckErrors("Memcpy failure on multi split");
                     }
                 }
@@ -480,7 +481,7 @@ void cpy_from_host(float* device_array,float* host_array,
                     // bdim and gdim
                     
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
+                        hipSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         dim3 block(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
                         dim3 grid((image_size[0]+block.x-1)/block.x, (image_size[1]+block.y-1)/block.y, (curr_slices+buffer_length*2+block.z-1)/block.z);
@@ -490,7 +491,7 @@ void cpy_from_host(float* device_array,float* host_array,
                                 spacing[2], spacing[1], spacing[0]);
                     }
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
+                        hipSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         dim3 block(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
                         dim3 grid((image_size[0]+block.x-1)/block.x, (image_size[1]+block.y-1)/block.y, (curr_slices+buffer_length*2+block.z-1)/block.z);
@@ -503,8 +504,8 @@ void cpy_from_host(float* device_array,float* host_array,
                 
                 // Synchronize mathematics, make sure bounding pixels are correct
                 for(dev=0; dev<deviceCount;dev++){
-                    cudaSetDevice(gpuids[dev]);
-                    cudaDeviceSynchronize();
+                    hipSetDevice(gpuids[dev]);
+                    hipDeviceSynchronize();
                 }
 
                 // We have done as many iterations as our buffer allowed. We now need to syncronize the buffers.
@@ -519,45 +520,45 @@ void cpy_from_host(float* device_array,float* host_array,
                     // Pass buffer_pixels amount of data from the start of the image to the previous GPU
                     for(dev=0; dev<deviceCount;dev++){
                         if (dev<deviceCount-1){
-                            cudaSetDevice(gpuids[dev+1]);
-                            cudaMemcpyAsync(buffer_u , d_u[dev+1] , buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+1]);
-                            cudaMemcpyAsync(buffer_px, d_px[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+2]);
-                            cudaMemcpyAsync(buffer_py, d_py[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+3]);
-                            cudaMemcpyAsync(buffer_pz, d_pz[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+4]);
+                            hipSetDevice(gpuids[dev+1]);
+                            hipMemcpyAsync(buffer_u , d_u[dev+1] , buffer_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[(dev+1)*nStream_device+1]);
+                            hipMemcpyAsync(buffer_px, d_px[dev+1], buffer_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[(dev+1)*nStream_device+2]);
+                            hipMemcpyAsync(buffer_py, d_py[dev+1], buffer_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[(dev+1)*nStream_device+3]);
+                            hipMemcpyAsync(buffer_pz, d_pz[dev+1], buffer_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[(dev+1)*nStream_device+4]);
 
                             
-                            cudaSetDevice(gpuids[dev]);
-                            cudaStreamSynchronize(stream[(dev+1)*nStream_device+1]);
-                            cudaMemcpyAsync(d_u[dev] +slices_per_split*pixels_per_slice+buffer_pixels, buffer_u , buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+1]);
-                            cudaStreamSynchronize(stream[(dev+1)*nStream_device+2]);
-                            cudaMemcpyAsync(d_px[dev]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_px, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+2]);
-                            cudaStreamSynchronize(stream[(dev+1)*nStream_device+3]);
-                            cudaMemcpyAsync(d_py[dev]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_py, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+3]);
-                            cudaStreamSynchronize(stream[(dev+1)*nStream_device+4]);
-                            cudaMemcpyAsync(d_pz[dev]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pz, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+4]);
+                            hipSetDevice(gpuids[dev]);
+                            hipStreamSynchronize(stream[(dev+1)*nStream_device+1]);
+                            hipMemcpyAsync(d_u[dev] +slices_per_split*pixels_per_slice+buffer_pixels, buffer_u , buffer_pixels*sizeof(float), hipMemcpyHostToDevice,stream[(dev)*nStream_device+1]);
+                            hipStreamSynchronize(stream[(dev+1)*nStream_device+2]);
+                            hipMemcpyAsync(d_px[dev]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_px, buffer_pixels*sizeof(float), hipMemcpyHostToDevice,stream[(dev)*nStream_device+2]);
+                            hipStreamSynchronize(stream[(dev+1)*nStream_device+3]);
+                            hipMemcpyAsync(d_py[dev]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_py, buffer_pixels*sizeof(float), hipMemcpyHostToDevice,stream[(dev)*nStream_device+3]);
+                            hipStreamSynchronize(stream[(dev+1)*nStream_device+4]);
+                            hipMemcpyAsync(d_pz[dev]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pz, buffer_pixels*sizeof(float), hipMemcpyHostToDevice,stream[(dev)*nStream_device+4]);
                             
                             
                         }
-                        cudaDeviceSynchronize();
+                        hipDeviceSynchronize();
                         // Pass buffer_pixels amoung of data of the end part of the image to the next GPU.
                         if (dev>0){
                             // U
-                            cudaSetDevice(gpuids[dev-1]);
-                            cudaMemcpyAsync(buffer_u,  d_u[dev-1] +slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+1]);
-                            cudaMemcpyAsync(buffer_px, d_px[dev-1]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+2]);
-                            cudaMemcpyAsync(buffer_py, d_py[dev-1]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+3]);
-                            cudaMemcpyAsync(buffer_pz, d_pz[dev-1]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+4]);
+                            hipSetDevice(gpuids[dev-1]);
+                            hipMemcpyAsync(buffer_u,  d_u[dev-1] +slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[(dev-1)*nStream_device+1]);
+                            hipMemcpyAsync(buffer_px, d_px[dev-1]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[(dev-1)*nStream_device+2]);
+                            hipMemcpyAsync(buffer_py, d_py[dev-1]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[(dev-1)*nStream_device+3]);
+                            hipMemcpyAsync(buffer_pz, d_pz[dev-1]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[(dev-1)*nStream_device+4]);
                             
                             
-                            cudaSetDevice(gpuids[dev]);
-                            cudaStreamSynchronize(stream[(dev-1)*nStream_device+1]);
-                            cudaMemcpyAsync(d_u[dev] ,buffer_u , buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+1]);
-                            cudaStreamSynchronize(stream[(dev-1)*nStream_device+2]);
-                            cudaMemcpyAsync(d_px[dev],buffer_px, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+2]);
-                            cudaStreamSynchronize(stream[(dev-1)*nStream_device+3]);
-                            cudaMemcpyAsync(d_py[dev],buffer_py, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+3]);
-                            cudaStreamSynchronize(stream[(dev-1)*nStream_device+4]);
-                            cudaMemcpyAsync(d_pz[dev],buffer_pz, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+4]);
+                            hipSetDevice(gpuids[dev]);
+                            hipStreamSynchronize(stream[(dev-1)*nStream_device+1]);
+                            hipMemcpyAsync(d_u[dev] ,buffer_u , buffer_pixels*sizeof(float), hipMemcpyHostToDevice,stream[(dev)*nStream_device+1]);
+                            hipStreamSynchronize(stream[(dev-1)*nStream_device+2]);
+                            hipMemcpyAsync(d_px[dev],buffer_px, buffer_pixels*sizeof(float), hipMemcpyHostToDevice,stream[(dev)*nStream_device+2]);
+                            hipStreamSynchronize(stream[(dev-1)*nStream_device+3]);
+                            hipMemcpyAsync(d_py[dev],buffer_py, buffer_pixels*sizeof(float), hipMemcpyHostToDevice,stream[(dev)*nStream_device+3]);
+                            hipStreamSynchronize(stream[(dev-1)*nStream_device+4]);
+                            hipMemcpyAsync(d_pz[dev],buffer_pz, buffer_pixels*sizeof(float), hipMemcpyHostToDevice,stream[(dev)*nStream_device+4]);
                             
                             
                         }
@@ -567,22 +568,22 @@ void cpy_from_host(float* device_array,float* host_array,
                 }else{
                     // Vopy all the U variable into the host.
                     for(dev=0; dev<deviceCount;dev++){
-                        cudaSetDevice(gpuids[dev]);
+                        hipSetDevice(gpuids[dev]);
                         curr_slices      = ((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         linear_idx_start = pixels_per_slice*slices_per_split*(sp*deviceCount+dev);
                         total_pixels     = curr_slices*pixels_per_slice;
-                        cudaMemcpyAsync(&h_u[linear_idx_start],  d_u [dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
+                        hipMemcpyAsync(&h_u[linear_idx_start],  d_u [dev]+buffer_pixels,total_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[dev*nStream_device+1]);
                     }
                     if ((i+buffer_length)<maxIter){ // If its the last iteration, we don't need to get these out.
                         // if its not, copy them to host fully. 
                         for(dev=0; dev<deviceCount;dev++){
-                            cudaSetDevice(gpuids[dev]);
+                            hipSetDevice(gpuids[dev]);
                             curr_slices      = ((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                             linear_idx_start = pixels_per_slice*slices_per_split*(sp*deviceCount+dev);
                             total_pixels     = curr_slices*pixels_per_slice;
-                            cudaMemcpyAsync(&h_px[linear_idx_start], d_px[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+2]);
-                            cudaMemcpyAsync(&h_py[linear_idx_start], d_py[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+3]);
-                            cudaMemcpyAsync(&h_pz[linear_idx_start], d_pz[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+4]);
+                            hipMemcpyAsync(&h_px[linear_idx_start], d_px[dev]+buffer_pixels,total_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[dev*nStream_device+2]);
+                            hipMemcpyAsync(&h_py[linear_idx_start], d_py[dev]+buffer_pixels,total_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[dev*nStream_device+3]);
+                            hipMemcpyAsync(&h_pz[linear_idx_start], d_pz[dev]+buffer_pixels,total_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[dev*nStream_device+4]);
                             
                         }
                     }
@@ -592,8 +593,8 @@ void cpy_from_host(float* device_array,float* host_array,
         }//END main iter
         
         for(dev=0; dev<deviceCount;dev++){
-            cudaSetDevice(gpuids[dev]);
-            cudaDeviceSynchronize();
+            hipSetDevice(gpuids[dev]);
+            hipDeviceSynchronize();
         }
         cudaCheckErrors("TV minimization");
         
@@ -601,47 +602,47 @@ void cpy_from_host(float* device_array,float* host_array,
         // lets get it out. 
         if(splits==1){
             for(dev=0; dev<deviceCount;dev++){
-                cudaSetDevice(gpuids[dev]);
+                hipSetDevice(gpuids[dev]);
                 curr_slices  = ((dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*dev;
                 total_pixels = curr_slices*pixels_per_slice;
-                cudaMemcpyAsync(dst+slices_per_split*pixels_per_slice*dev, d_u[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
+                hipMemcpyAsync(dst+slices_per_split*pixels_per_slice*dev, d_u[dev]+buffer_pixels,total_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[dev*nStream_device+1]);
             }
         } // done, everything in GPU and auxiliary variables are good to go. 
 
         for(dev=0; dev<deviceCount;dev++){
-            cudaSetDevice(gpuids[dev]);
-            cudaDeviceSynchronize();
+            hipSetDevice(gpuids[dev]);
+            hipDeviceSynchronize();
         }
         cudaCheckErrors("Copy result back");
         for(dev=0; dev<deviceCount;dev++){
             
-            cudaFree(d_src[dev]);
-            cudaFree(d_u [dev]);
-            cudaFree(d_pz[dev]);
-            cudaFree(d_py[dev]);
-            cudaFree(d_px[dev]);
+            hipFree(d_src[dev]);
+            hipFree(d_u [dev]);
+            hipFree(d_pz[dev]);
+            hipFree(d_py[dev]);
+            hipFree(d_px[dev]);
         }
         if(splits>1 && buffer_length<maxIter){
-            cudaFreeHost(h_px);
-            cudaFreeHost(h_py);
-            cudaFreeHost(h_pz);
+            hipHostFree(h_px);
+            hipHostFree(h_py);
+            hipHostFree(h_pz);
         }else if(splits==1){
-            cudaFreeHost(buffer_u);
-            cudaFreeHost(buffer_px);
-            cudaFreeHost(buffer_py);
-            cudaFreeHost(buffer_pz);
+            hipHostFree(buffer_u);
+            hipHostFree(buffer_px);
+            hipHostFree(buffer_py);
+            hipHostFree(buffer_pz);
         }
         
         for (int i = 0; i < nStreams; ++i)
-           cudaStreamDestroy(stream[i]) ;
+           hipStreamDestroy(stream[i]) ;
 
         if (isHostRegisterSupported & splits>1){
-            cudaHostUnregister(src);
-            cudaHostUnregister(dst);
+            hipHostUnregister(src);
+            hipHostUnregister(dst);
         }
         for(dev=0; dev<deviceCount;dev++){
-            cudaSetDevice(gpuids[dev]);
-            cudaDeviceSynchronize();
+            hipSetDevice(gpuids[dev]);
+            hipDeviceSynchronize();
         }
         cudaCheckErrors("Copy free ");
         
@@ -654,8 +655,8 @@ void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
         const int deviceCount = gpuids.GetLength();
 
         for (int dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(gpuids[dev]);
-            cudaMemGetInfo(&memfree,&memtotal);
+            hipSetDevice(gpuids[dev]);
+            hipMemGetInfo(&memfree,&memtotal);
             if(dev==0) *mem_GPU_global=memfree;
             if(memfree<memtotal/2){
                 mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
@@ -672,22 +673,22 @@ void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
 void cpy_from_host(float* device_array,float* host_array, 
                    unsigned long long bytes_device,unsigned long long offset_device,unsigned long long offset_host, 
                    unsigned long long pixels_per_slice, unsigned int buffer_length, 
-                   cudaStream_t stream, bool is_first_chunk, bool is_last_chunk,const long* image_size)
+                   hipStream_t stream, bool is_first_chunk, bool is_last_chunk,const long* image_size)
 {
 
     // Initial and last cases are special. These define the boundary condition. In our case, we are using Neumann boundary condition
     // so we need to copy the edge slice into the buffer
     if(is_first_chunk){
         for (unsigned int j=0;j<buffer_length;j++){
-            cudaMemcpyAsync(device_array+pixels_per_slice*j, host_array+pixels_per_slice*(buffer_length-j), pixels_per_slice*sizeof(float), cudaMemcpyHostToDevice,stream); 
+            hipMemcpyAsync(device_array+pixels_per_slice*j, host_array+pixels_per_slice*(buffer_length-j), pixels_per_slice*sizeof(float), hipMemcpyHostToDevice,stream); 
         }       
     }
     if(is_last_chunk){  
 
         for (unsigned int j=0;j<buffer_length;j++){
-           cudaMemcpyAsync(device_array+bytes_device+pixels_per_slice*j, host_array+pixels_per_slice*(image_size[2]-j-2), pixels_per_slice*sizeof(float), cudaMemcpyHostToDevice,stream);
+           hipMemcpyAsync(device_array+bytes_device+pixels_per_slice*j, host_array+pixels_per_slice*(image_size[2]-j-2), pixels_per_slice*sizeof(float), hipMemcpyHostToDevice,stream);
         }
     }
-    cudaStreamSynchronize(stream);
-    cudaMemcpyAsync(device_array +offset_device, host_array +offset_host,  bytes_device*sizeof(float), cudaMemcpyHostToDevice,stream);
+    hipStreamSynchronize(stream);
+    hipMemcpyAsync(device_array +offset_device, host_array +offset_host,  bytes_device*sizeof(float), hipMemcpyHostToDevice,stream);
 }

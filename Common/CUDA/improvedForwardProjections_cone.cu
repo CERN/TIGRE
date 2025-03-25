@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /*-------------------------------------------------------------------------
  * CUDA function for optimized proton CT radiographies
  * The full method is described in Kaser et al.: Integration of proton imaging into the TIGRE toolbox (submitted to ZMP)
@@ -21,19 +22,19 @@
 --------------------------------------------------------------------------*/
 
 
-#include <cuda.h>
+#include <hip/hip_runtime.h>
 #include "mex.h"
-#include <cuda_runtime_api.h>
+#include <hip/hip_runtime_api.h>
 #include "improvedForwardProjections.hpp"
 // #include <algorithm>
 // #include <math.h>
 
 #define cudaCheckErrors(msg) \
 do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
+        hipError_t __err = hipGetLastError(); \
+        if (__err != hipSuccess) { \
                 mexPrintf("%s \n",msg);\
-                mexErrMsgIdAndTxt("ImprovedForwardProj:",cudaGetErrorString(__err));\
+                mexErrMsgIdAndTxt("ImprovedForwardProj:",hipGetErrorString(__err));\
         } \
 } while (0)
 
@@ -1133,45 +1134,45 @@ __host__ void ParticleProjectionsCone(float * outProjection, float* posIn, float
     }
 
     //Allocate Memory on GPU
-    cudaMalloc( (void**) &dPosIn, sizeInputs );
-    cudaMalloc( (void**) &dPosOut, sizeInputs );
-    cudaMalloc( (void**) &ddirIn, sizeInputs );
-    cudaMalloc( (void**) &ddirOut, sizeInputs );
-    cudaMalloc( (void**) &d_wepl, numOfEntries*sizeof(float));
-    cudaMalloc( (void**) &dhist1, detectorMem );
-    cudaMalloc( (void**) &dhist2, detectorMem );
-    cudaMalloc( (void**) &dnumEntries, sizeof(int));
-    cudaMalloc( (void**) &ddetectorX, sizeof(int));
-    cudaMalloc( (void**) &ddetectorY, sizeof(int));
-    cudaMalloc( (void**) &dpixelSize, 2*sizeof(float));
-    cudaMalloc( (void**) &dDetectDistIn, sizeof(float));
-    cudaMalloc( (void**) &dDetectDistOut, sizeof(float));
-    cudaMalloc( (void**) &dSourceDist, sizeof(float));
-    cudaMalloc( (void**) &dEin, sizeof(float));
-    cudaMalloc( (void**) &dReject, sizeof(float));
-    cudaMalloc( (void**) &dHull, 5*sizeof(float));
-    cudaError_t _err_alloc = cudaGetLastError();
-    mexPrintf("%s \n", cudaGetErrorString(_err_alloc));
+    hipMalloc( (void**) &dPosIn, sizeInputs );
+    hipMalloc( (void**) &dPosOut, sizeInputs );
+    hipMalloc( (void**) &ddirIn, sizeInputs );
+    hipMalloc( (void**) &ddirOut, sizeInputs );
+    hipMalloc( (void**) &d_wepl, numOfEntries*sizeof(float));
+    hipMalloc( (void**) &dhist1, detectorMem );
+    hipMalloc( (void**) &dhist2, detectorMem );
+    hipMalloc( (void**) &dnumEntries, sizeof(int));
+    hipMalloc( (void**) &ddetectorX, sizeof(int));
+    hipMalloc( (void**) &ddetectorY, sizeof(int));
+    hipMalloc( (void**) &dpixelSize, 2*sizeof(float));
+    hipMalloc( (void**) &dDetectDistIn, sizeof(float));
+    hipMalloc( (void**) &dDetectDistOut, sizeof(float));
+    hipMalloc( (void**) &dSourceDist, sizeof(float));
+    hipMalloc( (void**) &dEin, sizeof(float));
+    hipMalloc( (void**) &dReject, sizeof(float));
+    hipMalloc( (void**) &dHull, 5*sizeof(float));
+    hipError_t _err_alloc = hipGetLastError();
+    mexPrintf("%s \n", hipGetErrorString(_err_alloc));
     cudaCheckErrors("GPU Allocation failed!");
 
     //Copy Arrays to GPU
-    cudaMemcpy(dPosIn, posIn,sizeInputs ,cudaMemcpyHostToDevice);
-    cudaMemcpy(dPosOut, posOut,sizeInputs,cudaMemcpyHostToDevice);
-    cudaMemcpy(ddirIn, dirIn,sizeInputs,cudaMemcpyHostToDevice);
-    cudaMemcpy(ddirOut, dirOut,sizeInputs,cudaMemcpyHostToDevice);
-    cudaMemcpy(d_wepl, p_wepl, numOfEntries*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(dnumEntries, &numOfEntries,sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(ddetectorX, &detectSizeX, sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(ddetectorY, &detectSizeY, sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(dpixelSize, pixelSize, 2*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(dDetectDistIn, &detectDistIn, sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(dDetectDistOut, &detectDistOut, sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(dSourceDist, &sourcePos, sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(dEin, &ein, sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(dReject, &reject, sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(dHull, ch_param, 5*sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(dhist1, hist1, detectorMem, cudaMemcpyHostToDevice);
-    cudaMemcpy(dhist2, hist2, detectorMem, cudaMemcpyHostToDevice);
+    hipMemcpy(dPosIn, posIn,sizeInputs ,hipMemcpyHostToDevice);
+    hipMemcpy(dPosOut, posOut,sizeInputs,hipMemcpyHostToDevice);
+    hipMemcpy(ddirIn, dirIn,sizeInputs,hipMemcpyHostToDevice);
+    hipMemcpy(ddirOut, dirOut,sizeInputs,hipMemcpyHostToDevice);
+    hipMemcpy(d_wepl, p_wepl, numOfEntries*sizeof(float), hipMemcpyHostToDevice);
+    hipMemcpy(dnumEntries, &numOfEntries,sizeof(int), hipMemcpyHostToDevice);
+    hipMemcpy(ddetectorX, &detectSizeX, sizeof(int), hipMemcpyHostToDevice);
+    hipMemcpy(ddetectorY, &detectSizeY, sizeof(int), hipMemcpyHostToDevice);
+    hipMemcpy(dpixelSize, pixelSize, 2*sizeof(float), hipMemcpyHostToDevice);
+    hipMemcpy(dDetectDistIn, &detectDistIn, sizeof(float), hipMemcpyHostToDevice);
+    hipMemcpy(dDetectDistOut, &detectDistOut, sizeof(float), hipMemcpyHostToDevice);
+    hipMemcpy(dSourceDist, &sourcePos, sizeof(float), hipMemcpyHostToDevice);
+    hipMemcpy(dEin, &ein, sizeof(float), hipMemcpyHostToDevice);
+    hipMemcpy(dReject, &reject, sizeof(float), hipMemcpyHostToDevice);
+    hipMemcpy(dHull, ch_param, 5*sizeof(float), hipMemcpyHostToDevice);
+    hipMemcpy(dhist1, hist1, detectorMem, hipMemcpyHostToDevice);
+    hipMemcpy(dhist2, hist2, detectorMem, hipMemcpyHostToDevice);
     cudaCheckErrors("Host to device transport failed!");
 
 
@@ -1182,8 +1183,8 @@ __host__ void ParticleProjectionsCone(float * outProjection, float* posIn, float
     
     ParticleKernelCone<<<grid, block>>>(dhist1, dhist2, dPosIn, dPosOut, ddirIn, ddirOut, d_wepl, dnumEntries, ddetectorX, ddetectorY, \
             dpixelSize, dDetectDistIn, dDetectDistOut, dEin, dHull, dReject, dSourceDist);
-    cudaError_t _err = cudaGetLastError();
-    mexPrintf("%s \n", cudaGetErrorString(_err));
+    hipError_t _err = hipGetLastError();
+    mexPrintf("%s \n", hipGetErrorString(_err));
     cudaCheckErrors("Kernel fail!");
     
     //dim3 grid_sum((int)floor(detectSizeX*detectSizeY/64),1,1);
@@ -1191,12 +1192,12 @@ __host__ void ParticleProjectionsCone(float * outProjection, float* posIn, float
     //sumHist<<<grid_sum, block_sum>>>(dhist1, dhist2);
         
     //Copy result from device to host
-    //cudaMemcpy(outProjection, dhist1,detectorMem ,cudaMemcpyDeviceToHost);
-    cudaMemcpy(hist1, dhist1,detectorMem ,cudaMemcpyDeviceToHost);
-    cudaMemcpy(hist2, dhist2,detectorMem ,cudaMemcpyDeviceToHost);
-    cudaMemcpy(&reject, dReject,sizeof(float) ,cudaMemcpyDeviceToHost);
-    //cudaError_t _errcp = cudaGetLastError();
-    //mexPrintf("%s \n", cudaGetErrorString(_errcp));
+    //hipMemcpy(outProjection, dhist1,detectorMem ,hipMemcpyDeviceToHost);
+    hipMemcpy(hist1, dhist1,detectorMem ,hipMemcpyDeviceToHost);
+    hipMemcpy(hist2, dhist2,detectorMem ,hipMemcpyDeviceToHost);
+    hipMemcpy(&reject, dReject,sizeof(float) ,hipMemcpyDeviceToHost);
+    //hipError_t _errcp = hipGetLastError();
+    //mexPrintf("%s \n", hipGetErrorString(_errcp));
     cudaCheckErrors("Device to host transport failed!");
     
     for(int j = 0; j<detectSizeX*detectSizeY; j++){
@@ -1205,22 +1206,22 @@ __host__ void ParticleProjectionsCone(float * outProjection, float* posIn, float
 
     std::cout << "Particles rejected [%]: " << 100*reject/numOfEntries << std::endl;
 
-    cudaFree(dPosIn);
-    cudaFree(dPosOut);
-    cudaFree(ddirIn);
-    cudaFree(ddirOut);
-    cudaFree(dhist1);
-    cudaFree(dhist2);
-    cudaFree(d_wepl);
-    cudaFree(dnumEntries);
-    cudaFree(ddetectorX);
-    cudaFree(ddetectorY);
-    cudaFree(dpixelSize);
-    cudaFree(dDetectDistIn);
-    cudaFree(dDetectDistOut);
-    cudaFree(dEin);
-    cudaFree(dReject);
-    cudaFree(dHull);
+    hipFree(dPosIn);
+    hipFree(dPosOut);
+    hipFree(ddirIn);
+    hipFree(ddirOut);
+    hipFree(dhist1);
+    hipFree(dhist2);
+    hipFree(d_wepl);
+    hipFree(dnumEntries);
+    hipFree(ddetectorX);
+    hipFree(ddetectorY);
+    hipFree(dpixelSize);
+    hipFree(dDetectDistIn);
+    hipFree(dDetectDistOut);
+    hipFree(dEin);
+    hipFree(dReject);
+    hipFree(dHull);
 
     delete(hist1);
     delete(hist2);

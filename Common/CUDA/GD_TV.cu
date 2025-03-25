@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /*-------------------------------------------------------------------------
  *
  * CUDA functions for Steepest descend in POCS-type algorithms.
@@ -61,11 +62,11 @@
 
 #define cudaCheckErrors(msg) \
 do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
+        hipError_t __err = hipGetLastError(); \
+        if (__err != hipSuccess) { \
                 mexPrintf("%s \n",msg);\
-                cudaDeviceReset();\
-                mexErrMsgIdAndTxt("GD_TV:GPU",cudaGetErrorString(__err));\
+                hipDeviceReset();\
+                mexErrMsgIdAndTxt("GD_TV:GPU",hipGetErrorString(__err));\
         } \
 } while (0)
     
@@ -362,16 +363,16 @@ do { \
          
         // allocate memory in each GPU
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(gpuids[dev]);
+            hipSetDevice(gpuids[dev]);
             
-            cudaMalloc((void**)&d_image[dev]    , mem_img_each_GPU);
-            cudaMemset(         d_image[dev],0  , mem_img_each_GPU);
-            cudaMalloc((void**)&d_dimgTV[dev]   , mem_img_each_GPU);
-            cudaMemset(         d_dimgTV[dev],0 , mem_img_each_GPU);
-            cudaMalloc((void**)&d_norm2[dev]    , slices_per_split*mem_slice_image);
-            cudaMemset(         d_norm2[dev],0  , slices_per_split*mem_slice_image);
-            cudaMalloc((void**)&d_norm2aux[dev]   , mem_auxiliary);
-            cudaMemset(         d_norm2aux[dev],0 , mem_auxiliary);
+            hipMalloc((void**)&d_image[dev]    , mem_img_each_GPU);
+            hipMemset(         d_image[dev],0  , mem_img_each_GPU);
+            hipMalloc((void**)&d_dimgTV[dev]   , mem_img_each_GPU);
+            hipMemset(         d_dimgTV[dev],0 , mem_img_each_GPU);
+            hipMalloc((void**)&d_norm2[dev]    , slices_per_split*mem_slice_image);
+            hipMemset(         d_norm2[dev],0  , slices_per_split*mem_slice_image);
+            hipMalloc((void**)&d_norm2aux[dev]   , mem_auxiliary);
+            hipMemset(         d_norm2aux[dev],0 , mem_auxiliary);
             cudaCheckErrors("Malloc  error");
             
             
@@ -381,7 +382,7 @@ do { \
         if(splits>1){
             mexWarnMsgIdAndTxt("minimizeTV:GD_TV:Image_split","Your image can not be fully split between the available GPUs. The computation of minTV will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
         }else{
-            cudaMallocHost((void**)&buffer,buffer_length*image_size[0]*image_size[1]*sizeof(float));
+            hipHostMalloc((void**)&buffer,buffer_length*image_size[0]*image_size[1]*sizeof(float));
         }
         
         
@@ -390,12 +391,12 @@ do { \
         // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
         int isHostRegisterSupported = 0;
 #if CUDART_VERSION >= 9020
-        cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
+        hipDeviceGetAttribute(&isHostRegisterSupported,hipDeviceAttributeHostRegisterSupported,gpuids[0]);
 #endif
         // splits>2 is completely empirical observation
         if (isHostRegisterSupported & splits>2){
-            cudaHostRegister(img ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
-            cudaHostRegister(dst ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
+            hipHostRegister(img ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),hipHostRegisterPortable);
+            hipHostRegister(dst ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),hipHostRegisterPortable);
         }
         cudaCheckErrors("Error pinning memory");
 
@@ -404,12 +405,12 @@ do { \
                 // Create streams
         int nStream_device=2;
         int nStreams=deviceCount*nStream_device;
-        cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
+        hipStream_t* stream=(hipStream_t*)malloc(nStreams*sizeof(hipStream_t));
         
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(gpuids[dev]);
+            hipSetDevice(gpuids[dev]);
             for (int i = 0; i < nStream_device; ++i){
-                cudaStreamCreate(&stream[i+dev*nStream_device]);
+                hipStreamCreate(&stream[i+dev*nStream_device]);
             }
         }
         cudaCheckErrors("Stream creation fail");
@@ -421,7 +422,7 @@ do { \
         double totalsum;
         float sum_curr_spl;
         float * sumnorm2;
-        cudaMallocHost((void**)&sumnorm2,deviceCount*sizeof(float));
+        hipHostMalloc((void**)&sumnorm2,deviceCount*sizeof(float));
         
         unsigned int curr_slices;
         unsigned long long curr_pixels;
@@ -460,28 +461,28 @@ do { \
 
                 if(i==0){
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
+                        hipSetDevice(gpuids[dev]);
                         
-                        cudaMemcpyAsync(d_image[dev]+offset_device[dev], img+offset_host[dev]  , bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
+                        hipMemcpyAsync(d_image[dev]+offset_device[dev], img+offset_host[dev]  , bytes_device[dev]*sizeof(float), hipMemcpyHostToDevice,stream[dev*nStream_device+1]);
                         
                         
                     }
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
-                        cudaDeviceSynchronize();
+                        hipSetDevice(gpuids[dev]);
+                        hipDeviceSynchronize();
                     }
                 }
                 // if we need to split and its not the first iteration, then we need to copy from Host memory the previosu result.
                 if (splits>1 & i>0){
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
-                        cudaMemcpyAsync(d_image[dev]+offset_device[dev], dst+offset_host[dev]  , bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
+                        hipSetDevice(gpuids[dev]);
+                        hipMemcpyAsync(d_image[dev]+offset_device[dev], dst+offset_host[dev]  , bytes_device[dev]*sizeof(float), hipMemcpyHostToDevice,stream[dev*nStream_device+1]);
                         
                         
                     }
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
-                        cudaDeviceSynchronize();
+                        hipSetDevice(gpuids[dev]);
+                        hipDeviceSynchronize();
                     }
                 }
                 cudaCheckErrors("Memcpy failure on multi split");
@@ -493,7 +494,7 @@ do { \
                     dim3 gridGrad((image_size[0]+blockGrad.x-1)/blockGrad.x, (image_size[1]+blockGrad.y-1)/blockGrad.y, (curr_slices+buffer_length*2+blockGrad.z-1)/blockGrad.z);
                     
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
+                        hipSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         // Compute the gradient of the TV norm
                         
@@ -506,48 +507,48 @@ do { \
                     
                     
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
+                        hipSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         // no need to copy the 2 aux slices here
-                        cudaStreamSynchronize(stream[dev*nStream_device]);
-                        cudaMemcpyAsync(d_norm2[dev], d_dimgTV[dev]+buffer_pixels, image_size[0]*image_size[1]*curr_slices*sizeof(float), cudaMemcpyDeviceToDevice,stream[dev*nStream_device+1]);
+                        hipStreamSynchronize(stream[dev*nStream_device]);
+                        hipMemcpyAsync(d_norm2[dev], d_dimgTV[dev]+buffer_pixels, image_size[0]*image_size[1]*curr_slices*sizeof(float), hipMemcpyDeviceToDevice,stream[dev*nStream_device+1]);
                     }
                     
                     
                     // Compute the L2 norm of the gradient. For that, reduction is used.
                     //REDUCE
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
+                        hipSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
                         
                         size_t dimblockRed = MAXTHREADS;
                         size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
                         
-                        cudaStreamSynchronize(stream[dev*nStream_device+1]);
-                        reduceNorm2 << <dimgridRed, dimblockRed, MAXTHREADS*sizeof(float),stream[dev*nStream_device]>> >(d_norm2[dev], d_norm2aux[dev], total_pixels);
+                        hipStreamSynchronize(stream[dev*nStream_device+1]);
+                        reduceNorm2 <<<dimgridRed, dimblockRed, MAXTHREADS*sizeof(float),stream[dev*nStream_device]>>>(d_norm2[dev], d_norm2aux[dev], total_pixels);
                         
                     }
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
+                        hipSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
                         size_t dimblockRed = MAXTHREADS;
                         size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
 
                         if (dimgridRed > 1) {
-                            reduceSum << <1, dimblockRed, MAXTHREADS*sizeof(float),stream[dev*nStream_device] >> >(d_norm2aux[dev], d_norm2[dev], dimgridRed);
-                            cudaStreamSynchronize(stream[dev*nStream_device]);
-                            cudaMemcpyAsync(&sumnorm2[dev], d_norm2[dev], sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
+                            reduceSum <<<1, dimblockRed, MAXTHREADS*sizeof(float),stream[dev*nStream_device]>>>(d_norm2aux[dev], d_norm2[dev], dimgridRed);
+                            hipStreamSynchronize(stream[dev*nStream_device]);
+                            hipMemcpyAsync(&sumnorm2[dev], d_norm2[dev], sizeof(float), hipMemcpyDeviceToHost,stream[dev*nStream_device+1]);
                         }
                         else {
-                            cudaStreamSynchronize(stream[dev*nStream_device]);
-                            cudaMemcpyAsync(&sumnorm2[dev], d_norm2aux[dev], sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
+                            hipStreamSynchronize(stream[dev*nStream_device]);
+                            hipMemcpyAsync(&sumnorm2[dev], d_norm2aux[dev], sizeof(float), hipMemcpyDeviceToHost,stream[dev*nStream_device+1]);
                         }
                     }
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
-                        cudaDeviceSynchronize();
+                        hipSetDevice(gpuids[dev]);
+                        hipDeviceSynchronize();
                      }
                     cudaCheckErrors("Reduction error");
                     
@@ -570,7 +571,7 @@ do { \
                     
                     
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
+                        hipSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
                         //NORMALIZE
@@ -580,15 +581,15 @@ do { \
                         multiplyArrayScalar<<<60,MAXTHREADS,0,stream[dev*nStream_device]>>>(d_dimgTV[dev]+buffer_pixels,alpha,   total_pixels);
                     }
                      for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
-                        cudaDeviceSynchronize();
+                        hipSetDevice(gpuids[dev]);
+                        hipDeviceSynchronize();
                      }
                     cudaCheckErrors("Scalar operations error");
                     
                     //SUBSTRACT GRADIENT
                     //////////////////////////////////////////////
                     for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
+                        hipSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
                         
@@ -598,8 +599,8 @@ do { \
 
                 // Synchronize mathematics, make sure bounding pixels are correct
                  for (dev = 0; dev < deviceCount; dev++){
-                        cudaSetDevice(gpuids[dev]);
-                        cudaDeviceSynchronize();
+                        hipSetDevice(gpuids[dev]);
+                        hipDeviceSynchronize();
                      }
                 
                 if(splits==1){
@@ -607,35 +608,35 @@ do { \
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
                         if (dev<deviceCount-1){
-                            cudaSetDevice(gpuids[dev+1]);
-                            cudaMemcpy(buffer, d_image[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
-                            cudaSetDevice(gpuids[dev]);
-                            cudaMemcpy(d_image[dev]+total_pixels+buffer_pixels,buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice); 
+                            hipSetDevice(gpuids[dev+1]);
+                            hipMemcpy(buffer, d_image[dev+1], buffer_pixels*sizeof(float), hipMemcpyDeviceToHost);
+                            hipSetDevice(gpuids[dev]);
+                            hipMemcpy(d_image[dev]+total_pixels+buffer_pixels,buffer, buffer_pixels*sizeof(float), hipMemcpyHostToDevice); 
                         }
-                        cudaDeviceSynchronize();
+                        hipDeviceSynchronize();
                         if (dev>0){
-                            cudaSetDevice(gpuids[dev-1]);
-                            cudaMemcpyAsync(buffer, d_image[dev-1]+total_pixels+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
-                            cudaSetDevice(gpuids[dev]);
-                            cudaMemcpyAsync(d_image[dev],buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
+                            hipSetDevice(gpuids[dev-1]);
+                            hipMemcpyAsync(buffer, d_image[dev-1]+total_pixels+buffer_pixels, buffer_pixels*sizeof(float), hipMemcpyDeviceToHost);
+                            hipSetDevice(gpuids[dev]);
+                            hipMemcpyAsync(d_image[dev],buffer, buffer_pixels*sizeof(float), hipMemcpyHostToDevice);
                         }
                     }
                 }else{
                     
                     // We need to take it out :(
                     for(dev=0; dev<deviceCount;dev++){
-                        cudaSetDevice(gpuids[dev]);
+                        hipSetDevice(gpuids[dev]);
                         
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         linear_idx_start=image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
                         total_pixels=curr_slices*image_size[0]*image_size[1];
-                        cudaMemcpyAsync(&dst[linear_idx_start], d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
+                        hipMemcpyAsync(&dst[linear_idx_start], d_image[dev]+buffer_pixels,total_pixels*sizeof(float), hipMemcpyDeviceToHost,stream[dev*nStream_device+1]);
                     }
                 }
                 
                 for (dev = 0; dev < deviceCount; dev++){
-                    cudaSetDevice(gpuids[dev]);
-                    cudaDeviceSynchronize();
+                    hipSetDevice(gpuids[dev]);
+                    hipDeviceSynchronize();
                 }
                 cudaCheckErrors("Memory gather error");
 
@@ -646,39 +647,39 @@ do { \
         // If there has not been splits, we still have data in memory
         if(splits==1){
             for(dev=0; dev<deviceCount;dev++){
-                cudaSetDevice(gpuids[dev]);
+                hipSetDevice(gpuids[dev]);
                 
                 curr_slices=((dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*dev;
                 total_pixels=curr_slices*image_size[0]*image_size[1];
-                cudaMemcpy(dst+slices_per_split*image_size[0]*image_size[1]*dev, d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
+                hipMemcpy(dst+slices_per_split*image_size[0]*image_size[1]*dev, d_image[dev]+buffer_pixels,total_pixels*sizeof(float), hipMemcpyDeviceToHost);
             }
         }
         cudaCheckErrors("Copy result back");
         
         for(dev=0; dev<deviceCount;dev++){
-            cudaSetDevice(gpuids[dev]);
-            cudaFree(d_image[dev]);
-            cudaFree(d_norm2aux[dev]);
-            cudaFree(d_dimgTV[dev]);
-            cudaFree(d_norm2[dev]);
+            hipSetDevice(gpuids[dev]);
+            hipFree(d_image[dev]);
+            hipFree(d_norm2aux[dev]);
+            hipFree(d_dimgTV[dev]);
+            hipFree(d_norm2[dev]);
         }
         if (splits==1){
-            cudaFreeHost(buffer);
+            hipHostFree(buffer);
         }
         
         if (isHostRegisterSupported& splits>2){
-            cudaHostUnregister(img);
-            cudaHostUnregister(dst);
+            hipHostUnregister(img);
+            hipHostUnregister(dst);
         }
         for (int i = 0; i < nStreams; ++i)
-           cudaStreamDestroy(stream[i]) ;
+           hipStreamDestroy(stream[i]) ;
         
         for (dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(gpuids[dev]);
-            cudaDeviceSynchronize();
+            hipSetDevice(gpuids[dev]);
+            hipDeviceSynchronize();
         }
         cudaCheckErrors("Memory free");
-        cudaDeviceReset();
+        hipDeviceReset();
     }
         
 void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
@@ -686,8 +687,8 @@ void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
         size_t memtotal;
         int deviceCount = gpuids.GetLength();
         for (int dev = 0; dev < deviceCount; dev++){
-            cudaSetDevice(gpuids[dev]);
-            cudaMemGetInfo(&memfree,&memtotal);
+            hipSetDevice(gpuids[dev]);
+            hipMemGetInfo(&memfree,&memtotal);
             if(dev==0) *mem_GPU_global=memfree;
             if(memfree<memtotal/2){
                 mexErrMsgIdAndTxt("GD_TV:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");

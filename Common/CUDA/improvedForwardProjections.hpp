@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /*-------------------------------------------------------------------------
  * CUDA function for optimized proton CT radiographies
  * The full method is described in Kaser et al.: Integration of proton imaging into the TIGRE toolbox (submitted to ZMP)
@@ -20,8 +21,8 @@
  Coded by:           Stefanie Kaser, Benjamin Kirchmayer 
 --------------------------------------------------------------------------*/
 
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include <hip/hip_runtime_api.h>
+#include <hip/hip_runtime.h>
 #include <iostream>
 #ifndef improvedForwardProjections_H
 #define improvedForwardProjections_H
