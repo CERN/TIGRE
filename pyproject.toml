@@ -39,3 +39,10 @@ dev = [
 	"pep8-naming~=0.11",
 	"pre-commit~=2.10",
 ]
+
+[tool.setuptools.packages.find]
+where = ["Python"]
+
+[tool.setuptools.package-data]
+"tigre.utilities.cuda_interface" = ["*.pyx", "*.pxd", "*.cpp"]
+

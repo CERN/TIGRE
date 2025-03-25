@@ -38,7 +38,7 @@ We strongly recommend using `conda` environments and doing the install in one sp
 
 1. Install Python and pip, MSVC and CUDA
 2. run `git clone https://github.com/CERN/TIGRE.git` 
-3. run `pip install .` in the Python folder. 
+3. run `pip install .` in the root folder. 
 
 A successful installation should be able to execute the script at `TIGRE/Python/example.py`
 
@@ -60,7 +60,7 @@ A successful installation should be able to execute the script at `TIGRE/Python/
 5. Compile libraries
 
 	```
-	cd TIGRE/Python/  
+	cd TIGRE/  
 	pip install . --user
 	```
 	**NOTE:** If you are working under the virtual environment that created by `venv` or a `conda` environment and you want to install TIGRE to it, 
@@ -95,7 +95,7 @@ Tested on
 
 1. Install python, gcc, pip and CUDA
 2. run `git clone https://github.com/CERN/TIGRE.git` 
-3. run `pip install .` in the Python folder. 
+3. run `pip install .` in the root folder. 
 
 A successful installation should be able to execute the script at `TIGRE/Python/example.py`
 
@@ -131,7 +131,7 @@ For Ubuntu
 5. Compile libraries
 
 	```
-	cd TIGRE/Python/  
+	cd TIGRE/  
 	pip install . --user
 	```
 	**NOTE:** If you are working under the virtual environment that created by `venv` and you want to install TIGRE to it, 
