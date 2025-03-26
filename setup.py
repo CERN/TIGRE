@@ -107,8 +107,13 @@ def locate_cuda():
     cudaconfig = {
         "home": cuda_home,
         "include": pjoin(cuda_home, "include"),
-        "lib64": pjoin(cuda_home, pjoin("lib", "x64") if IS_WINDOWS else "lib"),
     }
+    if IS_WINDOWS:
+        cudaconfig["lib64"]= pjoin(cuda_home, pjoin("lib", "x64"))
+    else:
+        lib64_path = pjoin(cuda_home, "lib64")
+        cudaconfig["lib64"] = lib64_path if os.path.exists(lib64_path) else pjoin(cuda_home, "lib")
+
     if not all([os.path.exists(v) for v in cudaconfig.values()]):
         raise EnvironmentError(
             "The CUDA  path could not be located in $PATH, $CUDA_HOME or $CUDA_PATH. "
