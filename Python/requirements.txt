@@ -1,6 +1,0 @@
-Cython
-matplotlib
-numpy>=1.20.0
-scipy
-setuptools
-h5py
