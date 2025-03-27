@@ -23,6 +23,16 @@ jobs:
         with:
           version: 0.6.9
           enable-cache: true
+      - name: Get Pyproject Version
+        run: |
+          export PYPROJECT_VERSION=v$(uvx --from=toml-cli toml get --toml-path=pyproject.toml project.version)
+          echo "PYPROJECT_VERSION=$PYPROJECT_VERSION" >> "$GITHUB_ENV"
+      - name: Validate version with tag
+        if: ${{ github.ref_name != env.PYPROJECT_VERSION }}
+        uses: actions/github-script@v3
+        with:
+          script: |
+            core.setFailed('Tag version ${{ github.ref_name }} does not match pyproject version ${{ env.PYPROJECT_VERSION }}')
       - name: Build wheel 
         run: uv build
       - name: Publish wheel 
