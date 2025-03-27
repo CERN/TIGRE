@@ -107,8 +107,13 @@ def locate_cuda():
     cudaconfig = {
         "home": cuda_home,
         "include": pjoin(cuda_home, "include"),
-        "lib64": pjoin(cuda_home, pjoin("lib", "x64") if IS_WINDOWS else "lib64"),
     }
+    if IS_WINDOWS:
+        cudaconfig["lib64"]= pjoin(cuda_home, pjoin("lib", "x64"))
+    else:
+        lib64_path = pjoin(cuda_home, "lib64")
+        cudaconfig["lib64"] = lib64_path if os.path.exists(lib64_path) else pjoin(cuda_home, "lib")
+
     if not all([os.path.exists(v) for v in cudaconfig.values()]):
         raise EnvironmentError(
             "The CUDA  path could not be located in $PATH, $CUDA_HOME or $CUDA_PATH. "
@@ -351,7 +356,7 @@ def include_headers(filename_list, sdist=False):
             header[1] = ".hpp"
             header_list.append("".join(header))
 
-    filename_list += ["../Common/CUDA/types_TIGRE.hpp", "../Common/CUDA/errors.hpp"]
+    filename_list += ["Common/CUDA/types_TIGRE.hpp", "Common/CUDA/errors.hpp"]
     return filename_list + header_list
 
 
@@ -359,14 +364,14 @@ Ax_ext = Extension(
     "_Ax",
     sources=include_headers(
         [
-            "../Common/CUDA/projection.cpp",
-            "../Common/CUDA/TIGRE_common.cpp",
-            "../Common/CUDA/Siddon_projection.cu",
-            "../Common/CUDA/Siddon_projection_parallel.cu",
-            "../Common/CUDA/ray_interpolated_projection.cu",
-            "../Common/CUDA/ray_interpolated_projection_parallel.cu",
-            "../Common/CUDA/GpuIds.cpp",
-            "tigre/utilities/cuda_interface/_Ax.pyx",
+            "Common/CUDA/projection.cpp",
+            "Common/CUDA/TIGRE_common.cpp",
+            "Common/CUDA/Siddon_projection.cu",
+            "Common/CUDA/Siddon_projection_parallel.cu",
+            "Common/CUDA/ray_interpolated_projection.cu",
+            "Common/CUDA/ray_interpolated_projection_parallel.cu",
+            "Common/CUDA/GpuIds.cpp",
+            "Python/tigre/utilities/cuda_interface/_Ax.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
     ),
@@ -375,7 +380,7 @@ Ax_ext = Extension(
     libraries=["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
-    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
 )
 
 
@@ -383,13 +388,13 @@ Atb_ext = Extension(
     "_Atb",
     sources=include_headers(
         [
-            "../Common/CUDA/TIGRE_common.cpp",
-            "../Common/CUDA/voxel_backprojection.cu",
-            "../Common/CUDA/voxel_backprojection2.cu",
-            "../Common/CUDA/voxel_backprojection_parallel.cu",
-            "../Common/CUDA/GpuIds.cpp",
-            "../Common/CUDA/gpuUtils.cu",
-            "tigre/utilities/cuda_interface/_Atb.pyx",
+            "Common/CUDA/TIGRE_common.cpp",
+            "Common/CUDA/voxel_backprojection.cu",
+            "Common/CUDA/voxel_backprojection2.cu",
+            "Common/CUDA/voxel_backprojection_parallel.cu",
+            "Common/CUDA/GpuIds.cpp",
+            "Common/CUDA/gpuUtils.cu",
+            "Python/tigre/utilities/cuda_interface/_Atb.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
     ),
@@ -398,7 +403,7 @@ Atb_ext = Extension(
     libraries=["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
-    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
 )
 
 
@@ -406,11 +411,11 @@ tv_proximal_ext = Extension(
     "_tv_proximal",
     sources=include_headers(
         [
-            "../Common/CUDA/TIGRE_common.cpp",
-            "../Common/CUDA/tv_proximal.cu",
-            "../Common/CUDA/GpuIds.cpp",
-            "../Common/CUDA/gpuUtils.cu",
-            "tigre/utilities/cuda_interface/_tv_proximal.pyx",
+            "Common/CUDA/TIGRE_common.cpp",
+            "Common/CUDA/tv_proximal.cu",
+            "Common/CUDA/GpuIds.cpp",
+            "Common/CUDA/gpuUtils.cu",
+            "Python/tigre/utilities/cuda_interface/_tv_proximal.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
     ),
@@ -419,7 +424,7 @@ tv_proximal_ext = Extension(
     libraries=["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
-    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
 )
 
 
@@ -427,11 +432,11 @@ minTV_ext = Extension(
     "_minTV",
     sources=include_headers(
         [
-            "../Common/CUDA/TIGRE_common.cpp",
-            "../Common/CUDA/GD_TV.cu",
-            "../Common/CUDA/GpuIds.cpp",
-            "../Common/CUDA/gpuUtils.cu",
-            "tigre/utilities/cuda_interface/_minTV.pyx",
+            "Common/CUDA/TIGRE_common.cpp",
+            "Common/CUDA/GD_TV.cu",
+            "Common/CUDA/GpuIds.cpp",
+            "Common/CUDA/gpuUtils.cu",
+            "Python/tigre/utilities/cuda_interface/_minTV.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
     ),
@@ -440,7 +445,7 @@ minTV_ext = Extension(
     libraries=["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
-    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
 )
 
 
@@ -448,11 +453,11 @@ AwminTV_ext = Extension(
     "_AwminTV",
     sources=include_headers(
         [
-            "../Common/CUDA/TIGRE_common.cpp",
-            "../Common/CUDA/GD_AwTV.cu",
-            "../Common/CUDA/GpuIds.cpp",
-            "../Common/CUDA/gpuUtils.cu",
-            "tigre/utilities/cuda_interface/_AwminTV.pyx",
+            "Common/CUDA/TIGRE_common.cpp",
+            "Common/CUDA/GD_AwTV.cu",
+            "Common/CUDA/GpuIds.cpp",
+            "Common/CUDA/gpuUtils.cu",
+            "Python/tigre/utilities/cuda_interface/_AwminTV.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
     ),
@@ -461,7 +466,7 @@ AwminTV_ext = Extension(
     libraries=["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
-    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
 )
 
 
@@ -469,8 +474,8 @@ gpuUtils_ext = Extension(
     "_gpuUtils",
     sources=include_headers(
         [
-            "../Common/CUDA/gpuUtils.cu",
-            "tigre/utilities/cuda_interface/_gpuUtils.pyx",
+            "Common/CUDA/gpuUtils.cu",
+            "Python/tigre/utilities/cuda_interface/_gpuUtils.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
     ),
@@ -478,7 +483,7 @@ gpuUtils_ext = Extension(
     libraries=["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
-    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
 )
 
 
@@ -486,11 +491,11 @@ RandomNumberGenerator_ext = Extension(
     "_RandomNumberGenerator",
     sources=include_headers(
         [
-            "../Common/CUDA/TIGRE_common.cpp",
-            "../Common/CUDA/RandomNumberGenerator.cu",
-            "../Common/CUDA/GpuIds.cpp",
-            "../Common/CUDA/gpuUtils.cu",
-            "tigre/utilities/cuda_interface/_randomNumberGenerator.pyx",
+            "Common/CUDA/TIGRE_common.cpp",
+            "Common/CUDA/RandomNumberGenerator.cu",
+            "Common/CUDA/GpuIds.cpp",
+            "Common/CUDA/gpuUtils.cu",
+            "Python/tigre/utilities/cuda_interface/_randomNumberGenerator.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
     ),
@@ -499,23 +504,17 @@ RandomNumberGenerator_ext = Extension(
     libraries=["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
-    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
 )
 
 
 setup(
-    name="pytigre",
-    version="3.0.0",
-    author="Ander Biguri, Reuben Lindroos, Sam Loescher",
     packages=find_packages(),
     include_package_data=True,
-    data_files=[("data", ["../Common/data/head.mat"])],
+    data_files=[("data", ["Common/data/head.mat"])],
     ext_modules=[Ax_ext, Atb_ext, tv_proximal_ext, minTV_ext, AwminTV_ext, gpuUtils_ext, RandomNumberGenerator_ext],
     py_modules=["tigre.py"],
     cmdclass={"build_ext": BuildExtension},
-    install_requires=["Cython", "matplotlib", "numpy", "scipy", "tqdm"],
-    license_files=("LICENSE",),
-    license="BSD 3-Clause",
     # since the package has c code, the egg cannot be zipped
     zip_safe=False,
 )
