@@ -55,7 +55,7 @@ Codes  : https://github.com/CERN/TIGRE
 #include "TIGRE_common.hpp"
 #include "GpuIds.hpp"
 
-void piccs_tv(const float* img,const float* prior, float* dst,float alpha, float ratio, const long* image_size, int maxIter, const GpuIds& gpuids);
+void piccs_tv(float* img,float* prior, float* dst,float alpha, float ratio, const long* image_size, int maxIter, const GpuIds& gpuids);
 
 
 #endif
