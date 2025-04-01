@@ -54,7 +54,7 @@ Codes  : https://github.com/CERN/TIGRE
 #define MAXTHREADS 1024
 
 #include "PICCS.hpp"
-
+#include "gpuUtils.hpp"
 
 
 
@@ -114,17 +114,21 @@ do { \
         unsigned long size2d = rows*cols;
         unsigned long long idx = z * size2d + y * cols + x;
         
-        float uidx = u[idx];
+        // float uidx = u[idx];
+        float uidx = 0;
         
         if ( z - 1 >= 0 && z<depth) {
+            uidx = u[idx];
             grad[0] = (uidx-u[(z-1)*size2d + y*cols + x]) ;
         }
-        
-        if ( y - 1 >= 0 && y<rows){
+        //z may be out of bounds, need to add a condition check z < depth.
+        if ( y - 1 >= 0 && y<rows && z<depth){
+            uidx = u[idx];
             grad[1] = (uidx-u[z*size2d + (y-1)*cols + x]) ;
         }
-        
-        if ( x - 1 >= 0 && x<cols) {
+        //z may be out of bounds, need to add a condition check z < depth.
+        if ( x - 1 >= 0 && x<cols && z<depth) {
+            uidx = u[idx];
             grad[2] = (uidx-u[z*size2d + y*cols + (x-1)]);
         }
     }

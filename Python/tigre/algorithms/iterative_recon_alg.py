@@ -6,6 +6,7 @@ import time
 import numpy as np
 from _AwminTV import AwminTV
 from _minTV import minTV
+from _PICCS import PICCS
 from tigre.algorithms.single_pass_algorithms import FDK
 from tigre.utilities.Atb import Atb
 from tigre.utilities.Ax import Ax
@@ -355,6 +356,11 @@ class IterativeReconAlg(object):
             self.gpuids = GpuIds()
         return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta, self.gpuids)
 
+    def PICCS_TV(self, res_prev, res_prior, dtvg, ratio):
+        if self.gpuids is None:
+            self.gpuids = GpuIds()
+        return PICCS(res_prev, res_prior, dtvg, ratio, self.numiter_tv, self.gpuids)
+    
     def error_measurement(self, res_prev, iter):
         if self.Quameasopts is not None:
             self.lq[:, iter] = MQ(self.res, res_prev, self.Quameasopts)

@@ -464,6 +464,25 @@ AwminTV_ext = Extension(
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
 )
 
+PICCS_ext = Extension(
+    "_PICCS",
+    sources=include_headers(
+        [
+            "../Common/CUDA/TIGRE_common.cpp",
+            "../Common/CUDA/PICCS.cu",
+            "../Common/CUDA/GpuIds.cpp",
+            "../Common/CUDA/gpuUtils.cu",
+            "tigre/utilities/cuda_interface/_PICCS.pyx",
+        ],
+        sdist=sys.argv[1] == "sdist",
+    ),
+    define_macros=define_macros,
+    library_dirs=[CUDA["lib64"]],
+    libraries=["cudart"],
+    language="c++",
+    runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "../Common/CUDA/"],
+)
 
 gpuUtils_ext = Extension(
     "_gpuUtils",
@@ -510,7 +529,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     data_files=[("data", ["../Common/data/head.mat"])],
-    ext_modules=[Ax_ext, Atb_ext, tv_proximal_ext, minTV_ext, AwminTV_ext, gpuUtils_ext, RandomNumberGenerator_ext],
+    ext_modules=[Ax_ext, Atb_ext, tv_proximal_ext, minTV_ext, AwminTV_ext, PICCS_ext, gpuUtils_ext, RandomNumberGenerator_ext],
     py_modules=["tigre.py"],
     cmdclass={"build_ext": BuildExtension},
     install_requires=["Cython", "matplotlib", "numpy", "scipy", "tqdm"],

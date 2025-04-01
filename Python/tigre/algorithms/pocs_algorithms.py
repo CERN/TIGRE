@@ -112,6 +112,8 @@ class initASD_POCS(IterativeReconAlg):
         self.alpha = 0.002 if "alpha" not in kwargs else kwargs["alpha"]
         self.alpha_red = 0.95 if "alpha_red" not in kwargs else kwargs["alpha_red"]
         self.rmax = 0.95 if "rmax" not in kwargs else kwargs["rmax"]
+        self.ratio = 0.5 if "ratio" not in kwargs else kwargs["ratio"]
+        self.regularization = "minimizeTV" if "regularization" not in kwargs else kwargs["regularization"]
         if "maxl2err" not in kwargs:
             self.epsilon = (
                 im3DNORM(Ax(FDK(proj, geo, angles, gpuids=self.gpuids), geo, angles) - proj, 2)
@@ -128,6 +130,10 @@ class initASD_POCS(IterativeReconAlg):
     def run_main_iter(self):
         stop_criteria = False
         n_iter = 0
+        if (self.regularization=="PICCS"):
+            # Modify the `set_res` function in the `Python\tigre\algorithms\iterative_recon_alg.py` file as needed.
+            res_prior = copy.deepcopy(self.res)
+
         while not stop_criteria:
             if self.verbose:
                 self._estimate_time_until_completion(n_iter)
@@ -146,7 +152,12 @@ class initASD_POCS(IterativeReconAlg):
                 dtvg = self.alpha * dp
 
             res_prev = copy.deepcopy(self.res)
-            self.res = getattr(self, self.regularization)(self.res, dtvg)
+            # self.res = getattr(self, self.regularization)(self.res, dtvg)
+            if (self.regularization=="PICCS"):
+                self.res = getattr(self, self.regularization)(self.res, res_prior, dtvg, self.ratio)
+            else:
+                self.res = getattr(self, self.regularization)(self.res, dtvg)
+            
             dg_vec = self.res - res_prev
             dg = im3DNORM(dg_vec, 2)
 
