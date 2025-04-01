@@ -356,7 +356,7 @@ class IterativeReconAlg(object):
             self.gpuids = GpuIds()
         return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta, self.gpuids)
 
-    def PICCS_TV(self, res_prev, res_prior, dtvg, ratio):
+    def PICCS(self, res_prev, res_prior, dtvg, ratio):
         if self.gpuids is None:
             self.gpuids = GpuIds()
         return PICCS(res_prev, res_prior, dtvg, ratio, self.numiter_tv, self.gpuids)
