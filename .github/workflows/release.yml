@@ -9,8 +9,8 @@
  jobs:
    pypi:
      name: Publish to PyPI
+     needs: [build_wheels]
      runs-on: ubuntu-latest
-     container: nvidia/cuda:12.8.1-devel-ubuntu24.04
      # Environment and permissions trusted publishing.
      environment:
        # Create this environment in the GitHub repository under Settings -> Environments
@@ -33,7 +33,10 @@
          with:
             script: |
             core.setFailed('Tag version ${{ github.ref_name }} does not match pyproject version ${{ env.PYPROJECT_VERSION }}')
-       - name: Build wheel 
-         run: uv build
+       - uses: actions/download-artifact@v4
+         with:
+            pattern: cibw-*
+            path: dist
+            merge-multiple: true
        - name: Publish wheel 
          run: uv publish --trusted-publishing always
