@@ -26,7 +26,7 @@ authors=[
 	{name = "Sam Loescher"},
 ]
 license={text="BSD 3-Clause"}
-requires-python = ">=3.7,<=3.11"
+requires-python = ">=3.7,<3.12"
 
 [dependency-groups]
 dev = [
