@@ -1,0 +1,84 @@
+ name: Release
+ 
+ on:
+   push:
+     tags:
+       # Publish on any tag starting with a `v`, e.g. v1.2.3
+       - v*
+ 
+ jobs:
+   build_wheels:
+     name: Build wheels on ${{ matrix.os }}
+     runs-on: ${{ matrix.os }}
+     strategy:
+       matrix:
+         # macos-13 is an intel runner, macos-14 is apple silicon
+         #os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-14]
+         os: [ubuntu-latest]
+
+     steps:
+       - uses: actions/checkout@v4
+
+       - name: Build wheels
+         uses: pypa/cibuildwheel@v2.23.2
+         # env:
+         #   CIBW_SOME_OPTION: value
+         #    ...
+         # with:
+         #   package-dir: .
+         #   output-dir: wheelhouse
+         #   config-file: "{package}/pyproject.toml"
+
+       - uses: actions/upload-artifact@v4
+         with:
+           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+           path: ./wheelhouse/*.whl
+   make_sdist:
+     name: Make SDist
+     runs-on: ubuntu-latest
+     container: nvidia/cuda:12.8.1-devel-ubuntu24.04
+     steps:
+     - uses: actions/checkout@v4
+     - uses: astral-sh/setup-uv@v3
+       with:
+         version: 0.6.9
+         enable-cache: true
+     - name: Build SDist
+       run: uv build --sdist
+     - uses: actions/upload-artifact@v4
+       with:
+         name: cibw-sdist
+         path: dist/*.tar.gz
+   pypi:
+     name: Publish to PyPI
+     needs: [build_wheels, make_sdist]
+     runs-on: ubuntu-latest
+     # Environment and permissions trusted publishing.
+     environment:
+       # Create this environment in the GitHub repository under Settings -> Environments
+       name: release
+     permissions:
+       id-token: write
+     steps:
+       - uses: actions/checkout@v4
+       - uses: astral-sh/setup-uv@v3
+         with:
+           version: 0.6.9
+           enable-cache: true
+       - name: Get Pyproject Version
+         run: |
+          export PYPROJECT_VERSION=v$(uvx --from=toml-cli toml get --toml-path=pyproject.toml project.version)
+          echo "PYPROJECT_VERSION=$PYPROJECT_VERSION" >> "$GITHUB_ENV"
+       - name: Validate version with tag
+         if: ${{ github.ref_name != env.PYPROJECT_VERSION }}
+         uses: actions/github-script@v3
+         with:
+            script: |
+              core.setFailed('Tag version ${{ github.ref_name }} does not match pyproject version ${{ env.PYPROJECT_VERSION }}')
+       - uses: actions/download-artifact@v4
+         with:
+            pattern: cibw-*
+            path: dist
+            merge-multiple: true
+       - name: Publish wheel 
+         run: uv publish --trusted-publishing always
