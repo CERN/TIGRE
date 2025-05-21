@@ -77,16 +77,19 @@ def FDK(proj, geo, angles, **kwargs):
 
     def zeropadding(proj, geo):
         zgeo = copy.deepcopy(geo)
-        padwidth = int(2 * geo.offDetector[1] / geo.dDetector[1])
-        zgeo.offDetector[1] = geo.offDetector[1] - \
+        if geo.offDetector.ndim == 2:
+            off =geo.offDetector[1,0]
+        else:
+            off = geo.offDetector[1] 
+        padwidth = int(2 * off / geo.dDetector[1])
+        zgeo.offDetector[1] = off - \
             padwidth / 2 * geo.dDetector[1]
         zgeo.nDetector[1] = abs(padwidth) + geo.nDetector[1]
         zgeo.sDetector[1] = zgeo.nDetector[1] * zgeo.dDetector[1]
 
-        theta = (geo.sDetector[1] / 2 - abs(geo.offDetector[1])
-                 ) * np.sign(geo.offDetector[1])
+        theta = (geo.sDetector[1] / 2 - abs(off)) * np.sign(off)
 
-        if geo.offDetector[1] > 0:
+        if off > 0:
             zproj = np.zeros(
                 (proj.shape[0] , proj.shape[1], proj.shape[2]+ padwidth), dtype=proj.dtype)
             for ii in range(proj.shape[0]):
