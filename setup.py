@@ -45,6 +45,7 @@ CC_COMPATIBILITY_TABLE = [
     (86, 86, 11.1, 999 ), # From CUDA 11.1
     (87, 87, 11.5, 999 ), 
     (90, 90, 11.8, 999 ), # From CUDA 12
+    (120, 120, 12.8, 999)
 ]
 
 COMPUTE_CAPABILITY_ARGS = [
