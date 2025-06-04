@@ -180,6 +180,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     fieldnames[11]= "mode";
     fieldnames[12]= "COR";
     fieldnames[13]= "rotDetector";
+    fieldnames[14]= "offSource";
     // Make sure input is structure
     
     mxArray    *tmp;
@@ -189,7 +190,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     double * nVoxel, *nDetec; //we need to cast these to int
     double * sVoxel, *dVoxel,*sDetec,*dDetec, *DSO, *DSD,*offOrig,*offDetec;
-    double *acc, *COR,*rotDetector;
+    double *acc, *COR,*rotDetector,*offSource;
     const char* mode;
     bool coneBeam=true;
     Geometry geo;
@@ -312,6 +313,17 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                     geo.dPitch[i]= (float)rotDetector[1+3*c];
                     geo.dRoll[i] = (float)rotDetector[2+3*c];
                     
+                }
+                break;
+            case 14:
+                geo.offSourceY=(float*)malloc(nangles * sizeof(float));
+                geo.offSourceZ=(float*)malloc(nangles * sizeof(float));
+                
+                offSource=(double *)mxGetData(tmp);
+                for (int i=0;i<nangles;i++){
+                    c=i;
+                    geo.offSourceY[i]=(float)offSource[0+2*c];
+                    geo.offSourceZ[i]=(float)offSource[1+2*c];
                 }
                 break;
             default:
