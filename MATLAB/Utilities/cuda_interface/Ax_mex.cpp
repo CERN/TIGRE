@@ -156,12 +156,13 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     fieldnames[11]= "mode";
     fieldnames[12]= "COR";
     fieldnames[13]= "rotDetector";
-    
+    fieldnames[14]= "offSource";
+        
     // Now we know that all the input struct is good! Parse it from mxArrays to
     // C structures that MEX can understand.
     double * nVoxel, *nDetec; //we need to cast these to int
     double * sVoxel, *dVoxel,*sDetec,*dDetec, *DSO, *DSD;
-    double *offOrig,*offDetec,*rotDetector;
+    double *offOrig,*offDetec,*rotDetector,*offSource;
     double *  acc, *COR;
     const char* mode;
     int c;
@@ -290,6 +291,17 @@ void mexFunction(int  nlhs , mxArray *plhs[],
                     
                 }
                 break;
+            case 14:
+                geo.offSourceY=(float*)malloc(nangles * sizeof(float));
+                geo.offSourceZ=(float*)malloc(nangles * sizeof(float));
+                
+                offSource=(double *)mxGetData(tmp);
+                for (int i=0;i<nangles;i++){
+                    c=i;
+                    geo.offSourceY[i]=(float)offSource[0+2*c];
+                    geo.offSourceZ[i]=(float)offSource[1+2*c];
+                }
+                break; 
             default:
                 mexErrMsgIdAndTxt( "CBCT:MEX:Ax:unknown","This should not happen. Weird");
                 break;
