@@ -6,14 +6,14 @@ geofields_mandatory={'nVoxel','sVoxel','dVoxel', ...
     'DSO','DSD'};
 
 geofields_optional={'offOrigin','offDetector','rotDetector','COR',...
-    'mode','accuracy'};
+    'mode','accuracy','offSource'};
 allfields=horzcat(geofields_mandatory,geofields_optional);
 fnames=fieldnames(geo);
 % Find if geo has fields we do not recongize
 unknown=~ismember(fnames,allfields);
 % there must be not unknown variables
 % TODO: Do we really want to enforce this? Perhaps just a warning?
-assert(~sum(unknown),'TIGRE:checkGeo:BadGeometry',['The following fields are not known by TIGRE:\n' strjoin(fnames(unknown)),'\nMake sure you have not misspelled any field or introduced unnecessary fields.'])
+assert(~sum(unknown),'TIGRE:checkGeo:BadGeometry',['The following fields are not known by TIGRE:\n' strjoin(fnames(unknown)),'\nMake sure you have not misspelled any field or introduced unnecesary fields.'])
 
 
 
@@ -128,5 +128,14 @@ else
 end
 
 
+if isfield(geo,'offSource')
+    assert(isequal(size(geo.offSource),[2 1]) | isequal(size(geo.offSource),[2 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offSource Should be 2x1 or 2xsize(angles,2)')
+    assert(isa(geo.offSource,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.offSource is not double type.' )
+    if isequal(size(geo.offSource),[2 1])
+        geo.offSource=repmat(geo.offSource,[1, size(angles,2)]);
+    end
+else
+    geo.offSource=zeros(2,size(angles,2));
+end
 end
 
