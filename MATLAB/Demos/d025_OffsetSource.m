@@ -22,7 +22,6 @@
 %% Initialize
 clear;
 close all;
-run 'D:\dyf20\CT\TIGRE-offSource\MATLAB\InitTIGRE.m'
 %% Geometry
 geo=defaultGeometry();
 head=headPhantom(geo.nVoxel);
