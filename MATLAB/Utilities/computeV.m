@@ -8,6 +8,7 @@ else
 end
     
 V=zeros(geo.nVoxel(1),geo.nVoxel(2) ,length(alphablocks),'single');
+%geo.offDetector(1) = geo.offDetector(1) + (geo.DSD(1) / geo.DSO(1)) * geo.COR(1);  
 geo=checkGeo(geo,angles);
 
 if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
@@ -16,15 +17,15 @@ if ~isfield(geo,'mode')||~strcmp(geo.mode,'parallel')
         auxindex=orig_index{ii};
         auxgeo = geo;
         % expand the detector to avoiding zeros in backprojection
-%         maxsize=max(auxgeo.sVoxel+geo.offOrigin(:,auxindex),[],2);
-%         auxgeo.sDetector=max(auxgeo.sDetector , [maxsize(1); maxsize(3)] *geo.DSD/geo.DSO);
-%         auxgeo.dDetector = auxgeo.sDetector ./ auxgeo.nDetector;
+        maxsize=max(auxgeo.sVoxel+geo.offOrigin(:,auxindex),[],2);
+        auxgeo.sDetector=max(auxgeo.sDetector , [maxsize(1); maxsize(3)] *geo.DSD/geo.DSO);
+        auxgeo.dDetector = auxgeo.sDetector ./ auxgeo.nDetector;
         % subset of projection angles
         auxgeo.DSD = geo.DSD(auxindex);
         auxgeo.DSO = geo.DSO(auxindex);
         auxgeo.offOrigin = geo.offOrigin(:,auxindex);
-        auxgeo.offDetector = geo.offDetector(:,auxindex);
         auxgeo.offSource = geo.offSource(:,auxindex);
+        auxgeo.offDetector = geo.offDetector(:,auxindex);
         auxgeo.rotDetector = geo.rotDetector(:,auxindex);
         auxgeo.COR = geo.COR(auxindex);
         %auxgeo=geo;
@@ -53,4 +54,3 @@ function [gpuids]=parse_inputs(varargin)
         gpuids=p.Results.gpuids;
     end
 end
-
