@@ -165,7 +165,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     mxArray * geometryMex=(mxArray*)prhs[1];
     
     // IMPORTANT-> Make sure Matlab creates the struct in this order.
-    const char *fieldnames[14];
+    const char *fieldnames[15];
     fieldnames[0] = "nVoxel";
     fieldnames[1] = "sVoxel";
     fieldnames[2] = "dVoxel";
@@ -196,7 +196,7 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     Geometry geo;
     int c;
     geo.unitX=1;geo.unitY=1;geo.unitZ=1;
-    for(int ifield=0; ifield<14; ifield++) {
+    for(int ifield=0; ifield<15; ifield++) {
         tmp=mxGetField(geometryMex,0,fieldnames[ifield]);
         if(tmp==NULL){
             //tofix
