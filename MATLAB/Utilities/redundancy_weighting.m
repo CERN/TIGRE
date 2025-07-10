@@ -18,7 +18,7 @@ abstheta = abs(theta * geo.DSO(1)/geo.DSD(1));
 
 w = ones([geo.nDetector(2),geo.nDetector(1)]);
 if apply_wang_weights(geo)
-    for ii = 1:geo.nDetector
+    for ii = 1:geo.nDetector(1)
         t = us(ii);
         if(abs(t) <= abstheta)
             w(:,ii) = 0.5*(sin((pi/2)*atan(t/geo.DSO(1))/(atan(abstheta/geo.DSO(1)))) + 1);
