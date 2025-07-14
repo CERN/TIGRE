@@ -89,7 +89,7 @@ Tested on
 |**Ubuntu**| 16.04>|
 |**Python**| 3.7-3.11|
 |**CUDA**| 9.2>|
-|**gcc**|  7.6.0|
+|**gcc**|  7.5.0|
 
 ### Simple Instructions
 
