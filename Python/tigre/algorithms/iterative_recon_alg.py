@@ -339,6 +339,7 @@ class IterativeReconAlg(object):
             geo.rotDetector = self.geo.rotDetector[angle_indices]
             geo.DSD = self.geo.DSD[angle_indices]
             geo.DSO = self.geo.DSO[angle_indices]
+            geo.COR = self.geo.COR[angle_indices]
 
             self.update_image(geo, angle, j)
 
