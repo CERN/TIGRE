@@ -82,7 +82,7 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
 
     # TODO: Swap axis here could be making a copy
     model = np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_model)
-    PyArray_ENABLEFLAGS(model, np.NPY_OWNDATA) # Attribute new memory owner
+    PyArray_ENABLEFLAGS(model, np.NPY_ARRAY_OWNDATA) # Attribute new memory owner
 
     free_c_geometry(c_geometry)
 

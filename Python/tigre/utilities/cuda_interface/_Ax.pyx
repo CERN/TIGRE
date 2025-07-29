@@ -93,7 +93,7 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     shape[2] = <np.npy_intp> (<np.npy_long>(geometry.nDetector[1]))
 
     projections = np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_projectionsNonPinned)
-    PyArray_ENABLEFLAGS(projections, np.NPY_OWNDATA)  # Attribute new memory owner
+    PyArray_ENABLEFLAGS(projections, np.NPY_ARRAY_OWNDATA)  # Attribute new memory owner
 
     free(c_projections)  # Free pointer array, not actual data
     free_c_geometry(c_geometry)
