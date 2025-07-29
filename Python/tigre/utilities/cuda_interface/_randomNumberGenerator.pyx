@@ -58,7 +58,7 @@ def add_poisson(np.ndarray[np.float32_t, ndim=3] src, gpuids=None):
     cdef np.npy_intp c_uiSigLen = <np.npy_intp> (size_img[0] *size_img[1] *size_img[2])
     cuda_raise_errors(poisson_1d(c_src, c_uiSigLen, c_imgout, c_gpuids[0]))
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
-    PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)
+    PyArray_ENABLEFLAGS(imgout, np.NPY_ARRAY_OWNDATA)
     
     return imgout
 
@@ -91,6 +91,6 @@ def add_noise(np.ndarray[np.float32_t, ndim=3] poisson_lambda,
     cdef np.float32_t c_fGaussSigma = gaussian_sigma
     cuda_raise_errors(poisson_gaussian_1d(c_src, c_uiSigLen, c_fGaussMu, c_fGaussSigma, c_imgout, c_gpuids[0]))
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
-    PyArray_ENABLEFLAGS(imgout, np.NPY_OWNDATA)
+    PyArray_ENABLEFLAGS(imgout, np.NPY_ARRAY_OWNDATA)
     
     return imgout
