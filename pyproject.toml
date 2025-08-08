@@ -46,3 +46,21 @@ where = ["Python"]
 [tool.setuptools.package-data]
 "tigre.utilities.cuda_interface" = ["*.pyx", "*.pxd", "*.cpp"]
 
+[tool.cibuildwheel]
+build-frontend = "build[uv]"
+skip = "pp* *musl*"
+archs = ["native"]
+
+[tool.cibuildwheel.linux]
+#CUDA Installation
+before-all = """
+rpm --import https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/7fa2af80.pub &&
+yum-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo &&
+yum clean all &&
+yum -y install cuda-nvcc-12-4 cuda-cudart-devel-12-4 libcurand-devel-12-4 &&
+ls -al /usr/local &&
+export PATH=$PATH:/usr/local/cuda/bin &&
+export CUDA_PATH=/usr/local/cuda &&
+nvcc --version &&
+export BUILD_WITH_CUDA=1
+"""
