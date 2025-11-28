@@ -49,7 +49,6 @@ CC_COMPATIBILITY_TABLE = [
 ]
 
 COMPUTE_CAPABILITY_ARGS = [
-    "-gencode=arch=compute_70,code=compute_70", # allows forward compiling
     "--ptxas-options=-v",
     "-c",
     "--default-stream=per-thread",
@@ -147,6 +146,7 @@ for item in CC_COMPATIBILITY_TABLE:
         continue
     str_arg = f"-gencode=arch=compute_{item[0]},code=sm_{item[1]}"
     COMPUTE_CAPABILITY_ARGS.insert(0, str_arg)
+
 
 # Obtain the numpy include directory.  This logic works across numpy versions.
 try:
@@ -508,6 +508,7 @@ RandomNumberGenerator_ext = Extension(
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
 )
 
+print(find_packages())
 
 setup(
     packages=find_packages(),
