@@ -116,7 +116,7 @@ def readXtekctGeometry(filepath):
             # TODO: detect header lines automatically
             file.readline()
             for line in file:
-                angles.append(math.radians(line.split("\t")[1]))
+                angles.append(math.radians(float(line.split("\t")[1])))
         return folder, geometry, numpy.array(angles)
 
     # .txt
