@@ -31,7 +31,7 @@ geo = tigre.geometry_default(high_resolution=False)
 
 # define projection angles (in radians)
 angles = np.linspace(0, 2 * np.pi, 50)
-# load phatnom image
+# load phantom image
 head = sample_loader.load_head_phantom(geo.nVoxel)
 
 # Simulate forward projection.
