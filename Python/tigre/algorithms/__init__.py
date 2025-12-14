@@ -29,6 +29,8 @@ from .pocs_algorithms import os_aw_pcsd
 from .single_pass_algorithms import fdk
 from .single_pass_algorithms import fbp
 from .statistical_algorithms import mlem
+from .pocs_algorithms import piccs
+from .pocs_algorithms import os_piccs
 
 __all__ = [
     "sart",
@@ -39,6 +41,8 @@ __all__ = [
     "iterativereconalg",
     "FDK",
     "asd_pocs",
+    "piccs",
+    "os_piccs",
     "os_asd_pocs",
     "awasd_pocs",
     "os_awasd_pocs",

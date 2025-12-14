@@ -6,6 +6,7 @@ import time
 import numpy as np
 from _AwminTV import AwminTV
 from _minTV import minTV
+from _minPICCS import minPICCS
 from tigre.algorithms.single_pass_algorithms import FDK
 from tigre.utilities.Atb import Atb
 from tigre.utilities.Ax import Ax
@@ -170,7 +171,8 @@ class IterativeReconAlg(object):
             "hyper",
             "fista_p",
             "fista_q",
-            "niter_outer"
+            "niter_outer",
+            "prior"
         ]
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
@@ -350,6 +352,11 @@ class IterativeReconAlg(object):
         if self.gpuids is None:
             self.gpuids = GpuIds()
         return minTV(res_prev, dtvg, self.numiter_tv, self.gpuids)
+    
+    def minimizeTV_prior(self, res_prev, dtvg, prior, ratio):
+        if self.gpuids is None:
+            self.gpuids = GpuIds()
+        return minPICCS(res_prev, prior, dtvg, self.numiter_tv, ratio, self.gpuids)
 
     def minimizeAwTV(self, res_prev, dtvg):
         if self.gpuids is None:
