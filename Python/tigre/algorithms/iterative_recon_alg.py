@@ -172,7 +172,8 @@ class IterativeReconAlg(object):
             "fista_p",
             "fista_q",
             "niter_outer",
-            "prior"
+            "prior",
+            "prior_ratio"
         ]
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
