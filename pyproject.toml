@@ -25,7 +25,7 @@ authors=[
 	{name = "Reuben Lindroos"}, 
 	{name = "Sam Loescher"},
 ]
-license={text="BSD 3-Clause"}
+license="BSD-3-Clause"
 requires-python = ">=3.7,<3.12"
 
 [dependency-groups]
