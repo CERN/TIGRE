@@ -118,7 +118,6 @@ def read_Bruker_geometry(filepath, **kwargs):
     else:
         resizing_correction = 1.0
 
- 
     try:
         binu = float(cfg_aq["Camera binning"][0])
         binv = float(cfg_aq["Camera binning"][2])
@@ -128,7 +127,11 @@ def read_Bruker_geometry(filepath, **kwargs):
 
     geometry.dDetector = numpy.array(
         (
-            float(cfg_system["Camera Pixel Size (um)"]) / 1000.0 * binv * ratio * resizing_correction,
+            float(cfg_system["Camera Pixel Size (um)"])
+            / 1000.0
+            * binv
+            * ratio
+            * resizing_correction,
             float(cfg_system["Camera Pixel Size (um)"]) / 1000.0 * binu * resizing_correction,
         )
     )
@@ -165,7 +168,7 @@ def read_Bruker_geometry(filepath, **kwargs):
     geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
     geometry.nVoxel = geometry.nVoxel.astype(int)
 
-    #% Global geometry
+    # % Global geometry
     geometry.DSO = float(cfg_aq["Object to Source (mm)"])
     geometry.DSD = float(cfg_aq["Camera to Source (mm)"])
 

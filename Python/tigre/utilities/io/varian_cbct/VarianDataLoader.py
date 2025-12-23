@@ -2,17 +2,31 @@ import numpy as np
 import os
 from tigre.utilities.geometry import Geometry
 import xml.etree.ElementTree as ET
+from xim_io import XIM
+from tqdm import tqdm
 
 
 def VarianDataLoader(filepath, **kwargs):
-    # add kwargs for acdc, dps, and sc. Disregard BH correction.
-    # parse_inputs
-    folder, geometry, angles = readVarianGeometry(filepath)  # read from xml. equiv: GeometryFromXML
-    sc_calib = readScatterCalib(filepath)  # read scatter calib from xml. equiv: ScCalibFromXML
-    return loadVarianProjections(folder, geometry, angles, **kwargs)
+
+    acdc, dps, sc = parse_inputs(**kwargs)  #
+
+    folder, geometry = read_varian_geometry(filepath)  # read from xml. equiv: GeometryFromXML
+    if dps or sc:
+        sc_calib = read_scatter_calib(
+            filepath
+        )  # read scatter calib from xml. equiv: ScCalibFromXML
+
+    angular_threshold = 0
+    if acdc:
+
+        angular_threshold = angular_interval * 0.9
+
+    projs, airnorm = load_varian_projections(folder, geometry, **kwargs)
+
+    return projections, geometry, angles
 
 
-def readVarianGeometry(filepath):
+def read_varian_geometry(filepath):
     # read from xml
     geometry = Geometry()
 
@@ -54,7 +68,7 @@ def readVarianGeometry(filepath):
     geometry.accuracy = 0.5
 
     # read Reconstruction.xml
-    file = os.path.join(filepath, "Reconstruction.xml")
+    file = os.path.join(filepath, "**", "Reconstruction.xml")
     tree = ET.parse(file)
     recon_params = tree.getroot().find("Reconstruction")
     if recon_params is None:
@@ -74,23 +88,67 @@ def readVarianGeometry(filepath):
         geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
     else:
         pass
+        # TODO
 
-    return folder, geometry, angles, scan_xml
+    return folder, geometry, scan_xml
 
 
-def readScatterCalib(filepath):
+def read_scatter_calib(filepath):
+
+    file = os.path.join(filepath, "Calibrations", "SC-*", "Factory", "Calibration.xml")
+    tree = ET.parse(file)
+    sc_calib = tree.getroot().find("Calibration")
 
     return sc_calib
 
 
-def loadVarianProjections(folder, geometry, angles, **kwargs):
-    # load projections
-    # if tag_acdc: remove over-sampled projections
-    # load blank scan
-    # if tag_dps: perform detector point scatter correction
-    # if tag_sc: perform asks scatter correction
-    # perform log norm with airnorm
-    # enforce positive values
-    # ring removal
-    # convert angles from deg to rad
-    return np.asarray(projections), geometry, angles
+def correct_scatter(sc_calib, blank, sec, blk_airnorm, projs, airnorm, geo):
+    pass
+    # TODO
+
+
+def correct_detector_point_scatter(proj, geo, sc_calib):
+    pass
+    # TODO
+
+
+def log_normalize(projs, angles, airnorm, blk, sec, blk_airnorm):
+    pass
+    # TODO
+
+
+def remove_ring_artifacts(log_proj):
+    pass
+    # TODO
+
+
+def load_blank_projections(filepath):
+    pass
+    # TODO
+
+
+def load_projections(filepath, geometry, angles, **kwargs):
+
+    xim_files = os.dir(os.path.join(filepath, "**", "Proj_*.xim"))
+
+    # load images
+    xim_files = sorted(
+        [file for file in os.listdir(folder) if file.startswith("Proj_") and file.endswith(".xim")]
+    )
+
+    return projections, angles, airnorm
+
+
+def parse_inputs(**kwargs):
+    """
+    Returns tags.
+    ACDC: acceleration-deceleration correction (default: True)
+    DPS: detector point scatter correction (default: True)
+    SC: kernel-based scatter correction (default: True)
+    """
+
+    acdc = kwargs["acdc"] if "acdc" in kwargs else True
+    dps = kwargs["dps"] if "dps" in kwargs else True
+    sc = kwargs["sc"] if "sc" in kwargs else True
+
+    return acdc, dps, sc
