@@ -4,6 +4,9 @@ import glob
 from tigre.utilities.geometry import Geometry
 import xml.etree.ElementTree as ET
 from Python.tigre.utilities.io.xim_io import XIM
+from scipy.ndimage import median_filter
+from scipy.signal import decimate, convolve2d
+from scipy.interpolate import RegularGridInterpolator
 from tqdm import tqdm
 
 
@@ -19,7 +22,7 @@ def VarianDataLoader(filepath, **kwargs):
     if acdc:
         ns = get_xmlns(scan_params)
         rot_velocity = float(scan_params.find("Acquisitions/Velocity", ns).text)
-        frame_rate = rot_velocity = float(scan_params.find("Acquisitions/FrameRate", ns).text)
+        frame_rate = float(scan_params.find("Acquisitions/FrameRate", ns).text)
         angular_threshold = calculate_angular_threshold(rot_velocity, frame_rate)
 
     projs, angles, airnorms = load_projections(filepath, angular_threshold)
@@ -27,17 +30,19 @@ def VarianDataLoader(filepath, **kwargs):
     blank_projs, blank_angles, blank_airnorms = load_blank_projections(filepath, scan_params)
 
     if dps:
-        projs = correct_detector_point_scatter(projs, geometry, sc_calib)
-        blank_projs = correct_detector_point_scatter(blank_projs, geometry, sc_calib)
+        projs = correct_detector_scatter(projs, geometry, sc_calib)
+        blank_projs = correct_detector_scatter(blank_projs, geometry, sc_calib)
 
-    if sc:
-        projs = correct_scatter(
-            sc_calib, blank_projs, blank_angles, blank_airnorms, projs, airnorms, geometry
-        )
+    # if sc:
+    #     projs = correct_scatter(
+    #         sc_calib, blank_projs, blank_angles, blank_airnorms, projs, airnorms, geometry
+    #     )
 
     log_projs = log_normalize(projs, angles, airnorms, blank_projs, blank_angles, blank_airnorms)
+    log_projs = enforce_positive(log_projs)
+    log_projs = remove_ring_artifact(log_projs)
 
-    return log_projs, geometry, angles
+    return log_projs, geometry, np.deg2rad(angles)
 
 
 def get_xmlns(xml_root):
@@ -61,22 +66,20 @@ def read_varian_geometry(filepath):
     geometry.DSO = float(acquisition_params.find("SAD", ns).text)
     geometry.nDetector = np.array(
         [
-            float(acquisition_params.find("ImagerSizeX", ns).text),
-            float(acquisition_params.find("ImagerSizeY", ns).text),
+            int(acquisition_params.find("ImagerSizeY", ns).text),
+            int(acquisition_params.find("ImagerSizeX", ns).text),
         ]
     )
     geometry.dDetector = np.array(
         [
-            float(acquisition_params.find("ImagerResX", ns).text),
             float(acquisition_params.find("ImagerResY", ns).text),
+            float(acquisition_params.find("ImagerResX", ns).text),
         ]
     )
     geometry.sDetector = geometry.nDetector * geometry.dDetector
 
     offset = float(acquisition_params.find("ImagerLat", ns).text)
-    geometry.offDetector = np.array(
-        [-1 * offset, 0]
-    )  # offset orientation in VarianCBCT is opposite to TIGRE
+    geometry.offDetector = np.array([0, -offset])
     geometry.offOrigin = np.array([0, 0, 0])
 
     # Auxiliary variable to define accuracy of 'interpolated' projection
@@ -94,33 +97,35 @@ def read_varian_geometry(filepath):
     if recon_params is None:
         print("Estimating acceptable image size...")
         geometry.dVoxel = np.array(
-            [geometry.dDetector[0], geometry.dDetector[0], geometry.dDetector[1]]
+            [geometry.dDetector[1], geometry.dDetector[0], geometry.dDetector[0]]
         ) * (geometry.DSO / geometry.DSD)
         geometry.nVoxel = np.ceil(
             np.array(
                 [
-                    geometry.nDetector[0] + abs(geometry.offDetector[0]) / geometry.dDetector[0],
-                    geometry.nDetector[0] + abs(geometry.offDetector[0]) / geometry.dDetector[0],
                     geometry.nDetector[1],
+                    geometry.nDetector[0] + abs(geometry.offDetector[0]) / geometry.dDetector[0],
+                    geometry.nDetector[0] + abs(geometry.offDetector[0]) / geometry.dDetector[0],
                 ]
             )
-        )
+        ).astype("int")
         geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
     else:
         # Retrieve existing reconstruction parameters
         geometry.sVoxel = np.array(
             [
-                float(recon_params.find("VOISizeX", ns).text),
-                float(recon_params.find("VOISizeY", ns).text),
                 float(recon_params.find("VOISizeZ", ns).text),
+                float(recon_params.find("VOISizeY", ns).text),
+                float(recon_params.find("VOISizeX", ns).text),
             ]
         )
-        slice_num = round(geometry.sVoxel[2] / float(recon_params.find("SliceThickness", ns).text))
+        slice_num = np.ceil(
+            geometry.sVoxel[0] / float(recon_params.find("SliceThickness", ns).text)
+        )
         geometry.nVoxel = np.array(
             [
-                float(recon_params.find("MatrixSize", ns).text),
-                float(recon_params.find("MatrixSize", ns).text),
                 slice_num,
+                int(recon_params.find("MatrixSize", ns).text),
+                int(recon_params.find("MatrixSize", ns).text),
             ]
         )
         geometry.dVoxel = geometry.sVoxel / geometry.nVoxel
@@ -129,15 +134,28 @@ def read_varian_geometry(filepath):
 
 
 def calculate_angular_threshold(rot_velocity, frame_rate):
-    angular_interval = rot_velocity / frame_rate
-    return 0.9 * angular_interval
+    return 0.9 * (rot_velocity / frame_rate)
+
+
+def remove_ring_artifact(log_projs, kernel_size=(1, 9)):
+    log_projs = np.array([median_filter(p, size=kernel_size) for p in tqdm(log_projs)])
+    return log_projs
+
+
+def enforce_positive(x):
+    return np.clip(x, a_min=0, a_max=None)
 
 
 def read_scatter_calib(filepath):
 
-    file = os.path.join(filepath, "Calibrations", "SC-*", "Factory", "Calibration.xml")
-    tree = ET.parse(file)
-    sc_calib = tree.getroot().find("Calibration")
+    file = glob.glob(os.path.join(filepath, "Calibrations", "SC-*", "Factory", "Calibration.xml"))
+    if len(file) == 0:
+        raise RuntimeError("Scatter calibration file not found.")
+    elif len(file) > 1:
+        raise RuntimeError("Multiple calibration files found")
+
+    tree = ET.parse(file[0])
+    sc_calib = tree.getroot()
 
     return sc_calib
 
@@ -147,19 +165,89 @@ def correct_scatter(sc_calib, blank, sec, blk_airnorm, projs, airnorm, geo):
     # TODO
 
 
-def correct_detector_point_scatter(proj, geo, sc_calib):
-    pass
-    # TODO
+def read_dps_params(sc_calib):
+    ns = get_xmlns(sc_calib)
+    det_scatter_model = sc_calib.find("CalibrationResults/Globals/DetectorScatterModel", ns)
+    return [float(elem.text) for elem in det_scatter_model]
 
 
-def log_normalize(projs, angles, airnorm, blk, sec, blk_airnorm):
-    pass
-    # TODO
+def calculate_dps_kernel(sc_calib, U, V):
+    grid = np.sqrt(U**2 + V**2)
+    a = read_dps_params(sc_calib)
+    det_kernel = a[0] * np.exp(-a[1] * grid) + a[2] * (np.exp(-a[3] * (grid - a[4]) ** 3))
+    det_kernel = a[5] * det_kernel / np.sum(det_kernel)
+    return det_kernel
 
 
-def remove_ring_artifacts(log_proj):
-    pass
-    # TODO
+def correct_detector_scatter(projs, geometry, sc_calib):
+    # Detector coords,centered (cm)
+    us = 0.1 * (
+        0.5
+        * (geometry.sDetector[1] - geometry.dDetector[1])
+        * np.linspace(-1, 1, int(geometry.nDetector[1]))
+    )
+    vs = 0.1 * (
+        0.5
+        * (geometry.sDetector[0] - geometry.dDetector[0])
+        * np.linspace(-1, 1, int(geometry.nDetector[0]))
+    )
+    U, V = np.meshgrid(us, vs)
+
+    # Downsampled coords
+    ds_rate = 8
+    dus = decimate(us, ds_rate)
+    dvs = decimate(vs, ds_rate)
+    DU, DV = np.meshgrid(dus, dvs)
+
+    # Detector point scatter kernel
+    det_kernel = calculate_dps_kernel(sc_calib, DU, DV)
+
+    # Interpolate
+    corrected_projs = np.zeros(np.shape(projs))
+    print("Performing detector point scatter correction: ")
+    for i, proj in tqdm(enumerate(projs)):
+        interp_proj = RegularGridInterpolator((vs, us), proj, bounds_error=False)
+        proj_down = interp_proj((DV, DU))
+
+        scatter_down = convolve2d(proj_down, det_kernel, mode="same")
+        interp_sc = RegularGridInterpolator(
+            (dvs, dus), scatter_down, method="cubic", bounds_error=False, fill_value=None
+        )
+        scatter = interp_sc((V, U))
+        corrected_projs[i] = proj - scatter
+    return corrected_projs
+
+
+def interp_weight(x, xp, N=360):
+    # linear interpolation of xp at x, mod(N).
+    # xp must be monotonically increasing.
+    i_min = np.argmin(abs(x - xp))
+    if x - xp[i_min] >= 0:
+        i_lower = i_min
+    else:
+        i_lower = (i_min - 1) % len(xp)
+
+    i_upper = (i_lower + 1) % len(xp)
+
+    xp_diff = (xp[i_upper] - xp[i_lower]) % N
+    weights = (np.array([(xp[i_upper] - x), (x - xp[i_lower])]) % N) / float(xp_diff)
+    return i_lower, i_upper, weights
+
+
+def log_normalize(projs, angles, airnorms, blank_projs, blank_angles, blank_airnorms):
+    log_projs = np.zeros(np.shape(projs))
+    eps = np.finfo(projs.dtype).eps
+    if blank_angles.size == 0:
+        for i in range(len(angles)):
+            cf_air = airnorms[i] / blank_airnorms
+            log_projs[i] = np.log(cf_air * blank_projs / (projs[i] + eps) + eps)
+    else:
+        for i in range(len(angles)):
+            i_lower, i_upper, w = interp_weight(angles[i], blank_angles)
+            blank_interp = w[0] * blank_projs[i_lower] + w[1] * blank_projs[i_upper]
+            cf_air = airnorms[i] / (w[0] * blank_airnorms[i_lower] + w[1] * blank_airnorms[i_upper])
+            log_projs[i] = np.log(cf_air * blank_interp / (projs[i] + eps) + eps)
+    return log_projs
 
 
 def load_blank_projections(filepath, scan_params):
@@ -206,7 +294,8 @@ def load_blank_projections(filepath, scan_params):
             print("Blank image not found.")
         else:
             blank_airnorm = xim_img.properties["KVNormChamber"]
-            return np.array(blank_projection, dtype="float32"), np.array([]), float(blank_airnorm)
+            blank_projection = np.fliplr(np.array(blank_projection, dtype="float"))
+            return blank_projection, np.array([]), float(blank_airnorm)
 
     elif version == 2.7:
         blank_projections = []
@@ -219,17 +308,20 @@ def load_blank_projections(filepath, scan_params):
             except AttributeError:
                 pass
             else:
+                blank = np.fliplr(np.array(blank, dtype="float"))
                 blank_projections.append(blank)
                 blank_angles.append(xim_img.properties["GantryRtn"] + GANTRY_KVSOURCE_ANGLE_SEP)
                 blank_airnorms.append(xim_img.properties["KVNormChamber"])
-        blank_projections = np.array(blank_projections, dtype="float32")
-        blank_angles = np.array(blank_angles)
-        blank_airnorms = np.array(blank_airnorms, dtype="float32")
 
-        # TODO: sort to be monotonically increasing
-        i_sort = np.argsort(blank_angles % 360)
-        blank_angles = blank_angles[i_sort]
-        blank_projections = blank_projections[i_sort,]
+        blank_projections = np.array(blank_projections)
+        blank_angles = np.array(blank_angles)
+        blank_airnorms = np.array(blank_airnorms, dtype="float")
+
+        # Sort for easy interpolation later
+        N = 360  # deg
+        i_sort = np.argsort(blank_angles % N)
+        blank_angles = blank_angles[i_sort] % N
+        blank_projections = blank_projections[i_sort]
         blank_airnorms = blank_airnorms[i_sort]
 
         return blank_projections, blank_angles, blank_airnorms
@@ -253,6 +345,8 @@ def load_projections(filepath, threshold=0):
     projections = []
     angles = []
     airnorms = []
+
+    print("Loading Varian CBCT dataset: " + folder)
     for xim_filepath in tqdm(ximfilelist):
         xim_img = XIM(xim_filepath)
         try:
@@ -262,13 +356,14 @@ def load_projections(filepath, threshold=0):
         else:
             angle = xim_img.properties["GantryRtn"] + GANTRY_KVSOURCE_ANGLE_SEP
             if not angles or abs(angle - angles[-1]) > threshold:
-                angles.append(angle)
+                proj = np.fliplr(np.array(proj, dtype="float"))
                 projections.append(proj)
+                angles.append(angle)
                 airnorms.append(xim_img.properties["KVNormChamber"])
 
-    projections = np.array(projections, dtype="float32")
+    projections = np.array(projections, dtype="float")
     angles = np.array(angles)
-    airnorms = np.array(airnorms, dtype="float32")
+    airnorms = np.array(airnorms, dtype="float")
     return projections, angles, airnorms
 
 

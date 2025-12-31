@@ -78,12 +78,11 @@ def FDK(proj, geo, angles, **kwargs):
     def zeropadding(proj, geo):
         zgeo = copy.deepcopy(geo)
         if geo.offDetector.ndim == 2:
-            off =geo.offDetector[1,0]
+            off = geo.offDetector[1, 0]
         else:
-            off = geo.offDetector[1] 
+            off = geo.offDetector[1]
         padwidth = int(2 * off / geo.dDetector[1])
-        zgeo.offDetector[1] = off - \
-            padwidth / 2 * geo.dDetector[1]
+        zgeo.offDetector[1] = off - padwidth / 2 * geo.dDetector[1]
         zgeo.nDetector[1] = abs(padwidth) + geo.nDetector[1]
         zgeo.sDetector[1] = zgeo.nDetector[1] * zgeo.dDetector[1]
 
@@ -91,16 +90,20 @@ def FDK(proj, geo, angles, **kwargs):
 
         if off > 0:
             zproj = np.zeros(
-                (proj.shape[0] , proj.shape[1], proj.shape[2]+ padwidth), dtype=proj.dtype)
-            for ii in range(proj.shape[0]):
-                zproj[ii,:, :] = np.concatenate(
-                    (np.zeros((proj.shape[1], padwidth)), proj[ii,:,:]), axis=1)
-        else:
-            zproj = np.zeros(
-                (proj.shape[0] , proj.shape[1] , proj.shape[2]+ abs(padwidth)), dtype=proj.dtype)
+                (proj.shape[0], proj.shape[1], proj.shape[2] + padwidth), dtype=proj.dtype
+            )
             for ii in range(proj.shape[0]):
                 zproj[ii, :, :] = np.concatenate(
-                    (proj[ ii,:, :], np.zeros((proj.shape[1], abs(padwidth)))), axis=1)
+                    (np.zeros((proj.shape[1], padwidth)), proj[ii, :, :]), axis=1
+                )
+        else:
+            zproj = np.zeros(
+                (proj.shape[0], proj.shape[1], proj.shape[2] + abs(padwidth)), dtype=proj.dtype
+            )
+            for ii in range(proj.shape[0]):
+                zproj[ii, :, :] = np.concatenate(
+                    (proj[ii, :, :], np.zeros((proj.shape[1], abs(padwidth)))), axis=1
+                )
 
         return zproj, zgeo, theta
 
@@ -121,10 +124,11 @@ def FDK(proj, geo, angles, **kwargs):
 
         """
         offset = geo.offDetector[1]
-        offset = offset + (geo.DSD / geo.DSO) #* geo.COR
+        offset = offset + (geo.DSD / geo.DSO)  # * geo.COR
 
-        us = np.arange(-geo.nDetector[1]/2 + 0.5, geo.nDetector[1] /
-                       2 - 0.5 + 1) * geo.dDetector[1] + abs(offset)
+        us = np.arange(-geo.nDetector[1] / 2 + 0.5, geo.nDetector[1] / 2 - 0.5 + 1) * geo.dDetector[
+            1
+        ] + abs(offset)
         us = us * geo.DSO / geo.DSD
         abstheta = np.abs(theta * geo.DSO / geo.DSD)
 
@@ -133,26 +137,34 @@ def FDK(proj, geo, angles, **kwargs):
         for ii in range(geo.nDetector[1]):
             t = us[ii]
             if np.abs(t) <= abstheta:
-                w[:,ii] = 0.5 * (np.sin((np.pi / 2) * np.arctan(t /
-                                  geo.DSO) / (np.arctan(abstheta / geo.DSO))) + 1)
+                w[:, ii] = 0.5 * (
+                    np.sin((np.pi / 2) * np.arctan(t / geo.DSO) / (np.arctan(abstheta / geo.DSO)))
+                    + 1
+                )
             if t < -abstheta:
-                w[:,ii] = 0
+                w[:, ii] = 0
 
         if theta < 0:
             w = np.fliplr(w)
 
         proj_w = proj.copy()  # preallocation
         for ii in range(proj.shape[0]):
-            proj_w[ii, :, :,] = proj[ii, :, :] * w * 2
+            proj_w[
+                ii,
+                :,
+                :,
+            ] = (
+                proj[ii, :, :] * w * 2
+            )
 
         return proj_w, w
 
     if not np.any(geo.offDetector):
         dowang = False
-        
+
     if dowang:
         if verbose:
-            print('FDK: applying detector offset weights')
+            print("FDK: applying detector offset weights")
         # Zero-padding to avoid FFT-induced aliasing
         zproj, zgeo, theta = zeropadding(proj, geo)
         # Preweighting using Wang function to save memory
@@ -162,24 +174,26 @@ def FDK(proj, geo, angles, **kwargs):
         # proj = proj_w;
         geo = zgeo
 
-    
     geo = copy.deepcopy(geo)
     geo.check_geo(angles)
     geo.checknans()
     geo.filter = kwargs["filter"] if "filter" in kwargs else None
     # Weight
     proj_filt = np.zeros(proj.shape, dtype=np.float32)
-    xv = np.arange((-geo.nDetector[1] / 2) + 0.5,
-                   1 + (geo.nDetector[1] / 2) - 0.5) * geo.dDetector[1]
-    yv = np.arange((-geo.nDetector[0] / 2) + 0.5,
-                   1 + (geo.nDetector[0] / 2) - 0.5) * geo.dDetector[0]
+    xv = (
+        np.arange((-geo.nDetector[1] / 2) + 0.5, 1 + (geo.nDetector[1] / 2) - 0.5)
+        * geo.dDetector[1]
+    )
+    yv = (
+        np.arange((-geo.nDetector[0] / 2) + 0.5, 1 + (geo.nDetector[0] / 2) - 0.5)
+        * geo.dDetector[0]
+    )
     (yy, xx) = np.meshgrid(xv, yv)
 
-    w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx ** 2 + yy ** 2))
+    w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx**2 + yy**2))
     np.multiply(proj, w, out=proj_filt)
 
-    proj_filt = filtering(proj_filt, geo, angles,
-                          parker=False, verbose=verbose)
+    proj_filt = filtering(proj_filt, geo, angles, parker=False, verbose=verbose)
     # geo.proj = proj_filt
 
     return Atb(proj_filt, geo, geo.angles, "FDK", gpuids=gpuids)
@@ -198,9 +212,8 @@ def fbp(proj, geo, angles, **kwargs):  # noqa: D103
     gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
     geo.filter = kwargs["filter"] if "filter" in kwargs else None
 
-    proj_filt = filtering(copy.deepcopy(proj), geox,
-                          angles, parker=False, verbose=verbose)
+    proj_filt = filtering(copy.deepcopy(proj), geox, angles, parker=False, verbose=verbose)
     if not isinstance(geo.DSO, np.ndarray):
-        return Atb(proj_filt, geo, angles, gpuids=gpuids)* geo.DSO / geo.DSD
+        return Atb(proj_filt, geo, angles, gpuids=gpuids) * geo.DSO / geo.DSD
     else:
-        return Atb(proj_filt, geo, angles, gpuids=gpuids)* geo.DSO[0] / geo.DSD[0]
+        return Atb(proj_filt, geo, angles, gpuids=gpuids) * geo.DSO[0] / geo.DSD[0]

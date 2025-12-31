@@ -18,17 +18,17 @@
 # Codes:              https://github.com/CERN/TIGRE/
 # Coded by:           Ander Biguri
 # --------------------------------------------------------------------------
-#%%Initialize
+# %%Initialize
 import tigre
 import numpy as np
 from tigre.utilities import sample_loader
 from tigre.utilities import CTnoise
 import tigre.algorithms as algs
 
-#%% Geometry
+# %% Geometry
 geo = tigre.geometry_default(high_resolution=False)
 
-#%% Load data and generate projections
+# %% Load data and generate projections
 # define angles
 angles = np.linspace(0, 2 * np.pi, 100)
 # Load thorax phantom data
@@ -67,3 +67,5 @@ tigre.plotimg(np.concatenate([imgFDK1, imgFDK2], axis=1), dim="Z")
 # but it can be seen that one has bigger errors in the whole image, while
 # hte other just in the boundaries
 tigre.plotimg(np.concatenate([abs(head - imgFDK1), abs(head - imgFDK2)], axis=1), dim="Z")
+
+# %%
