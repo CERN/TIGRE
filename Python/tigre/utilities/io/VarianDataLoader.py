@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from Python.tigre.utilities.io.xim_io import XIM
 from scipy.ndimage import median_filter
 from scipy.signal import decimate, convolve2d
-from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import interpn
 from tqdm import tqdm
 
 
@@ -66,20 +66,20 @@ def read_varian_geometry(filepath):
     geometry.DSO = float(acquisition_params.find("SAD", ns).text)
     geometry.nDetector = np.array(
         [
-            int(acquisition_params.find("ImagerSizeY", ns).text),
             int(acquisition_params.find("ImagerSizeX", ns).text),
+            int(acquisition_params.find("ImagerSizeY", ns).text),
         ]
     )
     geometry.dDetector = np.array(
         [
-            float(acquisition_params.find("ImagerResY", ns).text),
             float(acquisition_params.find("ImagerResX", ns).text),
+            float(acquisition_params.find("ImagerResY", ns).text),
         ]
     )
     geometry.sDetector = geometry.nDetector * geometry.dDetector
 
     offset = float(acquisition_params.find("ImagerLat", ns).text)
-    geometry.offDetector = np.array([0, -offset])
+    geometry.offDetector = np.array([-offset, 0])
     geometry.offOrigin = np.array([0, 0, 0])
 
     # Auxiliary variable to define accuracy of 'interpolated' projection
@@ -114,8 +114,8 @@ def read_varian_geometry(filepath):
         geometry.sVoxel = np.array(
             [
                 float(recon_params.find("VOISizeZ", ns).text),
-                float(recon_params.find("VOISizeY", ns).text),
                 float(recon_params.find("VOISizeX", ns).text),
+                float(recon_params.find("VOISizeY", ns).text),
             ]
         )
         slice_num = np.ceil(
@@ -179,7 +179,7 @@ def calculate_dps_kernel(sc_calib, U, V):
     return det_kernel
 
 
-def correct_detector_scatter(projs, geometry, sc_calib):
+def get_detector_coords_cm(geometry, downsample_rate=0):
     # Detector coords,centered (cm)
     us = 0.1 * (
         0.5
@@ -191,30 +191,37 @@ def correct_detector_scatter(projs, geometry, sc_calib):
         * (geometry.sDetector[0] - geometry.dDetector[0])
         * np.linspace(-1, 1, int(geometry.nDetector[0]))
     )
-    U, V = np.meshgrid(us, vs)
+    if downsample_rate:
+        us = decimate(us, downsample_rate)
+        vs = decimate(vs, downsample_rate)
+
+    return us, vs
+
+
+def correct_detector_scatter(projs, geometry, sc_calib):
+    # Detector coords,centered (cm)
+
+    us, vs = get_detector_coords_cm(geometry)
+    U, V = np.meshgrid(us, vs, indexing="ij")
 
     # Downsampled coords
-    ds_rate = 8
-    dus = decimate(us, ds_rate)
-    dvs = decimate(vs, ds_rate)
-    DU, DV = np.meshgrid(dus, dvs)
+    dus, dvs = get_detector_coords_cm(geometry, downsample_rate=8)
+    DU, DV = np.meshgrid(dus, dvs, indexing="ij")
 
     # Detector point scatter kernel
     det_kernel = calculate_dps_kernel(sc_calib, DU, DV)
 
     # Interpolate
-    corrected_projs = np.zeros(np.shape(projs))
+    corrected_projs = np.zeros_like(projs)
     print("Performing detector point scatter correction: ")
     for i, proj in tqdm(enumerate(projs)):
-        interp_proj = RegularGridInterpolator((vs, us), proj, bounds_error=False)
-        proj_down = interp_proj((DV, DU))
-
+        proj_down = interpn((us, vs), projs[0], (DU, DV))
         scatter_down = convolve2d(proj_down, det_kernel, mode="same")
-        interp_sc = RegularGridInterpolator(
-            (dvs, dus), scatter_down, method="cubic", bounds_error=False, fill_value=None
+        scatter = interpn(
+            (dus, dvs), scatter_down, (U, V), method="cubic", bounds_error=False, fill_value=None
         )
-        scatter = interp_sc((V, U))
         corrected_projs[i] = proj - scatter
+
     return corrected_projs
 
 
@@ -236,17 +243,20 @@ def interp_weight(x, xp, N=360):
 
 def log_normalize(projs, angles, airnorms, blank_projs, blank_angles, blank_airnorms):
     log_projs = np.zeros(np.shape(projs))
-    eps = np.finfo(projs.dtype).eps
     if blank_angles.size == 0:
         for i in range(len(angles)):
             cf_air = airnorms[i] / blank_airnorms
-            log_projs[i] = np.log(cf_air * blank_projs / (projs[i] + eps) + eps)
+            ratio = cf_air * blank_projs / projs[i]
+            ratio[ratio < 1] = 1
+            log_projs[i] = np.log(ratio)
     else:
         for i in range(len(angles)):
             i_lower, i_upper, w = interp_weight(angles[i], blank_angles)
             blank_interp = w[0] * blank_projs[i_lower] + w[1] * blank_projs[i_upper]
             cf_air = airnorms[i] / (w[0] * blank_airnorms[i_lower] + w[1] * blank_airnorms[i_upper])
-            log_projs[i] = np.log(cf_air * blank_interp / (projs[i] + eps) + eps)
+            ratio = cf_air * blank_interp / projs[i]
+            ratio[ratio < 1] = 1
+            log_projs[i] = np.log(ratio)
     return log_projs
 
 
