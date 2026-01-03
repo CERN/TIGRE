@@ -139,6 +139,22 @@ imgASDPOCS = algs.asd_pocs(
     verbose=verb,
 )
 
+imgPICCS = algs.piccs(
+    noise_projections,
+    geo,
+    angles,
+    10,
+    prior = imgOSSART,
+    tviter=ng,
+    maxl2err=epsilon,
+    alpha=alpha,  # less important.
+    lmbda=lmbda,
+    lmbda_red=lambdared,
+    rmax=ratio,
+    verbose=verb,
+    prior_ratio = 0.5,
+)
+
 
 #  OS_ASD_POCS: Ordered Subset-TV algorithm
 # ==========================================================================
@@ -203,5 +219,5 @@ imgCGLSTV=algs.irn_tv_cgls(noise_projections,geo,angles,10,lmbda=5,niter_outer=2
 
 # plot images
 tigre.plotimg(
-    np.concatenate([imgAWASDPOCS, imgOSASDPOCS, imgASDPOCS, imgOSSART, imgCGLSTV], axis=1), dim="z", step=2
+    np.concatenate([imgAWASDPOCS, imgOSASDPOCS, imgASDPOCS, imgOSSART, imgCGLSTV, imgPICCS], axis=1), dim="z", step=2
 )
