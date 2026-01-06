@@ -72,7 +72,7 @@ lmbda = 1
 # the further the update. Default=0.99
 lambdared = 0.999
 
-# 'Init' : Initialization method. Possible options are
+# 'init' : Initialization method. Possible options are
 #          None (default). There will be no initialization method, just
 #                 the algorithm
 #
@@ -87,7 +87,7 @@ lambdared = 0.999
 
 initmode = None
 
-# 'InitImg' : related to init. The image to use for initializing the
+# 'initimg' : related to init. The image to use for initializing the
 # algorithm.
 
 # 'verbose': boolean to make the algorithm display (or not) running state.

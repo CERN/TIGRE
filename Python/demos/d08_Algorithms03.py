@@ -53,11 +53,11 @@ noise_projections = CTnoise.add(projections, Poisson=1e5, Gaussian=np.array([0, 
 #
 #  Projections, geometry, angles, and number of iterations
 #
-# Additionally it contains optional initialization tehcniques, but we
+# Additionally it contains optional initialization techniques, but we
 # reccomend not using them. CGLS is already quite fast and using them may
 # lead to divergence.
 # The options are:
-#  'Init'    Describes different initialization techniques.
+#  'init'    Describes different initialization techniques.
 #             -  'none'     : Initializes the image to zeros (default)
 #             -  'FDK'      : initializes image to FDK reconstruction
 #             -  'multigrid': Initializes image by solving the problem in
@@ -66,7 +66,7 @@ noise_projections = CTnoise.add(projections, Poisson=1e5, Gaussian=np.array([0, 
 #             -  'image'    : Initialization using a user specified
 #                            image. Not recommended unless you really
 #                            know what you are doing.
-#  'InitImg'    an image for the 'image' initialization. Avoid.
+#  'initimg'    an image for the 'image' initialization. Avoid.
 
 # # use CGLS
 imgCGLS, normL2CGLS = algs.cgls(noise_projections, geo, angles, 30, computel2=True)
@@ -75,7 +75,7 @@ imgLSQR, normL2LSQR = algs.lsqr(noise_projections, geo, angles, 30, computel2=Tr
 # use LSMR
 imgLSMR, normL2LSMR = algs.lsmr(noise_projections, geo, angles, 30, computel2=True,lmbda=0)
 imgLSMR2, normL2LSMR2 = algs.lsmr(noise_projections, geo, angles, 30, computel2=True,lmbda=30)
-# use LSQR
+# use hybrid LSQR
 imghLSQR, normhL2LSQR = algs.hybrid_lsqr(noise_projections, geo, angles, 30, computel2=True)
 
 # AB/BA-GMRES
@@ -100,9 +100,9 @@ plt.plot(np.vstack((normL2CGLS[0, :], normL2SIRT[0, 0:30],normL2LSMR[0, :],normL
 plt.title("L2 error")
 plt.xlabel("Iteration")
 plt.ylabel("$ |Ax-b| $")
-plt.gca().legend(("CGLS", "SIRT","LSMR lambda=0", "LSMR lambda=30","hybrid LSQR","AB-GMRES","BA-GMRES","AB-GMRES FDK","BA-GMRES FDK"))
+plt.gca().legend(("CGLS","SIRT","LSMR lambda=0","LSMR lambda=30","hybrid LSQR","AB-GMRES","BA-GMRES","AB-GMRES FDK","BA-GMRES FDK"))
 plt.show()
 # plot images
-tigre.plotimg(np.concatenate([np.concatenate([imgCGLS, imgSIRT, imgLSQR,imgabgmres,imgabgmresfdk],axis=1),np.concatenate([imgLSMR, imgLSMR2, imghLSQR,imgbagmres,imgbagmresfdk], axis=1)], axis=2), dim="z", step=2,clims=[0, 2])
+tigre.plotimg(np.concatenate([np.concatenate([imgCGLS, imgSIRT, imgLSQR,imgabgmres,imgabgmresfdk],axis=1),np.concatenate([imgLSMR, imgLSMR2, imghLSQR, imgbagmres, imgbagmresfdk], axis=1)], axis=2), dim="z", step=2, clims=[0, 2])
 # plot errors
-tigre.plotimg(np.concatenate([np.concatenate([head-imgCGLS, head-imgSIRT, head-imgLSQR, head-imgabgmres, head-imgabgmresfdk],axis=1),np.concatenate([head-imgLSMR, head-imgLSMR2, head-imghLSQR,head-imgbagmres,head-imgbagmresfdk], axis=1)], axis=2), dim="z", slice=32)
+tigre.plotimg(np.concatenate([np.concatenate([head-imgCGLS, head-imgSIRT, head-imgLSQR, head-imgabgmres, head-imgabgmresfdk],axis=1),np.concatenate([head-imgLSMR, head-imgLSMR2, head-imghLSQR, head-imgbagmres, head-imgbagmresfdk], axis=1)], axis=2), dim="z", slice=32)

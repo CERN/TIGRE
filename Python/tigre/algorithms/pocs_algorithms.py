@@ -75,7 +75,7 @@ class initASD_POCS(IterativeReconAlg):
         Default: 0.95
 
     :keyword rmax: (float)
-        The maximum allowed image/TV update ration. If the TV
+        The maximum allowed image/TV update ratio. If the TV
         update changes the image more than this, the parameter
         will be reduced. Default: 0.95
 

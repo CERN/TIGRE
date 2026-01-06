@@ -31,7 +31,7 @@ angles=linspace(0,2*pi,100);
 head=headPhantom(geo.nVoxel);
 projections=Ax(head,geo,angles,'interpolated');
 noise_projections=addCTnoise(projections);
-%% Lets just use FDK
+%% Let's just use FDK
 
 imgFDK=FDK(noise_projections,geo,angles);
 
@@ -42,7 +42,7 @@ imgFDK=FDK(noise_projections,geo,angles);
 %
 % im3Ddenoise : Denoises a 3D image, using Total Variation denoising.
 %
-%  Argumetns are the hyperparameter and number of iterations (same as in
+%  Arguments are the hyperparameter and number of iterations (same as in
 %  SART-TV)
 imgdenoised=im3DDenoise(imgFDK,'TV',100,15);
 
@@ -55,7 +55,7 @@ imcroped=cropCBCT(imgFDK,geo);
 %% plot results
 % denoised image is clearer
 plotImg([imgFDK imgdenoised imcroped],'Dim','Z')
-% however, teh denoising has no knoledge of the original data (projections)
+% however, the denoising has no knoledge of the original data (projections)
 % this it doesnt reduce the error. The error increases, specially in small
 % areas
 plotImg(abs([head-imgFDK head-imgdenoised head-imcroped]),'Dim','Z')

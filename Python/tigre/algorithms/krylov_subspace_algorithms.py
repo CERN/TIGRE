@@ -432,8 +432,8 @@ class LSMR(IterativeReconAlg):
                 if self.re_init_at_iteration + 1 == i or not self.restart:
                     print("LSMR exited due to divergence.")
                     return self.res
-                self.re_init_at_iteration=iter
-                iter=iter-1
+                self.re_init_at_iteration=i
+                i=i-1
                 self.initialize_algo()
                 break
 lsmr = decorator(LSMR, name="lsmr")

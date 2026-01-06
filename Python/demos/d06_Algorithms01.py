@@ -55,7 +55,7 @@ noise_projections = CTnoise.add(projections, Poisson=1e5, Gaussian=np.array([0, 
 #        'cosine'
 #        'hamming'
 #        'hann'
-# The choice of filter will modify the noise and sopme discreatization
+# The choice of filter will modify the noise and some discretization
 # errors, depending on which is chosen.
 #
 imgFDK1 = algs.fdk(noise_projections, geo, angles, filter="hann")
@@ -65,5 +65,5 @@ imgFDK2 = algs.fdk(noise_projections, geo, angles, filter="ram_lak")
 tigre.plotimg(np.concatenate([imgFDK1, imgFDK2], axis=1), dim="Z")
 
 # but it can be seen that one has bigger errors in the whole image, while
-# hte other just in the boundaries
+# the other just in the boundaries
 tigre.plotimg(np.concatenate([abs(head - imgFDK1), abs(head - imgFDK2)], axis=1), dim="Z")
