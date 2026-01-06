@@ -20,12 +20,12 @@ function img=cropCBCT(img,geo)
 % Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
 
-% Tangent is equal, cropRadious:
+% Tangent is equal, cropRadius:
 cropR=((geo.sDetector(1)/2+abs(geo.offDetector(1)))*geo.DSO)/geo.DSD;
-%maximum distance from O
+% maximum distance from O
 maxD=min(geo.nVoxel(1:2)-1)/2;
 
-% Crop radious will be theminimum of them
+% Crop radius will be the minimum of them
 cropR=min([cropR/geo.dVoxel(1) maxD]);
 [x,y]=meshgrid(1:size(img,1),1:size(img,2));
 inM=(x-size(img,1)/2).^2+(y-size(img,2)/2).^2<cropR^2;

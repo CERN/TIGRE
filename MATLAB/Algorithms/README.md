@@ -43,7 +43,7 @@ This assumes the noise and the data follows Poisson distribution, so mostly usef
    
 # Krylov Subspace algorithms
 
-These are fast coverging iterative algorithms. The have some issues with regards of semiconvergence and loss of ortogonality, so in some cases they may not produce best results,
+These are fast coverging iterative algorithms. The have some issues with regards of semiconvergence and loss of orthogonality, so in some cases they may not produce best results,
 but the main advantage is that few iterations should produce a good image. 
 
 Non regularized:

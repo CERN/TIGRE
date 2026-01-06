@@ -3,10 +3,10 @@
 %
 %  This demo presents the Total variation algorithms in TIGRE. Total
 %  variation algorithms try to minimize the variation (gradient) of the
-%  image, assuming its piecewise smooth, as most things in nature are (i.e.
+%  image, assuming it's piecewise smooth, as most things in nature are (i.e.
 %  human body). 
 %
-% This set of algorithms is specially good performing when the noise is
+% This set of algorithms is especially well-performing when the noise is
 % very big or the number of projections is small, however, they require more
 % computational time and memory than the other algorithms to run.
 % 
@@ -69,7 +69,7 @@ noise_projections=addCTnoise(projections);
 % ASD-POCS has a variety of optional arguments, and some of them are crucial
 % to determine the behavior of the algorithm. The advantage of ASD-POCS is
 % the power to create good images from bad data, but it needs a lot of
-% tunning. 
+% tuning. 
 %
 %  Optional parameters that are very relevant:
 % ----------------------------------------------
@@ -78,10 +78,10 @@ noise_projections=addCTnoise(projections);
 %                  what point an image should not be updated further.
 %                  Default is 20% of the FDK L2 norm.
 %                  
-% its called epsilon in the paper
+% it's called epsilon in the paper
 epsilon=im3Dnorm(Ax(FDK(noise_projections,geo,angles),geo,angles)-noise_projections,'L2')*0.15;
-%   'alpha':       Defines the TV hyperparameter. default is 0.002. 
-%                  However the paper mentions 0.2 as good choice
+%   'alpha':       Defines the TV hyperparameter. Default is 0.002. 
+%                  However the paper mentions 0.2 as a good choice
 alpha=0.002;
 
 %   'TViter':      Defines the amount of TV iterations performed per SART
@@ -104,9 +104,9 @@ lambdared=0.9999;
 %   'alpha_red':   Defines the reduction rate of the TV hyperparameter
 alpha_red=0.95;
 
-%   'Ratio':       The maximum allowed image/TV update ration. If the TV 
+%   'Ratio':       The maximum allowed image/TV update ratio. If the TV 
 %                  update changes the image more than this, the parameter
-%                  will be reduced.default is 0.95
+%                  will be reduced. Default is 0.95
 ratio=0.94;
 
 %   'Verbose'      1 or 0. Default is 1. Gives information about the

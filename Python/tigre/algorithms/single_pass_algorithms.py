@@ -25,7 +25,7 @@ def FDK(proj, geo, angles, **kwargs):
     :param filter: str
     Type of filter used for backprojection
     opts: "ram_lak" (default)
-          "shep_logan"
+          "shepp_logan"
           "cosine"
           "hamming"
           "hann"
@@ -78,9 +78,9 @@ def FDK(proj, geo, angles, **kwargs):
     def zeropadding(proj, geo):
         zgeo = copy.deepcopy(geo)
         if geo.offDetector.ndim == 2:
-            off =geo.offDetector[1,0]
+            off = geo.offDetector[1,0]
         else:
-            off = geo.offDetector[1] 
+            off = geo.offDetector[1]
         padwidth = int(2 * off / geo.dDetector[1])
         zgeo.offDetector[1] = off - \
             padwidth / 2 * geo.dDetector[1]

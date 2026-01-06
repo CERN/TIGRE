@@ -46,12 +46,12 @@ noise_projections=addCTnoise(projections);
 % ANGLES     : Propjection angles
 % And has a single optional argument:
 % FILTER: filter type applied to the projections. Possible options are
-%        'ram-lal' (default)
+%        'ram-lak' (default)
 %        'shepp-logan'
 %        'cosine'
 %        'hamming'
 %        'hann'
-% The choice of filter will modify the noise and sopme discreatization
+% The choice of filter will modify the noise and some discretization
 % errors, depending on which is chosen.
 %
 imgFDK1=FDK(noise_projections,geo,angles,'filter','hann');
@@ -62,5 +62,5 @@ imgFDK2=FDK(noise_projections,geo,angles,'filter','ram-lak');
 plotImg([imgFDK1 imgFDK2],'Dim','Z');
 
 % but it can be seen that one has bigger errors in the whole image, while
-% hte other just in the boundaries
+% the other just in the boundaries
 plotImg([abs(head-imgFDK1) abs(head-imgFDK2)],'Dim','Z');

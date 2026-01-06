@@ -66,7 +66,7 @@
  * MEX gateway
  *
  * This function takes data from MATLAB and passes it to the MEX code.
- * It checks and casts the inputs and prepares teh outputs for MATLAB.
+ * It checks and casts the inputs and prepares the outputs for MATLAB.
  *
  *
  */

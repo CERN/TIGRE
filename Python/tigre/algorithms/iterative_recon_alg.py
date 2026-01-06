@@ -198,7 +198,7 @@ class IterativeReconAlg(object):
             self.set_res()
         if self.verbose:
             self.tic = 0    # preparation for _estimate_time_until_completion()
-        # make it list
+        # make it a list
         if self.Quameasopts is not None:
             self.Quameasopts = (
                 [self.Quameasopts] if isinstance(self.Quameasopts, str) else self.Quameasopts

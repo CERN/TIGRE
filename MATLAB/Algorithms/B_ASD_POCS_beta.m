@@ -25,13 +25,13 @@ function [ fres, qualMeasOut ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargi
 %   'TViter':      Defines the amount of TV iterations performed per SART
 %                  iteration. Default is 20
 %
-%   'alpha':       Defines the TV hyperparameter. default is 0.002
+%   'alpha':       Defines the TV hyperparameter. Default is 0.002
 %
 %   'alpha_red':   Defines the reduction rate of the TV hyperparameter
 %
-%   'Ratio':       The maximum allowed image/TV update ration. If the TV
+%   'Ratio':       The maximum allowed image/TV update ratio. If the TV
 %                  update changes the image more than this, the parameter
-%                  will be reduced.default is 0.95
+%                  will be reduced. Default is 0.95
 %   'maxL2err'     Maximum L2 error to accept an image as valid. This
 %                  parameter is crucial for the algorithm, determines at
 %                  what point an image should not be updated further.

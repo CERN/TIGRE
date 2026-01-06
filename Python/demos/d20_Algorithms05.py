@@ -3,7 +3,7 @@
 #
 #  This demo presents the FISTA algorithm in TIGRE. using a total variation proximal.
 #  Total variation algorithms try to minimize the variation (gradient) of the
-#  image, assuming its piecewise smooth, as most things in nature are (i.e.
+#  image, assuming it's piecewise smooth, as most things in nature are (i.e.
 #  human body). FISTA attempts to perform this with much faster convergence
 #  than standard gradient algorithms such as SIRT.
 #

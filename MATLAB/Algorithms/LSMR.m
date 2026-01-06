@@ -24,7 +24,7 @@ function [x,resL2,qualMeasOut]= LSMR(proj,geo,angles,niter,varargin)
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
 %  'restart'  true or false. By default the algorithm will restart when
-%             loss of ortogonality is found.
+%             loss of orthogonality is found.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -167,7 +167,7 @@ while iter<niter
         % (11) Compute ||r_k||
         d = d + betacheck^2;
         gamma_var = d + (betad - taud)^2 + betadd^2;
-        aux = sqrt(gamma_var); % this is the residual teh algorithm follows, but we lose ortogonality, so we compute it explicitly
+        aux = sqrt(gamma_var); % this is the residual the algorithm follows, but we lose orthogonality, so we compute it explicitly
         
         % ||A^T r_k || is just |zetabar|
         
@@ -180,12 +180,12 @@ while iter<niter
         if measurequality
             qualMeasOut(:,iter)=Measure_Quality(x0,x,QualMeasOpts);
         end
-        % The following should never happen, but the reallity is that if we use
+        % The following should never happen, but the reality is that if we use
         % the residual from the algorithm, it starts diverging from this explicit residual value.
         % This is an interesting fact that I believe may be caused either by
         % the mismatch of the backprojection w.r.t the real adjoint, or
         % numerical issues related to doing several order of magnitude
-        % difference operations on single precission numbers.
+        % difference operations on single precision numbers.
         aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
         resL2(iter)=im3Dnorm(aux,'L2');
         if iter>1 && resL2(iter)>resL2(iter-1)
@@ -196,7 +196,7 @@ while iter<niter
             x=x-(zeta / (rho*rhobar)) * hbar;
             % if the restart didn't work.
             if remember==iter || ~restart
-                disp(['Algorithm stoped in iteration ', num2str(iter),' due to loss of ortogonality.'])
+                disp(['Algorithm stoped in iteration ', num2str(iter),' due to loss of orthogonality.'])
                 return;
             end
             remember=iter;
