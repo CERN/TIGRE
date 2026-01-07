@@ -19,7 +19,7 @@ class FISTA(IterativeReconAlg):
     Parameters
     ----------
     :param proj: (np.ndarray, dtype=np.float32)
-    Input data, shape = (geo.nDector, nangles)
+    Input data, shape = (nangles, geo.nDetector)
 
     :param geo: (tigre.geometry)
     Geometry of detector and image (see examples/Demo code)
