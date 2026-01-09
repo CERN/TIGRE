@@ -85,8 +85,8 @@ class XIM:
     - https://bitbucket.org/dmoderesearchtools/ximreader/src/master/
     """
 
-    array: np.ndarray  #:
-    properties: dict  #:
+    array: np.ndarray
+    properties: dict
 
     def __init__(self, file_path: str | Path, read_pixels: bool = True):
         """
