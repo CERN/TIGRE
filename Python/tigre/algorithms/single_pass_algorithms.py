@@ -25,7 +25,7 @@ def FDK(proj, geo, angles, **kwargs):
     :param filter: str
     Type of filter used for backprojection
     opts: "ram_lak" (default)
-          "shep_logan"
+          "shepp_logan"
           "cosine"
           "hamming"
           "hann"

@@ -20,7 +20,7 @@ class initASD_POCS(IterativeReconAlg):
     Parameters
     ----------
     :param proj: (np.ndarray, dtype=np.float32)
-    Input data, shape = (geo.nDector, nangles)
+    Input data, shape = (nangles, geo.nDetector)
 
     :param geo: (tigre.geometry)
     Geometry of detector and image (see examples/Demo code)
@@ -75,7 +75,7 @@ class initASD_POCS(IterativeReconAlg):
         Default: 0.95
 
     :keyword rmax: (float)
-        The maximum allowed image/TV update ration. If the TV
+        The maximum allowed image/TV update ratio. If the TV
         update changes the image more than this, the parameter
         will be reduced. Default: 0.95
 
@@ -192,7 +192,7 @@ class initPICCS(IterativeReconAlg):
     Parameters
     ----------
     :param proj: (np.ndarray, dtype=np.float32)
-    Input data, shape = (geo.nDector, nangles)
+    Input data, shape = (nangles, geo.nDetector)
 
     :param geo: (tigre.geometry)
     Geometry of detector and image (see examples/Demo code)
@@ -439,7 +439,7 @@ class initPCSD(IterativeReconAlg):
     Parameters
     ----------
     :param proj: (np.ndarray, dtype=np.float32)
-    Input data, shape = (geo.nDector, nangles)
+    Input data, shape = (nangles, geo.nDetector)
 
     :param geo: (tigre.geometry)
     Geometry of detector and image (see examples/Demo code)

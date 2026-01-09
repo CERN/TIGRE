@@ -307,12 +307,12 @@ do { \
             size_t mem_free=mem_GPU_global-mem_auxiliary;
             
             splits=(unsigned int)(ceil(((float)(3*mem_size_image)/(float)(deviceCount))/mem_free));
-            // Now, there is an overhead here, as each splits should have 2 slices more, to accoutn for overlap of images.
+            // Now, there is an overhead here, as each splits should have 2 slices more, to account for overlap of images.
             // lets make sure these 2 slices fit, if they do not, add 1 to splits.
             slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits);
             mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
             
-            // if the new stuff does not fit in the GPU, it measn we are in the edge case where adding that extra slice will overflow memory
+            // if the new stuff does not fit in the GPU, it means we are in the edge case where adding that extra slice will overflow memory
             if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
                 // one more split should do the job, as its an edge case.
                 splits++;

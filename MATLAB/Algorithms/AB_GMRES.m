@@ -109,7 +109,7 @@ for k=1:niter
         resL2(k)=im3Dnorm(proj-Ax(compute_res(x,w(:,1:k),y,geo,angles,backproject,gpuids),geo,angles,'Siddon','gpuids',gpuids),'L2');
         if k>1 && resL2(k)>resL2(k-1)
             x=compute_res(x,w(:,1:end-1),y(1),geo,angles,backproject,gpuids);
-            disp(['Algorithm stoped in iteration ', num2str(k),' due to loss of ortogonality.'])
+            disp(['Algorithm stoped in iteration ', num2str(k),' due to loss of orthogonality.'])
             return;
         end
         

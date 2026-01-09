@@ -229,12 +229,12 @@ void cpy_from_host(float* device_array,float* host_array,
             size_t mem_free=mem_GPU_global;
             
             splits=(unsigned int)(ceil(((float)(5*mem_size_image)/(float)(deviceCount))/mem_free));
-            // Now, there is an overhead here, as each splits should have 2 slices more, to accoutn for overlap of images.
+            // Now, there is an overhead here, as each splits should have 2 slices more, to account for overlap of images.
             // lets make sure these 2 slices fit, if they do not, add 1 to splits.
             slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits);
             mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
             
-            // if the new stuff does not fit in the GPU, it measn we are in the edge case where adding that extra slice will overflow memory
+            // if the new stuff does not fit in the GPU, it means we are in the edge case where adding that extra slice will overflow memory
             if (mem_GPU_global< 5*mem_img_each_GPU){
                 // one more split should do the job, as its an edge case.
                 splits++;
@@ -677,12 +677,12 @@ void cpy_from_host(float* device_array,float* host_array,
 
     // Initial and last cases are special. These define the boundary condition. In our case, we are using Neumann boundary condition
     // so we need to copy the edge slice into the buffer
-    if(is_first_chunk){
+    if(is_first_chunk && image_size[2] > 1){
         for (unsigned int j=0;j<buffer_length;j++){
-            cudaMemcpyAsync(device_array+pixels_per_slice*j, host_array+pixels_per_slice*(buffer_length-j), pixels_per_slice*sizeof(float), cudaMemcpyHostToDevice,stream); 
-        }       
+            cudaMemcpyAsync(device_array+pixels_per_slice*j, host_array+pixels_per_slice*(buffer_length-j), pixels_per_slice*sizeof(float), cudaMemcpyHostToDevice,stream);
+        }
     }
-    if(is_last_chunk){  
+    if(is_last_chunk && image_size[2] > 1){
 
         for (unsigned int j=0;j<buffer_length;j++){
            cudaMemcpyAsync(device_array+bytes_device+pixels_per_slice*j, host_array+pixels_per_slice*(image_size[2]-j-2), pixels_per_slice*sizeof(float), cudaMemcpyHostToDevice,stream);

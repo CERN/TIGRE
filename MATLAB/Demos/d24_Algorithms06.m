@@ -2,7 +2,7 @@
 %
 %
 %  This demo presents the TIGRE capability of using image priors for
-%  CT recosntruction. The most known algorithm for this is PICCS
+%  CT reconstruction. The most known algorithm for this is PICCS
 % 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------

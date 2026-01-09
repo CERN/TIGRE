@@ -106,7 +106,7 @@ for k=1:niter
         resL2(k)=im3Dnorm(aux,'L2');
         if k>1 && resL2(k)>resL2(k-1)
             x=compute_res(x,w(:,1:k),y,geo);
-            disp(['Algorithm stoped in iteration ', num2str(k),' due to loss of ortogonality.'])
+            disp(['Algorithm stoped in iteration ', num2str(k),' due to loss of orthogonality.'])
             return
         end
         
