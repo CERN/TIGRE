@@ -101,6 +101,7 @@ class Geometry(object):
             self.__check_and_repmat__("COR", angles)
         else:
             self.COR = np.zeros(angles.shape[0])
+            self.__check_and_repmat__("COR", angles)
 
         if not hasattr(self, "accuracy"):
             self.accuracy = 0.5
