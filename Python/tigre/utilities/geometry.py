@@ -64,7 +64,7 @@ class Geometry(object):
         if not self.dVoxel.shape == (3,):
             raise AttributeError("geo.dVoxel.shape should be (3, )")
         if not sum(abs(self.dVoxel * self.nVoxel - self.sVoxel)) < 1e-6:
-            "nVoxel*dVoxel is not equal to sVoxel. " "Check fields."
+            raise AttributeError("nVoxel*dVoxel is not equal to sVoxel. Check fields.")
 
         # Detector Data
         if not self.nDetector.shape == (2,):
