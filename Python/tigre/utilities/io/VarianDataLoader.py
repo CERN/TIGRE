@@ -40,7 +40,6 @@ def VarianDataLoader(filepath, **kwargs):
         )
 
     log_projs = log_normalize(projs, angles, airnorms, blank_projs, blank_angles, blank_airnorms)
-    log_projs = enforce_positive(log_projs)
     log_projs = correct_ring_artifacts(log_projs)
 
     return log_projs, geometry, np.deg2rad(angles)
@@ -147,10 +146,6 @@ def correct_ring_artifacts(log_projs, kernel_size=(1, 9)):
     return log_projs
 
 
-def enforce_positive(x):
-    return np.clip(x, a_min=0, a_max=None)
-
-
 def log_normalize(projs, angles, airnorms, blank_projs, blank_angles, blank_airnorms):
     log_projs = np.zeros_like(projs)
     eps = np.finfo(projs.dtype).eps
@@ -158,7 +153,7 @@ def log_normalize(projs, angles, airnorms, blank_projs, blank_angles, blank_airn
         for i in range(len(angles)):
             cf_air = airnorms[i] / blank_airnorms
             ratio = cf_air * blank_projs / (projs[i] + eps)
-            ratio[ratio < 1] = 1
+            ratio[ratio < 1] = 1  # TODO: replace with
             log_projs[i] = np.log(ratio)
     else:
         for i in range(len(angles)):

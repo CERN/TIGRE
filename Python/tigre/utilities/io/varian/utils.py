@@ -2,15 +2,13 @@ import numpy as np
 
 
 def get_xmlns(xml_root):
-    """Returns:
-    str: namespace of an xml_root.
-    """
+    """Get the namespace of xml file. Utility function for xml readers."""
     return {"": xml_root.tag.split("}")[0].strip("{")}
 
 
 def _interp_weight(x, xp, N=360):
-    # linear interpolation of xp at x, mod(N).
-    # xp must be monotonically increasing.
+    """Linear interpolation of xp at x, mod(N). xp must be monotonically increasing"""
+
     i_min = np.argmin(abs(x - xp))
     if x - xp[i_min] >= 0:
         i_lower = i_min
@@ -25,6 +23,7 @@ def _interp_weight(x, xp, N=360):
 
 
 def interpolate_blank_scan(angle, blank_projs, blank_angles, blank_airnorms):
+    """Interpolate blank projections and airnorm values at a given angle. Used in Varian v2.7"""
     i_lower, i_upper, w = _interp_weight(angle, blank_angles)
     blank_interp = w[0] * blank_projs[i_lower] + w[1] * blank_projs[i_upper]
     airnorm_interp = w[0] * blank_airnorms[i_lower] + w[1] * blank_airnorms[i_upper]
