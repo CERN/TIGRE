@@ -2,7 +2,12 @@ import numpy as np
 import os
 import glob
 from Python.tigre.utilities.geometry import Geometry
-from Python.tigre.utilities.io.varian.utils import get_xmlns, interpolate_blank_scan
+from Python.tigre.utilities.io.varian.utils import (
+    get_xmlns,
+    interpolate_blank_scan,
+    mask_outside,
+    interp_masked_array,
+)
 from Python.tigre.utilities.io.varian.scatter_correct import (
     read_scatter_calib,
     correct_detector_scatter,
@@ -149,21 +154,21 @@ def correct_ring_artifacts(log_projs, kernel_size=(1, 9)):
 def log_normalize(projs, angles, airnorms, blank_projs, blank_angles, blank_airnorms):
     log_projs = np.zeros_like(projs)
     eps = np.finfo(projs.dtype).eps
-    if blank_angles.size == 0:
-        for i in range(len(angles)):
-            cf_air = airnorms[i] / blank_airnorms
-            ratio = cf_air * blank_projs / (projs[i] + eps)
-            ratio[ratio < 1] = 1  # TODO: replace with
-            log_projs[i] = np.log(ratio)
-    else:
-        for i in range(len(angles)):
+
+    for i in range(len(angles)):
+        if blank_angles.size:
             blank_interp, airnorm_interp = interpolate_blank_scan(
                 angles[i], blank_projs, blank_angles, blank_airnorms
             )
-            cf_air = airnorms[i] / airnorm_interp
-            ratio = cf_air * blank_interp / (projs[i] + eps)
-            ratio[ratio < 1] = 1
-            log_projs[i] = np.log(ratio)
+            blank = blank_interp * airnorms[i] / airnorm_interp
+        else:
+            blank = blank_projs * airnorms[i] / blank_airnorms
+
+        ratio = blank / (projs[i] + eps)
+        ratio_masked = mask_outside(ratio, min_val=1, max_val=1e20)
+        if np.ma.is_masked(ratio_masked):
+            ratio = interp_masked_array(ratio_masked, fill_value=1.0)
+        log_projs[i] = np.log(ratio)
     return log_projs
 
 
@@ -295,5 +300,6 @@ def parse_inputs(**kwargs):
     acdc = kwargs["acdc"] if "acdc" in kwargs else True
     dps = kwargs["dps"] if "dps" in kwargs else True
     sc = kwargs["sc"] if "sc" in kwargs else True
-
+    if sc:
+        dps = True
     return acdc, dps, sc

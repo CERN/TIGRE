@@ -6,7 +6,12 @@ from scipy.ndimage import gaussian_filter, median_filter
 from scipy.fft import fft2, ifft2
 from scipy.signal import decimate, convolve2d
 from scipy.interpolate import interpn
-from Python.tigre.utilities.io.varian.utils import get_xmlns, interpolate_blank_scan
+from Python.tigre.utilities.io.varian.utils import (
+    get_xmlns,
+    interpolate_blank_scan,
+    mask_outside,
+    interp_masked_array,
+)
 from tqdm import tqdm
 
 
@@ -37,9 +42,11 @@ def calculate_grid_response(u, v, grid_efficiency):
 def _log_normalize(blank, proj):
     eps = np.finfo(proj.dtype).eps
     ratio = blank / (proj + eps)
-    ratio[ratio < 1] = 1  # TODO: replace with interpolation of these values?
-    log_norm = np.log(ratio)
-    return log_norm
+    lognorm = np.log(ratio)
+    lognorm_masked = mask_outside(lognorm, max_val=1e20)
+    if np.ma.is_masked(lognorm_masked):
+        lognorm = interp_masked_array(lognorm_masked, fill_value=0.0)
+    return lognorm
 
 
 def mm2cm(x):
@@ -106,9 +113,8 @@ def calculate_edge_response(thickness_map, threshold=50, filter_size=25, num_ite
         edge_weight = convolve2d(edge_weight, avg_kernel, mode="same")
 
     tmp = tmp_mask * edge_weight
-    tmp[tmp == 0] = np.nan
-    tmp = _rescale(tmp, min_val=0.6)
-    tmp[np.isnan(tmp)] = 0
+    tmp_masked = np.ma.masked_not_equal(tmp, 0)
+    tmp[tmp_masked.mask] = _rescale(tmp[tmp_masked.mask], min_val=0.6)
     edge_weight = tmp
     return edge_weight
 
@@ -127,8 +133,8 @@ def calculate_amplitudes(blank, proj, edge_weight, sc_calib):
     A, alpha, beta = _get_ampl_params(sc_calib)
     num_groups = len(A)
     log_norm = _log_normalize(blank, proj)
-    norm = proj / blank
-    # TODO: improve thresholding with interpolation?
+    eps = np.finfo(proj.dtype).eps
+    norm = (proj + eps) / (blank + eps)
     norm[norm > 1] = 1
     norm[norm < 0] = 0
     amplitudes = []
@@ -159,100 +165,16 @@ def update_scatter_estimate(
 def update_primary_estimate(primary, scatter_old, scatter, lam=0.6):
     primary += lam * (scatter_old - scatter)
     eps = np.finfo(primary.dtype).eps
-    primary[primary < eps] = eps  # TODO improve thresholding
+    primary[primary < eps] = eps
     return primary
 
 
-def calculate_primary(proj, scatter, max_scatter_frac=0.95):
-    scatter_frac = scatter / (proj + np.finfo(proj.dtype).eps)
-    # TODO: add nan check?
-    scatter_frac = median_filter(scatter_frac, size=3)
-    scatter_frac = np.minimum(scatter_frac, max_scatter_frac)
-    return proj * (1 - scatter_frac)
-
-
-def correct_scatter(
-    projs,
-    angles,
-    airnorms,
-    blank_projs,
-    blank_angles,
-    blank_airnorms,
-    geometry,
-    sc_calib,
-    downsample=12,
-    num_iter=8,
-    lam=0.005,
-):
-    # Detector coords,centered (cm)
-    u, v = _get_detector_coords(geometry)
-    U, V = np.meshgrid(u, v)
-
-    # Downsampled coords
-    du, dv = _get_detector_coords(geometry, downsample=downsample)
-    DU, DV = np.meshgrid(du, dv)
-
-    ns = get_xmlns(sc_calib)
-    mu_water = float(sc_calib.find("CalibrationResults/Globals/muH2O", ns).text)  # mm^-1
-    # for thickness smoothing
-    sigma_u = float(sc_calib.find("CalibrationResults/Globals/AsymPertSigmaMMu", ns).text)
-    sigma_v = float(sc_calib.find("CalibrationResults/Globals/AsymPertSigmaMMv", ns).text)
-    step_du = np.mean(np.diff(du))
-    step_dv = np.mean(np.diff(dv))
-    sigma = (mm2cm(sigma_v) / step_dv, mm2cm(sigma_u) / step_du)  # dimensionless
-
-    obj_scatter_models = sc_calib.find("CalibrationResults/ObjectScatterModels", ns)
-    gamma = float(obj_scatter_models.find("ObjectScatterModel/ObjectScatterFit/gamma", ns).text)
-    thickness_bounds_mm = [
-        float(thickness.text)
-        for thickness in obj_scatter_models.findall("ObjectScatterModel/Thickness", ns)
-    ]
-    grid_efficiency = float(
-        obj_scatter_models.find("ObjectScatterModel/GridEfficiency/LamellaTransmission", ns).text
-    )
-    grid_kernel = calculate_grid_response(du, dv, grid_efficiency)
-
-    primaries = np.zeros_like(projs)
-    print("Performing ASKS scatter correction: ")
-    for i, proj in tqdm(enumerate(projs)):
-        blank_interp, airnorm_interp = interpolate_blank_scan(
-            angles[i], blank_projs, blank_angles, blank_airnorms
-        )
-
-        cf_air = airnorms[i] / airnorm_interp
-        blank = interpn((v, u), blank_interp * cf_air, (DV, DU))
-        primary = interpn((v, u), proj, (DV, DU))
-        scatter = np.zeros_like(primary)  # initialize scatter
-
-        for n in range(num_iter):
-            scatter_old = scatter
-            thickness_map = estimate_water_equiv_thickness(
-                blank, primary, mu_water, smooth=True, sigma=sigma
-            )
-            edge_weight = calculate_edge_response(thickness_map)
-            thickness_masks = get_thickness_masks(thickness_map, thickness_bounds_mm)
-            gforms = calculate_form_functions(thickness_map, sc_calib, (DU, DV))
-            amplitudes = calculate_amplitudes(blank, primary, edge_weight, sc_calib)
-
-            scatter = update_scatter_estimate(
-                primary,
-                mm2cm(thickness_map),
-                thickness_masks,
-                amplitudes,
-                gforms,
-                grid_kernel,
-                gamma,
-            )
-            primary = update_primary_estimate(primary, scatter_old, scatter, lam=lam)
-
-        # Upsample
-        scatter_est = interpn(
-            (dv, du), scatter, (V, U), method="cubic", bounds_error=False, fill_value=None
-        )
-        scatter_est[scatter_est < 0] = 0
-        # TODO: check for nans and interpolate
-        primaries[i] = calculate_primary(proj, scatter_est)
-    return primaries
+def calculate_primary(proj, scatter, max_scatt_frac=0.95):
+    scatt_frac = scatter / (proj + np.finfo(proj.dtype).eps)
+    scatt_frac = median_filter(scatt_frac, size=3)
+    scatt_frac[scatt_frac < 0] = 0
+    scatt_frac = np.minimum(scatt_frac, max_scatt_frac)
+    return proj * (1 - scatt_frac)
 
 
 def _get_dps_params(sc_calib):
@@ -309,3 +231,87 @@ def correct_detector_scatter(projs, geometry, sc_calib, downsample=8):
         corrected_projs[i] = proj - scatter
 
     return corrected_projs
+
+
+def correct_scatter(
+    projs,
+    angles,
+    airnorms,
+    blank_projs,
+    blank_angles,
+    blank_airnorms,
+    geometry,
+    sc_calib,
+    downsample=12,
+    num_iter=8,
+    lam=0.005,
+):
+    # Detector coords,centered (cm)
+    u, v = _get_detector_coords(geometry)
+    U, V = np.meshgrid(u, v)
+
+    # Downsampled coords
+    du, dv = _get_detector_coords(geometry, downsample=downsample)
+    DU, DV = np.meshgrid(du, dv)
+
+    ns = get_xmlns(sc_calib)
+    mu_water = float(sc_calib.find("CalibrationResults/Globals/muH2O", ns).text)  # mm^-1
+    # for thickness smoothing
+    sigma_u = float(sc_calib.find("CalibrationResults/Globals/AsymPertSigmaMMu", ns).text)
+    sigma_v = float(sc_calib.find("CalibrationResults/Globals/AsymPertSigmaMMv", ns).text)
+    step_du = np.mean(np.diff(du))
+    step_dv = np.mean(np.diff(dv))
+    sigma = (mm2cm(sigma_v) / step_dv, mm2cm(sigma_u) / step_du)  # dimensionless
+
+    obj_scatter_models = sc_calib.find("CalibrationResults/ObjectScatterModels", ns)
+    gamma = float(obj_scatter_models.find("ObjectScatterModel/ObjectScatterFit/gamma", ns).text)
+    thickness_bounds_mm = [
+        float(thickness.text)
+        for thickness in obj_scatter_models.findall("ObjectScatterModel/Thickness", ns)
+    ]
+    grid_efficiency = float(
+        obj_scatter_models.find("ObjectScatterModel/GridEfficiency/LamellaTransmission", ns).text
+    )
+    grid_kernel = calculate_grid_response(du, dv, grid_efficiency)
+
+    primaries = np.zeros_like(projs)
+    print("Performing ASKS scatter correction: ")
+    for i, proj in tqdm(enumerate(projs)):
+        blank_interp, airnorm_interp = interpolate_blank_scan(
+            angles[i], blank_projs, blank_angles, blank_airnorms
+        )
+
+        cf_air = airnorms[i] / airnorm_interp
+        blank = interpn((v, u), blank_interp * cf_air, (DV, DU))
+        blank = np.float32(blank)
+        primary = interpn((v, u), proj, (DV, DU))
+        primary = np.float32(primary)
+        scatter = np.zeros_like(primary)  # initialize scatter
+
+        for n in range(num_iter):
+            scatter_old = scatter
+            thickness_map = estimate_water_equiv_thickness(
+                blank, primary, mu_water, smooth=True, sigma=sigma
+            )
+            edge_weight = calculate_edge_response(thickness_map)
+            thickness_masks = get_thickness_masks(thickness_map, thickness_bounds_mm)
+            gforms = calculate_form_functions(thickness_map, sc_calib, (DU, DV))
+            amplitudes = calculate_amplitudes(blank, primary, edge_weight, sc_calib)
+
+            scatter = update_scatter_estimate(
+                primary,
+                mm2cm(thickness_map),
+                thickness_masks,
+                amplitudes,
+                gforms,
+                grid_kernel,
+                gamma,
+            )
+            primary = update_primary_estimate(primary, scatter_old, scatter, lam=lam)
+
+        # Upsample
+        scatter_est = interpn(
+            (dv, du), scatter, (V, U), method="cubic", bounds_error=False, fill_value=None
+        )
+        primaries[i] = calculate_primary(proj, scatter_est)
+    return primaries
