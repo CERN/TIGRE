@@ -4,9 +4,9 @@ from numpy.typing import NDArray
 import os
 import glob
 from Python.tigre.utilities.geometry import Geometry
-from Python.tigre.utilities.io.varian.utils import get_xmlns, interpolate_blank_scan
+from Python.tigre.utilities.io.varian.utils import get_xmlns, interp_weight
 from Python.tigre.utilities.io.varian.scatter_correct import (
-    read_scatter_calib,
+    ScatterCalibXML,
     correct_detector_scatter,
     correct_scatter,
 )
@@ -22,10 +22,6 @@ def VarianDataLoader(filepath, **kwargs):
     acdc, dps, sc = parse_inputs(**kwargs)
 
     geometry, scan_params = read_varian_geometry(filepath)
-    if dps or sc:
-        sc_calib = read_scatter_calib(
-            filepath
-        )  # TODO: move to scatter correct module and pass filepath to scatter correction functions instead
 
     angular_threshold = 0
     if acdc:
@@ -33,12 +29,14 @@ def VarianDataLoader(filepath, **kwargs):
     Proj = load_projections(filepath, angular_threshold)
     Blank = load_blank_projections(filepath, scan_params)
 
+    if dps or sc:
+        ScattCalib = ScatterCalibXML(filepath)
     if dps:
-        Blank.projs = correct_detector_scatter(Blank.projs, geometry, filepath)
-        Proj.projs = correct_detector_scatter(Proj.projs, geometry, filepath)
+        Blank.projs = correct_detector_scatter(Blank.projs, geometry, ScattCalib)
+        Proj.projs = correct_detector_scatter(Proj.projs, geometry, ScattCalib)
 
     if sc:
-        Proj.projs = correct_scatter(Proj, Blank, geometry, sc_calib)
+        Proj.projs = correct_scatter(Proj, Blank, geometry, ScattCalib)
 
     log_projs = log_normalize(Proj, Blank)
     log_projs = correct_ring_artifacts(log_projs)
@@ -49,9 +47,21 @@ def VarianDataLoader(filepath, **kwargs):
 @dataclass
 class ProjData:
     projs: NDArray
-    angles: NDArray | float
-    airnorms: NDArray | float
+    angles: NDArray
+    airnorms: NDArray
 
+    def num_projs(self):
+        return np.shape(self.projs)[0]
+
+    def interp_proj(self, angle):
+        """Interpolate between projections and airnorm values at a given angle.""" 
+        if self.num_projs==1:
+            return self.projs, self.airnorms
+        else:   
+            i_lower, i_upper, w = interp_weight(angle, self.angles)
+            blank_interp = w[0] * self.projs[i_lower] + w[1] * self.projs[i_upper]
+            airnorm_interp = w[0] * self.airnorms[i_lower] + w[1] * self.airnorms[i_upper]
+        return blank_interp, airnorm_interp
 
 def read_varian_geometry(filepath):
 
@@ -161,8 +171,8 @@ def log_normalize(Proj, Blank):
 
     print("Performing log normalization:")
     for i in tqdm(range(len(Proj.angles))):
-        if Blank.angles.size:
-            blank_interp, airnorm_interp = interpolate_blank_scan(Proj.angles[i], Blank)
+        if Blank.num_projs==1:
+            blank_interp, airnorm_interp = Blank.interp_proj(Proj.angles[i])
             blank = blank_interp * Proj.airnorms[i] / airnorm_interp
         else:
             blank = Blank.projs[0] * Proj.airnorms[i] / Blank.airnorms
@@ -190,7 +200,7 @@ def load_blank_projections(filepath, scan_params):
     try:
         version = float(version_str)
     except Exception:
-        print(f"Error retrieving version number, value found was '{version_str}'")
+        raise RuntimeError(f"Error retrieving version number, value found was '{version_str}'")
     else:
 
         if version not in ALLOWED_VERSIONS:
@@ -218,7 +228,7 @@ def load_blank_projections(filepath, scan_params):
         else:
             blank_airnorm = xim_img.properties["KVNormChamber"]
             blank_projection = np.fliplr(np.array(blank_projection, dtype="float"))
-        return ProjData(projs=blank_projection, angles=np.array([]), airnorms=float(blank_airnorm))
+        return ProjData(projs=blank_projection, angles=np.array([]), airnorms=np.array(blank_airnorm))
 
     elif version == 2.7:
         blank_projections = []
