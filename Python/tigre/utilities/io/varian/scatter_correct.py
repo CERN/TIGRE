@@ -34,8 +34,11 @@ class ScatterCalibXML:
 
         self.gamma = _get_prop_coeff(sc_calib)
         self.form_func_params = _get_form_func_params(sc_calib)
+        self.dps_params = _get_dps_params(sc_calib)
+        self.ampl_params = _get_ampl_params(sc_calib)
 
 
+# TODO: convert getter function to methods
 def _get_thickness_params(sc_calib):
     ns = get_xmlns(sc_calib)
     mu_water = float(sc_calib.find("CalibrationResults/Globals/muH2O", ns).text)  # mm^-1
@@ -70,17 +73,6 @@ def _get_prop_coeff(sc_calib):
     return float(obj_scatter_models.find("ObjectScatterModel/ObjectScatterFit/gamma", ns).text)
 
 
-def _get_thickness_bounds(sc_calib):
-    """Returns: thickness bounds in mm."""
-    ns = get_xmlns(sc_calib)
-    obj_scatter_models = _get_object_scatter_models(sc_calib)
-    thickness_bounds = [
-        float(thickness.text)
-        for thickness in obj_scatter_models.findall("ObjectScatterModel/Thickness", ns)
-    ]
-    return thickness_bounds
-
-
 def _get_form_func_params(sc_calib):
     ns = get_xmlns(sc_calib)
     obj_scatter_models = sc_calib.find("CalibrationResults/ObjectScatterModels", ns)
@@ -89,6 +81,22 @@ def _get_form_func_params(sc_calib):
     sigma2 = [float(elem.find("sigma2", ns).text) for elem in obj_scatter_fits]  # (cm^-1)
     B = [float(elem.find("B", ns).text) for elem in obj_scatter_fits]
     return sigma1, sigma2, B
+
+
+def _get_dps_params(sc_calib):
+    ns = get_xmlns(sc_calib)
+    det_scatter_model = sc_calib.find("CalibrationResults/Globals/DetectorScatterModel", ns)
+    return [float(elem.text) for elem in det_scatter_model]
+
+
+def _get_ampl_params(sc_calib):
+    ns = get_xmlns(sc_calib)
+    obj_scatter_models = sc_calib.find("CalibrationResults/ObjectScatterModels", ns)
+    obj_scatter_fits = obj_scatter_models.findall("ObjectScatterModel/ObjectScatterFit", ns)
+    A = [float(elem.find("A", ns).text) for elem in obj_scatter_fits]
+    alpha = [float(elem.find("alpha", ns).text) for elem in obj_scatter_fits]
+    beta = [float(elem.find("beta", ns).text) for elem in obj_scatter_fits]
+    return A, alpha, beta
 
 
 def calculate_grid_response(u, v, grid_efficiency):
@@ -169,16 +177,6 @@ def calculate_edge_response(thickness_map, threshold=50, filter_size=25, num_ite
     return edge_weight
 
 
-def _get_ampl_params(sc_calib):
-    ns = get_xmlns(sc_calib)
-    obj_scatter_models = sc_calib.find("CalibrationResults/ObjectScatterModels", ns)
-    obj_scatter_fits = obj_scatter_models.findall("ObjectScatterModel/ObjectScatterFit", ns)
-    A = [float(elem.find("A", ns).text) for elem in obj_scatter_fits]
-    alpha = [float(elem.find("alpha", ns).text) for elem in obj_scatter_fits]
-    beta = [float(elem.find("beta", ns).text) for elem in obj_scatter_fits]
-    return A, alpha, beta
-
-
 def calculate_amplitudes(blank, proj, edge_weight, sc_calib):
     A, alpha, beta = _get_ampl_params(sc_calib)
     num_groups = len(A)
@@ -227,12 +225,6 @@ def calculate_primary(proj, scatter, max_scatt_frac=0.95):
     return proj * (1 - scatt_frac)
 
 
-def _get_dps_params(sc_calib):
-    ns = get_xmlns(sc_calib)
-    det_scatter_model = sc_calib.find("CalibrationResults/Globals/DetectorScatterModel", ns)
-    return [float(elem.text) for elem in det_scatter_model]
-
-
 def calculate_dps_kernel(sc_calib, U, V):
     grid = np.sqrt(U**2 + V**2)
     a = _get_dps_params(sc_calib)
@@ -261,8 +253,9 @@ def _get_detector_coords(geometry, downsample=0):
     return mm2cm(u), mm2cm(v)
 
 
-def correct_detector_scatter(projs, geometry, sc_calib, downsample=8):
+def correct_detector_scatter(projs, geometry, filepath, downsample=8):
 
+    sc_calib = read_scatter_calib(filepath)
     u, v = _get_detector_coords(geometry)
     U, V = np.meshgrid(u, v)
     du, dv = _get_detector_coords(geometry, downsample=downsample)
@@ -284,12 +277,8 @@ def correct_detector_scatter(projs, geometry, sc_calib, downsample=8):
 
 
 def correct_scatter(
-    projs,
-    angles,
-    airnorms,
-    blank_projs,
-    blank_angles,
-    blank_airnorms,
+    Proj,
+    Blank,
     geometry,
     sc_calib,
     downsample=12,
@@ -313,14 +302,12 @@ def correct_scatter(
     grid_efficiency = _get_grid_efficiency(sc_calib)
     grid_kernel = calculate_grid_response(du, dv, grid_efficiency)
 
-    primaries = np.zeros_like(projs)
+    primaries = np.zeros_like(Proj.projs)
     print("Performing ASKS scatter correction: ")
-    for i, proj in tqdm(enumerate(projs)):
-        blank_interp, airnorm_interp = interpolate_blank_scan(
-            angles[i], blank_projs, blank_angles, blank_airnorms
-        )
+    for i, proj in tqdm(enumerate(Proj.projs)):
+        blank_interp, airnorm_interp = interpolate_blank_scan(Proj.angles[i], Blank)
 
-        cf_air = airnorms[i] / airnorm_interp
+        cf_air = Proj.airnorms[i] / airnorm_interp
         blank = interpn((v, u), blank_interp * cf_air, (DV, DU))
         blank = np.float32(blank)
         primary = interpn((v, u), proj, (DV, DU))

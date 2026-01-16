@@ -1,4 +1,6 @@
+from __future__ import annotations
 import numpy as np
+from numpy.typing import NDArray
 import os
 import glob
 from Python.tigre.utilities.geometry import Geometry
@@ -28,28 +30,27 @@ def VarianDataLoader(filepath, **kwargs):
     angular_threshold = 0
     if acdc:
         angular_threshold = calculate_angular_threshold(scan_params)
-    projs, angles, airnorms = load_projections(filepath, angular_threshold)
-    blank_projs, blank_angles, blank_airnorms = load_blank_projections(filepath, scan_params)
+    Proj = load_projections(filepath, angular_threshold)
+    Blank = load_blank_projections(filepath, scan_params)
 
     if dps:
-        blank_projs = correct_detector_scatter(blank_projs, geometry, sc_calib)
-        projs = correct_detector_scatter(projs, geometry, sc_calib)
+        Blank.projs = correct_detector_scatter(Blank.projs, geometry, filepath)
+        Proj.projs = correct_detector_scatter(Proj.projs, geometry, filepath)
 
     if sc:
-        projs = correct_scatter(
-            projs, angles, airnorms, blank_projs, blank_angles, blank_airnorms, geometry, sc_calib
-        )
+        Proj.projs = correct_scatter(Proj, Blank, geometry, sc_calib)
 
-    log_projs = log_normalize(projs, angles, airnorms, blank_projs, blank_angles, blank_airnorms)
+    log_projs = log_normalize(Proj, Blank)
     log_projs = correct_ring_artifacts(log_projs)
 
-    return log_projs, geometry, np.deg2rad(angles)
+    return log_projs, geometry, np.deg2rad(Proj.angles)
 
 
 @dataclass
 class ProjData:
-    projs: np.ndarray
-    angles: np.ndarray
+    projs: NDArray
+    angles: NDArray | float
+    airnorms: NDArray | float
 
 
 def read_varian_geometry(filepath):
@@ -154,21 +155,19 @@ def correct_ring_artifacts(log_projs, kernel_size=(1, 9)):
     return log_projs
 
 
-def log_normalize(projs, angles, airnorms, blank_projs, blank_angles, blank_airnorms):
-    log_projs = np.zeros_like(projs)
-    eps = np.finfo(projs.dtype).eps
+def log_normalize(Proj, Blank):
+    log_projs = np.zeros_like(Proj.projs)
+    eps = np.finfo(Proj.projs.dtype).eps
 
     print("Performing log normalization:")
-    for i in tqdm(range(len(angles))):
-        if blank_angles.size:
-            blank_interp, airnorm_interp = interpolate_blank_scan(
-                angles[i], blank_projs, blank_angles, blank_airnorms
-            )
-            blank = blank_interp * airnorms[i] / airnorm_interp
+    for i in tqdm(range(len(Proj.angles))):
+        if Blank.angles.size:
+            blank_interp, airnorm_interp = interpolate_blank_scan(Proj.angles[i], Blank)
+            blank = blank_interp * Proj.airnorms[i] / airnorm_interp
         else:
-            blank = blank_projs[0] * airnorms[i] / blank_airnorms
+            blank = Blank.projs[0] * Proj.airnorms[i] / Blank.airnorms
 
-        ratio = (blank + eps) / (projs[i] + eps)
+        ratio = (blank + eps) / (Proj.projs[i] + eps)
         ratio[ratio < 1] = 1
         log_projs[i] = np.log(ratio)
     return log_projs
@@ -215,11 +214,11 @@ def load_blank_projections(filepath, scan_params):
         try:
             blank_projection = xim_img.array
         except AttributeError:
-            print("Blank image not found.")
+            raise RuntimeError(f"Blank image not found in {blank_filepath}.")
         else:
             blank_airnorm = xim_img.properties["KVNormChamber"]
             blank_projection = np.fliplr(np.array(blank_projection, dtype="float"))
-            return blank_projection, np.array([]), float(blank_airnorm)
+        return ProjData(projs=blank_projection, angles=np.array([]), airnorms=float(blank_airnorm))
 
     elif version == 2.7:
         blank_projections = []
@@ -251,10 +250,10 @@ def load_blank_projections(filepath, scan_params):
         blank_projections /= np.expand_dims(blank_airnorms, axis=(1, 2))
         blank_airnorms = np.ones_like(blank_airnorms)
 
-        return blank_projections, blank_angles, blank_airnorms  # TODO: output as a dataclass
+        return ProjData(projs=blank_projections, angles=blank_angles, airnorms=blank_airnorms)
 
 
-def load_projections(filepath, threshold=0):
+def load_projections(filepath, threshold=0.0):
 
     # separation between the gantry head and the KV x-ray tube source (in deg)
     GANTRY_KVSOURCE_ANGLE_SEP = 90
@@ -295,7 +294,7 @@ def load_projections(filepath, threshold=0):
     projections /= np.expand_dims(airnorms, axis=(1, 2))
     airnorms = np.ones_like(airnorms)
 
-    return projections, angles, airnorms  # TODO: output as a dataclass
+    return ProjData(projs=projections, angles=angles, airnorms=airnorms)
 
 
 def parse_inputs(**kwargs):
