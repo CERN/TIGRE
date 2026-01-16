@@ -2,12 +2,7 @@ import numpy as np
 import os
 import glob
 from Python.tigre.utilities.geometry import Geometry
-from Python.tigre.utilities.io.varian.utils import (
-    get_xmlns,
-    interpolate_blank_scan,
-    mask_outside,
-    interp_masked_array,
-)
+from Python.tigre.utilities.io.varian.utils import get_xmlns, interpolate_blank_scan
 from Python.tigre.utilities.io.varian.scatter_correct import (
     read_scatter_calib,
     correct_detector_scatter,
@@ -17,6 +12,7 @@ from Python.tigre.utilities.io.varian.xim_io import XIM
 import xml.etree.ElementTree as ET
 from scipy.ndimage import median_filter
 from tqdm import tqdm
+from dataclasses import dataclass
 
 
 def VarianDataLoader(filepath, **kwargs):
@@ -48,6 +44,12 @@ def VarianDataLoader(filepath, **kwargs):
     log_projs = correct_ring_artifacts(log_projs)
 
     return log_projs, geometry, np.deg2rad(angles)
+
+
+@dataclass
+class ProjData:
+    projs: np.ndarray
+    angles: np.ndarray
 
 
 def read_varian_geometry(filepath):
@@ -147,6 +149,7 @@ def calculate_angular_threshold(scan_params):
 
 
 def correct_ring_artifacts(log_projs, kernel_size=(1, 9)):
+    print("Performing ring artifact correction:")
     log_projs = np.array([median_filter(p, size=kernel_size) for p in tqdm(log_projs)])
     return log_projs
 
@@ -155,19 +158,18 @@ def log_normalize(projs, angles, airnorms, blank_projs, blank_angles, blank_airn
     log_projs = np.zeros_like(projs)
     eps = np.finfo(projs.dtype).eps
 
-    for i in range(len(angles)):
+    print("Performing log normalization:")
+    for i in tqdm(range(len(angles))):
         if blank_angles.size:
             blank_interp, airnorm_interp = interpolate_blank_scan(
                 angles[i], blank_projs, blank_angles, blank_airnorms
             )
             blank = blank_interp * airnorms[i] / airnorm_interp
         else:
-            blank = blank_projs * airnorms[i] / blank_airnorms
+            blank = blank_projs[0] * airnorms[i] / blank_airnorms
 
-        ratio = blank / (projs[i] + eps)
-        ratio_masked = mask_outside(ratio, min_val=1, max_val=1e20)
-        if np.ma.is_masked(ratio_masked):
-            ratio = interp_masked_array(ratio_masked, fill_value=1.0)
+        ratio = (blank + eps) / (projs[i] + eps)
+        ratio[ratio < 1] = 1
         log_projs[i] = np.log(ratio)
     return log_projs
 
@@ -188,7 +190,7 @@ def load_blank_projections(filepath, scan_params):
     version_str = scan_params.attrib["Version"].rstrip(".0.0")
     try:
         version = float(version_str)
-    except:
+    except Exception:
         print(f"Error retrieving version number, value found was '{version_str}'")
     else:
 
@@ -246,7 +248,10 @@ def load_blank_projections(filepath, scan_params):
         blank_projections = blank_projections[i_sort]
         blank_airnorms = blank_airnorms[i_sort]
 
-        return blank_projections, blank_angles, blank_airnorms
+        blank_projections /= np.expand_dims(blank_airnorms, axis=(1, 2))
+        blank_airnorms = np.ones_like(blank_airnorms)
+
+        return blank_projections, blank_angles, blank_airnorms  # TODO: output as a dataclass
 
 
 def load_projections(filepath, threshold=0):
@@ -286,7 +291,11 @@ def load_projections(filepath, threshold=0):
     projections = np.array(projections, dtype="float")
     angles = np.array(angles)
     airnorms = np.array(airnorms, dtype="float")
-    return projections, angles, airnorms
+
+    projections /= np.expand_dims(airnorms, axis=(1, 2))
+    airnorms = np.ones_like(airnorms)
+
+    return projections, angles, airnorms  # TODO: output as a dataclass
 
 
 def parse_inputs(**kwargs):

@@ -6,17 +6,12 @@ from scipy.ndimage import gaussian_filter, median_filter
 from scipy.fft import fft2, ifft2
 from scipy.signal import decimate, convolve2d
 from scipy.interpolate import interpn
-from Python.tigre.utilities.io.varian.utils import (
-    get_xmlns,
-    interpolate_blank_scan,
-    mask_outside,
-    interp_masked_array,
-)
+from Python.tigre.utilities.io.varian.utils import get_xmlns, interpolate_blank_scan
 from tqdm import tqdm
 
 
 def read_scatter_calib(filepath):
-
+    # TODO: convert to a class and incorporate getter methods for the various params.
     file = glob.glob(os.path.join(filepath, "Calibrations", "SC-*", "Factory", "Calibration.xml"))
     if len(file) == 0:
         raise RuntimeError("Scatter calibration file not found.")
@@ -27,6 +22,73 @@ def read_scatter_calib(filepath):
     sc_calib = tree.getroot()
 
     return sc_calib
+
+
+class ScatterCalibXML:
+    def __init__(self, filepath):
+        sc_calib = read_scatter_calib(filepath)
+        self.ns = get_xmlns(sc_calib)
+        obj_scatter_models = _get_object_scatter_models(sc_calib)
+        self.grid_efficiency = _get_grid_efficiency(sc_calib)
+        self.thickness_params = _get_thickness_params(sc_calib)
+
+        self.gamma = _get_prop_coeff(sc_calib)
+        self.form_func_params = _get_form_func_params(sc_calib)
+
+
+def _get_thickness_params(sc_calib):
+    ns = get_xmlns(sc_calib)
+    mu_water = float(sc_calib.find("CalibrationResults/Globals/muH2O", ns).text)  # mm^-1
+    # for thickness smoothing
+    sigma_u = float(sc_calib.find("CalibrationResults/Globals/AsymPertSigmaMMu", ns).text)
+    sigma_v = float(sc_calib.find("CalibrationResults/Globals/AsymPertSigmaMMv", ns).text)
+    obj_scatter_models = _get_object_scatter_models(sc_calib)
+    thickness_bounds = [
+        float(thickness.text)
+        for thickness in obj_scatter_models.findall("ObjectScatterModel/Thickness", ns)
+    ]
+    return mu_water, sigma_u, sigma_v, thickness_bounds
+
+
+def _get_grid_efficiency(sc_calib):
+    ns = get_xmlns(sc_calib)
+    obj_scatter_models = _get_object_scatter_models(sc_calib)
+    grid_efficiency = float(
+        obj_scatter_models.find("ObjectScatterModel/GridEfficiency/LamellaTransmission", ns).text
+    )
+    return grid_efficiency
+
+
+def _get_object_scatter_models(sc_calib):
+    ns = get_xmlns(sc_calib)
+    return sc_calib.find("CalibrationResults/ObjectScatterModels", ns)
+
+
+def _get_prop_coeff(sc_calib):
+    ns = get_xmlns(sc_calib)
+    obj_scatter_models = _get_object_scatter_models(sc_calib)
+    return float(obj_scatter_models.find("ObjectScatterModel/ObjectScatterFit/gamma", ns).text)
+
+
+def _get_thickness_bounds(sc_calib):
+    """Returns: thickness bounds in mm."""
+    ns = get_xmlns(sc_calib)
+    obj_scatter_models = _get_object_scatter_models(sc_calib)
+    thickness_bounds = [
+        float(thickness.text)
+        for thickness in obj_scatter_models.findall("ObjectScatterModel/Thickness", ns)
+    ]
+    return thickness_bounds
+
+
+def _get_form_func_params(sc_calib):
+    ns = get_xmlns(sc_calib)
+    obj_scatter_models = sc_calib.find("CalibrationResults/ObjectScatterModels", ns)
+    obj_scatter_fits = obj_scatter_models.findall("ObjectScatterModel/ObjectScatterFit", ns)
+    sigma1 = [float(elem.find("sigma1", ns).text) for elem in obj_scatter_fits]  # (cm^-1)
+    sigma2 = [float(elem.find("sigma2", ns).text) for elem in obj_scatter_fits]  # (cm^-1)
+    B = [float(elem.find("B", ns).text) for elem in obj_scatter_fits]
+    return sigma1, sigma2, B
 
 
 def calculate_grid_response(u, v, grid_efficiency):
@@ -41,12 +103,10 @@ def calculate_grid_response(u, v, grid_efficiency):
 
 def _log_normalize(blank, proj):
     eps = np.finfo(proj.dtype).eps
-    ratio = blank / (proj + eps)
-    lognorm = np.log(ratio)
-    lognorm_masked = mask_outside(lognorm, max_val=1e20)
-    if np.ma.is_masked(lognorm_masked):
-        lognorm = interp_masked_array(lognorm_masked, fill_value=0.0)
-    return lognorm
+    ratio = (blank + eps) / (proj + eps)
+    ratio[ratio < 1] = 1
+    log_proj = np.log(ratio)
+    return log_proj
 
 
 def mm2cm(x):
@@ -70,16 +130,6 @@ def get_thickness_masks(thickness_map, lower_bounds):
         masks[i] = (thickness_map > lower_bounds[i]) * (thickness_map < lower_bounds[i + 1])
     masks[-1] = thickness_map > lower_bounds[-1]
     return masks
-
-
-def _get_form_func_params(sc_calib):
-    ns = get_xmlns(sc_calib)
-    obj_scatter_models = sc_calib.find("CalibrationResults/ObjectScatterModels", ns)
-    obj_scatter_fits = obj_scatter_models.findall("ObjectScatterModel/ObjectScatterFit", ns)
-    sigma1 = [float(elem.find("sigma1", ns).text) for elem in obj_scatter_fits]  # (cm^-1)
-    sigma2 = [float(elem.find("sigma2", ns).text) for elem in obj_scatter_fits]  # (cm^-1)
-    B = [float(elem.find("B", ns).text) for elem in obj_scatter_fits]
-    return sigma1, sigma2, B
 
 
 def calculate_form_functions(thickness_map, sc_calib, grid_coords):
@@ -246,32 +296,21 @@ def correct_scatter(
     num_iter=8,
     lam=0.005,
 ):
-    # Detector coords,centered (cm)
+
     u, v = _get_detector_coords(geometry)
     U, V = np.meshgrid(u, v)
 
-    # Downsampled coords
     du, dv = _get_detector_coords(geometry, downsample=downsample)
     DU, DV = np.meshgrid(du, dv)
 
-    ns = get_xmlns(sc_calib)
-    mu_water = float(sc_calib.find("CalibrationResults/Globals/muH2O", ns).text)  # mm^-1
-    # for thickness smoothing
-    sigma_u = float(sc_calib.find("CalibrationResults/Globals/AsymPertSigmaMMu", ns).text)
-    sigma_v = float(sc_calib.find("CalibrationResults/Globals/AsymPertSigmaMMv", ns).text)
+    mu_water, sigma_u, sigma_v, thickness_bounds_mm = _get_thickness_params(sc_calib)
     step_du = np.mean(np.diff(du))
     step_dv = np.mean(np.diff(dv))
     sigma = (mm2cm(sigma_v) / step_dv, mm2cm(sigma_u) / step_du)  # dimensionless
 
-    obj_scatter_models = sc_calib.find("CalibrationResults/ObjectScatterModels", ns)
-    gamma = float(obj_scatter_models.find("ObjectScatterModel/ObjectScatterFit/gamma", ns).text)
-    thickness_bounds_mm = [
-        float(thickness.text)
-        for thickness in obj_scatter_models.findall("ObjectScatterModel/Thickness", ns)
-    ]
-    grid_efficiency = float(
-        obj_scatter_models.find("ObjectScatterModel/GridEfficiency/LamellaTransmission", ns).text
-    )
+    gamma = _get_prop_coeff(sc_calib)
+    # thickness_bounds_mm = _get_thickness_bounds(sc_calib)
+    grid_efficiency = _get_grid_efficiency(sc_calib)
     grid_kernel = calculate_grid_response(du, dv, grid_efficiency)
 
     primaries = np.zeros_like(projs)
