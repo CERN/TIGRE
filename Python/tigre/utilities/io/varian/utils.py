@@ -1,9 +1,14 @@
 import numpy as np
 
 
-def get_xmlns(xml_root):
-    """Get the namespace of xml file. Utility function for xml readers."""
-    return {"": xml_root.tag.split("}")[0].strip("{")}
+class XML:
+    def __init__(self, filepath, xml_reader):
+        self.root = xml_reader(filepath)
+        self.ns = self._get_xmlns()
+
+    def _get_xmlns(self):
+        """Returns the namespace of the xml file."""
+        return {"": self.root.tag.split("}")[0].strip("{")}
 
 
 def interp_weight(x, xp, N=360):
@@ -20,3 +25,7 @@ def interp_weight(x, xp, N=360):
     xp_diff = (xp[i_upper] - xp[i_lower]) % N
     weights = (np.array([(xp[i_upper] - x), (x - xp[i_lower])]) % N) / float(xp_diff)
     return i_lower, i_upper, weights
+
+
+def mm2cm(x):
+    return 0.1 * x

@@ -4,9 +4,11 @@ from numpy.typing import NDArray
 import os
 import glob
 from Python.tigre.utilities.geometry import Geometry
-from Python.tigre.utilities.io.varian.utils import get_xmlns, interp_weight
+from Python.tigre.utilities.io.varian.utils import interp_weight, XML
 from Python.tigre.utilities.io.varian.scatter_correct import (
-    ScatterCalibXML,
+    DetScattParams,
+    ScattParams,
+    read_scatt_calib_xml,
     correct_detector_scatter,
     correct_scatter,
 )
@@ -16,32 +18,40 @@ from scipy.ndimage import median_filter
 from tqdm import tqdm
 from dataclasses import dataclass
 
+# separation between the gantry head and the KV x-ray tube source (in deg)
+GANTRY_KVSOURCE_ANGLE_SEP = 90
+# Varian TrueBeam versions
+ALLOWED_VERSIONS = [2.0, 2.7]
+
 
 def VarianDataLoader(filepath, **kwargs):
-    # TODO: add docstring
+
     acdc, dps, sc = parse_inputs(**kwargs)
 
-    geometry, scan_params = read_varian_geometry(filepath)
+    scan_params = ScanParams(filepath, xml_reader=read_scan_xml)
+    recon_params = ReconParams(filepath, xml_reader=read_recon_xml)
+    geometry = read_varian_geometry(scan_params, recon_params)
 
-    angular_threshold = 0
+    angular_threshold = 0.0
     if acdc:
-        angular_threshold = calculate_angular_threshold(scan_params)
-    Proj = load_projections(filepath, angular_threshold)
-    Blank = load_blank_projections(filepath, scan_params)
+        angular_threshold = scan_params.calculate_angular_threshold()
 
-    if dps or sc:
-        ScattCalib = ScatterCalibXML(filepath)
+    proj_data = load_projections(filepath, angular_threshold)
+    blank_proj_data = load_blank_projections(filepath, scan_params)
+
     if dps:
-        Blank.projs = correct_detector_scatter(Blank.projs, geometry, ScattCalib)
-        Proj.projs = correct_detector_scatter(Proj.projs, geometry, ScattCalib)
+        dps_calib = DetScattParams(filepath, xml_reader=read_scatt_calib_xml)
+        blank_proj_data.projs = correct_detector_scatter(blank_proj_data.projs, geometry, dps_calib)
+        proj_data.projs = correct_detector_scatter(proj_data.projs, geometry, dps_calib)
 
     if sc:
-        Proj.projs = correct_scatter(Proj, Blank, geometry, ScattCalib)
+        sc_calib = ScattParams(filepath, xml_reader=read_scatt_calib_xml)
+        proj_data.projs = correct_scatter(proj_data, blank_proj_data, geometry, sc_calib)
 
-    log_projs = log_normalize(Proj, Blank)
+    log_projs = log_normalize(proj_data, blank_proj_data)
     log_projs = correct_ring_artifacts(log_projs)
 
-    return log_projs, geometry, np.deg2rad(Proj.angles)
+    return log_projs, geometry, np.deg2rad(proj_data.angles)
 
 
 @dataclass
@@ -54,59 +64,150 @@ class ProjData:
         return np.shape(self.projs)[0]
 
     def interp_proj(self, angle):
-        """Interpolate between projections and airnorm values at a given angle.""" 
-        if self.num_projs==1:
+        """Interpolate between projections and airnorm values at a given angle.
+        If self.num_projs=1, the projection and airnorm are returned unchanged."""
+        if self.num_projs == 0:
+            raise RuntimeError("Interpolation failed. No projections found.")
+        if self.num_projs == 1:
             return self.projs, self.airnorms
-        else:   
+        else:
             i_lower, i_upper, w = interp_weight(angle, self.angles)
             blank_interp = w[0] * self.projs[i_lower] + w[1] * self.projs[i_upper]
             airnorm_interp = w[0] * self.airnorms[i_lower] + w[1] * self.airnorms[i_upper]
-        return blank_interp, airnorm_interp
+            return blank_interp, airnorm_interp
 
-def read_varian_geometry(filepath):
 
-    # read Scan.xml
+class ScanParams(XML):
+    def __init__(self, filepath, xml_reader):
+        super().__init__(filepath, xml_reader)
+        self.acquisition_params = self._get_acq_params()
+        self.SID = self._get_SID()
+        self.SAD = self._get_SAD()
+        self.imager_size = self._get_imager_size()
+        self.imager_res = self._get_imager_res()
+        self.imager_lat = self._get_imager_lat()
+        self.start_angle = self._get_start_angle()
+        self.stop_angle = self._get_stop_angle()
+        self.bowtie_filter = self._get_bowtie_filter()
+        self.rot_velocity = self._get_rot_velocity()
+        self.frame_rate = self._get_frame_rate()
+        self.version = self._get_varian_version()
+
+    def _get_acq_params(self):
+        acquisition_params = self.root.find("Acquisitions", self.ns)
+        return acquisition_params
+
+    def _get_SID(self):
+        return float(self.acquisition_params.find("SID", self.ns).text)
+
+    def _get_SAD(self):
+        return float(self.acquisition_params.find("SAD", self.ns).text)
+
+    def _get_imager_size(self):
+        imager_size = [
+            int(self.acquisition_params.find("ImagerSizeX", self.ns).text),
+            int(self.acquisition_params.find("ImagerSizeY", self.ns).text),
+        ]
+        return imager_size
+
+    def _get_imager_res(self):
+        imager_res = [
+            float(self.acquisition_params.find("ImagerResX", self.ns).text),
+            float(self.acquisition_params.find("ImagerResY", self.ns).text),
+        ]
+        return imager_res
+
+    def _get_imager_lat(self):
+        return float(self.acquisition_params.find("ImagerLat", self.ns).text)
+
+    def _get_start_angle(self):
+        return float(self.root.find("Acquisitions/StartAngle", self.ns).text)
+
+    def _get_stop_angle(self):
+        return float(self.root.find("Acquisitions/StopAngle", self.ns).text)
+
+    def _get_bowtie_filter(self):
+        return self.root.find("Acquisitions/Bowtie", self.ns)
+
+    def _get_rot_velocity(self):
+        return float(self.root.find("Acquisitions/Velocity", self.ns).text)
+
+    def _get_frame_rate(self):
+        return float(self.root.find("Acquisitions/FrameRate", self.ns).text)
+
+    def _get_varian_version(self):
+        version_str = self.root.attrib["Version"].rstrip(".0.0")
+        try:
+            version = float(version_str)
+        except Exception:
+            raise RuntimeError(f"Error retrieving version number. Value found was '{version_str}'")
+        else:
+            if version not in ALLOWED_VERSIONS:
+                raise ValueError(f"Version {version} not in allowed versions: {ALLOWED_VERSIONS}.")
+            else:
+                return version
+
+    def calculate_angular_threshold(self, frac=0.9):
+        return frac * (self.rot_velocity / self.frame_rate)
+
+
+class ReconParams(XML):
+    def __init__(self, filepath, xml_reader):
+        super().__init__(filepath, xml_reader)
+        self.VOI_size = self._get_VOI_size()
+        self.matrix_size = self._get_matrix_size()
+        self.slice_thickness = self._get_slice_thickness()
+
+    def _get_VOI_size(self):
+        VOI_size = [
+            float(self.root.find("VOISizeX", self.ns).text),
+            float(self.root.find("VOISizeY", self.ns).text),
+            float(self.root.find("VOISizeZ", self.ns).text),
+        ]
+        return VOI_size
+
+    def _get_matrix_size(self):
+        return (int(self.root.find("MatrixSize", self.ns).text),)
+
+    def _get_slice_thickness(self):
+        return float(self.root.find("SliceThickness", self.ns).text)
+
+
+def read_scan_xml(filepath):
     file = os.path.join(filepath, "Scan.xml")
     tree = ET.parse(file)
-    scan_params = tree.getroot()
-    ns = get_xmlns(scan_params)
-    acquisition_params = scan_params.find("Acquisitions", ns)
-    if acquisition_params is None:
-        raise RuntimeError("Cone beam scan parameters not found")
+    root = tree.getroot()
+    if root is None:
+        raise RuntimeError("Cone beam scan parameters not found.")
+    else:
+        return root
+
+
+def read_recon_xml(filepath):
+    file = glob.glob(os.path.join(filepath, "**", "Reconstruction.xml"), recursive=True)
+    if len(file) > 1:
+        raise RuntimeError("Multiple Reconstruction.xml files found.")
+    tree = ET.parse(file[0])
+    return tree.getroot()
+
+
+def read_varian_geometry(scan_params, recon_params):
 
     geometry = Geometry()
     geometry.mode = "cone"
-    geometry.DSD = float(acquisition_params.find("SID", ns).text)
-    geometry.DSO = float(acquisition_params.find("SAD", ns).text)
-    geometry.nDetector = np.array(
-        [
-            int(acquisition_params.find("ImagerSizeY", ns).text),
-            int(acquisition_params.find("ImagerSizeX", ns).text),
-        ]
-    )
-    geometry.dDetector = np.array(
-        [
-            float(acquisition_params.find("ImagerResY", ns).text),
-            float(acquisition_params.find("ImagerResX", ns).text),
-        ]
-    )
+    geometry.DSD = scan_params.SID
+    geometry.DSO = scan_params.SAD
+    geometry.nDetector = np.array(scan_params.imager_size[::-1])
+    geometry.dDetector = np.array(scan_params.imager_res[::-1])
     geometry.sDetector = geometry.nDetector * geometry.dDetector
 
-    offset = float(acquisition_params.find("ImagerLat", ns).text)
+    offset = scan_params.imager_lat
     geometry.offDetector = np.array([0, -offset])
     geometry.offOrigin = np.array([0, 0, 0])
 
     # Auxiliary variable to define accuracy of 'interpolated' projection
     # Recommended <=0.5 (vx/sample)
     geometry.accuracy = 0.5
-
-    # read Reconstruction.xml
-    file = glob.glob(os.path.join(filepath, "**", "Reconstruction.xml"), recursive=True)
-    if len(file) > 1:
-        raise RuntimeError("Multiple Reconstruction.xml files found.")
-    tree = ET.parse(file[0])
-    recon_params = tree.getroot()
-    ns = get_xmlns(recon_params)
 
     if recon_params is None:
         print("Estimating acceptable image size...")
@@ -125,38 +226,18 @@ def read_varian_geometry(filepath):
         geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
     else:
         # Retrieve existing reconstruction parameters
-        geometry.sVoxel = np.array(
-            [
-                float(recon_params.find("VOISizeZ", ns).text),
-                float(recon_params.find("VOISizeY", ns).text),
-                float(recon_params.find("VOISizeX", ns).text),
-            ]
-        )
-        slice_num = np.ceil(
-            geometry.sVoxel[0] / float(recon_params.find("SliceThickness", ns).text)
-        )
+        geometry.sVoxel = np.array(recon_params.VOI_size[::-1])
+        num_slices = np.ceil(geometry.sVoxel[0] / recon_params.slice_thickness)
         geometry.nVoxel = np.array(
             [
-                slice_num,
-                int(recon_params.find("MatrixSize", ns).text),
-                int(recon_params.find("MatrixSize", ns).text),
+                num_slices,
+                recon_params.matrix_size,
+                recon_params.matrix_size,
             ]
         )
         geometry.dVoxel = geometry.sVoxel / geometry.nVoxel
 
-    return geometry, scan_params
-
-
-def _get_angular_threshold_params(scan_params):
-    ns = get_xmlns(scan_params)
-    rot_velocity = float(scan_params.find("Acquisitions/Velocity", ns).text)
-    frame_rate = float(scan_params.find("Acquisitions/FrameRate", ns).text)
-    return rot_velocity, frame_rate
-
-
-def calculate_angular_threshold(scan_params):
-    rot_velocity, frame_rate = _get_angular_threshold_params(scan_params)
-    return 0.9 * (rot_velocity / frame_rate)
+    return geometry
 
 
 def correct_ring_artifacts(log_projs, kernel_size=(1, 9)):
@@ -165,72 +246,53 @@ def correct_ring_artifacts(log_projs, kernel_size=(1, 9)):
     return log_projs
 
 
-def log_normalize(Proj, Blank):
-    log_projs = np.zeros_like(Proj.projs)
-    eps = np.finfo(Proj.projs.dtype).eps
+def log_normalize(proj_data, blank_proj_data):
+    log_projs = np.zeros_like(proj_data.projs)
+    eps = np.finfo(proj_data.projs.dtype).eps
 
     print("Performing log normalization:")
-    for i in tqdm(range(len(Proj.angles))):
-        if Blank.num_projs==1:
-            blank_interp, airnorm_interp = Blank.interp_proj(Proj.angles[i])
-            blank = blank_interp * Proj.airnorms[i] / airnorm_interp
-        else:
-            blank = Blank.projs[0] * Proj.airnorms[i] / Blank.airnorms
+    for i in tqdm(range(len(proj_data.angles))):
+        blank_interp, airnorm_interp = blank_proj_data.interp_proj(proj_data.angles[i])
+        blank = blank_interp * proj_data.airnorms[i] / airnorm_interp
 
-        ratio = (blank + eps) / (Proj.projs[i] + eps)
+        ratio = (blank + eps) / (proj_data.projs[i] + eps)
         ratio[ratio < 1] = 1
         log_projs[i] = np.log(ratio)
     return log_projs
 
 
 def load_blank_projections(filepath, scan_params):
-    ns = get_xmlns(scan_params)
-    start_angle = float(scan_params.find("Acquisitions/StartAngle", ns).text)
-    stop_angle = float(scan_params.find("Acquisitions/StopAngle", ns).text)
 
     # Determine rotation direction
-    if stop_angle - start_angle:
+    if scan_params.stop_angle - scan_params.start_angle:
         rot_dir = "CC"
     else:
         rot_dir = "CW"
 
-    # Get Truebeam version
-    ALLOWED_VERSIONS = [2.0, 2.7]
-    version_str = scan_params.attrib["Version"].rstrip(".0.0")
-    try:
-        version = float(version_str)
-    except Exception:
-        raise RuntimeError(f"Error retrieving version number, value found was '{version_str}'")
-    else:
-
-        if version not in ALLOWED_VERSIONS:
-            raise ValueError(f"Version {version} not in allowed versions: {ALLOWED_VERSIONS}.")
-
-    bowtie = scan_params.find("Acquisitions/Bowtie", ns)
-
-    if bowtie is None:
+    if scan_params.bowtie_filter is None:
         blank_fname = "Filter.xim"
     else:
-        rot_str = f"_{rot_dir}*" if version == 2.7 else ""
+        rot_str = f"_{rot_dir}*" if scan_params.version == ALLOWED_VERSIONS[1] else ""
         blank_fname = f"FilterBowtie{rot_str}.xim"
 
     blank_filepath = glob.glob(
         os.path.join(filepath, "Calibrations", "Air-*", "**", blank_fname), recursive=True
     )
 
-    GANTRY_KVSOURCE_ANGLE_SEP = 90
-    if version == 2.0:
+    if scan_params.version == ALLOWED_VERSIONS[0]:
         xim_img = XIM(blank_filepath[0])
         try:
             blank_projection = xim_img.array
         except AttributeError:
-            raise RuntimeError(f"Blank image not found in {blank_filepath}.")
+            raise RuntimeError(f"blank_proj_data image not found in {blank_filepath}.")
         else:
             blank_airnorm = xim_img.properties["KVNormChamber"]
             blank_projection = np.fliplr(np.array(blank_projection, dtype="float"))
-        return ProjData(projs=blank_projection, angles=np.array([]), airnorms=np.array(blank_airnorm))
+        return ProjData(
+            projs=blank_projection, angles=np.array([]), airnorms=np.array(blank_airnorm)
+        )
 
-    elif version == 2.7:
+    elif scan_params.version == ALLOWED_VERSIONS[1]:
         blank_projections = []
         blank_angles = []
         blank_airnorms = []
@@ -264,9 +326,6 @@ def load_blank_projections(filepath, scan_params):
 
 
 def load_projections(filepath, threshold=0.0):
-
-    # separation between the gantry head and the KV x-ray tube source (in deg)
-    GANTRY_KVSOURCE_ANGLE_SEP = 90
 
     folder = os.path.join(filepath, "Acquisitions")
 
@@ -319,5 +378,6 @@ def parse_inputs(**kwargs):
     dps = kwargs["dps"] if "dps" in kwargs else True
     sc = kwargs["sc"] if "sc" in kwargs else True
     if sc:
+        RuntimeWarning("dps must be enabled when sc=True. Setting dps=True.")
         dps = True
     return acdc, dps, sc
