@@ -5,14 +5,14 @@ import os
 import glob
 from Python.tigre.utilities.geometry import Geometry
 from Python.tigre.utilities.io.varian.utils import interp_weight, XML
-from Python.tigre.utilities.io.varian.scatter_correct import (
+from Python.tigre.utilities.io.varian.scatter import (
     DetScattParams,
     ScattParams,
     read_scatt_calib_xml,
     correct_detector_scatter,
     correct_scatter,
 )
-from Python.tigre.utilities.io.varian.xim_io import XIM
+from Python.tigre.utilities.io.varian.xim import XIM
 import xml.etree.ElementTree as ET
 from scipy.ndimage import median_filter
 from tqdm import tqdm
