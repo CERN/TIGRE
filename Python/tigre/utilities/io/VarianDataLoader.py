@@ -150,6 +150,12 @@ class ScanParams(XML):
     def calculate_angular_threshold(self, frac=0.9):
         return frac * (self.rot_velocity / self.frame_rate)
 
+    def rot_direction(self):
+        if self.stop_angle - self.start_angle:
+            return "CC"
+        else:
+            return "CW"
+
 
 class ReconParams(XML):
     def __init__(self, filepath, xml_reader):
@@ -263,16 +269,12 @@ def log_normalize(proj_data, blank_proj_data):
 
 def load_blank_projections(filepath, scan_params):
 
-    # Determine rotation direction
-    if scan_params.stop_angle - scan_params.start_angle:
-        rot_dir = "CC"
-    else:
-        rot_dir = "CW"
-
     if scan_params.bowtie_filter is None:
         blank_fname = "Filter.xim"
     else:
-        rot_str = f"_{rot_dir}*" if scan_params.version == ALLOWED_VERSIONS[1] else ""
+        rot_str = (
+            f"_{scan_params.rot_direction()}*" if scan_params.version == ALLOWED_VERSIONS[1] else ""
+        )
         blank_fname = f"FilterBowtie{rot_str}.xim"
 
     blank_filepath = glob.glob(

@@ -181,7 +181,7 @@ def read_scatt_calib_xml(filepath):
     if len(file) == 0:
         raise RuntimeError("Scatter calibration file not found.")
     elif len(file) > 1:
-        raise RuntimeError("Multiple calibration files found")
+        raise RuntimeError("Multiple calibration files found.")
     else:
         tree = ET.parse(file[0])
         sc_calib = tree.getroot()
