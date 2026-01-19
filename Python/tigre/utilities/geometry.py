@@ -140,7 +140,7 @@ class Geometry(object):
         old_attrib = getattr(self, attrib)
 
         if type(old_attrib) in [float, int, np.float32, np.float64, np.int32]:
-            new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
+            new_attrib = np.tile(old_attrib, angles.shape[0])
             setattr(self, attrib, new_attrib)
 
         elif type(old_attrib) == np.ndarray:
