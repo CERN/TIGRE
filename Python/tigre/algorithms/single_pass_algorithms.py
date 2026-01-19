@@ -123,8 +123,11 @@ def FDK(proj, geo, angles, **kwargs):
         :return: np.array(dtype=float32), np.array(dtype=float32)
 
         """
+
+        if not hasattr(geo, "COR"):
+            geo.COR = 0
         offset = geo.offDetector[1]
-        offset = offset + (geo.DSD / geo.DSO)  # * geo.COR
+        offset = offset + (geo.DSD / geo.DSO) * geo.COR
 
         us = np.arange(-geo.nDetector[1] / 2 + 0.5, geo.nDetector[1] / 2 - 0.5 + 1) * geo.dDetector[
             1
