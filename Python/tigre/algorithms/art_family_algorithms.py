@@ -13,6 +13,7 @@ class SART(IterativeReconAlg):
         "SART(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem\n"
         "using the projection data PROJ taken over ALPHA angles, corresponding\n"
         "to the geometry described in GEO, using NITER iterations. \n"
+
     ) + IterativeReconAlg.__doc__
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
@@ -53,9 +54,11 @@ class OS_SART(IterativeReconAlg):
         "to the geometry described in GEO, using NITER iterations.\n"
     ) + IterativeReconAlg.__doc__
 
-    def __init__(self, proj, geo, angles, niter, **kwargs):
+
+    def __init__(self, proj, geo, angles, niter, parker_weighting=False, **kwargs):
         
         self.blocksize = 20 if 'blocksize' not in kwargs else kwargs["blocksize"]       
+        self.parker_weighting = parker_weighting  # store it for later use
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
 
@@ -87,7 +90,11 @@ class SART_TV(IterativeReconAlg):
         """
         Goes through the main iteration for the given configuration.
         :return: None
+        Parameters:
+        ...
+        parker_weighting (bool): If True, applies Parker/redundancy weighting for half-fan CBCT. Default False.
         """
+
         Quameasopts = self.Quameasopts
 
         for i in range(self.niter):
@@ -103,6 +110,9 @@ class SART_TV(IterativeReconAlg):
             self.res = im3ddenoise(self.res, self.tviter, self.tvlambda, self.gpuids)
             if Quameasopts is not None:
                 self.error_measurement(res_prev, i)
+            if self.parker_weighting:
+            # Assume there is a function `apply_parker_weighting(proj, geo)` in your repo
+            self.proj = apply_parker_weighting(self.proj, self.geo)
 
 
 sart_tv = decorator(SART_TV, name="sart_tv")
