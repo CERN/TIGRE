@@ -228,6 +228,7 @@ def _update_primary_estimate(primary, scatter_old, scatter, lam=0.6):
 
 def _calculate_primary(proj, scatt, max_scatt_frac=0.95):
     scatt_frac = scatt / (proj + np.finfo(proj.dtype).eps)
+
     scatt_frac = median_filter(scatt_frac, size=3)
     scatt_frac[scatt_frac < 0] = 0
     scatt_frac = np.minimum(scatt_frac, max_scatt_frac)
@@ -271,6 +272,8 @@ def correct_detector_scatter(projs, geometry, dps_calib, downsample=8):
             (dv, du), scatter_down, (V, U), method="cubic", bounds_error=False, fill_value=None
         )
         corrected_projs[i] = proj - scatter
+    eps = np.finfo(proj.dtype).eps
+    corrected_projs[corrected_projs < eps] = eps
 
     return corrected_projs
 

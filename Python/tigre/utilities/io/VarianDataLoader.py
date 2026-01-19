@@ -173,7 +173,7 @@ class ReconParams(XML):
         return VOI_size
 
     def _get_matrix_size(self):
-        return (int(self.root.find("MatrixSize", self.ns).text),)
+        return int(self.root.find("MatrixSize", self.ns).text)
 
     def _get_slice_thickness(self):
         return float(self.root.find("SliceThickness", self.ns).text)
@@ -261,7 +261,7 @@ def log_normalize(proj_data, blank_proj_data):
         blank_interp, airnorm_interp = blank_proj_data.interp_proj(proj_data.angles[i])
         blank = blank_interp * proj_data.airnorms[i] / airnorm_interp
 
-        ratio = (blank + eps) / (proj_data.projs[i] + eps)
+        ratio = (blank / (proj_data.projs[i] + eps)) + eps
         ratio[ratio < 1] = 1
         log_projs[i] = np.log(ratio)
     return log_projs
@@ -324,7 +324,9 @@ def load_blank_projections(filepath, scan_params):
         blank_projections /= np.expand_dims(blank_airnorms, axis=(1, 2))
         blank_airnorms = np.ones_like(blank_airnorms)
 
-        return ProjData(projs=blank_projections, angles=blank_angles, airnorms=blank_airnorms)
+        return ProjData(
+            projs=blank_projections.astype("float32"), angles=blank_angles, airnorms=blank_airnorms
+        )
 
 
 def load_projections(filepath, threshold=0.0):
@@ -365,7 +367,7 @@ def load_projections(filepath, threshold=0.0):
     projections /= np.expand_dims(airnorms, axis=(1, 2))
     airnorms = np.ones_like(airnorms)
 
-    return ProjData(projs=projections, angles=angles, airnorms=airnorms)
+    return ProjData(projs=projections.astype("float32"), angles=angles, airnorms=airnorms)
 
 
 def parse_inputs(**kwargs):
