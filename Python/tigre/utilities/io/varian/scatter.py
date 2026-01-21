@@ -1,4 +1,6 @@
+from __future__ import annotations
 import numpy as np
+from numpy.typing import NDArray
 import glob
 import os
 import xml.etree.ElementTree as ET
@@ -6,52 +8,73 @@ from scipy.ndimage import gaussian_filter, median_filter
 from scipy.fft import fft2, ifft2
 from scipy.signal import decimate, convolve2d
 from scipy.interpolate import interpn
-from Python.tigre.utilities.io.varian.utils import mm2cm, XML
+from Python.tigre.utilities.geometry import Geometry
+from Python.tigre.utilities.io.varian.utils import cm2mm, XML, PathLike, XMLReader
+from Python.tigre.utilities.io.varian.varian_io import ProjData
 from tqdm import tqdm
 
 
+def _read_scatt_xml(filepath: PathLike) -> ET.Element:
+    file = glob.glob(os.path.join(filepath, "Calibrations", "SC-*", "Factory", "Calibration.xml"))
+    if len(file) == 0:
+        raise RuntimeError("Scatter calibration file not found.")
+    elif len(file) > 1:
+        raise RuntimeError("Multiple calibration files found.")
+    else:
+        tree = ET.parse(file[0])
+        sc_calib = tree.getroot()
+        return sc_calib
+
+
 class DetScattParams(XML):
-    def __init__(self, filepath, xml_reader):
+    def __init__(self, filepath: PathLike, xml_reader: XMLReader = _read_scatt_xml) -> None:
         super().__init__(filepath, xml_reader)
-        self.params = self._get_params()
+        self.params: list[float] = self._get_params()
 
-    def _get_params(self):
-        det_scatter_model = self.root.find(
-            "CalibrationResults/Globals/DetectorScatterModel", self.ns
-        )
-        return [float(elem.text) for elem in det_scatter_model]
+    def _get_params(self) -> list[float]:
+        dps_elems = self._get_field("CalibrationResults/Globals/DetectorScatterModel")
+        try:
+            dps_params = [float(elem.text) for elem in dps_elems]
+        except Exception:
+            raise ValueError("Invalid DetectorScatterModel parameters.")
+        else:
+            return dps_params
 
-    def calculate_dps_kernel(self, grid_coords):
+    def calculate_dps_kernel(self, grid_coords: tuple[NDArray, NDArray]) -> NDArray:
         U, V = grid_coords
         grid = np.sqrt(U**2 + V**2)
-        det_kernel = self.params[0] * np.exp(-self.params[1] * grid) + self.params[2] * (
-            np.exp(-self.params[3] * (grid - self.params[4]) ** 3)
+
+        det_kernel = self.params[0] * np.exp(-10.0 * self.params[1] * grid) + self.params[2] * (
+            np.exp(-10.0 * self.params[3] * (grid - self.params[4]) ** 3)
         )
         det_kernel = self.params[5] * det_kernel / np.sum(det_kernel)
         return det_kernel
 
 
+# TODO: add try except blocks to _get_ methods
 class ScattParams(XML):
-    def __init__(self, filepath, xml_reader):
+    def __init__(self, filepath: PathLike, xml_reader: XMLReader = _read_scatt_xml) -> None:
         super().__init__(filepath, xml_reader)
-        self.obj_scatt_models = self._get_obj_scatt_models()
-        self.obj_scatt_fits = self._get_obj_scatt_fits()
-        self.thickness_params = self._get_thickness_params()
-        self.grid_efficiency = self._get_grid_efficiency()
-        self.gamma = self._get_prop_coeff()
-        self.form_func_params = self._get_form_func_params()
-        self.ampl_params = self._get_ampl_params()
+        self.obj_scatt_models: ET.Element = self._get_obj_scatt_models()
+        self.obj_scatt_fits: list[ET.Element] = self._get_obj_scatt_fits()
+        self.thickness_params: dict[str, float | list[float]] = self._get_thickness_params()
+        self.grid_efficiency: float = self._get_grid_efficiency()
+        self.gamma: float = self._get_prop_coeff()
+        self.form_func_params: dict[str, NDArray] = self._get_form_func_params()
+        self.ampl_params: dict[str, NDArray] = self._get_ampl_params()
 
-    def _get_obj_scatt_models(self):
-        return self.root.find("CalibrationResults/ObjectScatterModels", self.ns)
+    def _get_obj_scatt_models(self) -> ET.Element:
+        return self._get_field(
+            "CalibrationResults/ObjectScatterModels",
+        )
 
-    def _get_obj_scatt_fits(self):
+    def _get_obj_scatt_fits(self) -> list[ET.Element]:
         return self.obj_scatt_models.findall("ObjectScatterModel/ObjectScatterFit", self.ns)
 
-    def _get_thickness_params(self):
-        mu_water = float(self.root.find("CalibrationResults/Globals/muH2O", self.ns).text)  # mm^-1
-        sigma_u = float(self.root.find("CalibrationResults/Globals/AsymPertSigmaMMu", self.ns).text)
-        sigma_v = float(self.root.find("CalibrationResults/Globals/AsymPertSigmaMMv", self.ns).text)
+    def _get_thickness_params(self) -> dict[str, float | list[float]]:
+        mu_water = float(self._get_field("CalibrationResults/Globals/muH2O").text)  # mm^-1
+        sigma_u = float(self._get_field("CalibrationResults/Globals/AsymPertSigmaMMu").text)
+        sigma_v = float(self._get_field("CalibrationResults/Globals/AsymPertSigmaMMv").text)
         bounds = [
             float(thickness.text)
             for thickness in self.obj_scatt_models.findall("ObjectScatterModel/Thickness", self.ns)
@@ -59,7 +82,7 @@ class ScattParams(XML):
         thickness_params = dict(mu_water=mu_water, sigma_u=sigma_u, sigma_v=sigma_v, bounds=bounds)
         return thickness_params
 
-    def _get_grid_efficiency(self):
+    def _get_grid_efficiency(self) -> float:
         grid_efficiency = float(
             self.obj_scatt_models.find(
                 "ObjectScatterModel/GridEfficiency/LamellaTransmission", self.ns
@@ -67,32 +90,34 @@ class ScattParams(XML):
         )
         return grid_efficiency
 
-    def _get_prop_coeff(self):
+    def _get_prop_coeff(self) -> float:
         gamma = float(
             self.obj_scatt_models.find("ObjectScatterModel/ObjectScatterFit/gamma", self.ns).text
         )
         return gamma
 
-    def _get_form_func_params(self):
-        sigma1 = [
-            float(elem.find("sigma1", self.ns).text) for elem in self.obj_scatt_fits
-        ]  # (cm^-1)
-        sigma2 = [
-            float(elem.find("sigma2", self.ns).text) for elem in self.obj_scatt_fits
-        ]  # (cm^-1)
-        B = [float(elem.find("B", self.ns).text) for elem in self.obj_scatt_fits]
-        return dict(sigma1=sigma1, sigma2=sigma2, B=B)
+    def _get_form_func_params(self) -> dict[str, NDArray]:
+        sigma1 = np.array(
+            [float(elem.find("sigma1", self.ns).text) for elem in self.obj_scatt_fits]
+        )  # cm
+        sigma2 = np.array(
+            [float(elem.find("sigma2", self.ns).text) for elem in self.obj_scatt_fits]
+        )  # cm
+        B = np.array([float(elem.find("B", self.ns).text) for elem in self.obj_scatt_fits])
 
-    def _get_ampl_params(self):
-        A = [float(elem.find("A", self.ns).text) for elem in self.obj_scatt_fits]
-        alpha = [float(elem.find("alpha", self.ns).text) for elem in self.obj_scatt_fits]
-        beta = [float(elem.find("beta", self.ns).text) for elem in self.obj_scatt_fits]
+        return dict(sigma1=cm2mm(sigma1), sigma2=cm2mm(sigma2), B=B)
+
+    def _get_ampl_params(self) -> dict[str, NDArray]:
+        A = np.array([float(elem.find("A", self.ns).text) for elem in self.obj_scatt_fits])  # cm^-2
+        alpha = np.array([float(elem.find("alpha", self.ns).text) for elem in self.obj_scatt_fits])
+        beta = np.array([float(elem.find("beta", self.ns).text) for elem in self.obj_scatt_fits])
+        A = 0.01 * A  # mm^-2
         return dict(A=A, alpha=alpha, beta=beta)
 
-    def num_thicknesses(self):
+    def num_thicknesses(self) -> int:
         return len(self.thickness_params["bounds"])
 
-    def create_thickness_masks(self, thickness_map):
+    def create_thickness_masks(self, thickness_map: NDArray) -> NDArray:
         mask = np.zeros_like(thickness_map)
         masks = np.tile(mask[np.newaxis, :, :], [self.num_thicknesses(), 1, 1])
         for i in range(self.num_thicknesses() - 1):
@@ -102,7 +127,7 @@ class ScattParams(XML):
         masks[-1] = thickness_map > self.thickness_params["bounds"][-1]
         return masks
 
-    def calculate_grid_response(self, u, v):
+    def calculate_grid_response(self, u: NDArray, v: NDArray) -> NDArray:
         # TODO: read params from Calibration.xml
         K = -0.15
         B = 1
@@ -111,16 +136,21 @@ class ScattParams(XML):
         kernel[kernel < self.grid_efficiency] = self.grid_efficiency
         return kernel
 
-    def estimate_water_equiv_thickness(self, blank, proj, smooth=False, sigma=None):
+    def estimate_water_equiv_thickness(
+        self,
+        blank: NDArray,
+        proj: NDArray,
+        pixel_size: tuple[float, float],
+    ) -> NDArray:
         log_norm = _log_normalize(blank, proj)
-        thickness = log_norm / self.thickness_params["mu_water"]
-        if smooth:
-            if sigma is None:
-                raise ValueError("sigma cannot be 'None' if smooth=True.")
-            thickness = gaussian_filter(thickness, sigma)
-        return thickness
+        thickness_map = log_norm / self.thickness_params["mu_water"]
+        sigma = self.calculate_thickness_sigma(*pixel_size)
+        thickness_map = gaussian_filter(thickness_map, sigma)
+        return thickness_map
 
-    def calculate_form_functions(self, thickness_map, grid_coords):
+    def calculate_form_functions(
+        self, thickness_map: NDArray, grid_coords: tuple[NDArray, NDArray]
+    ) -> NDArray:
         U, V = grid_coords
         grid = U**2 + V**2
         gform = np.zeros_like(thickness_map)
@@ -128,13 +158,13 @@ class ScattParams(XML):
 
         for i in range(self.num_thicknesses()):
             gforms[i] = np.exp(
-                -0.5 * grid / (self.form_func_params["sigma1"][i] ** 2)
+                -0.5 * grid / ((10.0 * self.form_func_params["sigma1"][i]) ** 2)
             ) + self.form_func_params["B"][i] * np.exp(
-                -0.5 * grid / (self.form_func_params["sigma2"][i] ** 2)
+                -0.5 * grid / ((10.0 * self.form_func_params["sigma2"][i]) ** 2)
             )
         return gforms
 
-    def calculate_amplitudes(self, blank, proj, edge_weight):
+    def calculate_amplitudes(self, blank: NDArray, proj: NDArray, edge_weight: NDArray) -> NDArray:
         log_norm = _log_normalize(blank, proj)
         eps = np.finfo(proj.dtype).eps
         norm = (proj + eps) / (blank + eps)
@@ -143,7 +173,8 @@ class ScattParams(XML):
         amplitudes = []
         for i in range(self.num_thicknesses()):
             amplitude = (
-                mm2cm(self.ampl_params["A"][i])
+                0.01
+                * (self.ampl_params["A"][i])
                 * edge_weight
                 * (norm ** self.ampl_params["alpha"][i])
                 * (log_norm ** self.ampl_params["beta"][i])
@@ -151,15 +182,20 @@ class ScattParams(XML):
             amplitudes.append(amplitude)
         return np.array(amplitudes)
 
-    def calculate_thickness_sigma(self, step_du, step_dv):
+    def calculate_thickness_sigma(self, step_du: float, step_dv: float) -> tuple[float, float]:
         sigma = (
-            mm2cm(self.thickness_params["sigma_v"]) / step_dv,
-            mm2cm(self.thickness_params["sigma_u"]) / step_du,
+            self.thickness_params["sigma_v"] / step_dv,
+            self.thickness_params["sigma_u"] / step_du,
         )
         return sigma
 
     @staticmethod
-    def calculate_edge_response(thickness_map, threshold=50, filter_size=25, num_iter=5):
+    def calculate_edge_response(
+        thickness_map: NDArray,
+        threshold: int | float = 50,
+        filter_size: int = 25,
+        num_iter: int = 5,
+    ) -> NDArray:
         # TODO: read params from calibration.xml file
         edge_weight = thickness_map > threshold
         edge_weight = np.array(edge_weight, dtype="float")
@@ -176,19 +212,7 @@ class ScattParams(XML):
         return edge_weight
 
 
-def read_scatt_calib_xml(filepath):
-    file = glob.glob(os.path.join(filepath, "Calibrations", "SC-*", "Factory", "Calibration.xml"))
-    if len(file) == 0:
-        raise RuntimeError("Scatter calibration file not found.")
-    elif len(file) > 1:
-        raise RuntimeError("Multiple calibration files found.")
-    else:
-        tree = ET.parse(file[0])
-        sc_calib = tree.getroot()
-        return sc_calib
-
-
-def _log_normalize(blank, proj):
+def _log_normalize(blank: NDArray, proj: NDArray) -> NDArray:
     eps = np.finfo(proj.dtype).eps
     ratio = (blank + eps) / (proj + eps)
     ratio[ratio < 1] = 1
@@ -196,14 +220,20 @@ def _log_normalize(blank, proj):
     return log_proj
 
 
-def _rescale(x, min_val=0.0, max_val=1.0):
+def _rescale(x: NDArray, min_val: float = 0.0, max_val: float = 1.0) -> NDArray:
     x_rescale = (max_val - min_val) * (x - np.nanmin(x)) / (np.nanmax(x) - np.nanmin(x)) + min_val
     return x_rescale
 
 
 def _update_scatter_estimate(
-    proj, thickness_map, thickness_masks, amplitudes, gforms, grid_kernel, gamma
-):
+    proj: NDArray,
+    thickness_map: NDArray,
+    thickness_masks: NDArray,
+    amplitudes: NDArray,
+    gforms: NDArray,
+    grid_kernel: NDArray,
+    gamma: float,
+) -> NDArray:
     num_groups = len(thickness_masks)
     rep_proj = np.tile(proj[np.newaxis, :, :], [num_groups, 1, 1])
     term1 = rep_proj * thickness_masks * amplitudes
@@ -219,14 +249,16 @@ def _update_scatter_estimate(
     return scatter
 
 
-def _update_primary_estimate(primary, scatter_old, scatter, lam=0.6):
+def _update_primary_estimate(
+    primary: NDArray, scatter_old: NDArray, scatter: NDArray, lam: float = 0.6
+) -> NDArray:
     primary += lam * (scatter_old - scatter)
     eps = np.finfo(primary.dtype).eps
     primary[primary < eps] = eps
     return primary
 
 
-def _calculate_primary(proj, scatt, max_scatt_frac=0.95):
+def _calculate_primary(proj: NDArray, scatt: NDArray, max_scatt_frac: float = 0.95) -> NDArray:
     scatt_frac = scatt / (proj + np.finfo(proj.dtype).eps)
 
     scatt_frac = median_filter(scatt_frac, size=3)
@@ -235,27 +267,23 @@ def _calculate_primary(proj, scatt, max_scatt_frac=0.95):
     return proj * (1 - scatt_frac)
 
 
-def _get_detector_coords(geometry, downsample=0):
+def _get_detector_coords(geometry: Geometry, downsample: int = 0) -> tuple[NDArray, NDArray]:
     # Detector coords,centered (cm)
-    u = (
-        0.5
-        * (geometry.sDetector[1] - geometry.dDetector[1])
-        * np.linspace(-1, 1, int(geometry.nDetector[1]))
-    )
-    v = (
-        0.5
-        * (geometry.sDetector[0] - geometry.dDetector[0])
-        * np.linspace(-1, 1, int(geometry.nDetector[0]))
-    )
+    u = 0.5 * np.linspace(-1, 1, int(geometry.nDetector[1]))
+    u *= geometry.sDetector[1] - geometry.dDetector[1]
+    v = 0.5 * np.linspace(-1, 1, int(geometry.nDetector[0]))
+    v *= geometry.sDetector[0] - geometry.dDetector[0]
 
     if downsample:
         u = decimate(u, downsample)
         v = decimate(v, downsample)
 
-    return mm2cm(u), mm2cm(v)
+    return u, v
 
 
-def correct_detector_scatter(projs, geometry, dps_calib, downsample=8):
+def correct_detector_scatter(
+    projs: NDArray, geometry: Geometry, dps_calib: DetScattParams, downsample: int = 8
+) -> NDArray:
     u, v = _get_detector_coords(geometry)
     U, V = np.meshgrid(u, v)
     du, dv = _get_detector_coords(geometry, downsample=downsample)
@@ -279,14 +307,14 @@ def correct_detector_scatter(projs, geometry, dps_calib, downsample=8):
 
 
 def correct_scatter(
-    proj_data,
-    blank_proj_data,
-    geometry,
-    sc_calib,
-    downsample=12,
-    num_iter=8,
-    lam=0.005,
-):
+    proj_data: ProjData,
+    blank_proj_data: ProjData,
+    geometry: Geometry,
+    sc_calib: ScattParams,
+    downsample: int = 12,
+    num_iter: int = 8,
+    lam: float = 0.005,
+) -> NDArray:
 
     u, v = _get_detector_coords(geometry)
     U, V = np.meshgrid(u, v)
@@ -296,26 +324,21 @@ def correct_scatter(
 
     step_du = np.mean(np.diff(du))
     step_dv = np.mean(np.diff(dv))
-    sigma = sc_calib.calculate_thickness_sigma(step_du, step_dv)
 
     grid_kernel = sc_calib.calculate_grid_response(du, dv)
 
     primaries = np.zeros_like(proj_data.projs)
     print("Performing ASKS scatter correction: ")
     for i, proj in tqdm(enumerate(proj_data.projs)):
-        blank, blank_airnorm = blank_proj_data.interp_proj(proj_data.angles[i])
-
-        cf_air = proj_data.airnorms[i] / blank_airnorm
-        blank = interpn((v, u), blank * cf_air, (DV, DU))
-        blank = np.float32(blank)
+        blank = blank_proj_data.interp_proj(proj_data.angles[i])
+        blank = interpn((v, u), blank, (DV, DU))
         primary = interpn((v, u), proj, (DV, DU))
-        primary = np.float32(primary)
         scatter = np.zeros_like(primary)
 
         for n in range(num_iter):
             scatter_old = scatter
             thickness_map = sc_calib.estimate_water_equiv_thickness(
-                blank, primary, smooth=True, sigma=sigma
+                blank, primary, pixel_size=(step_du, step_dv)
             )
             edge_weight = sc_calib.calculate_edge_response(thickness_map)
             thickness_masks = sc_calib.create_thickness_masks(thickness_map)
@@ -324,7 +347,7 @@ def correct_scatter(
 
             scatter = _update_scatter_estimate(
                 primary,
-                mm2cm(thickness_map),
+                thickness_map,
                 thickness_masks,
                 amplitudes,
                 gforms,
