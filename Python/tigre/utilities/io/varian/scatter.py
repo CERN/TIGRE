@@ -73,12 +73,12 @@ class ScattParams(XML):
 
     def _get_thickness_params(self) -> dict[str, float | list[float]]:
         mu_water = float(self._get_field("CalibrationResults/Globals/muH2O").text)  # mm^-1
-        sigma_u = float(self._get_field("CalibrationResults/Globals/AsymPertSigmaMMu").text)
-        sigma_v = float(self._get_field("CalibrationResults/Globals/AsymPertSigmaMMv").text)
+        sigma_u = float(self._get_field("CalibrationResults/Globals/AsymPertSigmaMMu").text)  # mm
+        sigma_v = float(self._get_field("CalibrationResults/Globals/AsymPertSigmaMMv").text)  # mm
         bounds = [
             float(thickness.text)
             for thickness in self.obj_scatt_models.findall("ObjectScatterModel/Thickness", self.ns)
-        ]
+        ]  # mm
         thickness_params = dict(mu_water=mu_water, sigma_u=sigma_u, sigma_v=sigma_v, bounds=bounds)
         return thickness_params
 
@@ -111,7 +111,7 @@ class ScattParams(XML):
         A = np.array([float(elem.find("A", self.ns).text) for elem in self.obj_scatt_fits])  # cm^-2
         alpha = np.array([float(elem.find("alpha", self.ns).text) for elem in self.obj_scatt_fits])
         beta = np.array([float(elem.find("beta", self.ns).text) for elem in self.obj_scatt_fits])
-        A = 0.01 * A  # mm^-2
+        A = (cm2mm(1) ** -2) * A  # mm^-2
         return dict(A=A, alpha=alpha, beta=beta)
 
     def num_thicknesses(self) -> int:
@@ -158,9 +158,9 @@ class ScattParams(XML):
 
         for i in range(self.num_thicknesses()):
             gforms[i] = np.exp(
-                -0.5 * grid / ((10.0 * self.form_func_params["sigma1"][i]) ** 2)
+                -0.5 * grid / ((self.form_func_params["sigma1"][i]) ** 2)
             ) + self.form_func_params["B"][i] * np.exp(
-                -0.5 * grid / ((10.0 * self.form_func_params["sigma2"][i]) ** 2)
+                -0.5 * grid / ((self.form_func_params["sigma2"][i]) ** 2)
             )
         return gforms
 
@@ -173,8 +173,7 @@ class ScattParams(XML):
         amplitudes = []
         for i in range(self.num_thicknesses()):
             amplitude = (
-                0.01
-                * (self.ampl_params["A"][i])
+                (self.ampl_params["A"][i])
                 * edge_weight
                 * (norm ** self.ampl_params["alpha"][i])
                 * (log_norm ** self.ampl_params["beta"][i])
@@ -192,7 +191,7 @@ class ScattParams(XML):
     @staticmethod
     def calculate_edge_response(
         thickness_map: NDArray,
-        threshold: int | float = 50,
+        threshold: float = 50.0,
         filter_size: int = 25,
         num_iter: int = 5,
     ) -> NDArray:
@@ -268,7 +267,7 @@ def _calculate_primary(proj: NDArray, scatt: NDArray, max_scatt_frac: float = 0.
 
 
 def _get_detector_coords(geometry: Geometry, downsample: int = 0) -> tuple[NDArray, NDArray]:
-    # Detector coords,centered (cm)
+    # Detector coords, centered (cm)
     u = 0.5 * np.linspace(-1, 1, int(geometry.nDetector[1]))
     u *= geometry.sDetector[1] - geometry.dDetector[1]
     v = 0.5 * np.linspace(-1, 1, int(geometry.nDetector[0]))
