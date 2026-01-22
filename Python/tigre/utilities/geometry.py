@@ -64,7 +64,7 @@ class Geometry(object):
         if not self.dVoxel.shape == (3,):
             raise AttributeError("geo.dVoxel.shape should be (3, )")
         if not sum(abs(self.dVoxel * self.nVoxel - self.sVoxel)) < 1e-6:
-            "nVoxel*dVoxel is not equal to sVoxel. " "Check fields."
+            raise AttributeError("nVoxel*dVoxel is not equal to sVoxel. Check fields.")
 
         # Detector Data
         if not self.nDetector.shape == (2,):
@@ -101,6 +101,7 @@ class Geometry(object):
             self.__check_and_repmat__("COR", angles)
         else:
             self.COR = np.zeros(angles.shape[0])
+            self.__check_and_repmat__("COR", angles)
 
         if not hasattr(self, "accuracy"):
             self.accuracy = 0.5
