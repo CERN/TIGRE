@@ -18,7 +18,7 @@ gform = [];
 
 for ii=1:ngroup
     tmp = sccalib.CalibrationResults.ObjectScatterModels.ObjectScatterModel{ii}.ObjectScatterFit;
-    % unit: cm^(-1)
+    % unit: cm
     sigma1 = str2double(tmp.sigma1.Text);
     sigma2 = str2double(tmp.sigma2.Text);
     % unitless

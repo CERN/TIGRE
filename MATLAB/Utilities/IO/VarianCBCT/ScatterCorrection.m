@@ -55,7 +55,7 @@ ASG = SC_ASGkernel(ScCalib, geo, dus, dvs);
 
 %% Component Weights: gamma (gamma = 0 for SKS)
 gamma = str2double(ScCalib.CalibrationResults.ObjectScatterModels.ObjectScatterModel{1}.ObjectScatterFit.gamma.Text);
-% unit: cm-> mm
+% unit: mm -> cm
 mm2cm =  1/10;
 
 % gamma = gamma * unit_cvt;
@@ -95,8 +95,6 @@ for ii = 1: size(proj, 3)
         
         % estimate thickness: mm
         thickness = SC_ThicknessEstimator(blk, page, ScCalib, step_du, step_dv);
-        % smooth thickness
-        thickness = SC_SmoothThickness(thickness, ScCalib, step_du, step_dv);
         
         % Ri(x,y): group-based masks
         nmask = SC_GroupMask(thickness, ngroup, nbounds);
