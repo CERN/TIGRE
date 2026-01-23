@@ -38,14 +38,16 @@ class DetScattParams(XML):
         except Exception:
             raise ValueError("Invalid DetectorScatterModel parameters.")
         else:
+            dps_params[1] /= cm2mm(1)  # convert to mm^-1
+            dps_params[3] /= cm2mm(1)  # convert to mm^-1
             return dps_params
 
     def calculate_dps_kernel(self, grid_coords: tuple[NDArray, NDArray]) -> NDArray:
         U, V = grid_coords
         grid = np.sqrt(U**2 + V**2)
 
-        det_kernel = self.params[0] * np.exp(-10.0 * self.params[1] * grid) + self.params[2] * (
-            np.exp(-10.0 * self.params[3] * (grid - self.params[4]) ** 3)
+        det_kernel = self.params[0] * np.exp(-self.params[1] * grid) + self.params[2] * (
+            np.exp(-self.params[3] * (grid - self.params[4]) ** 3)
         )
         det_kernel = self.params[5] * det_kernel / np.sum(det_kernel)
         return det_kernel
@@ -105,13 +107,16 @@ class ScattParams(XML):
         )  # cm
         B = np.array([float(elem.find("B", self.ns).text) for elem in self.obj_scatt_fits])
 
-        return dict(sigma1=cm2mm(sigma1), sigma2=cm2mm(sigma2), B=B)
+        sigma1 *= cm2mm(1)  # convert to mm
+        sigma2 *= cm2mm(1)  # convert to mm
+
+        return dict(sigma1=sigma1, sigma2=sigma2, B=B)
 
     def _get_ampl_params(self) -> dict[str, NDArray]:
         A = np.array([float(elem.find("A", self.ns).text) for elem in self.obj_scatt_fits])  # cm^-2
         alpha = np.array([float(elem.find("alpha", self.ns).text) for elem in self.obj_scatt_fits])
         beta = np.array([float(elem.find("beta", self.ns).text) for elem in self.obj_scatt_fits])
-        A = (cm2mm(1) ** -2) * A  # mm^-2
+        A /= cm2mm(1) ** 2  # convert to mm^-2
         return dict(A=A, alpha=alpha, beta=beta)
 
     def num_thicknesses(self) -> int:
@@ -130,8 +135,9 @@ class ScattParams(XML):
     def calculate_grid_response(self, u: NDArray, v: NDArray) -> NDArray:
         # TODO: read params from Calibration.xml
         K = -0.15
+        K /= cm2mm(1)
         B = 1
-        t_ratio = K * abs(v.T) + B
+        t_ratio = K * np.abs(v.T) + B
         kernel = np.tile(t_ratio[:, np.newaxis], [1, len(u)])
         kernel[kernel < self.grid_efficiency] = self.grid_efficiency
         return kernel
