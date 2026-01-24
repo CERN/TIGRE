@@ -54,7 +54,7 @@ noise_projections = CTnoise.add(projections, Poisson=1e5, Gaussian=np.array([0, 
 #  Projections, geometry, angles, and number of iterations
 #
 # Additionally it contains optional initialization techniques, but we
-# reccomend not using them. CGLS is already quite fast and using them may
+# recommend not using them. CGLS is already quite fast and using them may
 # lead to divergence.
 # The options are:
 #  'init'    Describes different initialization techniques.

@@ -98,7 +98,7 @@ if ispc
             mex_xml_file="mex_CUDA_win64_MVS2013.xml";
             vs_version_year="2013";
         else
-            error("Unknwon version %s\n", vs_major_version);
+            error("Unknown version %s\n", vs_major_version);
         end
         fprintf("Visual Studio %s detected\n", vs_version_year);
     end
