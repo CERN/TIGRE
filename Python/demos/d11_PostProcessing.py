@@ -26,7 +26,8 @@ from tigre.utilities import sample_loader
 from tigre.utilities import CTnoise
 import tigre.algorithms as algs
 from matplotlib import pyplot as plt
-
+from tigre.utilities.im_3d_denoise import im3ddenoise
+from tigre.utilities.crop_CBCT import cropCBCT
 
 #%% Geometry
 geo = tigre.geometry_default(high_resolution=False)
@@ -44,5 +45,31 @@ noise_projections = CTnoise.add(projections, Poisson=1e5, Gaussian=np.array([0, 
 #%% Some recon, FDK for example
 imgFDK = algs.fdk(projections, geo, angles)
 
-# TODO, these are not implemented/accessible in python TIGRE
-# Issues #270 #271
+#%% Postprocessing
+#
+#  Currently the postprocessing steps in TIGRE are limited, but there are 2
+#  functions you can use
+#
+# im3ddenoise : Denoises a 3D image, using Total Variation denoising.
+#
+#  Arguments are the number of iterations and the hyperparameter (same as in
+#  SART-TV)
+imgdenoised = im3ddenoise(imgFDK, 100, 15)
+
+# cropCBCT: Crops all the sections that lie outide the area that is covered
+# by the cone
+# Note this does not consider offsets nor does it remove the top and bottom
+# cone sections
+imcropped = cropCBCT(imgFDK)
+
+#%% plot results
+# denoised image is clearer
+tigre.plotImg(
+    np.concatenate([imgFDK, imgdenoised, imcropped], axis=1), dim="z"
+    )
+# however, the denoising has no knoledge of the original data (projections)
+# this it doesnt reduce the error. The error increases, specially in small
+# areas
+tigre.plotImg(
+    abs(np.concatenate([head - imgFDK, head - imgdenoised, head - imcropped], axis=1)), dim="z"
+    )
