@@ -112,7 +112,7 @@ while iter<niter
             break  
             
         end
-        % If step is adecuate, then continue withg CGLS
+        % If step is adequate, then continue withg CGLS
         r=r-alpha*q;
         s=Atb(r,geo,angles,'matched','gpuids',gpuids);
         

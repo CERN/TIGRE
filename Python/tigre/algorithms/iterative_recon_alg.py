@@ -368,7 +368,7 @@ class IterativeReconAlg(object):
         if self.Quameasopts is not None:
             self.lq[:, iter] = MQ(self.res, res_prev, self.Quameasopts)
         if self.computel2:
-            # compute l2 borm for b-Ax
+            # compute l2 norm for b-Ax
             errornow = im3DNORM(
                 self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids), 2
             )

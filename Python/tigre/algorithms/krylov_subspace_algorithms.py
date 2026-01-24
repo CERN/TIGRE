@@ -545,7 +545,7 @@ class IRN_TV_CGLS(IterativeReconAlg):
                 self.l2l[0, outer*self.niter+i] = np.linalg.norm(aux.ravel(),2)
 
               
-                #% If step is adecuate, then continue withg CGLS
+                #% If step is adequate, then continue withg CGLS
                 r_aux_1 = r_aux_1-alpha*q_aux_1
                 r_aux_2=r_aux_2-alpha*q_aux_2
 

@@ -118,4 +118,4 @@ title('geo.accuracy=0.05')
 % From these plots we can conclude that  a value of 1 or less of
 % geo.accuracy i srasonable. The smaller the better, but eventually the
 % error will be so small that the imporvement is unperceptible. we
-% reccomend something in the range [0.1-0.5]
+% recommend something in the range [0.1-0.5]
