@@ -6,8 +6,7 @@ import time
 import numpy as np
 from _AwminTV import AwminTV
 from _minTV import minTV
-
-# from _minPICCS import minPICCS
+from _minPICCS import minPICCS
 from tigre.algorithms.single_pass_algorithms import FDK
 from tigre.utilities.Atb import Atb
 from tigre.utilities.Ax import Ax
