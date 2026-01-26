@@ -14,12 +14,13 @@
 # This Demo is not fully complete, as several algorithms are not shown
 # here, yet are available in TIGRE, namely:
 #
-# - AwASD_POCS:  Edge preserving ASD_POCS (Adaptative weighted).
-# - OS_AwASD_POCS: OS-version of the previous algorithm
+# - OS_AwASD_POCS: block-wise version of AwASD_POCS
+# - OS_PICCS: block-wise version of PICCS
 # - PCSD: A version of ASD_POCS that heuristically select some of the
 #         parameters, particularly epsilon (maxL2norm)
+# - OS_PCSD: block-wise version of the previous algorithm
 # - AwPCSD: Edge preserving version of the previous algorithm
-# - OS_AwPCSD: block-wise version of the previous
+# - OS_AwPCSD: block-wise version of the previous algorithm
 #
 # You can use these algorithms in a very similar manner as below examples.
 # --------------------------------------------------------------------------
@@ -113,6 +114,7 @@ lambdared = 0.9999  # you generally want 1
 
 
 #   'alpha_red':   Defines the reduction rate of the TV hyperparameter
+#                  alpha=alpha_red*alpha. Default is 0.95
 alpha_red = 0.95
 
 #   'rmax':       The maximum allowed image/TV update ratio. If the TV

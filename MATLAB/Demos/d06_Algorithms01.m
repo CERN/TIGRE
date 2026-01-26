@@ -40,10 +40,10 @@ noise_projections=addCTnoise(projections);
 % 3D Cone beam CT (CBCT) projection backprojection FDK, iterative reconstruction Matlab examples
 % https://www.mathworks.com/matlabcentral/fileexchange/35548-3d-cone-beam-ct--cbct--projection-backprojection-fdk--iterative-reconstruction-matlab-examples
 
-% The algorithm takes, as eny of them, 3 mandatory inputs:
+% The algorithm takes, as any of them, 3 mandatory inputs:
 % PROJECTIONS: Projection data
 % GEOMETRY   : Geometry describing the system
-% ANGLES     : Propjection angles
+% ANGLES     : Projection angles
 % And has a single optional argument:
 % FILTER: filter type applied to the projections. Possible options are
 %        'ram-lak' (default)

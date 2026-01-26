@@ -50,7 +50,7 @@ noise_projections = CTnoise.add(projections, Poisson=1e5, Gaussian=np.array([0, 
 #  (less L2 error) for the same amount of iterations, and SIRT is the
 #  worst (still relatively similar). However, SART needs increased
 #  computational time per iteration, as it needs to update the image very often,
-#  while SIRT only updates the emage ones for the whole sets of projections.
+#  while SIRT only updates the image once for the whole set of projections.
 #  OS-SART lies in the middle, reaching similar convergence (L2 error per
 #  iteration) than SART but with less computational time than SART.
 #
@@ -61,14 +61,14 @@ noise_projections = CTnoise.add(projections, Poisson=1e5, Gaussian=np.array([0, 
 #
 # Optional arguments for all of them
 # ==========================================================================
-# 'lambda': hyperparameter. The update will be multiplied by this number
-# every iteration, to make the steps bigger or smaller. Default: 1
+# 'lmbda': hyperparameter (lambda). The update will be multiplied by this 
+# number every iteration, to make the steps bigger or smaller. Default: 1
 #
 lmbda = 1
 
 
-# 'lambdared': reduction multiplier for the hyperparameter.
-# lambda=lambda*lambdared every iterations, so the steps can be smaller
+# 'lmbda_red': reduction multiplier for the hyperparameter.
+# lmbda=lmbda*lmbda_red every iteration, so the steps can be smaller
 # the further the update. Default=0.99
 lambdared = 0.999
 
@@ -82,7 +82,7 @@ lambdared = 0.999
 #                      will be solved in a small scale, and the size of it
 #                      will increase until the desired size is reached.
 #
-#          'image'     Initialzies with a user given image. Not recoomended
+#          'image'     Initializes with a user given image. Not recommended
 #                      unless you really know what you are doing.
 
 initmode = None
