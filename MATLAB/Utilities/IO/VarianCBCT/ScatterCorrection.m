@@ -55,10 +55,6 @@ ASG = SC_ASGkernel(ScCalib, geo, dus, dvs);
 
 %% Component Weights: gamma (gamma = 0 for SKS)
 gamma = str2double(ScCalib.CalibrationResults.ObjectScatterModels.ObjectScatterModel{1}.ObjectScatterFit.gamma.Text);
-% unit: mm -> cm
-mm2cm =  1/10;
-
-% gamma = gamma * unit_cvt;
 
 %% iteration number
 niter = 8;
@@ -108,8 +104,6 @@ for ii = 1: size(proj, 3)
         % cei(x,y): group-based amplitude factors
         cfactor = SC_AmplitudeFactor(blk, page, edgewt, ScCalib);
         
-        % mm -> cm
-        thickness = thickness * mm2cm;
         %% n-group summation
         term1 = repmat(page,[1,1, ngroup]).*nmask.*cfactor;
         term2 = fft2(gform.* repmat(ASG, [1,1, ngroup]));
@@ -121,7 +115,7 @@ for ii = 1: size(proj, 3)
         comp2 = real(ifft2(tmp2));        
         %% fASKS scatter correction
         Is = (1 - gamma .*thickness).*comp1 + gamma.*comp2; 
-        %sum(sum(Is_prv - Is))
+
         page = page + lambda * (Is_prv - Is);
         page(page<0) = eps;
     end

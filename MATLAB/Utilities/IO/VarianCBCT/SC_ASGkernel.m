@@ -22,8 +22,8 @@ gamma = abs(rad2deg(atan(dvs'./DSD)));
 %% Transmission modelling
 k = -0.15;
 b = 1;
-
-t_ratio = k.*abs(dvs'/10) + b;
+mm2cm = 0.1;
+t_ratio = k.*abs(mm2cm*dvs') + b;
 
 %% Kernel: [nv, nu]
 kernel = repmat(t_ratio, [1,length(dus)]);
