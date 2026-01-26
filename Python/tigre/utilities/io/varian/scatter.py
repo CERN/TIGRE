@@ -267,8 +267,7 @@ def _calculate_primary(proj: NDArray, scatt: NDArray, max_scatt_frac: float = 0.
     scatt_frac = scatt / (proj + np.finfo(proj.dtype).eps)
 
     scatt_frac = median_filter(scatt_frac, size=3)
-    scatt_frac[scatt_frac < 0] = 0
-    scatt_frac = np.minimum(scatt_frac, max_scatt_frac)
+    scatt_frac = np.clip(scatt_frac, 0, max_scatt_frac)
     return proj * (1 - scatt_frac)
 
 
@@ -317,8 +316,9 @@ def correct_scatter(
     geometry: Geometry,
     sc_calib: ScattParams,
     downsample: int = 12,
-    num_iter: int = 8,
+    max_iter: int = 8,
     lam: float = 0.005,
+    min_delta: float = 1e-16,
 ) -> NDArray:
 
     u, v = _get_detector_coords(geometry)
@@ -333,6 +333,7 @@ def correct_scatter(
     grid_kernel = sc_calib.calculate_grid_response(du, dv)
 
     primaries = np.zeros_like(proj_data.projs)
+
     print("Performing ASKS scatter correction: ")
     for i, proj in tqdm(enumerate(proj_data.projs)):
         blank = blank_proj_data.interp_proj(proj_data.angles[i])
@@ -340,7 +341,9 @@ def correct_scatter(
         primary = interpn((v, u), proj, (DV, DU))
         scatter = np.zeros_like(primary)
 
-        for n in range(num_iter):
+        n_iter = 0
+        delta_scatter = 1.0
+        while delta_scatter > min_delta and n_iter < max_iter:
             scatter_old = scatter
             thickness_map = sc_calib.estimate_water_equiv_thickness(
                 blank, primary, pixel_size=(step_du, step_dv)
@@ -360,7 +363,8 @@ def correct_scatter(
                 sc_calib.gamma,
             )
             primary = _update_primary_estimate(primary, scatter_old, scatter, lam=lam)
-
+            delta_scatter = np.mean(np.abs(scatter - scatter_old))
+            n_iter += 1
         # Upsample
         scatter_est = interpn(
             (dv, du), scatter, (V, U), method="cubic", bounds_error=False, fill_value=None
