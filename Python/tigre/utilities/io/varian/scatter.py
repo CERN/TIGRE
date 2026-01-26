@@ -15,6 +15,15 @@ from tqdm import tqdm
 
 
 def _read_scatt_xml(filepath: PathLike) -> ET.Element:
+    """Reads scatter correction parameters from Calibration.xml stored in
+      '/Calibrations/SC-*/Factory' directory. Raises runtime error if none or multiple files found.
+
+    Args:
+        filepath (PathLike): scan folder
+
+    Returns:
+        ET.Element: xml root element
+    """
     file = glob.glob(os.path.join(filepath, "Calibrations", "SC-*", "Factory", "Calibration.xml"))
     if len(file) == 0:
         raise RuntimeError("Scatter calibration file not found.")
@@ -27,6 +36,8 @@ def _read_scatt_xml(filepath: PathLike) -> ET.Element:
 
 
 class DetScattParams(XML):
+    """Class for detector scatter correction parameters (read from Calibration.xml file)."""
+
     def __init__(self, filepath: PathLike, xml_reader: XMLReader = _read_scatt_xml) -> None:
         super().__init__(filepath, xml_reader)
         self.params: list[float] = self._get_params()
@@ -53,8 +64,9 @@ class DetScattParams(XML):
         return det_kernel
 
 
-# TODO: add try except blocks to _get_ methods
 class ScattParams(XML):
+    """Class for FASKS scatter correction parameters (read from Calibration.xml file)."""
+
     def __init__(self, filepath: PathLike, xml_reader: XMLReader = _read_scatt_xml) -> None:
         super().__init__(filepath, xml_reader)
         self.obj_scatt_models: ET.Element = self._get_obj_scatt_models()
@@ -107,8 +119,8 @@ class ScattParams(XML):
         )  # cm
         B = np.array([float(elem.find("B", self.ns).text) for elem in self.obj_scatt_fits])
 
-        sigma1 *= cm2mm(1)  # convert to mm
-        sigma2 *= cm2mm(1)  # convert to mm
+        sigma1 = cm2mm(sigma1)  # convert to mm
+        sigma2 = cm2mm(sigma2)  # convert to mm
 
         return dict(sigma1=sigma1, sigma2=sigma2, B=B)
 
@@ -134,8 +146,7 @@ class ScattParams(XML):
 
     def calculate_grid_response(self, u: NDArray, v: NDArray) -> NDArray:
         # TODO: read params from Calibration.xml
-        K = -0.15
-        K /= cm2mm(1)
+        K = -0.15 / cm2mm(1)
         B = 1
         t_ratio = K * np.abs(v.T) + B
         kernel = np.tile(t_ratio[:, np.newaxis], [1, len(u)])
@@ -226,6 +237,7 @@ def _log_normalize(blank: NDArray, proj: NDArray) -> NDArray:
 
 
 def _rescale(x: NDArray, min_val: float = 0.0, max_val: float = 1.0) -> NDArray:
+    """Rescales input x to range [min_val, max_val] (default: [0,1])."""
     x_rescale = (max_val - min_val) * (x - np.nanmin(x)) / (np.nanmax(x) - np.nanmin(x)) + min_val
     return x_rescale
 
@@ -272,7 +284,15 @@ def _calculate_primary(proj: NDArray, scatt: NDArray, max_scatt_frac: float = 0.
 
 
 def _get_detector_coords(geometry: Geometry, downsample: int = 0) -> tuple[NDArray, NDArray]:
-    # Detector coords, centered (cm)
+    """Calculates the local detector coords (mm), centered at the origin.
+
+    Args:
+        geometry (Geometry): scan geometry
+        downsample (int, optional): downsample factor. Defaults to 0.
+
+    Returns:
+        tuple[NDArray, NDArray]: detector coords (u,v)->(j,i)
+    """
     u = 0.5 * np.linspace(-1, 1, int(geometry.nDetector[1]))
     u *= geometry.sDetector[1] - geometry.dDetector[1]
     v = 0.5 * np.linspace(-1, 1, int(geometry.nDetector[0]))
@@ -288,6 +308,17 @@ def _get_detector_coords(geometry: Geometry, downsample: int = 0) -> tuple[NDArr
 def correct_detector_scatter(
     projs: NDArray, geometry: Geometry, dps_calib: DetScattParams, downsample: int = 8
 ) -> NDArray:
+    """Performs detector point scatter (dps) correction using calibration factors in dps_calib.
+
+    Args:
+        projs (NDArray): uncorrected projection data
+        geometry (Geometry): scan geometry
+        dps_calib (DetScattParams): Calibration parameters (from xml file)
+        downsample (int, optional): downsample factor. (Default: 8).
+
+    Returns:
+        NDArray: dps-corrected projections
+    """
     u, v = _get_detector_coords(geometry)
     U, V = np.meshgrid(u, v)
     du, dv = _get_detector_coords(geometry, downsample=downsample)
@@ -320,6 +351,22 @@ def correct_scatter(
     lam: float = 0.005,
     min_delta: float = 1e-16,
 ) -> NDArray:
+    """Performs FASKS scatter correction (sc) based on algorithm described in Sun & Star-Lack 2010
+    (doi: 10.1088/0031-9155/55/22/007).
+
+    Args:
+        proj_data (ProjData): uncorrected projection data (assumes dps correction already applied)
+        blank_proj_data (ProjData): blank projection data (assumes dps correction already applied)
+        geometry (Geometry): scan geometry
+        sc_calib (ScattParams): scatter calibration parameters (from xml file)
+        downsample (int, optional): downsample factor. (Default: 12).
+        max_iter (int, optional): maximum number of iterations for scatter estimation. (Default: 8).
+        lam (float, optional): relaxation factor. (Default: 0.005).
+        min_delta (float, optional): minimum change in scatter estimation (mean abs. diff.). (Default: 1e-16).
+
+    Returns:
+        NDArray: scatter-corrected projections
+    """
 
     u, v = _get_detector_coords(geometry)
     U, V = np.meshgrid(u, v)
@@ -334,7 +381,7 @@ def correct_scatter(
 
     primaries = np.zeros_like(proj_data.projs)
 
-    print("Performing ASKS scatter correction: ")
+    print("Performing FASKS scatter correction: ")
     for i, proj in tqdm(enumerate(proj_data.projs)):
         blank = blank_proj_data.interp_proj(proj_data.angles[i])
         blank = interpn((v, u), blank, (DV, DU))
@@ -365,7 +412,7 @@ def correct_scatter(
             primary = _update_primary_estimate(primary, scatter_old, scatter, lam=lam)
             delta_scatter = np.mean(np.abs(scatter - scatter_old))
             n_iter += 1
-        # Upsample
+
         scatter_est = interpn(
             (dv, du), scatter, (V, U), method="cubic", bounds_error=False, fill_value=None
         )

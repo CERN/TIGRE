@@ -22,7 +22,22 @@ from tqdm import tqdm
 
 
 def VarianDataLoader(filepath: PathLike, **kwargs) -> tuple[NDArray, Geometry, NDArray]:
+    """Loads raw projection data (xim format) for CBCT scans acquired with Varian OBI
+    (Truebeam 2.0 or 2.7). Option to perform detector scatter correction (dps) and FASKS scatter
+    correction (sc) based on algorithm described in Sun & Star-Lack 2010
+    (doi: 10.1088/0031-9155/55/22/007). Ring artifact correction is also applied.
+    NOTE: This function has only been tested on clinical data from Varian Truebeam (Ver 2.7).
 
+    Args:
+        filepath (PathLike): folder containing projection data and calibration files.
+        kwargs:
+            acdc (bool): acceleration-deceleration correction (default: True)
+            dps (bool): detector point scatter correction (default: True)
+            sc (bool): kernel-based scatter correction (default: True)
+
+    Returns:
+        tuple[NDArray, Geometry, NDArray]: log-normalized projections, geometry, projection angles (in radians)
+    """
     acdc, dps, sc = parse_inputs(**kwargs)
 
     scan_params = ScanParams(filepath)
@@ -54,12 +69,18 @@ def VarianDataLoader(filepath: PathLike, **kwargs) -> tuple[NDArray, Geometry, N
 
 
 def correct_ring_artifacts(log_projs: NDArray, kernel_size: tuple[int, int] = (1, 9)) -> NDArray:
+    """Applies median filter along column dimension to reduce ring artifacts."""
     print("Performing ring artifact correction:")
     log_projs = np.array([median_filter(p, size=kernel_size) for p in tqdm(log_projs)])
     return log_projs
 
 
 def log_normalize(proj_data: ProjData, blank_proj_data: ProjData) -> NDArray:
+    """Applies log normalization: p = -log(I/I0).
+
+    Returns:
+        NDArray: log normalized projections
+    """
     proj_data.projs = proj_data.projs.astype("float32")
     blank_proj_data.projs = blank_proj_data.projs.astype("float32")
     log_projs = np.zeros_like(proj_data.projs)

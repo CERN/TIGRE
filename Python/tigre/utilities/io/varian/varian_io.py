@@ -28,6 +28,8 @@ RECON_FILE = "Reconstruction.xml"
 
 @dataclass
 class ProjData:
+    """Dataclass for projection data and projection angles."""
+
     projs: NDArray
     angles: NDArray
 
@@ -45,11 +47,12 @@ class ProjData:
             return self.projs
         else:
             i_lower, i_upper, w = interp_weight(angle, self.angles)
-            blank_interp = w[0] * self.projs[i_lower] + w[1] * self.projs[i_upper]
-            return blank_interp
+            proj_interp = w[0] * self.projs[i_lower] + w[1] * self.projs[i_upper]
+            return proj_interp
 
 
 def _read_scan_xml(filepath: PathLike) -> ET.Element:
+    """Reads scan parameters from SCAN_FILE. Raises runtime error if file not found."""
     file = os.path.join(filepath, SCAN_FILE)
     tree = ET.parse(file)
     root = tree.getroot()
@@ -60,6 +63,10 @@ def _read_scan_xml(filepath: PathLike) -> ET.Element:
 
 
 def _read_recon_xml(filepath: PathLike) -> ET.Element:
+    """
+    Reads reconstruction parameters from RECON_FILE. Raises runtime error if
+    multiple files found.
+    """
     file = glob.glob(os.path.join(filepath, "**", RECON_FILE), recursive=True)
     if len(file) > 1:
         raise RuntimeError(f"Multiple {RECON_FILE} files found.")
@@ -68,6 +75,8 @@ def _read_recon_xml(filepath: PathLike) -> ET.Element:
 
 
 class ScanParams(XML):
+    """Class for scan parameters."""
+
     def __init__(self, filepath: PathLike, xml_reader: XMLReader = _read_scan_xml) -> None:
         super().__init__(filepath, xml_reader)
         self.version: float = self._get_varian_version()
@@ -197,6 +206,7 @@ class ScanParams(XML):
                 return version
 
     def calculate_angular_threshold(self, frac: float = 0.9) -> float:
+        "Calculates angular threshold for acceleration-deceleration correction."
         return frac * (self.rot_velocity / self.frame_rate)
 
     def rot_direction(self) -> str:
@@ -207,6 +217,8 @@ class ScanParams(XML):
 
 
 class ReconParams(XML):
+    """Class for reconstruction parameters."""
+
     def __init__(self, filepath: PathLike, xml_reader: XMLReader = _read_recon_xml) -> None:
         super().__init__(filepath, xml_reader)
         if self.root is not None:
@@ -246,7 +258,12 @@ class ReconParams(XML):
 
 
 def read_varian_geometry(scan_params: ScanParams, recon_params: ReconParams | None) -> Geometry:
+    """
+    Reads Varian CBCT geometry from scan and reconstruction parameters.
 
+    Returns:
+        Geometry: scan geometry object
+    """
     geometry = Geometry()
     geometry.mode = "cone"
     geometry.DSD = scan_params.SID
@@ -294,12 +311,16 @@ def read_varian_geometry(scan_params: ScanParams, recon_params: ReconParams | No
     return geometry
 
 
-def air_normalize(proj: NDArray, airnorm: float) -> NDArray:
+def _air_normalize(proj: NDArray, airnorm: float) -> NDArray:
     return proj / airnorm
 
 
 def load_blank_projections(filepath: PathLike, scan_params: ScanParams) -> ProjData:
-
+    """Loads blank projection(s) and angles from xim files. Projection(s) are divided by air
+    normalization factor. If Varian version 2.7, multiple blank projections are loaded and sorted
+    according to angle. If Varian version 2.0, single blank projection is loaded and angles array
+    is empty.
+    """
     if scan_params.bowtie_filter is None:
         blank_fname = "Filter.xim"
     else:
@@ -325,7 +346,7 @@ def load_blank_projections(filepath: PathLike, scan_params: ScanParams) -> ProjD
         else:
             blank_airnorm = float(xim_img.properties["KVNormChamber"])
             blank_proj = np.fliplr(np.array(blank_proj, dtype="float"))
-            blank_proj = air_normalize(blank_proj, blank_airnorm)
+            blank_proj = _air_normalize(blank_proj, blank_airnorm)
             return ProjData(projs=blank_proj, angles=np.array([]))
 
     elif scan_params.version == ALLOWED_VERSIONS[1]:
@@ -348,7 +369,7 @@ def load_blank_projections(filepath: PathLike, scan_params: ScanParams) -> ProjD
 
         blank_angles = np.array(blank_angles, dtype="float")
         blank_projs = np.array(
-            [air_normalize(blank_projs[i], air) for i, air in enumerate(blank_airnorms)]
+            [_air_normalize(blank_projs[i], air) for i, air in enumerate(blank_airnorms)]
         )
 
         blank_angles, i_sort = sort_mod_N(blank_angles, N=360)
@@ -358,7 +379,9 @@ def load_blank_projections(filepath: PathLike, scan_params: ScanParams) -> ProjD
 
 
 def load_projections(filepath: PathLike, threshold: float = 0.0) -> ProjData:
-
+    """Loads projections and angles from xim files. Projection(s) are divided by air normalization
+    factor. if threshold>0, oversampled projections are discarded.
+    """
     folder = os.path.join(filepath, "Acquisitions")
 
     ximfilelist = []
@@ -388,6 +411,6 @@ def load_projections(filepath: PathLike, threshold: float = 0.0) -> ProjData:
                 angles.append(angle)
                 airnorms.append(float(xim_img.properties["KVNormChamber"]))
 
-    projs = np.array([air_normalize(projs[i], air) for i, air in enumerate(airnorms)])
+    projs = np.array([_air_normalize(projs[i], air) for i, air in enumerate(airnorms)])
 
     return ProjData(projs=projs, angles=np.array(angles))

@@ -10,7 +10,15 @@ XMLReader = Callable[[PathLike], ET.Element]
 
 
 class XML:
+    """Base class for parsing xml files using xml_reader."""
+
     def __init__(self, filepath: PathLike, xml_reader: XMLReader) -> None:
+        """reads xml file and initializes namespace.
+
+        Args:
+            filepath (PathLike): absolute or relative path to xml file.
+            xml_reader (XMLReader): function for reading xml file.
+        """
         self.name = os.path.basename(filepath)
         self.root = xml_reader(filepath)
         self.ns = self._get_namespace()
@@ -20,6 +28,7 @@ class XML:
         return {"": self.root.tag.split("}")[0].strip("{")}
 
     def _get_field(self, field: str) -> ET.Element:
+        """Returns the xml element corresponding to field."""
         elem = self.root.find(field, self.ns)
         if elem is None:
             basefield = field.split("/")[-1]
@@ -29,13 +38,28 @@ class XML:
 
 
 def sort_mod_N(a: NDArray, N: int) -> tuple[NDArray, NDArray]:
-    a = a % N
-    i_sort = np.argsort(a)
-    return a, i_sort
+    """Returns sorted array mod(N) and indices used for sorting.
+
+    Args:
+        a (NDArray): array to be sorted
+        N (int): modulus
+
+    Returns:
+        tuple[NDArray, NDArray]: sorted array mod(N), indices for sorting
+    """
+    a_mod = a % N
+    i_sort = np.argsort(a_mod)
+    return a_mod[i_sort], i_sort
 
 
 def interp_weight(x: NDArray, xp: NDArray, N: int = 360) -> tuple[int, int, NDArray]:
-    """Linear interpolation of xp at x, mod(N). xp must be monotonically increasing"""
+    """Linearly interpolates xp at points x, mod(N). xp must be monotonically increasing.
+    Returns:
+        i_lower (int): index of the lower bound point in xp
+        i_upper (int): index of the upper bound point in xp
+        weights (NDArray): weights for interpolation of x between xp[i_lower], xp[i_upper]
+
+    """
 
     i_min = int(np.argmin(abs(x - xp)))
     if x - xp[i_min] >= 0:
@@ -50,9 +74,6 @@ def interp_weight(x: NDArray, xp: NDArray, N: int = 360) -> tuple[int, int, NDAr
     return i_lower, i_upper, weights
 
 
-def mm2cm(x: int | float | NDArray) -> float | NDArray:
-    return 0.1 * x
-
-
 def cm2mm(x: int | float | NDArray) -> float | NDArray:
+    """Converts input(s) x from cm to mm."""
     return 10.0 * x
