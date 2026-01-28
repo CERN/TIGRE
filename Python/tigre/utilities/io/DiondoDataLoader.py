@@ -11,7 +11,7 @@ from tigre.utilities.geometry import Geometry
 
 
 def DiondoDataLoader(filepath, **kwargs):
-    #DiondoDataLoader(filepath) Loads Diondo uCT datasets into TIGRE standard
+    # DiondoDataLoader(filepath) Loads Diondo uCT datasets into TIGRE standard
     #
     # DiondoDataLoader(filepath, OPT=VAL, ...) uses options and values.
     #    These are options in case you don't want to load the entire
@@ -72,16 +72,12 @@ def readDiondoGeometry(filepath):
     # Number of pixel in the detector
     geometry.nDetector = numpy.array((pixels_y, pixels_x))
     # Size of pixels in the detector
-    geometry.dDetector = numpy.array(
-        (pixel_size_y, pixel_size_x)
-    )
+    geometry.dDetector = numpy.array((pixel_size_y, pixel_size_x))
     # Total size of the detector
     geometry.sDetector = geometry.nDetector * geometry.dDetector
 
     ## Offset of the detector:
-    geometry.offDetector = numpy.array(
-        (0,0)
-    )
+    geometry.offDetector = numpy.array((0, 0))
 
     ## Image information
     voxels_x = int(xml_recon.find("VolumeDimX").text)
@@ -92,18 +88,14 @@ def readDiondoGeometry(filepath):
     voxel_size_z = float(xml_recon.find("VolumeVoxelSizeZ").text)
     # Number of voxels for the volume
     # the algos require these to be integers.
-    geometry.nVoxel = numpy.array(
-        (voxels_z, voxels_y, voxels_x)
-    )
+    geometry.nVoxel = numpy.array((voxels_z, voxels_y, voxels_x))
     # Size of each voxel
-    geometry.dVoxel = numpy.array(
-        (voxel_size_z, voxel_size_y, voxel_size_x)
-    )
+    geometry.dVoxel = numpy.array((voxel_size_z, voxel_size_y, voxel_size_x))
     # Size of the image in mm
     geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
     geometry.offOrigin = numpy.array((0, 0, 0))
 
-    #%% Global geometry
+    # %% Global geometry
     xml_geometry = xml_root.find("Geometrie")
     src_det = float(xml_geometry.find("SourceDetectorDist").text)
     src_obj = float(xml_geometry.find("SourceObjectDist").text)
@@ -124,10 +116,10 @@ def readDiondoGeometry(filepath):
         )
 
     ## whitelevel
-    geometry.whitelevel = float(2**16-1)
+    geometry.whitelevel = float(2**16 - 1)
 
     ## angles
-    angular_step = -math.radians(360.0/projections) # -ve due to the way it rotates
+    angular_step = -math.radians(360.0 / projections)  # -ve due to the way it rotates
     angles = numpy.empty(projections)
     for i in range(0, projections):
         angles[i] = i * angular_step
@@ -151,16 +143,16 @@ def loadDiondoProjections(folder, geometry, angles, height, **kwargs):
     projection_folder = Path(folder, "Projection")
     if not projection_folder.exists():
         raise ValueError("Not importing the raw data from a diondo scan")
-    filename_prefix=f"_{height:07.2f}".replace(".",",")
+    filename_prefix = f"_{height:07.2f}".replace(".", ",")
     (pixels_y, pixels_x) = geometry.nDetector
     projection_data = numpy.zeros([len(indices), pixels_y, pixels_x], dtype="<u2")
-    whitelevel = 2^16-1
+    whitelevel = 2 ^ 16 - 1
     for i in tqdm(indices):
         filename = f"{filename_prefix}_{i:04d}.raw"
         file_path = Path(projection_folder, filename)
-        image = numpy.fromfile(file_path, dtype="uint16") #read data in as 1D array
-        image = image.reshape((pixels_y, pixels_x)) # reshape to be image size
-        projection_data[i, :, : ] = -numpy.log(image / float(geometry.whitelevel))
+        image = numpy.fromfile(file_path, dtype="uint16")  # read data in as 1D array
+        image = image.reshape((pixels_y, pixels_x))  # reshape to be image size
+        projection_data[i, :, :] = -numpy.log(image / float(geometry.whitelevel))
     del geometry.whitelevel
 
     return projection_data, geometry, angles
@@ -189,11 +181,13 @@ def parse_inputs(geometry, angles, **kwargs):
         raise ValueError("Unknown sampling type: " + str(sampling))
     return angles, indices
 
+
 def main():
     projections, geometry, angles = DiondoDataLoader(
         "DiondoDataLoaderTest/", sampling="continuous", num_angles=100
     )
     print("", projections.shape, "", geometry, "", angles, "", sep="\n")
+
 
 if __name__ == "__main__":
     main()

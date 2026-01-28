@@ -152,7 +152,7 @@ class IterativeReconAlg(object):
             sup_kw_warning=False,
             gpuids=None,
             niter_outer=4,
-            restart=True
+            restart=True,
         )
         allowed_keywords = [
             "V",
@@ -173,7 +173,7 @@ class IterativeReconAlg(object):
             "fista_q",
             "niter_outer",
             "prior",
-            "prior_ratio"
+            "prior_ratio",
         ]
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
@@ -200,7 +200,7 @@ class IterativeReconAlg(object):
         if not hasattr(self, "res"):
             self.set_res()
         if self.verbose:
-            self.tic = 0    # preparation for _estimate_time_until_completion()
+            self.tic = 0  # preparation for _estimate_time_until_completion()
         # make it a list
         if self.Quameasopts is not None:
             self.Quameasopts = (
@@ -265,7 +265,7 @@ class IterativeReconAlg(object):
 
             else:
                 V[i] *= len(self.angleblocks[i])
-        V[V==0.0] = np.inf       
+        V[V == 0.0] = np.inf
 
         self.V = V
 
@@ -286,8 +286,7 @@ class IterativeReconAlg(object):
                 if verbose:
                     print("init multigrid complete.")
             if init == "FDK":
-                self.res = np.maximum(FDK(self.proj, self.geo, self.angles),0)
-
+                self.res = np.maximum(FDK(self.proj, self.geo, self.angles), 0)
 
         elif isinstance(init, np.ndarray):
             if (self.geo.nVoxel == init.shape).all():
@@ -353,7 +352,7 @@ class IterativeReconAlg(object):
         if self.gpuids is None:
             self.gpuids = GpuIds()
         return minTV(res_prev, dtvg, self.numiter_tv, self.gpuids)
-    
+
     def minimizeTV_prior(self, res_prev, dtvg, prior, ratio):
         if self.gpuids is None:
             self.gpuids = GpuIds()

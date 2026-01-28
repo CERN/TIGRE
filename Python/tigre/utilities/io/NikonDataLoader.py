@@ -36,6 +36,7 @@ def NikonDataLoader(filepath, **kwargs):
     folder, geometry, angles = readXtekctGeometry(filepath)
     return loadNikonProjections(folder, geometry, angles, **kwargs)
 
+
 def readXtekctGeometry(filepath):
 
     # Developed by A. Biguri, W. Sun, P Basford
@@ -85,7 +86,7 @@ def readXtekctGeometry(filepath):
     geometry.sVoxel = geometry.nVoxel * geometry.dVoxel
     geometry.offOrigin = numpy.array((0, 0, 0))
 
-    #%% Global geometry
+    # %% Global geometry
     geometry.DSO = float(cfg["SrcToObject"])
     geometry.DSD = float(cfg["SrcToDetector"])
     try:
@@ -147,7 +148,7 @@ def loadNikonProjections(folder, geometry, angles, **kwargs):
     #       GEOMETRY and ANGLES (loaded from readXtekctGeometry())
     #       See NikonDataLoader() for additional options.
     #
-    #% developed by A. Biguri and W. Sun 06.07.2020
+    # % developed by A. Biguri and W. Sun 06.07.2020
 
     # parse inputs
     angles, indices = parse_inputs(geometry, angles, **kwargs)

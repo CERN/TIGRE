@@ -1,4 +1,3 @@
-
 so.*
 *.jpg
 *.bmp
@@ -13,6 +12,7 @@ so.*
 ## C ignore
 *.pyc
 ## python build files
+build/
 Python/build
 Python/tigre.egg-info/
 Python/purge.sh

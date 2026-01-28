@@ -4,6 +4,8 @@ function cfactor = SC_AmplitudeFactor(blk, page, edgewt, sccalib)
 % Author: Yi Du (yi.du@hotmail.com)
 % Date: 2021-05-24
 
+cm2mm = 10.0;
+
 %% group number
 ngroup = length(sccalib.CalibrationResults.ObjectScatterModels.ObjectScatterModel);
 
@@ -12,15 +14,17 @@ cfactor = [];
 
 for ii=1:ngroup
     tmp = sccalib.CalibrationResults.ObjectScatterModels.ObjectScatterModel{ii}.ObjectScatterFit;
-    % Amplitude Factor
-    % unit: mm - > cm
-    A = str2double(tmp.A.Text) / 10;
+    % Amplitude Factor (cm^-2)
+    A = str2double(tmp.A.Text);
+    A = A*cm2mm^-2;
     % unitless
     alpha = str2double(tmp.alpha.Text);
     beta = str2double(tmp.beta.Text);
 
     % fill holes
     term = (page + eps)./(blk + eps);
+    term(term>1) = 1;
+    term(term<0) = 0;
     logterm = -log(term);
     logterm(logterm<0) = NaN;
     logterm = single(inpaint_nans(double(logterm), 2));
