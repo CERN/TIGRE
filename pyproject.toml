@@ -12,7 +12,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name="tigre"
-version="3.0.0"
+version="3.1.0"
 dependencies = [
 	"matplotlib",
 	"numpy>=1.20.0",
