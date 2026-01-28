@@ -14,7 +14,7 @@ so.*
 *.pyc
 ## python build files
 Python/build
-Python/pytigre.egg-info/
+Python/tigre.egg-info/
 Python/purge.sh
 Python/.idea/
 Python/devtest.py
