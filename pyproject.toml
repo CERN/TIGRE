@@ -3,9 +3,9 @@ line-length = 100
 
 [build-system]
 requires = [
-	"setuptools", 
-	"wheel", 
-	"Cython", 
+	"setuptools",
+	"wheel",
+	"Cython",
 	"numpy",
 	]
 build-backend = "setuptools.build_meta"
@@ -22,11 +22,11 @@ dependencies = [
 ]
 authors=[
 	{name = "Ander Biguri"},
-	{name = "Reuben Lindroos"}, 
+	{name = "Reuben Lindroos"},
 	{name = "Sam Loescher"},
 ]
 license={text="BSD-3-Clause"}
-requires-python = ">=3.7,<3.12"
+requires-python = ">=3.10,<3.15"
 
 [dependency-groups]
 dev = [
