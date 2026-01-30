@@ -125,7 +125,7 @@ class ScanParams(XML):
         try:
             imager_size = [int(elem.text) for elem in elems]
         except Exception:
-            raise ValueError(f"Invalid {field}.")
+            raise ValueError(f"Error converting {fields} to int")
         else:
             return imager_size
 
