@@ -48,7 +48,7 @@ __eIn__ is a single value containing the initial beam energy (in MeV). Other par
 | Parameter | Description | Unit | Type |
 |---        |---         |---   |---  |
 | geo.dDetector      | side length of pixels used in the optimized projection | mm | single |
-| geo.sDetecor   | x and y length of the projection (in mm/cm/..) (array with two entries)  | mm | single |
+| geo.sDetector   | x and y length of the projection (in mm/cm/..) (array with two entries)  | mm | single |
 | geo.DSO | distance between source and origin (always > 0!) | mm | single |
 | geo.DSID | distance between source and entry detector (always > 0!) | mm | single |
 | geo.DSD | distance between source and exit detector (always > 0!)| mm | single |

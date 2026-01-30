@@ -2,7 +2,7 @@ from __future__ import annotations
 import numpy as np
 import os
 from numpy.typing import NDArray
-from Python.tigre.utilities.io.varian.utils import (
+from tigre.utilities.io.varian.utils import (
     XML,
     PathLike,
     XMLReader,
@@ -10,8 +10,8 @@ from Python.tigre.utilities.io.varian.utils import (
     sort_mod_N,
 )
 import xml.etree.ElementTree as ET
-from Python.tigre.utilities.geometry import Geometry
-from Python.tigre.utilities.io.varian.xim import XIM
+from tigre.utilities.geometry import Geometry
+from tigre.utilities.io.varian.xim import XIM
 from dataclasses import dataclass
 import glob
 from tqdm import tqdm
@@ -125,7 +125,7 @@ class ScanParams(XML):
         try:
             imager_size = [int(elem.text) for elem in elems]
         except Exception:
-            raise ValueError(f"Invalid {field}.")
+            raise ValueError(f"Error converting {fields} to int")
         else:
             return imager_size
 
