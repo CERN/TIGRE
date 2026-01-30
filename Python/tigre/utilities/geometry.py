@@ -68,13 +68,13 @@ class Geometry(object):
 
         # Detector Data
         if not self.nDetector.shape == (2,):
-            raise AttributeError("geo.nDecetor.shape should be (2, )")
+            raise AttributeError("geo.nDetector.shape should be (2, )")
         if not self.sDetector.shape == (2,):
             raise AttributeError("geo.sDetector.shape should be (2, )")
         if not self.dDetector.shape == (2,):
             raise AttributeError("geo.dDetector.shape should be (2, )")
         if not sum(abs(self.dDetector * self.nDetector - self.sDetector)) < 1e-6:
-            raise AttributeError("nDetector*dDetecor is not equal to sDetector. Check fields.")
+            raise AttributeError("nDetector*dDetector is not equal to sDetector. Check fields.")
 
         for attrib in ["DSD", "DSO"]:
             self.__check_and_repmat__(attrib, angles)
