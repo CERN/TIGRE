@@ -1,9 +1,9 @@
 from __future__ import annotations
 import numpy as np
 from numpy.typing import NDArray
-from Python.tigre.utilities.geometry import Geometry
-from Python.tigre.utilities.io.varian.utils import PathLike
-from Python.tigre.utilities.io.varian.varian_io import (
+from tigre.utilities.geometry import Geometry
+from tigre.utilities.io.varian.utils import PathLike
+from tigre.utilities.io.varian.varian_io import (
     ProjData,
     ScanParams,
     ReconParams,
@@ -11,7 +11,7 @@ from Python.tigre.utilities.io.varian.varian_io import (
     load_projections,
     load_blank_projections,
 )
-from Python.tigre.utilities.io.varian.scatter import (
+from tigre.utilities.io.varian.scatter import (
     DetScattParams,
     ScattParams,
     correct_detector_scatter,

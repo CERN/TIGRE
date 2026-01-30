@@ -8,9 +8,9 @@ from scipy.ndimage import gaussian_filter, median_filter
 from scipy.fft import fft2, ifft2
 from scipy.signal import decimate, convolve2d
 from scipy.interpolate import interpn
-from Python.tigre.utilities.geometry import Geometry
-from Python.tigre.utilities.io.varian.utils import cm2mm, XML, PathLike, XMLReader
-from Python.tigre.utilities.io.varian.varian_io import ProjData
+from tigre.utilities.geometry import Geometry
+from tigre.utilities.io.varian.utils import cm2mm, XML, PathLike, XMLReader
+from tigre.utilities.io.varian.varian_io import ProjData
 from tqdm import tqdm
 
 
