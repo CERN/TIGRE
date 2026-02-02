@@ -1,65 +1,56 @@
-Installation Instructions for Python
-======
+# Installation Instructions for Python
 
 ## Table of contents
 
 - [Windows](#windows)
    - [Requirements](#requirements)
-   - [Simple Instructions](#simple-instructions)
-   - [Step by Step Instructions](#step-by-step-instructions)
+   - [Build Instructions](#build-instructions)
+   - [Conda package](#conda-install)
 - [Linux](#linux)
    - [Requirements](#requirements-1)
-   - [Simple Instructions](#simple-instructions-1)
-   - [Step by Step Instructions](#step-by-step-instructions1)
-- [Optional Code Style Enforcement](#Optional-Code-Style-Enforcement)
+   - [Build Instructions](#build-instructions-1)
+   - [Conda package](#conda-install-1)
+- [Optional Code Style Enforcement](#optional-code-style-enforcement)
 - [Advanced](#advanced)
-   *****
+
 ## Windows
 
-### Requirements:
+### Requirements
 
 1. Python 3.7-3.11
-2. MVS
-3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.5](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
-4. CUDA Toolkit
+2. NVIDIA CUDA-capable GPU with [compute capability >=3.5](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
+3. MSVC (for building)
+4. CUDA Toolkit (for building)
 
-Tested on
+Tested on:
 
-| Software        | Version           | 
+| Software      | Version       | 
 | ------------- |:-------------:|
 |**Windows**| 10, 11 |
-|**Python**| 3.7 3.8 3.9 3.10, 3.11|
-|**CUDA**| 9.2>|
+|**Python**| 3.10-3.14 |
+|**CUDA**| >=9.2 |
 |**MSVC**| 19.24 |
 
-### Simple Instructions
+### Build Instructions
 
 We strongly recommend using `conda` environments and doing the install in one specific for tigre. 
 
-1. Install Python and pip, MSVC and CUDA
-2. run `git clone https://github.com/CERN/TIGRE.git` 
-3. run `pip install .` in the root folder. 
+> [!TIP]
+> Quick Summary:
+>
+> 1. Install Python and pip, MSVC and CUDA
+> 2. run `git clone https://github.com/CERN/TIGRE.git` 
+> 3. run `pip install .` in the root folder. 
 
 A successful installation should be able to execute the script at `TIGRE/Python/example.py`
 
-#### Conda install
-
-There is no official conda package, but the great people at CIL have been maitaining their own TIGRE conda package. 
-You can install that by running:
-`conda install -c ccpi tigre`
-
-They package releases only Any issues please contact them.
-
-### Step by Step Instructions:
-
 1. Install [MS Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/) with Windows SDK.\
    **NOTE:** The User has to have no spaces.
-	
-2. Install Python 3 + pip. You can use a virtual [conda environment](https://www.anaconda.com/) or just a normal python installation. We strongly recommend the conda environments. Activate the environment before step 5. 
+
+2. Install Python 3 + pip. You can use a virtual [conda environment](https://www.anaconda.com/) or just a normal python installation. We strongly recommend the conda environments. Activate the environment before step 5.
 
 3. Install [CUDA](https://developer.nvidia.com/cuda-downloads). Make sure the `CUDA_PATH` and `PATH` environment variable are set accordingly.\
   **NOTE:** The User has to have no spaces.
-
 
 4. Download/clone TIGRE
 
@@ -67,7 +58,7 @@ They package releases only Any issues please contact them.
 
 5. Compile libraries
 
-	```
+	```sh
 	cd TIGRE/  
 	pip install . --user
 	```
@@ -75,48 +66,48 @@ They package releases only Any issues please contact them.
 	you should remove the `--user` option. 
 	With the `--user` option, TIGRE and the other required packages will be installed to your Python user install directory, not to your virtual environment or system directory.
 
-
 6. Try demo 3. If it runs successfully then you are good to go.
+
+### Conda install
+
+An unofficial conda package is built & maintained by CCPi Tomographic Imaging - you can install it by running:
+
+`conda install -c ccpi tigre`
+
+Please report conda issues [upstream](https://github.com/TomographicImaging/TIGRE-conda/issues).
 
 ## Linux
 
-### Requirements:
+### Requirements
 
 We strongly recommend using `conda` environments and doing the install in one specific for tigre. 
 
 1. Python 3
-2. gcc
-3. A CUDA capable GPU from NVIDIA with [compute capability greater or equal to 3.5](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
-4. CUDA Toolkit
+2. NVIDIA CUDA-capable GPU with [compute capability >=3.5](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
+3. gcc (for building)
+4. CUDA Toolkit (for building)
 
+Tested on:
 
-Tested on
-
-| Software        | Version           | 
+| Software      | Version       | 
 | ------------- |:-------------:|
-|**Ubuntu**| 16.04>|
-|**Python**| 3.7-3.11|
-|**CUDA**| 9.2>|
-|**gcc**|  7.6.0|
+|**Ubuntu**| >=16.04 |
+|**Python**| 3.10-3.14 |
+|**CUDA**| >=9.2 |
+|**gcc**| 7.6.0 |
 
-### Simple Instructions
+### Build Instructions
 
-1. Install python, gcc, pip and CUDA
-2. run `git clone https://github.com/CERN/TIGRE.git` 
-3. run `pip install .` in the root folder. 
+We strongly recommend using `conda` environments and doing the install in one specific for tigre. 
+
+> [!TIP]
+> Quick Summary:
+>
+> 1. Install python and pip, gcc and CUDA
+> 2. run `git clone https://github.com/CERN/TIGRE.git` 
+> 3. run `pip install .` in the root folder. 
 
 A successful installation should be able to execute the script at `TIGRE/Python/example.py`
-
-#### Conda install
-
-There is no official conda package, but the great people at CIL have been maitaining their own TIGRE conda package. 
-You can install that by running:
-`conda install -c ccpi tigre`
-
-They package releases only Any issues please contact them.
-
-
-### Step by Step Instructions:
 
 For Ubuntu
 
@@ -124,19 +115,18 @@ For Ubuntu
 
 	Recommended to do it via [Anaconda3](https://docs.anaconda.com/free/anaconda/install/linux/), and not the following. 
 
-	```
+	```sh
 	sudo apt update
 	sudo apt upgrade
 	sudo apt install python3.10 python-pip
 	```
-	
 
 2. Install CUDA
 
    Installing CUDA in linux (specially one with a GUI) can be a challenge. Please follow [NVIDIAs instructions](https://developer.download.nvidia.com/compute/cuda/10.0/Prod/docs/sidebar/CUDA_Installation_Guide_Linux.pdf) carefully.\
    [CUDA download link](https://developer.nvidia.com/cuda-downloads)
 
-3. Install gcc 
+3. Install gcc
 
    gcc should already be installed in your linux, as it is part of the linux distribution.\
    If you need to install an older version of gcc, [read here](https://askubuntu.com/questions/923337/installing-an-older-gcc-version3-4-3-on-ubuntu-14-04-currently-4-8-installed).
@@ -155,7 +145,6 @@ For Ubuntu
 	you should remove the `--user` option. 
 	With the `--user` option, TIGRE and the other required packages will be installed to your Python user install directory, not to your virtual environment or system directory.
 
-
 6. Try demo 3. If it runs successfully then you are good to go. 
 
 if this fails, then try:
@@ -165,12 +154,21 @@ if this fails, then try:
 
 **NOTE:** as of November 2020 the pip pytigre is behind the main repo, we recommend you install it and compile it yourself. Trying to fix that. 
 
+### Conda install
+
+An unofficial conda package is built & maintained by CCPi Tomographic Imaging - you can install it by running:
+
+`conda install -c ccpi tigre`
+
+Please report conda issues [upstream](https://github.com/TomographicImaging/TIGRE-conda/issues).
+
 ## Optional Code Style Enforcement
 Optional linting dependencies are provided to enforce the prevailing codestyle in the Python component of the TIGRE library.
 
 The primary linting packages utilized are:
-  * [black](https://black.readthedocs.io/en/stable/) for automatic code formatting
-  * [flake8](https://flake8.pycqa.org/en/latest/) for code style enforcement
+
+* [black](https://black.readthedocs.io/en/stable/) for automatic code formatting
+* [flake8](https://flake8.pycqa.org/en/latest/) for code style enforcement
 
 Multiple installation options have been provided:
 
@@ -216,7 +214,3 @@ check blanket noqa.......................................................Passed
 If you are doing reconstruction of large datasets, and you want to use swap memory, you will need to deactivate TIGREs pinned memory feature at compile time. This will allow you to use swap memory, but it will make the operators in TIGRE slower, as pinned memory is used for simultaneous memory and compute. 
 
 You can do this by calling the `setup.py` with the flag `--no_pinned_memory`. 
-
-
-
-
