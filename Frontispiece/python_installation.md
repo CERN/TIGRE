@@ -42,6 +42,14 @@ We strongly recommend using `conda` environments and doing the install in one sp
 
 A successful installation should be able to execute the script at `TIGRE/Python/example.py`
 
+#### Conda install
+
+There is no official conda package, but the great people at CIL have been maitaining their own TIGRE conda package. 
+You can install that by running:
+`conda install -c ccpi tigre`
+
+They package releases only Any issues please contact them.
+
 ### Step by Step Instructions:
 
 1. Install [MS Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/) with Windows SDK.\
@@ -98,6 +106,15 @@ Tested on
 3. run `pip install .` in the root folder. 
 
 A successful installation should be able to execute the script at `TIGRE/Python/example.py`
+
+#### Conda install
+
+There is no official conda package, but the great people at CIL have been maitaining their own TIGRE conda package. 
+You can install that by running:
+`conda install -c ccpi tigre`
+
+They package releases only Any issues please contact them.
+
 
 ### Step by Step Instructions:
 
