@@ -4,7 +4,17 @@ from __future__ import division, absolute_import, print_function
 # related to:
 # https://github.com/CERN/TIGRE/issues/247
 # https://github.com/CERN/TIGRE/issues/349
+# https://github.com/CERN/TIGRE/issues/716
 import os
+import sys
+
+_DLL_DIR_HANDLES = []
+if sys.platform == "win32" and hasattr(os, "add_dll_directory"):
+    _cuda_path = os.environ.get("CUDA_PATH")
+    if _cuda_path:
+        _bin = os.path.join(_cuda_path, "bin")
+        if os.path.isdir(_bin):
+            _DLL_DIR_HANDLES.append(os.add_dll_directory(_bin))
 
 # if hasattr(os, "add_dll_directory"):
 #     # Add all the DLL directories manually
