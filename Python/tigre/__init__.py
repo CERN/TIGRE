@@ -4,17 +4,21 @@ from __future__ import division, absolute_import, print_function
 # related to:
 # https://github.com/CERN/TIGRE/issues/247
 # https://github.com/CERN/TIGRE/issues/349
-# https://github.com/CERN/TIGRE/issues/716
 import os
-import sys
 
-_DLL_DIR_HANDLES = []
-if sys.platform == "win32" and hasattr(os, "add_dll_directory"):
-    _cuda_path = os.environ.get("CUDA_PATH")
-    if _cuda_path:
-        _bin = os.path.join(_cuda_path, "bin")
-        if os.path.isdir(_bin):
-            _DLL_DIR_HANDLES.append(os.add_dll_directory(_bin))
+_CUDA_PATH_WIN_DIR_HANDLE = None
+def _add_cuda_path_on_windows():
+    global _CUDA_PATH_WIN_DIR_HANDLE
+    import sys
+    if sys.platform == "win32" and hasattr(os, "add_dll_directory"):
+        _cuda_path = os.environ.get("CUDA_PATH")
+        if _cuda_path:
+            _bin = os.path.join(_cuda_path, "bin")
+            if os.path.isdir(_bin):
+                # a reference to the handle returned by os.add_dll_directory is necessary, 
+                # otherwise it will be garbage collected and the directory will be removed 
+                # from the search path again.
+                _CUDA_PATH_WIN_DIR_HANDLE = os.add_dll_directory(_bin)
 
 # if hasattr(os, "add_dll_directory"):
 #     # Add all the DLL directories manually
@@ -31,7 +35,18 @@ if sys.platform == "win32" and hasattr(os, "add_dll_directory"):
 from .utilities.geometry import geometry
 from .utilities.geometry_default import ConeGeometryDefault as geometry_default
 from .utilities.geometry_default import FanGeometryDefault as fan_geometry_default
-from .utilities.Ax import Ax
+
+# always import Ax and _Ax_ext before all other ctypes extensions (checks for DLL import errors).
+from .utilities.Ax import Ax, _Ax_ext
+# _Ax_ext will be None if the import failed, 
+# in that case we try to add the CUDA path on windows and import again, 
+# this will raise the original import error with the full message if it still fails.
+if _Ax_ext is None:
+    from .utilities.Ax import _try_import_Ax_ext, _ensure_Ax_ext_import
+    _add_cuda_path_on_windows()
+    _try_import_Ax_ext()
+    _ensure_Ax_ext_import() # check if the import was successful, if not this will raise the original import error.
+
 from .utilities.Atb import Atb
 from .utilities.visualization.plotproj import plotproj, plotProj, plotSinogram
 from .utilities.visualization.plotimg import plotimg, plotImg
