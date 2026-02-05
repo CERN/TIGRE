@@ -19,6 +19,7 @@ def _try_import_Ax_ext():
         GpuIds = imported_ids
 
 def _ensure_Ax_ext_import():
+    global _Ax_ext
     if _Ax_ext is None:
         from _Ax import _Ax_ext
 
