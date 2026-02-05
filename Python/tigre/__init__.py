@@ -37,15 +37,15 @@ from .utilities.geometry_default import ConeGeometryDefault as geometry_default
 from .utilities.geometry_default import FanGeometryDefault as fan_geometry_default
 
 # always import Ax and _Ax_ext before all other ctypes extensions (checks for DLL import errors).
-from .utilities.Ax import Ax, _Ax_ext
+from .utilities.Ax import Ax, _Ax_ext, _ensure_Ax_ext_import
 # _Ax_ext will be None if the import failed, 
 # in that case we try to add the CUDA path on windows and import again, 
 # this will raise the original import error with the full message if it still fails.
 if _Ax_ext is None:
-    from .utilities.Ax import _try_import_Ax_ext, _ensure_Ax_ext_import
+    from .utilities.Ax import _try_import_Ax_ext
     _add_cuda_path_on_windows()
     _try_import_Ax_ext()
-    _ensure_Ax_ext_import() # check if the import was successful, if not this will raise the original import error.
+_ensure_Ax_ext_import() # check if the import was successful, if not this will raise the original import error.
 
 from .utilities.Atb import Atb
 from .utilities.visualization.plotproj import plotproj, plotProj, plotSinogram
