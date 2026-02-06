@@ -81,8 +81,6 @@ def log_normalize(proj_data: ProjData, blank_proj_data: ProjData) -> NDArray:
     Returns:
         NDArray: log normalized projections
     """
-    proj_data.projs = proj_data.projs.astype("float32")
-    blank_proj_data.projs = blank_proj_data.projs.astype("float32")
     log_projs = np.zeros_like(proj_data.projs)
     eps = np.finfo(proj_data.projs.dtype).eps
 
