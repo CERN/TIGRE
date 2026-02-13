@@ -14,7 +14,7 @@ If you have more of a comment or a suggestion, you can also open a thread in the
 
 **Q: I can not compile TIGRE!**
 
-*A: Have a look at the installation instructions of [the MATLAB version](Frontispiece/MATLAB_installation) or [the Python version](Frontispiece/Python_installation).\
+*A: Have a look at the installation instructions of [the MATLAB version](https://github.com/CERN/TIGRE/blob/master/Frontispiece/MATLAB_installation.md) or [the Python version](https://github.com/CERN/TIGRE/blob/master/Frontispiece/python_installation.md).\
 If after reading that you still have problems, please feel free to contact us.*
 
 **Q: I get compilation error nvcc fatal   : Unsupported gpu architecture 'compute_XX'**

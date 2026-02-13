@@ -1,12 +1,33 @@
 import copy
 
 import numpy as np
-from _Ax import _Ax_ext
 
-from .gpu import GpuIds
+_Ax_ext = None
+GpuIds = None
+def _try_import_Ax_ext():
+    global _Ax_ext, GpuIds
+    if _Ax_ext is None:
+        try:
+            from _Ax import _Ax_ext as imported
+            _Ax_ext = imported
+        except ImportError:
+            _Ax_ext = None
+    if _Ax_ext is not None and GpuIds is None:
+        # GpuIds depends on ctypes as well, so we must import it 
+        # after sucessful completion of the _Ax_ext import.
+        from .gpu import GpuIds as imported_ids
+        GpuIds = imported_ids
+
+def _ensure_Ax_ext_import():
+    global _Ax_ext
+    if _Ax_ext is None:
+        from _Ax import _Ax_ext
+
+_try_import_Ax_ext()
 
 
 def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
+    _ensure_Ax_ext_import() # check if the import was successful, if not this will raise the original import error with the full message.
     if img.dtype != np.float32:
         raise TypeError("Input data should be float32, not " + str(img.dtype))
     if not np.isreal(img).all():
