@@ -16,8 +16,6 @@ from dataclasses import dataclass
 import glob
 from tqdm import tqdm
 
-# separation between the gantry head and the KV x-ray tube source (in deg)
-GANTRY_KVSOURCE_ANGLE_SEP = 90
 # Varian TrueBeam versions
 ALLOWED_VERSIONS = [2.0, 2.7]
 # CC=Counterclockwise, CW=Clockwise
@@ -362,9 +360,7 @@ def load_blank_projections(filepath: PathLike, scan_params: ScanParams) -> ProjD
             else:
                 blank_proj = np.fliplr(np.array(blank_proj, dtype="float"))
                 blank_projs.append(blank_proj)
-                blank_angles.append(
-                    float(xim_img.properties["GantryRtn"] + GANTRY_KVSOURCE_ANGLE_SEP)
-                )
+                blank_angles.append(float(xim_img.properties["KVSourceRtn"]))
                 blank_airnorms.append(float(xim_img.properties["KVNormChamber"]))
 
         blank_angles = np.array(blank_angles, dtype="float")
@@ -404,7 +400,7 @@ def load_projections(filepath: PathLike, threshold: float = 0.0) -> ProjData:
         except AttributeError:
             pass
         else:
-            angle = float(xim_img.properties["GantryRtn"] + GANTRY_KVSOURCE_ANGLE_SEP)
+            angle = float(xim_img.properties["KVSourceRtn"])
             if not angles or abs(angle - angles[-1]) > threshold:
                 proj = np.fliplr(np.array(proj, dtype="float"))
                 projs.append(proj)
