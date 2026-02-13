@@ -52,26 +52,35 @@ def sort_mod_N(a: NDArray, N: int) -> tuple[NDArray, NDArray]:
     return a_mod[i_sort], i_sort
 
 
-def interp_weight(x: NDArray, xp: NDArray, N: int = 360) -> tuple[int, int, NDArray]:
-    """Linearly interpolates xp at points x, mod(N). xp must be monotonically increasing.
+def interp_weight(x: float, xp: NDArray, N: int = 360) -> tuple[int, int, NDArray]:
+    """Linearly interpolates xp at points x, mod(N). xp must be monotonically increasing mod N.
     Returns:
         i_lower (int): index of the lower bound point in xp
         i_upper (int): index of the upper bound point in xp
         weights (NDArray): weights for interpolation of x between xp[i_lower], xp[i_upper]
 
     """
-
-    i_min = int(np.argmin(abs(x - xp)))
-    if x - xp[i_min] >= 0:
-        i_lower = i_min
+    xp = xp % N
+    if np.any(np.diff(xp) < 0.0):
+        raise RuntimeError(f"xp must be monotonically increasing mod {N}.")
     else:
-        i_lower = (i_min - 1) % len(xp)
+        x = x % N
+        i_min = int(np.argmin(abs(x - xp)))
+        if x - xp[i_min] >= 0:
+            i_lower = i_min
+        else:
+            i_lower = (i_min - 1) % len(xp)
 
-    i_upper = (i_lower + 1) % len(xp)
+        i_upper = (i_lower + 1) % len(xp)
 
-    xp_diff = (xp[i_upper] - xp[i_lower]) % N
-    weights = (np.array([(xp[i_upper] - x), (x - xp[i_lower])]) % N) / float(xp_diff)
-    return i_lower, i_upper, weights
+        xp_diff = (xp[i_upper] - xp[i_lower]) % N
+        weights = (np.array([(xp[i_upper] - x), (x - xp[i_lower])]) % N) / float(xp_diff)
+        if (np.abs(np.sum(weights)) - 1) > np.finfo(xp.dtype).eps:
+            raise RuntimeError(f"Invalid weights: {weights}. Must sum to 1.")
+        elif np.any(weights) < 0.0:
+            raise RuntimeError(f"Invalid weights: {weights}. Weights must be positive.")
+        else:
+            return i_lower, i_upper, weights
 
 
 def cm2mm(x: int | float | NDArray) -> float | NDArray:
