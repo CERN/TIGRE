@@ -27,6 +27,7 @@ if strcmp(mode,'cone')
     geo.sVoxel=[256;256;256];                   % total size of the image       (mm)
     geo.dVoxel=geo.sVoxel./geo.nVoxel;          % size of each voxel            (mm)
     % Offsets
+    geo.offSource = [0;0];                      % Offset of Source              (mm)
     geo.offOrigin =[0;0;0];                     % Offset of image from origin   (mm)
     geo.offDetector=[0; 0];                     % Offset of Detector            (mm)
     
