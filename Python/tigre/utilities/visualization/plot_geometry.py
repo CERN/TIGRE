@@ -1,7 +1,10 @@
 import matplotlib.patches
 import numpy as np
 import tigre
-from mpl_toolkits.mplot3d import art3d
+import mpl_toolkits.mplot3d.art3d as art3d
+
+if not hasattr(art3d.PathPatch3D, "_axlim_clip"):
+    art3d.PathPatch3D._axlim_clip = False
 
 # https://matplotlib.org/mpl_toolkits/mplot3d/tutorial.html
 
