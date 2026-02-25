@@ -329,7 +329,7 @@ def correct_detector_scatter(
     corrected_projs = np.zeros_like(projs)
     print("Performing detector point scatter correction: ")
     for i, proj in tqdm(enumerate(projs)):
-        proj_down = interpn((v, u), projs[0], (DV, DU))
+        proj_down = interpn((v, u), proj, (DV, DU))
         scatter_down = convolve2d(proj_down, det_kernel, mode="same")
         scatter = interpn(
             (dv, du), scatter_down, (V, U), method="cubic", bounds_error=False, fill_value=None
