@@ -138,6 +138,17 @@
         "bug",
         "code"
       ]
+    },
+    {
+      "login": "Pawelip",
+      "name": "Pawel_Lipowicz",
+      "avatar_url": "https://avatars.githubusercontent.com/u/84121133?v=4",
+      "profile": "https://github.com/Pawelip",
+      "contributions": [
+        "code",
+        "test",
+        "userTesting"
+      ]
     }
   ],
   "contributorsPerLine": 7,
