@@ -34,6 +34,8 @@ def BrukerDataLoader(filepath, **kwargs):
     #
     #         'sampling_step': step to load when loading projections.
     #                 Default=1. Useful for 'step' loading.
+    #
+    # developed by A. Biguri, P. Lipowicz 
 
     dataset_number = kwargs["dataset_number"] if "dataset_number" in kwargs else None
     if dataset_number == "all":
