@@ -217,6 +217,8 @@ def fbp(proj, geo, angles, **kwargs):  # noqa: D103
 
     proj_filt = filtering(copy.deepcopy(proj), geox, angles, parker=False, verbose=verbose)
     if not isinstance(geo.DSO, np.ndarray):
-        return Atb(proj_filt, geo, angles, gpuids=gpuids) * geo.DSO / geo.DSD
+        weight= np.float32(geo.DSO / geo.DSD)
     else:
-        return Atb(proj_filt, geo, angles, gpuids=gpuids) * geo.DSO[0] / geo.DSD[0]
+        weight = np.float32(geo.DSO[0] / geo.DSD[0])
+
+    return Atb(proj_filt, geo, angles, gpuids=gpuids) * weight
