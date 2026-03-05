@@ -16,7 +16,7 @@ def filtering(proj, geo, angles, parker, verbose=False):
     if parker:
         proj=parkerweight(proj.transpose(0,2,1),geo,angles,parker).transpose(0,2,1)
 
-    filt_len=max(64,2**nextpow2(2*max(geo.nDetector)))
+    filt_len=max(64,2**nextpow2(2*geo.nDetector[0])) 
     ramp_kernel=ramp_flat(filt_len)
 
     d=1
@@ -24,7 +24,7 @@ def filtering(proj, geo, angles, parker, verbose=False):
     filt=np.kron(np.ones((np.int64(geo.nDetector[0]),1),dtype=np.float32),filt)
 
     padding = int((filt_len-geo.nDetector[1])//2 )
-    scale_factor = (geo.DSD[0]/geo.DSO[0]) * (2 * np.pi/ len(angles)) / ( 4 * geo.dDetector[0] ) 
+    scale_factor = (geo.DSD[0]/geo.DSO[0]) * (2 * np.pi/ len(angles)) / ( 4 * geo.dDetector[1] ) 
 
     #filter 2 projection at a time packing in to complex container
     fproj=np.empty((geo.nDetector[0],filt_len),dtype=np.complex64)
@@ -89,6 +89,6 @@ def filter(filter, kernel, order, d, verbose=False):
 
 def nextpow2(n):
     i = 1
-    while (2 ** i) < n:
+    while (2 ** i) <= n:
         i += 1
     return i

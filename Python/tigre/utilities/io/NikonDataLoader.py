@@ -117,9 +117,11 @@ def readXtekctGeometry(filepath):
             # TODO: detect header lines automatically
             file.readline()
             for line in file:
-                angles.append(math.radians(float(line.split("\t")[1])))
-        return folder, geometry, numpy.array(angles)
-
+                if "\t" in line:
+                    angles.append(math.radians(line.split("\t")[1]))
+                else:
+                    angles.append(math.radians(float(line.split(": ")[1])))        
+                    return folder, geometry, numpy.array(angles)
     # .txt
     files = [file for file in os.listdir(folder) if file.endswith("_ctdata.txt")]
     if files:

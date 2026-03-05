@@ -194,7 +194,7 @@ for ii=1:length(opts)
         case 'hyper'
             if default
                 disp("Computing operator norm. This may take a while....")
-                lambda=power_methods(geo,angles);
+                lambda=power_method(geo,angles);
                 disp("Parameter hyper computed, consider inputing it for subsequent calls to the same geometry to save time")
                 disp(['hyper= ',str(lambda)])
             elseif length(val)>1 || ~isnumeric( val)
