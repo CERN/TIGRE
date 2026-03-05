@@ -121,7 +121,7 @@ def readXtekctGeometry(filepath):
                     angles.append(math.radians(line.split("\t")[1]))
                 else:
                     angles.append(math.radians(float(line.split(": ")[1])))        
-                    return folder, geometry, numpy.array(angles)
+        return folder, geometry, numpy.array(angles)
     # .txt
     files = [file for file in os.listdir(folder) if file.endswith("_ctdata.txt")]
     if files:
