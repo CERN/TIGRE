@@ -30,7 +30,7 @@ requires-python = ">=3.10,<3.15"
 
 [dependency-groups]
 dev = [
-	"black~=20.8b1",
+	"black~=24.3",
 	"flake8~=3.8",
 	"flake8-annotations~=2.5",
 	"flake8-bugbear~=20.11",
