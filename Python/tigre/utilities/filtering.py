@@ -16,7 +16,7 @@ def filtering(proj, geo, angles, parker, verbose=False):
     if parker:
         proj=parkerweight(proj.transpose(0,2,1),geo,angles,parker).transpose(0,2,1)
 
-    filt_len=max(64,2**nextpow2(2*geo.nDetector[0])) 
+    filt_len=max(64,2**nextpow2(2*geo.nDetector[1])) 
     ramp_kernel=ramp_flat(filt_len)
 
     d=1
