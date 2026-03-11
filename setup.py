@@ -133,7 +133,7 @@ cuda_version = 11.0
 try:
     cuda_version = float(CUDA_VERSION)
 except ValueError:
-    cuda_list = re.findall('\d+', CUDA_VERSION)
+    cuda_list = re.findall(r'\d+', CUDA_VERSION)
     cuda_version = float( str(cuda_list[0] + '.' + cuda_list[1]))
 
 # Insert CUDA arguments depedning on the version
