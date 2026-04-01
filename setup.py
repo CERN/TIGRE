@@ -29,30 +29,6 @@ IS_WINDOWS = sys.platform == "win32"
 
 # Code from https://github.com/pytorch/pytorch/blob/master/torch/utils/cpp_extension.py
 
-CC_COMPATIBILITY_TABLE = [
-    # gencode, code, support_begin, suport_end
-    (20, 20,    1,  1.0),
-    (30, 30,    1, 11.0), 
-    (35, 35,    1, 12.0),
-    (37, 37,    1, 12.0), 
-    (50, 50,  6.5, 13.0), 
-    (52, 52,  6.5, 13.0), 
-    (60, 60,  8.0, 13.0), 
-    (61, 61,  8.0, 13.0), 
-    (70, 70,  9.0, 13.0), # GTX 10 series
-    (75, 75, 10.0, 999 ), # RTX 20 series, T4, T1000, RTX8000
-    (80, 80, 11.0, 999 ), # A100, A30
-    (86, 86, 11.1, 999 ), # RTX 30 series, A40, A10, A16, A2, RTX A6000
-    (87, 87, 11.5, 999 ), # Jetson AGX Orin, Orin Nano, Orin NX
-    (89, 89, 11.8, 999 ), # RTX 40 series, RTX Ada
-    (90, 90, 11.8, 999 ), # GH200, H200, H100
-    (100, 100, 12.8, 999 ), # GB200, B200
-    (103, 103, 12.8, 999 ), # GB300, B300
-    (110, 110, 13.0, 999 ), # Jetson T5000, T4000
-    (120, 120, 12.8, 999 ), # RTX 50 series, RTX Pro Balckwell
-    (121, 121, 12.8, 999 ), # GB10
-]
-
 COMPUTE_CAPABILITY_ARGS = [
     "--ptxas-options=-v",
     "-c",
@@ -77,6 +53,14 @@ def get_cuda_version(cuda_home):
             return version_str[idx + len("release ") : idx + len("release ") + 4]
     except:
         raise RuntimeError("Cannot read cuda version file")
+
+
+def get_cuda_cc(cuda_home):
+    """List nvcc Compute Capabilities"""
+    cc = subprocess.check_output(
+        [os.path.join(cuda_home, "bin", "nvcc"), "--list-gpu-arch"]
+    )
+    return re.findall(r"\d+", str(cc))
 
 
 def locate_cuda():
@@ -141,15 +125,9 @@ except ValueError:
     cuda_list = re.findall(r'\d+', CUDA_VERSION)
     cuda_version = float( str(cuda_list[0] + '.' + cuda_list[1]))
 
-# Insert CUDA arguments depedning on the version
-for item in CC_COMPATIBILITY_TABLE:
-    support_begin = item[2]
-    support_end   = item[3]
-    if cuda_version < support_begin:
-        continue
-    if cuda_version >= support_end:
-        continue
-    str_arg = f"-gencode=arch=compute_{item[0]},code=sm_{item[1]}"
+# Insert CUDA CC arguments
+for item in get_cuda_cc(CUDA["home"]):
+    str_arg = f"-gencode=arch=compute_{item},code=sm_{item}"
     COMPUTE_CAPABILITY_ARGS.insert(0, str_arg)
 
 
