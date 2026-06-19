@@ -53,8 +53,7 @@
 
 
 #include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include "cuda_to_hip.h"
 #include "ray_interpolated_projection.hpp"
 #include "TIGRE_common.hpp"
 #include <math.h>
@@ -195,7 +194,10 @@ template<bool sphericalrotation>
         ty=vectY*i+source.y;
         tz=vectZ*i+source.z;
         
-        sum += tex3D<float>(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
+        if (geo.accuracy>1)
+            sum += tex3D<float>(tex, tx+0.5f, ty+0.5f, tz+0.5f); // point-filtered texture
+        else
+            sum += tex3D_TIGRE(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
     }
     
     float deltalength=sqrtf((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
@@ -591,7 +593,7 @@ void CreateTextureInterp(const GpuIds& gpuids,const float* imagedata,Geometry ge
             geo.accuracy=1;
         }
         else{
-            texDescr.filterMode = cudaFilterModeLinear;
+            texDescr.filterMode = tigre_hw_linear_supported() ? cudaFilterModeLinear : cudaFilterModePoint;
         }
         texDescr.addressMode[0] = cudaAddressModeBorder;
         texDescr.addressMode[1] = cudaAddressModeBorder;
@@ -599,6 +601,10 @@ void CreateTextureInterp(const GpuIds& gpuids,const float* imagedata,Geometry ge
         texDescr.readMode = cudaReadModeElementType;
         cudaCreateTextureObject(&texImage[dev], &texRes, &texDescr, NULL);
         cudaCheckErrors("Texture object creation fail");
+        // tex3D_TIGRE follows this verdict: hardware fetch when supported, else
+        // software trilinear. The accuracy>1 kernel path samples through the raw
+        // tex3D<float> (point) above and never consults the flag.
+        tigre_sync_hw_linear();
     }
 }
 

@@ -50,8 +50,7 @@
 
 
 #include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include "cuda_to_hip.h"
 #include "Siddon_projection_parallel.hpp"
 #include "TIGRE_common.hpp"
 #include <math.h>
@@ -244,6 +243,11 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     float maxlength=sqrtf(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY);//+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
     float sum=0.0f;
     unsigned long Np=(imax-imin+1)+(jmax-jmin+1);//+(kmax-kmin+1); // Number of intersections
+    // See Siddon_projection.cu: cap Np at the geometric maximum so an
+    // out-of-range index bound (from an approximate-division float-equality
+    // flip) cannot make the loop run unbounded. A no-op for any valid ray.
+    const unsigned long Np_max=(unsigned long)geo.nVoxelX+(unsigned long)geo.nVoxelY+3UL;
+    if (Np>Np_max) Np=Np_max;
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
     i+=0.5f;
     j+=0.5f;
