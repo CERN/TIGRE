@@ -22,6 +22,7 @@ class Geometry(object):
 
 
     def check_geo(self, angles, verbose=False):
+        angles = np.atleast_1d(np.asarray(angles))
         if angles.ndim == 1:
             self.n_proj = angles.shape[0]
             zeros_array = np.zeros((self.n_proj, 1), dtype=np.float32)
@@ -123,8 +124,9 @@ class Geometry(object):
 
         :return: None
         """
+        exclude_from_cast = ["nVoxel", "nDetector", "n_proj", "mode", "filter"]
         for attrib in self.__dict__:
-            if getattr(self, attrib) is not None:
+            if getattr(self, attrib) is not None and attrib not in exclude_from_cast:
                 try:
                     setattr(self, attrib, np.float32(getattr(self, attrib)))
                 except ValueError:
