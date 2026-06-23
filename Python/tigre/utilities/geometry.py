@@ -152,7 +152,10 @@ class Geometry(object):
                     new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
                     setattr(self, attrib, new_attrib)
                 elif old_attrib.shape in [(1,)]:
-                    new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
+                    if attrib in ["DSD", "DSO", "COR"]:
+                        new_attrib = np.tile(old_attrib, angles.shape[0])
+                    else:
+                        new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
                     setattr(self, attrib, new_attrib)
                 elif old_attrib.shape == (angles.shape[0],):
                     pass
