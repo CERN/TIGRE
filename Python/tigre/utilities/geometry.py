@@ -120,15 +120,22 @@ class Geometry(object):
 
     def cast_to_single(self):
         """
-        Casts all number values in current instance to single prevision floating point types.
+        Casts all number values in current instance to single precision floating point types.
+        Integers and arrays of integers are preserved.
 
         :return: None
         """
         exclude_from_cast = ["nVoxel", "nDetector", "n_proj", "mode", "filter"]
         for attrib in self.__dict__:
-            if getattr(self, attrib) is not None and attrib not in exclude_from_cast:
+            val = getattr(self, attrib)
+            if val is not None and attrib not in exclude_from_cast:
                 try:
-                    setattr(self, attrib, np.float32(getattr(self, attrib)))
+                    # Convert to numpy array to easily check dtype
+                    arr = np.array(val)
+                    if np.issubdtype(arr.dtype, np.integer):
+                        # Don't cast if it's purely integer
+                        continue
+                    setattr(self, attrib, np.float32(val))
                 except ValueError:
                     pass
 
