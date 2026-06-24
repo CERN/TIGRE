@@ -63,22 +63,6 @@ def run_benchmarks():
     plt.savefig("convergence_benchmark.png")
     print("Saved convergence plot to convergence_benchmark.png")
     
-    print("\n--- Benchmark 2: Image Quality (OSSART_TV vs AwOSSART_TV) ---")
-    
-    # Standard OSSART_TV
-    print("Running OSSART_TV...")
-    res_tv = algs.ossart_tv(proj, geo, angles, niter=15, blocksize=blocksize, tviter=20, tvlambda=50)
-    
-    # AwOSSART_TV
-    print("Running AwOSSART_TV...")
-    res_awtv = algs.aw_ossart_tv(proj, geo, angles, niter=15, blocksize=blocksize, tviter=20, tvlambda=50, delta=-0.005)
-    
-    # Calculate Metrics (RMSE and SSIM)
-    rmse_tv = Measure_Quality(res_tv, head, ['RMSE'])
-    rmse_awtv = Measure_Quality(res_awtv, head, ['RMSE'])
-    
-    print(f"RMSE -> OSSART_TV: {float(rmse_tv):.6f} | AwOSSART_TV: {float(rmse_awtv):.6f}")
-    
     print("\n--- Benchmarks Complete! ---")
     print("You can copy these results into your GitHub PR.")
 
