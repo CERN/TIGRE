@@ -183,6 +183,7 @@ class Fast_OS_SART(IterativeReconAlg):
             t_old = t
             t = (1.0 + np.sqrt(1.0 + 4.0 * t ** 2)) / 2.0
             y_rec = self.res + (t_old - 1.0) / t * (self.res - x_rec_old)
+            y_rec = np.float32(y_rec)
             
             if Quameasopts is not None:
                 self.error_measurement(res_prev, i)
