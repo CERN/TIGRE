@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 try:
     import tigre
     import tigre.algorithms as algs
-    from tigre.demos.Test_data import data_loader
+    from tigre.utilities.sample_loader import load_head_phantom
     from tigre.utilities.Measure_Quality import Measure_Quality
 except ImportError:
     print("ERROR: TIGRE is not properly installed or compiled.")
@@ -24,7 +24,7 @@ def run_benchmarks():
     angles = np.linspace(0, 2 * np.pi, 100)
     
     # Load phantom
-    head = data_loader.load_head_phantom(geo.nVoxel)
+    head = load_head_phantom(geo.nVoxel)
     
     # Generate projection data
     print("Generating forward projections...")
