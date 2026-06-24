@@ -77,7 +77,7 @@ def run_benchmarks():
     rmse_tv = Measure_Quality(res_tv, head, ['RMSE'])
     rmse_awtv = Measure_Quality(res_awtv, head, ['RMSE'])
     
-    print(f"RMSE -> OSSART_TV: {rmse_tv[0]:.6f} | AwOSSART_TV: {rmse_awtv[0]:.6f}")
+    print(f"RMSE -> OSSART_TV: {float(rmse_tv):.6f} | AwOSSART_TV: {float(rmse_awtv):.6f}")
     
     print("\n--- Benchmarks Complete! ---")
     print("You can copy these results into your GitHub PR.")
