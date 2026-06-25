@@ -215,8 +215,8 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     float ax,ay;
     ax=(source.x<pixel1D.x)?  (imin-source.x)/(ray.x+0.000000000001f)  :  (imax-source.x)/(ray.x+0.000000000001f);
     ay=(source.y<pixel1D.y)?  (jmin-source.y)/(ray.y+0.000000000001f)  :  (jmax-source.y)/(ray.y+0.000000000001f);
-    ay = (ray.y==0.0f)? -copysignf(1e11,ax) : ay;
-    ax = (ray.x==0.0f)? -copysignf(1e11,ay) : ax;
+    ay = (ray.y==0.0f)? 1e11f : ay;
+    ax = (ray.x==0.0f)? 1e11f : ax;
 //     az=(source.z<pixel1D.z)?  (kmin-source.z)/ray.z  :  (kmax-source.z)/ray.z;
     
     
@@ -334,9 +334,6 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
             geo.alpha=angles[proj_global*3];
             geo.theta=angles[proj_global*3+1];
             geo.psi  =angles[proj_global*3+2];
-            if(geo.alpha==0.0 || abs(geo.alpha-1.5707963267949)<0.0000001){
-                geo.alpha=geo.alpha+1.1920929e-07;
-            }
             
             //precomute distances for faster execution
             //Precompute per angle constant stuff for speed
