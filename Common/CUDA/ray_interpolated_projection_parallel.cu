@@ -50,8 +50,7 @@
 
 
 #include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include "cuda_to_hip.h"
 #include "ray_interpolated_projection_parallel.hpp"
 #include "TIGRE_common.hpp"
 #include <math.h>
@@ -181,7 +180,7 @@ __global__ void kernelPixelDetector_parallel_interpolated( Geometry geo,
         ty=vectY*i+S.y;
         tz=vectZ*i+S.z;
         
-        sum += tex3D<float>(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
+        sum += tex3D_TIGRE(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
         
     }
     float deltalength=sqrtf((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
@@ -439,11 +438,12 @@ void CreateTextureParallelInterp(float* image,Geometry geo,cudaArray** d_cuArrTe
     cudaTextureDesc     texDescr;
     memset(&texDescr, 0, sizeof(cudaTextureDesc));
     texDescr.normalizedCoords = false;
-    texDescr.filterMode = cudaFilterModeLinear;
+    texDescr.filterMode = tigre_hw_linear_supported() ? cudaFilterModeLinear : cudaFilterModePoint;
     texDescr.addressMode[0] = cudaAddressModeBorder;
     texDescr.addressMode[1] = cudaAddressModeBorder;
     texDescr.addressMode[2] = cudaAddressModeBorder;
     texDescr.readMode = cudaReadModeElementType;
     cudaCreateTextureObject(&texImage[0], &texRes, &texDescr, NULL);
-    
-}
+    tigre_sync_hw_linear();
+
+}
