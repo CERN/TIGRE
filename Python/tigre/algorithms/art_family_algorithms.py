@@ -1,5 +1,5 @@
 import copy
-
+import numpy as np
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.utilities.im_3d_denoise import im3ddenoise
@@ -150,3 +150,42 @@ class OSSART_TV(IterativeReconAlg):
                 self.error_measurement(res_prev, i)
 
 ossart_tv = decorator(OSSART_TV, name="ossart_tv")
+
+class Fast_OS_SART(IterativeReconAlg):
+    __doc__ = (
+        "Fast_OS_SART solves Cone Beam CT image reconstruction using Nesterov accelerated\n"
+        "Oriented Subsets Simultaneous Algebraic Reconstruction Technique algorithm\n"
+        "Fast_OS_SART(PROJ,GEO,ALPHA,NITER,BLOCKSIZE=20) solves the reconstruction problem\n"
+        "using the projection data PROJ taken over ALPHA angles, corresponding\n"
+        "to the geometry described in GEO, using NITER iterations.\n"
+    ) + IterativeReconAlg.__doc__
+
+    def __init__(self, proj, geo, angles, niter, **kwargs):
+        self.blocksize = 20 if 'blocksize' not in kwargs else kwargs["blocksize"]
+        IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+        self.__t__ = 1.0
+
+    def run_main_iter(self):
+        Quameasopts = self.Quameasopts
+        t = self.__t__
+        y_rec = copy.deepcopy(self.res)
+        
+        for i in range(self.niter):
+            res_prev = copy.deepcopy(self.res) if Quameasopts is not None else None
+            if self.verbose:
+                self._estimate_time_until_completion(i)
+                
+            x_rec_old = copy.deepcopy(self.res)
+            
+            self.res = copy.deepcopy(y_rec)
+            getattr(self, self.dataminimizing)()
+            
+            t_old = t
+            t = (1.0 + np.sqrt(1.0 + 4.0 * t ** 2)) / 2.0
+            y_rec = self.res + (t_old - 1.0) / t * (self.res - x_rec_old)
+            y_rec = np.float32(y_rec)
+            
+            if Quameasopts is not None:
+                self.error_measurement(res_prev, i)
+
+fast_os_sart = decorator(Fast_OS_SART, name="fast_os_sart")
