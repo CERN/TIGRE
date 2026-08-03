@@ -110,7 +110,23 @@ class XIM:
             self.compression = decode_binary(xim, int)
             if not self.compression:
                 pixel_buffer_size = decode_binary(xim, int)
-                self.pixel_buffer = decode_binary(xim, str, num_values=pixel_buffer_size)
+                self.pixel_buffer = xim.read(pixel_buffer_size)
+                if read_pixels:
+                    if self.bytes_per_pixel == 1:
+                        dtype = np.int8
+                    elif self.bytes_per_pixel == 2:
+                        dtype = np.int16
+                    elif self.bytes_per_pixel == 4:
+                        dtype = np.int32
+                    elif self.bytes_per_pixel == 8:
+                        dtype = np.int64
+                    else:
+                        raise ValueError(
+                            "The XIM image has an unsupported bytes per pixel value. Raise a ticket on the pylinac Github with this file."
+                        )
+                    self.array = np.frombuffer(self.pixel_buffer, dtype=dtype).reshape(
+                        (self.img_height_px, self.img_width_px)
+                    )
             else:
                 lookup_table_size = decode_binary(xim, int)
                 self.lookup_table = np.fromfile(xim, count=lookup_table_size, dtype=np.uint8)
