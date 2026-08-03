@@ -289,8 +289,8 @@ def read_varian_geometry(scan_params: ScanParams, recon_params: ReconParams | No
             np.array(
                 [
                     geometry.nDetector[1],
-                    geometry.nDetector[0] + abs(geometry.offDetector[0]) / geometry.dDetector[0],
-                    geometry.nDetector[0] + abs(geometry.offDetector[0]) / geometry.dDetector[0],
+                    geometry.nDetector[0] + abs(geometry.offDetector[1]) / geometry.dDetector[1],
+                    geometry.nDetector[0] + abs(geometry.offDetector[1]) / geometry.dDetector[1],
                 ]
             )
         ).astype("int")
