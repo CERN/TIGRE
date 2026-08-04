@@ -113,13 +113,13 @@ class XIM:
                 self.pixel_buffer = xim.read(pixel_buffer_size)
                 if read_pixels:
                     if self.bytes_per_pixel == 1:
-                        dtype = np.int8
+                        dtype = "<i1"
                     elif self.bytes_per_pixel == 2:
-                        dtype = np.int16
+                        dtype = "<i2"
                     elif self.bytes_per_pixel == 4:
-                        dtype = np.int32
+                        dtype = "<i4"
                     elif self.bytes_per_pixel == 8:
-                        dtype = np.int64
+                        dtype = "<i8"
                     else:
                         raise ValueError(
                             "The XIM image has an unsupported bytes per pixel value. Raise a ticket on the pylinac Github with this file."

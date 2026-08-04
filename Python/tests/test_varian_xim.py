@@ -16,10 +16,10 @@ def _load_xim():
 
 def test_uncompressed_xim_exposes_pixel_array(tmp_path):
     xim_path = tmp_path / "uncompressed.xim"
-    pixels = np.array([[-1, 0], [1, 1024]], dtype=np.int16)
+    pixels = np.array([[-1, 0], [1, 1024]], dtype="<i4")
     xim_path.write_bytes(
         b"XIMFILE\x00"
-        + struct.pack("<6i", 1, 2, 2, 16, 2, 0)
+        + struct.pack("<6i", 1, 2, 2, 32, 4, 0)
         + struct.pack("<i", pixels.nbytes)
         + pixels.tobytes()
         + struct.pack("<2i", 0, 0)
