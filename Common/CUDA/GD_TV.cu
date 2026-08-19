@@ -678,7 +678,18 @@ do { \
             cudaDeviceSynchronize();
         }
         cudaCheckErrors("Memory free");
-        cudaDeviceReset();
+        // Do NOT cudaDeviceReset() here: it destroys the PRIMARY CUDA
+        // CONTEXT of the whole host process, not just this function's
+        // resources - every allocation, module and stream the caller holds
+        // through CuPy, PyTorch (see the d25 bindings) or any other CUDA
+        // library dies with it. TIGRE's own subsequent kernels survive only
+        // because the runtime silently re-creates the context, so the
+        // symptom appears in the NEXT library to touch the GPU (e.g.
+        // cudaErrorInvalidValue / CUDA_ERROR_INVALID_HANDLE inside CuPy
+        // deallocations) rather than in TIGRE itself. All buffers are
+        // already freed explicitly above; GD_AwTV.cu has this reset
+        // commented out for the same reason.
+        // cudaDeviceReset();
     }
         
 void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){

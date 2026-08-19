@@ -393,6 +393,10 @@ bool isnan_cuda(float* vec, size_t size){
 
 
         cudaCheckErrors("Memory free");
-        cudaDeviceReset();
+        // Do NOT cudaDeviceReset() here - it destroys the whole host
+        // process's primary CUDA context (CuPy/PyTorch state included),
+        // not just this function's resources. See the matching note in
+        // GD_TV.cu; all buffers are already freed explicitly above.
+        // cudaDeviceReset();
     }
     
