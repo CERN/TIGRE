@@ -76,6 +76,84 @@ class SART_TV(IterativeReconAlg):
         if "blocksize" in kwargs and kwargs['blocksize']>1:
             print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
         kwargs.update(dict(blocksize=1))
+import copy
+import numpy as np
+from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
+from tigre.algorithms.iterative_recon_alg import decorator
+from tigre.utilities.im_3d_denoise import im3ddenoise
+
+
+
+class SART(IterativeReconAlg):  
+    __doc__ = (
+        "SART solves Cone Beam CT image reconstruction using \n"
+        "Simultaneous Algebraic Reconstruction Technique algorithm\n"
+        "SART(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem\n"
+        "using the projection data PROJ taken over ALPHA angles, corresponding\n"
+        "to the geometry described in GEO, using NITER iterations. \n"
+    ) + IterativeReconAlg.__doc__
+
+    def __init__(self, proj, geo, angles, niter, **kwargs):
+        if "blocksize" in kwargs and kwargs['blocksize']>1:
+            print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
+        kwargs.update(dict(blocksize=1))
+        IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+
+
+sart = decorator(SART, name="sart")
+
+
+class SIRT(IterativeReconAlg):  
+    __doc__ = (
+        "SIRT solves Cone Beam CT image reconstruction using \n"
+        "Simultaneous Iterative Reconstructive Technique algorithm\n"
+        "SIRT(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem\n"
+        "using the projection data PROJ taken over ALPHA angles, corresponding\n"
+        "to the geometry described in GEO, using NITER iterations.\n"
+    ) + IterativeReconAlg.__doc__
+
+    def __init__(self, proj, geo, angles, niter, **kwargs):
+        if "blocksize" in kwargs and kwargs['blocksize']>1:
+            print('Warning: blocksize is set to {}, please do not specify blocksize for this algorithm'.format(angles.shape[0]))
+        kwargs.update(dict(blocksize=angles.shape[0]))
+        IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+
+
+sirt = decorator(SIRT, name="sirt")
+
+
+class OS_SART(IterativeReconAlg):  
+    __doc__ = (
+        "OS_SART solves Cone Beam CT image reconstruction using Oriented Subsets\n"
+        "Simultaneous Algebraic Reconstruction Technique algorithm\n"
+        "OS_SART(PROJ,GEO,ALPHA,NITER,BLOCKSIZE=20) solves the reconstruction problem\n"
+        "using the projection data PROJ taken over ALPHA angles, corresponding\n"
+        "to the geometry described in GEO, using NITER iterations.\n"
+    ) + IterativeReconAlg.__doc__
+
+    def __init__(self, proj, geo, angles, niter, **kwargs):
+        
+        self.blocksize = 20 if 'blocksize' not in kwargs else kwargs["blocksize"]       
+        IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+
+
+ossart = decorator(OS_SART, name="ossart")
+
+
+class SART_TV(IterativeReconAlg):  
+    __doc__ = (
+        "SART_TV solves Cone Beam CT image reconstruction using Simultaneous \n"
+        "Algebraic Reconstruction Technique with TV regularization algorithm\n"
+        "SART_TV(PROJ,GEO,ALPHA,NITER,TVLAMBDA=50,TVITER=50) solves the reconstruction\n"
+        "problem using the projection data PROJ taken over ALPHA angles\n"
+        "corresponding to the geometry described in GEO, using NITER iterations. \n"
+    ) + IterativeReconAlg.__doc__
+
+    def __init__(self, proj, geo, angles, niter, **kwargs):
+        
+        if "blocksize" in kwargs and kwargs['blocksize']>1:
+            print('Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1')
+        kwargs.update(dict(blocksize=1))
         self.tvlambda = 50 if 'tvlambda' not in kwargs else kwargs['tvlambda']
         self.tviter = 50 if 'tviter' not in kwargs else kwargs['tviter']
         # these two settings work well for nVoxel=[254,254,254]
@@ -90,6 +168,13 @@ class SART_TV(IterativeReconAlg):
         """
         Quameasopts = self.Quameasopts
 
+        nesterov = False
+        if isinstance(self.lmbda, str) and self.lmbda.lower() == "nesterov":
+            nesterov = True
+            self.lmbda = 1.0
+            t = 1.0
+            y_rec = copy.deepcopy(self.res)
+
         for i in range(self.niter):
 
             res_prev = None
@@ -98,9 +183,20 @@ class SART_TV(IterativeReconAlg):
             if self.verbose:
                 self._estimate_time_until_completion(i)
 
+            if nesterov:
+                x_rec_old = copy.deepcopy(self.res)
+                self.res = copy.deepcopy(y_rec)
+
             getattr(self, self.dataminimizing)()
             # print("run_main_iter: gpuids = {}", self.gpuids)
             self.res = im3ddenoise(self.res, self.tviter, self.tvlambda, self.gpuids)
+            
+            if nesterov:
+                t_old = t
+                t = (1.0 + np.sqrt(1.0 + 4.0 * t ** 2)) / 2.0
+                y_rec = self.res + (t_old - 1.0) / t * (self.res - x_rec_old)
+                y_rec = np.float32(y_rec)
+
             if Quameasopts is not None:
                 self.error_measurement(res_prev, i)
 
@@ -135,6 +231,13 @@ class OSSART_TV(IterativeReconAlg):
         """
         Quameasopts = self.Quameasopts
 
+        nesterov = False
+        if isinstance(self.lmbda, str) and self.lmbda.lower() == "nesterov":
+            nesterov = True
+            self.lmbda = 1.0
+            t = 1.0
+            y_rec = copy.deepcopy(self.res)
+
         for i in range(self.niter):
 
             res_prev = None
@@ -143,49 +246,21 @@ class OSSART_TV(IterativeReconAlg):
             if self.verbose:
                 self._estimate_time_until_completion(i)
             
+            if nesterov:
+                x_rec_old = copy.deepcopy(self.res)
+                self.res = copy.deepcopy(y_rec)
+
             getattr(self, self.dataminimizing)()
             # print("run_main_iter: gpuids = {}", self.gpuids)
             self.res = im3ddenoise(self.res, self.tviter, self.tvlambda, self.gpuids)
+            
+            if nesterov:
+                t_old = t
+                t = (1.0 + np.sqrt(1.0 + 4.0 * t ** 2)) / 2.0
+                y_rec = self.res + (t_old - 1.0) / t * (self.res - x_rec_old)
+                y_rec = np.float32(y_rec)
+
             if Quameasopts is not None:
                 self.error_measurement(res_prev, i)
 
 ossart_tv = decorator(OSSART_TV, name="ossart_tv")
-
-class Fast_OS_SART(IterativeReconAlg):
-    __doc__ = (
-        "Fast_OS_SART solves Cone Beam CT image reconstruction using Nesterov accelerated\n"
-        "Oriented Subsets Simultaneous Algebraic Reconstruction Technique algorithm\n"
-        "Fast_OS_SART(PROJ,GEO,ALPHA,NITER,BLOCKSIZE=20) solves the reconstruction problem\n"
-        "using the projection data PROJ taken over ALPHA angles, corresponding\n"
-        "to the geometry described in GEO, using NITER iterations.\n"
-    ) + IterativeReconAlg.__doc__
-
-    def __init__(self, proj, geo, angles, niter, **kwargs):
-        self.blocksize = 20 if 'blocksize' not in kwargs else kwargs["blocksize"]
-        IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
-        self.__t__ = 1.0
-
-    def run_main_iter(self):
-        Quameasopts = self.Quameasopts
-        t = self.__t__
-        y_rec = copy.deepcopy(self.res)
-        
-        for i in range(self.niter):
-            res_prev = copy.deepcopy(self.res) if Quameasopts is not None else None
-            if self.verbose:
-                self._estimate_time_until_completion(i)
-                
-            x_rec_old = copy.deepcopy(self.res)
-            
-            self.res = copy.deepcopy(y_rec)
-            getattr(self, self.dataminimizing)()
-            
-            t_old = t
-            t = (1.0 + np.sqrt(1.0 + 4.0 * t ** 2)) / 2.0
-            y_rec = self.res + (t_old - 1.0) / t * (self.res - x_rec_old)
-            y_rec = np.float32(y_rec)
-            
-            if Quameasopts is not None:
-                self.error_measurement(res_prev, i)
-
-fast_os_sart = decorator(Fast_OS_SART, name="fast_os_sart")

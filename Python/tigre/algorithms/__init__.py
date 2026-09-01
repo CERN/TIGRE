@@ -7,7 +7,6 @@ from .art_family_algorithms import sirt
 from .art_family_algorithms import ossart
 from .art_family_algorithms import sart_tv
 from .art_family_algorithms import ossart_tv
-from .art_family_algorithms import fast_os_sart
 from .ista_algorithms import fista
 from .ista_algorithms import ista
 from .iterative_recon_alg import iterativereconalg
@@ -39,7 +38,6 @@ __all__ = [
     "ossart",
     "sart_tv",
     "ossart_tv",
-    "fast_os_sart",
     "iterativereconalg",
     "FDK",
     "asd_pocs",

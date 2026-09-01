@@ -33,7 +33,7 @@ def run_benchmarks():
     niter = 30
     blocksize = 20
     
-    print("\n--- Benchmark 1: Convergence Speed & Time (OS_SART vs Fast_OS_SART) ---")
+    print("\n--- Benchmark 1: Convergence Speed & Time (OS_SART vs OS_SART with Nesterov) ---")
     
     # Standard OS_SART
     print("Running standard OS_SART...")
@@ -42,20 +42,20 @@ def run_benchmarks():
     time_os_sart = time.time() - start_time
     
     # Fast OS_SART
-    print("Running Fast_OS_SART...")
+    print("Running OS_SART with Nesterov acceleration...")
     start_time = time.time()
-    res_fast, err_fast = algs.fast_os_sart(proj, geo, angles, niter=niter, blocksize=blocksize, computel2=True)
+    res_fast, err_fast = algs.ossart(proj, geo, angles, niter=niter, blocksize=blocksize, lmbda='nesterov', computel2=True)
     time_fast = time.time() - start_time
     
     print(f"OS_SART Total Time: {time_os_sart:.2f}s ({time_os_sart/niter:.3f}s per iteration)")
-    print(f"Fast_OS_SART Total Time: {time_fast:.2f}s ({time_fast/niter:.3f}s per iteration)")
-    print(f"Final L2 Error -> OS_SART: {err_os_sart[0][-1]:.4f} | Fast_OS_SART: {err_fast[0][-1]:.4f}")
+    print(f"OS_SART (Nesterov) Total Time: {time_fast:.2f}s ({time_fast/niter:.3f}s per iteration)")
+    print(f"Final L2 Error -> OS_SART: {err_os_sart[0][-1]:.4f} | OS_SART (Nesterov): {err_fast[0][-1]:.4f}")
     
     # Plot convergence
     plt.figure(figsize=(8, 5))
     plt.plot(err_os_sart[0], label="OS_SART", linewidth=2)
-    plt.plot(err_fast[0], label="Fast_OS_SART", linewidth=2)
-    plt.title("Convergence Speed: OS_SART vs Fast_OS_SART")
+    plt.plot(err_fast[0], label="OS_SART (Nesterov)", linewidth=2)
+    plt.title("Convergence Speed: OS_SART vs OS_SART (Nesterov)")
     plt.xlabel("Iteration")
     plt.ylabel("L2 Error")
     plt.legend()
