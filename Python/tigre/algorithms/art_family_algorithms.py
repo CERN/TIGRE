@@ -194,8 +194,8 @@ class SART_TV(IterativeReconAlg):
             if nesterov:
                 t_old = t
                 t = (1.0 + np.sqrt(1.0 + 4.0 * t ** 2)) / 2.0
-                y_rec = self.res + (t_old - 1.0) / t * (self.res - x_rec_old)
-                y_rec = np.float32(y_rec)
+                gamma = np.float32((t_old - 1.0) / t)
+                y_rec = self.res + gamma * (self.res - x_rec_old)
 
             if Quameasopts is not None:
                 self.error_measurement(res_prev, i)
@@ -257,8 +257,8 @@ class OSSART_TV(IterativeReconAlg):
             if nesterov:
                 t_old = t
                 t = (1.0 + np.sqrt(1.0 + 4.0 * t ** 2)) / 2.0
-                y_rec = self.res + (t_old - 1.0) / t * (self.res - x_rec_old)
-                y_rec = np.float32(y_rec)
+                gamma = np.float32((t_old - 1.0) / t)
+                y_rec = self.res + gamma * (self.res - x_rec_old)
 
             if Quameasopts is not None:
                 self.error_measurement(res_prev, i)
