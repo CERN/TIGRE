@@ -136,22 +136,26 @@ end
 
 %% parse inputs'
 function [verbose,x,QualMeasOpts,gpuids,gt,restart]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids','groundtruth','restart'};
+[common, leftover] = parseCommonInputs(proj, geo, angles, argin, 'CGLS');
+verbose      = common.verbose;
+x            = common.res;
+QualMeasOpts = common.QualMeasOpts;
+gpuids       = common.gpuids;
+gt           = common.gt;
+
+% Algorithm-specific options
+opts=     {'restart'};
 defaults=ones(length(opts),1);
 
 % Check inputs
-nVarargs = length(argin);
-if mod(nVarargs,2)
-    error('TIGRE:CGLS:InvalidInput','Invalid number of inputs')
-end
-
+nVarargs = length(leftover);
 % check if option has been passed as input
 for ii=1:2:nVarargs
-    ind=find(ismember(opts,lower(argin{ii})));
+    ind=find(ismember(opts,lower(leftover{ii})));
     if ~isempty(ind)
         defaults(ind)=0;
     else
-        error('TIGRE:CGLS:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
+        error('TIGRE:CGLS:InvalidInput',['Optional parameter "' leftover{ii} '" does not exist' ]);
     end
 end
 
@@ -160,84 +164,18 @@ for ii=1:length(opts)
     default=defaults(ii);
     % if one option isnot default, then extranc value from input
     if default==0
-        ind=double.empty(0,1);jj=1;
+        ind=[];jj=1;
         while isempty(ind)
-            ind=find(isequal(opt,lower(argin{jj})));
+            ind=find(isequal(opt,lower(leftover{jj})));
             jj=jj+1;
         end
         if isempty(ind)
-            error('TIGRE:CGLS:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
+            error('TIGRE:CGLS:InvalidInput',['Optional parameter "' leftover{jj} '" does not exist' ]);
         end
-        val=argin{jj};
+        val=leftover{jj};
     end
-    
+
     switch opt
-        case 'init'
-            x=[];
-            if default || strcmp(val,'none')
-                x=zeros(geo.nVoxel','single');
-                continue;
-            end
-            if strcmp(val,'FDK')
-                x=FDK(proj,geo,angles);
-                continue;
-            end
-            if strcmp(val,'multigrid')
-                x=init_multigrid(proj,geo,angles);
-                continue;
-            end
-            if strcmp(val,'image')
-                initwithimage=1;
-                continue;
-            end
-            if isempty(x)
-                error('TIGRE:CGLS:InvalidInput','Invalid Init option')
-            end
-            % % % % % % % ERROR
-        case 'initimg'
-            if default
-                continue;
-            end
-            if exist('initwithimage','var')
-                if isequal(size(val),geo.nVoxel')
-                    x=single(val);
-                else
-                    error('TIGRE:CGLS:InvalidInput','Invalid image for initialization');
-                end
-            end
-            %  =========================================================================
-        case 'qualmeas'
-            if default
-                QualMeasOpts={};
-            else
-                if iscellstr(val)
-                    QualMeasOpts=val;
-                else
-                    error('TIGRE:CGLS:InvalidInput','Invalid quality measurement parameters');
-                end
-            end
-        case 'verbose'
-            if default
-                verbose=1;
-            else
-                verbose=val;
-            end
-            if ~is2014bOrNewer
-                warning('TIGRE:Verbose mode not available for older versions than MATLAB R2014b');
-                verbose=false;
-            end
-        case 'gpuids'
-            if default
-                gpuids = GpuIds();
-            else
-                gpuids = val;
-            end
-        case 'groundtruth'
-            if default
-                gt=nan;
-            else
-                gt=val;
-            end
         case 'restart'
             if default
                 restart=true;
@@ -248,6 +186,5 @@ for ii=1:length(opts)
             error('TIGRE:CGLS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);
     end
 end
-
 
 end
