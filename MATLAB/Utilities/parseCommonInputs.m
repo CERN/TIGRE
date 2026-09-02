@@ -1,4 +1,4 @@
-function [common, leftover] = parseCommonInputs(proj, geo, angles, argin, algName)
+function [common, leftover] = parseCommonInputs(proj, geo, angles, argin, algName, multigridFn)
 %PARSECOMMONINPUTS Parses the option name/value pairs shared by (almost)
 % all TIGRE reconstruction algorithms.
 %
@@ -23,6 +23,20 @@ function [common, leftover] = parseCommonInputs(proj, geo, angles, argin, algNam
 % ALGNAME is used only to build 'TIGRE:<ALGNAME>:InvalidInput' error
 % identifiers, matching each algorithm's pre-existing error IDs.
 %
+% [...] = PARSECOMMONINPUTS(..., MULTIGRIDFN) lets the caller supply its
+% own INIT_MULTIGRID implementation as a function handle. This matters
+% because init_multigrid is NOT a shared utility in TIGRE -- it is
+% duplicated as a local (file-private) function inside several
+% algorithms (e.g. SART, SIRT, OSEM), each only visible within its own
+% file. If MULTIGRIDFN is omitted, this defaults to a bare @init_multigrid
+% handle resolved from THIS file's scope, which preserves each
+% algorithm's pre-existing behavior exactly: algorithms with no global
+% init_multigrid on the path (e.g. CGLS, which already lacks one today)
+% keep failing with the same "undefined function" error as before, while
+% algorithms that define their own local init_multigrid (e.g. SIRT) must
+% pass a handle to it (e.g. @init_multigrid, created from within their
+% own file's scope) to keep 'init','multigrid' working as it does today.
+%
 % NOTE on preserved (not "fixed") behavior: matching every existing
 % algorithm's current implementation, if 'init' is set to 'image' but
 % 'initimg' is not supplied, COMMON.RES is left as [] without raising an
@@ -43,6 +57,10 @@ function [common, leftover] = parseCommonInputs(proj, geo, angles, argin, algNam
 % Contact: tigre.toolbox@gmail.com
 % Codes: https://github.com/CERN/TIGRE/
 %--------------------------------------------------------------------------
+
+if nargin < 6 || isempty(multigridFn)
+    multigridFn = @init_multigrid;
+end
 
 commonOpts = {'init','initimg','verbose','qualmeas','gpuids','groundtruth'};
 
@@ -91,7 +109,7 @@ if (~has('init')) || (ischar(initVal) && strcmp(initVal,'none'))
 elseif ischar(initVal) && strcmp(initVal,'FDK')
     common.res = FDK(proj,geo,angles);
 elseif ischar(initVal) && strcmp(initVal,'multigrid')
-    common.res = init_multigrid(proj,geo,angles);
+    common.res = multigridFn(proj,geo,angles);
 elseif ischar(initVal) && strcmp(initVal,'image')
     if has('initimg')
         initimgVal = value('initimg');
