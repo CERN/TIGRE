@@ -53,6 +53,7 @@ from .utilities.visualization.plotimg import plotimg, plotImg
 from .utilities.visualization.plot_geometry import plot_geometry
 from .utilities.visualization.plot_angles import plot_angles
 from .utilities.CTnoise import add
+from .utilities.computeCOR import computeCOR
 from .utilities.common_geometry import (
     staticDetectorGeo,
     staticDetLinearSourceGeo,

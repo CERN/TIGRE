@@ -36,9 +36,16 @@ angles = np.hstack([angles, angles, angles])  # loop 3 times
 # Load thorax phantom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
 
-# This makes it helical
+# This makes it helical.
+#
+# NOTE the component ordering: the Python bindings map offOrigin as
+# (z, y, x) - matching numpy's volume index order - so the axial (helix)
+# motion goes in column 0. This differs from MATLAB, whose offOrigin is
+# (x, y, z) and whose version of this demo therefore uses offOrigin(3,:).
+# Porting by keeping the index silently translates the volume along the
+# BEAM instead of along the rotation axis.
 geo.offOrigin = np.zeros((angles.shape[0], 3))
-geo.offOrigin[:, 2] = np.linspace(
+geo.offOrigin[:, 0] = np.linspace(
     -1024 / 2 + 128, 1024 / 2 - 128, angles.shape[0]
 )  # about 256^3 images fit int he detector with this size.
 
