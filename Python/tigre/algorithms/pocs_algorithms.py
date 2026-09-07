@@ -7,7 +7,7 @@ from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.algorithms.single_pass_algorithms import FDK
 from tigre.utilities.Ax import Ax
-from tigre.utilities.im3Dnorm import im3DNORM
+from tigre.utilities.im3Dnorm import im3DNORM, inner
 
 
 
@@ -364,7 +364,7 @@ class initPICCS(IterativeReconAlg):
             # the decay on a float copy nobody reads, so lambda_red had no effect on
             # the solver at all. Keep them in step.
             self.lmbda = self.beta
-            c = np.dot(dg_vec.reshape(-1,), dp_vec.reshape(-1,)) / max(
+            c = inner(dg_vec, dp_vec) / max(
                 dg * dp, 1e-6
             )  # reshape ensures no copy is made.
             if (c < -0.99 and dd <= self.epsilon) or self.beta < 0.005 or n_iter >= self.niter:
@@ -608,7 +608,7 @@ class initPCSD(IterativeReconAlg):
             # the decay on a float copy nobody reads, so lambda_red had no effect on
             # the solver at all. Keep them in step.
             self.lmbda = self.beta
-            c = np.dot(dg_vec.reshape(-1,), dp_vec.reshape(-1,)) / max(dg * dp, 1e-6) # reshape ensures no copy is made. 
+            c = inner(dg_vec, dp_vec) / max(dg * dp, 1e-6) # reshape ensures no copy is made. 
             if (c < -0.99 and dd <=
                     self.epsilon) or self.beta < 0.005 or n_iter > self.niter:
                 if self.verbose:
