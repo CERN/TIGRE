@@ -46,8 +46,7 @@
 
 #define  PI_2 1.57079632679489661923
 #include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include "cuda_to_hip.h"
 #include "voxel_backprojection.hpp"
 #include "voxel_backprojection_parallel.hpp"
 
@@ -245,9 +244,9 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             // Get Value in the computed (U,V) and multiply by the corresponding weight.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
 #if IS_FOR_MATLAB_TIGRE
-            voxelColumn[colIdx]+=tex3D<float>(tex, v+0.5f, u+0.5f ,indAlpha+0.5f);
+            voxelColumn[colIdx]+=tex3D_TIGRE(tex, v+0.5f, u+0.5f ,indAlpha+0.5f);
 #else
-            voxelColumn[colIdx]+=tex3D<float>(tex, u+0.5f, v+0.5f ,indAlpha+0.5f);
+            voxelColumn[colIdx]+=tex3D_TIGRE(tex, u+0.5f, v+0.5f ,indAlpha+0.5f);
 #endif
             
         }  // END iterating through column of voxels
@@ -616,12 +615,13 @@ void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuAr
         cudaTextureDesc     texDescr;
         memset(&texDescr, 0, sizeof(cudaTextureDesc));
         texDescr.normalizedCoords = false;
-        texDescr.filterMode = cudaFilterModeLinear;
+        texDescr.filterMode = tigre_hw_linear_supported() ? cudaFilterModeLinear : cudaFilterModePoint;
         texDescr.addressMode[0] = cudaAddressModeBorder;
         texDescr.addressMode[1] = cudaAddressModeBorder;
         texDescr.addressMode[2] = cudaAddressModeBorder;
         texDescr.readMode = cudaReadModeElementType;
         cudaCreateTextureObject(&texImage[0], &texRes, &texDescr, NULL);
         cudaCheckErrors("Texture object creation fail");
+        tigre_sync_hw_linear();
     
-}
+}

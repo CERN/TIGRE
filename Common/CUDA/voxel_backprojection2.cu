@@ -45,8 +45,7 @@
 
 #define  PI_2 1.57079632679489661923
 #include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include "cuda_to_hip.h"
 #include "voxel_backprojection2.hpp"
 #include "TIGRE_common.hpp"
 #include <math.h>
@@ -245,9 +244,9 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             u=y+(float)geo.nDetecU*0.5f;
             v=z+(float)geo.nDetecV*0.5f;
 #if IS_FOR_MATLAB_TIGRE
-            float sample=tex3D<float>(tex, v, u ,indAlpha+0.5f);
+            float sample=tex3D_TIGRE(tex, v, u ,indAlpha+0.5f);
 #else
-            float sample=tex3D<float>(tex, u, v ,indAlpha+0.5f);
+            float sample=tex3D_TIGRE(tex, u, v ,indAlpha+0.5f);
 #endif
             float weight=0;
             //
@@ -689,12 +688,13 @@ void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cud
         cudaTextureDesc     texDescr;
         memset(&texDescr, 0, sizeof(cudaTextureDesc));
         texDescr.normalizedCoords = false;
-        texDescr.filterMode = cudaFilterModeLinear;
+        texDescr.filterMode = tigre_hw_linear_supported() ? cudaFilterModeLinear : cudaFilterModePoint;
         texDescr.addressMode[0] = cudaAddressModeBorder;
         texDescr.addressMode[1] = cudaAddressModeBorder;
         texDescr.addressMode[2] = cudaAddressModeBorder;
         texDescr.readMode = cudaReadModeElementType;
         cudaCreateTextureObject(&texImage[dev], &texRes, &texDescr, NULL);
+        tigre_sync_hw_linear();
     }
 }
 #ifndef BACKPROJECTION_HPP

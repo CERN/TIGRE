@@ -10,6 +10,7 @@
    - [Requirements](#requirements-1)
    - [Build Instructions](#build-instructions-1)
    - [Conda package](#conda-install-1)
+- [AMD GPU (ROCm/HIP)](#amd-gpu-rocmhip)
 - [Optional Code Style Enforcement](#optional-code-style-enforcement)
 - [Advanced](#advanced)
 
@@ -161,6 +162,44 @@ An unofficial conda package is built & maintained by CCPi Tomographic Imaging - 
 `conda install -c ccpi tigre`
 
 Please report conda issues [upstream](https://github.com/TomographicImaging/TIGRE-conda/issues).
+
+## AMD GPU (ROCm/HIP)
+
+TIGRE's Python backend can be built for AMD GPUs with ROCm instead of CUDA. The same `.cu` sources are compiled with `hipcc`, so the CUDA build is unchanged and is selected by default; the ROCm build is opt-in through environment variables.
+
+### Requirements
+
+1. Python 3
+2. AMD ROCm-capable GPU
+3. [ROCm](https://rocm.docs.amd.com/) (for building; includes `hipcc` and the HIP runtime)
+
+Tested on:
+
+| Software      | Version       |
+| ------------- |:-------------:|
+|**ROCm**| >=7.2 |
+|**Linux GPU**| gfx90a (Instinct MI250X) |
+|**Windows GPU**| gfx1201 (RDNA4) |
+
+### Build Instructions
+
+Set `BUILD_WITH_HIP=1` and the environment variables below, then build with `pip` as for the CUDA install:
+
+```sh
+export BUILD_WITH_HIP=1
+export ROCM_PATH=/opt/rocm
+export HIP_ARCH=gfx90a
+cd TIGRE/
+pip install . --no-build-isolation
+```
+
+- `BUILD_WITH_HIP=1` selects the ROCm/HIP build path.
+- `ROCM_PATH` points to the ROCm install (default `/opt/rocm`).
+- `HIP_ARCH` is the target GPU architecture for `--offload-arch`. Pass a comma-separated list to build for several, for example `HIP_ARCH=gfx90a,gfx1100,gfx1201`.
+
+**NOTE:** On Windows, also set `HIPCC` to the ROCm `clang++` (for example `%ROCM_PATH%\lib\llvm\bin\clang++.exe`); the build links the HIP runtime (`amdhip64`) instead of `cudart`.
+
+A successful installation should be able to execute the script at `TIGRE/Python/example.py`, the same as for the CUDA build.
 
 ## Optional Code Style Enforcement
 Optional linting dependencies are provided to enforce the prevailing codestyle in the Python component of the TIGRE library.
