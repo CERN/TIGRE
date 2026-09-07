@@ -49,43 +49,16 @@
 #include <cuda.h>
 #include "voxel_backprojection.hpp"
 #include "TIGRE_common.hpp"
-#include "tigre_cleanup.hpp"
-#include "errors.hpp"
 #include <math.h>
-#include <string.h>
-#include <vector>
 #include "GpuIds.hpp"
 
 // https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
-//
-// Reports the error, then RETURNS ERR_CUDA to the caller rather than unwinding
-// out of the enclosing function. Previously mexErrMsgIdAndTxt() left by the
-// side door - a longjmp back to MATLAB, or exit(1) under Python - from the
-// middle of a function holding device buffers, page-locked host memory, host
-// registrations, streams and texture objects, none of which were released.
-// Returning lets the tigre::CleanupScope in the caller free them on the way
-// out, and lets the binding turn the code into a MATLAB error or a Python
-// TigreCudaCallError.
-//
-// Only usable in functions returning int; the void helpers below use
-// cudaCheckErrorsVoid() and record the error for the caller to notice.
 #define cudaCheckErrors(msg) \
 do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
                 mexPrintf("%s \n",msg);\
                 mexErrMsgIdAndTxt("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
-                return ERR_CUDA;\
-        } \
-} while (0)
-
-#define cudaCheckErrorsVoid(msg) \
-do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
-                mexPrintf("%s \n",msg);\
-                mexErrMsgIdAndTxt("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
-                return;\
         } \
 } while (0)
     
@@ -322,34 +295,11 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     // printf("voxel_backprojection(geo.nDetector = %d, %d)\n", geo.nDetecU, geo.nDetecV);
     // printf("geo.nVoxel    = %d, %d, %d\n", geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
     
-    // Start from a clean error state. cudaGetLastError() reports the last error
-    // from ANY earlier CUDA call and clears it, so without this the first check
-    // below can report a failure that happened before we were even called -
-    // which makes one failure look like every subsequent call failing too.
-    cudaGetLastError();
-
-    // Declared BEFORE the cleanup scope on purpose. These four are filled in
-    // later (cudaMallocHost writes through them; two are allocated inside the
-    // loop), so their release actions must capture them by reference - and a
-    // reference is only good while the object is alive. Locals are destroyed in
-    // reverse order of declaration, so anything the scope refers to has to be
-    // declared before it, or the scope would outlive what it points at.
-    Point3D* projParamsArrayHost = 0;
-    float* projSinCosArrayHost = 0;
-    float** partial_projection = 0;
-    size_t* proj_split_size = 0;
-
-    // Releases every resource acquired below, in reverse order, on ANY return
-    // from this function - including the error returns from cudaCheckErrors().
-    // Without it those returns would leak whatever had been acquired so far.
-    tigre::CleanupScope cleanup;
-
     // Prepare for MultiGPU
     int deviceCount = gpuids.GetLength();
     cudaCheckErrors("Device query fail");
     if (deviceCount == 0) {
         mexErrMsgIdAndTxt("Atb:Voxel_backprojection:GPUselect","There are no available device(s) that support CUDA\n");
-        return ERR_NO_CAPABLE_DEVICES;
     }
 
     // CODE assumes
@@ -377,109 +327,60 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
 #endif
     // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to
     // pin the memory is greater than the lost time in Synchronously launching the memcpys. This is only worth it when the image is too big.
-#ifndef NO_PINNED_MEMORY
+#ifndef NO_PINNED_MEMORY    
     if (isHostRegisterSupported & (split_image>1 |deviceCount>1)){
         cudaHostRegister(result, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float),cudaHostRegisterPortable);
-        cleanup.add([result]{ cudaHostUnregister(result); });
     }
-    if (isHostRegisterSupported ){
-        cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
-        // These are the CALLER'S buffers (a MATLAB array or a NumPy array).
-        // Leaving them page-locked outlives this call and can make a later,
-        // unrelated transfer fail, so the unregister must happen on every path.
-        cleanup.add([projections]{ cudaHostUnregister(projections); });
-    }
+    if (isHostRegisterSupported ){ 
+        cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable); 
+    } 
 #endif
     cudaCheckErrors("Error pinning memory");
     
     
     // Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the
     // image slices. The rest of the Geometry is the same
-    const unsigned int nGeoArray = split_image*deviceCount;
-    Geometry* geoArray=(Geometry*)malloc(nGeoArray*sizeof(Geometry));
-    // Zero it first: createGeoArray mallocs a per-split offOrigZ, and if we
-    // leave this function before that happens, freeGeoArray would free
-    // uninitialised pointers. free(NULL) is a no-op, garbage is not.
-    memset(geoArray, 0, nGeoArray*sizeof(Geometry));
-    // freeGeoArray releases the per-split offOrigZ AND geoArray itself.
-    cleanup.add([geoArray,nGeoArray]{ freeGeoArray(nGeoArray,geoArray); });
+    Geometry* geoArray=(Geometry*)malloc(split_image*deviceCount*sizeof(Geometry));
     createGeoArray(split_image*deviceCount,geo,geoArray,nalpha);
-
-    // Device ids, copied so the release lambdas do not depend on the caller's
-    // GpuIds outliving them.
-    std::vector<int> devIds(deviceCount);
-    for (dev = 0; dev < deviceCount; dev++) devIds[dev] = gpuids[dev];
-
+    
     // Now lest allocate all the image memory on the GPU, so we can use it later. If we have made our numbers correctly
     // in the previous section this should leave enough space for the textures.
     size_t num_bytes_img = (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geoArray[0].nVoxelZ* sizeof(float);
     float** dimage=(float**)malloc(deviceCount*sizeof(float*));
-    memset(dimage, 0, deviceCount*sizeof(float*));
-    // Registered BEFORE the allocation loop, and freed per device, so a failure
-    // part-way through still releases the buffers already allocated on the
-    // earlier devices.
-    cleanup.add([dimage]{ free(dimage); });
-    cleanup.add([dimage,devIds]{
-        for (size_t d = 0; d < devIds.size(); d++){
-            if (dimage[d]) { cudaSetDevice(devIds[d]); cudaFree(dimage[d]); }
-        }
-    });
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(gpuids[dev]);
         cudaMalloc((void**)&dimage[dev], num_bytes_img);
         cudaCheckErrors("cudaMalloc fail");
     }
-
+    
     //If it is the first time, lets make sure our image is zeroed.
     int nStreamDevice=2;
     int nStreams=deviceCount*nStreamDevice;
     cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));;
-    memset(stream, 0, nStreams*sizeof(cudaStream_t));
-    cleanup.add([stream]{ free(stream); });
-    cleanup.add([stream,nStreams]{
-        for (int i = 0; i < nStreams; ++i) if (stream[i]) cudaStreamDestroy(stream[i]);
-    });
-
+    
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(gpuids[dev]);
         for (int i = 0; i < nStreamDevice; ++i){
             cudaStreamCreate(&stream[i+dev*nStreamDevice]);
-
+            
         }
     }
-
+    
 
      
     
-    // Kernel auxiliary variables (declared above the cleanup scope)
+    // Kernel auxiliary variables
+    Point3D* projParamsArrayHost;
     cudaMallocHost((void**)&projParamsArrayHost,6*PROJ_PER_KERNEL*sizeof(Point3D));
-    cleanup.add([&projParamsArrayHost]{ if (projParamsArrayHost) cudaFreeHost(projParamsArrayHost); });
+    float* projSinCosArrayHost;
     cudaMallocHost((void**)&projSinCosArrayHost,5*PROJ_PER_KERNEL*sizeof(float));
-    cleanup.add([&projSinCosArrayHost]{ if (projSinCosArrayHost) cudaFreeHost(projSinCosArrayHost); });
-
-
+    
+    
     // Texture object variables
     cudaTextureObject_t *texProj;
     cudaArray **d_cuArrTex;
     texProj =(cudaTextureObject_t*)malloc(deviceCount*2*sizeof(cudaTextureObject_t));
     d_cuArrTex =(cudaArray**)malloc(deviceCount*2*sizeof(cudaArray*));
-    memset(texProj, 0, deviceCount*2*sizeof(cudaTextureObject_t));
-    memset(d_cuArrTex, 0, deviceCount*2*sizeof(cudaArray*));
-    cleanup.add([texProj]{ free(texProj); });
-    cleanup.add([d_cuArrTex]{ free(d_cuArrTex); });
-    // Release any texture/array still live if we leave from inside the loop.
-    // The normal path destroys them at the end and zeroes the slots, so this
-    // is a no-op then; on an error return it is the only thing that frees them.
-    cleanup.add([texProj,d_cuArrTex,devIds]{
-        for (size_t d = 0; d < devIds.size(); d++){
-            cudaSetDevice(devIds[d]);
-            for (size_t i = 0; i < 2; i++){
-                size_t k = i*devIds.size()+d;
-                if (texProj[k])    cudaDestroyTextureObject(texProj[k]);
-                if (d_cuArrTex[k]) cudaFreeArray(d_cuArrTex[k]);
-            }
-        }
-    });
     
     // Auxiliary Host page-locked memory for fast and asycnornous memcpy.
 
@@ -492,11 +393,8 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     unsigned int current_proj_split_size,current_proj_overlap_split_size;
     size_t num_bytes_img_curr;
     size_t img_linear_idx_start;
-    // Allocated once inside the loop below (guarded by !proj && !img_slice).
-    // Declared above the cleanup scope; released by it, so an early return
-    // frees them whether or not the loop got far enough to allocate.
-    cleanup.add([&partial_projection]{ if (partial_projection) free(partial_projection); });
-    cleanup.add([&proj_split_size]{ if (proj_split_size) free(proj_split_size); });
+    float** partial_projection;
+    size_t* proj_split_size;
     
     
     
@@ -677,37 +575,47 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     } // end image splits
 
     ///////// Cleaning:
-    //
-    // The texture objects and their arrays are created inside the image-split
-    // loop, so they are released here rather than by the CleanupScope; the
-    // pointers are zeroed so the scope's own release is idempotent if we leave
-    // early. Everything else - device buffers, page-locked host memory, host
-    // registrations, streams and the plain mallocs - is released by `cleanup`
-    // when this function returns, by ANY path.
-
+    
+    
     bool two_buffers_used=((((nalpha+split_projections-1)/split_projections)+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL)>1;
     for(unsigned int i=0; i<2;i++){ // 2 buffers (if needed, maybe only 1)
         if (!two_buffers_used && i==1)
             break;
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(gpuids[dev]);
-            if (texProj[i*deviceCount+dev]) {
-                cudaDestroyTextureObject(texProj[i*deviceCount+dev]);
-                texProj[i*deviceCount+dev]=0;
-            }
-            if (d_cuArrTex[i*deviceCount+dev]) {
-                cudaFreeArray(d_cuArrTex[i*deviceCount+dev]);
-                d_cuArrTex[i*deviceCount+dev]=0;
-            }
+            cudaDestroyTextureObject(texProj[i*deviceCount+dev]);
+            cudaFreeArray(d_cuArrTex[i*deviceCount+dev]);
         }
     }
     cudaCheckErrors("cudadestroy textures result fail");
-
+    
+    for (dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(gpuids[dev]);
+        cudaFree(dimage[dev]);
+    }
+    cudaFreeHost(projSinCosArrayHost);
+    cudaFreeHost(projParamsArrayHost);
+    free(partial_projection);
+    free(proj_split_size);
+    
+    freeGeoArray(split_image*deviceCount,geoArray);
+#ifndef NO_PINNED_MEMORY        
+    if (isHostRegisterSupported & (split_image>1 |deviceCount>1)){
+        cudaHostUnregister(result);
+    }
+    if (isHostRegisterSupported){
+        cudaHostUnregister(projections);
+    }
+#endif
+    
+    for (int i = 0; i < nStreams; ++i)
+        cudaStreamDestroy(stream[i]);
+    
     cudaCheckErrors("cudaFree fail");
-
+    
     //cudaDeviceReset(); // For the Nvidia Visual Profiler
-    return CUDA_SUCCESS;
-
+    return 0;
+    
 }  // END voxel_backprojection
 //
 
@@ -1001,8 +909,8 @@ void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
         if(memfree<memtotal/2){
             mexErrMsgIdAndTxt("voxel_backprojection:Atb:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
         }
-        cudaCheckErrorsVoid("Check mem error");
-
+        cudaCheckErrors("Check mem error");
+        
         *mem_GPU_global=(memfree<*mem_GPU_global)?memfree:*mem_GPU_global;
     }
     *mem_GPU_global=(size_t)((double)*mem_GPU_global*0.95);
