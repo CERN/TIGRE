@@ -57,8 +57,6 @@
 #include <CUDA/voxel_backprojection2.hpp>
 #include <CUDA/voxel_backprojection_parallel.hpp>
 #include <CUDA/GpuIds.hpp>
-#include <CUDA/errors.hpp>
-#include <CUDA/TIGRE_common.hpp>
 
 
 
@@ -353,27 +351,14 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
    
     // Run the CUDA code.
-    //
-    // Report at THIS boundary, not from inside the CUDA code. The error used to
-    // be raised by mexErrMsgIdAndTxt() deep inside voxel_backprojection(),
-    // which longjmps straight back to MATLAB from the middle of a function
-    // holding device buffers, page-locked host memory, host registrations,
-    // streams and texture objects - running no cleanup, so a CUDA error leaked
-    // all of them for the rest of the session. The CUDA functions now release
-    // everything on the way out and return an errors.hpp code; we turn that
-    // into the MATLAB error here, after the cleanup has happened.
-    int tigre_status = CUDA_SUCCESS;
     if (coneBeam){
         if (pseudo_matched){
-            tigre_status = voxel_backprojection2(projections,geo,result,angles,nangles, gpuids);
+            voxel_backprojection2(projections,geo,result,angles,nangles, gpuids);
         }else{
-            tigre_status = voxel_backprojection(projections,geo,result,angles,nangles, gpuids);
+            voxel_backprojection(projections,geo,result,angles,nangles, gpuids);
         }
     }else{
-        tigre_status = voxel_backprojection_parallel(projections,geo,result,angles,nangles, gpuids);
-    }
-    if (tigre_status != CUDA_SUCCESS){
-        mexErrMsgIdAndTxt("CBCT:CUDA:Atb", tigreGetLastError());
+        voxel_backprojection_parallel(projections,geo,result,angles,nangles, gpuids);
     }
 
 
