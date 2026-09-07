@@ -335,6 +335,13 @@ class IterativeReconAlg(object):
         """
         Quameasopts = self.Quameasopts
 
+        nesterov = False
+        if isinstance(self.lmbda, str) and self.lmbda.lower() == "nesterov":
+            nesterov = True
+            self.lmbda = 1.0
+            t = 1.0
+            y_rec = copy.deepcopy(self.res)
+
         for i in range(self.niter):
 
             res_prev = None
@@ -343,7 +350,18 @@ class IterativeReconAlg(object):
             if self.verbose:
                 self._estimate_time_until_completion(i)
 
+            if nesterov:
+                x_rec_old = copy.deepcopy(self.res)
+                self.res = copy.deepcopy(y_rec)
+
             getattr(self, self.dataminimizing)()
+
+            if nesterov:
+                t_old = t
+                t = (1.0 + np.sqrt(1.0 + 4.0 * t ** 2)) / 2.0
+                gamma = np.float32((t_old - 1.0) / t)
+                y_rec = self.res + gamma * (self.res - x_rec_old)
+
             self.error_measurement(res_prev, i)
 
     def art_data_minimizing(self):
