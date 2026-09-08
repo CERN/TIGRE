@@ -43,6 +43,15 @@ function [res]=FDK(proj,geo,angles,varargin)
 geo=checkGeo(geo,angles);
 geo.filter=filter;
 
+if dowang && (max(angles(1,:))-min(angles(1,:)) < 2*pi-1.5*max(abs(diff(angles(1,:)))))
+    % Wang's displaced-detector weights assume a FULL circle: they ramp one
+    % side of the detector down and rely on the opposing (beta+pi) views to
+    % bring the coverage back to uniform. On a short scan those views do not
+    % exist and the ramp survives in the image as one-sided shading. Same
+    % short-scan test as the Parker default in parse_inputs.
+    warning('FDK: short scan, Wang detector-offset weights not applied (they assume a full 360-degree circle)');
+    dowang=false;
+end
 if dowang
     % Zero-padding to avoid FFT-induced aliasing %TODO: should't this be
     % for all cases, not just wang?
