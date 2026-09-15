@@ -64,22 +64,24 @@ def Measure_Quality(res_prev, res, QualMeasOpts):  # noqa: N803
             K1 = 0.01  # K1 is a small constant <<1
             d = np.max(res_prev) - np.min(res_prev)  # dynamic range of the pixel values
             l = ((2 * mean_res * mean_res_p) + (K1 * d) ** 2) / (
-                (mean_res_p ** 2) + (mean_res ** 2) + K1 * d ** 2
+                (mean_res_p ** 2) + (mean_res ** 2) + (K1 * d) ** 2
             )
 
             # Contrast comparison
 
-            K2 = 0.02
-            sres_p = res_prev.std()
-            sres = res.std()
+            K2 = 0.03
+            sres_p = res_prev.std(ddof=1)
+            sres = res.std(ddof=1)
 
-            c = ((2 * sres_p * sres) + (K2 * d) ** 2) / ((sres_p ** 2) + (sres ** 2) + K2 * d ** 2)
+            c = ((2 * sres_p * sres) + (K2 * d) ** 2) / (
+                (sres_p ** 2) + (sres ** 2) + (K2 * d) ** 2
+            )
 
             # Structure comparison
             diffres_p = res_prev - mean_res_p
             diffres = res - mean_res
             delta = (1 / (N - 1)) * np.sum(diffres_p * diffres)
-            s = (delta + (((K2 * d) ** 2)) / 2) / ((sres_p * sres) + ((K2 * d ** 2) / 2))
+            s = (delta + (((K2 * d) ** 2)) / 2) / ((sres_p * sres) + (((K2 * d) ** 2) / 2))
 
             values.append((1 / N) * l * c * s)
         if "UQI" == qual:
