@@ -45,20 +45,20 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <cuda.h>
+#include <hip/hip_runtime.h>
 #include <curand_kernel.h>
 #include <curand.h>
 
 #include "gpuUtils.hpp"
 #include "RandomNumberGenerator.hpp"
 
-#define cudaCheckErrors(msg) \
+#define hipCheckErrors(msg) \
 do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
+        hipError_t __err = hipGetLastError(); \
+        if (__err != hipSuccess) { \
                 mexPrintf("%s \n",msg);\
-                cudaDeviceReset();\
-                mexErrMsgIdAndTxt("RandomNumberGenerator:",cudaGetErrorString(__err));\
+                hipDeviceReset();\
+                mexErrMsgIdAndTxt("RandomNumberGenerator:",hipGetErrorString(__err));\
         } \
 } while (0)
 
@@ -127,12 +127,12 @@ void poisson_1d(const float* pfIn, size_t uiLen, float* pfOut, const GpuIds& gpu
     // printf("poisson_1d(pfIn = %p, uiLen = %zd, pfOut = %p)\n", pfIn, uiLen, pfOut);
     float* d_pfIn = nullptr;
     float* d_pfOut = nullptr;
-    cudaMalloc((void **)&d_pfIn, uiLen * sizeof(float));
-    cudaCheckErrors("poisson_1d fail cudaMalloc 1");
-    cudaMalloc((void **)&d_pfOut, uiLen * sizeof(float));
-    cudaCheckErrors("poisson_1d fail cudaMalloc 2");
-    cudaMemcpy(d_pfIn, pfIn, uiLen*sizeof(float), cudaMemcpyHostToDevice);
-    cudaCheckErrors("poisson_1d fail cudaMemcpy 1");
+    hipMalloc((void **)&d_pfIn, uiLen * sizeof(float));
+    hipCheckErrors("poisson_1d fail hipMalloc 1");
+    hipMalloc((void **)&d_pfOut, uiLen * sizeof(float));
+    hipCheckErrors("poisson_1d fail hipMalloc 2");
+    hipMemcpy(d_pfIn, pfIn, uiLen*sizeof(float), hipMemcpyHostToDevice);
+    hipCheckErrors("poisson_1d fail hipMemcpy 1");
 
     // float fMin, fMax;
     // GetMinMax(pfIn, uiLen, fMin, fMax);
@@ -140,18 +140,18 @@ void poisson_1d(const float* pfIn, size_t uiLen, float* pfOut, const GpuIds& gpu
     curandState *curandStates = nullptr;
     const int kiBlockDim = 1024;  // Threads per Block
     const int kiGridDim = 64;//(uiLen+kiBlockDim-1)/kiBlockDim;
-    cudaMalloc((void **)&curandStates, kiGridDim * kiBlockDim * sizeof(curandState));
-    cudaCheckErrors("poisson_1d fail cudaMalloc 3");
+    hipMalloc((void **)&curandStates, kiGridDim * kiBlockDim * sizeof(curandState));
+    hipCheckErrors("poisson_1d fail hipMalloc 3");
     setup_kernel<<<kiGridDim, kiBlockDim>>>(curandStates);
     GeneratePoisson<<<kiGridDim, kiBlockDim>>>(curandStates, d_pfIn, uiLen, d_pfOut);
-    cudaMemcpy(pfOut, d_pfOut, uiLen*sizeof(float), cudaMemcpyDeviceToHost);
-    cudaCheckErrors("poisson_1d fail cudaMemcpy 2");
+    hipMemcpy(pfOut, d_pfOut, uiLen*sizeof(float), hipMemcpyDeviceToHost);
+    hipCheckErrors("poisson_1d fail hipMemcpy 2");
     // GetMinMax(pfOut, uiLen, fMin, fMax);
     // printf("fMin, fMax = %f, %f\n", fMin, fMax);
     
-    cudaFree(d_pfIn); d_pfIn = nullptr;
-    cudaFree(d_pfOut); d_pfOut = nullptr;
-    cudaFree(curandStates); curandStates = nullptr;
+    hipFree(d_pfIn); d_pfIn = nullptr;
+    hipFree(d_pfOut); d_pfOut = nullptr;
+    hipFree(curandStates); curandStates = nullptr;
 }
 
 void poisson_gaussian_1d(const float* pfIn,
@@ -164,12 +164,12 @@ void poisson_gaussian_1d(const float* pfIn,
     // printf("poisson_gaussian_1d(pfIn = %p, uiLen = %zd, fGaussMu = %+f, fGaussSigma = %f, pfOut = %p)\n", pfIn, uiLen, fGaussMu, fGaussSigma, pfOut);
     float* d_pfIn = nullptr;
     float* d_pfOut = nullptr;
-    cudaMalloc((void **)&d_pfIn, uiLen * sizeof(float));
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMalloc 1");
-    cudaMalloc((void **)&d_pfOut, uiLen * sizeof(float));
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMalloc 2");
-    cudaMemcpy(d_pfIn, pfIn, uiLen*sizeof(float), cudaMemcpyHostToDevice);
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMemcpy 1");
+    hipMalloc((void **)&d_pfIn, uiLen * sizeof(float));
+    hipCheckErrors("poisson_gaussian_1d fail hipMalloc 1");
+    hipMalloc((void **)&d_pfOut, uiLen * sizeof(float));
+    hipCheckErrors("poisson_gaussian_1d fail hipMalloc 2");
+    hipMemcpy(d_pfIn, pfIn, uiLen*sizeof(float), hipMemcpyHostToDevice);
+    hipCheckErrors("poisson_gaussian_1d fail hipMemcpy 1");
 
     // float fMin, fMax;
     // GetMinMax(pfIn, uiLen, fMin, fMax);
@@ -177,17 +177,17 @@ void poisson_gaussian_1d(const float* pfIn,
     curandState *curandStates = nullptr;
     const int kiBlockDim = 64;  // Threads per Block
     const int kiGridDim = 64;//(uiLen+kiBlockDim-1)/kiBlockDim;
-    cudaMalloc((void **)&curandStates, kiGridDim * kiBlockDim * sizeof(curandState));
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMalloc 3");
+    hipMalloc((void **)&curandStates, kiGridDim * kiBlockDim * sizeof(curandState));
+    hipCheckErrors("poisson_gaussian_1d fail hipMalloc 3");
     setup_kernel<<<kiGridDim, kiBlockDim>>>(curandStates);
     GeneratePoissonAddGaussian<<<kiGridDim, kiBlockDim>>>(curandStates, d_pfIn, uiLen, fGaussMu, fGaussSigma, d_pfOut);
-    cudaMemcpy(pfOut, d_pfOut, uiLen*sizeof(float), cudaMemcpyDeviceToHost);
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMemcpy 2");
+    hipMemcpy(pfOut, d_pfOut, uiLen*sizeof(float), hipMemcpyDeviceToHost);
+    hipCheckErrors("poisson_gaussian_1d fail hipMemcpy 2");
     // GetMinMax(pfOut, uiLen, fMin, fMax);
     // printf("fMin, fMax = %f, %f\n", fMin, fMax);
 
 
-    cudaFree(d_pfIn); d_pfIn = nullptr;
-    cudaFree(d_pfOut); d_pfOut = nullptr;
-    cudaFree(curandStates); curandStates = nullptr;
+    hipFree(d_pfIn); d_pfIn = nullptr;
+    hipFree(d_pfOut); d_pfOut = nullptr;
+    hipFree(curandStates); curandStates = nullptr;
 }
