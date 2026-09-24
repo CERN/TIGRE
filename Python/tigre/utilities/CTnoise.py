@@ -9,7 +9,9 @@ def add(projections, Gaussian=None, Poisson=None):
                 "Poisson value should be an scalar, is " + str(type(Poisson)) + " instead."
             )
     else:
-        Poisson = np.ceil(np.log2(np.max(np.abs(projections))))  # nextpow2
+        Poisson = 60000.0
+        if np.max(projections) > Poisson:
+            Poisson = float(np.max(projections) / 5.0)
     if Gaussian is not None:
         if not isinstance(Gaussian, np.ndarray):
             raise ValueError(
@@ -24,6 +26,7 @@ def add(projections, Gaussian=None, Poisson=None):
 
     projections = RNG.add_noise(projections, Gaussian[0], Gaussian[1])
 
+    projections[projections <= 0] = 1e-6
     projections = -np.log(projections / Poisson) * max_proj
     projections = np.float32(projections)
     return projections
