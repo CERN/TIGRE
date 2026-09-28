@@ -47,7 +47,7 @@ where = ["Python"]
 "tigre.utilities.cuda_interface" = ["*.pyx", "*.pxd", "*.cpp"]
 
 [tool.cibuildwheel]
-build-frontend = "build[uv]"
+# build-frontend = "build[uv]"
 skip = "pp* *musl*"
 archs = ["native"]
 
