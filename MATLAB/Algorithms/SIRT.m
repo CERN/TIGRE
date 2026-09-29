@@ -223,21 +223,26 @@ end
 
 
 function [lambda,res,lambdared,verbose,QualMeasOpts,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,alpha,argin)
-opts={'lambda','init','initimg','verbose','lambda_red','qualmeas','nonneg','gpuids','redundancy_weighting','groundtruth'};
-defaults=ones(length(opts),1);
-% Check inputs
-nVarargs = length(argin);
-if mod(nVarargs,2)
-    error('TIGRE:SIRT:InvalidInput','Invalid number of inputs')
-end
+[common, leftover] = parseCommonInputs(proj, geo, alpha, argin, 'SIRT', @init_multigrid);
+verbose      = common.verbose;
+res          = common.res;
+QualMeasOpts = common.QualMeasOpts;
+gpuids       = common.gpuids;
+gt           = common.gt;
 
+% Algorithm-specific options
+opts={'lambda','lambda_red','nonneg','redundancy_weighting'};
+defaults=ones(length(opts),1);
+
+% Check inputs
+nVarargs = length(leftover);
 % check if option has been passed as input
 for ii=1:2:nVarargs
-    ind=find(ismember(opts,lower(argin{ii})));
+    ind=find(ismember(opts,lower(leftover{ii})));
     if ~isempty(ind)
         defaults(ind)=0;
     else
-        error('TIGRE:SIRT:InvalidInput',['Optional parameter "' argin{ii} '" does not exist' ]);
+        error('TIGRE:SIRT:InvalidInput',['Optional parameter "' leftover{ii} '" does not exist' ]);
     end
 end
 
@@ -246,30 +251,19 @@ for ii=1:length(opts)
     default=defaults(ii);
     % if one option is not default, then extract value from input
     if default==0
-        ind=double.empty(0,1);jj=1;
+        ind=[];jj=1;
         while isempty(ind)
-            ind=find(isequal(opt,lower(argin{jj})));
+            ind=find(isequal(opt,lower(leftover{jj})));
             jj=jj+1;
         end
         if isempty(ind)
-            error('TIGRE:SIRT:InvalidInput',['Optional parameter "' argin{jj} '" does not exist' ]);
+            error('TIGRE:SIRT:InvalidInput',['Optional parameter "' leftover{jj} '" does not exist' ]);
         end
-        val=argin{jj};
+        val=leftover{jj};
     end
-    
+
     switch opt
-        % % % % % % % Verbose
-        case 'verbose'
-            if default
-                verbose=1;
-            else
-                verbose=val;
-            end
-            if ~is2014bOrNewer
-                warning('TIGRE: Verbose mode not available for older versions than MATLAB R2014b');
-                verbose=false;
-            end
-            % % % % % % % hyperparameter, LAMBDA
+        % % % % % % % hyperparameter, LAMBDA
         case 'lambda'
             if default
                 lambda=1;
@@ -289,72 +283,17 @@ for ii=1:length(opts)
                 end
                 lambdared=val;
             end
-        case 'init'
-            res=[];
-            if default || strcmp(val,'none')
-                res=zeros(geo.nVoxel','single');
-                continue
-            end
-            if strcmp(val,'FDK')
-                res=FDK(proj,geo,alpha);
-                continue
-            end
-            if strcmp(val,'multigrid')
-                res=init_multigrid(proj,geo,alpha);
-                continue
-            end
-            if strcmp(val,'image')
-                initwithimage=1;
-                continue
-            end
-            if isempty(res)
-                error('TIGRE:SIRT:InvalidInput','Invalid Init option')
-            end
-            % % % % % % % ERROR
-        case 'initimg'
-            if default
-                continue
-            end
-            if exist('initwithimage','var')
-                if isequal(size(val),geo.nVoxel')
-                    res=single(val);
-                else
-                    error('TIGRE:SIRT:InvalidInput','Invalid image for initialization');
-                end
-            end
-        case 'qualmeas'
-            if default
-                QualMeasOpts={};
-            else
-                if iscellstr(val)
-                    QualMeasOpts=val;
-                else
-                    error('TIGRE:SIRT:InvalidInput','Invalid quality measurement parameters');
-                end
-            end
         case 'nonneg'
             if default
                 nonneg=true;
             else
                 nonneg=val;
             end
-        case 'gpuids'
-            if default
-                gpuids = GpuIds();
-            else
-                gpuids = val;
-            end
         case 'redundancy_weighting'
             if default
                 redundancy_weights = true;
             else
                 redundancy_weights = val;
-            end
-        case 'groundtruth'
-            if default
-                gt=nan;
-            else
-                gt=val;
             end
         otherwise
             error('TIGRE:SIRT:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in SIRT()']);
