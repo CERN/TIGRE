@@ -9,6 +9,23 @@ from tigre.utilities.Atb import Atb
 from tigre.utilities.filtering import filtering
 
 
+def is_short_scan(angles):
+    """True when the projection angles do not cover a full circle.
+
+    Same test as MATLAB's FDK.m uses to decide Parker weighting: the arc
+    ``max - min`` of the in-plane angle (first Euler column for (n, 3) input)
+    is shorter than ``2*pi`` by more than 1.5 angular steps, so a full circle
+    sampled with ``endpoint=False`` (arc = 2*pi - one step) is NOT short.
+    """
+    a = np.asarray(angles, dtype=float)
+    if a.ndim > 1:
+        a = a[:, 0]
+    if a.size < 2:
+        return True
+    step = float(np.max(np.abs(np.diff(a))))
+    return float(np.max(a) - np.min(a)) < 2 * np.pi - 1.5 * step
+
+
 def FDK(proj, geo, angles, **kwargs):
     """
     solves CT image reconstruction.
@@ -163,6 +180,18 @@ def FDK(proj, geo, angles, **kwargs):
         return proj_w, w
 
     if not np.any(geo.offDetector):
+        dowang = False
+
+    # Wang's displaced-detector weights assume a FULL circle: they ramp one
+    # side of the detector down and rely on the opposing (beta + pi) views to
+    # bring the coverage back to uniform. On a short scan those views do not
+    # exist, so the ramp survives into the image as a one-sided "teardrop"
+    # shading - and ANY non-zero offDetector (a sub-pixel calibration value is
+    # enough) switches the weights on. Skip them on short scans.
+    if dowang and is_short_scan(angles):
+        if verbose:
+            print("FDK: short scan - Wang detector-offset weights not applied "
+                  "(they assume a full 360-degree circle)")
         dowang = False
 
     if dowang:
