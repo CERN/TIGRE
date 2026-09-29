@@ -53,6 +53,7 @@ Codes  : https://github.com/CERN/TIGRE
 
 #define MAXTHREADS 1024
 
+#include "cuda_to_hip.h"
 #include "PICCS.hpp"
 
 
@@ -350,11 +351,11 @@ bool isnan_cuda(float* vec, size_t size){
             //mexPrintf("Pre-norm2 is nan: %s\n",isnan_cuda(d_dimgTV,total_pixels) ? "true" : "false");
             cudaMemcpy(d_norm2, d_dimgTV, mem_size, cudaMemcpyDeviceToDevice);
             cudaCheckErrors("Copy from gradient call error");
-            reduceNorm2 << <dimgridRed, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_norm2, d_aux_small, total_pixels);
+            reduceNorm2 <<<dimgridRed, dimblockRed, MAXTHREADS*sizeof(float) >>>(d_norm2, d_aux_small, total_pixels);
             cudaDeviceSynchronize();
             cudaCheckErrors("reduce1");
             if (dimgridRed > 1) {
-                reduceSum << <1, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_aux_small, d_norm2, dimgridRed);
+                reduceSum <<<1, dimblockRed, MAXTHREADS*sizeof(float) >>>(d_aux_small, d_norm2, dimgridRed);
                 cudaDeviceSynchronize();
                 cudaCheckErrors("reduce2");
                 cudaMemcpy(&sumnorm2, d_norm2, sizeof(float), cudaMemcpyDeviceToHost);
