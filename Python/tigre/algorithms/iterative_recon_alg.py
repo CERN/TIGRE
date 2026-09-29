@@ -240,7 +240,7 @@ class IterativeReconAlg(object):
         :return: None
         """
         geox = copy.deepcopy(self.geo)
-        geox.sVoxel[1:] = geox.sVoxel[1:] * 1.1  # a bit larger to avoid zeros in projections
+        geox.sVoxel[1:] = geox.sDetector[1:] * 1.1  # a bit larger to avoid zeros in projections
         geox.sVoxel[0] = max(geox.sDetector[0], geox.sVoxel[0])
 
         geox.nVoxel = np.array([2, 2, 2])
@@ -250,6 +250,7 @@ class IterativeReconAlg(object):
         )
         W[W <= min(self.geo.dVoxel / 2)] = np.inf
         W = 1.0 / W
+        W[W > 0.1] = 0.1
         setattr(self, "W", W)
 
     def set_v(self):
