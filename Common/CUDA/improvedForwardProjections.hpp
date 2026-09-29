@@ -20,8 +20,8 @@
  Coded by:           Stefanie Kaser, Benjamin Kirchmayer 
 --------------------------------------------------------------------------*/
 
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include <hip/hip_runtime_api.h>
+#include <hip/hip_runtime.h>
 #include <iostream>
 #ifndef improvedForwardProjections_H
 #define improvedForwardProjections_H

@@ -203,7 +203,7 @@ class BuildExtension(build_ext):
             try:
                 original_compiler = self.compiler.compiler_so
                 if _is_cuda_file(src):
-                    nvcc = _join_cuda_home("bin", "nvcc")
+                    nvcc = os.environ.get("TIGRE_HIPCC", _join_cuda_home("bin", "nvcc"))
                     if not isinstance(nvcc, list):
                         nvcc = [nvcc]
                     self.compiler.set_executable("compiler_so", nvcc)
@@ -258,7 +258,7 @@ class BuildExtension(build_ext):
                     src = src_list[0]
                     obj = obj_list[0]
                     if _is_cuda_file(src):
-                        nvcc = _join_cuda_home("bin", "nvcc")
+                        nvcc = os.environ.get("TIGRE_HIPCC", _join_cuda_home("bin", "nvcc"))
                         if isinstance(cflags, dict):
                             cflags = cflags["nvcc"]
                         elif not isinstance(cflags, list):
@@ -361,7 +361,7 @@ Ax_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"] if os.environ.get("TIGRE_HIPCC") else ["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -384,7 +384,7 @@ Atb_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"] if os.environ.get("TIGRE_HIPCC") else ["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -405,7 +405,7 @@ tv_proximal_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"] if os.environ.get("TIGRE_HIPCC") else ["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -426,7 +426,7 @@ minTV_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"] if os.environ.get("TIGRE_HIPCC") else ["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -446,7 +446,7 @@ minPICCS_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"] if os.environ.get("TIGRE_HIPCC") else ["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -466,7 +466,7 @@ AwminTV_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"] if os.environ.get("TIGRE_HIPCC") else ["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -483,7 +483,7 @@ gpuUtils_ext = Extension(
         sdist=sys.argv[1] == "sdist",
     ),
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"] if os.environ.get("TIGRE_HIPCC") else ["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -504,7 +504,7 @@ RandomNumberGenerator_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=["amdhip64"] if os.environ.get("TIGRE_HIPCC") else ["cudart"],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],

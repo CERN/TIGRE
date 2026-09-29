@@ -58,12 +58,12 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 
-#define cudaCheckErrors(msg) \
+#define hipCheckErrors(msg) \
 do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
+        hipError_t __err = hipGetLastError(); \
+        if (__err != hipSuccess) { \
                 mexPrintf("ERROR in: %s \n",msg);\
-                mexErrMsgIdAndTxt("err",cudaGetErrorString(__err));\
+                mexErrMsgIdAndTxt("err",hipGetErrorString(__err));\
         } \
 } while (0)
     
@@ -263,9 +263,9 @@ do { \
 bool isnan_cuda(float* vec, size_t size){
     bool*d_nan;
     bool h_nan;
-    cudaMalloc((void **)&d_nan, sizeof (bool));
+    hipMalloc((void **)&d_nan, sizeof (bool));
     isnan_device<<<60,MAXTHREADS>>>(vec,size,d_nan);
-    cudaMemcpy(&h_nan, d_nan, sizeof(bool), cudaMemcpyDeviceToHost);
+    hipMemcpy(&h_nan, d_nan, sizeof(bool), hipMemcpyDeviceToHost);
     return h_nan;
 
 }
@@ -281,25 +281,25 @@ bool isnan_cuda(float* vec, size_t size){
         
         float *d_image,*d_prior,*d_dpiccsTV, *d_dimgTV,*d_aux_small,*d_aux_image, *d_norm2;
         // memory for image
-        cudaMalloc(&d_image, mem_size);
-        cudaMalloc(&d_prior, mem_size);
+        hipMalloc(&d_image, mem_size);
+        hipMalloc(&d_prior, mem_size);
 
-        cudaCheckErrors("Malloc Image error");
-        cudaMemcpy(d_image, img, mem_size, cudaMemcpyHostToDevice);
-        cudaMemcpy(d_prior, prior, mem_size, cudaMemcpyHostToDevice);
-        cudaCheckErrors("Memory Malloc and Memset: SRC");
+        hipCheckErrors("Malloc Image error");
+        hipMemcpy(d_image, img, mem_size, hipMemcpyHostToDevice);
+        hipMemcpy(d_prior, prior, mem_size, hipMemcpyHostToDevice);
+        hipCheckErrors("Memory Malloc and Memset: SRC");
         // memory for df
-        cudaMalloc(&d_dimgTV, mem_size);
-        cudaMalloc(&d_dpiccsTV, mem_size);
-        cudaCheckErrors("Memory Malloc and Memset: TV");
-        cudaMalloc(&d_norm2, mem_size);
-        cudaCheckErrors("Memory Malloc and Memset: TV");
-        cudaMalloc(&d_aux_image, mem_size);
-        cudaCheckErrors("Memory Malloc and Memset: TV");
+        hipMalloc(&d_dimgTV, mem_size);
+        hipMalloc(&d_dpiccsTV, mem_size);
+        hipCheckErrors("Memory Malloc and Memset: TV");
+        hipMalloc(&d_norm2, mem_size);
+        hipCheckErrors("Memory Malloc and Memset: TV");
+        hipMalloc(&d_aux_image, mem_size);
+        hipCheckErrors("Memory Malloc and Memset: TV");
         
         // memory for L2norm auxiliar
-        cudaMalloc(&d_aux_small, sizeof(float)*(total_pixels + MAXTHREADS - 1) / MAXTHREADS);
-        cudaCheckErrors("Memory Malloc and Memset: NORMAux");
+        hipMalloc(&d_aux_small, sizeof(float)*(total_pixels + MAXTHREADS - 1) / MAXTHREADS);
+        hipCheckErrors("Memory Malloc and Memset: NORMAux");
         
         
         
@@ -315,88 +315,88 @@ bool isnan_cuda(float* vec, size_t size){
 
         for(unsigned int i=0;i<maxIter;i++){
             
-            cudaMemcpy( d_aux_image,d_image, mem_size, cudaMemcpyDeviceToDevice);
+            hipMemcpy( d_aux_image,d_image, mem_size, hipMemcpyDeviceToDevice);
 //             mexPrintf("Iteration %d\n",(int)i);
 
             // Compute the gradient of the TV norm
             gradientTV<<<gridGrad, blockGrad>>>(d_image,d_dimgTV,image_size[2], image_size[1],image_size[0]);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Gradient");
+            hipDeviceSynchronize();
+            hipCheckErrors("Gradient");
 //             mexPrintf("Gradient is nan: %s\n",isnan_cuda(d_dimgTV,total_pixels) ? "true" : "false");
 
 
             multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dimgTV,(1-ratio),   total_pixels);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Multiplication error");
+            hipDeviceSynchronize();
+            hipCheckErrors("Multiplication error");
 
             substractArrays<<<60,MAXTHREADS>>>(d_aux_image,d_prior, total_pixels);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Substraction error");
+            hipDeviceSynchronize();
+            hipCheckErrors("Substraction error");
             
             gradientTV<<<gridGrad, blockGrad>>>(d_aux_image,d_dpiccsTV,image_size[2], image_size[1],image_size[0]);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Gradient");
+            hipDeviceSynchronize();
+            hipCheckErrors("Gradient");
 //             mexPrintf("Gradient piccs is nan: %s\n",isnan_cuda(d_dimgTV,total_pixels) ? "true" : "false");
 
             multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dpiccsTV,ratio,   total_pixels);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Multiplication error");
+            hipDeviceSynchronize();
+            hipCheckErrors("Multiplication error");
 //             mexPrintf("Multiplication is nan: %s\n",isnan_cuda(d_dimgTV,total_pixels) ? "true" : "false");
                 
             
             addArrays<<<60,MAXTHREADS>>>(d_dimgTV,d_dpiccsTV,total_pixels);
-            cudaDeviceSynchronize();
+            hipDeviceSynchronize();
             //NOMRALIZE via reduction
             //mexPrintf("Pre-norm2 is nan: %s\n",isnan_cuda(d_dimgTV,total_pixels) ? "true" : "false");
-            cudaMemcpy(d_norm2, d_dimgTV, mem_size, cudaMemcpyDeviceToDevice);
-            cudaCheckErrors("Copy from gradient call error");
+            hipMemcpy(d_norm2, d_dimgTV, mem_size, hipMemcpyDeviceToDevice);
+            hipCheckErrors("Copy from gradient call error");
             reduceNorm2 << <dimgridRed, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_norm2, d_aux_small, total_pixels);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("reduce1");
+            hipDeviceSynchronize();
+            hipCheckErrors("reduce1");
             if (dimgridRed > 1) {
                 reduceSum << <1, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_aux_small, d_norm2, dimgridRed);
-                cudaDeviceSynchronize();
-                cudaCheckErrors("reduce2");
-                cudaMemcpy(&sumnorm2, d_norm2, sizeof(float), cudaMemcpyDeviceToHost);
-                cudaCheckErrors("cudaMemcpy");
+                hipDeviceSynchronize();
+                hipCheckErrors("reduce2");
+                hipMemcpy(&sumnorm2, d_norm2, sizeof(float), hipMemcpyDeviceToHost);
+                hipCheckErrors("hipMemcpy");
 
             }
             else {
-                cudaMemcpy(&sumnorm2, d_aux_small, sizeof(float), cudaMemcpyDeviceToHost);
-                cudaCheckErrors("cudaMemcpy");
+                hipMemcpy(&sumnorm2, d_aux_small, sizeof(float), hipMemcpyDeviceToHost);
+                hipCheckErrors("hipMemcpy");
             }
 //             mexPrintf("alpha/sqrt(sumnorm2): %f\n",alpha/sqrt(sumnorm2));
             //MULTIPLY HYPERPARAMETER sqrt(sumnorm2)
             multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dimgTV,alpha/sqrt(sumnorm2),  total_pixels);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Multiplication error");
+            hipDeviceSynchronize();
+            hipCheckErrors("Multiplication error");
             //SUBSTRACT GRADIENT
             substractArrays    <<<60,MAXTHREADS>>>(d_image,d_dimgTV, total_pixels);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Substraction error");
+            hipDeviceSynchronize();
+            hipCheckErrors("Substraction error");
 //             mexPrintf("Final update is nan: %s\n",isnan_cuda(d_image,total_pixels) ? "true" : "false");
 //             mexPrintf("\n");
             sumnorm2=0;
         }
         
-        cudaCheckErrors("TV minimization");
+        hipCheckErrors("TV minimization");
         
-        cudaMemcpy(dst, d_image, mem_size, cudaMemcpyDeviceToHost);
-        cudaCheckErrors("Copy result back");
+        hipMemcpy(dst, d_image, mem_size, hipMemcpyDeviceToHost);
+        hipCheckErrors("Copy result back");
         
-        cudaFree(d_image);
-        cudaFree(d_dpiccsTV);
-        cudaFree(d_aux_image);
-        cudaFree(d_aux_small);
-        cudaFree(d_prior);
-        cudaFree(d_norm2);
+        hipFree(d_image);
+        hipFree(d_dpiccsTV);
+        hipFree(d_aux_image);
+        hipFree(d_aux_small);
+        hipFree(d_prior);
+        hipFree(d_norm2);
 
 
-        cudaCheckErrors("Memory free");
-        // Do NOT cudaDeviceReset() here - it destroys the whole host
+        hipCheckErrors("Memory free");
+        // Do NOT hipDeviceReset() here - it destroys the whole host
         // process's primary CUDA context (CuPy/PyTorch state included),
         // not just this function's resources. See the matching note in
         // GD_TV.cu; all buffers are already freed explicitly above.
-        // cudaDeviceReset();
+        // hipDeviceReset();
     }
     
