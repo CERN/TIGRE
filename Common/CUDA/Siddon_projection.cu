@@ -176,8 +176,10 @@ __global__ void kernelPixelDetector( Geometry geo,
     float aM=fminf(fminf(axM,ayM),azM);
     
     // line intersects voxel space ->   am<aM
-    if (am>=aM)
+    if (am>=aM) {
         detector[idx]=0;
+        return;
+    }
     
     // Compute max/min image INDEX for intersection eq(11-19)
     // Discussion about ternary operator in CUDA: https://stackoverflow.com/questions/7104384/in-cuda-why-is-a-b010-more-efficient-than-an-if-else-version
