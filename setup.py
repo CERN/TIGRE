@@ -8,9 +8,9 @@ import sys
 import shutil
 import re
 
+from setuptools import setup, find_packages, Extension
 from Cython.Distutils import build_ext
 import numpy
-from setuptools import setup, find_packages, Extension
 
 
 # Macros for compilation

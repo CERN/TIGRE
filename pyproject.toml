@@ -5,8 +5,8 @@ line-length = 100
 requires = [
 	"setuptools",
 	"wheel",
-	"Cython",
-	"numpy",
+	"Cython<3.0.0",
+	"numpy<2.0.0",
 	]
 build-backend = "setuptools.build_meta"
 
@@ -15,7 +15,7 @@ name="tigre"
 version="3.1.3"
 dependencies = [
 	"matplotlib",
-	"numpy>=1.20.0",
+	"numpy>=1.20.0,<2.0.0",
 	"scipy",
 	"h5py",
 	"tqdm"
@@ -47,7 +47,7 @@ where = ["Python"]
 "tigre.utilities.cuda_interface" = ["*.pyx", "*.pxd", "*.cpp"]
 
 [tool.cibuildwheel]
-build-frontend = "build[uv]"
+# build-frontend = "build[uv]"
 skip = "pp* *musl*"
 archs = ["native"]
 
