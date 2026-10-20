@@ -460,7 +460,7 @@ class IterativeReconAlg(object):
                 + time.strftime("%H:%M:%S", time.gmtime(seconds))
             )
             print(
-                "Estimated completion time       : "
+                "Algorithm will finish at        : "
                 + time.strftime("%H:%M:%S", time.localtime(time.time() + remaining_time))
             )
 
