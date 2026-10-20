@@ -152,122 +152,257 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     ray.x=pixel1D.x-source.x;
     ray.y=pixel1D.y-source.y;
     ray.z=pixel1D.z-source.z;
-    // This variables are ommited because
-    // bx,by,bz ={0,0,0}
-    // dx,dy,dz ={1,1,1}
-    // compute parameter values for x-ray parametric equation. eq(3-10)
-    float axm,aym,azm;
-    float axM,ayM,azM;
-    
-    /**************************************
-     *
-     *
-     * Problem. In paralel beam, often ray.y or ray.x=0;
-     * This leads to infinities progpagating and breaking everything.
-     *
-     * We need to fix it.
-     *
-     ***************************************/
-    
-    // In the paper Nx= number of X planes-> Nvoxel+1
-    axm=fminf(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
-    aym=fminf(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
-//     azm=min(-source.z/ray.z,(geo.nVoxelZ-source.z)/ray.z);
-    axM=fmaxf(-source.x/ray.x,(geo.nVoxelX-source.x)/ray.x);
-    ayM=fmaxf(-source.y/ray.y,(geo.nVoxelY-source.y)/ray.y);
-//     azM=max(-source.z/ray.z,(geo.nVoxelZ-source.z)/ray.z);
-    float am=(fmaxf(axm,aym));
-    float aM=(fminf(axM,ayM));
+
+    float axm, aym, azm;
+    float axM, ayM, azM;
+
+    if (ray.x == 0.0f) {
+        if (source.x >= 0.0f && source.x < geo.nVoxelX) {
+            axm = -INFINITY;
+            axM = INFINITY;
+        } else {
+            axm = INFINITY;
+            axM = -INFINITY;
+        }
+    } else {
+        float t1 = -source.x / ray.x;
+        float t2 = (geo.nVoxelX - source.x) / ray.x;
+        axm = fminf(t1, t2);
+        axM = fmaxf(t1, t2);
+    }
+
+    if (ray.y == 0.0f) {
+        if (source.y >= 0.0f && source.y < geo.nVoxelY) {
+            aym = -INFINITY;
+            ayM = INFINITY;
+        } else {
+            aym = INFINITY;
+            ayM = -INFINITY;
+        }
+    } else {
+        float t1 = -source.y / ray.y;
+        float t2 = (geo.nVoxelY - source.y) / ray.y;
+        aym = fminf(t1, t2);
+        ayM = fmaxf(t1, t2);
+    }
+
+    if (ray.z == 0.0f) {
+        if (source.z >= 0.0f && source.z < geo.nVoxelZ) {
+            azm = -INFINITY;
+            azM = INFINITY;
+        } else {
+            azm = INFINITY;
+            azM = -INFINITY;
+        }
+    } else {
+        float t1 = -source.z / ray.z;
+        float t2 = (geo.nVoxelZ - source.z) / ray.z;
+        azm = fminf(t1, t2);
+        azM = fmaxf(t1, t2);
+    }
+
+    float am = fmaxf(fmaxf(axm, aym), azm);
+    float aM = fminf(fminf(axM, ayM), azM);
     
     // line intersects voxel space ->   am<aM
-    if (am>=aM)
-        detector[idx]=0.0f;
+    if (am >= aM) {
+        detector[idx] = 0.0f;
+        return;
+    }
     
     // Compute max/min image INDEX for intersection eq(11-19)
-    // Discussion about ternary operator in CUDA: https://stackoverflow.com/questions/7104384/in-cuda-why-is-a-b010-more-efficient-than-an-if-else-version
-    float imin,imax,jmin,jmax;
+    float imin, imax, jmin, jmax, kmin, kmax;
+    float ax, ay, az;
+    float axu, ayu, azu;
+    float iu, ju, ku;
+    unsigned long Npx = 0, Npy = 0, Npz = 0;
+
     // for X
-    if( source.x<pixel1D.x){
-        imin=(am==axm)? 1.0f             : ceilf (source.x+am*ray.x);
-        imax=(aM==axM)? geo.nVoxelX      : floorf(source.x+aM*ray.x);
-    }else{
-        imax=(am==axm)? geo.nVoxelX-1.0f : floorf(source.x+am*ray.x);
-        imin=(aM==axM)? 0.0f             : ceilf (source.x+aM*ray.x);
+    if (ray.x == 0.0f) {
+        ax = INFINITY;
+        axu = INFINITY;
+        iu = 0.0f;
+        Npx = 0;
+    } else {
+        if (source.x < pixel1D.x) {
+            imin = (am == axm) ? 1.0f        : ceilf(source.x + am * ray.x);
+            imax = (aM == axM) ? geo.nVoxelX : floorf(source.x + aM * ray.x);
+            ax = (imin - source.x) / ray.x;
+            iu = 1.0f;
+            while (ax <= am && imin <= imax) {
+                imin += 1.0f;
+                ax = (imin - source.x) / ray.x;
+            }
+            while (imax >= imin && ((imax - source.x) / ray.x) > aM) {
+                imax -= 1.0f;
+            }
+        } else {
+            imax = (am == axm) ? geo.nVoxelX - 1.0f : floorf(source.x + am * ray.x);
+            imin = (aM == axM) ? 0.0f               : ceilf(source.x + aM * ray.x);
+            ax = (imax - source.x) / ray.x;
+            iu = -1.0f;
+            while (ax <= am && imax >= imin) {
+                imax -= 1.0f;
+                ax = (imax - source.x) / ray.x;
+            }
+            while (imax >= imin && ((imin - source.x) / ray.x) > aM) {
+                imin += 1.0f;
+            }
+        }
+        ax = (isinf(ax)) ? fabsf(ax) : ax;
+        axu = 1.0f / fabsf(ray.x);
+        if (imax >= imin) {
+            Npx = (unsigned long)(imax - imin + 1.0f);
+        } else {
+            Npx = 0;
+            ax = INFINITY;
+        }
     }
+
     // for Y
-    if( source.y<pixel1D.y){
-        jmin=(am==aym)? 1.0f             : ceilf (source.y+am*ray.y);
-        jmax=(aM==ayM)? geo.nVoxelY      : floorf(source.y+aM*ray.y);
-    }else{
-        jmax=(am==aym)? geo.nVoxelY-1.0f : floorf(source.y+am*ray.y);
-        jmin=(aM==ayM)? 0.0f             : ceilf (source.y+aM*ray.y);
+    if (ray.y == 0.0f) {
+        ay = INFINITY;
+        ayu = INFINITY;
+        ju = 0.0f;
+        Npy = 0;
+    } else {
+        if (source.y < pixel1D.y) {
+            jmin = (am == aym) ? 1.0f        : ceilf(source.y + am * ray.y);
+            jmax = (aM == ayM) ? geo.nVoxelY : floorf(source.y + aM * ray.y);
+            ay = (jmin - source.y) / ray.y;
+            ju = 1.0f;
+            while (ay <= am && jmin <= jmax) {
+                jmin += 1.0f;
+                ay = (jmin - source.y) / ray.y;
+            }
+            while (jmax >= jmin && ((jmax - source.y) / ray.y) > aM) {
+                jmax -= 1.0f;
+            }
+        } else {
+            jmax = (am == aym) ? geo.nVoxelY - 1.0f : floorf(source.y + am * ray.y);
+            jmin = (aM == ayM) ? 0.0f               : ceilf(source.y + aM * ray.y);
+            ay = (jmax - source.y) / ray.y;
+            ju = -1.0f;
+            while (ay <= am && jmax >= jmin) {
+                jmax -= 1.0f;
+                ay = (jmax - source.y) / ray.y;
+            }
+            while (jmax >= jmin && ((jmin - source.y) / ray.y) > aM) {
+                jmin += 1.0f;
+            }
+        }
+        ay = (isinf(ay)) ? fabsf(ay) : ay;
+        ayu = 1.0f / fabsf(ray.y);
+        if (jmax >= jmin) {
+            Npy = (unsigned long)(jmax - jmin + 1.0f);
+        } else {
+            Npy = 0;
+            ay = INFINITY;
+        }
     }
-//     // for Z
-//     if( source.z<pixel1D.z){
-//         kmin=(am==azm)? 1             : ceilf (source.z+am*ray.z);
-//         kmax=(aM==azM)? geo.nVoxelZ : floorf(source.z+aM*ray.z);
-//     }else{
-//         kmax=(am==azm)? geo.nVoxelZ-1 : floorf(source.z+am*ray.z);
-//         kmin=(aM==azM)? 0             : ceilf (source.z+aM*ray.z);
-//     }
-    
-    // get intersection point N1. eq(20-21) [(also eq 9-10)]
-    float ax,ay;
-    ax=(source.x<pixel1D.x)?  (imin-source.x)/(ray.x+0.000000000001f)  :  (imax-source.x)/(ray.x+0.000000000001f);
-    ay=(source.y<pixel1D.y)?  (jmin-source.y)/(ray.y+0.000000000001f)  :  (jmax-source.y)/(ray.y+0.000000000001f);
-    ay = (ray.y==0.0f)? 1e11f : ay;
-    ax = (ray.x==0.0f)? 1e11f : ax;
-//     az=(source.z<pixel1D.z)?  (kmin-source.z)/ray.z  :  (kmax-source.z)/ray.z;
-    
-    
+
+    // for Z
+    if (ray.z == 0.0f) {
+        az = INFINITY;
+        azu = INFINITY;
+        ku = 0.0f;
+        Npz = 0;
+    } else {
+        if (source.z < pixel1D.z) {
+            kmin = (am == azm) ? 1.0f        : ceilf(source.z + am * ray.z);
+            kmax = (aM == azM) ? geo.nVoxelZ : floorf(source.z + aM * ray.z);
+            az = (kmin - source.z) / ray.z;
+            ku = 1.0f;
+            while (az <= am && kmin <= kmax) {
+                kmin += 1.0f;
+                az = (kmin - source.z) / ray.z;
+            }
+            while (kmax >= kmin && ((kmax - source.z) / ray.z) > aM) {
+                kmax -= 1.0f;
+            }
+        } else {
+            kmax = (am == azm) ? geo.nVoxelZ - 1.0f : floorf(source.z + am * ray.z);
+            kmin = (aM == azM) ? 0.0f               : ceilf(source.z + aM * ray.z);
+            az = (kmax - source.z) / ray.z;
+            ku = -1.0f;
+            while (az <= am && kmax >= kmin) {
+                kmax -= 1.0f;
+                az = (kmax - source.z) / ray.z;
+            }
+            while (kmax >= kmin && ((kmin - source.z) / ray.z) > aM) {
+                kmin += 1.0f;
+            }
+        }
+        az = (isinf(az)) ? fabsf(az) : az;
+        azu = 1.0f / fabsf(ray.z);
+        if (kmax >= kmin) {
+            Npz = (unsigned long)(kmax - kmin + 1.0f);
+        } else {
+            Npz = 0;
+            az = INFINITY;
+        }
+    }
     
     // get index of first intersection. eq (26) and (19)
-    unsigned long i,j,k;
-    float aminc=fminf(ax,ay);
-    i=(unsigned long)floorf(source.x+ (aminc+am)/2*ray.x);
-    j=(unsigned long)floorf(source.y+ (aminc+am)/2*ray.y);
-    k=(unsigned long)floorf(source.z+ (aminc+am)/2*ray.z);
-//     k=(int)source.z;
+    unsigned long i, j, k;
+    float aminc = fminf(fminf(ax, ay), az);
+
+    // X
+    if (ray.x == 0.0f) {
+        i = (unsigned long)fmaxf(0.0f, fminf(floorf(source.x), geo.nVoxelX - 1.0f));
+    } else if (source.x < pixel1D.x) {
+        i = (unsigned long)fmaxf(0.0f, fminf(imin - 1.0f, geo.nVoxelX - 1.0f));
+    } else {
+        i = (unsigned long)fmaxf(0.0f, fminf(imax, geo.nVoxelX - 1.0f));
+    }
+
+    // Y
+    if (ray.y == 0.0f) {
+        j = (unsigned long)fmaxf(0.0f, fminf(floorf(source.y), geo.nVoxelY - 1.0f));
+    } else if (source.y < pixel1D.y) {
+        j = (unsigned long)fmaxf(0.0f, fminf(jmin - 1.0f, geo.nVoxelY - 1.0f));
+    } else {
+        j = (unsigned long)fmaxf(0.0f, fminf(jmax, geo.nVoxelY - 1.0f));
+    }
+
+    // Z
+    if (ray.z == 0.0f) {
+        k = (unsigned long)fmaxf(0.0f, fminf(floorf(source.z), geo.nVoxelZ - 1.0f));
+    } else if (source.z < pixel1D.z) {
+        k = (unsigned long)fmaxf(0.0f, fminf(kmin - 1.0f, geo.nVoxelZ - 1.0f));
+    } else {
+        k = (unsigned long)fmaxf(0.0f, fminf(kmax, geo.nVoxelZ - 1.0f));
+    }
+
     // Initialize
-    float ac=am;
-    //eq (28), unit angles
-    float axu,ayu;
-    axu=1.0f/fabsf(ray.x);
-    ayu=1.0f/fabsf(ray.y);
-//     azu=1/abs(ray.z);
-    // eq(29), direction of update
-    float iu,ju;
-    iu=(source.x< pixel1D.x)? 1.0f : -1.0f;
-    ju=(source.y< pixel1D.y)? 1.0f : -1.0f;
-//     ku=(source.z< pixel1D.z)? 1 : -1;
-    
-    float maxlength=sqrtf(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY);//+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
-    float sum=0.0f;
-    unsigned long Np=(imax-imin+1)+(jmax-jmin+1);//+(kmax-kmin+1); // Number of intersections
+    float ac = am;
+
+    float maxlength = sqrtf(ray.x * ray.x * geo.dVoxelX * geo.dVoxelX + ray.y * ray.y * geo.dVoxelY * geo.dVoxelY + ray.z * ray.z * geo.dVoxelZ * geo.dVoxelZ);
+    float sum = 0.0f;
+    unsigned long Np = Npx + Npy + Npz; // Number of intersections
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
-    i+=0.5f;
-    j+=0.5f;
-    k+=0.5f;
-    // detector[idx]=aminc;
-    // return;
+    i += 0.5f;
+    j += 0.5f;
+    k += 0.5f;
+
     for (unsigned long ii=0;ii<Np;ii++){
         if (ax==aminc){
-            sum+=(ax-ac)*tex3D<float>(tex, i, j, k);//(ax-ac)*
+            sum+=(ax-ac)*tex3D<float>(tex, i, j, k);
             i=i+iu;
             ac=ax;
             ax+=axu;
         }else if(ay==aminc){
-            sum+=(ay-ac)*tex3D<float>(tex, i, j, k);//(ay-ac)*
+            sum+=(ay-ac)*tex3D<float>(tex, i, j, k);
             j=j+ju;
             ac=ay;
             ay+=ayu;
-//         }else if(az==aminc){
-//             sum+=(az-ac)*tex3D<float>(tex, i+0.5, j+0.5, k+0.5);
-//             k=k+ku;
-//             ac=az;
-//             az+=azu;
+        }else if(az==aminc){
+            sum+=(az-ac)*tex3D<float>(tex, i, j, k);
+            k=k+ku;
+            ac=az;
+            az+=azu;
         }
-        aminc=fminf(ay,ax);
+        aminc=fminf(fminf(ay,ax),az);
     }
     detector[idx]=maxlength*sum;
 }
@@ -423,17 +558,16 @@ void computeDeltas_Siddon_parallel(Geometry geo, float angles,int i, Point3D* uv
     //S doesnt need to chagne
     
     
-    //3: Rotate (around z)!
-    Point3D Pfinal, Pfinalu0, Pfinalv0;
+    //3: Rotate using full Euler angles (ZYZ convention: alpha, theta, psi)
+    Point3D Pfinal = P;
+    Point3D Pfinalu0 = Pu0;
+    Point3D Pfinalv0 = Pv0;
+    Point3D S2 = S;
     
-    Pfinal.x  =P.x*cos(geo.alpha)-P.y*sin(geo.alpha);       Pfinal.y  =P.y*cos(geo.alpha)+P.x*sin(geo.alpha);       Pfinal.z  =P.z;
-    Pfinalu0.x=Pu0.x*cos(geo.alpha)-Pu0.y*sin(geo.alpha);   Pfinalu0.y=Pu0.y*cos(geo.alpha)+Pu0.x*sin(geo.alpha);   Pfinalu0.z=Pu0.z;
-    Pfinalv0.x=Pv0.x*cos(geo.alpha)-Pv0.y*sin(geo.alpha);   Pfinalv0.y=Pv0.y*cos(geo.alpha)+Pv0.x*sin(geo.alpha);   Pfinalv0.z=Pv0.z;
-    
-    Point3D S2;
-    S2.x=S.x*cos(geo.alpha)-S.y*sin(geo.alpha);
-    S2.y=S.y*cos(geo.alpha)+S.x*sin(geo.alpha);
-    S2.z=S.z;
+    eulerZYZ(geo, &Pfinal);
+    eulerZYZ(geo, &Pfinalu0);
+    eulerZYZ(geo, &Pfinalv0);
+    eulerZYZ(geo, &S2);
     
     //2: Offset image (instead of offseting image, -offset everything else)
     
