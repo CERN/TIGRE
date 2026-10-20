@@ -459,6 +459,10 @@ class IterativeReconAlg(object):
                 "Estimated time until completion : "
                 + time.strftime("%H:%M:%S", time.gmtime(seconds))
             )
+            print(
+                "Algorithm will finish at        : "
+                + time.strftime("%H:%M:%S", time.localtime(time.time() + remaining_time))
+            )
 
 
 def decorator(IterativeReconAlg, name=None, docstring=None):  # noqa: N803
