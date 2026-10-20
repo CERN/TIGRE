@@ -45,8 +45,7 @@
 
 #define  PI_2 1.57079632679489661923
 #include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include "cuda_to_hip.h"
 #include "voxel_backprojection.hpp"
 #include "TIGRE_common.hpp"
 #include <math.h>
@@ -252,9 +251,9 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             
 #if IS_FOR_MATLAB_TIGRE
-            voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f)*weight;
+            voxelColumn[colIdx]+=tex3D_TIGRE(tex, v, u ,indAlpha+0.5f)*weight;
 #else
-            voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,indAlpha+0.5f)*weight;
+            voxelColumn[colIdx]+=tex3D_TIGRE(tex, u, v ,indAlpha+0.5f)*weight;
 #endif
         }  // END iterating through column of voxels
         
@@ -704,12 +703,13 @@ void CreateTexture(const GpuIds& gpuids, float* projectiondata,Geometry geo,cuda
         cudaTextureDesc     texDescr;
         memset(&texDescr, 0, sizeof(cudaTextureDesc));
         texDescr.normalizedCoords = false;
-        texDescr.filterMode = cudaFilterModeLinear;
+        texDescr.filterMode = tigre_hw_linear_supported() ? cudaFilterModeLinear : cudaFilterModePoint;
         texDescr.addressMode[0] = cudaAddressModeBorder;
         texDescr.addressMode[1] = cudaAddressModeBorder;
         texDescr.addressMode[2] = cudaAddressModeBorder;
         texDescr.readMode = cudaReadModeElementType;
         cudaCreateTextureObject(&texImage[dev], &texRes, &texDescr, NULL);
+        tigre_sync_hw_linear();
     }
 }
 

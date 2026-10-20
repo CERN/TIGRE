@@ -54,6 +54,7 @@
 #define MAXTHREADS 1024
 #define MAX_BUFFER 60
 
+#include "cuda_to_hip.h"
 #include "GD_TV.hpp"
 #include "gpuUtils.hpp"
 
@@ -525,7 +526,7 @@ do { \
                         size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
                         
                         cudaStreamSynchronize(stream[dev*nStream_device+1]);
-                        reduceNorm2 << <dimgridRed, dimblockRed, MAXTHREADS*sizeof(float),stream[dev*nStream_device]>> >(d_norm2[dev], d_norm2aux[dev], total_pixels);
+                        reduceNorm2 <<<dimgridRed, dimblockRed, MAXTHREADS*sizeof(float),stream[dev*nStream_device]>>>(d_norm2[dev], d_norm2aux[dev], total_pixels);
                         
                     }
                     for (dev = 0; dev < deviceCount; dev++){
@@ -536,7 +537,7 @@ do { \
                         size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
 
                         if (dimgridRed > 1) {
-                            reduceSum << <1, dimblockRed, MAXTHREADS*sizeof(float),stream[dev*nStream_device] >> >(d_norm2aux[dev], d_norm2[dev], dimgridRed);
+                            reduceSum <<<1, dimblockRed, MAXTHREADS*sizeof(float),stream[dev*nStream_device] >>>(d_norm2aux[dev], d_norm2[dev], dimgridRed);
                             cudaStreamSynchronize(stream[dev*nStream_device]);
                             cudaMemcpyAsync(&sumnorm2[dev], d_norm2[dev], sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
                         }

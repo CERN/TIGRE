@@ -48,8 +48,7 @@
  */
 
 #include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include "cuda_to_hip.h"
 #include "Siddon_projection.hpp"
 #include "TIGRE_common.hpp"
 #include <math.h>
@@ -241,6 +240,14 @@ __global__ void kernelPixelDetector( Geometry geo,
     float maxlength=__fsqrt_rd(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
     float sum=0.0f;
     unsigned long Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections
+    // A straight ray crosses at most (Nx+Ny+Nz) voxel-boundary planes. The
+    // index bounds above use exact float-equality tests on quantities formed
+    // with __fdividef, whose approximate result can differ enough between back
+    // ends to flip a test and yield a wildly out-of-range imax/jmax/kmax; the
+    // unsigned subtraction then makes Np astronomical and the loop runs for ~ever.
+    // Cap Np at the true geometric maximum: a no-op for any valid ray.
+    const unsigned long Np_max=(unsigned long)geo.nVoxelX+(unsigned long)geo.nVoxelY+(unsigned long)geo.nVoxelZ+3UL;
+    if (Np>Np_max) Np=Np_max;
     // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
     i+=0.5f;
     j+=0.5f;

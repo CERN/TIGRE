@@ -54,6 +54,7 @@
 #define MAX_BUFFER 60
 #define BLOCK_SIZE 10  // BLOCK_SIZE^3 must be smaller than MAXTREADS
 
+#include "cuda_to_hip.h"
 #include "tv_proximal.hpp"
 #define cudaCheckErrors(msg) \
 do { \
@@ -690,4 +691,4 @@ void cpy_from_host(float* device_array,float* host_array,
     }
     cudaStreamSynchronize(stream);
     cudaMemcpyAsync(device_array +offset_device, host_array +offset_host,  bytes_device*sizeof(float), cudaMemcpyHostToDevice,stream);
-}
+}
