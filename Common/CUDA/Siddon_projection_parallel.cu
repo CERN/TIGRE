@@ -205,11 +205,17 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     float aM = fminf(fminf(axM, ayM), azM);
     
     // line intersects voxel space ->   am<aM
-    if (am >= aM) {
-        detector[idx] = 0.0f;
+    // See Siddon_projection.cu: without the return a missed ray falls
+    // through to an Np built from indices that only mean something for a
+    // hit; for an axis-parallel ray with the source outside the volume that
+    // is (-inf)*0 = NaN, and (unsigned long)NaN = 2^63 spins forever. The
+    // hang was NOT reproduced in this kernel (26 configurations tried); the
+    // return here is by inspection.
+    if (am>=aM){
+        detector[idx]=0.0f;
         return;
     }
-    
+
     // Compute max/min image INDEX for intersection eq(11-19)
     float imin, imax, jmin, jmax, kmin, kmax;
     float ax, ay, az;

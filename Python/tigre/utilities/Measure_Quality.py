@@ -91,8 +91,8 @@ def Measure_Quality(res_prev, res, QualMeasOpts):  # noqa: N803
             mean_res = np.mean(res)
 
             # Variance
-            varres_p = np.var(res_prev)
-            varres = np.var(res)
+            varres_p = np.var(res_prev, ddof=1)
+            varres = np.var(res, ddof=1)
             if mean_res == 0 and mean_res_p == 0:
                 raise ValueError("Initializing with 0 matrix not valid")
             # Covariance

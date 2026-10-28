@@ -176,9 +176,25 @@ __global__ void kernelPixelDetector( Geometry geo,
     float aM=fminf(fminf(axM,ayM),azM);
     
     // line intersects voxel space ->   am<aM
-    if (am>=aM)
+    // The ray never enters the volume. RETURN HERE. Without it, execution
+    // falls into the index block below, whose imin..kmax are only meaningful
+    // for a ray that does enter. For a ray the eps guard has snapped to run
+    // exactly along one voxel axis, with the source OUTSIDE the volume on
+    // one of its zero axes, the two quotients for that axis share a sign, so
+    // fminf and fmaxf collapse (axm == axM == -inf) and aM inherits -inf.
+    // The other zero component then gives aM*ray = (-inf)*0 = NaN, Np is
+    // NaN, and (unsigned long)NaN is 2^63 on CUDA: that thread iterates
+    // ~9e18 times and the kernel never returns -- 100% SM, idle memory
+    // controller, no error, no result. Measured: 2 rays in 261 million on an
+    // odd x odd detector with an off-axis object; see
+    // Python/tests/test_siddon_missing_ray.py and
+    // Frontispiece/siddon_missed_ray_hang.png. A NEGATIVE Np does not do
+    // this -- CUDA saturates negatives and -inf to 0, a zero-trip loop.
+    if (am>=aM){
         detector[idx]=0;
-    
+        return;
+    }
+
     // Compute max/min image INDEX for intersection eq(11-19)
     // Discussion about ternary operator in CUDA: https://stackoverflow.com/questions/7104384/in-cuda-why-is-a-b010-more-efficient-than-an-if-else-version
     float imin,imax,jmin,jmax,kmin,kmax;
