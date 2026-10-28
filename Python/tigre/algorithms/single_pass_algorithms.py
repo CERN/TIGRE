@@ -33,6 +33,9 @@ def FDK(proj, geo, angles, **kwargs):
     :param verbose: bool
     Feedback print statements for algorithm progress
 
+    :param workers: int or None
+    Number of CPU threads used for projection filtering; None selects the default
+
     :param kwargs: dict
     keyword arguments
 
@@ -71,6 +74,7 @@ def FDK(proj, geo, angles, **kwargs):
                         PYTHON : Reuben Lindroos
     """
     verbose = kwargs["verbose"] if "verbose" in kwargs else False
+    workers = kwargs.get("workers")
 
     gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
     dowang = kwargs["dowang"] if "dowang" in kwargs else True
@@ -196,7 +200,7 @@ def FDK(proj, geo, angles, **kwargs):
     w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx**2 + yy**2))
     np.multiply(proj, w, out=proj_filt)
 
-    proj_filt = filtering(proj_filt, geo, angles, parker=False, verbose=verbose)
+    proj_filt = filtering(proj_filt, geo, angles, parker=False, verbose=verbose, workers=workers)
     # geo.proj = proj_filt
 
     return Atb(proj_filt, geo, geo.angles, "FDK", gpuids=gpuids)
@@ -212,10 +216,11 @@ def fbp(proj, geo, angles, **kwargs):  # noqa: D103
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
     verbose = kwargs["verbose"] if "verbose" in kwargs else False
+    workers = kwargs.get("workers")
     gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
     geox.filter = kwargs["filter"] if "filter" in kwargs else None
 
-    proj_filt = filtering(copy.deepcopy(proj), geox, angles, parker=False, verbose=verbose)
+    proj_filt = filtering(copy.deepcopy(proj), geox, angles, parker=False, verbose=verbose, workers=workers)
     if not isinstance(geo.DSO, np.ndarray):
         weight= np.float32(geo.DSO / geo.DSD)
     else:
