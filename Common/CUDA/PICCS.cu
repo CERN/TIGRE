@@ -392,6 +392,7 @@ bool isnan_cuda(float* vec, size_t size){
         cudaCheckErrors("Copy result back");
         
         cudaFree(d_image);
+        cudaFree(d_dimgTV);
         cudaFree(d_dpiccsTV);
         cudaFree(d_aux_image);
         cudaFree(d_aux_small);
@@ -400,6 +401,5 @@ bool isnan_cuda(float* vec, size_t size){
 
 
         cudaCheckErrors("Memory free");
-        cudaDeviceReset();
     }
     
