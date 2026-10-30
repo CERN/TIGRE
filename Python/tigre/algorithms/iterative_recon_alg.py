@@ -328,6 +328,11 @@ class IterativeReconAlg(object):
         self.angleblocks, self.angle_index = order_subsets(
             self.angles, self.blocksize, self.OrderStrategy
         )
+        # With blocksize 1, order_subsets returns each block as a single (3,) angle row and
+        # a scalar index. Ax/Atb read a 1D (3,) array as three angles (alpha, theta, psi),
+        # so keep the blocks 2D (k, 3) and the indices 1D (k,), as they are for blocksize > 1.
+        self.angleblocks = [np.atleast_2d(block) for block in self.angleblocks]
+        self.angle_index = [np.atleast_1d(index) for index in self.angle_index]
 
     def run_main_iter(self):
         """
