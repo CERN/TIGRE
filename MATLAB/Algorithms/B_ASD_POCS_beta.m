@@ -164,10 +164,10 @@ while ~stop_criteria %POCS
             geo.rotDetector=rotDetector(:,index_angles(:,jj));
         end
         if size(DSD,2)==size(angles,2)
-            geo.DSD=DSD(jj);
+            geo.DSD=DSD(index_angles(:,jj));
         end
         if size(DSO,2)==size(angles,2)
-            geo.DSO=DSO(jj);
+            geo.DSO=DSO(index_angles(:,jj));
         end
         %         proj_err=proj(:,:,jj)-Ax(f,geo,angles(:,jj));          %                                 (b-Ax)
         %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
@@ -189,6 +189,7 @@ while ~stop_criteria %POCS
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
     geo.DSD=DSD;
+    geo.DSO=DSO;
     geo.rotDetector=rotDetector;
     % Save copy of image.
     fres=f;
@@ -385,7 +386,7 @@ for ii=1:length(opts)
             %  =========================================================================
         case 'maxl2err'
             if default
-                epsilon=im3Dnorm(FDK(proj,geo,angles))*0.2; %heuristic
+                epsilon=im3Dnorm(FDK(proj,geo,angles),'L2')*0.2; %heuristic
             else
                 epsilon=val;
             end

@@ -83,8 +83,8 @@ if nargout<3 && measurequality
     warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
     measurequality=false;
 end
-qualMeasOut=zeros(length(QualMeasOpts),niter);
-resL2=zeros(1,niter);
+qualMeasOut=zeros(length(QualMeasOpts),maxiter);
+resL2=zeros(1,maxiter);
 if nargout>1
     computeL2=true;
 else
@@ -144,6 +144,7 @@ while ~stop_criteria %POCS
     end
     if (iter==0 && verbose==1);tic;end
     iter=iter+1;
+    f0=f; % image before this iteration's data step (used by dp_vec)
     
     %Estimation error in the projection domain
     est_proj=Ax(f,geo,angles,'interpolated','gpuids',gpuids);
@@ -153,22 +154,22 @@ while ~stop_criteria %POCS
     if (delta_p^2)>epsilon
         for jj=1:length(alphablocks)
             if size(offOrigin,2)==size(angles,2)
-                geo.offOrigin=offOrigin(:,jj);
+                geo.offOrigin=offOrigin(:,orig_index{jj});
             end
             if size(offDetector,2)==size(angles,2)
-                geo.offDetector=offDetector(:,jj);
+                geo.offDetector=offDetector(:,orig_index{jj});
             end
             if size(rotDetector,2)==size(angles,2)
-                geo.rotDetector=rotDetector(:,jj);
+                geo.rotDetector=rotDetector(:,orig_index{jj});
             end
             if size(DSD,2)==size(angles,2)
-                geo.DSD=DSD(jj);
+                geo.DSD=DSD(:,orig_index{jj});
             end
             if size(DSO,2)==size(angles,2)
-                geo.DSO=DSO(jj);
+                geo.DSO=DSO(:,orig_index{jj});
             end
             
-            f=f+beta* bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,jj).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj},'gpuids',gpuids)),geo,alphablocks{:,jj},'gpuids',gpuids));
+            f=f+beta* bsxfun(@times,1./sum(V(:,:,jj),3),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj},'gpuids',gpuids)),geo,alphablocks{:,jj},'gpuids',gpuids));
             
         end
     end
@@ -179,6 +180,9 @@ while ~stop_criteria %POCS
     end
     geo.offDetector=offDetector;
     geo.offOrigin=offOrigin;
+    geo.DSD=DSD;
+    geo.DSO=DSO;
+    geo.rotDetector=rotDetector;
     
     if measurequality
         qualMeasOut(:,iter)=Measure_Quality(res_prev,f,QualMeasOpts);
@@ -236,10 +240,13 @@ while ~stop_criteria %POCS
     
     if computeL2
         geo.offOrigin=offOrigin;
+        geo.DSD=DSD;
+        geo.DSO=DSO;
+        geo.rotDetector=rotDetector;
         geo.offDetector=offDetector;
-        resL2(ii)=im3Dnorm(proj-Ax(f,geo,angles,'gpuids',gpuids),'L2');                       % Compute error norm2 of b-Ax
+        resL2(iter)=im3Dnorm(proj-Ax(f,geo,angles,'gpuids',gpuids),'L2');                       % Compute error norm2 of b-Ax
         % If the error is not minimized.
-        if  iter~=1 && resL2(ii)>resL2(ii-1)
+        if  iter~=1 && resL2(iter)>resL2(iter-1)
             if verbose
                 disp(['Convergence criteria met, exiting on iteration number:', num2str(iter)]);
             end
