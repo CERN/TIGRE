@@ -117,10 +117,10 @@ while ~stop_criteria %POCS
             geo.rotDetector=rotDetector(:,index_angles(:,jj));
         end
         if size(DSD,2)==size(angles,2)
-            geo.DSD=DSD(jj);
+            geo.DSD=DSD(index_angles(:,jj));
         end
         if size(DSO,2)==size(angles,2)
-            geo.DSO=DSO(jj);
+            geo.DSO=DSO(index_angles(:,jj));
         end
         %         proj_err=proj(:,:,jj)-Ax(f,geo,angles(:,jj));          %                                 (b-Ax)
         %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
