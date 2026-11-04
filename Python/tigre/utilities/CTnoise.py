@@ -9,7 +9,10 @@ def add(projections, Gaussian=None, Poisson=None):
                 "Poisson value should be an scalar, is " + str(type(Poisson)) + " instead."
             )
     else:
-        Poisson = np.ceil(np.log2(np.max(np.abs(projections))))  # nextpow2
+        # same default photon count as MATLAB's addCTnoise
+        Poisson = 60000
+        if np.max(projections) > Poisson:
+            Poisson = np.max(projections) / 5
     if Gaussian is not None:
         if not isinstance(Gaussian, np.ndarray):
             raise ValueError(
@@ -23,6 +26,8 @@ def add(projections, Gaussian=None, Poisson=None):
     projections = Poisson * np.exp(-projections / max_proj)
 
     projections = RNG.add_noise(projections, Gaussian[0], Gaussian[1])
+    # the Gaussian term can push a reading to zero or below, where the log is not finite
+    projections[projections <= 0] = 1e-6
 
     projections = -np.log(projections / Poisson) * max_proj
     projections = np.float32(projections)

@@ -30,7 +30,7 @@ geo = tigre.geometry_default(high_resolution=False)
 #%% Define angles of projection and load phantom image
 
 # define projection angles (in radians)
-angles = np.linspace(0, 2 * np.pi, 50)
+angles = np.linspace(0, 2 * np.pi, 50, endpoint=False)
 # load phantom image
 head = sample_loader.load_head_phantom(geo.nVoxel)
 

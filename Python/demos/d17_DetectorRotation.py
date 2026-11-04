@@ -43,7 +43,7 @@ geo = tigre.geometry_default(high_resolution=False)
 
 #%% Load data and generate projections
 # define angles
-angles = np.linspace(0, 2 * np.pi, 100)
+angles = np.linspace(0, 2 * np.pi, 100, endpoint=False)
 
 roll = angles
 pitch = 0.7 * np.linspace(0, 1, len(angles))

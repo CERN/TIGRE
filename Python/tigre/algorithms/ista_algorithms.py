@@ -7,6 +7,7 @@ import tigre
 from tigre.algorithms.iterative_recon_alg import IterativeReconAlg
 from tigre.algorithms.iterative_recon_alg import decorator
 from tigre.utilities.im_3d_denoise import im3ddenoise
+from tigre.utilities.power_method import svd_power_method
 
 
 
@@ -35,9 +36,12 @@ class FISTA(IterativeReconAlg):
 
     Keyword Arguments
     -----------------
-    :keyword hyper: (np.float64)
+    :keyword hyper: (np.float64 or "auto")
         hyper parameter proportional to the largest eigenvalue of the
-        matrix A in the equations Ax-b and ATb.
+        matrix A in the equations Ax-b and ATb. The gradient step is
+        1/hyper, so the right value is problem-size dependent.
+        Default "auto": estimated for the given proj/geo/angles by power
+        iteration (see _estimate_hyper). Pass a number to pin it.
         Empirical tests show, for the headphantom object:
 
         nVoxel = np.array([64,64,64]),      hyper (approx=) 2.e8
@@ -82,7 +86,7 @@ class FISTA(IterativeReconAlg):
     >>> from tigre.demos.Test_data import data_loader
     >>> geo = tigre.geometry(mode='cone',default_geo=True,
     >>>                         nVoxel=np.array([512,512,512]))
-    >>> angles = np.linspace(0,2*np.pi,100)
+    >>> angles = np.linspace(0, 2 * np.pi, 100, endpoint=False)
     >>> src_img = data_loader.load_head_phantom(geo.nVoxel)
     >>> proj = tigre.Ax(src_img,geo,angles)
     >>> output = algs.fista(proj,geo,angles,niter=50
@@ -116,13 +120,44 @@ class FISTA(IterativeReconAlg):
         kwargs.update(dict(blocksize=angles.shape[0]))
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         self.lmbda = 0.1
-        self.__L__ = 2.0e8 if "hyper" not in kwargs else kwargs["hyper"]
-        self.__numiter_tv__ = 20 if "tviter" not in kwargs else kwargs["tviter"]
-        self.__lambda__ = 0.1 if "tvlambda" not in kwargs else kwargs["tvlambda"]
-        self.__t__ = 1
+        # hyper is the Lipschitz constant of the data term's gradient; the
+        # effective gradient step is 1/hyper, so it is PROBLEM-SIZE dependent
+        # (the docstring above quotes ~2e8 at 64^3 but ~2e4 at 512^3). With a
+        # fixed default, FISTA on a large/real geometry takes steps orders of
+        # magnitude too small and the image stays frozen near its
+        # initialization. "auto" (new default) estimates it for THIS problem
+        # by power iteration; passing a number keeps the old behaviour.
+        self.__L__ = kwargs.get("hyper", "auto")
+        self.__t__ = 1.0
+        self.__numiter_tv__ = 20 if "tviter" not in kwargs else int(np.asarray(kwargs["tviter"]).item())
+        self.__lambda__ = 0.1 if "tvlambda" not in kwargs else np.asarray(kwargs["tvlambda"]).item()
+        if isinstance(self.__L__, str):
+            self.__L__ = self._estimate_hyper()
         self.__bm__ = 1.0 / self.__L__
-        self.__p__ = 1 if "fista_p" not in kwargs else kwargs["fista_p"]
-        self.__q__ = 1 if "fista_q" not in kwargs else kwargs["fista_q"]
+        self.__p__ = 1 if "fista_p" not in kwargs else  np.asarray(kwargs["fista_p"]).item()
+        self.__q__ = 1 if "fista_q" not in kwargs else np.asarray(kwargs["fista_q"]).item()
+
+    def _estimate_hyper(self, seed=0):
+        """Estimate hyper = 2 * lambda_max(A^T A) = 2 * sigma_max(A)^2 with
+        the existing svd_power_method utility.
+
+        Why the factor 2: update_image applies an effective step of 1/hyper
+        to the least-squares gradient grad f = 2 A^T(Ax - b), whose Lipschitz
+        constant is 2 * lambda_max(A^T A); using the bare sigma^2 was
+        verified to diverge. The extra 1.05 biases the (from-below-
+        converging) power estimate to the safe side: overestimating hyper
+        only shrinks the step slightly, underestimating it can diverge.
+
+        Cost: a handful of forward+back projection pairs, paid once at
+        construction. Deterministic seed so repeat runs match."""
+        rng = np.random.default_rng(seed)
+        x = rng.standard_normal(tuple(self.geo.nVoxel)).astype(np.float32)
+        sigma = svd_power_method(x, self.geo, self.angles, verbose=self.verbose)
+        L = 2.0 * 1.05 * float(sigma) ** 2
+        if self.verbose:
+            print("FISTA: estimated hyper (Lipschitz constant) = %.4g "
+                  "(2 x sigma_max(A)^2 via svd_power_method)" % L)
+        return L
 
     # override update_image from iterative recon alg to remove W.
     def update_image(self, geo, angle, iteration):
@@ -172,7 +207,7 @@ class FISTA(IterativeReconAlg):
             x_rec_old = copy.deepcopy(x_rec)
             x_rec = im3ddenoise(self.res, self.__numiter_tv__, 1.0 / lambdaForTv, self.gpuids)
             t_old = t
-            t = (self.__p__ + np.sqrt(self.__q__ + 4 * t ** 2)) / 2
+            t = (self.__p__ + np.sqrt(self.__q__ + 4 * t ** 2,dtype=np.float32)) / 2
             self.res = x_rec + (t_old - 1) / t * (x_rec - x_rec_old)
             
             if Quameasopts is not None:

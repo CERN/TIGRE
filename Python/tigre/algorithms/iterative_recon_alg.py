@@ -101,7 +101,7 @@ class IterativeReconAlg(object):
     >>> from tigre.demos.Test_data import data_loader
     >>> geo = tigre.geometry(mode='cone',default_geo=True,
     >>>                         nVoxel=np.array([64,64,64]))
-    >>> angles = np.linspace(0,2*np.pi,100)
+    >>> angles = np.linspace(0, 2 * np.pi, 100, endpoint=False)
     >>> src_img = data_loader.load_head_phantom(geo.nVoxel)
     >>> proj = tigre.Ax(src_img,geo,angles)
     >>> output = algs.iterativereconalg(proj,geo,angles,niter=50
@@ -175,6 +175,25 @@ class IterativeReconAlg(object):
             "prior",
             "prior_ratio",
         ]
+        # numpy 2.4 made casting from single valued arrays to scalars deprecated. This is a list of keywords that are single valued and should be cast to scalars if they are given as single valued arrays.
+        single_valued_keywords = [
+            "alpha",
+            "alpha_red",
+            "rmax",
+            "maxl2err",
+            "delta",
+            "tviter",
+            "tvlambda",
+            "hyper",
+            "fista_p",
+            "fista_q",
+            "niter_outer",
+            "prior_ratio",
+            "lmbda",
+            "lmbda_red",
+            "blocksize",
+            "niter_outer",
+        ]
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
         for kw in kwargs.keys():
@@ -187,6 +206,10 @@ class IterativeReconAlg(object):
                             + kw
                             + " not recognized as default parameter for instance of IterativeReconAlg."  # noqa: E501
                         )
+            if kw in single_valued_keywords:
+                if isinstance(kwargs[kw], np.ndarray):
+                    if kwargs[kw].size == 1:
+                        self.__dict__[kw] = kwargs[kw].item()
         if self.angles.ndim == 1:
             a1 = self.angles
             a2 = np.zeros(self.angles.shape[0], dtype=np.float32)
@@ -217,7 +240,7 @@ class IterativeReconAlg(object):
         :return: None
         """
         geox = copy.deepcopy(self.geo)
-        geox.sVoxel[1:] = geox.sVoxel[1:] * 1.1  # a bit larger to avoid zeros in projections
+        geox.sVoxel[1:] = geox.sDetector[1:] * 1.1  # a bit larger to avoid zeros in projections
         geox.sVoxel[0] = max(geox.sDetector[0], geox.sVoxel[0])
 
         geox.nVoxel = np.array([2, 2, 2])
@@ -227,6 +250,7 @@ class IterativeReconAlg(object):
         )
         W[W <= min(self.geo.dVoxel / 2)] = np.inf
         W = 1.0 / W
+        W[W > 0.1] = 0.1
         setattr(self, "W", W)
 
     def set_v(self):
@@ -304,6 +328,11 @@ class IterativeReconAlg(object):
         self.angleblocks, self.angle_index = order_subsets(
             self.angles, self.blocksize, self.OrderStrategy
         )
+        # With blocksize 1, order_subsets returns each block as a single (3,) angle row and
+        # a scalar index. Ax/Atb read a 1D (3,) array as three angles (alpha, theta, psi),
+        # so keep the blocks 2D (k, 3) and the indices 1D (k,), as they are for blocksize > 1.
+        self.angleblocks = [np.atleast_2d(block) for block in self.angleblocks]
+        self.angle_index = [np.atleast_1d(index) for index in self.angle_index]
 
     def run_main_iter(self):
         """
@@ -435,6 +464,10 @@ class IterativeReconAlg(object):
                 "Estimated time until completion : "
                 + time.strftime("%H:%M:%S", time.gmtime(seconds))
             )
+            print(
+                "Algorithm will finish at        : "
+                + time.strftime("%H:%M:%S", time.localtime(time.time() + remaining_time))
+            )
 
 
 def decorator(IterativeReconAlg, name=None, docstring=None):  # noqa: N803
@@ -456,7 +489,7 @@ def decorator(IterativeReconAlg, name=None, docstring=None):  # noqa: N803
     >>> geo = tigre.geometry_default(high_resolution=False)
     >>> src = load_head_phantom(number_of_voxels=geo.nVoxel)
     >>> proj = Ax(src,geo,angles)
-    >>> angles = np.linspace(0,2*np.pi,100)
+    >>> angles = np.linspace(0, 2 * np.pi, 100, endpoint=False)
     >>> iterativereconalg = decorator(IterativeReconAlg)
     >>> output = iterativereconalg(proj,geo,angles, niter=50)
 

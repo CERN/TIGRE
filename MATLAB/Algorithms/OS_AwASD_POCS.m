@@ -156,10 +156,10 @@ while ~stop_criteria %POCS
             geo.rotDetector=rotDetector(:,orig_index{jj});
         end
         if size(DSD,2)==size(angles,2)
-            geo.DSD=DSD(jj);
+            geo.DSD=DSD(:,orig_index{jj});
         end
         if size(DSO,2)==size(angles,2)
-            geo.DSO=DSO(jj);
+            geo.DSO=DSO(:,orig_index{jj});
         end
         f=f+beta* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,orig_index{jj}).*(proj(:,:,orig_index{jj})-Ax(f,geo,alphablocks{:,jj},'gpuids',gpuids)),geo,alphablocks{:,jj},'gpuids',gpuids));
         if nonneg

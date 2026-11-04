@@ -21,9 +21,11 @@ import numpy as np
 
 
 def parkerweight(proj, geo, angles, q):
-    start = -geo.sDetector[0] / 2 + geo.dDetector[0] / 2
-    stop = geo.sDetector[0] / 2 - geo.dDetector[0] / 2
-    step = geo.dDetector[0]
+    # Detector arrays are [V, U]; the fan of a circular scan is along U (index 1). Using
+    # index 0 only worked on square detectors, where the two extents coincide.
+    start = -geo.sDetector[1] / 2 + geo.dDetector[1] / 2
+    stop = geo.sDetector[1] / 2 - geo.dDetector[1] / 2
+    step = geo.dDetector[1]
     alpha = np.arctan(np.arange(start, stop + step, step) / np.mean(geo.DSD))
     alpha = -alpha
     delta = abs(alpha[0] - alpha[-1]) / 2
@@ -55,7 +57,7 @@ def parkerweight(proj, geo, angles, q):
                 (beta - np.pi - 2 * delta - epsilon) / b_subf(-alpha, delta, epsilon, q) + 0.5
             )  # noqa: E501
         )
-        proj[ii] *= np.tile(w, [proj.shape[-1], 1])
+        proj[ii] *= np.tile(w, [proj.shape[1], 1])
 
     return proj
 

@@ -210,7 +210,7 @@ class ScanParams(XML):
         return frac * (self.rot_velocity / self.frame_rate)
 
     def rot_direction(self) -> str:
-        if self.stop_angle - self.start_angle:
+        if self.stop_angle - self.start_angle > 0:
             return ROTATION_DIR[0]
         else:
             return ROTATION_DIR[1]

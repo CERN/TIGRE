@@ -85,14 +85,7 @@ end
 % Projection weigth, W
 
 
-geoaux=geo;
-geoaux.sVoxel([1 2])=geo.sVoxel([1 2])*1.1; % a Bit bigger, to avoid numerical division by zero (small number)
-geoaux.sVoxel(3)=max(geo.sDetector(2),geo.sVoxel(3)); % make sure lines are not cropped. One is for when image is bigger than detector and viceversa
-geoaux.nVoxel=[2,2,2]'; % accurate enough?
-geoaux.dVoxel=geoaux.sVoxel./geoaux.nVoxel;
-W=Ax(ones(geoaux.nVoxel','single'),geoaux,angles,'Siddon','gpuids',gpuids);  %
-W(W<min(geo.dVoxel)/4)=Inf;
-W=1./W;
+W=computeW(geo,angles,gpuids);
 
 
 % Back-Projection weigth, V
@@ -124,10 +117,10 @@ while ~stop_criteria %POCS
             geo.rotDetector=rotDetector(:,index_angles(:,jj));
         end
         if size(DSD,2)==size(angles,2)
-            geo.DSD=DSD(jj);
+            geo.DSD=DSD(index_angles(:,jj));
         end
         if size(DSO,2)==size(angles,2)
-            geo.DSO=DSO(jj);
+            geo.DSO=DSO(index_angles(:,jj));
         end
         %         proj_err=proj(:,:,jj)-Ax(f,geo,angles(:,jj));          %                                 (b-Ax)
         %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)

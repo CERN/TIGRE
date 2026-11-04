@@ -22,6 +22,7 @@ class Geometry(object):
 
 
     def check_geo(self, angles, verbose=False):
+        angles = np.atleast_1d(np.asarray(angles))
         if angles.ndim == 1:
             self.n_proj = angles.shape[0]
             zeros_array = np.zeros((self.n_proj, 1), dtype=np.float32)
@@ -119,14 +120,22 @@ class Geometry(object):
 
     def cast_to_single(self):
         """
-        Casts all number values in current instance to single prevision floating point types.
+        Casts all number values in current instance to single precision floating point types.
+        Integers and arrays of integers are preserved.
 
         :return: None
         """
+        exclude_from_cast = ["nVoxel", "nDetector", "n_proj", "mode", "filter"]
         for attrib in self.__dict__:
-            if getattr(self, attrib) is not None:
+            val = getattr(self, attrib)
+            if val is not None and attrib not in exclude_from_cast:
                 try:
-                    setattr(self, attrib, np.float32(getattr(self, attrib)))
+                    # Convert to numpy array to easily check dtype
+                    arr = np.array(val)
+                    if np.issubdtype(arr.dtype, np.integer):
+                        # Don't cast if it's purely integer
+                        continue
+                    setattr(self, attrib, np.float32(val))
                 except ValueError:
                     pass
 
@@ -150,7 +159,10 @@ class Geometry(object):
                     new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
                     setattr(self, attrib, new_attrib)
                 elif old_attrib.shape in [(1,)]:
-                    new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
+                    if attrib in ["DSD", "DSO", "COR"]:
+                        new_attrib = np.tile(old_attrib, angles.shape[0])
+                    else:
+                        new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
                     setattr(self, attrib, new_attrib)
                 elif old_attrib.shape == (angles.shape[0],):
                     pass

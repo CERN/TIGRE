@@ -37,15 +37,13 @@ import tigre.algorithms as algs
 geo = tigre.geometry_default(high_resolution=False)
 
 #%% Load data and generate projections
-# define angles
-angles = np.linspace(0, 2 * np.pi, 100)
 ## Define angles
 numProjs = 100
 
 
-anglesY = np.linspace(0, 2 * np.pi, numProjs)
+anglesY = np.linspace(0, 2 * np.pi, numProjs, endpoint=False)
 anglesZ2 = anglesY
-anglesZ1 = np.pi * np.sin(np.linspace(0, 2 * np.pi, numProjs))
+anglesZ1 = np.pi * np.sin(anglesY)
 angles = np.vstack([anglesZ1, anglesY, anglesZ2]).T
 
 ## Get Image

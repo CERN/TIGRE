@@ -214,6 +214,7 @@ for ii=1:niter
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
         geo.DSD=DSD;
+        geo.DSO=DSO;
         geo.rotDetector=rotDetector;
         resL2(ii)=im3Dnorm(proj-Ax(res,geo,angles,'Siddon','gpuids',gpuids),'L2');
         % If the error is not minimized

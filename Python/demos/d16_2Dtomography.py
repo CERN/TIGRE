@@ -60,7 +60,7 @@ geo.mode = "parallel"
 
 #%% Define angles of projection and load phantom image
 
-angles = np.linspace(0, 2 * np.pi, 100)
+angles = np.linspace(0, 2 * np.pi, 100, endpoint=False)
 head = sample_loader.load_head_phantom(geo.nVoxel)
 projections = tigre.Ax(head, geo, angles)
 tigre.plotSinogram(projections, 0)
@@ -102,7 +102,7 @@ geo.mode = "cone"
 
 #%% Define angles of projection and load phantom image
 
-angles = np.linspace(0, 2 * np.pi, 100)
+angles = np.linspace(0, 2 * np.pi, 100, endpoint=False)
 head = sample_loader.load_head_phantom(geo.nVoxel)
 projections = tigre.Ax(head, geo, angles)
 #%% reconstruct

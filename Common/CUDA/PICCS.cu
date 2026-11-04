@@ -112,11 +112,18 @@ do { \
             long z, long y, long x,
             long depth, long rows, long cols)
     {
+        // gradientTV() also asks for the x+1, y+1 and z+1 neighbours, which
+        // fall outside the image on its last column, row and slice. Leave
+        // grad at zero there instead of reading u[idx]: for the last slice
+        // that read is past the end of the buffer (no halo is allocated here,
+        // unlike GD_TV.cu), and the values only ever fed zero numerators.
+        if (z >= depth || y >= rows || x >= cols)
+            return;
         unsigned long size2d = rows*cols;
         unsigned long long idx = z * size2d + y * cols + x;
-        
+
         float uidx = u[idx];
-        
+
         if ( z - 1 >= 0 && z<depth) {
             grad[0] = (uidx-u[(z-1)*size2d + y*cols + x]) ;
         }
@@ -386,6 +393,7 @@ bool isnan_cuda(float* vec, size_t size){
         cudaCheckErrors("Copy result back");
         
         cudaFree(d_image);
+        cudaFree(d_dimgTV);
         cudaFree(d_dpiccsTV);
         cudaFree(d_aux_image);
         cudaFree(d_aux_small);
@@ -394,6 +402,5 @@ bool isnan_cuda(float* vec, size_t size){
 
 
         cudaCheckErrors("Memory free");
-        cudaDeviceReset();
     }
     

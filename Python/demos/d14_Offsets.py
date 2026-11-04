@@ -44,7 +44,7 @@ geo.accuracy = 0.5
 
 ## Load data and generate projections
 # see previous demo for explanation
-angles = np.linspace(0, 2 * np.pi, 100)
+angles = np.linspace(0, 2 * np.pi, 100, endpoint=False)
 
 # Load thorax phantom data
 head = sample_loader.load_head_phantom(geo.nVoxel)
@@ -83,7 +83,7 @@ geo.offDetector = np.vstack(
     [10 * np.sin(angles), 10 * np.cos(angles)]
 ).T  # Offset of Detector            (mm)
 geo.offOrigin = np.vstack(
-    [40 * np.sin(angles), np.linspace(-30, 30, 100), 40 * np.cos(angles)]
+    [40 * np.sin(angles), np.linspace(-30, 30, len(angles)), 40 * np.cos(angles)]
 ).T  # Offset of image from origin   (mm)
 
 projections3 = tigre.Ax(head, geo, angles)

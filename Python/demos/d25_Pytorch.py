@@ -139,7 +139,7 @@ dataset = torch.utils.data.Subset(dataset,  list(range(100)))
 
 # We are going to be reconstructing 28x28 images, so we need to define the geometry accordingly
 geo = tigre.geometry(mode="fan",nVoxel=[1,28,28]) # MNIST is 28x28
-angles = np.linspace(0, 2*np.pi, 50)
+angles = np.linspace(0, 2 * np.pi, 50, endpoint=False)
 
 # take one sample
 sample_image = dataset[0][0]

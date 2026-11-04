@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import numpy as np
 import tigre
+from tigre.utilities.im3Dnorm import l2norm
 
 
 def svd_power_method(arr, geo, angles, **kwargs):
@@ -52,12 +53,17 @@ def svd_power_method(arr, geo, angles, **kwargs):
                 print("error for val is:" + str(error))
         # very verbose and inefficient for now
         omega = tigre.Ax(arr_old, geo, angles)
-        alpha = np.linalg.norm(omega)
+        alpha = l2norm(omega)
         u = (1.0 / alpha) * omega
-        z = tigre.Atb(u, geo, angles)
-        beta = np.linalg.norm(z)
+        # sigma_max(A) needs A^T: the "matched" backprojector is the (near-)
+        # adjoint of Ax (inner-product test: ~4e-5 relative asymmetry). The
+        # previous call used Atb's default "FDK"-weighted backprojector,
+        # which is NOT A^T (~93% inner-product discrepancy) - any Lipschitz/
+        # step-size estimate built on it is for the wrong operator.
+        z = tigre.Atb(u, geo, angles, backprojection_type="matched")
+        beta = l2norm(z)
         arr = (1.0 / beta) * z
-        error = np.linalg.norm(tigre.Ax(arr, geo, angles) - beta * u)
+        error = l2norm(tigre.Ax(arr, geo, angles) - beta * u)
         sigma = beta
         arr_old = arr
         i += 1

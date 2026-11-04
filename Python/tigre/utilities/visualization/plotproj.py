@@ -103,7 +103,7 @@ class plotProj:
         if self.step is None or self.step == 0:
             self.step = 1
         if self.savegif == "":
-            self.savegif == None
+            self.savegif = None
         if self.slice is None:
             self.run()
         if self.slice is not None:

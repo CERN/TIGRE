@@ -9,6 +9,23 @@ from tigre.utilities.Atb import Atb
 from tigre.utilities.filtering import filtering
 
 
+def is_short_scan(angles):
+    """True when the projection angles do not cover a full circle.
+
+    Same test as MATLAB's FDK.m uses to decide Parker weighting: the arc
+    ``max - min`` of the in-plane angle (first Euler column for (n, 3) input)
+    is shorter than ``2*pi`` by more than 1.5 angular steps, so a full circle
+    sampled with ``endpoint=False`` (arc = 2*pi - one step) is NOT short.
+    """
+    a = np.asarray(angles, dtype=float)
+    if a.ndim > 1:
+        a = a[:, 0]
+    if a.size < 2:
+        return True
+    step = float(np.max(np.abs(np.diff(a))))
+    return float(np.max(a) - np.min(a)) < 2 * np.pi - 1.5 * step
+
+
 def FDK(proj, geo, angles, **kwargs):
     """
     solves CT image reconstruction.
@@ -33,6 +50,9 @@ def FDK(proj, geo, angles, **kwargs):
     :param verbose: bool
     Feedback print statements for algorithm progress
 
+    :param workers: int or None
+    Number of CPU threads used for projection filtering; None selects the default
+
     :param kwargs: dict
     keyword arguments
 
@@ -46,7 +66,7 @@ def FDK(proj, geo, angles, **kwargs):
     >>> from tigre.demos.Test_data import data_loader
     >>> geo = tigre.geometry(mode='cone',default_geo=True,
     >>>                         nVoxel=np.array([64,64,64]))
-    >>> angles = np.linspace(0,2*np.pi,100)
+    >>> angles = np.linspace(0, 2 * np.pi, 100, endpoint=False)
     >>> src_img = data_loader.load_head_phantom(geo.nVoxel)
     >>> proj = tigre.Ax(src_img,geo,angles)
     >>> output = algs.FDK(proj,geo,angles)
@@ -71,6 +91,7 @@ def FDK(proj, geo, angles, **kwargs):
                         PYTHON : Reuben Lindroos
     """
     verbose = kwargs["verbose"] if "verbose" in kwargs else False
+    workers = kwargs.get("workers")
 
     gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
     dowang = kwargs["dowang"] if "dowang" in kwargs else True
@@ -165,6 +186,18 @@ def FDK(proj, geo, angles, **kwargs):
     if not np.any(geo.offDetector):
         dowang = False
 
+    # Wang's displaced-detector weights assume a FULL circle: they ramp one
+    # side of the detector down and rely on the opposing (beta + pi) views to
+    # bring the coverage back to uniform. On a short scan those views do not
+    # exist, so the ramp survives into the image as a one-sided "teardrop"
+    # shading - and ANY non-zero offDetector (a sub-pixel calibration value is
+    # enough) switches the weights on. Skip them on short scans.
+    if dowang and is_short_scan(angles):
+        if verbose:
+            print("FDK: short scan - Wang detector-offset weights not applied "
+                  "(they assume a full 360-degree circle)")
+        dowang = False
+
     if dowang:
         if verbose:
             print("FDK: applying detector offset weights")
@@ -196,7 +229,7 @@ def FDK(proj, geo, angles, **kwargs):
     w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx**2 + yy**2))
     np.multiply(proj, w, out=proj_filt)
 
-    proj_filt = filtering(proj_filt, geo, angles, parker=False, verbose=verbose)
+    proj_filt = filtering(proj_filt, geo, angles, parker=False, verbose=verbose, workers=workers)
     # geo.proj = proj_filt
 
     return Atb(proj_filt, geo, geo.angles, "FDK", gpuids=gpuids)
@@ -212,10 +245,11 @@ def fbp(proj, geo, angles, **kwargs):  # noqa: D103
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
     verbose = kwargs["verbose"] if "verbose" in kwargs else False
+    workers = kwargs.get("workers")
     gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
-    geo.filter = kwargs["filter"] if "filter" in kwargs else None
+    geox.filter = kwargs["filter"] if "filter" in kwargs else None
 
-    proj_filt = filtering(copy.deepcopy(proj), geox, angles, parker=False, verbose=verbose)
+    proj_filt = filtering(copy.deepcopy(proj), geox, angles, parker=False, verbose=verbose, workers=workers)
     if not isinstance(geo.DSO, np.ndarray):
         weight= np.float32(geo.DSO / geo.DSD)
     else:

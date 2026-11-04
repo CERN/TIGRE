@@ -144,17 +144,17 @@ for ii=1:niter
             geo.rotDetector=rotDetector(:,index_angles(:,jj));
         end
         if size(DSD,2)==size(angles,2)
-            geo.DSD=DSD(jj);
+            geo.DSD=DSD(index_angles(:,jj));
         end
         if size(DSO,2)==size(angles,2)
-            geo.DSO=DSO(jj);
+            geo.DSO=DSO(index_angles(:,jj));
         end
         %         proj_err=proj(:,:,jj)-Ax(res,geo,angles(:,jj));     %                                 (b-Ax)
         %         weighted_err=W(:,:,jj).*proj_err;                   %                          W^-1 * (b-Ax)
         %         backprj=Atb(weighted_err,geo,angles(:,jj));         %                     At * W^-1 * (b-Ax)
         %         weight_backprj=bsxfun(@times,1./V(:,:,jj),backprj); %                 V * At * W^-1 * (b-Ax)
         %         res=res+lambda*weight_backprj;                      % x= x + lambda * V * At * W^-1 * (b-Ax)
-        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,jj).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
+        res=res+lambda* bsxfun(@times,1./V(:,:,jj),Atb(W(:,:,index_angles(:,jj)).*(proj(:,:,index_angles(:,jj))-Ax(res,geo,angles_reorder(:,jj),'gpuids',gpuids)),geo,angles_reorder(:,jj),'gpuids',gpuids));
         if nonneg
             res=max(res,0);
         end
@@ -174,8 +174,9 @@ for ii=1:niter
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
         geo.DSD=DSD;
+        geo.DSO=DSO;
         geo.rotDetector=rotDetector;
-        resL2(ii)=im3Dnorm(proj(:,:,index_angles)-Ax(res,geo,angles,'gpuids',gpuids),'L2'); % Compute error norm2 of b-Ax
+        resL2(ii)=im3Dnorm(proj-Ax(res,geo,angles,'gpuids',gpuids),'L2'); % Compute error norm2 of b-Ax
         % If the error is not minimized.
         if  ii~=1 && resL2(ii)>resL2(ii-1)
             if verbose

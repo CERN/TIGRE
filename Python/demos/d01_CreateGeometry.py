@@ -1,9 +1,9 @@
 #%% DEMO 01: Describing your geometry
 #
-#  In TIGRE the geometry is stored in an structure. To see documentation
-#  about geometry, run:
-#
-#     doc('TIGRE/Geometry')
+#  In TIGRE the geometry is stored in a Geometry object (see
+#  tigre.utilities.geometry.Geometry / tigre.geometry()). The field list
+#  below documents the main parameters; this demo also constructs one
+#  step by step.
 #
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------

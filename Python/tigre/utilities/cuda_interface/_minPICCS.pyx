@@ -37,6 +37,11 @@ def cuda_raise_errors(error_code):
 
 
 def minPICCS(np.ndarray[np.float32_t, ndim=3] src,np.ndarray[np.float32_t, ndim=3] prior,float alpha = 15.0,int maxiter = 100, float ratio = 0.95, gpuids=None):
+    # piccs_tv copies as many floats from prior as src holds, so a smaller
+    # prior would be read out of bounds instead of reported.
+    if (prior.shape[0] != src.shape[0] or prior.shape[1] != src.shape[1]
+            or prior.shape[2] != src.shape[2]):
+        raise ValueError("prior has shape %s but src has shape %s" % (np.shape(prior), np.shape(src)))
     cdef c_GpuIds* c_gpuids = convert_to_c_gpuids(gpuids)
     if not c_gpuids:
         raise MemoryError()
