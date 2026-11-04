@@ -427,6 +427,7 @@ void CreateTextureParallelInterp(float* image,Geometry geo,cudaArray** d_cuArrTe
     copyParams.extent   = extent;
     copyParams.kind     = cudaMemcpyHostToDevice;
     cudaMemcpy3DAsync(&copyParams,stream[1]);
+    cudaStreamSynchronize(stream[1]);
     
     
     //Array creation End
