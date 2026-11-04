@@ -254,6 +254,9 @@ class BuildExtension(build_ext):
                         + HIP_OFFLOAD_ARGS
                         + cflags
                     )
+                    # rocRAND's device headers require C++14.
+                    if not any(flag.startswith("-std=") for flag in cflags):
+                        cflags.append("-std=c++14")
                 elif _is_cuda_file(src):
                     nvcc = _join_cuda_home("bin", "nvcc")
                     if not isinstance(nvcc, list):
