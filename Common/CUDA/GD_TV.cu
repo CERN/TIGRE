@@ -616,8 +616,10 @@ do { \
                         if (dev>0){
                             cudaSetDevice(gpuids[dev-1]);
                             cudaMemcpyAsync(buffer, d_image[dev-1]+total_pixels+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
+                            cudaDeviceSynchronize();
                             cudaSetDevice(gpuids[dev]);
                             cudaMemcpyAsync(d_image[dev],buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
+                            cudaDeviceSynchronize();
                         }
                     }
                 }else{

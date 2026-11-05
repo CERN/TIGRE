@@ -558,6 +558,7 @@ void cpy_from_host(float* device_array,float* host_array,
                             cudaMemcpyAsync(d_py[dev],buffer_py, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+3]);
                             cudaStreamSynchronize(stream[(dev-1)*nStream_device+4]);
                             cudaMemcpyAsync(d_pz[dev],buffer_pz, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+4]);
+                            cudaDeviceSynchronize();
                             
                             
                         }
