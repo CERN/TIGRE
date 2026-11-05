@@ -766,10 +766,10 @@ float maxdistanceCuboid(Geometry geo,unsigned int i){
 //  The distance returned is the safe distance that can be skipped for a given angle alpha, before we need to start sampling.
     
     if (geo.theta==0.0f & geo.psi==0.0f) // Special case, it will make the code faster
-        return max(a*b/sqrt(a*a*sin(geo.alpha)*sin(geo.alpha)+b*b*cos(geo.alpha)*cos(geo.alpha))-
+        return fmaxf(a*b/sqrt(a*a*sin(geo.alpha)*sin(geo.alpha)+b*b*cos(geo.alpha)*cos(geo.alpha))-
                 sqrt(maxCubX*maxCubX+maxCubY*maxCubY),0.0f);
     //TODO: think of more special cases?
-    return max(geo.DSO[i]/max(max(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY+maxCubZ*maxCubZ),0.0f);
+    return fmaxf(geo.DSO[i]/fmaxf(fmaxf(geo.dVoxelX,geo.dVoxelY),geo.dVoxelZ)-sqrt(maxCubX*maxCubX+maxCubY*maxCubY+maxCubZ*maxCubZ),0.0f);
 
 }
 void rollPitchYaw(Geometry geo,unsigned int i, Point3D* point){
