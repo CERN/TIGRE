@@ -2,7 +2,7 @@ from __future__ import division
 import os
 import numpy as np
 import scipy.io
-import scipy.ndimage.interpolation
+import scipy.ndimage
 
 
 def load_head_phantom(number_of_voxels=None):
@@ -22,6 +22,10 @@ def load_head_phantom(number_of_voxels=None):
             break
     if found:
         test_data = scipy.io.loadmat(abs_path)
+    else:
+        raise FileNotFoundError(
+            "TIGRE head phantom was not found; install the bundled Common/data/head.mat dataset."
+        )
 
     # Loads data in F_CONTIGUOUS MODE (column major), convert to Row major
     image = test_data["img"].transpose(2, 1, 0).copy()
@@ -32,7 +36,7 @@ def load_head_phantom(number_of_voxels=None):
     zoom_z = number_of_voxels[2] / image_dimensions[2]
 
     # TODO: add test for this is resizing and not simply zooming
-    resized_image = scipy.ndimage.interpolation.zoom(
+    resized_image = scipy.ndimage.zoom(
         image, (zoom_x, zoom_y, zoom_z), order=3, prefilter=False
     )
 
