@@ -520,10 +520,10 @@ void cpy_from_host(float* device_array,float* host_array,
                     for(dev=0; dev<deviceCount;dev++){
                         if (dev<deviceCount-1){
                             cudaSetDevice(gpuids[dev+1]);
-                            cudaMemcpyAsync(buffer_u , d_u[dev+1] , buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+1]);
-                            cudaMemcpyAsync(buffer_px, d_px[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+2]);
-                            cudaMemcpyAsync(buffer_py, d_py[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+3]);
-                            cudaMemcpyAsync(buffer_pz, d_pz[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+4]);
+                            cudaMemcpyAsync(buffer_u , d_u[dev+1]+buffer_pixels , buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+1]);
+                            cudaMemcpyAsync(buffer_px, d_px[dev+1]+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+2]);
+                            cudaMemcpyAsync(buffer_py, d_py[dev+1]+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+3]);
+                            cudaMemcpyAsync(buffer_pz, d_pz[dev+1]+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+4]);
 
                             
                             cudaSetDevice(gpuids[dev]);
@@ -543,10 +543,10 @@ void cpy_from_host(float* device_array,float* host_array,
                         if (dev>0){
                             // U
                             cudaSetDevice(gpuids[dev-1]);
-                            cudaMemcpyAsync(buffer_u,  d_u[dev-1] +slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+1]);
-                            cudaMemcpyAsync(buffer_px, d_px[dev-1]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+2]);
-                            cudaMemcpyAsync(buffer_py, d_py[dev-1]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+3]);
-                            cudaMemcpyAsync(buffer_pz, d_pz[dev-1]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+4]);
+                            cudaMemcpyAsync(buffer_u,  d_u[dev-1] +slices_per_split*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+1]);
+                            cudaMemcpyAsync(buffer_px, d_px[dev-1]+slices_per_split*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+2]);
+                            cudaMemcpyAsync(buffer_py, d_py[dev-1]+slices_per_split*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+3]);
+                            cudaMemcpyAsync(buffer_pz, d_pz[dev-1]+slices_per_split*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+4]);
                             
                             
                             cudaSetDevice(gpuids[dev]);
@@ -686,7 +686,7 @@ void cpy_from_host(float* device_array,float* host_array,
     if(is_last_chunk && image_size[2] > 1){
 
         for (unsigned int j=0;j<buffer_length;j++){
-           cudaMemcpyAsync(device_array+bytes_device+pixels_per_slice*j, host_array+pixels_per_slice*(image_size[2]-j-2), pixels_per_slice*sizeof(float), cudaMemcpyHostToDevice,stream);
+           cudaMemcpyAsync(device_array+offset_device+bytes_device+pixels_per_slice*j, host_array+pixels_per_slice*(image_size[2]-j-2), pixels_per_slice*sizeof(float), cudaMemcpyHostToDevice,stream);
         }
     }
     cudaStreamSynchronize(stream);
