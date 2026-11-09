@@ -275,9 +275,10 @@ void cpy_from_host(float* device_array,float* host_array,
         
         // Lets allocate auxiliary  variables.
         // Halo exchange e=2*dev copies the last slice of dev to dev+1, e=2*dev+1 the first slice of dev+1 to dev.
-        // For each variable v (u, px, py, pz) it goes through its own part 4*e+v of the pinned buffer,
-        // so all of them can run at once.
+        // Neighbours with peer access (peer_access[dev]) copy directly; for the others each variable v (u, px, py, pz)
+        // goes through its own part 4*e+v of the pinned buffer, so all of them can run at once.
         int nExchanges=2*(deviceCount-1);
+        bool* peer_access=(bool*)malloc((deviceCount-1)*sizeof(bool));
         float* buffer;
         cudaEvent_t* exchange_event=(cudaEvent_t*)malloc(4*nExchanges*sizeof(cudaEvent_t));
         float* h_px, *h_py, *h_pz, *h_u;
@@ -300,6 +301,22 @@ void cpy_from_host(float* device_array,float* host_array,
         }else if(deviceCount>1){
             cudaMallocHost((void**)&buffer, 4*nExchanges*pixels_per_slice*sizeof(float));
             for (dev = 0; dev < deviceCount-1; dev++){
+                int access_next=0, access_prev=0;
+                cudaDeviceCanAccessPeer(&access_next,gpuids[dev],gpuids[dev+1]);
+                cudaDeviceCanAccessPeer(&access_prev,gpuids[dev+1],gpuids[dev]);
+                peer_access[dev]=access_next && access_prev;
+                if (peer_access[dev]){
+                    // Peer access persists in the context, so an earlier call may have enabled it already.
+                    cudaSetDevice(gpuids[dev]);
+                    cudaError_t err_next=cudaDeviceEnablePeerAccess(gpuids[dev+1],0);
+                    cudaSetDevice(gpuids[dev+1]);
+                    cudaError_t err_prev=cudaDeviceEnablePeerAccess(gpuids[dev],0);
+                    if (err_next!=cudaSuccess || err_prev!=cudaSuccess){
+                        cudaGetLastError();
+                        peer_access[dev]=(err_next==cudaSuccess || err_next==cudaErrorPeerAccessAlreadyEnabled) &&
+                                         (err_prev==cudaSuccess || err_prev==cudaErrorPeerAccessAlreadyEnabled);
+                    }
+                }
                 for (int v = 0; v < 4; v++){
                     cudaSetDevice(gpuids[dev]);
                     cudaEventCreateWithFlags(&exchange_event[8*dev+v],cudaEventDisableTiming);
@@ -531,6 +548,13 @@ void cpy_from_host(float* device_array,float* host_array,
                     for(dev=0; dev<deviceCount-1;dev++){
                         for (int v = 0; v < 4; v++){
                             int to_next=8*dev+v, to_prev=8*dev+4+v;
+                            if (peer_access[dev]){
+                                cudaSetDevice(gpuids[dev]);
+                                cudaMemcpyPeerAsync(d_var[v][dev+1], gpuids[dev+1], d_var[v][dev]+slices_per_split*pixels_per_slice, gpuids[dev], buffer_pixels*sizeof(float), stream[dev*nStream_device+1+v]);
+                                cudaSetDevice(gpuids[dev+1]);
+                                cudaMemcpyPeerAsync(d_var[v][dev]+slices_per_split*pixels_per_slice+buffer_pixels, gpuids[dev], d_var[v][dev+1]+buffer_pixels, gpuids[dev+1], buffer_pixels*sizeof(float), stream[(dev+1)*nStream_device+1+v]);
+                                continue;
+                            }
                             cudaSetDevice(gpuids[dev]);
                             cudaMemcpyAsync(buffer+to_next*pixels_per_slice, d_var[v][dev]+slices_per_split*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1+v]);
                             cudaEventRecord(exchange_event[to_next],stream[dev*nStream_device+1+v]);
@@ -540,6 +564,7 @@ void cpy_from_host(float* device_array,float* host_array,
                         }
                     }
                     for(dev=0; dev<deviceCount-1;dev++){
+                        if (peer_access[dev]) continue;
                         for (int v = 0; v < 4; v++){
                             int to_next=8*dev+v, to_prev=8*dev+4+v;
                             cudaSetDevice(gpuids[dev+1]);
@@ -624,6 +649,7 @@ void cpy_from_host(float* device_array,float* host_array,
             }
         }
         free(exchange_event);
+        free(peer_access);
         
         for (int i = 0; i < nStreams; ++i)
            cudaStreamDestroy(stream[i]) ;
