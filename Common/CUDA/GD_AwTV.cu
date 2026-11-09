@@ -624,16 +624,18 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                         total_pixels=curr_slices*image_size[0]*image_size[1];
                         if (dev<deviceCount-1){
                             cudaSetDevice(gpuids[dev+1]);
-                            cudaMemcpy(buffer, d_image[dev+1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
+                            cudaMemcpy(buffer, d_image[dev+1]+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
                             cudaSetDevice(gpuids[dev]);
                             cudaMemcpy(d_image[dev]+total_pixels+buffer_pixels,buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice); 
                         }
                         cudaDeviceSynchronize();
                         if (dev>0){
                             cudaSetDevice(gpuids[dev-1]);
-                            cudaMemcpyAsync(buffer, d_image[dev-1]+total_pixels+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
+                            cudaMemcpyAsync(buffer, d_image[dev-1]+(size_t)slices_per_split*image_size[0]*image_size[1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
+                            cudaDeviceSynchronize();
                             cudaSetDevice(gpuids[dev]);
                             cudaMemcpyAsync(d_image[dev],buffer, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice);
+                            cudaDeviceSynchronize();
                         }
                     }
                 }else{
