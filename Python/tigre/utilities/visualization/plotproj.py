@@ -8,6 +8,10 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 class plotProj:
+    """Plot projections with (views,), (views, 1) or (views, 3) angles.
+
+    ZYZ angle titles display alpha and apply only to projection views (T).
+    """
     # NOTE: type help(plotImg) after importing in order to get a readable manual.
     (
         "\n"
@@ -23,7 +27,7 @@ class plotProj:
         '       default is "T"\n'
         "       NOTE: string arguments!"
         "\n"
-        "angles: Any 1D numpy array. \n"
+        "angles: A (views,), (views, 1) or (views, 3) array. \n"
         "        Its length must be the same as proj.shape[0].\n"
         '        Works only when dim is "T" or "t"\n'
         "slice: int, optional\n"
@@ -65,7 +69,18 @@ class plotProj:
         self.dimlist = ["U", "V", "T", "u", "v", "t", None]  # accepted parameters for dim
         self.step = step
         self.savegif = savegif
-        self.angles = angles
+        self.angles = None
+        if angles is not None:
+            values = np.asarray(angles, dtype=float)
+            if values.ndim == 1:
+                values = values[:, None]
+            if (values.ndim != 2 or values.shape[1] not in (1, 3)
+                    or values.shape[0] != self.proj.shape[0]
+                    or not np.isfinite(values).all()):
+                raise ValueError(
+                    "angles must be finite with shape (views,), (views, 1) or (views, 3), matching projections"
+                )
+            self.angles = values
         self.colormap = colormap
         if clims is None:
             self.min_val = np.amin(self.proj)
@@ -123,7 +138,7 @@ class plotProj:
             self.dimint = 1
             self.dimlist = ["->U", "->T", "V"]
             self.run_plot()
-        if self.dim in [None, "T", "a"]:
+        if self.dim in [None, "T", "t"]:
             self.dimint = 0
             self.dimlist = ["->U", "->V", "T"]
             self.run_plot()
@@ -160,7 +175,7 @@ class plotProj:
         # axis.get_yaxis().set_ticks([])
         axis.set_xlabel(self.dimlist[0])
         axis.set_ylabel(self.dimlist[1])
-        if self.angles is not None:
+        if self.angles is not None and self.dimint == 0:
             axis.set_title(
                 "{}:{}, alpha={:+.3f} pi".format(self.dimlist[2], i, self.angles[i,0] / np.pi)
             )
@@ -176,7 +191,7 @@ class plotProj:
         dim = self.proj.shape
 
         fig = plt.figure()
-        ani = animation.FuncAnimation(
+        self._animation = animation.FuncAnimation(
             fig,
             self.update_frame,
             fargs=(fig, self.min_val, self.max_val),
@@ -185,7 +200,7 @@ class plotProj:
             frames=len(range(0, dim[self.dimint])[:: self.step]),
         )
         if self.savegif is not None:
-            ani.save(self.savegif, writer="pillow")
+            self._animation.save(self.savegif, writer="pillow")
             self._show()
         else:
             self._show()
@@ -214,7 +229,7 @@ class plotProj:
             )
         if self.dim in [None, "T", "t"]:
             if self.angles is not None:
-                plt.title("alpha={:+.3f} pi".format(self.angles[self.slice] / np.pi))
+                plt.title("alpha={:+.3f} pi".format(self.angles[self.slice, 0] / np.pi))
             plt.xlabel("U")
             plt.ylabel("V")
             plt.imshow(
