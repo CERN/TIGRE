@@ -7,7 +7,8 @@ plane. Existing geometry and projector calls remain the default.
 
 This first patch adds the explicit model, a CUDA Siddon forward projector and
 matching discrete adjoint, Python bindings, build integration and focused tests.
-MATLAB bindings and opt-in shared solver support follow in dependent patches.
+MATLAB bindings are supplied in a dependent patch described below; opt-in
+shared solver support follows separately.
 The existing native projector files and conventional Python calls are unchanged.
 
 ## Representation
@@ -107,6 +108,52 @@ view chunks; this is a host NumPy API, not a GPU-resident CuPy pipeline.
 
 The traversal follows [Siddon (1985)](https://doi.org/10.1118/1.595715),
 also recorded in the Python utilities bibliography.
+
+## MATLAB bindings (dependent patch)
+
+Build with the existing `MATLAB/Compile.m`, then add `MATLAB/Utilities` and the
+platform's `MATLAB/Mex_files` directory to the MATLAB path as usual. The new
+`Surface_mex` target compiles the same CUDA source as Python; the existing
+projector targets are unchanged. The `-mex_xml` option remains available for a
+compatible custom compiler configuration. No Python runtime or extra MATLAB
+toolbox is needed by these bindings.
+
+The public MATLAB representation is a struct:
+
+| Field | MATLAB shape | Meaning |
+| --- | --- | --- |
+| `source_positions_mm` | `3 x views` | World `(x,y,z)` positions in mm |
+| `pixel_centers_mm` | `rows x columns x 3 x (one or views)` | World pixel centres |
+| `valid_mask` (optional) | `rows x columns x (one or views)` | Logical or binary mask; default all valid |
+
+Unlike the Python volume-array order, MATLAB volumes and `geo.nVoxel`,
+`geo.dVoxel`, `geo.offOrigin` use `(x,y,z)` order. Projection arrays are
+`rows x columns x views`. A missing `offOrigin` defaults to zero; otherwise it
+must be one fixed three-component origin. Geometry and data accept full real
+numeric arrays, converted to float32 for the native ray pair. Voxel counts are
+kept as double until their checked integer conversion, without float32 rounding.
+Coordinates and spacing must remain finite (and spacing positive) in float32.
+Sparse and complex arrays are rejected. Outputs are single precision.
+
+```matlab
+geo=struct('nVoxel',[16;16;8],'dVoxel',ones(3,1),'offOrigin',zeros(3,1));
+surface=struct('source_positions_mm',[40;0;0], ...
+    'pixel_centers_mm',reshape([-40;0;0],1,1,3));
+volume=ones(geo.nVoxel','single');
+data=Ax_surface(volume,geo,surface,0);
+back=Atb_surface(data,geo,surface,0);
+```
+
+Device indices are zero-based, defaulting to device 0. These bindings use one
+GPU and do not expose Python's slab scheduler or accept `gpuArray` input.
+`Atb_surface` discards masked NaNs without modifying its input; valid samples
+must remain finite. Direct packed `Surface_mex` calls require finite data
+already masked by the caller and are an internal interface.
+
+Run `MATLAB/Demos/d_detector_surface.m` for curved and three-panel U examples,
+and `test_surfaceRayBindings` from `MATLAB/Tests` for the independent voxel-box
+oracle, layout, masks, boundary segments, malformed input and recovery checks.
+This patch adds no MATLAB solver or analytical reconstruction implementation.
 
 ## Why explicit pixels and a shared projector contract?
 
