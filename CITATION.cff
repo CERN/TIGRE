@@ -1,0 +1,75 @@
+cff-version: 1.2.0
+message: "If you use TIGRE, please cite it using the references below."
+title: "TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox"
+type: software
+authors:
+  - family-names: Biguri
+    given-names: Ander
+    orcid: "https://orcid.org/0000-0002-2636-3032"
+  - name: "TIGRE contributors"
+repository-code: "https://github.com/CERN/TIGRE"
+license: BSD-3-Clause
+version: "3.1.3"
+keywords:
+  - computed tomography
+  - CT reconstruction
+  - iterative reconstruction
+  - GPU
+  - CUDA
+  - MATLAB
+  - Python
+preferred-citation:
+  type: article
+  title: "TIGRE v3: Efficient and easy to use iterative computed tomographic reconstruction toolbox for real datasets"
+  authors:
+    - {family-names: Biguri, given-names: Ander}
+    - {family-names: Sadakane, given-names: Tomoyuki}
+    - {family-names: Lindroos, given-names: Reuben}
+    - {family-names: Liu, given-names: Yi}
+    - {family-names: Sabaté Landman, given-names: Malena}
+    - {family-names: Du, given-names: Yi}
+    - {family-names: Lohvithee, given-names: Manasavee}
+    - {family-names: Kaser, given-names: Stefanie}
+    - {family-names: Hatamikia, given-names: Sepideh}
+    - {family-names: Bryll, given-names: Robert}
+    - {family-names: Valat, given-names: Emilien}
+    - {family-names: Wonglee, given-names: Sarinrat}
+    - {family-names: Blumensath, given-names: Thomas}
+    - {family-names: Schönlieb, given-names: Carola-Bibiane}
+  journal: "Engineering Research Express"
+  volume: 7
+  issue: 1
+  start: "015011"
+  year: 2025
+  doi: "10.1088/2631-8695/adbb3a"
+references:
+  - type: article
+    title: "TIGRE: a MATLAB-GPU toolbox for CBCT image reconstruction"
+    authors:
+      - {family-names: Biguri, given-names: Ander}
+      - {family-names: Dosanjh, given-names: Manjit}
+      - {family-names: Hancock, given-names: Steven}
+      - {family-names: Soleimani, given-names: Manuchehr}
+    journal: "Biomedical Physics & Engineering Express"
+    volume: 2
+    issue: 5
+    start: "055010"
+    year: 2016
+    doi: "10.1088/2057-1976/2/5/055010"
+  - type: article
+    title: "Arbitrarily large iterative tomographic reconstruction on multiple GPUs using the TIGRE toolbox"
+    authors:
+      - {family-names: Biguri, given-names: Ander}
+      - {family-names: Lindroos, given-names: Reuben}
+      - {family-names: Bryll, given-names: Robert}
+      - {family-names: Towsyfyan, given-names: Hossein}
+      - {family-names: Deyhle, given-names: Hans}
+      - {family-names: Harrane, given-names: Ibrahim El khalil}
+      - {family-names: Boardman, given-names: Richard}
+      - {family-names: Mavrogordato, given-names: Mark}
+      - {family-names: Dosanjh, given-names: Manjit}
+      - {family-names: Hancock, given-names: Steven}
+      - {family-names: Blumensath, given-names: Thomas}
+    journal: "Journal of Parallel and Distributed Computing"
+    year: 2020
+    doi: "10.1016/j.jpdc.2020.07.004"
