@@ -79,6 +79,17 @@ TIGRE is a GPU-based CT reconstruction software repository that contains a wide 
 
 MATLAB and Python builds are both fully supported.
 
+> [!IMPORTANT]
+> TIGRE is **not** on PyPI. `pip install tigre` installs an unrelated package with the same name.
+> For Python, install from source (see below) or straight from GitHub:
+>
+> ```sh
+> pip install git+https://github.com/CERN/TIGRE.git          # latest master
+> pip install git+https://github.com/CERN/TIGRE.git@v3.1.3   # a specific release
+> ```
+>
+> Both need the CUDA toolkit and a C++ compiler, as they compile TIGRE on your machine.
+
 - [Installation instructions and requirements for MATLAB](Frontispiece/MATLAB_installation.md).
 
 - [Installation instructions and requirements for Python](Frontispiece/python_installation.md). 

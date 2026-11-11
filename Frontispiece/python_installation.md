@@ -13,6 +13,12 @@
 - [Optional Code Style Enforcement](#optional-code-style-enforcement)
 - [Advanced](#advanced)
 
+> [!IMPORTANT]
+> TIGRE is **not** published on PyPI: `pip install tigre` installs an unrelated package with the same name.
+> Install TIGRE from a clone as described below, or directly with
+> `pip install git+https://github.com/CERN/TIGRE.git` (add `@v3.1.3` or another tag to pin a release).
+> From the next release on, prebuilt Linux wheels are also attached to each [GitHub Release](https://github.com/CERN/TIGRE/releases).
+
 ## Windows
 
 ### Requirements
@@ -152,7 +158,7 @@ if this fails, then try:
 `export CUDAHOME=yourcudahome`, e.g. default is `export CUDAHOME=/usr/local/cuda`
 `pip install . --user`
 
-**NOTE:** as of November 2020 the pip pytigre is behind the main repo, we recommend you install it and compile it yourself. Trying to fix that. 
+**NOTE:** the old `pytigre` package on PyPI is outdated (v0.1.x) and should not be used.
 
 ### Conda install
 
