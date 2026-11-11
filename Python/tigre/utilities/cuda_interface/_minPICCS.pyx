@@ -16,7 +16,6 @@
 
 cimport numpy as np 
 import numpy as np
-from tigre.utilities.errors import TigreCudaCallError
 from tigre.utilities.cuda_interface._gpuUtils cimport GpuIds as c_GpuIds, convert_to_c_gpuids, free_c_gpuids
 
 np.import_array()
@@ -33,6 +32,9 @@ cdef extern from "PICCS.hpp":
 
 def cuda_raise_errors(error_code):
     if error_code:
+        # Imported here, not at module level: importing tigre from a compiled
+        # module at load time is circular when the module is imported first.
+        from tigre.utilities.errors import TigreCudaCallError
         raise TigreCudaCallError('minimizeTV:PICCS_TV:', error_code)
 
 
