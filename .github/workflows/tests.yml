@@ -1,0 +1,28 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  python-tests:
+    name: Python tests (CPU-only)
+    runs-on: ubuntu-latest
+    # CUDA toolkit is needed to compile TIGRE. GitHub-hosted runners have no GPU,
+    # so tests marked `gpu` are skipped automatically (see Python/tests/conftest.py).
+    container: nvidia/cuda:12.8.1-devel-ubuntu24.04
+    env:
+      MPLBACKEND: Agg
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+        with:
+          version: 0.6.9
+          enable-cache: true
+      - name: Build and install TIGRE
+        run: |
+          uv venv --python 3.12
+          uv pip install --python .venv/bin/python . pytest
+      - name: Run tests
+        run: .venv/bin/python -m pytest -ra

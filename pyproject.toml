@@ -40,6 +40,12 @@ dev = [
 	"pre-commit~=2.10",
 ]
 
+[tool.pytest.ini_options]
+testpaths = ["Python/tests"]
+markers = [
+	"gpu: test needs a CUDA-capable GPU (skipped automatically when none is available)",
+]
+
 [tool.setuptools.packages.find]
 where = ["Python"]
 
