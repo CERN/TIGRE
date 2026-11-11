@@ -23,7 +23,7 @@
 
 ### Requirements
 
-1. Python 3.7-3.11
+1. Python 3.11-3.14
 2. NVIDIA CUDA-capable GPU with [compute capability >=3.5](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
 3. MSVC (for building)
 4. CUDA Toolkit (for building)
@@ -33,7 +33,7 @@ Tested on:
 | Software      | Version       | 
 | ------------- |:-------------:|
 |**Windows**| 10, 11 |
-|**Python**| 3.10-3.14 |
+|**Python**| 3.11-3.14 |
 |**CUDA**| >=9.2 |
 |**MSVC**| 19.24 |
 
@@ -88,7 +88,7 @@ Please report conda issues [upstream](https://github.com/TomographicImaging/TIGR
 
 We strongly recommend using `conda` environments and doing the install in one specific for tigre. 
 
-1. Python 3
+1. Python 3.11-3.14
 2. NVIDIA CUDA-capable GPU with [compute capability >=3.5](https://en.wikipedia.org/wiki/CUDA#GPUs_supported)
 3. gcc (for building)
 4. CUDA Toolkit (for building)
@@ -98,7 +98,7 @@ Tested on:
 | Software      | Version       | 
 | ------------- |:-------------:|
 |**Ubuntu**| >=16.04 |
-|**Python**| 3.10-3.14 |
+|**Python**| 3.11-3.14 |
 |**CUDA**| >=9.2 |
 |**gcc**| 7.5.0 |
 
@@ -124,7 +124,7 @@ For Ubuntu
 	```sh
 	sudo apt update
 	sudo apt upgrade
-	sudo apt install python3.10 python-pip
+	sudo apt install python3 python3-pip
 	```
 
 2. Install CUDA
