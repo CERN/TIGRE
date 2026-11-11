@@ -4,10 +4,9 @@ Each algorithm reconstructs the 64^3 head phantom from noise-free projections an
 must return a finite volume of the right shape whose relative L2 error against the
 phantom is below a bound. Idea for one test per algorithm from PR #768 (Vilax).
 
-The bounds in MAX_REL_ERROR are deliberately loose to start with; they catch an
-algorithm that diverges, returns garbage or stops working, not small regressions.
-Tighten them once you have numbers from your own GPU: run with `-s` and each test
-prints the error it measured.
+The bounds in MAX_REL_ERROR are the errors measured on a first run plus some
+headroom, so they catch an algorithm that gets noticeably worse. Run with `-s` to
+see the error each test measures.
 
 Run them locally on a machine with a GPU:  pytest -m gpu Python/tests
 """
@@ -52,9 +51,49 @@ ITERATIVE = [
 
 PRIOR_BASED = [("piccs", 10), ("os_piccs", 10)]
 
-# Relative L2 error bound per algorithm (default for anything not listed).
+# Relative L2 error bound per algorithm: the error measured on 2026-11-11
+# (Windows, CUDA 12.3, 1 GPU) plus 25% and 0.01 of headroom. A failure here means
+# an algorithm got noticeably worse, not just different rounding. Anything not
+# listed falls back to DEFAULT_MAX_REL_ERROR.
 DEFAULT_MAX_REL_ERROR = 0.6
-MAX_REL_ERROR = {}
+MAX_REL_ERROR = {
+    "fdk": 0.21,  # measured 0.1521
+    "fdk[ram_lak]": 0.21,  # measured 0.1521
+    "fdk[shepp_logan]": 0.19,  # measured 0.1387
+    "fdk[cosine]": 0.18,  # measured 0.1303
+    "fdk[hamming]": 0.18,  # measured 0.1335
+    "fdk[hann]": 0.19,  # measured 0.1362
+    "fbp": 0.17,  # measured 0.1228
+    "sart": 0.09,  # measured 0.0640
+    "sirt": 0.28,  # measured 0.2131
+    "ossart": 0.28,  # measured 0.2126
+    "sart_tv": 0.13,  # measured 0.0894
+    "ossart_tv": 0.33,  # measured 0.2549
+    "cgls": 0.11,  # measured 0.0775
+    "lsqr": 0.12,  # measured 0.0805
+    "hybrid_lsqr": 0.12,  # measured 0.0805
+    "lsmr": 0.13,  # measured 0.0886
+    "irn_tv_cgls": 0.08,  # measured 0.0556
+    "hybrid_flsqr_tv": 0.33,  # measured 0.2519
+    "ab_gmres": 0.12,  # measured 0.0802
+    "ba_gmres": 0.12,  # measured 0.0880
+    "asd_pocs": 0.06,  # measured 0.0364
+    "os_asd_pocs": 0.31,  # measured 0.2356
+    "awasd_pocs": 0.04,  # measured 0.0164
+    "os_awasd_pocs": 0.29,  # measured 0.2196
+    "pcsd": 0.04,  # measured 0.0227
+    "aw_pcsd": 0.03,  # measured 0.0136
+    "os_pcsd": 0.31,  # measured 0.2383
+    "os_aw_pcsd": 0.28,  # measured 0.2134
+    "mlem": 0.13,  # measured 0.0925
+    "fista": 0.11,  # measured 0.0727
+    "ista": 0.20,  # measured 0.1443
+    "piccs": 0.05,  # measured 0.0262
+    "os_piccs": 0.29,  # measured 0.2200
+    "sirt[parallel]": 0.23,  # measured 0.1700
+    "ossart[parallel]": 0.22,  # measured 0.1677
+    "cgls[parallel]": 0.13,  # measured 0.0901
+}
 
 
 def rel_error(x, truth):
