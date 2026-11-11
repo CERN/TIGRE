@@ -322,7 +322,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     size_t num_bytes = geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ * sizeof(float);
     float* dimage;
     cudaMalloc((void**)&dimage, num_bytes);
-    cudaMemset(dimage,0,num_bytes);
+    cudaMemset(dimage,0,num_bytes); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
     cudaCheckErrors("cudaMalloc fail");
     
     

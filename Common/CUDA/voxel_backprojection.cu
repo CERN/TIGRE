@@ -402,7 +402,7 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
         // Initialize the memory if its the first time.
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(gpuids[dev]);
-            cudaMemset(dimage[dev],0,num_bytes_img);
+            cudaMemset(dimage[dev],0,num_bytes_img); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
             cudaCheckErrors("memset fail");
         }
         
