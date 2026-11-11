@@ -31,6 +31,8 @@ from tigre.algorithms import (cgls, lsqr, lsmr, ab_gmres, ba_gmres,
                               hybrid_lsqr, irn_tv_cgls, fdk)
 from tigre.algorithms.krylov_subspace_algorithms import CGLS
 
+pytestmark = pytest.mark.gpu
+
 NITER = 5
 
 
