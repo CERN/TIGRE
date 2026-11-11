@@ -63,3 +63,10 @@ from .utilities.common_geometry import (
 from . import algorithms
 
 from .utilities.projection_operator import ProjectionOperator, TigreOperator, SurfaceOperator
+
+from .utilities.Ax_surface import Ax_surface, Atb_surface
+from .utilities.detector_geometry import (
+    DetectorModule, DetectorSurfaceGeometry, surface_from_geometry,
+    cylindrical_modular_detector_surface, piecewise_linear_modular_detector_surface,
+    linear_source_surface,
+)
