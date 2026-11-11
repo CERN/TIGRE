@@ -7,6 +7,11 @@ thank you.
 
 ## Unreleased
 
+### Changed
+- Wheels are built for Python 3.11 to 3.14 (3.14 was missing from 3.2.0), on
+  `manylinux_2_28`: they need glibc 2.28 or newer (e.g. RHEL/AlmaLinux 8, Ubuntu 18.10+);
+  older Linux distributions should build from source.
+
 ## 3.2.0 (2026-11-11)
 
 ### Changed
