@@ -16,7 +16,7 @@
 > [!IMPORTANT]
 > TIGRE is **not** published on PyPI: `pip install tigre` installs an unrelated package with the same name.
 > Install TIGRE from a clone as described below, or directly with
-> `pip install git+https://github.com/CERN/TIGRE.git` (add `@v3.1.3` or another tag to pin a release).
+> `pip install git+https://github.com/CERN/TIGRE.git` (add `@v3.2.0` or another tag to pin a release).
 > From the next release on, prebuilt Linux wheels are also attached to each [GitHub Release](https://github.com/CERN/TIGRE/releases).
 
 ## Windows

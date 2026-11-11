@@ -85,7 +85,7 @@ MATLAB and Python builds are both fully supported.
 >
 > ```sh
 > pip install git+https://github.com/CERN/TIGRE.git          # latest master
-> pip install git+https://github.com/CERN/TIGRE.git@v3.1.3   # a specific release
+> pip install git+https://github.com/CERN/TIGRE.git@v3.2.0   # a specific release
 > ```
 >
 > Both need the CUDA toolkit and a C++ compiler, as they compile TIGRE on your machine.
