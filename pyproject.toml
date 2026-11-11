@@ -61,15 +61,19 @@ archs = ["native"]
 
 [tool.cibuildwheel.linux]
 # CUDA installation. cibuildwheel >= 3 builds in manylinux_2_28 (AlmaLinux 8),
-# so this uses NVIDIA's RHEL 8 repository. Its compiler is GCC 14, which needs
-# CUDA 12.8 or newer (nvcc 12.4 rejects GCC > 13); 12.8 also matches the sdist job.
+# so this uses NVIDIA's RHEL 8 repository. The image's compiler is GCC 14, whose
+# C++ headers nvcc 12.8 cannot parse ("__is_nothrow_new_constructible"), so nvcc
+# is pointed at GCC 13 (gcc-toolset-13) through NVCC_PREPEND_FLAGS below; the
+# rest of the build keeps GCC 14 (same C++ ABI).
 before-all = """
 curl -fsSL -o /etc/yum.repos.d/cuda-rhel8.repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo &&
 dnf clean all &&
-dnf -y install cuda-nvcc-12-8 cuda-cudart-devel-12-8 libcurand-devel-12-8 &&
+dnf -y install cuda-nvcc-12-8 cuda-cudart-devel-12-8 libcurand-devel-12-8 gcc-toolset-13-gcc-c++ &&
+/opt/rh/gcc-toolset-13/root/usr/bin/g++ --version &&
 ls -al /usr/local &&
 export PATH=$PATH:/usr/local/cuda/bin &&
 export CUDA_PATH=/usr/local/cuda &&
 nvcc --version &&
 export BUILD_WITH_CUDA=1
 """
+environment = { NVCC_PREPEND_FLAGS="-ccbin /opt/rh/gcc-toolset-13/root/usr/bin/g++" }
