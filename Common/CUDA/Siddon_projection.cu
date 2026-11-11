@@ -330,7 +330,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
             cudaSetDevice(gpuids[dev]);
             for (int i = 0; i < 2; ++i){
                 cudaMalloc((void**)&dProjection_accum[dev*2+i], num_bytes_proj);
-                cudaMemset(dProjection_accum[dev*2+i],0,num_bytes_proj);
+                cudaMemset(dProjection_accum[dev*2+i],0,num_bytes_proj); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
                 cudaCheckErrors("cudaMallocauxiliarty projections fail");
             }
         }
@@ -343,7 +343,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
         
         for (int i = 0; i < 2; ++i){
             cudaMalloc((void**)&dProjection[dev*2+i],   num_bytes_proj);
-            cudaMemset(dProjection[dev*2+i]  ,0,num_bytes_proj);
+            cudaMemset(dProjection[dev*2+i]  ,0,num_bytes_proj); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
             cudaCheckErrors("cudaMalloc projections fail");
         }
     }
