@@ -54,18 +54,19 @@ where = ["Python"]
 
 [tool.cibuildwheel]
 build-frontend = "build[uv]"
-# Skip PyPy, musl and the free-threaded CPython builds (cp314t...), which TIGRE's
-# Cython extensions have not been checked against.
-skip = "pp* *musl* cp3??t-*"
+# Skip musl and the free-threaded CPython builds (cp314t...), which TIGRE's
+# Cython extensions have not been checked against. (PyPy is off by default.)
+skip = "*musl* cp3??t-*"
 archs = ["native"]
 
 [tool.cibuildwheel.linux]
 # CUDA installation. cibuildwheel >= 3 builds in manylinux_2_28 (AlmaLinux 8),
-# so this uses NVIDIA's RHEL 8 repository.
+# so this uses NVIDIA's RHEL 8 repository. Its compiler is GCC 14, which needs
+# CUDA 12.8 or newer (nvcc 12.4 rejects GCC > 13); 12.8 also matches the sdist job.
 before-all = """
 curl -fsSL -o /etc/yum.repos.d/cuda-rhel8.repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo &&
 dnf clean all &&
-dnf -y install cuda-nvcc-12-4 cuda-cudart-devel-12-4 libcurand-devel-12-4 &&
+dnf -y install cuda-nvcc-12-8 cuda-cudart-devel-12-8 libcurand-devel-12-8 &&
 ls -al /usr/local &&
 export PATH=$PATH:/usr/local/cuda/bin &&
 export CUDA_PATH=/usr/local/cuda &&
