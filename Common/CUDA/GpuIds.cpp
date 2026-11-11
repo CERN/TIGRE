@@ -1,7 +1,7 @@
 #include "GpuIds.hpp"
 #include <stdlib.h>
 #include <string.h>
-#include <cuda_runtime_api.h>
+#include "cuda_to_hip.h"
 
 GpuIds::~GpuIds() {
     free(m_piDeviceIds); m_piDeviceIds = nullptr;
