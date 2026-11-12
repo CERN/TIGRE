@@ -22,6 +22,7 @@ import pathlib
 import re
 import sys
 import time
+import urllib.parse
 import urllib.request
 
 import yaml
@@ -77,8 +78,18 @@ def fulltext_sentences(url):
     # Drop the reference list: it always mentions TIGRE and says nothing about use.
     cut = re.search(r"\n\s*(References|REFERENCES|Bibliography)\s*\n", text)
     body = text[: cut.start()] if cut else text
-    found = [s.strip() for s in sentences(body) if MENTION.search(s) and 20 < len(s) < 700]
-    return found[:8], "ok" if found else "no mention in body text"
+    sents = [x.strip() for x in sentences(body)]
+    windows, used = [], set()
+    for i, sent in enumerate(sents):
+        if not MENTION.search(sent) or i in used:
+            continue
+        lo, hi = max(0, i - 1), min(len(sents), i + 2)
+        used.update(range(lo, hi))
+        window = " ".join(sents[lo:hi])
+        if len(window) > 1200:
+            window = sent[:1200]
+        windows.append(window)
+    return windows[:6], "ok" if windows else "no mention in body text"
 
 
 OPENALEX = "https://api.openalex.org"
@@ -120,6 +131,35 @@ def openalex_citing():
         cursor = page["meta"].get("next_cursor")
         time.sleep(0.5)
     return out
+
+
+def unpaywall_pdf(doi):
+    if not doi:
+        return None
+    try:
+        data = _get_json(f"https://api.unpaywall.org/v2/{urllib.parse.quote(doi)}?email={MAILTO}")
+    except Exception:
+        return None
+    for loc in [data.get("best_oa_location")] + (data.get("oa_locations") or []):
+        if loc and loc.get("url_for_pdf"):
+            return loc["url_for_pdf"]
+    return None
+
+
+def add_fulltext(item, candidates):
+    """Try each PDF url in turn; keep the first that yields TIGRE mentions."""
+    status = None
+    for pdf in dict.fromkeys(u for u in candidates if u):
+        found, status = fulltext_sentences(pdf)
+        time.sleep(1)
+        if found:
+            item["sentences"] = found
+            item["source"] = "full-text"
+            item["pdf"] = pdf
+            return
+        item.setdefault("pdf", pdf)
+    if not item["sentences"]:
+        item["source"] = f"full-text: {status}" if status else "no open-access text"
 
 
 def known_ids():
@@ -173,16 +213,12 @@ def main():
             "claude": hint_of.get(pid), "sentences": entry["contexts"], "source": "citation-context",
             "origin": "semanticscholar",
         }
-        if not item["sentences"]:
-            pdf = (p.get("openAccessPdf") or {}).get("url") or (f"https://arxiv.org/pdf/{arxiv}" if arxiv else None)
-            if pdf:
-                found, status = fulltext_sentences(pdf)
-                item["source"] = "full-text" if found else f"full-text: {status}"
-                item["sentences"] = found or []
-                item["pdf"] = pdf
-                time.sleep(1)
-            else:
-                item["source"] = "no open-access text"
+        item["contexts"] = list(entry["contexts"])
+        add_fulltext(item, [
+            (p.get("openAccessPdf") or {}).get("url"),
+            f"https://arxiv.org/pdf/{arxiv}" if arxiv else None,
+            unpaywall_pdf(doi),
+        ])
         queue.append(item)
 
     # Papers OpenAlex knows about but Semantic Scholar does not.
@@ -207,13 +243,8 @@ def main():
             "area": guess_area(w.get("title"), src.get("display_name"), summary),
             "claude": None, "sentences": [], "source": "no open-access text",
         }
-        pdf = (w.get("best_oa_location") or {}).get("pdf_url")
-        if pdf:
-            found, status = fulltext_sentences(pdf)
-            item["source"] = "full-text" if found else f"full-text: {status}"
-            item["sentences"] = found or []
-            item["pdf"] = pdf
-            time.sleep(1)
+        item["contexts"] = []
+        add_fulltext(item, [(w.get("best_oa_location") or {}).get("pdf_url"), unpaywall_pdf(doi)])
         item["origin"] = "openalex"
         queue.append(item)
     print(len(oa_works), "OpenAlex citing works")
