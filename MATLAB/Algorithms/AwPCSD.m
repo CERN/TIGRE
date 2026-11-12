@@ -59,6 +59,13 @@ function [ f,resL2,qualMeasOut] = AwPCSD(proj,geo,angles,maxiter,varargin)
 % Coded by:           Ander Biguri and Manasavee Lohvithee
 %--------------------------------------------------------------------------
 %% parse inputs
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('AwPCSD',proj,maxiter,varargin);
+if operatorHandled
+    f=operatorImage;
+    resL2=operatorResidual;
+    qualMeasOut=operatorQuality;
+    return;
+end
     if nargin < 4
         error('TIGRE:AwPCSD:InvalidInput','Not enough inputs')
     end

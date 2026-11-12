@@ -66,6 +66,13 @@ function [ f,resL2,qualMeasOut] = OS_PCSD(proj,geo,angles,maxiter,varargin)
 % Coded by:           Ander Biguri and Manasavee Lohvithee
 %--------------------------------------------------------------------------
 %% parse inputs
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('OS_PCSD',proj,maxiter,varargin);
+if operatorHandled
+    f=operatorImage;
+    resL2=operatorResidual;
+    qualMeasOut=operatorQuality;
+    return;
+end
 [beta,beta_red,f,ng,verbose,epsilon,blocksize,OrderStrategy,QualMeasOpts,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,varargin);
 
 measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));

@@ -19,6 +19,10 @@ function [ projections ] = Ax(img, geo, angles, varargin )
 % Lets make 100% sure that data is correct
 %% Optionals
 
+if isfield(geo,'operator_binding')
+    projections=operatorProject(false,img,geo.operator_binding,angles);
+    return;
+end
 ptype='Siddon';
 % expected projection types. 'ray-voxel' is obsolete. Use 'Siddon'
 expectedProjectionTypes = {'Siddon','ray-voxel','interpolated'};
@@ -87,5 +91,3 @@ function [gpuids]=parse_inputs(varargin)
         gpuids=p.Results.gpuids;
     end
 end
-
-

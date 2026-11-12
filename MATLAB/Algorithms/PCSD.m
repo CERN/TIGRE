@@ -52,6 +52,12 @@ function [ f,qualMeasOut] = PCSD(proj,geo,angles,maxiter,varargin)
 %--------------------------------------------------------------------------
 
 %% parse inputs
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('PCSD',proj,maxiter,varargin);
+if operatorHandled
+    f=operatorImage;
+    qualMeasOut=operatorResidual;
+    return;
+end
     if nargin < 4
         error('TIGRE:PCSD:InvalidInput','Not enough inputs')
     end

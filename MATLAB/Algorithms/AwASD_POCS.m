@@ -73,6 +73,12 @@ function [ f,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,varargin)
 % Coded by:           Ander Biguri and Manasavee Lohvithee
 
 %% parse inputs
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('AwASD_POCS',proj,maxiter,varargin);
+if operatorHandled
+    f=operatorImage;
+    qualMeasOut=operatorResidual;
+    return;
+end
     if nargin < 4
         error('TIGRE:AwASD_POCS:InvalidInput','Not enough inputs')
     end

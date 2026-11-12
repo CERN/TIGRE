@@ -48,6 +48,13 @@ function [x_outer,resL2,qualMeasOut]= IRN_TV_CGLS(proj,geo,angles,niter,varargin
 % % Paul Rodriguez and Brendt Wohlberg
 % % 10.1109/ACSSC.2006.354879
 
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('IRN_TV_CGLS',proj,niter,varargin);
+if operatorHandled
+    x_outer=operatorImage;
+    resL2=operatorResidual;
+    qualMeasOut=operatorQuality;
+    return;
+end
 [verbose,x0,QualMeasOpts,gpuids,lambda,niter_outer,gt,restart]=parse_inputs(proj,geo,angles,varargin);
 x=x0;
 
@@ -90,6 +97,7 @@ while iter<niter
     
     gamma=norm(p(:),2)^2;
     while iter<niter %this will be broken by a parameter
+        if isfield(geo,'operator_binding') && gamma==0, x_outer=x; return; end
         iter=iter+1;
         if measurequality && ~strcmp(QualMeasOpts,'error_norm')
             x_prev = x; % only store if necessary
