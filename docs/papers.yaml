@@ -2293,7 +2293,14 @@
   area: methods
   verified: citation-context
 
-- {title: Performance Improvements and Analysis of Image Reconstruction Techniques in Proton Computed Tomography, authors: [Benjamin Kirchmayer], venue: 'Diploma thesis, Technische Universität Wien', year: 2021, doi: 10.34726/hss.2021.94905, s2: b7c6d5cd6c6991e9156e28badfb2fbee80a62bf3, area: particle, verified: citation-context}
+- title: Performance Improvements and Analysis of Image Reconstruction Techniques in Proton Computed Tomography
+  authors: [Benjamin Kirchmayer]
+  venue: Diploma thesis, Technische Universität Wien
+  year: 2021
+  doi: 10.34726/hss.2021.94905
+  s2: b7c6d5cd6c6991e9156e28badfb2fbee80a62bf3
+  area: particle
+  verified: citation-context
 
 - title: Generative Noise Reduction in Dental Cone-Beam CT by a Selective Anatomy Analytic Iteration Reconstruction Algorithm
   authors: [Lam Dao-Ngoc, Yi-Chun Du]
@@ -2537,7 +2544,7 @@
 
 - title: Machine Learning Based 3D XCT Image Enhancement for the Inspection of AM Metal Components using Limited X-ray Measurements
   authors: [Thomas Blumensath, Ibrahim Harrane]
-  venue: 'Preprint (submitted to Additive Manufacturing)'
+  venue: Preprint (submitted to Additive Manufacturing)
   year: 2023
   url: https://eprints.soton.ac.uk/476181/
   s2: 412fc975fa9f8b6992c596422ff6bb57e656973c
