@@ -65,10 +65,16 @@ archs = ["native"]
 # C++ headers nvcc 12.8 cannot parse ("__is_nothrow_new_constructible"), so nvcc
 # is pointed at GCC 13 (gcc-toolset-13) through NVCC_PREPEND_FLAGS below; the
 # rest of the build keeps GCC 14 (same C++ ABI).
+# The package install is retried: NVIDIA's repository occasionally serves an index
+# whose metadata files are not there yet (404) while it is being updated.
 before-all = """
-curl -fsSL -o /etc/yum.repos.d/cuda-rhel8.repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo &&
-dnf clean all &&
-dnf -y install cuda-nvcc-12-8 cuda-cudart-devel-12-8 libcurand-devel-12-8 gcc-toolset-13-gcc-c++ &&
+curl -fsSL --retry 5 --retry-delay 10 -o /etc/yum.repos.d/cuda-rhel8.repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo &&
+for attempt in 1 2 3 4 5; do
+  dnf clean all && dnf -y install cuda-nvcc-12-8 cuda-cudart-devel-12-8 libcurand-devel-12-8 gcc-toolset-13-gcc-c++ && break;
+  echo "Package install failed (attempt $attempt), retrying in 60 s";
+  sleep 60;
+done &&
+rpm -q cuda-nvcc-12-8 cuda-cudart-devel-12-8 libcurand-devel-12-8 gcc-toolset-13-gcc-c++ &&
 /opt/rh/gcc-toolset-13/root/usr/bin/g++ --version &&
 ls -al /usr/local &&
 export PATH=$PATH:/usr/local/cuda/bin &&
