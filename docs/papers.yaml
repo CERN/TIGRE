@@ -1,11 +1,21 @@
 # Published work that USES TIGRE (not only cites it).
 #
-# This file generates docs/papers.md. To add a paper, append an entry and open
-# a pull request. Fields:
-#   title, authors (list, "Given Family"), venue, year (required)
-#   doi or url (one of them, recommended)
-#   area: one of the area keys in docs/_ext/tigre_papers.py
+# This file generates docs/papers.md. To add a paper, append an entry with an
+# identifier and an area, then open a pull request:
+#
+#   - doi: "10.xxxx/yyyy"        # or  arxiv: "2405.20693"
+#     area: medical
+#
+# The "Papers list" workflow (or `python docs/tools/update_papers.py`) fills in
+# title, authors, venue and year. Fields you write yourself are never overwritten.
+#
+# Fields: title, authors, venue, year | doi, url, arxiv, s2 | area | note
+#   area: medical, particle, industrial, synchrotron, materials, methods or other
 #   note: optional, one line on how TIGRE was used
+#   verified: how we know the paper uses TIGRE:
+#     manual / author-review: a TIGRE maintainer checked the paper
+#     full-text: the paper's text around the TIGRE mention says it was used
+#     citation-context: the sentence citing TIGRE says it was used
 # Papers about TIGRE itself are listed on the Citing page, not here.
 
 - title: Validation and application of a new image reconstruction software toolbox (TIGRE) for breast cone-beam computed tomography
@@ -15,6 +25,7 @@
   doi: 10.1117/12.2293200
   area: medical
   note: Validates TIGRE against a standard MATLAB implementation for breast CBCT.
+  verified: manual
 
 - title: Breast tomosynthesis reconstruction using TIGRE software tool
   authors: [Albert Malet, Diego García Pinto, Josep Fernández, Robert Martí, Oliver Díaz]
@@ -23,14 +34,16 @@
   doi: 10.1117/12.2317933
   area: medical
   note: Digital breast tomosynthesis reconstruction with TIGRE.
+  verified: manual
 
-- title: "fastCAT: Fast cone beam CT (CBCT) simulation"
+- title: 'fastCAT: Fast cone beam CT (CBCT) simulation'
   authors: [Jericho O'Connell, Magdalena Bazalova-Carter]
   venue: arXiv:2011.04736
   year: 2021
   url: https://arxiv.org/abs/2011.04736
   area: medical
   note: CBCT simulator that uses TIGRE for its forward projections.
+  verified: manual
 
 - title: First application of the GPU-based software framework TIGRE for proton CT image reconstruction
   authors: [Stefanie Kaser, Thomas Bergauer, Wolfgang Birkfellner, Alexander Burker, Dietmar Georg, Sepideh Hatamikia, Albert Hirtl, Christian Irmler, Florian Pitters, Felix Ulrich-Pur]
@@ -38,6 +51,7 @@
   year: 2021
   url: https://pubmed.ncbi.nlm.nih.gov/33848784/
   area: particle
+  verified: manual
 
 - title: Extension of the open-source TIGRE toolbox for proton imaging
   authors: [Stefanie Kaser, Thomas Bergauer, Ander Biguri, Wolfgang Birkfellner, Sepideh Hatamikia, Albert Hirtl, Christian Irmler, Benjamin Kirchmayer, Felix Ulrich-Pur]
@@ -45,6 +59,7 @@
   year: 2023
   doi: 10.1016/j.zemedi.2022.08.005
   area: particle
+  verified: manual
 
 - title: Image reconstruction for ion computed tomography
   authors: [Stefanie Kaser]
@@ -52,9 +67,3080 @@
   year: 2022
   doi: 10.34726/hss.2022.94906
   area: particle
+  verified: manual
 
 - title: Benchmarking of different reconstruction algorithms for industrial cone-beam CT
   authors: [J. Singh Rathore, R. Laquai, A. Biguri, M. Soleimani, C. Vienne]
   venue: 11th Conference on Industrial Computed Tomography (iCT 2022), Wels, Austria
   year: 2022
   area: industrial
+  verified: manual
+
+- title: Extremely Sparse-View Computed Tomography from 2D Projections via Pose-Aware Diffusion Priors
+  authors: [Lin-Rui Dai, Jin-Xiu Liang, Chu Zhou, Mae Yamaguchi, Ryuya Takahashi, Imari Sato]
+  venue: arXiv:2610.38319
+  year: 2026
+  url: https://arxiv.org/abs/2610.38319
+  arxiv: '2610.38319'
+  area: methods
+  verified: citation-context
+
+- title: 'AD-GS: Anatomical Density-guided 3D Gaussian Splatting for Sparse-View Dental CBCT Reconstruction'
+  authors: [Zong-Lin Li, Ke-Xian Xie, Fei-Ran Li, Chuan-Pei Zhou, Yi-Xing Huang, Rui-Yang Chen, Zhan-Yu Ma, Heng Guo]
+  venue: arXiv:2610.14963
+  year: 2026
+  url: https://arxiv.org/abs/2610.14963
+  arxiv: '2610.14963'
+  area: methods
+  verified: citation-context
+
+- title: 'OX-NeRF: 3D X-ray Tomography Reconstruction from Sparse Views Using Implicit Neural Representation'
+  authors: [Thomas Welsch, Min-Hsin Tu, D. Chapman, D. Eakins]
+  venue: arXiv:2610.11547
+  year: 2026
+  url: https://arxiv.org/abs/2610.11547
+  arxiv: '2610.11547'
+  area: methods
+  verified: citation-context
+
+- title: A Latent Diffusion Model With Spatial Attributes for 3D Reconstruction in Biplanar X-Ray Images
+  authors: [Jing-Yi Bian, D. Xiao, Teng Zhang, Long Shao, Dan-Ni Ai, Jing-Fan Fan, Tian-Yu Fu, Yu-Cong Lin, Yuan-Yuan Wang, Hong Song, Jun-Qiang Wang, Jian Yang]
+  venue: IEEE Transactions on Circuits and Systems for Video Technology 36, 14447-14462
+  year: 2026
+  doi: 10.1109/TCSVT.2026.3709462
+  area: methods
+  verified: citation-context
+
+- title: Field-of-View Extension in Dental Cone-Beam CT via Implicit Neural Representations and Diffusion Model-Based Refinement
+  authors: [Susanne Schaub, Florentin Bieder, Matheus L. Oliveira, Yu-Lan Wang, Buyanbileg Sodnom-Ish, Dorothea C. Dagassan-Berndt, M. Bornstein, P. Cattin]
+  venue: arXiv:2609.28110
+  year: 2026
+  url: https://arxiv.org/abs/2609.28110
+  arxiv: '2609.28110'
+  area: methods
+  verified: citation-context
+
+- title: Anatomy-Decomposed Chest Computed Tomography (CT) Projections as Scalable Supervision for Bone Suppression in Chest Radiographs
+  authors: [Mrunmay Angaitkar, Piyush Kumar, Aarjav Satia, Pranav Rao, Ashish Mittal, M. Tadepalli, P. Putha]
+  venue: arXiv:2609.24937
+  year: 2026
+  url: https://arxiv.org/abs/2609.24937
+  arxiv: '2609.24937'
+  area: medical
+  verified: citation-context
+
+- title: Tomographic quality evaluation of flexible x-ray scintillating imaging skins
+  authors: [Rozenn Raffaut, Robert M. Moss, A. Stilli, D. Stoyanov]
+  venue: Biomedical Physics & Engineering Express 12
+  year: 2026
+  doi: 10.1088/2057-1976/aea910
+  area: materials
+  verified: citation-context
+
+- title: Shape-guided Gaussian Splatting for Sparse-View X-ray 3D Reconstruction
+  authors: [Pranav Poudel, Florence Dell'Aniello Picard, N. Shehata, F. Lavoie, H. Lombaert]
+  venue: arXiv:2609.10376
+  year: 2026
+  url: https://arxiv.org/abs/2609.10376
+  arxiv: '2609.10376'
+  area: methods
+  verified: citation-context
+
+- title: 'SpectralCTGaussians: Projection-Domain Reconstruction and Basis Material Decomposition for Spectral CT using 3D Gaussian Splatting'
+  authors: [Reinout Vos, Saptarshi Neil Sinha, M. Weinmann]
+  venue: arXiv:2609.29638
+  year: 2026
+  url: https://arxiv.org/abs/2609.29638
+  arxiv: '2609.29638'
+  area: methods
+  verified: citation-context
+
+- title: 'TR-GS: High-Fidelity Sparse-View CT Volumetric Rendering via t-Distribution Gaussian Splatting and Ray-Confidence Modeling'
+  authors: [Ze-Dong Xiao, Yi-Ren Wang, Zhou Liu, Xiao-Lin Liu, Zhang-Ji Lu]
+  venue: Proceedings of the 34th ACM International Conference on Multimedia
+  year: 2026
+  doi: 10.1145/3767308.3835527
+  area: methods
+  verified: citation-context
+
+- title: 'Task‐based detectability and angular‐sampling bounds on spatial resolution in cone‐beam micro‐CT: a closed‐form scan‐design analysis'
+  authors: [Falk L. Wiegmann, Nancy L. Ford]
+  venue: Medical Physics 53
+  year: 2026
+  doi: 10.1002/mp.70737
+  area: medical
+  verified: citation-context
+
+- title: 'UniSpine-GS: An Efficient Physics-Aware Gaussian Framework for Cross-Modality Multi-view Spine Image Synthesis'
+  authors: [Qiuhua Chen, Chang Yu, Nannan Huang, Chao Sun, Bo Du]
+  venue: International Conference on Medical Image Computing and Computer-Assisted Intervention 576-585
+  year: 2026
+  url: https://arxiv.org/abs/2607.04923
+  arxiv: '2607.04923'
+  area: methods
+  verified: citation-context
+
+- title: 'ProSAC-CT: Progressive Spectral-Anatomical Co-Guided Multi-Stage Diffusion Model for Low-Dose CT Denoising'
+  authors: [Xue-Peng Liu, Ze-Tong Liu, Renyiming Li, Yan Li, Rui-Yu Li, Rui-Li Li, Jia-Yi Ding, Eichi Takaya]
+  venue: arXiv:2607.01756
+  year: 2026
+  url: https://arxiv.org/abs/2607.01756
+  arxiv: '2607.01756'
+  area: methods
+  verified: citation-context
+
+- title: Prior Image-Guided Adaptive-Weighted Relative Total Variation for Sparse-View Computed Laminography of Plate-like Objects
+  authors: [Jing Lu, Shu Li, Han Wu, Yong-Xing Pei]
+  venue: Sensors (Basel, Switzerland) 26
+  year: 2026
+  doi: 10.3390/s26144519
+  area: industrial
+  verified: citation-context
+
+- title: 'RCL-mamba: a dual-domain state space model for measurement-oriented image restoration in rotational sparse-view scanning computed laminography'
+  authors: [Xu-Yang Duan, Gen-Yuan Zhang, Zhen-Jiang Dong, Chuan-Dong Tan, Zi-Hao Wang, Jun-Yao Wang, Feng-Ling Liu]
+  venue: Measurement Science and Technology 37
+  year: 2026
+  doi: 10.1088/1361-6501/ae9e60
+  area: industrial
+  verified: citation-context
+
+- title: 'A pilot study: dual-contrast arthrography using photon-counting detector computed tomography with gadolinium and iodine contrasts'
+  authors: [Xin-Chen Deng, James Day, O. Masella, K. Iniewski, M. Bazalova-Carter]
+  venue: Physics in Medicine & Biology 71
+  year: 2026
+  doi: 10.1088/1361-6560/ae8123
+  area: medical
+  verified: citation-context
+
+- title: Texture-preserving implicit neural representation for Cone beam CT truncated reconstruction
+  authors: [Gen-Yuan Zhang, Jun-Yao Wang, Haoran Lan, Chuan-Dong Tan, Song-Tao Zhu, Feng-Ling Liu]
+  venue: arXiv:2606.06039
+  year: 2026
+  url: https://arxiv.org/abs/2606.06039
+  arxiv: '2606.06039'
+  area: methods
+  verified: citation-context
+
+- title: A novel deep-learning approach for monitoring gastrointestinal air variation during radiotherapy in young patients using radiographs
+  authors: [Ana-Cristina Ghica, M. Simard, Shu-Tong Yu, A. Nisbet, J. Gains, Yi-Bao Zhang, Pei Lim, Catarina Veiga]
+  venue: Physics in Medicine & Biology 71
+  year: 2026
+  doi: 10.1088/1361-6560/ae6222
+  area: medical
+  verified: citation-context
+
+- title: Benchmarking Open-Source FDK Against Commercial and Iterative Reconstruction Methods for Preclinical Micro-CBCT
+  authors: [Falk L. Wiegmann, Nancy L. Ford]
+  venue: arXiv:2604.23047
+  year: 2026
+  url: https://arxiv.org/abs/2604.23047
+  arxiv: '2604.23047'
+  area: medical
+  verified: citation-context
+
+- title: 'CBCT-Pose: Few-Shot Viewpoint-Conditioned Diffusion for Sparse-View CBCT Reconstruction'
+  authors: [Li Zhou, Chang-Sheng Fang, Bahareh Morovati, Shuo Han, Shu-Yi Fan, Yu Shi, Heng-Yong Yu]
+  venue: 2026 IEEE 23rd International Symposium on Biomedical Imaging (ISBI) 1-5
+  year: 2026
+  doi: 10.1109/ISBI61048.2026.11515365
+  area: methods
+  verified: citation-context
+
+- title: Hybrid virtual imaging trials combining simulated microcalcifications with patient breast CT images
+  authors: [S. H. Lyu, A. Makeev, Dan Li, A. Badal, A. Hernandez, John M. Boone, Stephen J. Glick]
+  venue: Medical Imaging 13924, 1392407 - 1392407-6
+  year: 2026
+  doi: 10.1117/12.3087013
+  area: medical
+  verified: citation-context
+
+- title: A TV–BM3D Iterative Algorithm for VMAT-CT Reconstruction
+  authors: [Chia-Lung Chien, Bei-Bei Guo, Rui Zhang]
+  venue: Journal of Imaging 12
+  year: 2026
+  doi: 10.3390/jimaging12040166
+  area: methods
+  verified: citation-context
+
+- title: Splat-based Metal Artifact Reduction in Cone-Beam CT via Polychromatic Modeling
+  authors: [Kiseok Choi, I. Kim, Jaemin Cho, Hyeongjun Cho, Min H. Kim]
+  venue: arXiv:2608.13159
+  year: 2026
+  doi: 10.1111/cgf.70339
+  area: methods
+  verified: citation-context
+
+- title: Towards Enhanced Sparse-View Tomographic Reconstruction Using 3D Gaussian Splatting
+  authors: [A. Yousaf, Paul Agbaje, A. Anjum, Arkajyoti Mitra, Habeeb Olufowobi]
+  venue: 2026 International Conference on 3D Vision (3DV) 1240-1247
+  year: 2026
+  doi: 10.1109/3DV69130.2026.00122
+  area: methods
+  verified: citation-context
+
+- title: 'ILV: Iterative Latent Volumes for Fast and Accurate Sparse-View CT Reconstruction'
+  authors: [Seungryong Lee, Woojeong Baek, J. Lee, Eunbyung Park]
+  venue: arXiv:2603.14915
+  year: 2026
+  url: https://arxiv.org/abs/2603.14915
+  arxiv: '2603.14915'
+  area: methods
+  verified: citation-context
+
+- title: Limited-Angle CT Reconstruction Using Multi-Volume Latent Consistency Model
+  authors: [Hinako Isogai, Naruki Murahashi, Mitsuhiro Nakamura, M. Nakao]
+  venue: arXiv:2603.05183
+  year: 2026
+  url: https://arxiv.org/abs/2603.05183
+  arxiv: '2603.05183'
+  area: methods
+  verified: citation-context
+
+- title: Experimental characterization and mitigation of scatter induced spectral contamination in photon counting CBCT for radiotherapy
+  authors: [R. Sabounchi, U. Pyakurel, Abhinya Shukla, Farhang Bayat, C. Altunbas]
+  venue: Medical physics 53, e70389 - e70389
+  year: 2026
+  doi: 10.1002/mp.70389
+  area: medical
+  verified: citation-context
+
+- title: 'TG-Field: Geometry-Aware Radiative Gaussian Fields for Tomographic Reconstruction'
+  authors: [Yu Zhong, Jun Wei, Chao-Qi Chen, Senyou An, Hui Huang]
+  venue: arXiv:2602.11705
+  year: 2026
+  doi: 10.1609/aaai.v40i16.38361
+  area: methods
+  verified: citation-context
+
+- title: Feasibility of multisource CBCT for improving the predictability of dental implant primary stability compared to conventional CBCT
+  authors: [Wei Luo, Yuanming Hu, Amanda Finger Stadler, Antonio J. Moretti, Donald A. Tyndall, C. Inscoe, Yueh Z. Lee, Jianping Lu, Otto Zhou]
+  venue: Scientific Reports 16
+  year: 2026
+  doi: 10.1038/s41598-026-39266-0
+  area: medical
+  verified: citation-context
+
+- title: Radioactive 3D Gaussian Ray Tracing for Tomographic Reconstruction
+  authors: [Ling Chen, Bao Yang]
+  venue: arXiv:2602.01057
+  year: 2026
+  url: https://arxiv.org/abs/2602.01057
+  arxiv: '2602.01057'
+  area: methods
+  verified: citation-context
+
+- title: Improving the efficiency of normalized metal artifact reduction via a unified forward projection
+  authors: [Jooho Lee, Adam S. Wang, Jongduk Baek]
+  venue: Physics in Medicine & Biology 71
+  year: 2026
+  doi: 10.1088/1361-6560/ae3b01
+  area: methods
+  verified: citation-context
+
+- title: 'aDiner: Adaptive Dynamic Implicit Neural Representation for Dynamic CBCT Imaging'
+  authors: [Yu-Fu Zhou, Hua Chen, Zi-Heng Deng, Jun Zhao]
+  venue: IEEE Transactions on Medical Imaging 45, 2518-2531
+  year: 2026
+  doi: 10.1109/TMI.2026.3656348
+  area: methods
+  verified: citation-context
+
+- title: Guiding kVp optimization using a μCT simulation tool designed for a small-pixel photon-counting detector
+  authors: [A. Coathup, P. Cardarelli, V. Mazzini, S. Velardita, A. Taibi, L. Brombal]
+  venue: Journal of Instrumentation 21
+  year: 2026
+  doi: 10.1088/1748-0221/21/01/C01017
+  area: materials
+  verified: citation-context
+
+- title: Frequency-Regularized Neural Representation Method Via Prismoid-Based Transformer for Sparse-View Tomographic Reconstruction
+  authors: [Weiguo Zhang, Bai-Ming Chen, Xiang-Yuan Ma, Sihao Li]
+  venue: 2025 International Conference on Virtual Reality and Visualization (ICVRV) 568-573
+  year: 2025
+  doi: 10.1109/ICVRV67992.2025.00103
+  area: methods
+  verified: citation-context
+
+- title: 'VegaNet: Conditional Multi-View Medical Image Correction via X-Gaussian Modeling for Efficient Perspective Alignment'
+  authors: [Chang Yu, Nannan Huang, Hang Su, Chao Sun, Bo Du]
+  venue: 2025 IEEE International Conference on Bioinformatics and Biomedicine (BIBM) 3177-3183
+  year: 2025
+  doi: 10.1109/BIBM66473.2025.11356964
+  area: methods
+  verified: citation-context
+
+- title: 'CycleGan-based kV-to-MV image translation for potential in vivo dosimetry application: concept proposal and cross-institutional validation'
+  authors: [Rui Qu, Zhexiang Song, Qi-Jian Lu, Huimin Hu, Zheng-Kun Dong, Shu-Tong Yu, Jiang Liu, Juan Deng, Guojian Mei, Chuou Yin, Qiao Li, Fei Xiang, Tian Li, Chen Lin, Junfeng Qi, Xiao-Yun Le, Yi-Bao Zhang]
+  venue: BMC Medical Imaging 26
+  year: 2025
+  doi: 10.1186/s12880-025-02111-3
+  area: medical
+  verified: citation-context
+
+- title: A cone-beam photon-counting CT dataset for spectral image reconstruction and deep learning
+  authors: [Enze Zhou, Wenjian Li, Wenting Xu, Kefei Wan, Yuwei Lu, Shang-Bin Chen, Gang Zheng, Tianwu Xie, Qian Liu]
+  venue: Scientific Data 12
+  year: 2025
+  doi: 10.1038/s41597-025-06246-4
+  area: materials
+  verified: citation-context
+
+- title: 'VolMoVis: Real-Time Volume Generation and Motion Visualization with Dynamic Tomographic Reconstruction'
+  authors: [Gaofeng Deng, Arie E. Kaufman]
+  venue: IEEE Transactions on Visualization and Computer Graphics 32, 912-921
+  year: 2025
+  doi: 10.1109/TVCG.2025.3634648
+  area: methods
+  verified: citation-context
+
+- title: 'RSTAR4D: Rotational Streak Artifact Reduction in 4-D CBCT Using Separable 4-D Convolutions'
+  authors: [Zi-Heng Deng, Hua Chen, Yongzheng Zhou, Hai-Bo Hu, Zhi-Yong Xu, T. Lyu, Yan Xi, Yang Chen, Jia-Yuan Sun, Jun Zhao]
+  venue: IEEE Transactions on Radiation and Plasma Medical Sciences 9, 1094-1106
+  year: 2025
+  doi: 10.1109/TRPMS.2025.3553866
+  area: methods
+  verified: citation-context
+
+- title: 'LamiGauss: Pitching Radiative Gaussian for Sparse-View X-ray Laminography Reconstruction'
+  authors: [Chu Chen, A. Biguri, Jean-Michel Morel, Raymond H. Chan, C. Schönlieb, Ji-Zhou Li]
+  venue: arXiv:2509.13863
+  year: 2025
+  url: https://arxiv.org/abs/2509.13863
+  arxiv: '2509.13863'
+  area: industrial
+  verified: citation-context
+
+- title: Zero-Shot CT Super-Resolution Using Diffusion-Based 2D Projection Priors and Signed 3D Gaussians
+  authors: [Jeonghyun Noh, Hyunwoo Oh, Won-Ki Jeong]
+  venue: International Conference on Medical Image Computing and Computer-Assisted Intervention 629-639
+  year: 2025
+  doi: 10.1007/978-3-032-38189-7_60
+  area: methods
+  verified: citation-context
+
+- title: 'NerT-CA: Efficient Dynamic Reconstruction from Sparse-view X-ray Coronary Angiography'
+  authors: [K.W.H. Maas, D. Ruijters, Nicola Pezzotti, Anna Vilanova]
+  venue: GRAIL/RIME@MICCAI 13-22
+  year: 2025
+  url: https://arxiv.org/abs/2507.19328
+  arxiv: '2507.19328'
+  area: methods
+  verified: citation-context
+
+- title: Volumetric imaging during head and neck radiation therapy using a Kalman filter tracking approach
+  authors: [Chen Cheng, Mark Gardner, Owen Dillon, Y. Ben-Bouchta, Purnima Sundaresan, P. Keall]
+  venue: Physics in Medicine & Biology 70
+  year: 2025
+  doi: 10.1088/1361-6560/adf371
+  area: medical
+  verified: citation-context
+
+- title: 'STEPC: A Multienergy Nonuniform Response Calibration Framework for Photon-Counting Micro-CT in Multimaterial Imaging'
+  authors: [Enze Zhou, Wenjian Li, Wenting Xu, Yuwei Lu, Shang-Bin Chen, Shao-Yang Wang, Gang Zheng, Tianwu Xie, Qian Liu]
+  venue: IEEE Transactions on Instrumentation and Measurement 75, 1-16
+  year: 2025
+  doi: 10.1109/TIM.2026.3677968
+  area: materials
+  verified: citation-context
+
+- title: NeRF-based CBCT Reconstruction needs Normalization and Initialization
+  authors: [Zhuowei Xu, Han Li, Dai Sun, Zhi-Cheng Li, Yujia Li, Qingpeng Kong, Zhi-Qi Cheng, N. Navab, S. Zhou]
+  venue: arXiv:2506.19742
+  year: 2025
+  url: https://arxiv.org/abs/2506.19742
+  arxiv: '2506.19742'
+  area: methods
+  verified: citation-context
+
+- title: Are Pixel-Wise Metrics Reliable for Sparse-View Computed Tomography Reconstruction?
+  authors: [Tian-Yu Lin, Xin-Ran Li, Chun-Tung Zhuang, Qi Chen, Yuan-Hao Cai, Kai Ding, Alan L. Yuille, Zong-Wei Zhou]
+  venue: arXiv:2506.02093
+  year: 2025
+  url: https://arxiv.org/abs/2506.02093
+  arxiv: '2506.02093'
+  area: methods
+  verified: citation-context
+
+- title: 'Trajectory generation for ROI expansion in dental CBCT imaging: An out-of-FOV ROI annotation guided arc scan-based approach'
+  authors: [S. Islam, A. Biguri, C. Landi, G. Di Domenico, Pascal Grün, C. Sarti, C. Schönlieb, D. Turhani, G. Kronreif, W. Birkfellner, Sepideh Hatamikia]
+  venue: Computational and Structural Biotechnology Journal 28, 211 - 216
+  year: 2025
+  doi: 10.1016/j.csbj.2025.06.013
+  area: medical
+  verified: citation-context
+
+- title: 'X-GRM: Large Gaussian Reconstruction Model for Sparse-view X-rays to Computed Tomography'
+  authors: [Yi-Fan Liu, Wu-Yang Li, Wei-Hao Yu, Chen-Xin Li, Alexandre Alahi, Max Meng, Yi-Xuan Yuan]
+  venue: arXiv:2505.15235
+  year: 2025
+  url: https://arxiv.org/abs/2505.15235
+  arxiv: '2505.15235'
+  area: methods
+  verified: citation-context
+
+- title: '“Don’t stop me now!”: Stopping rules for iterative reconstruction with dimensional X-ray Computed Tomography'
+  authors: [J. Warnett, S. J. Harris, E. Zwanenburg, M. A. Williams]
+  venue: Precision Engineering
+  year: 2025
+  doi: 10.1016/j.precisioneng.2025.01.019
+  area: industrial
+  verified: citation-context
+
+- title: Characterization of x-ray tomography based on a novel continuous projection functor
+  authors: [Yuanwei He, Dan Ruan]
+  venue: Medical Imaging 13405, 134054O - 134054O-6
+  year: 2025
+  doi: 10.1117/12.3047107
+  area: methods
+  verified: citation-context
+
+- title: Regularizing neural fields for 3D computed tomographic imaging from sparse projections
+  authors: [Jooho Lee, Byeongjoon Kim, Jongduk Baek]
+  venue: Medical Imaging 13405, 1340526 - 1340526-6
+  year: 2025
+  doi: 10.1117/12.3045895
+  area: methods
+  verified: citation-context
+
+- title: '$\mathbf{X}^{\mathbf{2}}$-Gaussian: 4D Radiative Gaussian Splatting for Continuous-Time Tomographic Reconstruction'
+  authors: [Wei-Hao Yu, Yuan-Hao Cai, Ruyi Zha, Zhiwen Fan, Chen-Xin Li, Yi-Xuan Yuan]
+  venue: 2025 IEEE/CVF International Conference on Computer Vision (ICCV) 24728-24738
+  year: 2025
+  doi: 10.1109/ICCV51701.2025.02293
+  area: methods
+  verified: citation-context
+
+- title: A new type of neutron computed laminography scanning method and centre of rotation calibration algorithm for plate-like components
+  authors: [Qiang Lin, Ze-Ming Ma, Xiang-Feng Zhang, Linfeng He, Wen-Jian Wang, Hao-Hao Ding, Shu-Yue Zhang, Min Yang]
+  venue: Nondestructive Testing and Evaluation 41, 436 - 459
+  year: 2025
+  doi: 10.1080/10589759.2025.2469150
+  area: synchrotron
+  verified: citation-context
+
+- title: 'DE-NAF: decoupled neural attenuation fields for sparse-view CBCT reconstruction'
+  authors: [Tianning Zhao, Guoping Ding, Zhenyang Liu, Peng Hu, Hang-Ping Wei, Min Tan, Jiajun Ding]
+  venue: Pattern Analysis and Applications 28
+  year: 2025
+  doi: 10.1007/s10044-025-01416-x
+  area: methods
+  verified: citation-context
+
+- title: 'Energy-Threshold Bias Calculator: A Physics-Model-Based Adaptive Correction Scheme for Photon-Counting CT'
+  authors: [Yuting Chen, Yuxiang Xing, Li Zhang, Zhi-Pin Deng, He-Wei Gao]
+  venue: IEEE Transactions on Medical Imaging 45, 2385-2402
+  year: 2025
+  doi: 10.1109/TMI.2026.3654612
+  area: medical
+  verified: citation-context
+
+- title: Shape-matching-based fracture reduction aid concept exemplified on the proximal humerus—a pilot study
+  authors: [K. Mys, Luke Visscher, Sara Lindenmann, T. Pastor, Paolo Antonacci, Matthias Knobe, M. Jaeger, Simon Lambert, P. Varga]
+  venue: International Journal of Computer Assisted Radiology and Surgery 20, 869 - 880
+  year: 2025
+  doi: 10.1007/s11548-024-03318-5
+  area: medical
+  verified: citation-context
+
+- title: 'XGenRecon: A New Perspective in Ultrasparse Volumetric CBCT Reconstruction Through Geometry-Controlled X-Ray Projection Generation'
+  authors: [Chu-Long Zhang, Yao-Qin Xie, Xiao-Kun Liang]
+  venue: IEEE Transactions on Radiation and Plasma Medical Sciences 9, 95-106
+  year: 2025
+  doi: 10.1109/TRPMS.2024.3420742
+  area: methods
+  verified: citation-context
+
+- title: '4DRGS: 4D Radiative Gaussian Splatting for Efficient 3D Vessel Reconstruction from Sparse-View Dynamic DSA Images'
+  authors: [Zhen-Tao Liu, Ruyi Zha, Huang-Xuan Zhao, Hong-Dong Li, Zhi-Ming Cui]
+  venue: arXiv:2412.12919
+  year: 2024
+  url: https://arxiv.org/abs/2412.12919
+  arxiv: '2412.12919'
+  area: methods
+  verified: citation-context
+
+- title: A comprehensive dual energy method for CBCT metal artifact reduction
+  authors: [Weiwei Ge, Zi-Hao Liu, Hehe Cui, Xiao-Gang Yuan, Yi-Dong Yang]
+  venue: Physics in Medicine & Biology 70
+  year: 2024
+  doi: 10.1088/1361-6560/ad9db1
+  area: methods
+  verified: citation-context
+
+- title: Tri-Hash Progressive Sampling Neural Attenuation Field for Sparse-View CBCT Reconstruction
+  authors: [Si-Si Wang, Li-Jun Guo, Rong Zhang, Wen-Ming He, Qiang Li, Shang-Ce Gao]
+  venue: 2024 IEEE International Conference on Bioinformatics and Biomedicine (BIBM) 2577-2582
+  year: 2024
+  doi: 10.1109/BIBM62325.2024.10822431
+  area: methods
+  verified: citation-context
+
+- title: 'EPI-NAF: Enhancing Neural Attenuation Fields for Limited-Angle CT with Epipolar Consistency Conditions'
+  authors: [Daniel Gilo, Tzofi Klinghoffer, O. Litany]
+  venue: 2025 IEEE 22nd International Symposium on Biomedical Imaging (ISBI) 1-5
+  year: 2024
+  doi: 10.1109/ISBI60581.2025.10981301
+  area: methods
+  verified: citation-context
+
+- title: Why do we regularise in every iteration for imaging inverse problems?
+  authors: [E. Papoutsellis, Ž. Kereta, Kostas Papafitsoros]
+  venue: arXiv:2411.00688
+  year: 2024
+  url: https://arxiv.org/abs/2411.00688
+  arxiv: '2411.00688'
+  area: methods
+  verified: citation-context
+
+- title: Source-detector trajectory optimization for FOV extension in dental CBCT imaging
+  authors: [S. Islam, A. Biguri, C. Landi, G. Di Domenico, Benedikt Schneider, Pascal Grün, C. Sarti, R. Woitek, Andrea Delmiglio, C. Schönlieb, D. Turhani, G. Kronreif, W. Birkfellner, Sepideh Hatamikia]
+  venue: Computational and Structural Biotechnology Journal 24, 679 - 689
+  year: 2024
+  doi: 10.1016/j.csbj.2024.11.010
+  area: medical
+  verified: citation-context
+
+- title: A simulation framework for preclinical proton irradiation workflow
+  authors: [J. Malimban, Felix Ludwig, D. Lathouwers, Marius Staring, F. Verhaegen, Sytze Brandenburg]
+  venue: Physics in Medicine & Biology 69
+  year: 2024
+  doi: 10.1088/1361-6560/ad897f
+  area: particle
+  verified: citation-context
+
+- title: Imaging foundation model for universal enhancement of non-ideal measurement CT
+  authors: [Rong-Jun Ge, Yu-Xin Liu, Zhan Wu, Shang-Wen Yang, Yuan Gao, Chen-Yu You, Ge Wang, Shuo Li, Yu-Ting He, Yang Chen]
+  venue: Nature Communications 17
+  year: 2024
+  doi: 10.1038/s41467-026-73943-y
+  area: methods
+  verified: citation-context
+
+- title: Simultaneous iodine and barium imaging with photon-counting CT
+  authors: [Xin-Chen Deng, D. Richtsmeier, P. Rodesch, K. Iniewski, M. Bazalova-Carter]
+  venue: Physics in Medicine & Biology 69
+  year: 2024
+  doi: 10.1088/1361-6560/ad7775
+  area: medical
+  verified: citation-context
+
+- title: The Adaption of Recent New Concepts in Neural Radiance Fields and Their Role for High-Fidelity Volume Reconstruction in Medical Images
+  authors: [Haill An, Jawad Khan, Suhyeon Kim, Junseo Choi, Younhyun Jung]
+  venue: Sensors (Basel, Switzerland) 24
+  year: 2024
+  doi: 10.3390/s24185923
+  area: methods
+  verified: citation-context
+
+- title: 'NeRF-CA: Dynamic Reconstruction of X-Ray Coronary Angiography With Extremely Sparse-Views'
+  authors: [K.W.H. Maas, D. Ruijters, Anna Vilanova, Nicola Pezzotti]
+  venue: IEEE Transactions on Visualization and Computer Graphics 31, 8782-8795
+  year: 2024
+  doi: 10.1109/TVCG.2025.3579162
+  area: methods
+  verified: citation-context
+
+- title: 'DIFR3CT: Latent Diffusion for Probabilistic 3D CT Reconstruction from Few Planar X-Rays'
+  authors: [Yiran Sun, Hana Baroudi, T. Netherton, Laurence E. Court, Osama Mawlawi, A. Veeraraghavan, Guha Balakrishnan]
+  venue: arXiv:2408.15118
+  year: 2024
+  url: https://arxiv.org/abs/2408.15118
+  arxiv: '2408.15118'
+  area: methods
+  verified: citation-context
+
+- title: Spectral X-ray computed tomography image denoising using weighted local regression and noise-insensitive feature dimensionality reduction
+  authors: [T. Hotta, T. Yatagawa, Y. Ohtake, M. Matsukawa, H. Suzuki, T. Aoki]
+  venue: Journal of Instrumentation 19
+  year: 2024
+  doi: 10.1088/1748-0221/19/08/P08020
+  area: methods
+  verified: citation-context
+
+- title: Spatial-Division Augmented Occupancy Field for Bone Shape Reconstruction from Biplanar X-Rays
+  authors: [Ji-Xiang Chen, Yi-Qun Lin, Hao-Ran Sun, Xiao-Meng Li]
+  venue: International Conference on Medical Image Computing and Computer-Assisted Intervention 668-678
+  year: 2024
+  doi: 10.1007/978-3-031-72104-5_64
+  area: methods
+  verified: citation-context
+
+- title: 'DeepCA: Deep Learning-Based 3D Coronary Artery Tree Reconstruction from Two 2D Non-Simultaneous X-Ray Angiography Projections'
+  authors: [Yi-Ying Wang, Abhirup Banerjee, Robin P. Choudhury, V. Grau]
+  venue: 2025 IEEE/CVF Winter Conference on Applications of Computer Vision (WACV) 337-346
+  year: 2024
+  doi: 10.1109/WACV61041.2025.00043
+  area: methods
+  verified: citation-context
+
+- title: Sparse angle CT reconstruction based on neural radial field
+  authors: [Dongjie Zhao, Hai Nan, Kai Zhao]
+  venue: International Conference on Biomedical and Intelligent Systems 13208, 132080T - 132080T-6
+  year: 2024
+  doi: 10.1117/12.3036735
+  area: methods
+  verified: citation-context
+
+- title: A Novel and Reliable Pixel Response Correction Method (DAC-Shifting) for Spectral Photon-Counting CT Imaging
+  authors: [N. Bal, Imaiyan Chitra Ragupathy, T. Tramm, J. Nijkamp]
+  venue: Tomography 10, 1168 - 1191
+  year: 2024
+  doi: 10.3390/tomography10070089
+  area: materials
+  verified: citation-context
+
+- title: 'DDGS-CT: Direction-Disentangled Gaussian Splatting for Realistic Volume Rendering'
+  authors: [Zhong-Pai Gao, B. Planche, Meng Zheng, Xiao Chen, Terrence Chen, Zi-Yan Wu]
+  venue: arXiv:2406.02518
+  year: 2024
+  url: https://arxiv.org/abs/2406.02518
+  arxiv: '2406.02518'
+  area: methods
+  verified: citation-context
+
+- title: Cone-beam computed laminography with anisotropic adaptive weighted total variation minimization based on the framework of the Chambolle-Pock algorithm
+  authors: [Haowei Tang, Yi Liu, Peng-Cheng Zhang, Shu Li, Yu Liu, Z. Gui]
+  venue: Journal of Instrumentation 19
+  year: 2024
+  doi: 10.1088/1748-0221/19/06/P06025
+  area: industrial
+  verified: citation-context
+
+- title: 'R2-Gaussian: Rectifying Radiative Gaussian Splatting for Tomographic Reconstruction'
+  authors: [Ruyi Zha, T. Lin, Yuan-Hao Cai, J. Cao, Yanhao Zhang, Hong-Dong Li]
+  venue: arXiv:2405.20693
+  year: 2024
+  url: https://arxiv.org/abs/2405.20693
+  arxiv: '2405.20693'
+  area: methods
+  verified: citation-context
+
+- title: Multisource cone beam computed tomography using a carbon nanotube x-ray source array
+  authors: [Shuang Xu, Yuanming Hu, Boyuan Li, C. Inscoe, Donald A. Tyndall, Yueh Z. Lee, Jianping Lu, Otto Zhou]
+  venue: Medical Imaging 12925, 129253F - 129253F-9
+  year: 2024
+  doi: 10.1117/12.3005571
+  area: medical
+  verified: citation-context
+
+- title: Source-detector trajectory optimization for customized CBCT field of view extension using simulated annealing algorithm
+  authors: [Hannah Jungreuthmayer, S. Islam, A. Biguri, G. Kronreif, W. Birkfellner, Sepideh Hatamikia]
+  venue: Medical Imaging 12928, 129281S - 129281S-5
+  year: 2024
+  doi: 10.1117/12.3006176
+  area: medical
+  verified: citation-context
+
+- title: Neural Field Regularization by Denoising for 3D Sparse-View X-Ray Computed Tomography
+  authors: [R. Vo, J. Escoda, C. Vienne, Etienne Decencière]
+  venue: 2024 International Conference on 3D Vision (3DV) 1166-1176
+  year: 2024
+  doi: 10.1109/3DV62453.2024.00094
+  area: methods
+  verified: citation-context
+
+- title: Radiative Gaussian Splatting for Efficient X-ray Novel View Synthesis
+  authors: [Yuan-Hao Cai, Yixun Liang, Jiahao Wang, Angtian Wang, Yu-Lun Zhang, Xiao-Kang Yang, Zong-Wei Zhou, Alan L. Yuille]
+  venue: arXiv:2403.04116
+  year: 2024
+  url: https://arxiv.org/abs/2403.04116
+  arxiv: '2403.04116'
+  area: methods
+  verified: citation-context
+
+- title: Projection-Angle-Sensor-Assisted X-ray Computed Tomography for Cylindrical Lithium-Ion Batteries
+  authors: [Jia-Wei Dong, Lingling Ju, Quan-Yuan Jiang, Guang-Chao Geng]
+  venue: Sensors (Basel, Switzerland) 24
+  year: 2024
+  doi: 10.3390/s24041102
+  area: industrial
+  verified: citation-context
+
+- title: Fast and accurate sparse-view CBCT reconstruction using meta-learned neural attenuation field and hash-encoding regularization
+  authors: [Heejun Shin, Taehee Kim, J. Lee, S. Chun, Seung-Yoon Cho, Dongmyung Shin]
+  venue: arXiv:2312.01689
+  year: 2023
+  url: https://arxiv.org/abs/2312.01689
+  arxiv: '2312.01689'
+  area: methods
+  verified: citation-context
+
+- title: Structure-Aware Sparse-View X-Ray 3D Reconstruction
+  authors: [Yuan-Hao Cai, Jiahao Wang, Alan L. Yuille, Zong-Wei Zhou, Angtian Wang]
+  venue: 2024 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) 11174-11183
+  year: 2023
+  doi: 10.1109/CVPR52733.2024.01062
+  area: methods
+  verified: citation-context
+
+- title: 'Potential for Dose Reduction in CT-Derived Left Ventricular Ejection Fraction: A Simulation Study'
+  authors: [M. Kusk, S. Hess, O. Gerke, Shane J. Foley]
+  venue: Tomography 9, 2089 - 2102
+  year: 2023
+  doi: 10.3390/tomography9060164
+  area: medical
+  verified: citation-context
+
+- title: 'Single-View Fluoroscopic X-Ray Pose Estimation: A Comparison of Alternative Loss Functions and Volumetric Scene Representations'
+  authors: [Chaochao Zhou, Syed Hasib Akhter Faruqui, Dayeong An, Abhinav Patel, R. Abdalla, M. Hurley, A. Shaibani, M. Potts, B. Jahromi, S. Ansari, D. Cantrell]
+  venue: Journal of Imaging Informatics in Medicine 38, 2600 - 2612
+  year: 2023
+  doi: 10.1007/s10278-024-01354-w
+  area: medical
+  verified: citation-context
+
+- title: An empirical method for geometric calibration of a photon counting detector-based cone beam CT system
+  authors: [M.M.U. Ghani, A. Makeev, Joseph A. Manus, S. Glick, B. Ghammraoui]
+  venue: Journal of X-Ray Science and Technology 31, 865 - 877
+  year: 2023
+  doi: 10.3233/XST-230007
+  area: materials
+  verified: citation-context
+
+- title: Sinogram Inpainting with Generative Adversarial Networks and Shape Priors
+  authors: [Emilien Valat, K. Farrahi, T. Blumensath]
+  venue: Tomography 9, 1137 - 1152
+  year: 2023
+  doi: 10.3390/tomography9030094
+  area: methods
+  verified: citation-context
+
+- title: Development of an iterative method for the geometric calibration of a photon counting detector-based cone beam CT system
+  authors: [M. Ghani, A. Makeev, Joseph Manus, A. Bader, S. Glick, B. Ghammraoui]
+  venue: Medical Imaging 12463, 1246347 - 1246347-5
+  year: 2023
+  doi: 10.1117/12.2655208
+  area: materials
+  verified: citation-context
+
+- title: 3-D Computed Laminography Based on Prior Images and Total Variation
+  authors: [Z. Gui, Yu-Hang Liu, Yi Liu, Wen-Ting Liu, Rongbiao Yan, Lei Wang, Peng-Cheng Zhang, Quan Zhang, H. Shu]
+  venue: IEEE Transactions on Nuclear Science 70, 189-199
+  year: 2023
+  doi: 10.1109/TNS.2023.3246099
+  area: industrial
+  verified: citation-context
+
+- title: Simulation of calcium blooming artifacts in coronary CT angiography from digital phantoms
+  authors: [Xiao-Ling Wang, Guan-Yu Li, Shi-Teng Suo, Sant Kumar, Jia-Yue Huang, Jian-Hua Ma, Yong-Bo Wang, Xu-Hui Zhou, Yi-Qiang Yang, S. Tu]
+  venue: Cardiovascular Diagnosis and Therapy 16
+  year: 2023
+  doi: 10.21037/cdt-2026-0156
+  area: medical
+  verified: citation-context
+
+- title: 3D Reconstruction of Wrist Bones from C-Arm Fluoroscopy Using Planar Markers
+  authors: [Pragyan Shrestha, Chun Xie, Hidehiko Shishido, Y. Yoshii, Itaru Kitahara]
+  venue: Diagnostics 13
+  year: 2023
+  doi: 10.3390/diagnostics13020330
+  area: medical
+  verified: citation-context
+
+- title: On Krylov methods for large-scale CBCT reconstruction
+  authors: [Malena Sabaté Landman, A. Biguri, Sepideh Hatamikia, R. Boardman, J. Aston, C. Schönlieb]
+  venue: Physics in Medicine & Biology 68
+  year: 2022
+  doi: 10.1088/1361-6560/acd616
+  area: methods
+  verified: citation-context
+
+- title: Self-supervised Physics-based Denoising for Computed Tomography
+  authors: [E. Zainulina, A. Chernyavskiy, D. Dylov]
+  venue: arXiv:2211.00745
+  year: 2022
+  url: https://arxiv.org/abs/2211.00745
+  arxiv: '2211.00745'
+  area: methods
+  verified: citation-context
+
+- title: 'NAF: Neural Attenuation Fields for Sparse-View CBCT Reconstruction'
+  authors: [Ruyi Zha, Yan-Hao Zhang, Hong-Dong Li]
+  venue: International Conference on Medical Image Computing and Computer-Assisted Intervention 442-452
+  year: 2022
+  doi: 10.1007/978-3-031-16446-0_42
+  area: methods
+  verified: citation-context
+
+- title: Effects of fast x-ray cone-beam tomographic measurement on dimensional metrology
+  authors: [C. Rossides, H. Towsyfyan, A. Biguri, H. Deyhle, Reuben Lindroos, M. Mavrogordato, R. Boardman, W. Sun, T. Blumensath]
+  venue: Metrologia 59
+  year: 2022
+  doi: 10.1088/1681-7575/ac7926
+  area: industrial
+  verified: citation-context
+
+- title: Data-Driven Interpolation for Super-Scarce X-Ray Computed Tomography
+  authors: [Emilien Valat, K. Farrahi, T. Blumensath]
+  venue: arXiv:2205.07888
+  year: 2022
+  url: https://arxiv.org/abs/2205.07888
+  arxiv: '2205.07888'
+  area: methods
+  verified: citation-context
+
+- title: Generative Adversarial Network (GAN) for Automatic Reconstruction of the 3D Spine Structure by Using Simulated Bi-Planar X-ray Images
+  authors: [Ching-Juei Yang, Cheng-Li Lin, Chien-Kuo Wang, Jing-Yao Wang, Chih-Chia Chen, Fong-Chin Su, Yin-Ju Lee, Chun-Chung Lui, L. Yeh, Y. Fang]
+  venue: Diagnostics 12
+  year: 2022
+  doi: 10.3390/diagnostics12051121
+  area: methods
+  verified: citation-context
+
+- title: 'Concurrent kilovoltage CBCT imaging and megavoltage beam delivery: Suppression of cross-scatter with 2D antiscatter grids and grid-based scatter sampling'
+  authors: [Farhang Bayat, M. Eldib, B. Kavanagh, M. Miften, C. Altunbas]
+  venue: Physics in medicine and biology 67
+  year: 2022
+  doi: 10.1088/1361-6560/ac8268
+  area: medical
+  verified: citation-context
+
+- title: 'Cone-beam breast CT using an offset detector: Effect of detector offset and image reconstruction algorithm'
+  authors: [Hsin-Wu Tseng, A. Karellas, S. Vedantham]
+  venue: Physics in medicine and biology 67
+  year: 2022
+  doi: 10.1088/1361-6560/ac5fe1
+  area: medical
+  verified: citation-context
+
+- title: Strength-mass scaling law governs mass distribution inside honey bee swarms
+  authors: [Olga Shishkov, Claudia Chen, C. A. Madonna, Kaushik Jayaram, O. Peleg]
+  venue: Scientific Reports 12
+  year: 2022
+  doi: 10.1038/s41598-022-21347-5
+  area: other
+  verified: citation-context
+
+- title: Metal Artifact Reduction with Intra-Oral Scan Data for 3D Low Dose Maxillofacial CBCT Modeling
+  authors: [Chang Min Hyun, Taigyntuya Bayaraa, Hye-Sun Yun, T. Jang, Hyoung Suk Park, J. K. Seo]
+  venue: arXiv:2202.03571
+  year: 2022
+  url: https://arxiv.org/abs/2202.03571
+  arxiv: '2202.03571'
+  area: methods
+  verified: citation-context
+
+- title: 'DIOR: Deep Iterative Optimization-Based Residual-Learning for Limited-Angle CT Reconstruction'
+  authors: [Dian-Lin Hu, Yi-Kun Zhang, Jin Liu, Shou-Hua Luo, Yang Chen]
+  venue: IEEE Transactions on Medical Imaging 41, 1778-1790
+  year: 2022
+  doi: 10.1109/TMI.2022.3148110
+  area: methods
+  verified: citation-context
+
+- title: Multi-contrast CT imaging using a high energy resolution CdTe detector and a CZT photon-counting detector
+  authors: [N. Clements, D. Richtsmeier, A. Hart, M. Bazalova-Carter]
+  venue: Journal of Instrumentation 17
+  year: 2022
+  doi: 10.1088/1748-0221/17/01/P01004
+  area: materials
+  verified: citation-context
+
+- title: Limited-angle computed tomography with deep image and physics priors
+  authors: [Semih Barutcu, Selin S. Aslan, A. Katsaggelos, D. Gürsoy]
+  venue: Scientific Reports 11
+  year: 2021
+  doi: 10.1038/s41598-021-97226-2
+  area: methods
+  verified: citation-context
+
+- title: Pose Estimation of Multiple X-ray Cameras Using Planar Markers and Epipolar Consistency
+  authors: [Pragyan Shrestha, Hidehiko Shishido, Y. Yoshii, Itaru Kitahara]
+  venue: 2021 IEEE 3rd Global Conference on Life Sciences and Technologies (LifeTech) 13-17
+  year: 2021
+  doi: 10.1109/LifeTech52111.2021.9391862
+  area: medical
+  verified: citation-context
+
+- title: A Fully Automated Method for 3D Individual Tooth Identification and Segmentation in Dental CBCT
+  authors: [T. Jang, Kangcheol Kim, H. Cho, J. Seo]
+  venue: IEEE Transactions on Pattern Analysis and Machine Intelligence 44, 6562-6568
+  year: 2021
+  doi: 10.1109/TPAMI.2021.3086072
+  area: medical
+  verified: citation-context
+
+- title: No-Reference Denoising Of Low-Dose Ct Projections
+  authors: [E. Zainulina, A. Chernyavskiy, D. Dylov]
+  venue: 2021 IEEE 18th International Symposium on Biomedical Imaging (ISBI) 77-81
+  year: 2021
+  doi: 10.1109/ISBI48211.2021.9433825
+  area: methods
+  verified: citation-context
+
+- title: Optimization for customized trajectories in cone beam computed tomography
+  authors: [Sepideh Hatamikia, A. Biguri, G. Kronreif, J. Kettenbach, Tom Russ, H. Furtado, L. K. Shiyam Sundar, M. Buschmann, E. Unger, M. Figl, D. Georg, W. Birkfellner]
+  venue: Medical Physics 47, 4786 - 4799
+  year: 2020
+  doi: 10.1002/mp.14403
+  area: medical
+  verified: citation-context
+
+- title: Low Dose CT Perfusion With K-Space Weighted Image Average (KWIA)
+  authors: [Chen-Yang Zhao, Thomas Martin, Xing-Feng Shao, J. Alger, Vinnay A. Duddalwar, Danny J. J. Wang]
+  venue: IEEE transactions on medical imaging 39, 3879 - 3890
+  year: 2020
+  doi: 10.1109/TMI.2020.3006461
+  area: medical
+  verified: citation-context
+
+- title: Spatial resolution of a laboratory based X-Ray cone-beam laminography scanning system for various trajectories
+  authors: [H. Deyhle, H. Towsyfyan, A. Biguri, M. Mavrogordato, R. Boardman, T. Blumensath]
+  venue: Ndt & E International 111, 102222
+  year: 2020
+  doi: 10.1016/j.ndteint.2020.102222
+  area: industrial
+  verified: citation-context
+
+- title: Efficient Hyper-Parameter Selection in Total Variation-Penalised XCT Reconstruction Using Freund and Shapire’s Hedge Approach
+  authors: [S. Chrétien, Manasavee Lohvithee, Wenjuan Sun, M. Soleimani]
+  venue: Mathematics
+  year: 2020
+  doi: 10.3390/math8040493
+  area: methods
+  verified: citation-context
+
+- title: Efficient CT Image Reconstruction in a GPU Parallel Environment
+  authors: [T. A. Valencia Pérez, Javier Hernández López, E. Moreno-Barbosa, B. de Celis Alonso, M. R. Palomino Merino, V. M. Castaño Meneses]
+  venue: Tomography 6, 44 - 53
+  year: 2020
+  doi: 10.18383/j.tom.2020.00011
+  area: methods
+  verified: citation-context
+
+- title: Prototyping X-ray tomographic reconstruction pipelines with FleXbox
+  authors: [A. Kostenko, W. Palenstijn, S. Coban, A. Hendriksen, R. van Liere, K. Batenburg]
+  venue: SoftwareX 11, 100364
+  year: 2020
+  doi: 10.1016/j.softx.2019.100364
+  area: methods
+  verified: citation-context
+
+- title: A metal artifact reduction method for small field of view CT imaging
+  authors: [Seungwon Choi, Seunghyuk Moon, J. Baek]
+  venue: PLoS ONE 16
+  year: 2019
+  doi: 10.1371/journal.pone.0227656
+  area: methods
+  verified: citation-context
+
+- title: Geant4 simulations for ion CT image reconstruction
+  authors: [S. Kaser]
+  venue: Preprint
+  year: 2019
+  s2: 66f4a5d28988de42788cbf2d8fc8dd8ebd69499b
+  area: particle
+  verified: citation-context
+
+- title: Analysis of continuous infusion functional PET (fPET) in the human brain
+  authors: [Shen-Peng Li, S. Jamadar, Phillip G. D. Ward, M. Premaratne, G. Egan, Zhao-Lin Chen]
+  venue: bioRxiv
+  year: 2019
+  doi: 10.1101/778357
+  area: medical
+  verified: citation-context
+
+- title: Performance of a dual-layer scanner for hybrid SPECT/CBCT
+  authors: [M. Dietze, B. Kunnen, S. van der Velden, J. H. Leo Steenbergen, W. Koppert, M. Viergever, H. D. de Jong]
+  venue: Physics in Medicine & Biology 64
+  year: 2019
+  doi: 10.1088/1361-6560/ab15f6
+  area: medical
+  verified: citation-context
+
+- title: Improved Dynamic PET Reconstruction Using Temporal Decoding
+  authors: [Shen-Peng Li, S. Jamadar, Phillip G. D. Ward, F. Sforazzini, M. Premaratne, G. Egan, Zhao-Lin Chen]
+  venue: 2018 IEEE Nuclear Science Symposium and Medical Imaging Conference Proceedings (NSS/MIC) 1-2
+  year: 2018
+  doi: 10.1109/NSSMIC.2018.8824624
+  area: medical
+  verified: citation-context
+
+- title: Comparison of three breast imaging techniques using 4-AFC human observation study
+  authors: [S. Kazemi, Oliver Díaz, P. Elangovan, K. Wells, A. Lohstroh]
+  venue: Medical Imaging 10573
+  year: 2018
+  doi: 10.1117/12.2293201
+  area: medical
+  verified: citation-context
+
+- title: Non-rigid CT/CBCT to CBCT registration for online external beam radiotherapy guidance
+  authors: [C. Zachiu, B. D. de Senneville, R. Tijssen, A. Kotte, A. Houweling, L. Kerkmeijer, J. Lagendijk, C. Moonen, M. Ries]
+  venue: Physics in Medicine & Biology 63
+  year: 2017
+  doi: 10.1088/1361-6560/aa990e
+  area: medical
+  verified: citation-context
+
+- title: Parameter selection in limited data cone-beam CT reconstruction using edge-preserving total variation algorithms
+  authors: [Manasavee Lohvithee, A. Biguri, M. Soleimani]
+  venue: Physics in Medicine & Biology 62, 9295 - 9321
+  year: 2017
+  doi: 10.1088/1361-6560/aa93d3
+  area: methods
+  verified: citation-context
+
+- title: Hierarchical Hybrid Transformer for Sparse-View X-Ray 3D Reconstruction
+  authors: [Li An, Peng-Bo Zhou, Ming-Quan Zhou, Yong Wang, Wu-Yang Shui]
+  venue: IEEE Signal Processing Letters 33, 1295-1299
+  year: 2026
+  doi: 10.1109/LSP.2025.3584713
+  area: methods
+  verified: citation-context
+
+- title: 'FDA-Recon: Faithful and Data-Adaptive Reconstruction for Limited-Angle CBCT'
+  authors: [Yuhao Liu, Yao Wang, Yi-Kun Zhang, Dian-Lin Hu, Qiegen Liu, Yi Zhang, Jian Yang, Hao Gao, Yang Chen]
+  venue: IEEE Transactions on Instrumentation and Measurement 75, 1-13
+  year: 2026
+  doi: 10.1109/TIM.2026.3679175
+  area: methods
+  verified: citation-context
+
+- title: 'Dynamic Neural Attenuation Fields (D-NAF): A Self-Supervised Framework for 4D CBCT Reconstruction'
+  authors: [Yu-Lin Zhang, Yuxuan Long, T. Lyu, Fan Rao, Dian-Lin Hu, Yue Li, Feng Wang, Ye-Feng Zheng, Wen-Tao Zhu]
+  venue: IEEE Transactions on Computational Imaging 12, 1228-1240
+  year: 2026
+  doi: 10.1109/TCI.2026.3697644
+  area: methods
+  verified: citation-context
+
+- title: 'SPAM-Net: Spectral Prior-Guided Attentive Mamba Network for Sparse-View Multienergy CT Reconstruction'
+  authors: [Xi Wang, Tong Lin, Xinyun Zhong, Xu Ji, Yi-Kun Zhang, Yang Chen]
+  venue: IEEE Transactions on Instrumentation and Measurement 75, 4506519-4506519
+  year: 2026
+  doi: 10.1109/TIM.2026.3736197
+  area: methods
+  verified: citation-context
+
+- title: Ring Artifacts Correction Based on Global–Local Feature Interaction Guidance in the Projection Domain
+  authors: [Congyi Su, Yun-Ze Liu, Ping Yang, Li-Gen Shi, Xing Zhao]
+  venue: IEEE Transactions on Instrumentation and Measurement 74, 1-14
+  year: 2025
+  doi: 10.1109/TIM.2025.3612561
+  area: methods
+  verified: citation-context
+
+- title: Cone Beam Computed Laminography Based on Generalized Charbonnier Penalty
+  authors: [Yi Liu, Haowei Tang, Jing Lu, Peng-Cheng Zhang, Zhi-Guo Gui, Shu Li, Shao-Xiong Guo, Yu Liu]
+  venue: IEEE Transactions on Instrumentation and Measurement 74, 1-15
+  year: 2025
+  doi: 10.1109/TIM.2025.3617418
+  area: industrial
+  verified: citation-context
+
+- title: 'X-Field: A Physically Informed Representation for 3D X-ray Reconstruction'
+  authors: [Fei-Ran Wang, Jia-Chen Tao, Jun-Yi Wu, Hao-Xuan Wang, Bin Duan, Kai Wang, Zong-Ju Yang, Yan Yan]
+  venue: Advances in Neural Information Processing Systems 38
+  year: 2025
+  doi: 10.52202/085713-5036
+  area: methods
+  verified: citation-context
+
+- title: A Dual-Domain CNN-Based Network for CT Reconstruction
+  authors: [Fengyuan Jiao, Z. Gui, Kunpeng Li, Shangguan Hong, Yanling Wang, Yi Liu, Peng-Cheng Zhang]
+  venue: IEEE Access 9, 71091-71103
+  year: 2021
+  doi: 10.1109/ACCESS.2021.3079323
+  area: methods
+  verified: citation-context
+
+- title: Iterative reconstruction technique for cone-beam computed tomography with limited data
+  authors: [Manasavee Lohvithee]
+  venue: Preprint
+  year: 2019
+  s2: 19b094637efe31f54034c651afc413f6886bedb0
+  area: methods
+  verified: citation-context
+
+- title: 'Toward XRF-like chemical sensitivity in the laboratory: first hyperspectral x-ray imaging demonstration using the novel CITIUS detector'
+  authors: [V. Di Trapani, P. Thibault, F. Arfelli, Y. Honjo, K. Ozaki, H. Nishino, Y. Joti, T. Hatsui, F. Orsini, R. Menk]
+  venue: Scientific Reports 16
+  year: 2026
+  doi: 10.1038/s41598-026-48904-6
+  area: materials
+  verified: citation-context
+
+- title: Multi-stage NeRF for Efficient 3D Coronary Artery Reconstruction from Two Narrow-Angle Angiographic Projections
+  authors: [De-Yu Meng, Mojtaba Lashgari, Yi-Ying Wang, Abhirup Banerjee]
+  venue: arXiv:2609.15550
+  year: 2026
+  doi: 10.1007/978-3-032-38186-6_55
+  area: methods
+  verified: citation-context
+
+- title: Coupling Spectrum Estimation and Single Energy Material Decomposition via X-ray Grating Interferometry
+  authors: [Long-Chao Men, Pei-Yuan Guo, Jin-Cheng Lu, Yan Xu, Hong-Xia Yin, Zhen-Chang Wang, Li Zhang, Zhen-Tian Wang]
+  venue: arXiv:2605.29419
+  year: 2026
+  url: https://arxiv.org/abs/2605.29419
+  arxiv: '2605.29419'
+  area: materials
+  verified: citation-context
+
+- title: Implicit neural representation with plane attention for micro-CT super-resolution
+  authors: [Hongyu Shen, Qing-Xian Zhao, Yu-Xin Feng, Jiacheng Wang, Shouhua Luo]
+  venue: Medical Imaging 13924, 1392445 - 1392445-9
+  year: 2026
+  doi: 10.1117/12.3085800
+  area: methods
+  verified: citation-context
+
+- title: Fast reconstruction 3D computed tomography image of stacked cell under faster scanning by dual-branch cross-fusion flat bottom network
+  authors: [Long Chao, Hao Yin, Yi Wang, Chuan-Dong Tan, Yusheng Chen, Hui Tan, Li-Ming Duan]
+  venue: Measurement Science and Technology 36
+  year: 2024
+  doi: 10.1088/1361-6501/ad83e9
+  area: industrial
+  verified: author-review
+
+- title: 'OTCL-TFDK: Physics-based Elliptical Extension and Analytical Reconstruction Algorithm for Truncated Orthogonal Translation Computed Laminography Projection Data'
+  authors: [Chuan-Dong Tan, Yu-Fang Cai, Xueqing Luo, Zi-Hao Wang, Ming Jiang, Fenglin Liu, Li-Ming Duan]
+  venue: NDT &amp; E International
+  year: 2026
+  doi: 10.1016/j.ndteint.2026.103760
+  area: industrial
+  verified: author-review
+
+- title: A generalized image quality improvement strategy of cone-beam CT using multiple spectral CT labels in Pix2pix GAN
+  authors: [Yangkang Jiang, Yi-Bao Zhang, C. Luo, Peng-Fei Yang, Jing Wang, Xiao-Kun Liang, Wei Zhao, Rencang Li, T. Niu]
+  venue: Physics in Medicine & Biology 67
+  year: 2022
+  doi: 10.1088/1361-6560/ac6bda
+  area: medical
+  verified: author-review
+
+- title: Gradient Descent Provably Solves Nonlinear Tomographic Reconstruction
+  authors: [Sara Fridovich-Keil, Fabrizio Valdivia, Gordon Wetzstein, Benjamin Recht, M. Soltanolkotabi]
+  venue: IEEE transactions on information theory 72, 3195 - 3211
+  year: 2026
+  doi: 10.1109/TIT.2026.3677729
+  area: methods
+  verified: author-review
+
+- title: Coarse-to-Fine Learning for Planning CT-Enhanced Limited-Angle CBCT Reconstruction
+  authors: [Shizhe Zang, Yi-Kun Zhang, Dian-Lin Hu, Wei-Long Mao, Xuanjia Fei, Xu Ji, Yi Yao, Chun-Hsien Yang, G. Coatrieux, Yang Chen]
+  venue: IEEE Transactions on Instrumentation and Measurement 73, 1-15
+  year: 2024
+  doi: 10.1109/TIM.2024.3406810
+  area: methods
+  verified: author-review
+
+- title: ResUNet‑based deep learning technique for Ram‑Lak filter‑free CBCT reconstruction
+  authors: [Zhuqing Pu, Ke Lu, Fang-Fang Yin]
+  venue: Medical Imaging 13924, 1392432 - 1392432-7
+  year: 2026
+  doi: 10.1117/12.3086029
+  area: methods
+  verified: author-review
+
+- title: Predicting dental implant stability using a multisource CBCT
+  authors: [Wei Luo, Yuanming Hu, Amanda Finger Stadler, Antonio J. Moretti, Donald A. Tyndall, C. Inscoe, Yueh Z. Lee, Jian-Ping Lu, Otto Zhou]
+  venue: Medical Imaging 13924, 139243J - 139243J-9
+  year: 2026
+  doi: 10.1117/12.3087851
+  area: medical
+  verified: author-review
+
+- title: Data-driven volumetric reconstruction for optically measured sound field using physics-constrained 3D Gaussian splatting.
+  authors: [Risako Tanigawa, Kenji Ishikawa, Noboru Harada, Yasuhiro Oikawa]
+  venue: The Journal of the Acoustical Society of America 158 3, 2163-2175
+  year: 2025
+  doi: 10.1121/10.0039344
+  area: other
+  verified: author-review
+
+- title: 2D antiscatter grid and scatter sampling based CBCT method for online dose calculations during CBCT guided radiation therapy of pelvis
+  authors: [Farhang Bayat, Brian Miller, Yeonok Park, Zhelin Yu, T. Alexeev, David Thomas, K. Stuhr, Brian D. Kavanagh, M. Miften, C. Altunbas]
+  venue: Medical physics 51, 3053 - 3066
+  year: 2023
+  doi: 10.1002/mp.16867
+  area: medical
+  verified: author-review
+
+- title: 'Evaluation of charge summing correction in CdTe-based photon-counting detectors for breast CT: performance metrics and image quality'
+  authors: [Sriharsha Marupudi, Joseph A. Manus, M. Ghani, Stephen J. Glick, B. Ghammraoui]
+  venue: Journal of Medical Imaging 12, 013501 - 013501
+  year: 2025
+  doi: 10.1117/1.JMI.12.1.013501
+  area: materials
+  verified: author-review
+
+- title: 'Synthesis and Characterization of Gold-Nanoparticle-Loaded Block Copolymer Vectors for Biomedical Applications: A Multivariate Analysis.'
+  authors: [Talita de Francesco, D. Richtsmeier, Seoyoon Lee, Magdalena Bazalova-Carter, M. Moffitt]
+  venue: ACS applied materials & interfaces
+  year: 2024
+  doi: 10.1021/acsami.4c16915
+  area: other
+  verified: author-review
+
+- title: Refining imaging parameters for dual‐energy cone‐beam computed tomography in image‐guided radiation therapy
+  authors: [Hyejoo Kang, A. Keeler, Matthew Georgesen, Jason T. Luce, Ha Nguyen, M. Lehmann, S. Gros, J. Roeske]
+  venue: Journal of Applied Clinical Medical Physics 27
+  year: 2026
+  doi: 10.1002/acm2.70516
+  area: medical
+  verified: author-review
+
+- title: 'Patient dose in HR-pQCT bone scans can be reduced by suitably setting the tube start angle: A proof of concept.'
+  authors: [L. A. Cerbone, Y. Lai, Xun Jia, S. Boyd, G. Mettivier, P. Russo]
+  venue: European journal of radiology 205, 113198
+  year: 2026
+  doi: 10.1016/j.ejrad.2026.113198
+  area: medical
+  verified: author-review
+
+- title: Volumetric emission tomography for combustion processes
+  authors: [S. Grauer, K. Mohri, Tao Yu, Hecong Liu, Weiwei Cai]
+  venue: Progress in Energy and Combustion Science
+  year: 2023
+  doi: 10.1016/j.pecs.2022.101024
+  area: other
+  verified: author-review
+
+- title: 'X-Splat: Gaussian Splatting for 3D CBCT Generation from Single Panoramic Radiograph'
+  authors: [Tomasz Szczepanski, Szymon Płotka, Michal K. Grzeszczyk, Tomasz Trzci'nski, A. Sitek]
+  venue: arXiv:2607.02099
+  year: 2026
+  url: https://arxiv.org/abs/2607.02099
+  arxiv: '2607.02099'
+  area: methods
+  verified: author-review
+
+- title: Anatomically-adaptive multi-modal image registration for image-guided external-beam radiotherapy
+  authors: [C. Zachiu, B. D. de Senneville, T. Willigenburg, J. R. N. Voort van Zyp, J. D. de Boer, B. Raaymakers, M. Ries]
+  venue: Physics in Medicine & Biology 65
+  year: 2020
+  doi: 10.1088/1361-6560/abad7d
+  area: medical
+  verified: author-review
+
+- title: Revisiting Pose Sensitivity in Splat-based Computed Tomography under Sparse-view Reconstruction
+  authors: [Kiseok Choi, Hyeongjun Cho, I. Kim, Min H. Kim]
+  venue: arXiv:2608.04752
+  year: 2026
+  url: https://arxiv.org/abs/2608.04752
+  arxiv: '2608.04752'
+  area: methods
+  verified: author-review
+
+- title: 'Core Imaging Library - Part I: a versatile Python framework for tomographic imaging'
+  authors: [J. Jørgensen, E. Ametova, G. Burca, G. Fardell, E. Papoutsellis, E. Pasca, K. Thielemans, M. Turner, Ryan Warr, William Robert Breckon Lionheart, P. Withers]
+  venue: Philosophical transactions. Series A, Mathematical, physical, and engineering sciences 379
+  year: 2021
+  doi: 10.1098/rsta.2020.0192
+  area: methods
+  verified: author-review
+
+- title: Cone-beam computed tomography (CBCT) image-quality improvement using a denoising diffusion probabilistic model conditioned by pseudo-CBCT of pelvic regions
+  authors: [Masayuki Hattori, Hong-Bo Chai, Toshitada Hiraka, Koji Suzuki, Tetsuya Yuasa]
+  venue: Radiological Physics and Technology 18, 425 - 438
+  year: 2025
+  doi: 10.1007/s12194-025-00892-4
+  area: medical
+  verified: author-review
+
+- title: Assessment of Feldkamp-Davis-Kress Reconstruction Parameters in Overall Image Quality in Cone Beam Computed Tomography
+  authors: [Hajin Kim, Jun-Seon Choi, Youngjin Lee]
+  venue: Applied Sciences
+  year: 2024
+  doi: 10.3390/app14167058
+  area: medical
+  verified: author-review
+
+- title: Fully automated sinogram-based deep learning model for detection and classification of intracranial hemorrhage.
+  authors: [C. Sindhura, Mohammad Al Fahim, P. Yalavarthy, Subrahmanyam Gorthi]
+  venue: Medical physics
+  year: 2023
+  doi: 10.1002/mp.16714
+  area: medical
+  verified: author-review
+
+- title: Methods for Reducing Ring Artifacts in Tomographic Images Using Wavelet Decomposition and Averaging Techniques
+  authors: [P. Lipowicz, Marta T. Borowska, Agnieszka Dardzińska-Głębocka]
+  venue: Applied Sciences
+  year: 2024
+  doi: 10.3390/app14167292
+  area: methods
+  verified: author-review
+
+- title: 'DSV-CTGS: Dynamic Sparse-View CT Reconstruction Based on Gaussian Splatting and Prior Transfer'
+  authors: [Jinpeng An, Xin-Feng Zhang]
+  venue: ICASSP 2026 - 2026 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)
+  year: 2026
+  doi: 10.1109/icassp55912.2026.11464624
+  area: methods
+  verified: author-review
+
+- title: Deep learning-based fluorescence image correction for high spatial resolution precise dosimetry
+  authors: [Y. Nomura, M. R. Ashraf, M. Shi, L. Xing]
+  venue: Physics in Medicine & Biology 68
+  year: 2023
+  doi: 10.1088/1361-6560/acf182
+  area: medical
+  verified: author-review
+
+- title: A 3D Magnetospheric CT Reconstruction Method Based on 3D GAN and Supplementary Limited‐Angle 2D Soft X‐Ray Images
+  authors: [R.-C. Wang, Dalin Li, T. Sun, Xiao-Dong Peng, Zhen Yang, J. Wang]
+  venue: 'Journal of Geophysical Research: Space Physics 128'
+  year: 2023
+  doi: 10.1029/2022JA030424
+  area: other
+  verified: author-review
+
+- title: Prismoid-Based Self-Attention Neural Representation Method for Low-Dose Tomographic Reconstruction
+  authors: [Weiguo Zhang, Weifang Fang, Guo-Heng Huang, Yuan-Yuan Liu, Sida Li, Chi-Man Pun]
+  venue: ICASSP 2026 - 2026 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)
+  year: 2026
+  doi: 10.1109/icassp55912.2026.11462063
+  area: methods
+  verified: author-review
+
+- title: Comparative study of inertial measurement unit and optical tracking systems for respiratory motion management in radiotherapy.
+  authors: [Hyeongmin Jin, Manjin Ha, J. Jegal, Hyojun Park, J. Son, Seonghee Kang, Jong Min Park, Jung-in Kim, C. Choi]
+  venue: 'Physica medica : PM : an international journal devoted to the applications of physics to medicine and biology : official journal of the Italian Association of Biomedical Physics 141, 105707'
+  year: 2025
+  doi: 10.1016/j.ejmp.2025.105707
+  area: medical
+  verified: author-review
+
+- title: 'PhyDiff: Physics-guided latent diffusion model for sparse-view CT projection interpolation.'
+  authors: [Shuo Duan, Xing Wu, Yi-Min Zhu, Xin-Yuan Zhang, Xing Wei, Quan Qian, Jun Song, Jian-Biao Dai]
+  venue: 'Neural networks : the official journal of the International Neural Network Society 206 Pt A, 109744'
+  year: 2026
+  doi: 10.1016/j.neunet.2026.109744
+  area: methods
+  verified: author-review
+
+- title: 'CBCT-IDDNet: a three-dimensional Res-UNet based image domain denoising network for clinical dose cone-beam computed tomography—winner of the International Conference on Acoustics, Speech, and Signal Processing-2024 challenge'
+  authors: [Xu-Zhi Zhao, Xin-Yi Wang, Yi Du, Ya-Hui Peng]
+  venue: Quantitative Imaging in Medicine and Surgery 15, 9844 - 9854
+  year: 2025
+  doi: 10.21037/qims-24-1902
+  area: medical
+  verified: author-review
+
+- title: Unsupervised Deep Learning Algorithm for Artifact Reduction in X-Ray CT Reconstruction From Truncated Data
+  authors: [Rohit Kalla, Balaji Srinivasan, Ganapathy Krishnamurthi]
+  venue: IEEE Access 13, 175292-175308
+  year: 2025
+  doi: 10.1109/ACCESS.2025.3618871
+  area: methods
+  verified: author-review
+
+- title: 'MSRRA-NAF: Multi-Scale Relative Resolution Attention-Guided X-ray 3D Reconstruction via Neural Attenuation Field'
+  authors: [Zheng-Yang Wu, Long Cao, Wen-Jie Zheng, Mao-Dan Nie, Yuan Tian, Peng Cao, Peng Ye, Cong Han, Teng-Fei Weng, Zhong Li, Changqing Li, Chao Zhang, Qi Han]
+  venue: Biomed. Signal Process. Control. 119, 109892
+  year: 2026
+  doi: 10.1016/j.bspc.2026.109892
+  area: methods
+  verified: author-review
+
+- title: 'Feasibility study of photon-counting CT for material identification based on YSO/SiPM detector: A proof of concept.'
+  authors: [Du Zhang, Bin Wu, Dao-Ming Xi, Rui Chen, Peng Xiao, Qing-Guo Xie]
+  venue: Medical physics
+  year: 2024
+  doi: 10.1002/mp.17341
+  area: materials
+  verified: author-review
+
+- title: 'D-NAF: Dynamic Neural Attenuation Fields for 4D CBCT Reconstruction in Pulmonary Imaging'
+  authors: [Yuxuan Long, T. Lyu, Fan Rao, Peng Yuan, Yang Chen, Wentao Zhu]
+  venue: 2024 IEEE International Conference on Bioinformatics and Biomedicine (BIBM) 3549-3554
+  year: 2024
+  doi: 10.1109/bibm62325.2024.10822834
+  area: methods
+  verified: author-review
+
+- title: Limits for Axial Motion in Cone Beam Computed Tomography
+  authors: [J. S. Domínguez, Felix Mas Millian, D. S. Dominguez, S. M. Iglesias, Joaquim Teixeira de Assis]
+  venue: X-Ray Spectrometry
+  year: 2025
+  doi: 10.1002/xrs.70044
+  area: materials
+  verified: author-review
+
+- title: Inverse‐consistent deformable image registration to propagate biomechanical constraints for online adaptive radiotherapy
+  authors: [T. Draper, C. Zachiu, B. Raaymakers]
+  venue: Medical Physics 53
+  year: 2026
+  doi: 10.1002/mp.70645
+  area: medical
+  verified: author-review
+
+- title: 'Comparative analysis of cone‐beam breast computed tomography and digital breast tomosynthesis for breast cancer diagnosis: A comprehensive study on reconstruction algorithms'
+  authors: [T. E. Komolafe, Yuchi Tian, Olanrewaju James Awoniya, Shuang-Qing Chen, Xiao-Dong Yang]
+  venue: International Journal of Imaging Systems and Technology 34
+  year: 2024
+  doi: 10.1002/ima.23071
+  area: medical
+  verified: author-review
+
+- title: Multi‐dimensional attention‐enhanced reconstruction for sparse‐view CBCT
+  authors: [Yu-Hao Liu, Wan Li, Yiyuan Tao, T. Lyu, Yan Xi, Yi-Kun Zhang, Feng Wang, Peng-Cheng Zhang, Jian Yang, Yang Chen]
+  venue: Medical Physics 53
+  year: 2026
+  doi: 10.1002/mp.70299
+  area: methods
+  verified: author-review
+
+- title: Assessment and correction of the respiratory phase misalignment using different signals in 4-dimensional imaging and free-breathing gated radiotherapy.
+  authors: [Le-Kang Chen, Shu-Tong Yu, Q.-C. Zhao, Songmao Yu, Junqian Yang, Jie Xiao, Zijian Yu, Qian-Xi Ni, Tian Li, Chen Lin, Xiao-Yun Le, Xing-Hong Yao, Yi-Bao Zhang]
+  venue: 'Radiotherapy and oncology : journal of the European Society for Therapeutic Radiology and Oncology 111116'
+  year: 2025
+  doi: 10.1016/j.radonc.2025.111116
+  area: medical
+  verified: author-review
+
+- title: A simulation study to evaluate the effect of 2D antiscatter grid primary transmission on flat panel detector based CBCT image quality
+  authors: [M. Eldib, Farhang Bayat, M. Miften, C. Altunbas]
+  venue: Biomedical physics & engineering express 9
+  year: 2023
+  doi: 10.1088/2057-1976/acfb8a
+  area: medical
+  verified: author-review
+
+- title: A Study of Why We Need to Reassess Full Reference Image Quality Assessment with Medical Images
+  authors: [Anna Breger, A. Biguri, Malena Sabaté Landman, Ian Selby, N. Amberg, E. Brunner, Janek Gröhl, Sepideh Hatamikia, C. Karner, Li-Peng Ning, Sören Dittmer, Michael Roberts, Aix-Covnet Collaboration, C. Schönlieb]
+  venue: Journal of Imaging Informatics in Medicine 38, 3444 - 3469
+  year: 2024
+  doi: 10.1007/s10278-025-01462-1
+  area: methods
+  verified: author-review
+
+- title: Generalizability of convolutional neural network‐based model observer in breast tomosynthesis across volume glandular fractions and signal sizes
+  authors: [H. Jang, Jongduk Baek]
+  venue: Medical Physics 52, 4023 - 4038
+  year: 2025
+  doi: 10.1002/mp.17725
+  area: medical
+  verified: author-review
+
+- title: Polychromatic representation with implicit sinogram modeling for metal artifact reduction in cone beam CT (CBCT) imaging
+  authors: [Xiao-Qian Chen, Richard L. J. Qiu, A. Kesarwala, Xiao-Feng Yang]
+  venue: Medical Imaging 13924, 1392421 - 1392421-7
+  year: 2026
+  doi: 10.1117/12.3085323
+  area: methods
+  verified: author-review
+
+- title: A competition-proven deep learning-based dual-domain framework for low-dose CBCT reconstruction
+  authors: [Xu-Zhi Zhao, Mu-Liang Li, Yi Du]
+  venue: Quantitative Imaging in Medicine and Surgery 16
+  year: 2026
+  doi: 10.21037/qims-2026-0723
+  area: methods
+  verified: author-review
+
+- title: X‐ray CT metal artifact reduction using neural attenuation field prior
+  authors: [Jooho Lee, Seongjun Kim, Junhyun Ahn, Adam S. Wang, Jongduk Baek]
+  venue: Medical Physics 52
+  year: 2025
+  doi: 10.1002/mp.17859
+  area: methods
+  verified: author-review
+
+- title: Megavoltage cross-scatter rejection and correction using 2D antiscatter grids in kilovoltage CBCT imaging
+  authors: [Farhang Bayat, M. Eldib, C. Altunbas]
+  venue: Proceedings of SPIE--the International Society for Optical Engineering 12031
+  year: 2022
+  doi: 10.1117/12.2611202
+  area: medical
+  verified: author-review
+
+- title: Synthetic Data Generation Pipeline for Multi-Task Deep Learning-Based Catheter 3D Reconstruction and Segmentation from Biplanar X-Ray Images
+  authors: [Jia-ling Wang, Guixiang Zhang, Wen-Yun Yang, Chang-Sheng Wang, J. Yang]
+  venue: Applied Sciences
+  year: 2025
+  doi: 10.3390/app152212247
+  area: medical
+  verified: author-review
+
+- title: 'Self-learning GAN based synthetic CT generation: unlocking CBCT-based adaptive radiotherapy'
+  authors: [J. Prunaretty, L. Colombo, Sami Romdhani, Olivier Teboul, D. Azria, Nikolaos Paragyios, P. Fenoglietto]
+  venue: Frontiers in Oncology 16
+  year: 2026
+  doi: 10.3389/fonc.2026.1756153
+  area: medical
+  verified: author-review
+
+- title: 'VAG: Voxel Attenuation Grid For Sparse-View CBCT Reconstruction'
+  authors: [Jin-Hao Qiao, Jiang Liu, Heng Yu, Yi Xiao, Hongshan Yu, Yan Zheng, Sihan Li]
+  venue: International Conference on Information Photonics 2793-2799
+  year: 2024
+  doi: 10.1109/icip51287.2024.10647311
+  area: methods
+  verified: author-review
+
+- title: High-Resolution, Quantitative Density Tomography Using a Rotating Nozzle
+  authors: [Fernando Zigunov, S. Wagner, Mark Namatsaliuk]
+  venue: AIAA SCITECH 2026 Forum
+  year: 2026
+  doi: 10.2514/6.2026-2099
+  area: other
+  verified: author-review
+
+- title: 4D‐CT deformable image registration using unsupervised recursive cascaded full‐resolution residual networks
+  authors: [Lei Xu, P. Jiang, T. Tsui, Jun-Yan Liu, Xi-Ping Zhang, Lequan Yu, Tianye Niu]
+  venue: Bioengineering & Translational Medicine 8
+  year: 2023
+  doi: 10.1002/btm2.10587
+  area: medical
+  verified: author-review
+
+- title: An artifact intensity-layer transition model for PCB stub length measurement in rotation-scanning computed laminography
+  authors: [Qi Li, Chuan-Dong Tan, Yan Ma, Qian Qin, Kuan Shen, Feng-Lin Liu, Yu-Fang Cai]
+  venue: Optics &amp; Laser Technology
+  year: 2026
+  doi: 10.1016/j.optlastec.2026.116823
+  area: industrial
+  verified: author-review
+
+- title: Improving the robustness of radiomic features to patient size variations in CBCT imaging for radiotherapy
+  authors: [Farhang Bayat, C. Altunbas]
+  venue: Journal of X-ray science and technology 34, 622 - 635
+  year: 2026
+  doi: 10.1177/08953996261459392
+  area: medical
+  verified: author-review
+
+- title: High-resolution computed tomography with scattered X-ray radiation and a single pixel detector
+  authors: [A. Ben Yehuda, O. Sefi, Y. Klein, R. H. Shukrun, H. Schwartz, E. Cohen, S. Shwartz]
+  venue: Communications Engineering 3
+  year: 2023
+  doi: 10.1038/s44172-024-00184-6
+  area: materials
+  verified: author-review
+
+- title: 'ρ-NeRF: Leveraging Attenuation Priors in Neural Radiance Field for 3D Computed Tomography Reconstruction'
+  authors: [Li Zhou, Chang-Sheng Fang, Bahareh Morovati, Yong-Tong Liu, Shuo Han, Yong-Shun Xu, Heng-Yong Yu]
+  venue: Preprint
+  year: 2025
+  s2: 741e3981204a0ce934f7185f0f1cee3960cd3081
+  area: methods
+  verified: author-review
+
+- title: Image‐based scatter correction for cone‐beam CT using flip swin transformer U‐shape network
+  authors: [Xueren Zhang, Yangkang Jiang, C. Luo, Deng-Wang Li, Tianye Niu, Gang Yu]
+  venue: Medical Physics 50, 5002 - 5019
+  year: 2023
+  doi: 10.1002/mp.16277
+  area: methods
+  verified: author-review
+
+- title: A standardized and reproducible pipeline for fast multi-view digitally reconstructed radiograph (DRR) generation
+  authors: [Massimo Bottini, Istiak Khan, Olivier Zanier, Raffaele Da Mutten, L. Regli, Carlo Serra, V. Staartjes]
+  venue: Scientific Reports 16
+  year: 2026
+  doi: 10.1038/s41598-026-73833-9
+  area: medical
+  verified: author-review
+
+- title: The Feasibility of Accurate Stent Visualization With Photon-Counting Detector CT and K-Edge Imaging
+  authors: [D. Richtsmeier, P. Rodesch, K. Iniewski, William Siu, M. Bazalova-Carter]
+  venue: IEEE Transactions on Radiation and Plasma Medical Sciences 7, 712-718
+  year: 2023
+  doi: 10.1109/TRPMS.2023.3287566
+  area: medical
+  verified: author-review
+
+- title: 'BasisSimulator.jl: Open-source polychromatic CT simulation with a GPU-portable reconstruction stack'
+  authors: [Dale Black, H. Khodajou-Chokami, S. Molloi]
+  venue: SoftwareX 35, 102910
+  year: 2026
+  doi: 10.1016/j.softx.2026.102910
+  area: methods
+  verified: author-review
+
+- title: 'X-LRM: X-Ray Large Reconstruction Model for Extremely Sparse-View Computed Tomography Recovery in One Second'
+  authors: [Guo-Feng Zhang, Ruyi Zha, Hao He, Yixun Liang, A. Yuille, Hong-Dong Li, Yuan-Hao Cai]
+  venue: 2026 International Conference on 3D Vision (3DV) 176-185
+  year: 2025
+  doi: 10.1109/3DV69130.2026.00024
+  area: methods
+  verified: author-review
+
+- title: A flexible deconvolution-based reconstruction pipeline for Edge Illumination phase-contrast Computed Tomography
+  authors: [G. Rizzo, Luca Brombal, F. Brun]
+  venue: Tomography of Materials and Structures
+  year: 2025
+  doi: 10.1016/j.tmater.2025.100081
+  area: materials
+  verified: author-review
+
+- title: 'Influence of phantom design on evaluation metrics in photon counting spectral head CT: a simulation study'
+  authors: [B. Ghammraoui, M. Bhattarai, Harsha Marupudi, Stephen J. Glick]
+  venue: Journal of Medical Imaging 12, 043501 - 043501
+  year: 2025
+  doi: 10.1117/1.JMI.12.4.043501
+  area: medical
+  verified: author-review
+
+- title: Vector‐Driven Projection and Backprojection
+  authors: [Ismail Melik Turker, Isa Yildirim]
+  venue: Medical Physics 53
+  year: 2026
+  doi: 10.1002/mp.70581
+  area: methods
+  verified: author-review
+
+- title: A Comparative Study of Mismatch Projectors in Cone Beam CT
+  authors: [Shiyu Xie, Alireza Entezari, Arunava Banerjee]
+  venue: 2025 IEEE 22nd International Symposium on Biomedical Imaging (ISBI) 1-5
+  year: 2025
+  doi: 10.1109/ISBI60581.2025.10981304
+  area: methods
+  verified: author-review
+
+- title: 3D Vessel Reconstruction from Sparse-View Dynamic DSA Images via Vessel Probability Guided Attenuation Learning
+  authors: [Zhen-Tao Liu, Huang-Xuan Zhao, Wen-Hui Qin, Zheng-Hong Zhou, Xing-Gang Wang, Wen-Ping Wang, Xiao-Chun Lai, Chuan-Sheng Zheng, Ding-Gang Shen, Zhi-Ming Cui]
+  venue: Medical image analysis 112, 104088
+  year: 2024
+  doi: 10.1016/j.media.2026.104088
+  area: methods
+  verified: author-review
+
+- title: Implicit neural representation for fast 4D computed tomography of multiphase flow in porous media
+  authors: [H. Friis, H. Nese, Giacomo Luani, C. Pryme, L. Rennan, Basab Chattopadhyay, A. Kristoffersen, O. J. Mengshoel, D. W. Breiby]
+  venue: Communications Physics 8
+  year: 2025
+  doi: 10.1038/s42005-025-02249-0
+  area: materials
+  verified: author-review
+
+- title: Deep 3D reconstruction of synchrotron X-ray computed tomography for intact lungs
+  authors: [Seungjoo Shin, Min Woo Kim, Kyong Hwan Jin, K. M. Yi, Y. Kohmura, Tetsuya Ishikawa, Ho-Je Jung, Jaesik Park]
+  venue: Scientific Reports 13
+  year: 2023
+  doi: 10.1038/s41598-023-27627-y
+  area: synchrotron
+  verified: author-review
+
+- title: Deep Learning-Based Multi-View Projection Synthesis Approach for Improving the Quality of Sparse-View CBCT in Image-Guided Radiotherapy
+  authors: [Xu-Zhi Zhao, Yi Du, Ya-Hui Peng]
+  venue: Journal of Imaging Informatics in Medicine 38, 2894 - 2914
+  year: 2025
+  doi: 10.1007/s10278-025-01390-0
+  area: methods
+  verified: author-review
+
+- title: Extent of projection reduction in XCT dimensional measurements using OS-SART under beam-hardening effects
+  authors: [Kaojie Yue, Huan Shao, S. Petrò, G. Moroni]
+  venue: Measurement
+  year: 2026
+  doi: 10.1016/j.measurement.2026.121769
+  area: industrial
+  verified: author-review
+
+- title: Source-detector trajectory optimization for CBCT metal artifact reduction based on PICCS reconstruction
+  authors: [Sepideh Hatamikia, A. Biguri, G. Kronreif, Tom Russ, J. Kettenbach, W. Birkfellner]
+  venue: Zeitschrift für Medizinische Physik 34, 565 - 579
+  year: 2023
+  doi: 10.1016/j.zemedi.2023.02.001
+  area: medical
+  verified: author-review
+
+- title: Metamaterial-Inspired Antenna Array for Application in Microwave Breast Imaging Systems for Tumor Detection
+  authors: [Mohammad Alibakhshikenari, B. Virdee, Pancham Shukla, Nasser Ojaroudi, L. Azpilicueta, C. H. See, R. Abd-Alhameed, F. Falcone, I. Huynen, T. Denidni, E. Limiti]
+  venue: IEEE Access 8, 174667-174678
+  year: 2020
+  doi: 10.1109/ACCESS.2020.3025672
+  area: medical
+  verified: author-review
+
+- title: 'ActiveNaf: A novel NeRF-based approach for low-dose CT image reconstruction through active learning.'
+  authors: [Ahmad Zidane, Ilan Shimshoni]
+  venue: 'Physica medica : PM : an international journal devoted to the applications of physics to medicine and biology : official journal of the Italian Association of Biomedical Physics 135, 104997'
+  year: 2025
+  doi: 10.1016/j.ejmp.2025.104997
+  area: methods
+  verified: author-review
+
+- title: Understanding the generalizability of a convolutional neural network-based model observer for breast tomosynthesis images with different volume glandular fractions
+  authors: [H. Jang, Jongduk Baek]
+  venue: Medical Imaging 12929, 129290S - 129290S-7
+  year: 2024
+  doi: 10.1117/12.3004908
+  area: medical
+  verified: author-review
+
+- title: 'RNAF: Regularization neural attenuation fields for sparse-view CBCT reconstruction'
+  authors: [Chun-Jie Xia, Tianyun Gu, Nan Zheng, H. Wei, Tsung-Yuan Tsai]
+  venue: Journal of X-Ray Science and Technology 33, 713 - 725
+  year: 2025
+  doi: 10.1177/08953996241301661
+  area: methods
+  verified: author-review
+
+- title: Degradation diagnosis of lithium-ion batteries considering internal gas evolution
+  authors: [Lingling Ju, Xining Li, Guang-Chao Geng, Quanyuan Jiang]
+  venue: Journal of Energy Storage
+  year: 2023
+  doi: 10.1016/j.est.2023.108084
+  area: industrial
+  verified: author-review
+
+- title: 'GDNAF-Net: Gaussian Diffusion Combined Neural Attenuation Field Network for Sparse-Angle CBCT Reconstruction'
+  authors: [Kai Chen, Shipeng Xie, Biao Cheng, Yang Chen]
+  venue: ICASSP 2026 - 2026 IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)
+  year: 2026
+  doi: 10.1109/icassp55912.2026.11463247
+  area: methods
+  verified: author-review
+
+- title: 'FlameRF: A fast time-resolved reconstruction technique for turbulent flame using Tensorial Radiance Fields'
+  authors: [Shi-Yu Liu, Hai-Ou Wang, Yuqi Huang, Kun Luo, Jian-Ren Fan]
+  venue: Energy and AI
+  year: 2026
+  doi: 10.1016/j.egyai.2026.100758
+  area: other
+  verified: author-review
+
+- title: 'DiffNR: Diffusion-Enhanced Neural Representation Optimization for Sparse-View 3D Tomographic Reconstruction'
+  authors: [Shi-Yan Su, Ruyi Zha, D. Shi, Hong-Dong Li, Xuelian Cheng]
+  venue: AAAI Conference on Artificial Intelligence 9144-9152
+  year: 2026
+  doi: 10.1609/aaai.v40i11.37871
+  area: methods
+  verified: author-review
+
+- title: Target-oriented deep learning-based image registration with individualized test-time adaptation.
+  authors: [Y. Sang, M. McNitt-Gray, Ying-Li Yang, M. Cao, D. Low, D. Ruan]
+  venue: Medical physics
+  year: 2023
+  doi: 10.1002/mp.16477
+  area: medical
+  verified: author-review
+
+- title: 'Core Imaging Library - Part II: multichannel reconstruction for dynamic and spectral tomography'
+  authors: [E. Papoutsellis, E. Ametova, C. Delplancke, G. Fardell, J. Jørgensen, E. Pasca, M. Turner, Ryan Warr, William Robert Breckon Lionheart, P. Withers]
+  venue: Philosophical transactions. Series A, Mathematical, physical, and engineering sciences 379
+  year: 2021
+  doi: 10.1098/rsta.2020.0193
+  area: methods
+  verified: author-review
+
+- title: Hybrid simulation of breast CT for assessing microcalcification detectability
+  authors: [S. H. Lyu, A. Makeev, Dan Li, A. Badal, A. Hernandez, John M. Boone, Stephen J. Glick]
+  venue: Journal of Medical Imaging 12, S22015 - S22015
+  year: 2025
+  doi: 10.1117/1.JMI.12.S2.S22015
+  area: medical
+  verified: author-review
+
+- title: Truncated projection adaptive weighting combined with adaptive TV for artifact reduction in linear computed laminography
+  authors: [Chuan-Dong Tan, Ao Wang, Zhiting Chen, Shicong Nong, Feng-Lin Liu, Li-Ming Duan]
+  venue: Optics &amp; Laser Technology
+  year: 2026
+  doi: 10.1016/j.optlastec.2025.114348
+  area: industrial
+  verified: author-review
+
+- title: 'Mode-switchable computed laminography: System design and imaging analysis for plate-like objects'
+  authors: [Chuan-Dong Tan, Zhiting Chen, Qi Li, Ao Wang, Fenglin Liu, Yu-Fang Cai, Li-Ming Duan]
+  venue: NDT &amp; E International
+  year: 2026
+  doi: 10.1016/j.ndteint.2025.103614
+  area: industrial
+  verified: author-review
+
+- title: 'TPG-INR: Target Prior-Guided Implicit 3D CT Reconstruction for Enhanced Sparse-View Imaging'
+  authors: [Qinglei Cao, Zi-Yao Tang, Xiaoqin Tang]
+  venue: 2025 IEEE/CVF International Conference on Computer Vision (ICCV) 28239-28248
+  year: 2025
+  doi: 10.1109/ICCV51701.2025.02622
+  area: methods
+  verified: author-review
+
+- title: Evaluation of Reconstruction Methods in X-ray Computed Tomography Geometric Measurement
+  authors: [Kaojie Yue, Huan Shao, S. Petrò, G. Moroni]
+  venue: Procedia CIRP
+  year: 2024
+  doi: 10.1016/j.procir.2024.10.025
+  area: industrial
+  verified: author-review
+
+- title: Ring Artifacts Removal Based on Implicit Neural Representation of Sinogram Data
+  authors: [Li-Gen Shi, Xu Jiang, Yun-Ze Liu, Chang Liu, Ping Yang, Shi-Feng Guo, Xing Zhao]
+  venue: IEEE Transactions on Image Processing 34, 4080-4091
+  year: 2024
+  doi: 10.1109/TIP.2025.3581003
+  area: methods
+  verified: author-review
+
+- title: A quantitative CBCT pipeline based on 2D antiscatter grid and grid-based scatter sampling for image guided radiation therapy
+  authors: [Farhang Bayat, Dan Ruan, M. Miften, C. Altunbas]
+  venue: Medical physics 50, 7980 - 7995
+  year: 2023
+  doi: 10.1002/mp.16681
+  area: medical
+  verified: author-review
+
+- title: Improving parallel translation computed laminography reconstruction quality via projection extrapolation
+  authors: [Zhiting Chen, Chuan-Dong Tan, Xin-Xin Lin, Li-Ming Duan]
+  venue: Optics &amp; Laser Technology
+  year: 2025
+  doi: 10.1016/j.optlastec.2025.113663
+  area: industrial
+  verified: author-review
+
+- title: Scan angle-adjusted slice thickness in filtered backprojection-based limited-angle tomography
+  authors: [Seung-Min Yoo, H. Kim]
+  venue: Measurement
+  year: 2026
+  doi: 10.1016/j.measurement.2026.121893
+  area: methods
+  verified: author-review
+
+- title: Reference-Free Framework for Automatic Parameter Optimization in Iterative Reconstruction Using a Novel Search-Space-Aware Crow Search Algorithm
+  authors: [Poorya MohammadiNasab, A. Biguri, P. Steininger, P. Keuschnigg, L. Lamminger, Agnieszka Lach, S. Islam, Anna Breger, C. Karner, C. Schönlieb, W. Birkfellner, Sepideh Hatamikia]
+  venue: Results in Engineering
+  year: 2026
+  doi: 10.1016/j.rineng.2026.113147
+  area: methods
+  verified: author-review
+
+- title: 'Technical note: Preprocessing of portal images to improve image quality of VMAT-CT.'
+  authors: [Chia-Lung Chien, Xiao-Dong Zhao, Bei-Bei Guo, Rui Zhang]
+  venue: Medical physics
+  year: 2023
+  doi: 10.1002/mp.16741
+  area: medical
+  verified: author-review
+
+- title: Degradation-guided deep generative priors for general-purpose reconstruction of ill-posed CT
+  authors: [Feixiang Zhao, Yanhua Liu, Rui Luo, Chuandong He]
+  venue: Journal of Instrumentation 20
+  year: 2025
+  doi: 10.1088/1748-0221/20/12/P12001
+  area: methods
+  verified: author-review
+
+- title: Three-dimensional spine reconstruction from biplane radiographs using convolutional neural networks.
+  authors: [Bo Li, Junhua Zhang, Qian Wang, Hong-Jian Li, Qi-Yang Wang]
+  venue: Medical engineering & physics 123, 104088
+  year: 2023
+  doi: 10.1016/j.medengphy.2023.104088
+  area: medical
+  verified: author-review
+
+- title: Modified fast adaptive scatter kernel superposition (mfASKS) correction and its dosimetric impact on CBCT-based proton therapy dose calculation.
+  authors: [Y. Nomura, Qiong Xu, Hao Peng, S. Takao, S. Shimizu, L. Xing, H. Shirato]
+  venue: Medical physics
+  year: 2019
+  doi: 10.1002/mp.13878
+  area: medical
+  verified: author-review
+
+- title: Very deep super-resolution for efficient cone-beam computed tomographic image restoration
+  authors: [Jae-Joon Hwang, Yun-Hoa Jung, Bong-Hae Cho, Min-Suk Heo]
+  venue: Imaging Science in Dentistry 50, 331 - 337
+  year: 2020
+  doi: 10.5624/isd.2020.50.4.331
+  area: medical
+  verified: author-review
+
+- title: Decoupling of bowtie and object effects for beam hardening and scatter artefact reduction in iterative cone-beam CT
+  authors: [M. Cai, M. Byrne, B. Archibald-Heeren, P. Metcalfe, A. Rosenfeld, Yang Wang]
+  venue: Physical and Engineering Sciences in Medicine 43, 1161 - 1170
+  year: 2020
+  doi: 10.1007/s13246-020-00918-8
+  area: medical
+  verified: author-review
+
+- title: Resolution and noise performance of sparse view X-ray CT reconstruction via Lp-norm regularization.
+  authors: [Lin Zhang, Hui-Juan Zhao, Wen-Juan Ma, Jing-Ying Jiang, Limin Zhang, Jiao Li, Feng Gao, Zhong-Xing Zhou]
+  venue: 'Physica medica : PM : an international journal devoted to the applications of physics to medicine and biology : official journal of the Italian Association of Biomedical Physics 52, 72-80'
+  year: 2018
+  doi: 10.1016/j.ejmp.2018.04.396
+  area: methods
+  verified: author-review
+
+- title: Optical CT scanning for experimental demonstration of medical x-ray CT and SPECT
+  authors: [Y. De Deene]
+  venue: European Journal of Physics 40
+  year: 2019
+  doi: 10.1088/1361-6404/aaf94c
+  area: other
+  verified: author-review
+
+- title: 'FORCE-Interior: Measurement-Consistent Adaptation of a Poisson-Flow Generative Prior for Interior CT'
+  authors: [Kang Chen, Wenjun Xia, Jian-Xu Wang, Mahmud Wasif Nafee, Ge Wang]
+  venue: arXiv preprint
+  year: 2026
+  arxiv: '2607.14320'
+  s2: 16709bff08256a58602d8f3ada1c523941a8faca
+  area: methods
+  verified: author-review
+
+- title: Imaging with Ion Beams at MedAustron
+  authors: [A. Burker, T. Bergauer, Albert Hirtl, C. Irmler, S. Kaser, P. Paulitsch, V. Teufelhart, F. Ulrich-Pur, M. Valentan]
+  venue: Nuclear Instruments & Methods in Physics Research Section A-accelerators Spectrometers Detectors and Associated Equipment 958, 162246
+  year: 2020
+  doi: 10.1016/J.NIMA.2019.05.087
+  area: particle
+  verified: author-review
+
+- title: Cone-beam breast computed tomography using ultra-fast image reconstruction with constrained, total-variation minimization for suppression of artifacts
+  authors: [Hsin-Wu Tseng, S. Vedantham, A. Karellas]
+  venue: 'Physica medica : PM : an international journal devoted to the applications of physics to medicine and biology : official journal of the Italian Association of Biomedical Physics (AIFB) 73, 117 - 124'
+  year: 2020
+  doi: 10.1016/j.ejmp.2020.04.020
+  area: medical
+  verified: author-review
+
+- title: A general method for motion compensation in x-ray computed tomography
+  authors: [A. Biguri, M. Dosanjh, S. Hancock, M. Soleimani]
+  venue: Physics in Medicine & Biology 62, 6532 - 6549
+  year: 2017
+  doi: 10.1088/1361-6560/aa7675
+  area: methods
+  verified: author-review
+
+- title: Biomechanical quality assurance criteria for deformable image registration algorithms used in radiotherapy guidance
+  authors: [C. Zachiu, B. D. de Senneville, B. Raaymakers, M. Ries]
+  venue: Physics in Medicine & Biology 65
+  year: 2020
+  doi: 10.1088/1361-6560/ab501d
+  area: medical
+  verified: author-review
+
+- title: A dual-domain neural network based on sinogram synthesis for sparse-view CT reconstruction
+  authors: [Pengcheng Zhang, Kunpeng Li]
+  venue: Computer methods and programs in biomedicine 226, 107168
+  year: 2022
+  doi: 10.1016/j.cmpb.2022.107168
+  area: methods
+  verified: author-review
+
+- title: A Joint Row and Column Action Method for Cone-Beam Computed Tomography
+  authors: [Yu-Shan Gao, T. Blumensath]
+  venue: IEEE Transactions on Computational Imaging 4, 599-608
+  year: 2018
+  doi: 10.1109/TCI.2018.2857446
+  area: methods
+  verified: author-review
+
+- title: Coordinate-Reduced Steepest Gradient Descent for Computed Tomography Parallel Reconstruction
+  authors: [Yu-Shan Gao, T. Blumensath]
+  venue: Preprint
+  year: 2018
+  s2: 470a78139b6a24db13f81c62cf570c0cdc0af7cb
+  area: methods
+  verified: author-review
+
+- title: Reducing axial truncation artefacts in iterative cone-beam CT for radiation therapy using a priori pre-conditioned information.
+  authors: [M. Cai, M. Byrne, B. Archibald-Heeren, P. Metcalfe, A. Rosenfeld, Yang Wang]
+  venue: Medical physics
+  year: 2021
+  doi: 10.1002/mp.15248
+  area: medical
+  verified: author-review
+
+- title: Improved temporal resolution for mapping brain metabolism using functional PET and anatomical MRI knowledge
+  authors: [V. P. Sudarshan, Shen-Peng Li, S. Jamadar, G. Egan, Suyash P. Awate, Zhao-Lin Chen]
+  venue: bioRxiv
+  year: 2020
+  doi: 10.1101/2020.07.08.192872
+  area: medical
+  verified: author-review
+
+- title: Dual‐energy approach to reduce cone‐beam artefacts in a circular orbit cone‐beam CT system
+  authors: [C. Han, JongSeob Baek]
+  venue: Electronics Letters
+  year: 2020
+  doi: 10.1049/el.2020.0544
+  area: medical
+  verified: author-review
+
+- title: From particle physics to medical applications
+  authors: [M. Dosanjh]
+  venue: Preprint
+  year: 2017
+  doi: 10.1088/978-0-7503-1444-2
+  area: other
+  verified: author-review
+
+- title: 'HD-DCDM: Hybrid-domain network for limited-angle computed tomography with deconvolution and conditional diffusion model'
+  authors: [Jian-Yu Wang, Rong-Qian Wang, Li-De Cai, Xin-Tong Liu, Guochang Lin, Fukai Chen, Lingyun Qiu]
+  venue: Applied Mathematics for Modern Challenges
+  year: 2023
+  doi: 10.3934/ammc.2023008
+  area: methods
+  verified: author-review
+
+- title: Derivatives in Proton CT
+  authors: [M. Aehle, J. Alme, G. Barnaföldi, Johannes Blühdorn, T. Bodova, V. Borshchov, A. van den Brink, M. Chaar, V. Eikeland, G. Feofilov, Christoph Garth, N. Gauger, G. Genov, O. Grøttvik, H. Helstrup, S. Igolkin, R. Keidel, C. Kobdaj, T. Kortus, V. Leonhardt, S. Mehendale, R. N. Mulawade, O. Odland, G. O'Neill, G. Papp, T. Peitzmann, H. E. S. Pettersen, P. Piersimoni, Rohit Pochampalli, M. Protsenko, M. Rauch, Attiq Ur Rehman, M. Richter, D. Røhrich, M. Sagebaum, J. Santana, A. Schilling, J. Seco, A. Songmoolnak, J. R. Sølie, G. Tambave, Ihor Tymchuk, K. Ullaland, M. Varga-Kofarago, L. Volz, B. Wagner, S. Wendzel, Alexander Wiebel, Ren-Zheng Xiao, S. Yang, H. Yokoyama, S. Zillien]
+  venue: Preprint
+  year: 2022
+  s2: 71472044fe09e02daefdfd926dfcddf2d389fa0d
+  area: particle
+  verified: author-review
+
+- title: Evaluation of scatter rejection and correction performance of 2D antiscatter grids in cone beam computed tomography
+  authors: [Yeonok Park, T. Alexeev, B. Miller, M. Miften, C. Altunbas]
+  venue: Medical physics 48, 1846 - 1858
+  year: 2020
+  doi: 10.1002/mp.14756
+  area: medical
+  verified: author-review
+
+- title: 'Sparse-view, short-scan, dedicated cone-beam breast computed tomography: Image quality assessment'
+  authors: [Hsin-Wu Tseng, A. Karellas, S. Vedantham]
+  venue: Biomedical physics & engineering express 6
+  year: 2020
+  doi: 10.1088/2057-1976/abb834
+  area: medical
+  verified: author-review
+
+- title: A simulation study of a fan-beam time-of-flight fast-neutron tomography system.
+  authors: [Shi-Feng Sun, X. Ouyang]
+  venue: 'Applied radiation and isotopes : including data, instrumentation and methods for use in agriculture, industry and medicine 149, 52-59'
+  year: 2019
+  doi: 10.1016/j.apradiso.2019.04.017
+  area: synchrotron
+  verified: author-review
+
+- title: Alternating direction method of multipliers for nonconvex log total variation image restoration
+  authors: [Ben-Xin Zhang, Guo-Pu Zhu, Zhi-Bin Zhu, S. Kwong]
+  venue: Applied Mathematical Modelling
+  year: 2022
+  doi: 10.1016/j.apm.2022.09.018
+  area: methods
+  verified: author-review
+
+- title: Single-pass metal artifact reduction using a dual-layer flat panel detector
+  authors: [Lin-Xi Shi, N. R. Bennett, Amy Shiroma, Ming-Shan Sun, Jin Zhang, R. Colbeth, J. Star-Lack, Minghui Lu, Adam S. Wang]
+  venue: Medical physics 48, 6482 - 6496
+  year: 2021
+  doi: 10.1002/mp.15131
+  area: medical
+  verified: author-review
+
+- title: Complementary use of x-ray dark-field and attenuation computed tomography in quantifying pulmonary fibrosis in a mouse model
+  authors: [B. Nelson, S. Leng, T. Koenig, C. McCollough]
+  venue: Medical Imaging 12036, 120360W - 120360W-11
+  year: 2022
+  doi: 10.1117/12.2612877
+  area: medical
+  verified: author-review
+
+- title: Application of iterative reconstruction algorithms to mitigate CT-artefacts when measuring fiber reinforced polymer materials
+  authors: [A. Wilbers, A. Biguri, J. Schillings, J. Loos]
+  venue: Polymer
+  year: 2019
+  doi: 10.1016/J.POLYMER.2019.06.004
+  area: materials
+  verified: author-review
+
+- title: Pre- and post-reconstruction digital image processing solutions for computed tomography with spectral photon counting detectors
+  authors: [V. Di Trapani, F. Brun]
+  venue: Nuclear Instruments & Methods in Physics Research Section A-accelerators Spectrometers Detectors and Associated Equipment 1010, 165510
+  year: 2021
+  doi: 10.1016/J.NIMA.2021.165510
+  area: materials
+  verified: author-review
+
+- title: High dose rate brachytherapy three-dimensional gel dosimetry using optical computed tomography readout
+  authors: [David N. DeVries, C. Joshi, L. Schreiner]
+  venue: 'Journal of Physics: Conference Series 1305'
+  year: 2019
+  doi: 10.1088/1742-6596/1305/1/012051
+  area: medical
+  verified: author-review
+
+- title: 'Time separation technique: Accurate solution for 4D C‐Arm‐CT perfusion imaging using a temporal decomposition model'
+  authors: [Sebastian Bannasch, R. Frysch, T. Pfeiffer, G. Warnecke, G. Rose]
+  venue: Medical Physics 45, 1080–1092
+  year: 2018
+  doi: 10.1002/mp.12768
+  area: medical
+  verified: author-review
+
+- title: Projection-domain scatter correction for cone beam computed tomography using a residual convolutional neural network
+  authors: [Y. Nomura, Qiong Xu, H. Shirato, S. Shimizu, L. Xing]
+  venue: Medical physics 46, 3142 - 3155
+  year: 2019
+  doi: 10.1002/mp.13583
+  area: methods
+  verified: author-review
+
+- title: Short Scan Source-detector Trajectories for Target-based CBCT
+  authors: [Sepideh Hatamikia, A. Biguri, G. Kronreif, Tom Russ, J. Kettenbach, W. Birkfellner]
+  venue: 2020 42nd Annual International Conference of the IEEE Engineering in Medicine & Biology Society (EMBC) 1299-1302
+  year: 2020
+  doi: 10.1109/EMBC44109.2020.9176667
+  area: medical
+  verified: author-review
+
+- title: A field of view based metal artifact reduction method with the presence of data truncation
+  authors: [Seungwon Choi, Seunghyuk Moon, J. Baek]
+  venue: 15th International Meeting on Fully Three-Dimensional Image Reconstruction in Radiology and Nuclear Medicine
+  year: 2019
+  doi: 10.1117/12.2534809
+  area: methods
+  verified: author-review
+
+- title: Application of silicon drift detector in PIXE tomography system of Fudan University
+  authors: [Shi-Mei Wang, Tao Yu, Jing Li, Huanlu Xue, Xin Liu, Wei Zhang, Yu Zhang, Weiwei Wang, Hao Shen, Bo Li]
+  venue: 'Nuclear Instruments and Methods in Physics Research Section B: Beam Interactions with Materials and Atoms'
+  year: 2022
+  doi: 10.1016/j.nimb.2021.12.010
+  area: materials
+  verified: author-review
+
+- title: Incorporation of anatomical MRI knowledge for enhanced mapping of brain metabolism using functional PET
+  authors: [V. P. Sudarshan, Shen-Peng Li, S. Jamadar, G. Egan, Suyash P. Awate, Zhao-Lin Chen]
+  venue: NeuroImage 117928
+  year: 2021
+  doi: 10.1016/j.neuroimage.2021.117928
+  area: medical
+  verified: author-review
+
+- title: A Unified Scatter Rejection and Correction Method for Cone Beam Computed Tomography
+  authors: [C. Altunbas, Yeonok Park, Zhelin Yu, A. Gopal]
+  venue: Medical physics 48, 1211 - 1225
+  year: 2020
+  doi: 10.1002/mp.14681
+  area: medical
+  verified: author-review
+
+- title: A Combinational De-Noising Algorithm for Low-Dose Computed Tomography
+  authors: [Wei Zhang, Yan Kang]
+  venue: Chinese Conference on Advances in Image and Graphics Technologies 263-270
+  year: 2017
+  doi: 10.1007/978-981-10-7389-2_26
+  area: methods
+  verified: author-review
+
+- title: High-Sensitivity X-ray Phase Imaging System Based on a Hartmann Wavefront Sensor
+  authors: [Ginevra Begani Provinciali, M. Piponnier, Laura Oudjedi, X. Levecq, F. Harms, A. Cedola, Ombeline de La Rochefoucauld, P. Zeitoun]
+  venue: Condensed Matter
+  year: 2021
+  doi: 10.3390/condmat7010003
+  area: materials
+  verified: author-review
+
+- title: Optical diffraction tomography with finite object support for the minimization of missing cone artifacts.
+  authors: [W. Krauze]
+  venue: Biomedical optics express 11 4, 1919-1926
+  year: 2020
+  doi: 10.1364/boe.386507
+  area: other
+  verified: author-review
+
+- title: Respiratory motion compensation in interventional liver SPECT using simultaneous fluoroscopic and nuclear imaging
+  authors: [M. Dietze, R. Bastiaannet, B. Kunnen, S. van der Velden, M. Lam, M. Viergever, H. D. de Jong]
+  venue: Medical Physics 46, 3496 - 3507
+  year: 2019
+  doi: 10.1002/mp.13653
+  area: medical
+  verified: author-review
+
+- title: Evaluation of a compact cone beam CT concept with high image fidelity for point-of-care brain imaging
+  authors: [U. Pyakurel, R. Sabounchi, M. Eldib, Farhang Bayat, H. Phan, C. Altunbas]
+  venue: Scientific Reports 14
+  year: 2024
+  doi: 10.1038/s41598-024-79874-2
+  area: medical
+  verified: citation-context
+
+- title: Improving the accuracy of bone mineral density using a multisource CBCT
+  authors: [Yuanming Hu, Shuang Xu, Boyuan Li, C. Inscoe, Donald A. Tyndall, Yueh Z. Lee, Jianping Lu, Otto Zhou]
+  venue: Scientific Reports 14
+  year: 2024
+  doi: 10.1038/s41598-024-54529-4
+  area: medical
+  verified: full-text
+
+- title: Feasibility of dual-energy CBCT material decomposition in the human torso with 2D anti-scatter grids and grid-based scatter sampling
+  authors: [C. Altunbas]
+  venue: Medical physics 51, 334 - 347
+  year: 2023
+  doi: 10.1002/mp.16611
+  area: medical
+  verified: citation-context
+
+- title: 'CROSS: Cross-Domain Residual-Optimization-Based Structure Strengthening Reconstruction for Limited-Angle CT'
+  authors: [Dian-Lin Hu, Yi-Kun Zhang, Guotao Quan, Jun Xiang, G. Coatrieux, Shou-Hua Luo, J. Coatrieux, Xu Ji, Hongbin Han, Yang Chen]
+  venue: IEEE Transactions on Radiation and Plasma Medical Sciences 7, 521-531
+  year: 2023
+  doi: 10.1109/TRPMS.2023.3242662
+  area: methods
+  verified: citation-context
+
+- title: TIGRE-VarianCBCT for on-board cone-beam computed tomography, an open-source toolkit for imaging, dosimetry and clinical research.
+  authors: [Yi Du, Ruo-Xi Wang, A. Biguri, Xu-Zhi Zhao, Ya-Hui Peng, Hao Wu]
+  venue: 'Physica medica : PM : an international journal devoted to the applications of physics to medicine and biology : official journal of the Italian Association of Biomedical Physics 102, 33-45'
+  year: 2022
+  doi: 10.1016/j.ejmp.2022.08.013
+  area: medical
+  verified: citation-context
+
+- title: Low-dose Cone-Beam Computed Tomography Reconstruction through a fast Three-Dimensional Compressed Sensing Method Based on the Three-Dimensional Pseudo-polar Fourier Transform
+  authors: [N. Teyfouri, H. Rabbani, I. Jabbari]
+  venue: Journal of Medical Signals and Sensors 12, 8 - 24
+  year: 2021
+  doi: 10.4103/jmss.jmss_114_21
+  area: methods
+  verified: citation-context
+
+- title: Ant Colony-Based Hyperparameter Optimisation in Total Variation Reconstruction in X-ray Computed Tomography
+  authors: [Manasavee Lohvithee, Wenjuan Sun, S. Chrétien, M. Soleimani]
+  venue: Sensors (Basel, Switzerland) 21
+  year: 2021
+  doi: 10.3390/s21020591
+  area: methods
+  verified: citation-context
+
+- title: Performance Improvements and Analysis of Image Reconstruction Techniques in Proton Computed Tomography
+  authors: [Benjamin Kirchmayer]
+  venue: Diploma thesis, Technische Universität Wien
+  year: 2021
+  doi: 10.34726/hss.2021.94905
+  s2: b7c6d5cd6c6991e9156e28badfb2fbee80a62bf3
+  area: particle
+  verified: citation-context
+
+- title: Generative Noise Reduction in Dental Cone-Beam CT by a Selective Anatomy Analytic Iteration Reconstruction Algorithm
+  authors: [Lam Dao-Ngoc, Yi-Chun Du]
+  venue: Electronics
+  year: 2019
+  doi: 10.3390/electronics8121381
+  area: methods
+  verified: citation-context
+
+- title: Block stochastic gradient descent for large-scale tomographic reconstruction in a parallel network
+  authors: [Yu-Shan Gao, A. Biguri, T. Blumensath]
+  venue: arXiv:1903.11874
+  year: 2019
+  url: https://arxiv.org/abs/1903.11874
+  arxiv: '1903.11874'
+  area: methods
+  verified: full-text
+
+- title: 'X-Splat: Unified Gaussian Splatting for Joint RGB and X-ray 3D Reconstruction'
+  authors: [Wang-Ze Xu, Chu Zhou, Mae Yamaguchi, Lin-Rui Dai, I-Chao Shen, Takashi Ijiri, Imari Sato]
+  venue: arXiv:2610.23237
+  year: 2026
+  doi: 10.1145/3829340.3842177
+  area: methods
+  verified: full-text
+
+- title: Neural refractive index primitives for flame field reconstruction using background-oriented schlieren
+  authors: [Xin Lu, Wei Hu, Zizhou Liao, Zheng Wang, Yue Zhang, Jing-Xuan Li]
+  venue: Combustion and Flame
+  year: 2026
+  doi: 10.1016/j.combustflame.2026.115082
+  area: other
+  verified: full-text
+
+- title: 'Deep Generative Models: 5th MICCAI Workshop, DGM4MICCAI 2025, Held in Conjunction with MICCAI 2025, Daejeon, South Korea, September 23, 2025, Proceedings'
+  authors: [Susanne Schaub, Florentin Bieder, Matheus L. Oliveira, Yu-Lan Wang, Dorothea C. Dagassan-Berndt, M. Bornstein, P. Cattin]
+  venue: Deep Generative Models
+  year: 2026
+  doi: 10.1007/978-3-032-05472-2
+  area: other
+  verified: full-text
+
+- title: Comparative Evaluation of Surface Determination Techniques for Dimensional Metrology under Few-View X-ray Computed Tomography
+  authors: [Federico Pirillo, Huan Shao, Kaojie Yue, S. Petrò, G. Moroni]
+  venue: Procedia CIRP
+  year: 2026
+  doi: 10.1016/j.procir.2026.02.110
+  area: industrial
+  verified: full-text
+
+- title: Feasibility of longitudinal in vivo monitoring of pulmonary disease progression in mouse models using laboratory-based x-ray dark-field CT
+  authors: [Jin-Cheng Lu, Yi-Zhou Bai, Li Zhang, Long-Chao Men, Pei-Yuan Guo, Wen-Jie Yu, Ruo-Bing Liu, Xiao-Ting Xu, Pei-Xuan Song, Hao-Yu Liu, Qian-Yue Ma, Run-Tao Deng, Zi-Hao Zou, Yan Xu, Hong-Xia Yin, Zhen-Chang Wang, Zhen-Tian Wang]
+  venue: European Radiology Experimental 10
+  year: 2026
+  doi: 10.1186/s41747-026-00789-w
+  area: medical
+  verified: full-text
+
+- title: Perfusion Imaging and Single Material Reconstruction in Polychromatic Photon Counting CT
+  authors: [Namhoon Kim, A. Pananjady, A. Pourmorteza, Sara Fridovich-Keil]
+  venue: arXiv:2602.02713
+  year: 2026
+  url: https://arxiv.org/abs/2602.02713
+  arxiv: '2602.02713'
+  area: materials
+  verified: full-text
+
+- title: Towards industrially relevant total variation based reconstruction of few-view computed tomography by exploiting noise level estimation
+  authors: [M. Bahrkazemi, Alexander Rohde, Jonathan Hess, S. Gondrom-Linke, Patricio Guerrero, Wim Dewulf]
+  venue: CIRP Journal of Manufacturing Science and Technology
+  year: 2025
+  doi: 10.1016/j.cirpj.2025.06.008
+  area: industrial
+  verified: full-text
+
+- title: Tomographic task solution using a dichotomous discretization scheme in polar coordinates and partial system matrices invariant to rotations
+  authors: [A. Manushkin, N. N. Potrachov, A. V. Stepanov, E. Usachev]
+  venue: Russian Technological Journal
+  year: 2024
+  doi: 10.32362/2500-316x-2024-12-4-51-58
+  area: methods
+  verified: full-text
+
+- title: Quantitative spectral micro-CT of a CA4+ loaded osteochondral sample with a tabletop system
+  authors: [S. Fantoni, F. Brun, P. Cardarelli, F. Baruffaldi, V. Cristofori, A. Taibi, C. Trapella, L. Brombal]
+  venue: The European Physical Journal Plus 139
+  year: 2024
+  doi: 10.1140/epjp/s13360-024-05428-0
+  area: materials
+  verified: full-text
+
+- title: 25-Fold Resolution Enhancement of X-ray Microscopy Using Multipixel Ghost Imaging
+  authors: [O. Sefi, A. Ben Yehuda, Y. Klein, S. Bloch, H. Schwartz, E. Cohen, S. Shwartz]
+  venue: arXiv:2402.14023
+  year: 2024
+  url: https://arxiv.org/abs/2402.14023
+  arxiv: '2402.14023'
+  area: materials
+  verified: full-text
+
+- title: Machine learning based sinogram interpolation for X-ray computed tomography validated on experimental data
+  authors: [Simon Bellens, Patricio Guerrero, Michel Janssens, P. Vandewalle, Wim Dewulf]
+  venue: Precision Engineering
+  year: 2024
+  doi: 10.1016/j.precisioneng.2024.02.020
+  area: industrial
+  verified: full-text
+
+- title: An attenuation field network for dedicated cone beam breast CT with short scan and offset detector geometry
+  authors: [Zhiyang Fu, Hsin-Wu Tseng, S. Vedantham]
+  venue: Scientific Reports 14
+  year: 2024
+  doi: 10.1038/s41598-023-51077-1
+  area: medical
+  verified: full-text
+
+- title: 2D antiscatter grid and scatter sampling based CBCT pipeline for image guided radiation therapy.
+  authors: [Farhang Bayat, D. Ruan, M. Miften, C. Altunbas]
+  venue: arXiv:2308.09095
+  year: 2023
+  url: https://arxiv.org/abs/2308.09095
+  arxiv: '2308.09095'
+  area: medical
+  verified: full-text
+
+- title: The realisation of fast X-ray computed tomography using a limited number of projection images for dimensional metrology
+  authors: [W. Sun, Stéphane Chrétien, A. Biguri, M. Soleimani, T. Blumensath, Jessica Talbott]
+  venue: NDT &amp; E International
+  year: 2023
+  doi: 10.1016/j.ndteint.2023.102852
+  area: industrial
+  verified: full-text
+
+- title: 'PEPI Lab: a flexible compact multi-modal setup for X-ray phase-contrast and spectral imaging'
+  authors: [L. Brombal, F. Arfelli, R. Menk, L. Rigon, F. Brun]
+  venue: Scientific Reports 13
+  year: 2023
+  doi: 10.1038/s41598-023-30316-5
+  area: materials
+  verified: full-text
+
+- title: Contour Extraction of Inertial Confinement Fusion Images By Data Augmentation
+  authors: [Michael J. Falato, B. Wolfe, Nga T. T. Nguyen, Xinhua Zhang, Zhe-Hui Wang]
+  venue: arXiv:2211.04597
+  year: 2022
+  url: https://arxiv.org/abs/2211.04597
+  arxiv: '2211.04597'
+  area: other
+  verified: full-text
+
+- title: Design and CT imaging of casper, an anthropomorphic breathing thorax phantom
+  authors: [J. Laidlaw, Nicolas Earl, N. Shavdia, R. Davis, Sarah Mayer, Dmitri Karaman, D. Richtsmeier, P. Rodesch, Magdalena Bazalova-Carter]
+  venue: Biomedical Physics & Engineering Express 9
+  year: 2022
+  doi: 10.1088/2057-1976/acb7f7
+  area: medical
+  verified: full-text
+
+- title: Image fusion for neutron tomography of nuclear fuel
+  authors: [W. Chuirazzi, Joshua J. Kane, A. Craft, J. Schulthess]
+  venue: Journal of Radioanalytical and Nuclear Chemistry 331, 5223 - 5229
+  year: 2022
+  doi: 10.1007/s10967-022-08406-x
+  area: synchrotron
+  verified: full-text
+
+- title: Machine Learning for Detection of 3D Features using sparse X-ray data
+  authors: [B. Wolfe, Michael J. Falato, Xinhua Zhang, Nga T. T. Nguyen-Fotiadis, J. Sauppe, P. Kozlowski, P. Keiter, R. Reinovsky, S. Batha, Zhe-Hui Wang]
+  venue: The Review of scientific instruments 94 2, 023504
+  year: 2022
+  doi: 10.1063/5.0101681
+  area: methods
+  verified: full-text
+
+- title: A Proton Computed Tomography Demonstrator for Stopping Power Measurements
+  authors: [F. Ulrich-Pur, T. Bergauer, A. Burker, A. Hirtl, C. Irmler, S. Kaser, F. Pitters]
+  venue: 'Journal of Physics: Conference Series 2374'
+  year: 2021
+  doi: 10.1088/1742-6596/2374/1/012180
+  area: particle
+  verified: full-text
+
+- title: Toward on-the-fly trajectory optimization for C-arm CBCT under strong kinematic constraints
+  authors: [Sepideh Hatamikia, A. Biguri, G. Kronreif, M. Figl, Tom Russ, J. Kettenbach, M. Buschmann, W. Birkfellner]
+  venue: PLoS ONE 16
+  year: 2021
+  doi: 10.1371/journal.pone.0245508
+  area: medical
+  verified: full-text
+
+- title: Accelerating iterative CT reconstruction algorithms using Tensor Cores
+  authors: [Mohsen Nourazar, B. Goossens]
+  venue: Journal of Real-Time Image Processing 18, 1979 - 1991
+  year: 2021
+  doi: 10.1007/s11554-020-01069-5
+  area: methods
+  verified: full-text
+
+- title: Imaging with protons at MedAustron
+  authors: [F. Ulrich-Pur, T. Bergauer, A. Burker, S. Hatamikia, A. Hirtl, C. Irmler, S. Kaser, P. Paulitsch, F. Pitters, V. Teufelhart]
+  venue: Nuclear Instruments & Methods in Physics Research Section A-accelerators Spectrometers Detectors and Associated Equipment 978, 164407
+  year: 2020
+  doi: 10.1016/j.nima.2020.164407
+  area: particle
+  verified: full-text
+
+- title: Demonstrator for a Proton CT System at MedAustron
+  authors: [F. Ulrich-Pur, T. Bergauer, A. Burker, A. Hirtl, C. Irmler, S. Kaser, P. Paulitsch, F. Pitters, V. Teufelhart]
+  venue: 'arXiv: Instrumentation and Detectors'
+  year: 2020
+  url: https://arxiv.org/abs/2003.00115
+  arxiv: '2003.00115'
+  area: particle
+  verified: full-text
+
+- title: Numerically robust tetrahedron-based tomographic forward and backward projectors on parallel architectures
+  authors: [A. Biguri, H. Towsyfyan, R. Boardman, T. Blumensath]
+  venue: Ultramicroscopy 214, 113016
+  year: 2019
+  url: https://arxiv.org/abs/1908.06909
+  arxiv: '1908.06909'
+  area: methods
+  verified: full-text
+
+- title: An Exact and Fast CBCT Reconstruction via Pseudo-Polar Fourier Transform-Based Discrete Grangeat’s Formula
+  authors: [N. Teyfouri, H. Rabbani, R. Kafieh, I. Jabbari]
+  venue: IEEE Transactions on Image Processing 29, 5832-5847
+  year: 2019
+  doi: 10.1109/TIP.2020.2985874
+  area: methods
+  verified: full-text
+
+- title: 'Enhancing Detail Recovery in ICF Radiographs: A Transformer-based Approach with ViXReg'
+  authors: [Nga T. T. Nguyen-Fotiadis, B. Wolfe, Zhe-Hui Wang]
+  venue: 'NeurIPS 2024 Workshop: Foundation Models for Science (FM4Science)'
+  year: 2024
+  url: https://neurips.cc/virtual/2024/105893
+  s2: 38c98d09f9e18e7e0c5ffc44c6b869143cba664b
+  area: other
+  verified: citation-context
+
+- title: Machine Learning Based 3D XCT Image Enhancement for the Inspection of AM Metal Components using Limited X-ray Measurements
+  authors: [Thomas Blumensath, Ibrahim Harrane]
+  venue: Preprint (submitted to Additive Manufacturing)
+  year: 2023
+  url: https://eprints.soton.ac.uk/476181/
+  s2: 412fc975fa9f8b6992c596422ff6bb57e656973c
+  area: industrial
+  verified: citation-context
+
+- title: High quality imaging from sparsely sampled computed tomography data with deep learning and wavelet transform in various domains
+  authors: [Dong‐Hoon Lee, Sunghoon Choi, Hee‐Joung Kim]
+  venue: Medical Physics 46, 104-115
+  year: 2018
+  doi: 10.1002/mp.13258
+  openalex: W2898099302
+  area: methods
+  verified: author-review
+
+- title: Study of CT Images Processing with the Implementation of MLEM Algorithm using CUDA on NVIDIA’S GPU Framework
+  authors: [T. A. Valencia-Pérez, Javier Miguel Hernández-López, E. Moreno-Barbosa, Benito de Celis Alonso]
+  venue: Journal of Nuclear Physics Material Sciences Radiation and Applications 7, 165-171
+  year: 2020
+  doi: 10.15415/jnp.2020.72021
+  openalex: W3009931164
+  area: medical
+  verified: author-review
+
+- title: Empirical beam hardening and ring artifact correction for x‐ray grating interferometry (EBHC‐GI)
+  authors: [Brandon Nelson, Shuai Leng, Elisabeth R. Shanblatt, Cynthia H. McCollough, Thomas W. Koenig]
+  venue: Medical Physics 48, 1327-1340
+  year: 2020
+  doi: 10.1002/mp.14672
+  openalex: W3114491807
+  area: materials
+  verified: author-review
+
+- title: A New CL Reconstruction Method Under the Displaced Sample Stage Scanning Mode
+  authors: [Yanan Zhang, Min Yang, Yapeng Wu, Liang Sun, Jiawei Ran, Qiang Lin]
+  venue: IEEE Transactions on Nuclear Science 68, 2574-2586
+  year: 2021
+  doi: 10.1109/tns.2021.3117993
+  openalex: W3203842635
+  area: industrial
+  verified: author-review
+
+- title: Improving spatial resolution with an edge-enhancement model for low-dose propagation-based X-ray phase-contrast computed tomography
+  authors: [Lin Zhang, Huijuan Zhao, Zhongxing Zhou, Mengyu Jeremy Jia, Limin Zhang, Jingying Jiang, Feng Gao]
+  venue: Optics Express 29, 37399-37399
+  year: 2021
+  doi: 10.1364/oe.440664
+  openalex: W3207013092
+  area: materials
+  verified: author-review
+
+- title: A reconstruction approach for proton computed tomography by modeling the integral depth dose of the scanning proton pencil beam
+  authors: [Xinyuan Chen, Maria Medrano, Baozhou Sun, Yao Wu Hao, Francisco J. Reynoso, Arash Darafsheh, Deshan Yang, Tiezhi Zhang, Tianyu Zhao]
+  venue: Medical Physics 49, 2602-2620
+  year: 2022
+  doi: 10.1002/mp.15482
+  openalex: W4210331680
+  area: particle
+  verified: author-review
+
+- title: Investigation of image quality of MV and kV CBCT with low‐Z beams and high DQE detector
+  authors: [Jericho O'Connell, Magdalena Bazalova‐Carter]
+  venue: Medical Physics 49, 2334-2341
+  year: 2022
+  doi: 10.1002/mp.15503
+  openalex: W4210348825
+  area: medical
+  verified: author-review
+
+- title: Effect of the number of projections in X-ray CT imaging on image quality and digital volume correlation measurement
+  authors: [Xuanhao Zhang, Sun Lijuan, Bo Wang, Pan Bing]
+  venue: Measurement 194, 111061-111061
+  year: 2022
+  doi: 10.1016/j.measurement.2022.111061
+  openalex: W4220697585
+  area: industrial
+  verified: author-review
+
+- title: Evaluation of Parallel Processing Employed in Industrial Computed Tomography
+  authors: [Rajesh Acharya, Umesh Kumar, Vaibhav H. Patankar, Soumitra Kar, Ashutosh Kumar Dash]
+  venue: Lecture notes in mechanical engineering 1-8
+  year: 2022
+  doi: 10.1007/978-981-16-9093-8_1
+  openalex: W4226519382
+  area: industrial
+  verified: author-review
+
+- title: Comparison of Analytical and Iterative Algorithms for Reconstruction of Microtomographic Phantom Images and Rat Mandibular Scans
+  authors: [Paweł Lipowicz, Agnieszka Dardzińska, Marta Borowska, Ander Biguri]
+  venue: Advances in intelligent systems and computing 107-118
+  year: 2022
+  doi: 10.1007/978-3-031-09135-3_10
+  openalex: W4285262694
+  area: materials
+  verified: author-review
+
+- title: Rapid, Reliable Tissue Fractionation Algorithm for Commercial Scale Biorefineries
+  authors: [Rahul Reddy Kancharla]
+  venue: ScholarWorks (Boise State University)
+  year: 2022
+  doi: 10.18122/td.1935.boisestate
+  openalex: W4294912015
+  area: other
+  verified: author-review
+
+- title: Multi-material spectral photon-counting micro-CT with minimum residual decomposition and self-supervised deep denoising
+  authors: [Vittorio Di Trapani, Luca Brombal, Francesco Brun]
+  venue: Optics Express 30, 42995-42995
+  year: 2022
+  doi: 10.1364/oe.471439
+  openalex: W4296113863
+  area: materials
+  verified: author-review
+
+- title: 'Metal artifact correction in photon‐counting detector computed tomography: metal trace replacement using high‐energy data'
+  authors: [Devon Richtsmeier, Jericho O'Connell, Pierre‐Antoine Rodesch, Kris Iniewski, Magdalena Bazalova‐Carter]
+  venue: Medical Physics 50, 380-396
+  year: 2022
+  doi: 10.1002/mp.16049
+  openalex: W4304987437
+  area: medical
+  verified: author-review
+
+- title: Evaluation and Comparison of Two Deep-Learning Strategies for On-Line X-Ray Computed Tomography
+  authors: [Romain Vo, Julie Escoda, Caroline Vienne, Étienne Decencière]
+  venue: Annual Review of Progress in Quantitative Nondestructive Evaluation (QNDE)
+  year: 2022
+  doi: 10.1115/qnde2022-98387
+  openalex: W4315464573
+  area: industrial
+  verified: author-review
+
+- title: A total variation prior unrolling approach for computed tomography reconstruction
+  authors: [Pengcheng Zhang, Shuhui Ren, Yi Liu, Zhiguo Gui, Hong Shangguan, Yanling Wang, Huazhong Shu, Yang Chen]
+  venue: Medical Physics 50, 2816-2834
+  year: 2023
+  doi: 10.1002/mp.16307
+  openalex: W4320893531
+  area: methods
+  verified: author-review
+
+- title: Convolutional neural network‐based model observer for signal known statistically task in breast tomosynthesis images
+  authors: [Hanjoo Jang, Jongduk Baek]
+  venue: Medical Physics 50, 6390-6408
+  year: 2023
+  doi: 10.1002/mp.16395
+  openalex: W4361001862
+  area: medical
+  verified: author-review
+
+- title: High resolution imaging with focused kV x‐rays for small animal radio‐neuromodulation
+  authors: [Linxi Shi, Nathaniel Robert Bennett, Eric Nguyen, Carolyn A. MacDonald, Adam Wang, Wu Liu]
+  venue: Medical Physics 50, 4459-4465
+  year: 2023
+  doi: 10.1002/mp.16413
+  openalex: W4365811033
+  area: medical
+  verified: author-review
+
+- title: Statistical Penalized-likelihood CT Image Reconstruction with Plug-and-play Priors
+  authors: [Van-Giang Nguyen, Ha Dai Duong]
+  venue: IEEE Statistical Signal Processing Workshop (SSP) 7, 398-402
+  year: 2023
+  doi: 10.1109/ssp53291.2023.10207973
+  openalex: W4385694545
+  area: methods
+  verified: author-review
+
+- title: X-Ray-Based Investigations on Multiphase Capillary Flows
+  authors: [Norbert Kockmann, Julia Schuler, Bastian Oldach]
+  venue: Springer eBooks 1145-1181
+  year: 2023
+  doi: 10.1007/978-981-287-092-6_29
+  openalex: W4387067482
+  area: materials
+  verified: author-review
+
+- title: Non-coplanar lung SABR treatments delivered with a gantry-mounted x-ray tube
+  authors: [Jericho O’Connell, M Weil, Magdalena Bazalova‐Carter]
+  venue: Physics in Medicine and Biology 69, 025002-025002
+  year: 2023
+  doi: 10.1088/1361-6560/ad111a
+  openalex: W4389162835
+  area: medical
+  verified: author-review
+
+- title: 'Material decomposition with a prototype photon-counting detector CT system: expanding a stoichiometric dual-energy CT method via energy bin optimization and K-edge imaging'
+  authors: [Devon Richtsmeier, Pierre‐Antoine Rodesch, Kris Iniewski, Magdalena Bazalova‐Carter]
+  venue: Physics in Medicine and Biology 69, 055001-055001
+  year: 2024
+  doi: 10.1088/1361-6560/ad25c8
+  openalex: W4391465702
+  area: materials
+  verified: author-review
+
+- title: 'XTransCT: ultra-fast volumetric CT reconstruction using two orthogonal x-ray projections for image-guided radiation therapy via a transformer network'
+  authors: [Chulong Zhang, Lin Liu, Jingjing Dai, Xuan Liu, Wenfeng He, Yinping Chan, Yaoqin Xie, Feng Chi, Xiaokun Liang]
+  venue: Physics in Medicine and Biology 69, 085010-085010
+  year: 2024
+  doi: 10.1088/1361-6560/ad3320
+  openalex: W4392681580
+  area: methods
+  verified: author-review
+
+- title: Fast computational approach with prior dimension reduction for three-dimensional chemical component analysis using CT data of spectral imaging
+  authors: [M. Shiga, Taisuke Ono, Kenichi Morishita, Keiji Kuno, Nanase Moriguchi]
+  venue: Microscopy 73, 488-498
+  year: 2024
+  doi: 10.1093/jmicro/dfae027
+  openalex: W4397021630
+  area: materials
+  verified: author-review
+
+- title: 'Evaluating spectral performance for quantitative contrast-enhanced breast CT with a GaAs based photon counting detector: a simulation approach'
+  authors: [Bahaa Ghammraoui, Muhammad Usman Ghani, Stephen J. Glick]
+  venue: Biomedical Physics & Engineering Express 10, 055011-055011
+  year: 2024
+  doi: 10.1088/2057-1976/ad5f96
+  openalex: W4400346346
+  area: medical
+  verified: author-review
+
+- title: 'PE-INeR: prior-embedded implicit neural representation for sparse-view CBCT reconstruction'
+  authors: [Jiaying Yang, Shipeng Xie]
+  venue: Applied Optics 63, 8907-8907
+  year: 2024
+  doi: 10.1364/ao.534352
+  openalex: W4404346050
+  area: methods
+  verified: author-review
+
+- title: A Multiscale Reconstruction Framework Based on Edge-Enhanced Guidance for In-Line X-Ray Phase-Contrast CT With Limited-Angle Projections
+  authors: [Yimin Li, Yuanyuan Zhao, Chenyang Ma, Fangzhi Li, Ziyao Wang, Wenjuan Lv, Dongjiang Ji, Jianbo Jian, Xinyan Zhao, Yuqing Zhao, Chunhong Hu]
+  venue: IEEE Transactions on Instrumentation and Measurement 74, 1-11
+  year: 2024
+  doi: 10.1109/tim.2024.3522391
+  openalex: W4405812491
+  area: industrial
+  verified: author-review
+
+- title: Development of an Instantaneously Interpretable Real-Time Dosimeter System for Quality Assurance of a Medical Linear Accelerator
+  authors: [Dongyeon Lee, Sung Jin Kim, Wonjoong Cheon, Hyosung Cho, Youngyih Han]
+  venue: Progress in Medical Physics 35, 178-204
+  year: 2024
+  doi: 10.14316/pmp.2024.35.4.178
+  openalex: W4406122695
+  area: medical
+  verified: author-review
+
+- title: Fast, automated optimization of virtual monoenergetic images with the dual‐energy image synthesizer for cone‐beam CT
+  authors: [Andrew Keeler, Jason Luce, Mathias Lehmann, John C. Roeske, Hyejoo Kang]
+  venue: Journal of Applied Clinical Medical Physics 26, e70083-e70083
+  year: 2025
+  doi: 10.1002/acm2.70083
+  openalex: W4409678015
+  area: medical
+  verified: author-review
+
+- title: Truncated projection CL reconstruction based on TS-FBP
+  authors: [Junyao Wang, YongNing Zou, Qian Qin, Zexin Liu, Ying Chen]
+  venue: Optics Express 33, 25415-25415
+  year: 2025
+  doi: 10.1364/oe.565121
+  openalex: W4410813951
+  area: industrial
+  verified: author-review
+
+- title: 'Coded wavefront sensing for video-rate quantitative phase imaging and tomography: validation with digital holographic microscopy'
+  authors: [Syed Muhammad Kazim, Franziska Strasser, Mia Kvåle Løvmo, Andrii Nehrych, Simon Moser, Michał Ziemczonok, Wolfgang Heidrich, Ivo Ihrke, Monika Ritsch‐Marte]
+  venue: Optics Express 33, 25198-25198
+  year: 2025
+  doi: 10.1364/oe.564913
+  openalex: W4410817214
+  area: materials
+  verified: author-review
+
+- title: Orthogonal translation computed laminography reconstruction based on self-prior information and adaptive weighted total variation
+  authors: [Chuandong Tan, Chao Long, Yarui Xi, Zhiting Chen, Xinxin Lin, Fenglin Liu, Yufang Cai, Liming Duan]
+  venue: Displays 90, 103169-103169
+  year: 2025
+  doi: 10.1016/j.displa.2025.103169
+  openalex: W4412499314
+  area: industrial
+  verified: author-review
+
+- title: Hybrid GPU Monte Carlo software toolkit for fast and accurate cone‐beam CT simulation
+  authors: [Jericho O'Connell, Matthew W. Jacobson, Thomas C. Harris, Raphael Bruegger, Dianne Ferguson, Rony Fueglistaller, Yue‐Houng Hu, Daniel Morf, Vera Birrer, Pablo Corral Arroyo, Mathias Lehmann, Marios E. Myronakis, Ross Berbeco]
+  venue: Medical Physics 52, e18011-e18011
+  year: 2025
+  doi: 10.1002/mp.18011
+  openalex: W4413054422
+  area: medical
+  verified: author-review
+
+- title: A simulation tool for x-ray phase-contrast micro-CT featuring a small-pixel photon-counting detector
+  authors: [Andrew Coathup, P. Cardarelli, Luca Brombal]
+  venue: Journal of Physics D Applied Physics 58, 415102-415102
+  year: 2025
+  doi: 10.1088/1361-6463/ae0a61
+  openalex: W4414451913
+  area: materials
+  verified: author-review
+
+- title: 3D CBCT Artefact Removal Using Perpendicular Score-Based Diffusion Models
+  authors: [Susanne Schaub, Florentin Bieder, Matheus L. Oliveira, Yulan Wang, Dorothea C. Dagassan‐Berndt, Michael Marc Bornstein, Philippe Claude Cattin]
+  venue: Lecture notes in computer science 244-253
+  year: 2025
+  doi: 10.1007/978-3-032-05472-2_24
+  openalex: W4414478160
+  area: methods
+  verified: author-review
+
+- title: Filtering-Based Preconditioner for Accelerated High-Dimensional Cone-Beam CT Image Reconstruction
+  authors: [Ville-Veikko Wettenhovi, Ari Hietanen, Kati Niinimäki, Marko J. Vauhkonen, Ville Kolehmainen]
+  venue: Journal of Mathematical Imaging and Vision 67
+  year: 2025
+  doi: 10.1007/s10851-025-01276-4
+  openalex: W4416821207
+  area: methods
+  verified: author-review
+
+- title: 'Dual-beam fast-neutron and high-energy x-ray computed tomography for industrial applications: a comparative simulation study'
+  authors: [Chunguang Zong, Nick Cutmore, Yi Liu]
+  venue: Engineering Research Express 7, 045441-045441
+  year: 2025
+  doi: 10.1088/2631-8695/ae2768
+  openalex: W4416929936
+  area: industrial
+  verified: author-review
+
+- title: A comparison of limited-angle CBCT photon-counting and flat-panel digital mammography in perceived detection and visualization of breast lesions
+  authors: [Tony Martin Svahn, Radu Lesanu, Ander Biguri, Jennifer C. Ast]
+  venue: Radiation Protection Dosimetry 202, 346-357
+  year: 2026
+  doi: 10.1093/rpd/ncaf181
+  openalex: W7135181549
+  area: medical
+  verified: author-review
+
+- title: A Deep Learning-Based Web Application for CT Reconstruction from X-Ray Image
+  authors: [Huu Quang Hoa Nguyen, Tran Quoc Bao Le, Quy Dat Tran, Thi Tan Tien Nguyen, Hang Phuong Nguyen, Cong Tran, Cuong Pham]
+  venue: Lecture notes in networks and systems 329-337
+  year: 2026
+  doi: 10.1007/978-3-032-18316-3_37
+  openalex: W7150017409
+  area: methods
+  verified: author-review
+
+- title: Role of deep learning into three-dimensional reconstruction for breast tomosynthesis
+  authors: [Arnaud Quillent]
+  venue: theses.fr (ABES)
+  year: 2025
+  doi: 10.70675/96d4a1e2za7eaz438bza08bzec4325c1ffe0
+  openalex: W7152543342
+  area: medical
+  verified: author-review
+
+- title: Unsupervised large-cone-angle artifact suppression for CBCT reconstruction via neural radiance fields
+  authors: [yujie Liu, Chuandong Tan, Wang Ao, zihao wang, Songtao Zhu, Xiaojiao Duan, Fenglin Liu]
+  venue: Optics Express 34, 20754-20754
+  year: 2026
+  doi: 10.1364/oe.597105
+  openalex: W7153989556
+  area: methods
+  verified: author-review
+
+- title: Impact of dose allocation between high‐ and low‐kV scans on virtual monoenergetic image quality in developmental dual‐energy cone‐beam CT for image‐guided radiotherapy
+  authors: [Andrew Keeler, Luke Layman, Ha Nguyen, Jason Luce, Mathias Lehmann, John C. Roeske, Hyejoo Kang]
+  venue: Journal of Applied Clinical Medical Physics 27, e70545-e70545
+  year: 2026
+  doi: 10.1002/acm2.70545
+  openalex: W7155821726
+  area: medical
+  verified: author-review
+
+- title: Structure decomposition for quantitative microarchitecture analysis via X-ray grating interferometry
+  authors: [Longchao Men, Peiyuan Guo, Jincheng Lu, Yongle Yan, Hongxia Yin, 'Xu, Yan, 1963 Jan. 31-', Zhenchang Wang, Li Zhang, Zhentian Wang]
+  venue: Optica 13, 1104-1104
+  year: 2026
+  doi: 10.1364/optica.570829
+  openalex: W7161838464
+  area: materials
+  verified: author-review
+
+- title: Limited projection based in-situ X-ray tomography for hard material characterization
+  authors: [Yu Wang, Gong-Xiang Wei, Zhenguo Zhao, Xintong Liu, Jiaxing Xu, Yiyang Fu, Zonghao Xu, Min Yue, Fuli Wang, Huiqiang Liu]
+  venue: Optics Express 34, 22912-22912
+  year: 2026
+  doi: 10.1364/oe.600530
+  openalex: W7163348293
+  area: materials
+  verified: author-review
+
+- title: 3D Cerebrovascular Shape Completion from Biplane Angiography and CTA Prior
+  authors: [Janik Jehkul, Sarah Frisken, Vivek Gopalakrishnan, Daniel Rueckert, Nazim Haouchine]
+  venue: Lecture notes in computer science 411-421
+  year: 2026
+  doi: 10.1007/978-3-032-38186-6_39
+  openalex: W7214232221
+  area: medical
+  verified: author-review
+
+- title: 'NR-Align: Non-rigid Alignment for Non-simultaneous Two-View 3D Coronary Reconstruction in Complex Cardiac Interventions'
+  authors: [Pengbo Wang, Zhu Meng, Qiwan Yu, Fei Su, Chunxia Di]
+  venue: Lecture notes in computer science 237-246
+  year: 2026
+  doi: 10.1007/978-3-032-38186-6_23
+  openalex: W7214237006
+  area: medical
+  verified: author-review
+
+- title: 'PhyRadGS: Physics-Aware Radiative Gaussian Splatting for Fly-Scanning CBCT Reconstruction'
+  authors: [Anwei Li, Zhongyang Zheng, Tianyuan Sun, Zhang Yubing, Rongqiu Wang]
+  venue: Lecture notes in computer science 403-413
+  year: 2026
+  doi: 10.1007/978-3-032-38179-8_39
+  openalex: W7214292556
+  area: methods
+  verified: author-review
+
+- title: 'From cone-beam CT to synthesized extraoral bitewing: a patient-specific pipeline for dose- and cost-free 2D information presentation and clinical decision support'
+  authors: [Kemal Selçuk Yücel, Alp Pınarbaşı, Beyza YALVAÇ, Sedat Ozdogan, Ferhat Aydin, Kadir Yılmaz, Osman Furkan Çakmak, Duygu Polat, Büşranur Yavuz, Emin Murat Canger, Dan Ruan]
+  venue: Dentomaxillofacial Radiology
+  year: 2026
+  doi: 10.1093/dmfr/twag066
+  openalex: W7219920001
+  area: medical
+  verified: author-review
+
+- title: Real-time CBCT reconstructions using Krylov solvers in repeated scanning procedures
+  authors: [Fred Hastings, S M Ragib Shahriar Islam, Malena Sabaté Landman, Sepideh Hatamikia, Carola‐Bibiane Schönlieb, Ander Biguri]
+  venue: Physics in Medicine and Biology 71, 105019-105019
+  year: 2026
+  doi: 10.1088/1361-6560/ae676e
+  openalex: W4417070753
+  area: methods
+  verified: full-text
+
+- title: 'FaCT-GS: Fast and Scalable CT Reconstruction with Gaussian Splatting'
+  authors: [Pawel Tomasz Pieta, Rasmus Juul Pedersen, Sina Borgi, Jakob Sauer Jørgensen, Jens Wenzel Andreasen, Vedrana Andersen Dahl]
+  venue: Lecture notes in computer science 225-245
+  year: 2026
+  doi: 10.1007/978-3-032-37464-6_13
+  openalex: W7148642873
+  area: methods
+  verified: full-text
+
+- title: 100% Inline Quality Assurance for Ex- and Pultruded Products through Innovative and Novel X-ray Inspection Systems
+  authors: [Simon Rettenberger, Markus Eberhorn]
+  venue: e-Journal of Nondestructive Testing 31
+  year: 2026
+  doi: 10.58286/32612
+  openalex: W7128435027
+  area: industrial
+  verified: full-text
+
+- title: Neuromorphic X-Ray Computed Tomography
+  authors: [Hongjian Wang, Goran Lovrić, Benjamín Béjar]
+  venue: Lecture notes in computer science 137-155
+  year: 2026
+  doi: 10.1007/978-3-032-37577-3_8
+  openalex: W7212060898
+  area: methods
+  verified: full-text
+
+- title: Develop and Optimize 5DCT Imaging Simulation and Reconstruction Methods
+  authors: [Yuhao Wang, Zhendong Zhang, Edward Robert Criscuolo, John Ginn, Ke Lü, Yao Hao, Deshan Yang]
+  venue: arXiv (Cornell University)
+  year: 2026
+  doi: 10.48550/arxiv.2609.09455
+  openalex: W7212149011
+  area: medical
+  verified: full-text
+
+- title: 'P^2-Gaussian: Prior-Driven and Projection-Guided Gaussian Splatting for Sparse-View Cone-Beam CT Reconstruction'
+  authors: [Jinqiu Xia, Jianhui Ma, Bin Ouyang, Xiaoyan Huang, Yuan Xu, Zun Piao]
+  venue: arXiv (Cornell University)
+  year: 2026
+  doi: 10.48550/arxiv.2610.39359
+  openalex: W7224920323
+  area: methods
+  verified: full-text
+
+- title: Energy-based models for inverse imaging problems
+  authors: [Andreas Habring, Martin Höller, Thomas Pock, Martin Zach]
+  venue: arXiv (Cornell University)
+  year: 2025
+  doi: 10.48550/arxiv.2507.12432
+  openalex: W4415314511
+  area: methods
+  verified: full-text
+
+- title: Performance of 9 to 15 MV Computed Tomography of large objects in industrial and nuclear field
+  authors: [CEA Cadarache, Nicolas Estre, CEA Cadarache, Olivier David, CEA Cadarache, Daniel Eck, CEA Cadarache, B. Geslot, CEA Cadarache, Olivier Guetion, CEA Cadarache, Frédéric Moutet, CEA Cadarache, Emmanuel Payan, CEA Cadarache, Christophe Roure, CEA Cadarache, Alix Sardet, CEA Cadarache, Cécilia Tarpaut]
+  venue: e-Journal of Nondestructive Testing 30
+  year: 2025
+  doi: 10.58286/31408
+  openalex: W4411598487
+  area: industrial
+  verified: full-text
+
+- title: Wave-optics simulation model for full-field modulation-based tensor tomography using a random wavefront modulator
+  authors: [Ginevra Lautizi, Vittorio Di Trapani, Margaux Schmeltz, Marie‐Christine Zdora, Ludovic Broche, Ian Sinclair, Mark Mavrogordato, Richard Boardman, Yeajin Lee, Alain Studer, Federica Marone, Pierre Thibault]
+  venue: Optics Express 34, 15826-15826
+  year: 2025
+  doi: 10.1364/oe.578229
+  openalex: W4417413936
+  area: materials
+  verified: full-text
+
+- title: 20 µm resolution multipixel ghost imaging with high-energy x-rays
+  authors: [Or Sefi, A. Ben Yehuda, Y. Klein, Z. Sobol, S. Bloch, H. Schwartz, Eliahu Cohen, S. Shwartz]
+  venue: Optics Express 32, 37001-37001
+  year: 2024
+  doi: 10.1364/oe.524414
+  openalex: W4401878264
+  area: materials
+  verified: full-text
+
+- title: The constrained split Bregman algorithm for enhancing the quality of image reconstruction and analysis in few-view computed tomography
+  authors: [Maryam Bahrkazemi, Alexander Rohde, Johannes Fieres, Jonathan Hess, Patricio Guerrero, Sven Gondrom-Linke, Wim Dewulf]
+  venue: e-Journal of Nondestructive Testing 29
+  year: 2024
+  doi: 10.58286/29237
+  openalex: W4391315864
+  area: industrial
+  verified: full-text
+
+- title: 'Unveiling the Full Picture: Advanced Scanning Procedure for Complete Large Component Scans via Twin Robotic Computed Tomography'
+  authors: [Simon Wittl, Anton Weiss, Gabriel Herl, Simon Zabler, Patrick Dewailly, Ronan Le Goff]
+  venue: e-Journal of Nondestructive Testing 29
+  year: 2024
+  doi: 10.58286/29260
+  openalex: W4391315873
+  area: industrial
+  verified: full-text
+
+- title: Design and Implementation of Computed Tomography Reconstruction System Using Neural Radiance Fields Techniques
+  authors: [Haill An, Younhyun Jung]
+  venue: Asia-pacific Journal of Convergent Research Interchange 10, 65-74
+  year: 2024
+  doi: 10.47116/apjcri.2024.05.07
+  openalex: W4399162618
+  area: methods
+  verified: full-text
+
+- title: Volumetric computed tomography with carbon nanotube X-ray source array for improved image quality and accuracy
+  authors: [Shuang Xu, Yuanming Hu, Boyuan Li, Christina R. Inscoe, Donald A. Tyndall, Yueh Z. Lee, Jianping Lü, Otto Z. Zhou]
+  venue: Communications Engineering 2
+  year: 2023
+  doi: 10.1038/s44172-023-00123-x
+  openalex: W4387425264
+  area: medical
+  verified: full-text
+
+- title: Total Variation regularized reconstruction for enhancing the quality of few-view industrial computed tomography applied to image analysis and metrology
+  authors: [Maryam Bahrkazemi, Alexander Rohde, Jonathan Hess, Patricio Guerrero, Sven Gondrom-Linke, Wim Dewulf]
+  venue: e-Journal of Nondestructive Testing 28
+  year: 2023
+  doi: 10.58286/27726
+  openalex: W4322013114
+  area: industrial
+  verified: full-text
+
+- title: Deep learning method for reducing metal artifacts in dental cone-beam CT using supplementary information from intra-oral scan
+  authors: [Chang Min Hyun, Taigyntuya Bayaraa, Hye Sun Yun, Tae Jun Jang, Hyoung Suk Park, Jin Keun Seo]
+  venue: Physics in Medicine and Biology 67, 175007-175007
+  year: 2022
+  doi: 10.1088/1361-6560/ac8852
+  openalex: W4292421563
+  area: methods
+  verified: full-text
+
+- title: Neural network for 3D inertial confinement fusion shell reconstruction from single radiographs
+  authors: [Bradley T. Wolfe, Zhizhong Han, J. Ben-Benjamin, John L. Kline, David S. Montgomery, Elizabeth Merritt, Paul Arthur Keiter, Eric Loomis, Brian M. Patterson, Lindsey A. Kuettner, ‪Zhehui Wang]
+  venue: Review of Scientific Instruments 92, 033547-033547
+  year: 2021
+  doi: 10.1063/5.0043653
+  openalex: W3119082923
+  area: other
+  verified: full-text
+
+- title: Initial result on the use of tetrahedra-based imaging for limited angle tomography
+  authors: [Ander Biguri, Hossein Towsyfyan, Richard Boardman, Thomas Blumensath]
+  venue: e-Journal of Nondestructive Testing 24
+  year: 2019
+  doi: 10.58286/23737
+  openalex: W4362238185
+  area: methods
+  verified: full-text
+
+- title: 'Technical note: TIGRE‐DE for the creation of virtual monoenergetic images from dual‐energy cone‐beam CT'
+  authors: [Andrew Keeler, Mathias Lehmann, Jason Luce, Mandeep Kaur, John C. Roeske, Hyejoo Kang]
+  venue: Medical Physics 51, 2975-2982
+  year: 2024
+  doi: 10.1002/mp.17002
+  openalex: W4392154119
+  area: medical
+  verified: full-text
