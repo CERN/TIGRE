@@ -15,11 +15,13 @@ from setuptools import setup, find_packages, Extension
 
 # Macros for compilation
 define_macros=[("IS_FOR_PYTIGRE", None)]
-no_pinned=False
-if len(sys.argv)>2:
-    if "--no_pinned_memory" in sys.argv[2:] :
-        no_pinned=True
-        sys.argv.pop(sys.argv.index("--no_pinned_memory"))
+# Pinned (page-locked) host memory is on by default. Disable it with the
+# TIGRE_NO_PINNED_MEMORY environment variable (works with pip), or with the
+# legacy "python setup.py ... --no_pinned_memory" flag.
+no_pinned = os.environ.get("TIGRE_NO_PINNED_MEMORY", "").strip().lower() not in ("", "0", "false", "no", "off")
+if "--no_pinned_memory" in sys.argv[2:]:
+    no_pinned = True
+    sys.argv.pop(sys.argv.index("--no_pinned_memory"))
  
 if no_pinned:
     define_macros.append(("NO_PINNED_MEMORY",None))     

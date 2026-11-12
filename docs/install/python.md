@@ -142,9 +142,25 @@ If that works, continue with the demos in `Python/demos`, starting with
 
 TIGRE uses pinned (page-locked) host memory to overlap memory transfers with
 computation. If you reconstruct datasets larger than your RAM and rely on swap,
-compile without pinned memory. The operators will be slower. This option is
-only read by the legacy `setup.py` entry point:
+compile without pinned memory. The operators will be slower.
 
-```sh
-python setup.py install --no_pinned_memory
+Set the `TIGRE_NO_PINNED_MEMORY` environment variable when you install from
+source:
+
+::::{tab-set}
+:::{tab-item} Windows
+```bat
+set TIGRE_NO_PINNED_MEMORY=1
+pip install --no-cache-dir git+https://github.com/CERN/TIGRE.git
 ```
+:::
+:::{tab-item} Linux
+```sh
+TIGRE_NO_PINNED_MEMORY=1 pip install --no-cache-dir git+https://github.com/CERN/TIGRE.git
+```
+:::
+::::
+
+`--no-cache-dir` stops pip from reusing a wheel it built earlier with pinned
+memory. The same works with `pip install .` from a clone. The prebuilt wheels
+always use pinned memory.
