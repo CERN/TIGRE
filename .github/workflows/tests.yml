@@ -16,7 +16,7 @@ jobs:
       MPLBACKEND: Agg
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3
         with:
           version: 0.6.9
           enable-cache: true
