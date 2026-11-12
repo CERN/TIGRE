@@ -60,8 +60,10 @@ HEADER = """\
 # Fields: title, authors, venue, year | doi, url, arxiv, s2 | area | note
 #   area: medical, particle, industrial, synchrotron, materials, methods or other
 #   note: optional, one line on how TIGRE was used
-#   verified: how we know the paper uses TIGRE (e.g. citation-context: the
-#     sentence citing TIGRE says it was used; author: confirmed by the authors)
+#   verified: how we know the paper uses TIGRE:
+#     manual / author-review: a TIGRE maintainer checked the paper
+#     full-text: the paper's text around the TIGRE mention says it was used
+#     citation-context: the sentence citing TIGRE says it was used
 # Papers about TIGRE itself are listed on the Citing page, not here.
 """
 

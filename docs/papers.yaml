@@ -12,8 +12,10 @@
 # Fields: title, authors, venue, year | doi, url, arxiv, s2 | area | note
 #   area: medical, particle, industrial, synchrotron, materials, methods or other
 #   note: optional, one line on how TIGRE was used
-#   verified: how we know the paper uses TIGRE (e.g. citation-context: the
-#     sentence citing TIGRE says it was used; author: confirmed by the authors)
+#   verified: how we know the paper uses TIGRE:
+#     manual / author-review: a TIGRE maintainer checked the paper
+#     full-text: the paper's text around the TIGRE mention says it was used
+#     citation-context: the sentence citing TIGRE says it was used
 # Papers about TIGRE itself are listed on the Citing page, not here.
 
 - title: Validation and application of a new image reconstruction software toolbox (TIGRE) for breast cone-beam computed tomography
@@ -1201,3 +1203,345 @@
   doi: 10.1117/12.3085800
   area: methods
   verified: citation-context
+
+- {doi: 10.1088/1361-6501/ad83e9, area: industrial, verified: author-review}
+
+- {doi: 10.1016/j.ndteint.2026.103760, area: industrial, verified: author-review}
+
+- {doi: 10.1088/1361-6560/ac6bda, area: medical, verified: author-review}
+
+- {doi: 10.1109/TIT.2026.3677729, area: methods, verified: author-review}
+
+- {doi: 10.1109/TIM.2024.3406810, area: methods, verified: author-review}
+
+- {doi: 10.1117/12.3086029, area: methods, verified: author-review}
+
+- {doi: 10.1117/12.3087851, area: medical, verified: author-review}
+
+- {doi: 10.1121/10.0039344, area: other, verified: author-review}
+
+- {doi: 10.1002/mp.16867, area: medical, verified: author-review}
+
+- {doi: 10.1117/1.JMI.12.1.013501, area: materials, verified: author-review}
+
+- {doi: 10.1021/acsami.4c16915, area: other, verified: author-review}
+
+- {doi: 10.1002/acm2.70516, area: medical, verified: author-review}
+
+- {doi: 10.1016/j.ejrad.2026.113198, area: medical, verified: author-review}
+
+- {doi: 10.1016/j.pecs.2022.101024, area: other, verified: author-review}
+
+- {arxiv: '2607.02099', area: methods, verified: author-review}
+
+- {doi: 10.1088/1361-6560/abad7d, area: medical, verified: author-review}
+
+- {arxiv: '2608.04752', area: methods, verified: author-review}
+
+- {doi: 10.1098/rsta.2020.0192, area: methods, verified: author-review}
+
+- {doi: 10.1007/s12194-025-00892-4, area: medical, verified: author-review}
+
+- {doi: 10.3390/app14167058, area: medical, verified: author-review}
+
+- {doi: 10.1002/mp.16714, area: medical, verified: author-review}
+
+- {doi: 10.3390/app14167292, area: methods, verified: author-review}
+
+- {doi: 10.1109/icassp55912.2026.11464624, area: methods, verified: author-review}
+
+- {doi: 10.1088/1361-6560/acf182, area: medical, verified: author-review}
+
+- {doi: 10.1029/2022JA030424, area: other, verified: author-review}
+
+- {doi: 10.1109/icassp55912.2026.11462063, area: methods, verified: author-review}
+
+- {doi: 10.1016/j.ejmp.2025.105707, area: medical, verified: author-review}
+
+- {doi: 10.1016/j.neunet.2026.109744, area: methods, verified: author-review}
+
+- {doi: 10.21037/qims-24-1902, area: medical, verified: author-review}
+
+- {doi: 10.1109/ACCESS.2025.3618871, area: methods, verified: author-review}
+
+- {doi: 10.1016/j.bspc.2026.109892, area: methods, verified: author-review}
+
+- {doi: 10.1002/mp.17341, area: materials, verified: author-review}
+
+- {doi: 10.1109/bibm62325.2024.10822834, area: methods, verified: author-review}
+
+- {doi: 10.1002/xrs.70044, area: materials, verified: author-review}
+
+- {doi: 10.1002/mp.70645, area: medical, verified: author-review}
+
+- {doi: 10.1002/ima.23071, area: medical, verified: author-review}
+
+- {doi: 10.1002/mp.70299, area: methods, verified: author-review}
+
+- {doi: 10.1016/j.radonc.2025.111116, area: medical, verified: author-review}
+
+- {doi: 10.1088/2057-1976/acfb8a, area: medical, verified: author-review}
+
+- {doi: 10.1007/s10278-025-01462-1, area: methods, verified: author-review}
+
+- {doi: 10.1002/mp.17725, area: medical, verified: author-review}
+
+- {doi: 10.1117/12.3085323, area: methods, verified: author-review}
+
+- {doi: 10.21037/qims-2026-0723, area: methods, verified: author-review}
+
+- {doi: 10.1002/mp.17859, area: methods, verified: author-review}
+
+- {doi: 10.1117/12.2611202, area: medical, verified: author-review}
+
+- {doi: 10.3390/app152212247, area: medical, verified: author-review}
+
+- {doi: 10.3389/fonc.2026.1756153, area: medical, verified: author-review}
+
+- {doi: 10.1109/icip51287.2024.10647311, area: methods, verified: author-review}
+
+- {doi: 10.2514/6.2026-2099, area: other, verified: author-review}
+
+- {doi: 10.1002/btm2.10587, area: medical, verified: author-review}
+
+- {doi: 10.1016/j.optlastec.2026.116823, area: industrial, verified: author-review}
+
+- {doi: 10.1177/08953996261459392, area: medical, verified: author-review}
+
+- {doi: 10.1038/s44172-024-00184-6, area: materials, verified: author-review}
+
+- {s2: 741e3981204a0ce934f7185f0f1cee3960cd3081, area: methods, verified: author-review}
+
+- {doi: 10.1002/mp.16277, area: methods, verified: author-review}
+
+- {doi: 10.1038/s41598-026-73833-9, area: medical, verified: author-review}
+
+- {doi: 10.1109/TRPMS.2023.3287566, area: medical, verified: author-review}
+
+- {doi: 10.1016/j.softx.2026.102910, area: methods, verified: author-review}
+
+- {doi: 10.1109/3DV69130.2026.00024, area: methods, verified: author-review}
+
+- {doi: 10.1016/j.tmater.2025.100081, area: materials, verified: author-review}
+
+- {doi: 10.1117/1.JMI.12.4.043501, area: medical, verified: author-review}
+
+- {doi: 10.1002/mp.70581, area: methods, verified: author-review}
+
+- {doi: 10.1109/ISBI60581.2025.10981304, area: methods, verified: author-review}
+
+- {doi: 10.1016/j.media.2026.104088, area: methods, verified: author-review}
+
+- {doi: 10.1038/s42005-025-02249-0, area: materials, verified: author-review}
+
+- {doi: 10.1038/s41598-023-27627-y, area: synchrotron, verified: author-review}
+
+- {doi: 10.1007/s10278-025-01390-0, area: methods, verified: author-review}
+
+- {doi: 10.1016/j.measurement.2026.121769, area: industrial, verified: author-review}
+
+- {doi: 10.1016/j.zemedi.2023.02.001, area: medical, verified: author-review}
+
+- {doi: 10.1109/ACCESS.2020.3025672, area: medical, verified: author-review}
+
+- {doi: 10.1016/j.ejmp.2025.104997, area: methods, verified: author-review}
+
+- {doi: 10.1117/12.3004908, area: medical, verified: author-review}
+
+- {doi: 10.1177/08953996241301661, area: methods, verified: author-review}
+
+- {doi: 10.1016/j.est.2023.108084, area: industrial, verified: author-review}
+
+- {doi: 10.1109/icassp55912.2026.11463247, area: methods, verified: author-review}
+
+- {doi: 10.1016/j.egyai.2026.100758, area: other, verified: author-review}
+
+- {doi: 10.1609/aaai.v40i11.37871, area: methods, verified: author-review}
+
+- {doi: 10.1002/mp.16477, area: medical, verified: author-review}
+
+- {doi: 10.1098/rsta.2020.0193, area: methods, verified: author-review}
+
+- {doi: 10.1117/1.JMI.12.S2.S22015, area: medical, verified: author-review}
+
+- {doi: 10.1016/j.optlastec.2025.114348, area: industrial, verified: author-review}
+
+- {doi: 10.1016/j.ndteint.2025.103614, area: industrial, verified: author-review}
+
+- {doi: 10.1109/ICCV51701.2025.02622, area: methods, verified: author-review}
+
+- {doi: 10.1016/j.procir.2024.10.025, area: industrial, verified: author-review}
+
+- {doi: 10.1109/TIP.2025.3581003, area: methods, verified: author-review}
+
+- {doi: 10.1002/mp.16681, area: medical, verified: author-review}
+
+- {doi: 10.1016/j.optlastec.2025.113663, area: industrial, verified: author-review}
+
+- {doi: 10.1016/j.measurement.2026.121893, area: methods, verified: author-review}
+
+- {doi: 10.1016/j.rineng.2026.113147, area: methods, verified: author-review}
+
+- {doi: 10.1002/mp.16741, area: medical, verified: author-review}
+
+- {doi: 10.1088/1748-0221/20/12/P12001, area: methods, verified: author-review}
+
+- {doi: 10.1016/j.medengphy.2023.104088, area: medical, verified: author-review}
+
+- {doi: 10.1002/mp.13878, area: medical, verified: author-review}
+
+- {doi: 10.5624/isd.2020.50.4.331, area: medical, verified: author-review}
+
+- {doi: 10.1007/s13246-020-00918-8, area: medical, verified: author-review}
+
+- {doi: 10.1016/j.ejmp.2018.04.396, area: methods, verified: author-review}
+
+- {doi: 10.1088/1361-6404/aaf94c, area: other, verified: author-review}
+
+- {s2: 16709bff08256a58602d8f3ada1c523941a8faca, area: methods, verified: author-review}
+
+- {doi: 10.1016/J.NIMA.2019.05.087, area: particle, verified: author-review}
+
+- {doi: 10.1016/j.ejmp.2020.04.020, area: medical, verified: author-review}
+
+- {doi: 10.1088/1361-6560/aa7675, area: methods, verified: author-review}
+
+- {doi: 10.1088/1361-6560/ab501d, area: medical, verified: author-review}
+
+- {doi: 10.1016/j.cmpb.2022.107168, area: methods, verified: author-review}
+
+- {doi: 10.1109/TCI.2018.2857446, area: methods, verified: author-review}
+
+- {s2: 470a78139b6a24db13f81c62cf570c0cdc0af7cb, area: methods, verified: author-review}
+
+- {doi: 10.1002/mp.15248, area: medical, verified: author-review}
+
+- {doi: 10.1101/2020.07.08.192872, area: medical, verified: author-review}
+
+- {doi: 10.1049/el.2020.0544, area: medical, verified: author-review}
+
+- {doi: 10.1088/978-0-7503-1444-2, area: other, verified: author-review}
+
+- {doi: 10.3934/ammc.2023008, area: methods, verified: author-review}
+
+- {s2: 71472044fe09e02daefdfd926dfcddf2d389fa0d, area: particle, verified: author-review}
+
+- {doi: 10.1002/mp.14756, area: medical, verified: author-review}
+
+- {doi: 10.1088/2057-1976/abb834, area: medical, verified: author-review}
+
+- {doi: 10.1016/j.apradiso.2019.04.017, area: synchrotron, verified: author-review}
+
+- {doi: 10.1016/j.apm.2022.09.018, area: methods, verified: author-review}
+
+- {doi: 10.1002/mp.15131, area: medical, verified: author-review}
+
+- {doi: 10.1117/12.2612877, area: medical, verified: author-review}
+
+- {doi: 10.1016/J.POLYMER.2019.06.004, area: materials, verified: author-review}
+
+- {doi: 10.1016/J.NIMA.2021.165510, area: materials, verified: author-review}
+
+- {doi: 10.1088/1742-6596/1305/1/012051, area: medical, verified: author-review}
+
+- {doi: 10.1002/mp.12768, area: medical, verified: author-review}
+
+- {doi: 10.1002/mp.13583, area: methods, verified: author-review}
+
+- {doi: 10.1109/EMBC44109.2020.9176667, area: medical, verified: author-review}
+
+- {doi: 10.1117/12.2534809, area: methods, verified: author-review}
+
+- {doi: 10.1016/j.nimb.2021.12.010, area: materials, verified: author-review}
+
+- {doi: 10.1016/j.neuroimage.2021.117928, area: medical, verified: author-review}
+
+- {doi: 10.1002/mp.14681, area: medical, verified: author-review}
+
+- {doi: 10.1007/978-981-10-7389-2_26, area: methods, verified: author-review}
+
+- {doi: 10.3390/condmat7010003, area: materials, verified: author-review}
+
+- {doi: 10.1364/boe.386507, area: other, verified: author-review}
+
+- {doi: 10.1002/mp.13653, area: medical, verified: author-review}
+
+- {doi: 10.1038/s41598-024-79874-2, area: medical, verified: citation-context}
+
+- {doi: 10.1038/s41598-024-54529-4, area: medical, verified: full-text}
+
+- {doi: 10.1002/mp.16611, area: medical, verified: citation-context}
+
+- {doi: 10.1109/TRPMS.2023.3242662, area: methods, verified: citation-context}
+
+- {doi: 10.1016/j.ejmp.2022.08.013, area: medical, verified: citation-context}
+
+- {doi: 10.4103/jmss.jmss_114_21, area: methods, verified: citation-context}
+
+- {doi: 10.3390/s21020591, area: methods, verified: citation-context}
+
+- {s2: b7c6d5cd6c6991e9156e28badfb2fbee80a62bf3, area: particle, verified: citation-context}
+
+- {doi: 10.3390/electronics8121381, area: methods, verified: citation-context}
+
+- {arxiv: '1903.11874', area: methods, verified: full-text}
+
+- {s2: 1e3f0686d0557c471dc361f0cd6acb15f46d06ab, area: industrial, verified: citation-context}
+
+- {doi: 10.1145/3829340.3842177, area: methods, verified: full-text}
+
+- {doi: 10.1016/j.combustflame.2026.115082, area: other, verified: full-text}
+
+- {doi: 10.1007/978-3-032-05472-2, area: other, verified: full-text}
+
+- {doi: 10.1016/j.procir.2026.02.110, area: industrial, verified: full-text}
+
+- {doi: 10.1186/s41747-026-00789-w, area: medical, verified: full-text}
+
+- {arxiv: '2602.02713', area: materials, verified: full-text}
+
+- {doi: 10.1016/j.cirpj.2025.06.008, area: industrial, verified: full-text}
+
+- {doi: 10.32362/2500-316x-2024-12-4-51-58, area: methods, verified: full-text}
+
+- {doi: 10.1140/epjp/s13360-024-05428-0, area: materials, verified: full-text}
+
+- {arxiv: '2402.14023', area: materials, verified: full-text}
+
+- {doi: 10.1016/j.precisioneng.2024.02.020, area: industrial, verified: full-text}
+
+- {doi: 10.1038/s41598-023-51077-1, area: medical, verified: full-text}
+
+- {arxiv: '2310.07026', area: medical, verified: full-text}
+
+- {arxiv: '2308.09095', area: medical, verified: full-text}
+
+- {doi: 10.1016/j.ndteint.2023.102852, area: industrial, verified: full-text}
+
+- {doi: 10.1038/s41598-023-30316-5, area: materials, verified: full-text}
+
+- {arxiv: '2211.04597', area: other, verified: full-text}
+
+- {doi: 10.1088/2057-1976/acb7f7, area: medical, verified: full-text}
+
+- {doi: 10.1007/s10967-022-08406-x, area: synchrotron, verified: full-text}
+
+- {doi: 10.1063/5.0101681, area: methods, verified: full-text}
+
+- {doi: 10.1088/1742-6596/2374/1/012180, area: particle, verified: full-text}
+
+- {doi: 10.1371/journal.pone.0245508, area: medical, verified: full-text}
+
+- {doi: 10.1007/s11554-020-01069-5, area: methods, verified: full-text}
+
+- {doi: 10.1016/j.nima.2020.164407, area: particle, verified: full-text}
+
+- {arxiv: '2003.00115', area: particle, verified: full-text}
+
+- {arxiv: '1908.06909', area: methods, verified: full-text}
+
+- {doi: 10.1109/TIP.2020.2985874, area: methods, verified: full-text}
+
+- {s2: 38c98d09f9e18e7e0c5ffc44c6b869143cba664b, area: other, verified: citation-context}
+
+- {s2: 412fc975fa9f8b6992c596422ff6bb57e656973c, area: industrial, verified: citation-context}

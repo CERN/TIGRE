@@ -10,9 +10,9 @@ itself are on the [Citing TIGRE](citing.md) page.
 ## How this list is built
 
 Most entries come from the papers that cite TIGRE. A citation alone does not
-mean a paper used TIGRE, so we only list a paper when the sentence citing TIGRE
-says it was used (for example, "projections were simulated with TIGRE"), or
-when we checked the paper ourselves. Papers that only mention TIGRE among other
+mean a paper used TIGRE, so we only list a paper when the text around the TIGRE
+citation says it was used (for example, "projections were simulated with
+TIGRE"), or when a TIGRE maintainer checked the paper. Papers that only mention TIGRE among other
 toolboxes are left out.
 
 The list is not complete: papers whose citing sentence is not available, and
