@@ -61,6 +61,13 @@ function [res,resL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
 %--------------------------------------------------------------------------
 
 %% Deal with input parameters
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('SART',proj,niter,varargin);
+if operatorHandled
+    res=operatorImage;
+    resL2=operatorResidual;
+    qualMeasOut=operatorQuality;
+    return;
+end
     if nargin < 4
         error('TIGRE:SART:InvalidInput','Not enough inputs')
     end

@@ -20,7 +20,7 @@ mustFail(@() CGLS_operator(b,op,0,'UnknownOption',1));
 mustFail(@() CGLS_operator(b,op,0,'Init',nan(2,2)));
 sub=op.subset([3 1 3]); nested=sub.subset([2 1]);
 q=op.forward(truth); z=nested.forward(truth); assert(isequal(z,q(:,:,[1 3])));
-names={'CGLS', 'SIRT'};
+names={'CGLS', 'SIRT', 'SART', 'OS_SART', 'fast_OS_SART', 'SART_TV', 'OS_SART_TV', 'iterativereconalg'};
 for item=names
     name=item{1}; options={}; count=2;
     if contains(lower(name),'pocs')||contains(lower(name),'pcsd')

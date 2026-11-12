@@ -21,7 +21,7 @@ assert(max(abs(selected(:)-expected(:)))<2e-5);
 q=reshape(single(sin(1:numel(data))),size(data)); q(~op.valid_mask)=0;
 at=op.adjoint(q); left=sum(double(full(:)).*double(q(:))); right=sum(double(x(:)).*double(at(:)));
 assert(abs(left-right)<2e-5*max([1 abs(left) abs(right)]));
-names={'CGLS', 'SIRT'}; results=struct;
+names={'CGLS', 'SIRT', 'SART', 'OS_SART', 'fast_OS_SART', 'SART_TV', 'OS_SART_TV', 'iterativereconalg'}; results=struct;
 for item=names
     name=item{1}; options={};
     if contains(lower(name),'pocs')||contains(lower(name),'pcsd')
