@@ -495,7 +495,17 @@ def decorator(IterativeReconAlg, name=None, docstring=None):  # noqa: N803
 
     """
 
-    def iterativereconalg(proj, geo, angles, niter, **kwargs):
+    def iterativereconalg(proj, geo=None, angles=None, niter=None, **kwargs):
+        if niter is None:
+            raise TypeError("niter is required")
+        operator = kwargs.pop("operator", None)
+        if operator is not None:
+            if geo is not None or angles is not None:
+                raise ValueError("with operator=, omit geo and angles")
+            from .operator_algorithms import reconstruct
+            return reconstruct(name, proj, operator, niter, _algorithm_class=IterativeReconAlg, **kwargs)
+        if geo is None or angles is None:
+            raise TypeError("geo and angles are required without operator=")
 
         geo.check_geo(angles)
         alg = IterativeReconAlg(proj, geo, angles, niter, **kwargs)

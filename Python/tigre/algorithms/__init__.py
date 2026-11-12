@@ -58,3 +58,7 @@ __all__ = [
     "ista",
     "mlem",
 ]
+
+from .operator_exports import install as _install_operator_exports
+_install_operator_exports(globals())
+del _install_operator_exports
