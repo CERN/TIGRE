@@ -13,7 +13,7 @@ def install(namespace):
                              niter=niter, **kwargs)
         return wrapped
 
-    for name in ('cgls', 'sirt'):
+    for name in ('cgls', 'sirt', 'sart', 'ossart', 'os_sart', 'fast_os_sart', 'sart_tv', 'ossart_tv', 'os_sart_tv', 'iterativereconalg'):
         for suffix, factory in (("_operator", operator_entry), ("_surface", surface_entry)):
             wrapped = factory(namespace[name])
             wrapped.__name__ = name + suffix

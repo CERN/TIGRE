@@ -31,7 +31,9 @@ else:
     default_timer = time.clock
 
 
-class IterativeReconAlg(object):
+from .operator_recon_adapter import OperatorReconMixin
+
+class IterativeReconAlg(OperatorReconMixin):
     """
     Parameters
     ----------
@@ -129,6 +131,10 @@ class IterativeReconAlg(object):
     """
 
     def __init__(self, proj, geo, angles, niter, **kwargs):
+        operator = kwargs.pop("_projection_operator", None)
+        if operator is not None:
+            self._initialize_operator(proj, operator, niter, kwargs)
+            return
 
         self.proj = proj
         self.angles = angles
@@ -353,6 +359,9 @@ class IterativeReconAlg(object):
             self.error_measurement(res_prev, i)
 
     def art_data_minimizing(self):
+        if hasattr(self, "operator"):
+            self._operator_data_step()
+            return
         geo = copy.deepcopy(self.geo)
 
         for j in range(len(self.angleblocks)):
@@ -394,11 +403,14 @@ class IterativeReconAlg(object):
         if self.computel2:
             # compute l2 norm for b-Ax
             errornow = im3DNORM(
-                self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids), 2
+                self.proj - self._project_forward(Ax,self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids), 2
             )
             self.l2l[0, iter] = errornow
 
     def update_image(self, geo, angle, iteration):
+        if hasattr(self, "operator"):
+            self._operator_update(iteration)
+            return
         """
         VERBOSE:
          for j in range(angleblocks):

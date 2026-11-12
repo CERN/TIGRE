@@ -5,9 +5,12 @@ from tigre.utilities.projection_operator import prepare_projections, _array
 def reconstruct(name, proj, operator, niter, _algorithm_class=None, **kwargs):
     name = name.lower() if isinstance(name, str) else "iterativereconalg"
     name = {"ossart": "os_sart", "ossart_tv": "os_sart_tv"}.get(name, name)
-    solvers = {'cgls': cgls_operator, 'sirt': sirt_operator}
+    solvers = {'cgls': cgls_operator, 'sirt': sirt_operator, 'os_sart': os_sart_operator, 'fast_os_sart': fast_os_sart_operator}
     if name not in solvers:
-        raise NotImplementedError(f"{name} does not yet support projection operators")
+        if name not in ('sart', 'sart_tv', 'os_sart_tv', 'iterativereconalg'):
+            raise NotImplementedError(f"{name} is not included in this operator slice")
+        from .operator_recon_adapter import run_existing
+        return run_existing(_algorithm_class, proj, operator, niter, **kwargs)
     if "noneg" in kwargs:
         if "nonneg" in kwargs:
             raise TypeError("specify only one of noneg and nonneg")
@@ -109,3 +112,66 @@ def sirt_operator(proj, operator, niter=50, init=None, lmbda=1.0, nonneg=False):
         if nonneg:
             np.maximum(x, 0, out=x)
     return x
+
+def os_sart_operator(
+    proj, operator, niter=10, blocksize=20, init=None, lmbda=1.0, nonneg=False, momentum=False
+):
+    """Ordered-subset SART with a projection operator.
+
+    Views are split into interleaved blocks. With ``momentum=True`` the iterate
+    is extrapolated before every pass with the Nesterov schedule used by
+    ``tigre.algorithms.fast_os_sart`` (an acceleration heuristic, not a
+    convergent method). The per-block back-projection normalisation is
+    recomputed each time to keep memory at one extra volume. Backend settings belong to ``operator``.
+    """
+    niter = _iterations(niter)
+    b = prepare_projections(proj, operator)
+    if (
+        isinstance(blocksize, (bool, np.bool_))
+        or not isinstance(blocksize, (int, np.integer))
+        or blocksize < 1
+    ):
+        raise ValueError(f"blocksize must be a positive integer, got {blocksize!r}")
+    lmbda = _relaxation(lmbda)
+    shape = tuple(operator.volume_shape)
+    x = _initial(init, shape)
+    if niter == 0:
+        return x
+    n_views = b.shape[0]
+    n_blocks = max(1, -(-n_views // int(blocksize)))
+    blocks = [np.arange(k, n_views, n_blocks) for k in range(n_blocks)]
+    ones_vol = np.ones(shape, np.float32)
+
+    subs, weights = [], []
+    for idx in blocks:
+        sub = operator.subset(idx)
+        row_sum = sub.forward(ones_vol)
+        w = np.zeros_like(row_sum)
+        np.divide(1.0, row_sum, out=w, where=row_sum > 1e-6)
+        subs.append(sub)
+        weights.append(w)
+
+    t = 1.0
+    x_old = x.copy()
+    for _ in range(int(niter)):
+        if momentum:
+            t_old, t = t, (1.0 + np.sqrt(1.0 + 4.0 * t * t)) / 2.0
+            beta = np.float32((t_old - 1.0) / t)
+            for k in range(x.shape[0]):
+                saved = x[k].copy()
+                x[k] += beta * (x[k] - x_old[k])
+                x_old[k] = saved
+        for idx, sub, w in zip(blocks, subs, weights):
+            resid = (b[idx] - sub.forward(x)) * w
+            col_sum = sub.adjoint(_valid_samples(sub))
+            v = np.zeros_like(col_sum)
+            np.divide(1.0, col_sum, out=v, where=col_sum > 1e-6)
+            x += np.float32(lmbda) * v * sub.adjoint(resid.astype(np.float32))
+            if nonneg:
+                np.maximum(x, 0, out=x)
+    return x
+
+
+def fast_os_sart_operator(proj, operator, niter=10, **kwargs):
+    """OS-SART with Nesterov momentum with a projection operator."""
+    return os_sart_operator(proj, operator, niter=niter, momentum=True, **kwargs)
