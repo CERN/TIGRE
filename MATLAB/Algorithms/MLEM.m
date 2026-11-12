@@ -36,6 +36,12 @@ function [res,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Ander Biguri 
 %--------------------------------------------------------------------------
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('MLEM',proj,niter,varargin);
+if operatorHandled
+    res=operatorImage;
+    qualMeasOut=operatorResidual;
+    return;
+end
 [verbose,res,QualMeasOpts,gpuids,gt]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
 if ~any(isnan(gt(:)))
@@ -174,4 +180,3 @@ for ii=1:length(opts)
     end
 end
 end
-
