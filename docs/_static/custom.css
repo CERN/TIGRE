@@ -1,0 +1,17 @@
+/* Small adjustments on top of pydata-sphinx-theme. */
+
+.tigre-hero {
+  padding: 0.5rem 0 1rem;
+  align-items: center;
+}
+
+.tigre-tagline {
+  font-size: 1.25rem;
+  color: var(--pst-color-text-muted);
+  margin-bottom: 1.25rem;
+}
+
+.tigre-hero img {
+  max-width: 100%;
+  border-radius: 0.4rem;
+}
