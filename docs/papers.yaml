@@ -2716,15 +2716,6 @@
   area: materials
   verified: author-review
 
-- title: 'FRNAF: Frequency Regularization Neural Attenuation Fields for Sparse-View CBCT Reconstruction'
-  authors: [Chunjie Xia, Nan Zheng, Hongjiang Wei, Kai Xu, Tsung‐Yuan Tsai]
-  venue: SSRN Electronic Journal
-  year: 2023
-  doi: 10.2139/ssrn.4643014
-  openalex: W4389105293
-  area: methods
-  verified: author-review
-
 - title: Non-coplanar lung SABR treatments delivered with a gantry-mounted x-ray tube
   authors: [Jericho O’Connell, M Weil, Magdalena Bazalova‐Carter]
   venue: Physics in Medicine and Biology 69, 025002-025002
