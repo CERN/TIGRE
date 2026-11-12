@@ -1964,9 +1964,11 @@
   area: other
   verified: author-review
 
-- title: 'FORCE-Interior: A Poisson Flow Generative Prior for Interior Tomography Reconstruction'
-  authors: [Kang Chen, Member Ieee Wenjun Xia, Jian-Xu Wang, Mahmud Wasif Nafee, Life Fellow Ieee Ge Wang]
-  venue: Preprint
+- title: 'FORCE-Interior: Measurement-Consistent Adaptation of a Poisson-Flow Generative Prior for Interior CT'
+  authors: [Kang Chen, Wenjun Xia, Jian-Xu Wang, Mahmud Wasif Nafee, Ge Wang]
+  venue: arXiv preprint
+  year: 2026
+  arxiv: '2607.14320'
   s2: 16709bff08256a58602d8f3ada1c523941a8faca
   area: methods
   verified: author-review
@@ -2291,7 +2293,7 @@
   area: methods
   verified: citation-context
 
-- {title: Performance Improvements and Analysis of Image Reconstruction Techniques in Proton Computed Tomography, venue: Preprint, year: 2021, s2: b7c6d5cd6c6991e9156e28badfb2fbee80a62bf3, area: particle, verified: citation-context}
+- {title: Performance Improvements and Analysis of Image Reconstruction Techniques in Proton Computed Tomography, authors: [Benjamin Kirchmayer], venue: 'Diploma thesis, Technische Universität Wien', year: 2021, doi: 10.34726/hss.2021.94905, s2: b7c6d5cd6c6991e9156e28badfb2fbee80a62bf3, area: particle, verified: citation-context}
 
 - title: Generative Noise Reduction in Dental Cone-Beam CT by a Selective Anatomy Analytic Iteration Reconstruction Algorithm
   authors: [Lam Dao-Ngoc, Yi-Chun Du]
@@ -2309,13 +2311,6 @@
   arxiv: '1903.11874'
   area: methods
   verified: full-text
-
-- title: The effects of advanced iterative reconstruction on dimensional metrology using fast X-Ray Cone-Beam tomographic measurements
-  authors: [C. Rossides, H. Towsyfyan, A. Biguri, H. Deyhle, Reuben Lindroos, M. Mavrogordato, R. Boardman, Wen-Juan Sun, T. Blumensath]
-  venue: Preprint
-  s2: 1e3f0686d0557c471dc361f0cd6acb15f46d06ab
-  area: industrial
-  verified: citation-context
 
 - title: 'X-Splat: Unified Gaussian Splatting for Joint RGB and X-ray 3D Reconstruction'
   authors: [Wang-Ze Xu, Chu Zhou, Mae Yamaguchi, Lin-Rui Dai, I-Chao Shen, Takashi Ijiri, Imari Sato]
@@ -2533,14 +2528,18 @@
 
 - title: 'Enhancing Detail Recovery in ICF Radiographs: A Transformer-based Approach with ViXReg'
   authors: [Nga T. T. Nguyen-Fotiadis, B. Wolfe, Zhe-Hui Wang]
-  venue: Preprint
+  venue: 'NeurIPS 2024 Workshop: Foundation Models for Science (FM4Science)'
+  year: 2024
+  url: https://neurips.cc/virtual/2024/105893
   s2: 38c98d09f9e18e7e0c5ffc44c6b869143cba664b
   area: other
   verified: citation-context
 
 - title: Machine Learning Based 3D XCT Image Enhancement for the Inspection of AM Metal Components using Limited X-ray Measurements
-  authors: [Thomas Blumensath, I. Harrane]
-  venue: Preprint
+  authors: [Thomas Blumensath, Ibrahim Harrane]
+  venue: 'Preprint (submitted to Additive Manufacturing)'
+  year: 2023
+  url: https://eprints.soton.ac.uk/476181/
   s2: 412fc975fa9f8b6992c596422ff6bb57e656973c
   area: industrial
   verified: citation-context
