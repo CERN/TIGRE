@@ -7,7 +7,7 @@ def reconstruct(name, proj, operator, niter, _algorithm_class=None, **kwargs):
     name = {"ossart": "os_sart", "ossart_tv": "os_sart_tv"}.get(name, name)
     solvers = {'cgls': cgls_operator, 'sirt': sirt_operator, 'os_sart': os_sart_operator, 'fast_os_sart': fast_os_sart_operator}
     if name not in solvers:
-        if name not in ('sart', 'sart_tv', 'os_sart_tv', 'iterativereconalg', 'lsqr', 'lsmr', 'hybrid_lsqr', 'irn_tv_cgls', 'hybrid_flsqr_tv', 'ab_gmres', 'ba_gmres'):
+        if name not in ('sart', 'sart_tv', 'os_sart_tv', 'iterativereconalg', 'lsqr', 'lsmr', 'hybrid_lsqr', 'irn_tv_cgls', 'hybrid_flsqr_tv', 'ab_gmres', 'ba_gmres', 'fista', 'ista', 'mlem'):
             raise NotImplementedError(f"{name} is not included in this operator slice")
         from .operator_recon_adapter import run_existing
         return run_existing(_algorithm_class, proj, operator, niter, **kwargs)

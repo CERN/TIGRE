@@ -150,6 +150,8 @@ class FISTA(IterativeReconAlg):
 
         Cost: a handful of forward+back projection pairs, paid once at
         construction. Deterministic seed so repeat runs match."""
+        if hasattr(self, "operator"):
+            return self._operator_lipschitz(seed=seed)
         rng = np.random.default_rng(seed)
         x = rng.standard_normal(tuple(self.geo.nVoxel)).astype(np.float32)
         sigma = svd_power_method(x, self.geo, self.angles, verbose=self.verbose)
@@ -175,10 +177,10 @@ class FISTA(IterativeReconAlg):
         self.res += (
             self.__bm__
             * 2
-            * tigre.Atb(
+            * self._project_adjoint(tigre.Atb,
                 (
                     self.proj[self.angle_index[iteration]]
-                    - tigre.Ax(self.res, geo, angle, "interpolated", gpuids=self.gpuids)
+                    - self._project_forward(tigre.Ax,self.res, geo, angle, "interpolated", gpuids=self.gpuids)
                 ),
                 geo,
                 angle,
@@ -205,7 +207,7 @@ class FISTA(IterativeReconAlg):
             getattr(self, self.dataminimizing)()
 
             x_rec_old = copy.deepcopy(x_rec)
-            x_rec = im3ddenoise(self.res, self.__numiter_tv__, 1.0 / lambdaForTv, self.gpuids)
+            x_rec = (self.res.copy() if hasattr(self, "operator") and lambdaForTv == 0 else self._volume_denoise(im3ddenoise,self.res, self.__numiter_tv__, 1.0 / lambdaForTv, self.gpuids))
             t_old = t
             t = (self.__p__ + np.sqrt(self.__q__ + 4 * t ** 2,dtype=np.float32)) / 2
             self.res = x_rec + (t_old - 1) / t * (x_rec - x_rec_old)
@@ -229,7 +231,7 @@ class ISTA(FISTA):  # noqa: D101
         :return: None
         """
         Quameasopts = self.Quameasopts
-        lambdaForTv = 2 * self.__bm__ * self.lmbda
+        lambdaForTv = 2 * self.__bm__ * (self.__lambda__ if hasattr(self, "operator") else self.lmbda)
         for i in range(self.niter):
 
             res_prev = copy.deepcopy(self.res) if Quameasopts is not None else None
@@ -238,7 +240,7 @@ class ISTA(FISTA):  # noqa: D101
 
             getattr(self, self.dataminimizing)()
 
-            self.res = im3ddenoise(self.res, 20, 1.0 / lambdaForTv, self.gpuids)
+            self.res = (self.res.copy() if hasattr(self, "operator") and lambdaForTv == 0 else self._volume_denoise(im3ddenoise,self.res, self.__numiter_tv__ if hasattr(self, "operator") else 20, 1.0 / lambdaForTv, self.gpuids))
             
             if Quameasopts is not None:
                 self.error_measurement(res_prev, i)

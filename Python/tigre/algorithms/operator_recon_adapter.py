@@ -101,6 +101,20 @@ def _validated_options(cls, kwargs, shape):
 
 
 class OperatorReconMixin:
+    def _operator_lipschitz(self, seed=0):
+        from .operator_algorithms import _squared_norm
+        rng=np.random.default_rng(seed)
+        x=rng.standard_normal(tuple(self.geo.nVoxel)).astype(np.float32)
+        x /= np.float32(np.sqrt(_squared_norm(x)))
+        scale=1.0
+        for _ in range(8):
+            y=self.operator.adjoint(self.operator.forward(x))
+            scale=np.sqrt(_squared_norm(y))
+            if scale==0:
+                return 1.0
+            x=y/np.float32(scale)
+        return 2.1*scale
+
     def apply_constraints(self):
         if self.noneg:
             np.maximum(self.res, 0, out=self.res)
