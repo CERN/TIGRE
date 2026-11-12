@@ -10,7 +10,7 @@
 # title, authors, venue and year. Fields you write yourself are never overwritten.
 #
 # Fields: title, authors, venue, year | doi, url, arxiv, s2 | area | note
-#   area: medical, particle, industrial, synchrotron, methods or other
+#   area: medical, particle, industrial, synchrotron, materials, methods or other
 #   note: optional, one line on how TIGRE was used
 #   verified: how we know the paper uses TIGRE (e.g. citation-context: the
 #     sentence citing TIGRE says it was used; author: confirmed by the authors)
@@ -1174,7 +1174,7 @@
   venue: Scientific Reports 16
   year: 2026
   doi: 10.1038/s41598-026-48904-6
-  area: medical
+  area: materials
   verified: citation-context
 
 - title: Multi-stage NeRF for Efficient 3D Coronary Artery Reconstruction from Two Narrow-Angle Angiographic Projections

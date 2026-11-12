@@ -58,7 +58,7 @@ HEADER = """\
 # title, authors, venue and year. Fields you write yourself are never overwritten.
 #
 # Fields: title, authors, venue, year | doi, url, arxiv, s2 | area | note
-#   area: medical, particle, industrial, synchrotron, methods or other
+#   area: medical, particle, industrial, synchrotron, materials, methods or other
 #   note: optional, one line on how TIGRE was used
 #   verified: how we know the paper uses TIGRE (e.g. citation-context: the
 #     sentence citing TIGRE says it was used; author: confirmed by the authors)
