@@ -520,13 +520,25 @@ RandomNumberGenerator_ext = Extension(
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
 )
 
+
+AxSurface_ext = Extension(
+    "_AxSurface",
+    sources=include_headers([
+        "Common/CUDA/Siddon_surface_projection.cu",
+        "Python/tigre/utilities/cuda_interface/_AxSurface.pyx",
+    ], sdist=sys.argv[1] == "sdist"),
+    library_dirs=[CUDA["lib64"]], libraries=["cudart"], language="c++",
+    runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
+    include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
+)
+
 print(find_packages())
 
 setup(
     packages=find_packages(),
     include_package_data=True,
     data_files=[("data", ["Common/data/head.mat"])],
-    ext_modules=[minPICCS_ext, Ax_ext, Atb_ext, tv_proximal_ext, minTV_ext, AwminTV_ext, gpuUtils_ext, RandomNumberGenerator_ext],
+    ext_modules=[AxSurface_ext, minPICCS_ext, Ax_ext, Atb_ext, tv_proximal_ext, minTV_ext, AwminTV_ext, gpuUtils_ext, RandomNumberGenerator_ext],
     py_modules=["tigre.py"],
     cmdclass={"build_ext": BuildExtension},
     # since the package has c code, the egg cannot be zipped

@@ -28,7 +28,7 @@ class MLEM(IterativeReconAlg):  # noqa: D101
         if self.init is None:
             self.res += 1.0
 
-        self.W = Atb(np.ones(proj.shape, dtype=np.float32), geo, angles, backprojection_type="matched", gpuids=self.gpuids)
+        self.W = self._project_adjoint(Atb,(np.asarray(self.operator.valid_mask, dtype=np.float32) if hasattr(self, "operator") and self.operator.valid_mask is not None else np.ones(proj.shape, dtype=np.float32)), geo, angles, backprojection_type="matched", gpuids=self.gpuids)
         self.W[self.W <= 0.0] = np.inf
 
     # override
@@ -39,12 +39,18 @@ class MLEM(IterativeReconAlg):  # noqa: D101
                 res_prev = copy.deepcopy(self.res)
             self._estimate_time_until_completion(i)
 
-            den = Ax(self.res, self.geo, self.angles, "interpolated", gpuids=self.gpuids)
-            den[den == 0.0] = np.inf
-            auxmlem = self.proj / den
+            den = self._project_forward(Ax,self.res, self.geo, self.angles, "interpolated", gpuids=self.gpuids)
+            if hasattr(self, "operator"):
+                # Explicit operator policy: nonnegative data, small-denominator
+                # guard and bounded ratios. Conventional MLEM is unchanged.
+                den[den <= 1e-6] = np.inf
+                auxmlem = np.clip(self.proj / den, 0, 10)
+            else:
+                den[den == 0.0] = np.inf
+                auxmlem = self.proj / den
 
             # update
-            img = Atb(auxmlem, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids) / self.W  
+            img = self._project_adjoint(Atb,auxmlem, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids) / self.W
 
             self.res = self.res * img
             self.res[self.res < 0.0] = 0.0

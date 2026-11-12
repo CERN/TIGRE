@@ -61,3 +61,5 @@ from .utilities.common_geometry import (
 )
 
 from . import algorithms
+
+from .utilities.projection_operator import ProjectionOperator, TigreOperator, SurfaceOperator
