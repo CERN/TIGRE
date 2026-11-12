@@ -17,7 +17,7 @@ TIGRE reconstructs tomographic images from any scanning geometry, using GPU
 implementations (including multi-GPU) of the forward and backprojection
 operators and a wide range of iterative algorithms.
 
-```{button-ref} install
+```{button-ref} install/index
 :ref-type: doc
 :color: primary
 :class: sd-mr-2
@@ -85,7 +85,7 @@ contributions from the community.
 :gutter: 3
 
 :::{grid-item-card} Install
-:link: install
+:link: install/index
 :link-type: doc
 MATLAB and Python installation.
 :::
@@ -113,7 +113,7 @@ How to cite TIGRE in your work.
 :hidden:
 :maxdepth: 2
 
-install
+install/index
 user-guide/index
 gallery/index
 api/index

@@ -21,8 +21,8 @@ By participating you agree to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 You need an NVIDIA GPU, the CUDA toolkit and a C++ compiler (MSVC on Windows,
 gcc on Linux). See the full installation guides for
-[Python](Frontispiece/python_installation.md) and
-[MATLAB](Frontispiece/MATLAB_installation.md).
+[Python](https://cern.github.io/TIGRE/install/python.html) and
+[MATLAB](https://cern.github.io/TIGRE/install/matlab.html).
 
 ### Python
 

@@ -13,6 +13,8 @@ for improved image quality that have all been optimized to run on GPUs
 abstraction of MATLAB or Python with the performance of CUDA at a lower level in order to make 
 it both fast and easy to use.
 
+**Website and documentation: https://cern.github.io/TIGRE/**
+
 Read the most up to date article about tigre [here](https://iopscience.iop.org/article/10.1088/2631-8695/adbb3a).
 
 TIGRE is free to download and distribute: use it, modify it, add to it, 
@@ -89,10 +91,11 @@ MATLAB and Python builds are both fully supported.
 > ```
 >
 > Both need the CUDA toolkit and a C++ compiler, as they compile TIGRE on your machine.
+> On Linux, prebuilt wheels that need no compiler are attached to each [GitHub Release](https://github.com/CERN/TIGRE/releases).
 
-- [Installation instructions and requirements for MATLAB](Frontispiece/MATLAB_installation.md).
+- [Installation instructions and requirements for MATLAB](https://cern.github.io/TIGRE/install/matlab.html).
 
-- [Installation instructions and requirements for Python](Frontispiece/python_installation.md). 
+- [Installation instructions and requirements for Python](https://cern.github.io/TIGRE/install/python.html). 
 
 **Advanced, not required to run TIGRE**, will change the source code. Only do if performance is critical.
 
@@ -103,7 +106,7 @@ MATLAB and Python builds are both fully supported.
 
 Once TIGRE in installed, we strongly suggest you have a look at the Demos folder for each of the languages, [MATLAB](https://github.com/CERN/TIGRE/tree/master/MATLAB/Demos) or [Python](https://github.com/CERN/TIGRE/tree/master/Python/demos). 
 
-There is no documentation page for TIGRE (other than the function documentation), but all features are descrived and demonstrated with working code in the demos. They also serve as a tutorial of each feature. We strongly recommend you explore the first 4 demos for the basic TIGRE functionality, and look at the following ones for more advanced geometry or reconstruction functions. 
+The [TIGRE website](https://cern.github.io/TIGRE/) is gaining a user guide and API reference, but for now all features are described and demonstrated with working code in the demos. They also serve as a tutorial of each feature. We strongly recommend you explore the first 4 demos for the basic TIGRE functionality, and look at the following ones for more advanced geometry or reconstruction functions. 
 
 ## FAQ
 
