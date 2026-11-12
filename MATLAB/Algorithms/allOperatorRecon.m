@@ -1,6 +1,6 @@
 function [image,residual,quality]=allOperatorRecon(name,data,op,niter,varargin)
 % Shared public operator dispatcher. Conventional methods opt in explicitly.
-assert(ismember(lower(name),lower({'CGLS', 'SIRT', 'SART', 'OS_SART', 'fast_OS_SART', 'SART_TV', 'OS_SART_TV', 'iterativereconalg', 'LSQR', 'LSMR', 'hybrid_LSQR', 'IRN_TV_CGLS', 'hybrid_fLSQR_TV', 'AB_GMRES', 'BA_GMRES', 'FISTA', 'ISTA', 'MLEM'})), 'TIGRE:operator:unsupported','Method is not included in this operator slice');
+assert(ismember(lower(name),lower({'CGLS', 'SIRT', 'SART', 'OS_SART', 'fast_OS_SART', 'SART_TV', 'OS_SART_TV', 'iterativereconalg', 'LSQR', 'LSMR', 'hybrid_LSQR', 'IRN_TV_CGLS', 'hybrid_fLSQR_TV', 'AB_GMRES', 'BA_GMRES', 'FISTA', 'ISTA', 'MLEM', 'ASD_POCS', 'OS_ASD_POCS', 'AwASD_POCS', 'OS_AwASD_POCS', 'PCSD', 'OS_PCSD', 'AwPCSD', 'OS_AwPCSD'})), 'TIGRE:operator:unsupported','Method is not included in this operator slice');
 quality=[]; key=lower(name); args=varargin;
 pocs={'asd_pocs','os_asd_pocs','awasd_pocs','os_awasd_pocs','pcsd','os_pcsd','awpcsd','os_awpcsd'};
 if ismember(key,pocs)

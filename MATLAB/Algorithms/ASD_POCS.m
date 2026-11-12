@@ -68,6 +68,12 @@ function [ f,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 
 
 %% parse inputs
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('ASD_POCS',proj,maxiter,varargin);
+if operatorHandled
+    f=operatorImage;
+    qualMeasOut=operatorResidual;
+    return;
+end
     if nargin < 4
         error('TIGRE:ASD_POCS:InvalidInput','Not enough inputs')
     end

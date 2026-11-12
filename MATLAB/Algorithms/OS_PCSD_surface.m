@@ -1,0 +1,4 @@
+function [image,residual,quality]=OS_PCSD_surface(data,geo,surface,niter,varargin)
+% Explicit opt-in OS_PCSD; conventional calls retain upstream behavior.
+[image,residual,quality]=allSurfaceRecon('OS_PCSD',data,geo,surface,niter,varargin{:});
+end

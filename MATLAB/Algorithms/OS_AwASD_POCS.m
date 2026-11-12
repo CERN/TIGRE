@@ -79,6 +79,12 @@ function [f,qualMeasOut]= OS_AwASD_POCS(proj,geo,angles,maxiter,varargin)
 % Coded by:           Ander Biguri and Manasavee Lohvithee
 
 %% parse inputs
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('OS_AwASD_POCS',proj,maxiter,varargin);
+if operatorHandled
+    f=operatorImage;
+    qualMeasOut=operatorResidual;
+    return;
+end
 [beta,beta_red,f,ng,verbose,alpha,alpha_red,rmax,epsilon,delta,blocksize,OrderStrategy,QualMeasOpts,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
 if ~any(isnan(gt(:)))
