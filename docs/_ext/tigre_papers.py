@@ -25,7 +25,7 @@ AREAS = {
     "particle": "Proton and ion CT",
     "industrial": "Industrial and non-destructive testing",
     "synchrotron": "Synchrotron and neutron imaging",
-    "materials": "Materials and laboratory X-ray science",
+    "materials": "X-ray physics, detectors and materials",
     "methods": "Reconstruction methods and machine learning",
     "other": "Other applications",
 }

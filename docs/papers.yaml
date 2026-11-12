@@ -132,7 +132,7 @@
   venue: Biomedical Physics & Engineering Express 12
   year: 2026
   doi: 10.1088/2057-1976/aea910
-  area: medical
+  area: materials
   verified: citation-context
 
 - title: Shape-guided Gaussian Splatting for Sparse-View X-ray 3D Reconstruction
@@ -225,7 +225,7 @@
   venue: Physics in Medicine & Biology 71
   year: 2026
   doi: 10.1088/1361-6560/ae6222
-  area: methods
+  area: medical
   verified: citation-context
 
 - title: Benchmarking Open-Source FDK Against Commercial and Iterative Reconstruction Methods for Preclinical Micro-CBCT
@@ -267,7 +267,7 @@
   venue: Journal of Imaging 12
   year: 2026
   doi: 10.3390/jimaging12040166
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: Splat-based Metal Artifact Reduction in Cone-Beam CT via Polychromatic Modeling
@@ -342,7 +342,7 @@
   venue: Physics in Medicine & Biology 71
   year: 2026
   doi: 10.1088/1361-6560/ae3b01
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: 'aDiner: Adaptive Dynamic Implicit Neural Representation for Dynamic CBCT Imaging'
@@ -358,7 +358,7 @@
   venue: Journal of Instrumentation 21
   year: 2026
   doi: 10.1088/1748-0221/21/01/C01017
-  area: methods
+  area: materials
   verified: citation-context
 
 - title: Frequency-Regularized Neural Representation Method Via Prismoid-Based Transformer for Sparse-View Tomographic Reconstruction
@@ -390,7 +390,7 @@
   venue: Scientific Data 12
   year: 2025
   doi: 10.1038/s41597-025-06246-4
-  area: methods
+  area: materials
   verified: citation-context
 
 - title: 'VolMoVis: Real-Time Volume Generation and Motion Visualization with Dynamic Tomographic Reconstruction'
@@ -398,7 +398,7 @@
   venue: IEEE Transactions on Visualization and Computer Graphics 32, 912-921
   year: 2025
   doi: 10.1109/TVCG.2025.3634648
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: 'RSTAR4D: Rotational Streak Artifact Reduction in 4-D CBCT Using Separable 4-D Convolutions'
@@ -406,7 +406,7 @@
   venue: IEEE Transactions on Radiation and Plasma Medical Sciences 9, 1094-1106
   year: 2025
   doi: 10.1109/TRPMS.2025.3553866
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: 'LamiGauss: Pitching Radiative Gaussian for Sparse-View X-ray Laminography Reconstruction'
@@ -432,7 +432,7 @@
   year: 2025
   url: https://arxiv.org/abs/2507.19328
   arxiv: '2507.19328'
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: Volumetric imaging during head and neck radiation therapy using a Kalman filter tracking approach
@@ -448,7 +448,7 @@
   venue: IEEE Transactions on Instrumentation and Measurement 75, 1-16
   year: 2025
   doi: 10.1109/TIM.2026.3677968
-  area: industrial
+  area: materials
   verified: citation-context
 
 - title: NeRF-based CBCT Reconstruction needs Normalization and Initialization
@@ -499,7 +499,7 @@
   venue: Medical Imaging 13405, 134054O - 134054O-6
   year: 2025
   doi: 10.1117/12.3047107
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: Regularizing neural fields for 3D computed tomographic imaging from sparse projections
@@ -523,7 +523,7 @@
   venue: Nondestructive Testing and Evaluation 41, 436 - 459
   year: 2025
   doi: 10.1080/10589759.2025.2469150
-  area: industrial
+  area: synchrotron
   verified: citation-context
 
 - title: 'DE-NAF: decoupled neural attenuation fields for sparse-view CBCT reconstruction'
@@ -555,7 +555,7 @@
   venue: IEEE Transactions on Radiation and Plasma Medical Sciences 9, 95-106
   year: 2025
   doi: 10.1109/TRPMS.2024.3420742
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: '4DRGS: 4D Radiative Gaussian Splatting for Efficient 3D Vessel Reconstruction from Sparse-View Dynamic DSA Images'
@@ -572,7 +572,7 @@
   venue: Physics in Medicine & Biology 70
   year: 2024
   doi: 10.1088/1361-6560/ad9db1
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: Tri-Hash Progressive Sampling Neural Attenuation Field for Sparse-View CBCT Reconstruction
@@ -662,7 +662,7 @@
   venue: Journal of Instrumentation 19
   year: 2024
   doi: 10.1088/1748-0221/19/08/P08020
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: Spatial-Division Augmented Occupancy Field for Bone Shape Reconstruction from Biplanar X-Rays
@@ -670,7 +670,7 @@
   venue: International Conference on Medical Image Computing and Computer-Assisted Intervention 668-678
   year: 2024
   doi: 10.1007/978-3-031-72104-5_64
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: 'DeepCA: Deep Learning-Based 3D Coronary Artery Tree Reconstruction from Two 2D Non-Simultaneous X-Ray Angiography Projections'
@@ -694,7 +694,7 @@
   venue: Tomography 10, 1168 - 1191
   year: 2024
   doi: 10.3390/tomography10070089
-  area: medical
+  area: materials
   verified: citation-context
 
 - title: 'DDGS-CT: Direction-Disentangled Gaussian Splatting for Realistic Volume Rendering'
@@ -802,7 +802,7 @@
   venue: Journal of X-Ray Science and Technology 31, 865 - 877
   year: 2023
   doi: 10.3233/XST-230007
-  area: medical
+  area: materials
   verified: citation-context
 
 - title: Sinogram Inpainting with Generative Adversarial Networks and Shape Priors
@@ -818,7 +818,7 @@
   venue: Medical Imaging 12463, 1246347 - 1246347-5
   year: 2023
   doi: 10.1117/12.2655208
-  area: medical
+  area: materials
   verified: citation-context
 
 - title: 3-D Computed Laminography Based on Prior Images and Total Variation
@@ -925,7 +925,7 @@
   year: 2022
   url: https://arxiv.org/abs/2202.03571
   arxiv: '2202.03571'
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: Sinogram Enhancement with Generative Adversarial Networks using Shape Priors
@@ -950,7 +950,7 @@
   venue: Journal of Instrumentation 17
   year: 2022
   doi: 10.1088/1748-0221/17/01/P01004
-  area: medical
+  area: materials
   verified: citation-context
 
 - title: Limited-angle computed tomography with deep image and physics priors
@@ -982,7 +982,7 @@
   venue: 2021 IEEE 18th International Symposium on Biomedical Imaging (ISBI) 77-81
   year: 2021
   doi: 10.1109/ISBI48211.2021.9433825
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: Optimization for customized trajectories in cone beam computed tomography
@@ -1038,7 +1038,7 @@
   venue: PLoS ONE 16
   year: 2019
   doi: 10.1371/journal.pone.0227656
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: Geant4 simulations for ion CT image reconstruction
@@ -1110,7 +1110,7 @@
   venue: IEEE Transactions on Instrumentation and Measurement 75, 1-13
   year: 2026
   doi: 10.1109/TIM.2026.3679175
-  area: industrial
+  area: methods
   verified: citation-context
 
 - title: 'Dynamic Neural Attenuation Fields (D-NAF): A Self-Supervised Framework for 4D CBCT Reconstruction'
@@ -1126,7 +1126,7 @@
   venue: IEEE Transactions on Instrumentation and Measurement 75, 4506519-4506519
   year: 2026
   doi: 10.1109/TIM.2026.3736197
-  area: industrial
+  area: methods
   verified: citation-context
 
 - title: Ring Artifacts Correction Based on Global–Local Feature Interaction Guidance in the Projection Domain
@@ -1134,7 +1134,7 @@
   venue: IEEE Transactions on Instrumentation and Measurement 74, 1-14
   year: 2025
   doi: 10.1109/TIM.2025.3612561
-  area: industrial
+  area: methods
   verified: citation-context
 
 - title: Cone Beam Computed Laminography Based on Generalized Charbonnier Penalty
@@ -1166,7 +1166,7 @@
   venue: Preprint
   year: 2019
   s2: 19b094637efe31f54034c651afc413f6886bedb0
-  area: medical
+  area: methods
   verified: citation-context
 
 - title: 'Toward XRF-like chemical sensitivity in the laboratory: first hyperspectral x-ray imaging demonstration using the novel CITIUS detector'
@@ -1191,7 +1191,7 @@
   year: 2026
   url: https://arxiv.org/abs/2605.29419
   arxiv: '2605.29419'
-  area: medical
+  area: materials
   verified: citation-context
 
 - title: Implicit neural representation with plane attention for micro-CT super-resolution
