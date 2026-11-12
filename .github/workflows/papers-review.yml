@@ -30,11 +30,13 @@ jobs:
       - name: Build review queue
         env:
           S2_API_KEY: ${{ secrets.S2_API_KEY }}
-        run: python docs/tools/review_queue.py
+        run: python docs/tools/review_queue.py 2>&1 | tee docs/tools/review_queue.log; exit ${PIPESTATUS[0]}
+        shell: bash
       - name: Commit queue
+        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
-          git add docs/tools/review_queue.json
+          git add docs/tools/review_queue.log; git add docs/tools/review_queue.json || true
           git commit -m "papers: update review queue" || exit 0
           git push

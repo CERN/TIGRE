@@ -137,7 +137,7 @@ def main():
     hints = json.loads(HINTS.read_text()) if HINTS.exists() else {}
     hint_of = {pid: label for label, pids in hints.items() for pid in pids}
     known = known_ids()
-    fields = "title,year,venue,externalIds,openAccessPdf,abstract,tldr,contexts"
+    fields = "title,year,venue,externalIds,openAccessPdf,abstract,contexts"
     seen = {}
     for tigre in TIGRE_PAPERS:
         offset = 0
