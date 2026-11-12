@@ -2545,136 +2545,605 @@
   area: industrial
   verified: citation-context
 
-- {doi: 10.1002/mp.13258, openalex: W2898099302, area: methods, verified: author-review}
-
-- {doi: 10.15415/jnp.2020.72021, openalex: W3009931164, area: medical, verified: author-review}
-
-- {doi: 10.1002/mp.14672, openalex: W3114491807, area: materials, verified: author-review}
-
-- {doi: 10.1109/tns.2021.3117993, openalex: W3203842635, area: industrial, verified: author-review}
-
-- {doi: 10.1364/oe.440664, openalex: W3207013092, area: materials, verified: author-review}
-
-- {doi: 10.1002/mp.15482, openalex: W4210331680, area: particle, verified: author-review}
-
-- {doi: 10.1002/mp.15503, openalex: W4210348825, area: medical, verified: author-review}
-
-- {doi: 10.1016/j.measurement.2022.111061, openalex: W4220697585, area: industrial, verified: author-review}
-
-- {doi: 10.1007/978-981-16-9093-8_1, openalex: W4226519382, area: industrial, verified: author-review}
-
-- {doi: 10.1007/978-3-031-09135-3_10, openalex: W4285262694, area: materials, verified: author-review}
-
-- {doi: 10.18122/td.1935.boisestate, openalex: W4294912015, area: other, verified: author-review}
-
-- {doi: 10.1364/oe.471439, openalex: W4296113863, area: materials, verified: author-review}
-
-- {doi: 10.1002/mp.16049, openalex: W4304987437, area: medical, verified: author-review}
-
-- {doi: 10.1115/qnde2022-98387, openalex: W4315464573, area: industrial, verified: author-review}
-
-- {doi: 10.1002/mp.16307, openalex: W4320893531, area: methods, verified: author-review}
-
-- {doi: 10.1002/mp.16395, openalex: W4361001862, area: medical, verified: author-review}
-
-- {doi: 10.1002/mp.16413, openalex: W4365811033, area: medical, verified: author-review}
-
-- {doi: 10.1109/ssp53291.2023.10207973, openalex: W4385694545, area: methods, verified: author-review}
-
-- {doi: 10.1007/978-981-287-092-6_29, openalex: W4387067482, area: materials, verified: author-review}
-
-- {doi: 10.2139/ssrn.4643014, openalex: W4389105293, area: methods, verified: author-review}
-
-- {doi: 10.1088/1361-6560/ad111a, openalex: W4389162835, area: medical, verified: author-review}
-
-- {doi: 10.1088/1361-6560/ad25c8, openalex: W4391465702, area: materials, verified: author-review}
-
-- {doi: 10.1088/1361-6560/ad3320, openalex: W4392681580, area: methods, verified: author-review}
-
-- {doi: 10.1093/jmicro/dfae027, openalex: W4397021630, area: materials, verified: author-review}
-
-- {doi: 10.1088/2057-1976/ad5f96, openalex: W4400346346, area: medical, verified: author-review}
-
-- {doi: 10.1364/ao.534352, openalex: W4404346050, area: methods, verified: author-review}
-
-- {doi: 10.1109/tim.2024.3522391, openalex: W4405812491, area: industrial, verified: author-review}
-
-- {doi: 10.14316/pmp.2024.35.4.178, openalex: W4406122695, area: medical, verified: author-review}
-
-- {doi: 10.1002/acm2.70083, openalex: W4409678015, area: medical, verified: author-review}
-
-- {doi: 10.1364/oe.565121, openalex: W4410813951, area: industrial, verified: author-review}
-
-- {doi: 10.1364/oe.564913, openalex: W4410817214, area: materials, verified: author-review}
-
-- {doi: 10.1016/j.displa.2025.103169, openalex: W4412499314, area: industrial, verified: author-review}
-
-- {doi: 10.1002/mp.18011, openalex: W4413054422, area: medical, verified: author-review}
-
-- {doi: 10.1088/1361-6463/ae0a61, openalex: W4414451913, area: materials, verified: author-review}
-
-- {doi: 10.1007/978-3-032-05472-2_24, openalex: W4414478160, area: methods, verified: author-review}
-
-- {doi: 10.1007/s10851-025-01276-4, openalex: W4416821207, area: methods, verified: author-review}
-
-- {doi: 10.1088/2631-8695/ae2768, openalex: W4416929936, area: industrial, verified: author-review}
-
-- {doi: 10.1093/rpd/ncaf181, openalex: W7135181549, area: medical, verified: author-review}
-
-- {doi: 10.1007/978-3-032-18316-3_37, openalex: W7150017409, area: methods, verified: author-review}
-
-- {doi: 10.70675/96d4a1e2za7eaz438bza08bzec4325c1ffe0, openalex: W7152543342, area: medical, verified: author-review}
-
-- {doi: 10.1364/oe.597105, openalex: W7153989556, area: methods, verified: author-review}
-
-- {doi: 10.1002/acm2.70545, openalex: W7155821726, area: medical, verified: author-review}
-
-- {doi: 10.1364/optica.570829, openalex: W7161838464, area: materials, verified: author-review}
-
-- {doi: 10.1364/oe.600530, openalex: W7163348293, area: materials, verified: author-review}
-
-- {doi: 10.1007/978-3-032-38186-6_39, openalex: W7214232221, area: medical, verified: author-review}
-
-- {doi: 10.1007/978-3-032-38186-6_23, openalex: W7214237006, area: medical, verified: author-review}
-
-- {doi: 10.1007/978-3-032-38179-8_39, openalex: W7214292556, area: methods, verified: author-review}
-
-- {doi: 10.1093/dmfr/twag066, openalex: W7219920001, area: medical, verified: author-review}
-
-- {doi: 10.1088/1361-6560/ae676e, openalex: W4417070753, area: methods, verified: full-text}
-
-- {doi: 10.1007/978-3-032-37464-6_13, openalex: W7148642873, area: methods, verified: full-text}
-
-- {doi: 10.58286/32612, openalex: W7128435027, area: industrial, verified: full-text}
-
-- {doi: 10.1007/978-3-032-37577-3_8, openalex: W7212060898, area: methods, verified: full-text}
-
-- {doi: 10.48550/arxiv.2609.09455, openalex: W7212149011, area: medical, verified: full-text}
-
-- {doi: 10.48550/arxiv.2610.39359, openalex: W7224920323, area: methods, verified: full-text}
-
-- {doi: 10.48550/arxiv.2507.12432, openalex: W4415314511, area: methods, verified: full-text}
-
-- {doi: 10.58286/31408, openalex: W4411598487, area: industrial, verified: full-text}
-
-- {doi: 10.1364/oe.578229, openalex: W4417413936, area: materials, verified: full-text}
-
-- {doi: 10.1364/oe.524414, openalex: W4401878264, area: materials, verified: full-text}
-
-- {doi: 10.58286/29237, openalex: W4391315864, area: industrial, verified: full-text}
-
-- {doi: 10.58286/29260, openalex: W4391315873, area: industrial, verified: full-text}
-
-- {doi: 10.47116/apjcri.2024.05.07, openalex: W4399162618, area: methods, verified: full-text}
-
-- {doi: 10.1038/s44172-023-00123-x, openalex: W4387425264, area: medical, verified: full-text}
-
-- {doi: 10.58286/27726, openalex: W4322013114, area: industrial, verified: full-text}
-
-- {doi: 10.1088/1361-6560/ac8852, openalex: W4292421563, area: methods, verified: full-text}
-
-- {doi: 10.1063/5.0043653, openalex: W3119082923, area: other, verified: full-text}
-
-- {doi: 10.58286/23737, openalex: W4362238185, area: methods, verified: full-text}
-
-- {doi: 10.1002/mp.17002, openalex: W4392154119, area: medical, verified: full-text}
+- title: High quality imaging from sparsely sampled computed tomography data with deep learning and wavelet transform in various domains
+  authors: [Dong‐Hoon Lee, Sunghoon Choi, Hee‐Joung Kim]
+  venue: Medical Physics 46, 104-115
+  year: 2018
+  doi: 10.1002/mp.13258
+  openalex: W2898099302
+  area: methods
+  verified: author-review
+
+- title: Study of CT Images Processing with the Implementation of MLEM Algorithm using CUDA on NVIDIA’S GPU Framework
+  authors: [T. A. Valencia-Pérez, Javier Miguel Hernández-López, E. Moreno-Barbosa, Benito de Celis Alonso]
+  venue: Journal of Nuclear Physics Material Sciences Radiation and Applications 7, 165-171
+  year: 2020
+  doi: 10.15415/jnp.2020.72021
+  openalex: W3009931164
+  area: medical
+  verified: author-review
+
+- title: Empirical beam hardening and ring artifact correction for x‐ray grating interferometry (EBHC‐GI)
+  authors: [Brandon Nelson, Shuai Leng, Elisabeth R. Shanblatt, Cynthia H. McCollough, Thomas W. Koenig]
+  venue: Medical Physics 48, 1327-1340
+  year: 2020
+  doi: 10.1002/mp.14672
+  openalex: W3114491807
+  area: materials
+  verified: author-review
+
+- title: A New CL Reconstruction Method Under the Displaced Sample Stage Scanning Mode
+  authors: [Yanan Zhang, Min Yang, Yapeng Wu, Liang Sun, Jiawei Ran, Qiang Lin]
+  venue: IEEE Transactions on Nuclear Science 68, 2574-2586
+  year: 2021
+  doi: 10.1109/tns.2021.3117993
+  openalex: W3203842635
+  area: industrial
+  verified: author-review
+
+- title: Improving spatial resolution with an edge-enhancement model for low-dose propagation-based X-ray phase-contrast computed tomography
+  authors: [Lin Zhang, Huijuan Zhao, Zhongxing Zhou, Mengyu Jeremy Jia, Limin Zhang, Jingying Jiang, Feng Gao]
+  venue: Optics Express 29, 37399-37399
+  year: 2021
+  doi: 10.1364/oe.440664
+  openalex: W3207013092
+  area: materials
+  verified: author-review
+
+- title: A reconstruction approach for proton computed tomography by modeling the integral depth dose of the scanning proton pencil beam
+  authors: [Xinyuan Chen, Maria Medrano, Baozhou Sun, Yao Wu Hao, Francisco J. Reynoso, Arash Darafsheh, Deshan Yang, Tiezhi Zhang, Tianyu Zhao]
+  venue: Medical Physics 49, 2602-2620
+  year: 2022
+  doi: 10.1002/mp.15482
+  openalex: W4210331680
+  area: particle
+  verified: author-review
+
+- title: Investigation of image quality of MV and kV CBCT with low‐Z beams and high DQE detector
+  authors: [Jericho O'Connell, Magdalena Bazalova‐Carter]
+  venue: Medical Physics 49, 2334-2341
+  year: 2022
+  doi: 10.1002/mp.15503
+  openalex: W4210348825
+  area: medical
+  verified: author-review
+
+- title: Effect of the number of projections in X-ray CT imaging on image quality and digital volume correlation measurement
+  authors: [Xuanhao Zhang, Sun Lijuan, Bo Wang, Pan Bing]
+  venue: Measurement 194, 111061-111061
+  year: 2022
+  doi: 10.1016/j.measurement.2022.111061
+  openalex: W4220697585
+  area: industrial
+  verified: author-review
+
+- title: Evaluation of Parallel Processing Employed in Industrial Computed Tomography
+  authors: [Rajesh Acharya, Umesh Kumar, Vaibhav H. Patankar, Soumitra Kar, Ashutosh Kumar Dash]
+  venue: Lecture notes in mechanical engineering 1-8
+  year: 2022
+  doi: 10.1007/978-981-16-9093-8_1
+  openalex: W4226519382
+  area: industrial
+  verified: author-review
+
+- title: Comparison of Analytical and Iterative Algorithms for Reconstruction of Microtomographic Phantom Images and Rat Mandibular Scans
+  authors: [Paweł Lipowicz, Agnieszka Dardzińska, Marta Borowska, Ander Biguri]
+  venue: Advances in intelligent systems and computing 107-118
+  year: 2022
+  doi: 10.1007/978-3-031-09135-3_10
+  openalex: W4285262694
+  area: materials
+  verified: author-review
+
+- title: Rapid, Reliable Tissue Fractionation Algorithm for Commercial Scale Biorefineries
+  authors: [Rahul Reddy Kancharla]
+  venue: ScholarWorks (Boise State University)
+  year: 2022
+  doi: 10.18122/td.1935.boisestate
+  openalex: W4294912015
+  area: other
+  verified: author-review
+
+- title: Multi-material spectral photon-counting micro-CT with minimum residual decomposition and self-supervised deep denoising
+  authors: [Vittorio Di Trapani, Luca Brombal, Francesco Brun]
+  venue: Optics Express 30, 42995-42995
+  year: 2022
+  doi: 10.1364/oe.471439
+  openalex: W4296113863
+  area: materials
+  verified: author-review
+
+- title: 'Metal artifact correction in photon‐counting detector computed tomography: metal trace replacement using high‐energy data'
+  authors: [Devon Richtsmeier, Jericho O'Connell, Pierre‐Antoine Rodesch, Kris Iniewski, Magdalena Bazalova‐Carter]
+  venue: Medical Physics 50, 380-396
+  year: 2022
+  doi: 10.1002/mp.16049
+  openalex: W4304987437
+  area: medical
+  verified: author-review
+
+- title: Evaluation and Comparison of Two Deep-Learning Strategies for On-Line X-Ray Computed Tomography
+  authors: [Romain Vo, Julie Escoda, Caroline Vienne, Étienne Decencière]
+  venue: Annual Review of Progress in Quantitative Nondestructive Evaluation (QNDE)
+  year: 2022
+  doi: 10.1115/qnde2022-98387
+  openalex: W4315464573
+  area: industrial
+  verified: author-review
+
+- title: A total variation prior unrolling approach for computed tomography reconstruction
+  authors: [Pengcheng Zhang, Shuhui Ren, Yi Liu, Zhiguo Gui, Hong Shangguan, Yanling Wang, Huazhong Shu, Yang Chen]
+  venue: Medical Physics 50, 2816-2834
+  year: 2023
+  doi: 10.1002/mp.16307
+  openalex: W4320893531
+  area: methods
+  verified: author-review
+
+- title: Convolutional neural network‐based model observer for signal known statistically task in breast tomosynthesis images
+  authors: [Hanjoo Jang, Jongduk Baek]
+  venue: Medical Physics 50, 6390-6408
+  year: 2023
+  doi: 10.1002/mp.16395
+  openalex: W4361001862
+  area: medical
+  verified: author-review
+
+- title: High resolution imaging with focused kV x‐rays for small animal radio‐neuromodulation
+  authors: [Linxi Shi, Nathaniel Robert Bennett, Eric Nguyen, Carolyn A. MacDonald, Adam Wang, Wu Liu]
+  venue: Medical Physics 50, 4459-4465
+  year: 2023
+  doi: 10.1002/mp.16413
+  openalex: W4365811033
+  area: medical
+  verified: author-review
+
+- title: Statistical Penalized-likelihood CT Image Reconstruction with Plug-and-play Priors
+  authors: [Van-Giang Nguyen, Ha Dai Duong]
+  venue: IEEE Statistical Signal Processing Workshop (SSP) 7, 398-402
+  year: 2023
+  doi: 10.1109/ssp53291.2023.10207973
+  openalex: W4385694545
+  area: methods
+  verified: author-review
+
+- title: X-Ray-Based Investigations on Multiphase Capillary Flows
+  authors: [Norbert Kockmann, Julia Schuler, Bastian Oldach]
+  venue: Springer eBooks 1145-1181
+  year: 2023
+  doi: 10.1007/978-981-287-092-6_29
+  openalex: W4387067482
+  area: materials
+  verified: author-review
+
+- title: 'FRNAF: Frequency Regularization Neural Attenuation Fields for Sparse-View CBCT Reconstruction'
+  authors: [Chunjie Xia, Nan Zheng, Hongjiang Wei, Kai Xu, Tsung‐Yuan Tsai]
+  venue: SSRN Electronic Journal
+  year: 2023
+  doi: 10.2139/ssrn.4643014
+  openalex: W4389105293
+  area: methods
+  verified: author-review
+
+- title: Non-coplanar lung SABR treatments delivered with a gantry-mounted x-ray tube
+  authors: [Jericho O’Connell, M Weil, Magdalena Bazalova‐Carter]
+  venue: Physics in Medicine and Biology 69, 025002-025002
+  year: 2023
+  doi: 10.1088/1361-6560/ad111a
+  openalex: W4389162835
+  area: medical
+  verified: author-review
+
+- title: 'Material decomposition with a prototype photon-counting detector CT system: expanding a stoichiometric dual-energy CT method via energy bin optimization and K-edge imaging'
+  authors: [Devon Richtsmeier, Pierre‐Antoine Rodesch, Kris Iniewski, Magdalena Bazalova‐Carter]
+  venue: Physics in Medicine and Biology 69, 055001-055001
+  year: 2024
+  doi: 10.1088/1361-6560/ad25c8
+  openalex: W4391465702
+  area: materials
+  verified: author-review
+
+- title: 'XTransCT: ultra-fast volumetric CT reconstruction using two orthogonal x-ray projections for image-guided radiation therapy via a transformer network'
+  authors: [Chulong Zhang, Lin Liu, Jingjing Dai, Xuan Liu, Wenfeng He, Yinping Chan, Yaoqin Xie, Feng Chi, Xiaokun Liang]
+  venue: Physics in Medicine and Biology 69, 085010-085010
+  year: 2024
+  doi: 10.1088/1361-6560/ad3320
+  openalex: W4392681580
+  area: methods
+  verified: author-review
+
+- title: Fast computational approach with prior dimension reduction for three-dimensional chemical component analysis using CT data of spectral imaging
+  authors: [M. Shiga, Taisuke Ono, Kenichi Morishita, Keiji Kuno, Nanase Moriguchi]
+  venue: Microscopy 73, 488-498
+  year: 2024
+  doi: 10.1093/jmicro/dfae027
+  openalex: W4397021630
+  area: materials
+  verified: author-review
+
+- title: 'Evaluating spectral performance for quantitative contrast-enhanced breast CT with a GaAs based photon counting detector: a simulation approach'
+  authors: [Bahaa Ghammraoui, Muhammad Usman Ghani, Stephen J. Glick]
+  venue: Biomedical Physics & Engineering Express 10, 055011-055011
+  year: 2024
+  doi: 10.1088/2057-1976/ad5f96
+  openalex: W4400346346
+  area: medical
+  verified: author-review
+
+- title: 'PE-INeR: prior-embedded implicit neural representation for sparse-view CBCT reconstruction'
+  authors: [Jiaying Yang, Shipeng Xie]
+  venue: Applied Optics 63, 8907-8907
+  year: 2024
+  doi: 10.1364/ao.534352
+  openalex: W4404346050
+  area: methods
+  verified: author-review
+
+- title: A Multiscale Reconstruction Framework Based on Edge-Enhanced Guidance for In-Line X-Ray Phase-Contrast CT With Limited-Angle Projections
+  authors: [Yimin Li, Yuanyuan Zhao, Chenyang Ma, Fangzhi Li, Ziyao Wang, Wenjuan Lv, Dongjiang Ji, Jianbo Jian, Xinyan Zhao, Yuqing Zhao, Chunhong Hu]
+  venue: IEEE Transactions on Instrumentation and Measurement 74, 1-11
+  year: 2024
+  doi: 10.1109/tim.2024.3522391
+  openalex: W4405812491
+  area: industrial
+  verified: author-review
+
+- title: Development of an Instantaneously Interpretable Real-Time Dosimeter System for Quality Assurance of a Medical Linear Accelerator
+  authors: [Dongyeon Lee, Sung Jin Kim, Wonjoong Cheon, Hyosung Cho, Youngyih Han]
+  venue: Progress in Medical Physics 35, 178-204
+  year: 2024
+  doi: 10.14316/pmp.2024.35.4.178
+  openalex: W4406122695
+  area: medical
+  verified: author-review
+
+- title: Fast, automated optimization of virtual monoenergetic images with the dual‐energy image synthesizer for cone‐beam CT
+  authors: [Andrew Keeler, Jason Luce, Mathias Lehmann, John C. Roeske, Hyejoo Kang]
+  venue: Journal of Applied Clinical Medical Physics 26, e70083-e70083
+  year: 2025
+  doi: 10.1002/acm2.70083
+  openalex: W4409678015
+  area: medical
+  verified: author-review
+
+- title: Truncated projection CL reconstruction based on TS-FBP
+  authors: [Junyao Wang, YongNing Zou, Qian Qin, Zexin Liu, Ying Chen]
+  venue: Optics Express 33, 25415-25415
+  year: 2025
+  doi: 10.1364/oe.565121
+  openalex: W4410813951
+  area: industrial
+  verified: author-review
+
+- title: 'Coded wavefront sensing for video-rate quantitative phase imaging and tomography: validation with digital holographic microscopy'
+  authors: [Syed Muhammad Kazim, Franziska Strasser, Mia Kvåle Løvmo, Andrii Nehrych, Simon Moser, Michał Ziemczonok, Wolfgang Heidrich, Ivo Ihrke, Monika Ritsch‐Marte]
+  venue: Optics Express 33, 25198-25198
+  year: 2025
+  doi: 10.1364/oe.564913
+  openalex: W4410817214
+  area: materials
+  verified: author-review
+
+- title: Orthogonal translation computed laminography reconstruction based on self-prior information and adaptive weighted total variation
+  authors: [Chuandong Tan, Chao Long, Yarui Xi, Zhiting Chen, Xinxin Lin, Fenglin Liu, Yufang Cai, Liming Duan]
+  venue: Displays 90, 103169-103169
+  year: 2025
+  doi: 10.1016/j.displa.2025.103169
+  openalex: W4412499314
+  area: industrial
+  verified: author-review
+
+- title: Hybrid GPU Monte Carlo software toolkit for fast and accurate cone‐beam CT simulation
+  authors: [Jericho O'Connell, Matthew W. Jacobson, Thomas C. Harris, Raphael Bruegger, Dianne Ferguson, Rony Fueglistaller, Yue‐Houng Hu, Daniel Morf, Vera Birrer, Pablo Corral Arroyo, Mathias Lehmann, Marios E. Myronakis, Ross Berbeco]
+  venue: Medical Physics 52, e18011-e18011
+  year: 2025
+  doi: 10.1002/mp.18011
+  openalex: W4413054422
+  area: medical
+  verified: author-review
+
+- title: A simulation tool for x-ray phase-contrast micro-CT featuring a small-pixel photon-counting detector
+  authors: [Andrew Coathup, P. Cardarelli, Luca Brombal]
+  venue: Journal of Physics D Applied Physics 58, 415102-415102
+  year: 2025
+  doi: 10.1088/1361-6463/ae0a61
+  openalex: W4414451913
+  area: materials
+  verified: author-review
+
+- title: 3D CBCT Artefact Removal Using Perpendicular Score-Based Diffusion Models
+  authors: [Susanne Schaub, Florentin Bieder, Matheus L. Oliveira, Yulan Wang, Dorothea C. Dagassan‐Berndt, Michael Marc Bornstein, Philippe Claude Cattin]
+  venue: Lecture notes in computer science 244-253
+  year: 2025
+  doi: 10.1007/978-3-032-05472-2_24
+  openalex: W4414478160
+  area: methods
+  verified: author-review
+
+- title: Filtering-Based Preconditioner for Accelerated High-Dimensional Cone-Beam CT Image Reconstruction
+  authors: [Ville-Veikko Wettenhovi, Ari Hietanen, Kati Niinimäki, Marko J. Vauhkonen, Ville Kolehmainen]
+  venue: Journal of Mathematical Imaging and Vision 67
+  year: 2025
+  doi: 10.1007/s10851-025-01276-4
+  openalex: W4416821207
+  area: methods
+  verified: author-review
+
+- title: 'Dual-beam fast-neutron and high-energy x-ray computed tomography for industrial applications: a comparative simulation study'
+  authors: [Chunguang Zong, Nick Cutmore, Yi Liu]
+  venue: Engineering Research Express 7, 045441-045441
+  year: 2025
+  doi: 10.1088/2631-8695/ae2768
+  openalex: W4416929936
+  area: industrial
+  verified: author-review
+
+- title: A comparison of limited-angle CBCT photon-counting and flat-panel digital mammography in perceived detection and visualization of breast lesions
+  authors: [Tony Martin Svahn, Radu Lesanu, Ander Biguri, Jennifer C. Ast]
+  venue: Radiation Protection Dosimetry 202, 346-357
+  year: 2026
+  doi: 10.1093/rpd/ncaf181
+  openalex: W7135181549
+  area: medical
+  verified: author-review
+
+- title: A Deep Learning-Based Web Application for CT Reconstruction from X-Ray Image
+  authors: [Huu Quang Hoa Nguyen, Tran Quoc Bao Le, Quy Dat Tran, Thi Tan Tien Nguyen, Hang Phuong Nguyen, Cong Tran, Cuong Pham]
+  venue: Lecture notes in networks and systems 329-337
+  year: 2026
+  doi: 10.1007/978-3-032-18316-3_37
+  openalex: W7150017409
+  area: methods
+  verified: author-review
+
+- title: Role of deep learning into three-dimensional reconstruction for breast tomosynthesis
+  authors: [Arnaud Quillent]
+  venue: theses.fr (ABES)
+  year: 2025
+  doi: 10.70675/96d4a1e2za7eaz438bza08bzec4325c1ffe0
+  openalex: W7152543342
+  area: medical
+  verified: author-review
+
+- title: Unsupervised large-cone-angle artifact suppression for CBCT reconstruction via neural radiance fields
+  authors: [yujie Liu, Chuandong Tan, Wang Ao, zihao wang, Songtao Zhu, Xiaojiao Duan, Fenglin Liu]
+  venue: Optics Express 34, 20754-20754
+  year: 2026
+  doi: 10.1364/oe.597105
+  openalex: W7153989556
+  area: methods
+  verified: author-review
+
+- title: Impact of dose allocation between high‐ and low‐kV scans on virtual monoenergetic image quality in developmental dual‐energy cone‐beam CT for image‐guided radiotherapy
+  authors: [Andrew Keeler, Luke Layman, Ha Nguyen, Jason Luce, Mathias Lehmann, John C. Roeske, Hyejoo Kang]
+  venue: Journal of Applied Clinical Medical Physics 27, e70545-e70545
+  year: 2026
+  doi: 10.1002/acm2.70545
+  openalex: W7155821726
+  area: medical
+  verified: author-review
+
+- title: Structure decomposition for quantitative microarchitecture analysis via X-ray grating interferometry
+  authors: [Longchao Men, Peiyuan Guo, Jincheng Lu, Yongle Yan, Hongxia Yin, 'Xu, Yan, 1963 Jan. 31-', Zhenchang Wang, Li Zhang, Zhentian Wang]
+  venue: Optica 13, 1104-1104
+  year: 2026
+  doi: 10.1364/optica.570829
+  openalex: W7161838464
+  area: materials
+  verified: author-review
+
+- title: Limited projection based in-situ X-ray tomography for hard material characterization
+  authors: [Yu Wang, Gong-Xiang Wei, Zhenguo Zhao, Xintong Liu, Jiaxing Xu, Yiyang Fu, Zonghao Xu, Min Yue, Fuli Wang, Huiqiang Liu]
+  venue: Optics Express 34, 22912-22912
+  year: 2026
+  doi: 10.1364/oe.600530
+  openalex: W7163348293
+  area: materials
+  verified: author-review
+
+- title: 3D Cerebrovascular Shape Completion from Biplane Angiography and CTA Prior
+  authors: [Janik Jehkul, Sarah Frisken, Vivek Gopalakrishnan, Daniel Rueckert, Nazim Haouchine]
+  venue: Lecture notes in computer science 411-421
+  year: 2026
+  doi: 10.1007/978-3-032-38186-6_39
+  openalex: W7214232221
+  area: medical
+  verified: author-review
+
+- title: 'NR-Align: Non-rigid Alignment for Non-simultaneous Two-View 3D Coronary Reconstruction in Complex Cardiac Interventions'
+  authors: [Pengbo Wang, Zhu Meng, Qiwan Yu, Fei Su, Chunxia Di]
+  venue: Lecture notes in computer science 237-246
+  year: 2026
+  doi: 10.1007/978-3-032-38186-6_23
+  openalex: W7214237006
+  area: medical
+  verified: author-review
+
+- title: 'PhyRadGS: Physics-Aware Radiative Gaussian Splatting for Fly-Scanning CBCT Reconstruction'
+  authors: [Anwei Li, Zhongyang Zheng, Tianyuan Sun, Zhang Yubing, Rongqiu Wang]
+  venue: Lecture notes in computer science 403-413
+  year: 2026
+  doi: 10.1007/978-3-032-38179-8_39
+  openalex: W7214292556
+  area: methods
+  verified: author-review
+
+- title: 'From cone-beam CT to synthesized extraoral bitewing: a patient-specific pipeline for dose- and cost-free 2D information presentation and clinical decision support'
+  authors: [Kemal Selçuk Yücel, Alp Pınarbaşı, Beyza YALVAÇ, Sedat Ozdogan, Ferhat Aydin, Kadir Yılmaz, Osman Furkan Çakmak, Duygu Polat, Büşranur Yavuz, Emin Murat Canger, Dan Ruan]
+  venue: Dentomaxillofacial Radiology
+  year: 2026
+  doi: 10.1093/dmfr/twag066
+  openalex: W7219920001
+  area: medical
+  verified: author-review
+
+- title: Real-time CBCT reconstructions using Krylov solvers in repeated scanning procedures
+  authors: [Fred Hastings, S M Ragib Shahriar Islam, Malena Sabaté Landman, Sepideh Hatamikia, Carola‐Bibiane Schönlieb, Ander Biguri]
+  venue: Physics in Medicine and Biology 71, 105019-105019
+  year: 2026
+  doi: 10.1088/1361-6560/ae676e
+  openalex: W4417070753
+  area: methods
+  verified: full-text
+
+- title: 'FaCT-GS: Fast and Scalable CT Reconstruction with Gaussian Splatting'
+  authors: [Pawel Tomasz Pieta, Rasmus Juul Pedersen, Sina Borgi, Jakob Sauer Jørgensen, Jens Wenzel Andreasen, Vedrana Andersen Dahl]
+  venue: Lecture notes in computer science 225-245
+  year: 2026
+  doi: 10.1007/978-3-032-37464-6_13
+  openalex: W7148642873
+  area: methods
+  verified: full-text
+
+- title: 100% Inline Quality Assurance for Ex- and Pultruded Products through Innovative and Novel X-ray Inspection Systems
+  authors: [Simon Rettenberger, Markus Eberhorn]
+  venue: e-Journal of Nondestructive Testing 31
+  year: 2026
+  doi: 10.58286/32612
+  openalex: W7128435027
+  area: industrial
+  verified: full-text
+
+- title: Neuromorphic X-Ray Computed Tomography
+  authors: [Hongjian Wang, Goran Lovrić, Benjamín Béjar]
+  venue: Lecture notes in computer science 137-155
+  year: 2026
+  doi: 10.1007/978-3-032-37577-3_8
+  openalex: W7212060898
+  area: methods
+  verified: full-text
+
+- title: Develop and Optimize 5DCT Imaging Simulation and Reconstruction Methods
+  authors: [Yuhao Wang, Zhendong Zhang, Edward Robert Criscuolo, John Ginn, Ke Lü, Yao Hao, Deshan Yang]
+  venue: arXiv (Cornell University)
+  year: 2026
+  doi: 10.48550/arxiv.2609.09455
+  openalex: W7212149011
+  area: medical
+  verified: full-text
+
+- title: 'P^2-Gaussian: Prior-Driven and Projection-Guided Gaussian Splatting for Sparse-View Cone-Beam CT Reconstruction'
+  authors: [Jinqiu Xia, Jianhui Ma, Bin Ouyang, Xiaoyan Huang, Yuan Xu, Zun Piao]
+  venue: arXiv (Cornell University)
+  year: 2026
+  doi: 10.48550/arxiv.2610.39359
+  openalex: W7224920323
+  area: methods
+  verified: full-text
+
+- title: Energy-based models for inverse imaging problems
+  authors: [Andreas Habring, Martin Höller, Thomas Pock, Martin Zach]
+  venue: arXiv (Cornell University)
+  year: 2025
+  doi: 10.48550/arxiv.2507.12432
+  openalex: W4415314511
+  area: methods
+  verified: full-text
+
+- title: Performance of 9 to 15 MV Computed Tomography of large objects in industrial and nuclear field
+  authors: [CEA Cadarache, Nicolas Estre, CEA Cadarache, Olivier David, CEA Cadarache, Daniel Eck, CEA Cadarache, B. Geslot, CEA Cadarache, Olivier Guetion, CEA Cadarache, Frédéric Moutet, CEA Cadarache, Emmanuel Payan, CEA Cadarache, Christophe Roure, CEA Cadarache, Alix Sardet, CEA Cadarache, Cécilia Tarpaut]
+  venue: e-Journal of Nondestructive Testing 30
+  year: 2025
+  doi: 10.58286/31408
+  openalex: W4411598487
+  area: industrial
+  verified: full-text
+
+- title: Wave-optics simulation model for full-field modulation-based tensor tomography using a random wavefront modulator
+  authors: [Ginevra Lautizi, Vittorio Di Trapani, Margaux Schmeltz, Marie‐Christine Zdora, Ludovic Broche, Ian Sinclair, Mark Mavrogordato, Richard Boardman, Yeajin Lee, Alain Studer, Federica Marone, Pierre Thibault]
+  venue: Optics Express 34, 15826-15826
+  year: 2025
+  doi: 10.1364/oe.578229
+  openalex: W4417413936
+  area: materials
+  verified: full-text
+
+- title: 20 µm resolution multipixel ghost imaging with high-energy x-rays
+  authors: [Or Sefi, A. Ben Yehuda, Y. Klein, Z. Sobol, S. Bloch, H. Schwartz, Eliahu Cohen, S. Shwartz]
+  venue: Optics Express 32, 37001-37001
+  year: 2024
+  doi: 10.1364/oe.524414
+  openalex: W4401878264
+  area: materials
+  verified: full-text
+
+- title: The constrained split Bregman algorithm for enhancing the quality of image reconstruction and analysis in few-view computed tomography
+  authors: [Maryam Bahrkazemi, Alexander Rohde, Johannes Fieres, Jonathan Hess, Patricio Guerrero, Sven Gondrom-Linke, Wim Dewulf]
+  venue: e-Journal of Nondestructive Testing 29
+  year: 2024
+  doi: 10.58286/29237
+  openalex: W4391315864
+  area: industrial
+  verified: full-text
+
+- title: 'Unveiling the Full Picture: Advanced Scanning Procedure for Complete Large Component Scans via Twin Robotic Computed Tomography'
+  authors: [Simon Wittl, Anton Weiss, Gabriel Herl, Simon Zabler, Patrick Dewailly, Ronan Le Goff]
+  venue: e-Journal of Nondestructive Testing 29
+  year: 2024
+  doi: 10.58286/29260
+  openalex: W4391315873
+  area: industrial
+  verified: full-text
+
+- title: Design and Implementation of Computed Tomography Reconstruction System Using Neural Radiance Fields Techniques
+  authors: [Haill An, Younhyun Jung]
+  venue: Asia-pacific Journal of Convergent Research Interchange 10, 65-74
+  year: 2024
+  doi: 10.47116/apjcri.2024.05.07
+  openalex: W4399162618
+  area: methods
+  verified: full-text
+
+- title: Volumetric computed tomography with carbon nanotube X-ray source array for improved image quality and accuracy
+  authors: [Shuang Xu, Yuanming Hu, Boyuan Li, Christina R. Inscoe, Donald A. Tyndall, Yueh Z. Lee, Jianping Lü, Otto Z. Zhou]
+  venue: Communications Engineering 2
+  year: 2023
+  doi: 10.1038/s44172-023-00123-x
+  openalex: W4387425264
+  area: medical
+  verified: full-text
+
+- title: Total Variation regularized reconstruction for enhancing the quality of few-view industrial computed tomography applied to image analysis and metrology
+  authors: [Maryam Bahrkazemi, Alexander Rohde, Jonathan Hess, Patricio Guerrero, Sven Gondrom-Linke, Wim Dewulf]
+  venue: e-Journal of Nondestructive Testing 28
+  year: 2023
+  doi: 10.58286/27726
+  openalex: W4322013114
+  area: industrial
+  verified: full-text
+
+- title: Deep learning method for reducing metal artifacts in dental cone-beam CT using supplementary information from intra-oral scan
+  authors: [Chang Min Hyun, Taigyntuya Bayaraa, Hye Sun Yun, Tae Jun Jang, Hyoung Suk Park, Jin Keun Seo]
+  venue: Physics in Medicine and Biology 67, 175007-175007
+  year: 2022
+  doi: 10.1088/1361-6560/ac8852
+  openalex: W4292421563
+  area: methods
+  verified: full-text
+
+- title: Neural network for 3D inertial confinement fusion shell reconstruction from single radiographs
+  authors: [Bradley T. Wolfe, Zhizhong Han, J. Ben-Benjamin, John L. Kline, David S. Montgomery, Elizabeth Merritt, Paul Arthur Keiter, Eric Loomis, Brian M. Patterson, Lindsey A. Kuettner, ‪Zhehui Wang]
+  venue: Review of Scientific Instruments 92, 033547-033547
+  year: 2021
+  doi: 10.1063/5.0043653
+  openalex: W3119082923
+  area: other
+  verified: full-text
+
+- title: Initial result on the use of tetrahedra-based imaging for limited angle tomography
+  authors: [Ander Biguri, Hossein Towsyfyan, Richard Boardman, Thomas Blumensath]
+  venue: e-Journal of Nondestructive Testing 24
+  year: 2019
+  doi: 10.58286/23737
+  openalex: W4362238185
+  area: methods
+  verified: full-text
+
+- title: 'Technical note: TIGRE‐DE for the creation of virtual monoenergetic images from dual‐energy cone‐beam CT'
+  authors: [Andrew Keeler, Mathias Lehmann, Jason Luce, Mandeep Kaur, John C. Roeske, Hyejoo Kang]
+  venue: Medical Physics 51, 2975-2982
+  year: 2024
+  doi: 10.1002/mp.17002
+  openalex: W4392154119
+  area: medical
+  verified: full-text
