@@ -339,3 +339,62 @@
   doi: 10.1016/j.ejmp.2017.07.024
   title: A review of GPU-based medical image reconstruction.
   decision: 'no'
+- openalex: W4212772333
+  doi: 10.53846/goediss-8767
+  title: Ultrafast transmission electron microscopy of a structural phase transition
+  decision: 'no'
+- openalex: W4311877506
+  doi: 10.1002/adem.202201355
+  title: 'X‐ray Tomography and Tomoscopy on Metals: A Review'
+  decision: 'no'
+- openalex: W4380785834
+  doi: 10.1007/978-981-99-1839-3_3
+  title: Deep Learning for Dental Cone-Beam Computed Tomography
+  decision: 'no'
+- openalex: W4388557701
+  doi: 10.1107/s1600577523008962
+  title: 'tomoCAM : fast model-based iterative reconstruction via GPU acceleration and non-uniform fast Fourier transforms'
+  decision: 'no'
+- openalex: W4393970875
+  doi: 10.1088/2057-1976/ad3afe
+  title: Iterative image reconstruction algorithm analysis for optical CT radiochromic gel dosimetry
+  decision: 'no'
+- openalex: W4401008577
+  doi: 10.1364/oe.559227
+  title: 'SPyRiT 3.0: an open source package for single-pixel imaging based on deep learning'
+  decision: 'no'
+- openalex: W4406457733
+  doi: 10.1109/access.2025.3530297
+  title: 'From Technical Prerequisites to Improved Care: Distributed Edge AI for Tomographic Imaging'
+  decision: 'no'
+- openalex: W4407625007
+  doi: 10.1107/s1600577525000359
+  title: Multi-stage deep learning artifact reduction for parallel-beam computed tomography
+  decision: 'no'
+- openalex: W4413233795
+  doi: 10.26434/chemrxiv-2025-h5t2x-v2
+  title: 'nDTomo: A Python-Based Software Suite for X-ray Chemical Imaging and Tomography'
+  decision: 'no'
+- openalex: W4414478759
+  doi: 10.1016/bs.hna.2025.09.001
+  title: Energy-based models for inverse imaging problems
+  decision: 'no'
+- openalex: W7151586798
+  doi: 10.70675/bee2a393z70b4z4a95z976cz4cbaf8c6fd05
+  title: 'High-level synthesis (HLS) on FPGA for inverse problems : application to tomography and radioastronomy'
+  decision: 'no'
+- openalex: W7166671440
+  doi: 10.1038/s41598-026-79689-3
+  title: Comparison of Bresenham and Siddon ray tracing algorithms for sparse view 3D reconstruction of simulated coronary vessel models
+  decision: 'no'
+- openalex: W7207842588
+  doi: 10.2139/ssrn.7387578
+  title: Computational Budgets in Imaging Systems
+  decision: 'no'
+- openalex: W7225183296
+  doi: 10.2139/ssrn.7678399
+  title: 'Resource-Constrained Computational Imaging: Integrating Reconstruction, Compression, and Real-Time Inference'
+  decision: 'no'
+- openalex: W7113205665
+  title: 'Vector-driven: Vektör haritalamasına dayalı yeni bir projeksiyonve ters projeksiyon algoritması'
+  decision: 'no'

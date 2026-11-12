@@ -247,15 +247,6 @@
   area: methods
   verified: citation-context
 
-- title: No-reference based automatic parameter optimization for iterative reconstruction using a novel search space aware crow search algorithm
-  authors: [Poorya MohammadiNasab, A. Biguri, P. Steininger, P. Keuschnigg, L. Lamminger, Agnieszka Lach, S. Islam, Anna Breger, C. Karner, C. Schönlieb, W. Birkfellner, Sepideh Hatamikia]
-  venue: arXiv:2604.06246
-  year: 2026
-  url: https://arxiv.org/abs/2604.06246
-  arxiv: '2604.06246'
-  area: methods
-  verified: citation-context
-
 - title: Hybrid virtual imaging trials combining simulated microcalcifications with patient breast CT images
   authors: [S. H. Lyu, A. Makeev, Dan Li, A. Badal, A. Hernandez, John M. Boone, Stephen J. Glick]
   venue: Medical Imaging 13924, 1392407 - 1392407-6
@@ -927,15 +918,6 @@
   year: 2022
   url: https://arxiv.org/abs/2202.03571
   arxiv: '2202.03571'
-  area: methods
-  verified: citation-context
-
-- title: Sinogram Enhancement with Generative Adversarial Networks using Shape Priors
-  authors: [Emilien Valat, K. Farrahi, T. Blumensath]
-  venue: arXiv:2202.00419
-  year: 2022
-  url: https://arxiv.org/abs/2202.00419
-  arxiv: '2202.00419'
   area: methods
   verified: citation-context
 
@@ -2433,15 +2415,6 @@
   area: medical
   verified: full-text
 
-- title: A 2D antiscatter grid and scatter sampling based CBCT method for online dose calculations during CBCT guided radiation therapy of pelvis.
-  authors: [Farhang Bayat, Brian Miller, Yeonok Park, Zhelin Yu, T. Alexeev, David Thomas, K. Stuhr, Brian D. Kavanagh, M. Miften, C. Altunbas]
-  venue: arXiv:2310.07026
-  year: 2023
-  url: https://arxiv.org/abs/2310.07026
-  arxiv: '2310.07026'
-  area: medical
-  verified: full-text
-
 - title: 2D antiscatter grid and scatter sampling based CBCT pipeline for image guided radiation therapy.
   authors: [Farhang Bayat, D. Ruan, M. Miften, C. Altunbas]
   venue: arXiv:2308.09095
@@ -2571,3 +2544,137 @@
   s2: 412fc975fa9f8b6992c596422ff6bb57e656973c
   area: industrial
   verified: citation-context
+
+- {doi: 10.1002/mp.13258, openalex: W2898099302, area: methods, verified: author-review}
+
+- {doi: 10.15415/jnp.2020.72021, openalex: W3009931164, area: medical, verified: author-review}
+
+- {doi: 10.1002/mp.14672, openalex: W3114491807, area: materials, verified: author-review}
+
+- {doi: 10.1109/tns.2021.3117993, openalex: W3203842635, area: industrial, verified: author-review}
+
+- {doi: 10.1364/oe.440664, openalex: W3207013092, area: materials, verified: author-review}
+
+- {doi: 10.1002/mp.15482, openalex: W4210331680, area: particle, verified: author-review}
+
+- {doi: 10.1002/mp.15503, openalex: W4210348825, area: medical, verified: author-review}
+
+- {doi: 10.1016/j.measurement.2022.111061, openalex: W4220697585, area: industrial, verified: author-review}
+
+- {doi: 10.1007/978-981-16-9093-8_1, openalex: W4226519382, area: industrial, verified: author-review}
+
+- {doi: 10.1007/978-3-031-09135-3_10, openalex: W4285262694, area: materials, verified: author-review}
+
+- {doi: 10.18122/td.1935.boisestate, openalex: W4294912015, area: other, verified: author-review}
+
+- {doi: 10.1364/oe.471439, openalex: W4296113863, area: materials, verified: author-review}
+
+- {doi: 10.1002/mp.16049, openalex: W4304987437, area: medical, verified: author-review}
+
+- {doi: 10.1115/qnde2022-98387, openalex: W4315464573, area: industrial, verified: author-review}
+
+- {doi: 10.1002/mp.16307, openalex: W4320893531, area: methods, verified: author-review}
+
+- {doi: 10.1002/mp.16395, openalex: W4361001862, area: medical, verified: author-review}
+
+- {doi: 10.1002/mp.16413, openalex: W4365811033, area: medical, verified: author-review}
+
+- {doi: 10.1109/ssp53291.2023.10207973, openalex: W4385694545, area: methods, verified: author-review}
+
+- {doi: 10.1007/978-981-287-092-6_29, openalex: W4387067482, area: materials, verified: author-review}
+
+- {doi: 10.2139/ssrn.4643014, openalex: W4389105293, area: methods, verified: author-review}
+
+- {doi: 10.1088/1361-6560/ad111a, openalex: W4389162835, area: medical, verified: author-review}
+
+- {doi: 10.1088/1361-6560/ad25c8, openalex: W4391465702, area: materials, verified: author-review}
+
+- {doi: 10.1088/1361-6560/ad3320, openalex: W4392681580, area: methods, verified: author-review}
+
+- {doi: 10.1093/jmicro/dfae027, openalex: W4397021630, area: materials, verified: author-review}
+
+- {doi: 10.1088/2057-1976/ad5f96, openalex: W4400346346, area: medical, verified: author-review}
+
+- {doi: 10.1364/ao.534352, openalex: W4404346050, area: methods, verified: author-review}
+
+- {doi: 10.1109/tim.2024.3522391, openalex: W4405812491, area: industrial, verified: author-review}
+
+- {doi: 10.14316/pmp.2024.35.4.178, openalex: W4406122695, area: medical, verified: author-review}
+
+- {doi: 10.1002/acm2.70083, openalex: W4409678015, area: medical, verified: author-review}
+
+- {doi: 10.1364/oe.565121, openalex: W4410813951, area: industrial, verified: author-review}
+
+- {doi: 10.1364/oe.564913, openalex: W4410817214, area: materials, verified: author-review}
+
+- {doi: 10.1016/j.displa.2025.103169, openalex: W4412499314, area: industrial, verified: author-review}
+
+- {doi: 10.1002/mp.18011, openalex: W4413054422, area: medical, verified: author-review}
+
+- {doi: 10.1088/1361-6463/ae0a61, openalex: W4414451913, area: materials, verified: author-review}
+
+- {doi: 10.1007/978-3-032-05472-2_24, openalex: W4414478160, area: methods, verified: author-review}
+
+- {doi: 10.1007/s10851-025-01276-4, openalex: W4416821207, area: methods, verified: author-review}
+
+- {doi: 10.1088/2631-8695/ae2768, openalex: W4416929936, area: industrial, verified: author-review}
+
+- {doi: 10.1093/rpd/ncaf181, openalex: W7135181549, area: medical, verified: author-review}
+
+- {doi: 10.1007/978-3-032-18316-3_37, openalex: W7150017409, area: methods, verified: author-review}
+
+- {doi: 10.70675/96d4a1e2za7eaz438bza08bzec4325c1ffe0, openalex: W7152543342, area: medical, verified: author-review}
+
+- {doi: 10.1364/oe.597105, openalex: W7153989556, area: methods, verified: author-review}
+
+- {doi: 10.1002/acm2.70545, openalex: W7155821726, area: medical, verified: author-review}
+
+- {doi: 10.1364/optica.570829, openalex: W7161838464, area: materials, verified: author-review}
+
+- {doi: 10.1364/oe.600530, openalex: W7163348293, area: materials, verified: author-review}
+
+- {doi: 10.1007/978-3-032-38186-6_39, openalex: W7214232221, area: medical, verified: author-review}
+
+- {doi: 10.1007/978-3-032-38186-6_23, openalex: W7214237006, area: medical, verified: author-review}
+
+- {doi: 10.1007/978-3-032-38179-8_39, openalex: W7214292556, area: methods, verified: author-review}
+
+- {doi: 10.1093/dmfr/twag066, openalex: W7219920001, area: medical, verified: author-review}
+
+- {doi: 10.1088/1361-6560/ae676e, openalex: W4417070753, area: methods, verified: full-text}
+
+- {doi: 10.1007/978-3-032-37464-6_13, openalex: W7148642873, area: methods, verified: full-text}
+
+- {doi: 10.58286/32612, openalex: W7128435027, area: industrial, verified: full-text}
+
+- {doi: 10.1007/978-3-032-37577-3_8, openalex: W7212060898, area: methods, verified: full-text}
+
+- {doi: 10.48550/arxiv.2609.09455, openalex: W7212149011, area: medical, verified: full-text}
+
+- {doi: 10.48550/arxiv.2610.39359, openalex: W7224920323, area: methods, verified: full-text}
+
+- {doi: 10.48550/arxiv.2507.12432, openalex: W4415314511, area: methods, verified: full-text}
+
+- {doi: 10.58286/31408, openalex: W4411598487, area: industrial, verified: full-text}
+
+- {doi: 10.1364/oe.578229, openalex: W4417413936, area: materials, verified: full-text}
+
+- {doi: 10.1364/oe.524414, openalex: W4401878264, area: materials, verified: full-text}
+
+- {doi: 10.58286/29237, openalex: W4391315864, area: industrial, verified: full-text}
+
+- {doi: 10.58286/29260, openalex: W4391315873, area: industrial, verified: full-text}
+
+- {doi: 10.47116/apjcri.2024.05.07, openalex: W4399162618, area: methods, verified: full-text}
+
+- {doi: 10.1038/s44172-023-00123-x, openalex: W4387425264, area: medical, verified: full-text}
+
+- {doi: 10.58286/27726, openalex: W4322013114, area: industrial, verified: full-text}
+
+- {doi: 10.1088/1361-6560/ac8852, openalex: W4292421563, area: methods, verified: full-text}
+
+- {doi: 10.1063/5.0043653, openalex: W3119082923, area: other, verified: full-text}
+
+- {doi: 10.58286/23737, openalex: W4362238185, area: methods, verified: full-text}
+
+- {doi: 10.1002/mp.17002, openalex: W4392154119, area: medical, verified: full-text}

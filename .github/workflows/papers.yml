@@ -35,6 +35,7 @@ jobs:
         id: fill
         env:
           S2_API_KEY: ${{ secrets.S2_API_KEY }}
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
         run: |
           python docs/tools/update_papers.py ${{ inputs.refresh == true && '--refresh' || '' }} || echo "incomplete=true" >> "$GITHUB_OUTPUT"
       - name: Commit changes

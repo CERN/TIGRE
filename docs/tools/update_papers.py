@@ -15,8 +15,10 @@ Usage:
     python docs/tools/update_papers.py --candidates  # list papers citing TIGRE
                                                      # that are not in the file yet
 
-Identifiers: ``doi``, ``arxiv`` (e.g. "2405.20693") or ``s2`` (a Semantic
-Scholar paper id). Set S2_API_KEY to use a Semantic Scholar API key.
+Identifiers: ``doi``, ``arxiv`` (e.g. "2405.20693"), ``s2`` (a Semantic
+Scholar paper id) or ``openalex`` (e.g. "W2898099302"). Set S2_API_KEY to use a
+Semantic Scholar API key. Papers Semantic Scholar lacks (marked ``openalex``,
+or still incomplete) are looked up in OpenAlex, which needs OPENALEX_API_KEY.
 
 Network access is needed, so this runs in the "Papers list" GitHub workflow or
 on a maintainer's machine, never during the docs build.
@@ -43,7 +45,8 @@ TIGRE_PAPERS = [
     "DOI:10.1016/j.jpdc.2020.07.004",  # 2020, JPDC
     "DOI:10.1088/2631-8695/adbb3a",  # 2025, TIGRE v3
 ]
-KEY_ORDER = ["title", "authors", "venue", "year", "doi", "url", "arxiv", "s2",
+OPENALEX = "https://api.openalex.org"
+KEY_ORDER = ["title", "authors", "venue", "year", "doi", "url", "arxiv", "s2", "openalex",
              "area", "note", "verified"]
 HEADER = """\
 # Published work that USES TIGRE (not only cites it).
@@ -70,7 +73,7 @@ HEADER = """\
 
 def _request(url, body=None):
     headers = {"User-Agent": "TIGRE-docs (github.com/CERN/TIGRE)"}
-    if os.environ.get("S2_API_KEY"):
+    if os.environ.get("S2_API_KEY") and url.startswith(API):
         headers["x-api-key"] = os.environ["S2_API_KEY"]
     data = None
     if body is not None:
@@ -86,6 +89,38 @@ def _request(url, body=None):
                 time.sleep(5 * (attempt + 1))
                 continue
             raise
+
+
+def _openalex_fill(entry, refresh):
+    """Fallback for papers Semantic Scholar does not have. Needs OPENALEX_API_KEY."""
+    key = os.environ.get("OPENALEX_API_KEY")
+    if not key:
+        return
+    if entry.get("openalex"):
+        url = f"{OPENALEX}/works/{entry['openalex']}"
+    elif entry.get("doi"):
+        url = f"{OPENALEX}/works/doi:{entry['doi']}"
+    else:
+        return
+    try:
+        w = _request(f"{url}?api_key={key}")
+    except Exception as err:
+        print(f"  OpenAlex lookup failed for {entry.get('doi') or entry.get('openalex')}: {type(err).__name__}", file=sys.stderr)
+        return
+    src = (w.get("primary_location") or {}).get("source") or {}
+    biblio = w.get("biblio") or {}
+    pages = "-".join(x for x in (biblio.get("first_page"), biblio.get("last_page")) if x)
+    extra = ", ".join(x for x in (biblio.get("volume"), pages) if x)
+    venue = src.get("display_name")
+    new = {
+        "title": w.get("title") or w.get("display_name"),
+        "authors": [a["author"]["display_name"] for a in w.get("authorships") or [] if a.get("author")] or None,
+        "venue": f"{venue} {extra}".strip() if venue and extra else venue,
+        "year": w.get("publication_year"),
+    }
+    for k, v in new.items():
+        if v and (refresh or not entry.get(k)):
+            entry[k] = v
 
 
 def _s2_id(entry):
@@ -141,7 +176,7 @@ def _dump(entries):
 
 def update(refresh=False):
     entries = yaml.safe_load(PAPERS.read_text(encoding="utf-8")) or []
-    todo = [e for e in entries if _s2_id(e) and (refresh or not all(e.get(k) for k in ("title", "authors", "venue", "year")))]
+    todo = [e for e in entries if _s2_id(e) and not e.get("openalex") and (refresh or not all(e.get(k) for k in ("title", "authors", "venue", "year")))]
     print(f"{len(entries)} entries, {len(todo)} to look up")
     for start in range(0, len(todo), 400):
         chunk = todo[start:start + 400]
@@ -151,6 +186,9 @@ def update(refresh=False):
                 print(f"  not found: {_s2_id(entry)}", file=sys.stderr)
                 continue
             _fill(entry, paper, refresh)
+    for entry in entries:
+        if refresh and entry.get("openalex") or not all(entry.get(k) for k in ("title", "authors", "venue", "year")):
+            _openalex_fill(entry, refresh)
     PAPERS.write_text(_dump(entries), encoding="utf-8")
     missing = [_s2_id(e) or e.get("title") for e in entries if not all(e.get(k) for k in ("title", "authors", "venue", "year"))]
     if missing:
