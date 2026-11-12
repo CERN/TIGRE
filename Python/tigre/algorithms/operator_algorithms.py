@@ -5,6 +5,9 @@ from tigre.utilities.projection_operator import prepare_projections, _array
 def reconstruct(name, proj, operator, niter, _algorithm_class=None, **kwargs):
     name = name.lower() if isinstance(name, str) else "iterativereconalg"
     name = {"ossart": "os_sart", "ossart_tv": "os_sart_tv"}.get(name, name)
+    if name in ("asd_pocs", "os_asd_pocs", "awasd_pocs", "os_awasd_pocs", "pcsd", "os_pcsd", "aw_pcsd", "os_aw_pcsd"):
+        from . import operator_pocs
+        return getattr(operator_pocs, name + "_operator")(proj, operator, niter=niter, **kwargs)
     solvers = {'cgls': cgls_operator, 'sirt': sirt_operator, 'os_sart': os_sart_operator, 'fast_os_sart': fast_os_sart_operator}
     if name not in solvers:
         if name not in ('sart', 'sart_tv', 'os_sart_tv', 'iterativereconalg', 'lsqr', 'lsmr', 'hybrid_lsqr', 'irn_tv_cgls', 'hybrid_flsqr_tv', 'ab_gmres', 'ba_gmres', 'fista', 'ista', 'mlem'):
