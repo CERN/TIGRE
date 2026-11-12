@@ -11,6 +11,7 @@ on:
       - docs/tools/review_queue.py
       - docs/tools/review_hints.json
       - docs/tools/papers_reviewed.yaml
+      - docs/papers.yaml
       - .github/workflows/papers-review.yml
   workflow_dispatch:
 
@@ -30,6 +31,8 @@ jobs:
       - name: Build review queue
         env:
           S2_API_KEY: ${{ secrets.S2_API_KEY }}
+          OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          REVIEW_ONLY_OPENALEX: "1"
         run: python docs/tools/review_queue.py 2>&1 | tee docs/tools/review_queue.log; exit ${PIPESTATUS[0]}
         shell: bash
       - name: Commit queue

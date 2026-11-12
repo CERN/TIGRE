@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import pathlib
 import re
 import sys
@@ -94,9 +95,15 @@ def fulltext_sentences(url):
 
 OPENALEX = "https://api.openalex.org"
 MAILTO = "tigre.toolbox@gmail.com"
+OPENALEX_KEY = os.environ.get("OPENALEX_API_KEY", "")
+# REVIEW_ONLY_OPENALEX=1: Semantic Scholar is only used to skip papers it already
+# has (they were reviewed in an earlier round); the queue holds OpenAlex-only papers.
+ONLY_OPENALEX = os.environ.get("REVIEW_ONLY_OPENALEX") == "1"
 
 
 def _get_json(url):
+    if "api.openalex.org" in url and OPENALEX_KEY:
+        url += ("&" if "?" in url else "?") + "api_key=" + OPENALEX_KEY
     req = urllib.request.Request(url, headers={"User-Agent": f"TIGRE-docs (mailto:{MAILTO})"})
     for attempt in range(5):
         try:
@@ -200,7 +207,7 @@ def main():
         p = entry["paper"]
         ext = p.get("externalIds") or {}
         ids = {pid.lower(), str(ext.get("DOI", "")).lower(), str(ext.get("ArXiv", "")).lower()}
-        if ids & known or hint_of.get(pid) == "own":
+        if ids & known or hint_of.get(pid) == "own" or ONLY_OPENALEX:
             continue
         doi = ext.get("DOI")
         arxiv = ext.get("ArXiv")
