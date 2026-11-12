@@ -1,11 +1,19 @@
 # Published work that USES TIGRE (not only cites it).
 #
-# This file generates docs/papers.md. To add a paper, append an entry and open
-# a pull request. Fields:
-#   title, authors (list, "Given Family"), venue, year (required)
-#   doi or url (one of them, recommended)
-#   area: one of the area keys in docs/_ext/tigre_papers.py
+# This file generates docs/papers.md. To add a paper, append an entry with an
+# identifier and an area, then open a pull request:
+#
+#   - doi: "10.xxxx/yyyy"        # or  arxiv: "2405.20693"
+#     area: medical
+#
+# The "Papers list" workflow (or `python docs/tools/update_papers.py`) fills in
+# title, authors, venue and year. Fields you write yourself are never overwritten.
+#
+# Fields: title, authors, venue, year | doi, url, arxiv, s2 | area | note
+#   area: medical, particle, industrial, synchrotron, methods or other
 #   note: optional, one line on how TIGRE was used
+#   verified: how we know the paper uses TIGRE (e.g. citation-context: the
+#     sentence citing TIGRE says it was used; author: confirmed by the authors)
 # Papers about TIGRE itself are listed on the Citing page, not here.
 
 - title: Validation and application of a new image reconstruction software toolbox (TIGRE) for breast cone-beam computed tomography
@@ -15,6 +23,7 @@
   doi: 10.1117/12.2293200
   area: medical
   note: Validates TIGRE against a standard MATLAB implementation for breast CBCT.
+  verified: manual
 
 - title: Breast tomosynthesis reconstruction using TIGRE software tool
   authors: [Albert Malet, Diego García Pinto, Josep Fernández, Robert Martí, Oliver Díaz]
@@ -23,14 +32,16 @@
   doi: 10.1117/12.2317933
   area: medical
   note: Digital breast tomosynthesis reconstruction with TIGRE.
+  verified: manual
 
-- title: "fastCAT: Fast cone beam CT (CBCT) simulation"
+- title: 'fastCAT: Fast cone beam CT (CBCT) simulation'
   authors: [Jericho O'Connell, Magdalena Bazalova-Carter]
   venue: arXiv:2011.04736
   year: 2021
   url: https://arxiv.org/abs/2011.04736
   area: medical
   note: CBCT simulator that uses TIGRE for its forward projections.
+  verified: manual
 
 - title: First application of the GPU-based software framework TIGRE for proton CT image reconstruction
   authors: [Stefanie Kaser, Thomas Bergauer, Wolfgang Birkfellner, Alexander Burker, Dietmar Georg, Sepideh Hatamikia, Albert Hirtl, Christian Irmler, Florian Pitters, Felix Ulrich-Pur]
@@ -38,6 +49,7 @@
   year: 2021
   url: https://pubmed.ncbi.nlm.nih.gov/33848784/
   area: particle
+  verified: manual
 
 - title: Extension of the open-source TIGRE toolbox for proton imaging
   authors: [Stefanie Kaser, Thomas Bergauer, Ander Biguri, Wolfgang Birkfellner, Sepideh Hatamikia, Albert Hirtl, Christian Irmler, Benjamin Kirchmayer, Felix Ulrich-Pur]
@@ -45,6 +57,7 @@
   year: 2023
   doi: 10.1016/j.zemedi.2022.08.005
   area: particle
+  verified: manual
 
 - title: Image reconstruction for ion computed tomography
   authors: [Stefanie Kaser]
@@ -52,9 +65,285 @@
   year: 2022
   doi: 10.34726/hss.2022.94906
   area: particle
+  verified: manual
 
 - title: Benchmarking of different reconstruction algorithms for industrial cone-beam CT
   authors: [J. Singh Rathore, R. Laquai, A. Biguri, M. Soleimani, C. Vienne]
   venue: 11th Conference on Industrial Computed Tomography (iCT 2022), Wels, Austria
   year: 2022
   area: industrial
+  verified: manual
+
+- {arxiv: '2610.38319', area: methods, verified: citation-context}
+
+- {arxiv: '2610.14963', area: methods, verified: citation-context}
+
+- {arxiv: '2610.11547', area: methods, verified: citation-context}
+
+- {doi: 10.1109/TCSVT.2026.3709462, area: methods, verified: citation-context}
+
+- {arxiv: '2609.28110', area: methods, verified: citation-context}
+
+- {arxiv: '2609.24937', area: medical, verified: citation-context}
+
+- {doi: 10.1088/2057-1976/aea910, area: medical, verified: citation-context}
+
+- {arxiv: '2609.10376', area: methods, verified: citation-context}
+
+- {arxiv: '2609.29638', area: methods, verified: citation-context}
+
+- {doi: 10.1145/3767308.3835527, area: methods, verified: citation-context}
+
+- {doi: 10.1002/mp.70737, area: medical, verified: citation-context}
+
+- {arxiv: '2607.04923', area: methods, verified: citation-context}
+
+- {arxiv: '2607.01756', area: methods, verified: citation-context}
+
+- {doi: 10.3390/s26144519, area: industrial, verified: citation-context}
+
+- {doi: 10.1088/1361-6501/ae9e60, area: industrial, verified: citation-context}
+
+- {doi: 10.1088/1361-6560/ae8123, area: medical, verified: citation-context}
+
+- {arxiv: '2606.06039', area: methods, verified: citation-context}
+
+- {doi: 10.1088/1361-6560/ae6222, area: methods, verified: citation-context}
+
+- {arxiv: '2604.23047', area: medical, verified: citation-context}
+
+- {doi: 10.1109/ISBI61048.2026.11515365, area: methods, verified: citation-context}
+
+- {arxiv: '2604.06246', area: methods, verified: citation-context}
+
+- {doi: 10.1117/12.3087013, area: medical, verified: citation-context}
+
+- {doi: 10.3390/jimaging12040166, area: medical, verified: citation-context}
+
+- {doi: 10.1111/cgf.70339, area: methods, verified: citation-context}
+
+- {doi: 10.1109/3DV69130.2026.00122, area: methods, verified: citation-context}
+
+- {arxiv: '2603.14915', area: methods, verified: citation-context}
+
+- {arxiv: '2603.05183', area: methods, verified: citation-context}
+
+- {doi: 10.1002/mp.70389, area: medical, verified: citation-context}
+
+- {doi: 10.1609/aaai.v40i16.38361, area: methods, verified: citation-context}
+
+- {doi: 10.1038/s41598-026-39266-0, area: medical, verified: citation-context}
+
+- {arxiv: '2602.01057', area: methods, verified: citation-context}
+
+- {doi: 10.1088/1361-6560/ae3b01, area: medical, verified: citation-context}
+
+- {doi: 10.1109/TMI.2026.3656348, area: methods, verified: citation-context}
+
+- {doi: 10.1088/1748-0221/21/01/C01017, area: methods, verified: citation-context}
+
+- {doi: 10.1109/ICVRV67992.2025.00103, area: methods, verified: citation-context}
+
+- {doi: 10.1109/BIBM66473.2025.11356964, area: methods, verified: citation-context}
+
+- {doi: 10.1186/s12880-025-02111-3, area: medical, verified: citation-context}
+
+- {doi: 10.1038/s41597-025-06246-4, area: methods, verified: citation-context}
+
+- {doi: 10.1109/TVCG.2025.3634648, area: medical, verified: citation-context}
+
+- {doi: 10.1109/TRPMS.2025.3553866, area: medical, verified: citation-context}
+
+- {arxiv: '2509.13863', area: industrial, verified: citation-context}
+
+- {doi: 10.1007/978-3-032-38189-7_60, area: methods, verified: citation-context}
+
+- {arxiv: '2507.19328', area: medical, verified: citation-context}
+
+- {doi: 10.1088/1361-6560/adf371, area: medical, verified: citation-context}
+
+- {doi: 10.1109/TIM.2026.3677968, area: industrial, verified: citation-context}
+
+- {arxiv: '2506.19742', area: methods, verified: citation-context}
+
+- {arxiv: '2506.02093', area: methods, verified: citation-context}
+
+- {doi: 10.1016/j.csbj.2025.06.013, area: medical, verified: citation-context}
+
+- {arxiv: '2505.15235', area: methods, verified: citation-context}
+
+- {doi: 10.1016/j.precisioneng.2025.01.019, area: industrial, verified: citation-context}
+
+- {doi: 10.1117/12.3047107, area: medical, verified: citation-context}
+
+- {doi: 10.1117/12.3045895, area: methods, verified: citation-context}
+
+- {doi: 10.1109/ICCV51701.2025.02293, area: methods, verified: citation-context}
+
+- {doi: 10.1080/10589759.2025.2469150, area: industrial, verified: citation-context}
+
+- {doi: 10.1007/s10044-025-01416-x, area: methods, verified: citation-context}
+
+- {doi: 10.1109/TMI.2026.3654612, area: medical, verified: citation-context}
+
+- {doi: 10.1007/s11548-024-03318-5, area: medical, verified: citation-context}
+
+- {doi: 10.1109/TRPMS.2024.3420742, area: medical, verified: citation-context}
+
+- {arxiv: '2412.12919', area: methods, verified: citation-context}
+
+- {doi: 10.1088/1361-6560/ad9db1, area: medical, verified: citation-context}
+
+- {doi: 10.1109/BIBM62325.2024.10822431, area: methods, verified: citation-context}
+
+- {doi: 10.1109/ISBI60581.2025.10981301, area: methods, verified: citation-context}
+
+- {arxiv: '2411.00688', area: methods, verified: citation-context}
+
+- {doi: 10.1016/j.csbj.2024.11.010, area: medical, verified: citation-context}
+
+- {doi: 10.1088/1361-6560/ad897f, area: particle, verified: citation-context}
+
+- {doi: 10.1038/s41467-026-73943-y, area: methods, verified: citation-context}
+
+- {doi: 10.1088/1361-6560/ad7775, area: medical, verified: citation-context}
+
+- {doi: 10.3390/s24185923, area: methods, verified: citation-context}
+
+- {doi: 10.1109/TVCG.2025.3579162, area: methods, verified: citation-context}
+
+- {arxiv: '2408.15118', area: methods, verified: citation-context}
+
+- {doi: 10.1088/1748-0221/19/08/P08020, area: medical, verified: citation-context}
+
+- {doi: 10.1007/978-3-031-72104-5_64, area: medical, verified: citation-context}
+
+- {doi: 10.1109/WACV61041.2025.00043, area: methods, verified: citation-context}
+
+- {doi: 10.1117/12.3036735, area: methods, verified: citation-context}
+
+- {doi: 10.3390/tomography10070089, area: medical, verified: citation-context}
+
+- {arxiv: '2406.02518', area: methods, verified: citation-context}
+
+- {doi: 10.1088/1748-0221/19/06/P06025, area: industrial, verified: citation-context}
+
+- {arxiv: '2405.20693', area: methods, verified: citation-context}
+
+- {doi: 10.1117/12.3005571, area: medical, verified: citation-context}
+
+- {doi: 10.1117/12.3006176, area: medical, verified: citation-context}
+
+- {doi: 10.1109/3DV62453.2024.00094, area: methods, verified: citation-context}
+
+- {arxiv: '2403.04116', area: methods, verified: citation-context}
+
+- {doi: 10.3390/s24041102, area: industrial, verified: citation-context}
+
+- {arxiv: '2312.01689', area: methods, verified: citation-context}
+
+- {doi: 10.1109/CVPR52733.2024.01062, area: methods, verified: citation-context}
+
+- {doi: 10.3390/tomography9060164, area: medical, verified: citation-context}
+
+- {doi: 10.1007/s10278-024-01354-w, area: medical, verified: citation-context}
+
+- {doi: 10.3233/XST-230007, area: medical, verified: citation-context}
+
+- {doi: 10.3390/tomography9030094, area: methods, verified: citation-context}
+
+- {doi: 10.1117/12.2655208, area: medical, verified: citation-context}
+
+- {doi: 10.1109/TNS.2023.3246099, area: industrial, verified: citation-context}
+
+- {doi: 10.21037/cdt-2026-0156, area: medical, verified: citation-context}
+
+- {doi: 10.3390/diagnostics13020330, area: medical, verified: citation-context}
+
+- {doi: 10.1088/1361-6560/acd616, area: methods, verified: citation-context}
+
+- {arxiv: '2211.00745', area: methods, verified: citation-context}
+
+- {doi: 10.1007/978-3-031-16446-0_42, area: methods, verified: citation-context}
+
+- {doi: 10.1088/1681-7575/ac7926, area: industrial, verified: citation-context}
+
+- {arxiv: '2205.07888', area: methods, verified: citation-context}
+
+- {doi: 10.3390/diagnostics12051121, area: methods, verified: citation-context}
+
+- {doi: 10.1088/1361-6560/ac8268, area: medical, verified: citation-context}
+
+- {doi: 10.1088/1361-6560/ac5fe1, area: medical, verified: citation-context}
+
+- {doi: 10.1038/s41598-022-21347-5, area: other, verified: citation-context}
+
+- {arxiv: '2202.03571', area: medical, verified: citation-context}
+
+- {arxiv: '2202.00419', area: methods, verified: citation-context}
+
+- {doi: 10.1109/TMI.2022.3148110, area: methods, verified: citation-context}
+
+- {doi: 10.1088/1748-0221/17/01/P01004, area: medical, verified: citation-context}
+
+- {doi: 10.1038/s41598-021-97226-2, area: methods, verified: citation-context}
+
+- {doi: 10.1109/LifeTech52111.2021.9391862, area: medical, verified: citation-context}
+
+- {doi: 10.1109/TPAMI.2021.3086072, area: medical, verified: citation-context}
+
+- {doi: 10.1109/ISBI48211.2021.9433825, area: medical, verified: citation-context}
+
+- {doi: 10.1002/mp.14403, area: medical, verified: citation-context}
+
+- {doi: 10.1109/TMI.2020.3006461, area: medical, verified: citation-context}
+
+- {doi: 10.1016/j.ndteint.2020.102222, area: industrial, verified: citation-context}
+
+- {doi: 10.3390/math8040493, area: methods, verified: citation-context}
+
+- {doi: 10.18383/j.tom.2020.00011, area: methods, verified: citation-context}
+
+- {doi: 10.1016/j.softx.2019.100364, area: methods, verified: citation-context}
+
+- {doi: 10.1371/journal.pone.0227656, area: medical, verified: citation-context}
+
+- {s2: 66f4a5d28988de42788cbf2d8fc8dd8ebd69499b, area: particle, verified: citation-context}
+
+- {doi: 10.1101/778357, area: medical, verified: citation-context}
+
+- {doi: 10.1088/1361-6560/ab15f6, area: medical, verified: citation-context}
+
+- {doi: 10.1109/NSSMIC.2018.8824624, area: medical, verified: citation-context}
+
+- {doi: 10.1117/12.2293201, area: medical, verified: citation-context}
+
+- {doi: 10.1088/1361-6560/aa990e, area: medical, verified: citation-context}
+
+- {doi: 10.1088/1361-6560/aa93d3, area: methods, verified: citation-context}
+
+- {doi: 10.1109/LSP.2025.3584713, area: methods, verified: citation-context}
+
+- {doi: 10.1109/TIM.2026.3679175, area: industrial, verified: citation-context}
+
+- {doi: 10.1109/TCI.2026.3697644, area: methods, verified: citation-context}
+
+- {doi: 10.1109/TIM.2026.3736197, area: industrial, verified: citation-context}
+
+- {doi: 10.1109/TIM.2025.3612561, area: industrial, verified: citation-context}
+
+- {doi: 10.1109/TIM.2025.3617418, area: industrial, verified: citation-context}
+
+- {doi: 10.52202/085713-5036, area: methods, verified: citation-context}
+
+- {doi: 10.1109/ACCESS.2021.3079323, area: methods, verified: citation-context}
+
+- {s2: 19b094637efe31f54034c651afc413f6886bedb0, area: medical, verified: citation-context}
+
+- {doi: 10.1038/s41598-026-48904-6, area: medical, verified: citation-context}
+
+- {doi: 10.1007/978-3-032-38186-6_55, area: methods, verified: citation-context}
+
+- {arxiv: '2605.29419', area: medical, verified: citation-context}
+
+- {doi: 10.1117/12.3085800, area: methods, verified: citation-context}

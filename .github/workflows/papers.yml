@@ -1,0 +1,54 @@
+name: Papers list
+
+# Fills in title, authors, venue and year for docs/papers.yaml entries from
+# Semantic Scholar, and commits the result to the branch it ran on.
+# Runs automatically when papers.yaml changes on a branch of this repository
+# (never on master), or manually from the Actions tab.
+
+on:
+  push:
+    branches-ignore: [master]
+    paths: [docs/papers.yaml]
+  workflow_dispatch:
+    inputs:
+      refresh:
+        description: "Re-fetch metadata for every entry (overwrites manual edits)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: papers-${{ github.ref }}
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+      - name: Fill in metadata
+        id: fill
+        env:
+          S2_API_KEY: ${{ secrets.S2_API_KEY }}
+        run: |
+          python docs/tools/update_papers.py ${{ inputs.refresh == true && '--refresh' || '' }} || echo "incomplete=true" >> "$GITHUB_OUTPUT"
+      - name: Commit changes
+        if: github.ref != 'refs/heads/master'
+        run: |
+          if git diff --quiet docs/papers.yaml; then
+            echo "No changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: fill in papers.yaml metadata from Semantic Scholar" docs/papers.yaml
+          git push
+      - name: Report incomplete entries
+        if: steps.fill.outputs.incomplete == 'true'
+        run: |
+          echo "::warning::Some papers.yaml entries could not be filled in; see the 'Fill in metadata' step and fix them by hand."
