@@ -1,21 +1,25 @@
 # Citing TIGRE
 
-If you use TIGRE in your work, please cite it. The preferred reference is:
+TIGRE is free to use, modify and share under the BSD licence. If you use it in
+published work, please cite it: citations are how the project shows its impact.
 
-> A. Biguri, T. Sadakane, R. Lindroos, Y. Liu, M. Sabaté Landman, Y. Du,
-> M. Lohvithee, S. Kaser, S. Hatamikia, R. Bryll, E. Valat, S. Wonglee,
-> T. Blumensath and C.-B. Schönlieb.
-> *TIGRE v3: Efficient and easy to use iterative computed tomographic
-> reconstruction toolbox for real datasets.*
-> Engineering Research Express **7**(1), 015011 (2025).
-> [doi:10.1088/2631-8695/adbb3a](https://doi.org/10.1088/2631-8695/adbb3a)
+Cite the **TIGRE v3** paper for TIGRE in general. If your work relies on
+multi-GPU or very large reconstructions, also cite the 2020 paper; the 2016
+paper describes the original MATLAB toolbox.
+
+```{include} _generated/citations.md
+```
+
+## Citing the algorithms
+
+TIGRE implements algorithms published by many authors. If you use a specific
+algorithm, please also cite its original paper. In MATLAB, `citeme('OS_SART')`
+prints the reference for an algorithm; the full list is in
+[`TIGRE.bib`](https://github.com/CERN/TIGRE/blob/master/MATLAB/Utilities/TIGRE.bib).
+
+## Other formats
 
 The repository's
-[`CITATION.cff`](https://github.com/CERN/TIGRE/blob/master/CITATION.cff)
-holds the full list of references, and GitHub's **Cite this repository**
-button generates BibTeX and APA entries from it.
-
-:::{note}
-This page will soon be generated directly from `CITATION.cff`, with BibTeX
-for every TIGRE paper.
-:::
+[`CITATION.cff`](https://github.com/CERN/TIGRE/blob/master/CITATION.cff) is
+the source of this page. GitHub's **Cite this repository** button, on the
+repository's front page, exports it as APA or BibTeX.

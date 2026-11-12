@@ -3,8 +3,10 @@
 import datetime
 import pathlib
 import re
+import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "_ext"))
 
 # -- Project information -----------------------------------------------------
 
@@ -29,6 +31,8 @@ extensions = [
     "myst_parser",
     "sphinx_design",
     "sphinx_copybutton",
+    "tigre_citations",
+    "tigre_papers",
 ]
 
 myst_enable_extensions = [
@@ -41,7 +45,7 @@ myst_heading_anchors = 3
 myst_substitutions = {"release": release}
 
 source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "README.md"]
+exclude_patterns = ["_build", "_generated", "papers.yaml", "Thumbs.db", ".DS_Store", "README.md"]
 
 nitpicky = True
 linkcheck_anchors = False
@@ -84,5 +88,5 @@ html_context = {
 
 # Single-page sections have nothing to show in the left sidebar.
 html_sidebars = {
-    page: [] for page in ["index", "install", "citing", "papers"]
+    page: [] for page in ["index", "citing", "papers"]
 }

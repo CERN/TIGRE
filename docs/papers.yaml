@@ -1,0 +1,60 @@
+# Published work that USES TIGRE (not only cites it).
+#
+# This file generates docs/papers.md. To add a paper, append an entry and open
+# a pull request. Fields:
+#   title, authors (list, "Given Family"), venue, year (required)
+#   doi or url (one of them, recommended)
+#   area: one of the area keys in docs/_ext/tigre_papers.py
+#   note: optional, one line on how TIGRE was used
+# Papers about TIGRE itself are listed on the Citing page, not here.
+
+- title: Validation and application of a new image reconstruction software toolbox (TIGRE) for breast cone-beam computed tomography
+  authors: [Shada Kazemi, Oliver Diaz, Premkumar Elangovan, Kevin Wells, Annika Lohstroh]
+  venue: Proc. SPIE 10573, Medical Imaging 2018, 105735E
+  year: 2018
+  doi: 10.1117/12.2293200
+  area: medical
+  note: Validates TIGRE against a standard MATLAB implementation for breast CBCT.
+
+- title: Breast tomosynthesis reconstruction using TIGRE software tool
+  authors: [Albert Malet, Diego García Pinto, Josep Fernández, Robert Martí, Oliver Díaz]
+  venue: Proc. SPIE 10718, 14th International Workshop on Breast Imaging (IWBI 2018), 107181L
+  year: 2018
+  doi: 10.1117/12.2317933
+  area: medical
+  note: Digital breast tomosynthesis reconstruction with TIGRE.
+
+- title: "fastCAT: Fast cone beam CT (CBCT) simulation"
+  authors: [Jericho O'Connell, Magdalena Bazalova-Carter]
+  venue: arXiv:2011.04736
+  year: 2021
+  url: https://arxiv.org/abs/2011.04736
+  area: medical
+  note: CBCT simulator that uses TIGRE for its forward projections.
+
+- title: First application of the GPU-based software framework TIGRE for proton CT image reconstruction
+  authors: [Stefanie Kaser, Thomas Bergauer, Wolfgang Birkfellner, Alexander Burker, Dietmar Georg, Sepideh Hatamikia, Albert Hirtl, Christian Irmler, Florian Pitters, Felix Ulrich-Pur]
+  venue: Physica Medica 84
+  year: 2021
+  url: https://pubmed.ncbi.nlm.nih.gov/33848784/
+  area: particle
+
+- title: Extension of the open-source TIGRE toolbox for proton imaging
+  authors: [Stefanie Kaser, Thomas Bergauer, Ander Biguri, Wolfgang Birkfellner, Sepideh Hatamikia, Albert Hirtl, Christian Irmler, Benjamin Kirchmayer, Felix Ulrich-Pur]
+  venue: Zeitschrift für Medizinische Physik 33(4), 552–566
+  year: 2023
+  doi: 10.1016/j.zemedi.2022.08.005
+  area: particle
+
+- title: Image reconstruction for ion computed tomography
+  authors: [Stefanie Kaser]
+  venue: PhD thesis, TU Wien
+  year: 2022
+  doi: 10.34726/hss.2022.94906
+  area: particle
+
+- title: Benchmarking of different reconstruction algorithms for industrial cone-beam CT
+  authors: [J. Singh Rathore, R. Laquai, A. Biguri, M. Soleimani, C. Vienne]
+  venue: 11th Conference on Industrial Computed Tomography (iCT 2022), Wels, Austria
+  year: 2022
+  area: industrial
