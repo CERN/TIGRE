@@ -1,0 +1,40 @@
+name: Papers review queue
+
+# Builds docs/tools/review_queue.json (papers citing TIGRE that still need a
+# yes/no decision, with the sentences mentioning TIGRE) and commits it to the
+# papers/review branch. Temporary helper for curating docs/papers.yaml.
+
+on:
+  push:
+    branches: [papers/review]
+    paths:
+      - docs/tools/review_queue.py
+      - docs/tools/review_hints.json
+      - docs/tools/papers_reviewed.yaml
+      - .github/workflows/papers-review.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  queue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml pypdf
+      - name: Build review queue
+        env:
+          S2_API_KEY: ${{ secrets.S2_API_KEY }}
+        run: python docs/tools/review_queue.py
+      - name: Commit queue
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898299+github-actions[bot]@users.noreply.github.com"
+          git add docs/tools/review_queue.json
+          git commit -m "papers: update review queue" || exit 0
+          git push
