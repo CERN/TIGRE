@@ -18,6 +18,10 @@ function [ img ] = Atb( projections,geo,angles,varargin )
 % Lets make 100% sure that data is correct
 %% OPtionals
 
+if isfield(geo,'operator_binding')
+    img=operatorProject(true,projections,geo.operator_binding,angles);
+    return;
+end
 ptype='FDK';
 expectedProjectionTypes = {'FDK','matched'};
 acceptableOptionName = {'gpuids'};
@@ -77,4 +81,3 @@ function [gpuids]=parse_inputs(varargin)
         gpuids=p.Results.gpuids;
     end
 end
-

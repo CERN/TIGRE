@@ -50,6 +50,13 @@ function [x,resL2,qualMeasOut]= AB_GMRES(proj,geo,angles,niter,varargin)
 
 %%
 
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('AB_GMRES',proj,niter,varargin);
+if operatorHandled
+    x=operatorImage;
+    resL2=operatorResidual;
+    qualMeasOut=operatorQuality;
+    return;
+end
 [verbose,x,QualMeasOpts,gpuids,gt,bp]=parse_inputs(proj,geo,angles,varargin);
 
 if strcmpi(bp,'FDK')
@@ -99,8 +106,10 @@ for k=1:niter
         qk(:)=qk(:)-h(ii,k)*w(:,ii);
     end
     h(k+1,k)=norm(qk(:),2);
-    w(:,k+1)=qk(:)/h(k+1,k);
+    if isfield(geo,'operator_binding') && h(k+1,k)==0, w(:,k+1)=qk(:);
+    else, w(:,k+1)=qk(:)/h(k+1,k); end
     y=h(1:k+1,1:k)\(e1*norm(r(:),2));
+    if isfield(geo,'operator_binding') && h(k+1,k)==0, x=compute_res(x,w(:,1:k),y,geo,angles,backproject,gpuids); return; end
     if measurequality
         qualMeasOut(:,k)=Measure_Quality(x0,compute_res(x,w(:,1:k),y,geo,angles,backproject,gpuids) ,QualMeasOpts);
     end
