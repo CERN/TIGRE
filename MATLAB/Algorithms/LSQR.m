@@ -45,6 +45,13 @@ function [x,resL2,qualMeasOut]= LSQR(proj,geo,angles,niter,varargin)
 
 %%
 
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('LSQR',proj,niter,varargin);
+if operatorHandled
+    x=operatorImage;
+    resL2=operatorResidual;
+    qualMeasOut=operatorQuality;
+    return;
+end
 [verbose,x,QualMeasOpts,gpuids,gt,restart]=parse_inputs(proj,geo,angles,varargin);
 
 measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
@@ -85,7 +92,8 @@ while iter<niter
     w = v;
     
     % (2) Start iterations
-    for ii=iter:niter
+    last=niter; if isfield(geo,'operator_binding'), last=niter-1; end
+    for ii=iter:last
         iter=iter+1;
         if measurequality && ~strcmp(QualMeasOpts,'error_norm')
             x0 = x; % only store if necessary
@@ -95,12 +103,12 @@ while iter<niter
         % (3)(a)
         u = Ax(v,geo,angles,'Siddon','gpuids',gpuids) - alpha*u;
         beta = norm(u(:),2);
-        u = u / beta;
+        if ~isfield(geo,'operator_binding') || beta~=0, u = u / beta; end
         
         % (3)(b)
         v = Atb(u,geo,angles,'matched','gpuids',gpuids) - beta*v;
         alpha = norm(v(:),2);
-        v = v / alpha;
+        if ~isfield(geo,'operator_binding') || alpha~=0, v = v / alpha; end
         
         % (4)(a-g)
         rho = sqrt(rhobar^2 + beta^2);
@@ -137,6 +145,7 @@ while iter<niter
         % difference operations on single precision numbers.
         aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
         resL2(iter)=im3Dnorm(aux,'L2');
+        if isfield(geo,'operator_binding') && (alpha==0 || beta==0), return; end
         if iter>1 && resL2(iter)>resL2(iter-1)
             % we lost orthogonality, lets restart the algorithm unless the
             % user asked us not to.
