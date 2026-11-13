@@ -6,12 +6,16 @@ on:
     paths:
       - "docs/**"
       - "Frontispiece/**"
+      - "Python/demos/**"
+      - "MATLAB/Demos/**"
       - "CITATION.cff"
       - ".github/workflows/docs.yml"
   pull_request:
     paths:
       - "docs/**"
       - "Frontispiece/**"
+      - "Python/demos/**"
+      - "MATLAB/Demos/**"
       - "CITATION.cff"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
@@ -36,6 +40,17 @@ jobs:
           cache-dependency-path: docs/requirements.txt
       - name: Install docs dependencies
         run: pip install -r docs/requirements.txt
+      - name: Fetch the rendered gallery
+        # Demo outputs are rendered on a GPU machine (docs/tools/build_gallery.py)
+        # and kept on the docs-gallery branch; without it the gallery shows code only.
+        run: |
+          if git ls-remote --exit-code --heads origin docs-gallery > /dev/null; then
+            git fetch --depth 1 origin docs-gallery
+            mkdir -p docs/gallery
+            git archive FETCH_HEAD | tar -x -C docs/gallery
+          else
+            echo "No docs-gallery branch yet"
+          fi
       - name: Build HTML (warnings are errors)
         run: sphinx-build -W --keep-going -b html docs docs/_build/html
       - name: Check external links

@@ -95,9 +95,8 @@ With real data, step 2 is loading your scan instead ([](loading-data.md)).
 [](further-reading.md)
 : Papers and the thesis behind TIGRE.
 
-Every feature also has a demo, in
-[Python](https://github.com/CERN/TIGRE/tree/master/Python/demos) and
-[MATLAB](https://github.com/CERN/TIGRE/tree/master/MATLAB/Demos).
+Every feature also has a demo; the [gallery](../gallery/index.rst) shows
+them all, in Python and MATLAB.
 
 ```{toctree}
 :hidden:

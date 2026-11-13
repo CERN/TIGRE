@@ -144,6 +144,9 @@ class plotImg:  # noqa: N801
             repeat_delay=1000,
             frames=len(range(0, dim[self.dimint])[:: self.step]),
         )
+        # keep the animation alive as long as its figure; otherwise it can be
+        # garbage-collected before it is shown (or captured by sphinx-gallery)
+        fig._tigre_animation = ani
         if self.savegif is not None:
             ani.save(self.savegif, writer="pillow")
             self._show()
