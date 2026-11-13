@@ -659,9 +659,17 @@ class AB_GMRES(IterativeReconAlg):
             else:
                 backproject="matched"
             if backproject == "matched":
-                self.backproject=Atb
+                # Atb defaults to the FDK-weighted backprojector, so ask for
+                # the matched one explicitly (as MATLAB does).
+                self.backproject = lambda proj, geo, angles, gpuids=None: Atb(
+                    proj, geo, angles, "matched", gpuids=gpuids
+                )
             elif backproject == "FDK":
                 self.backproject=algs.fdk
+            else:
+                raise ValueError(
+                    "backprojector must be 'matched' or 'FDK', got " + repr(backproject)
+                )
             IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
       
 
@@ -729,9 +737,17 @@ class BA_GMRES(IterativeReconAlg):
             else:
                 backproject="matched"
             if backproject == "matched":
-                self.backproject=Atb
+                # Atb defaults to the FDK-weighted backprojector, so ask for
+                # the matched one explicitly (as MATLAB does).
+                self.backproject = lambda proj, geo, angles, gpuids=None: Atb(
+                    proj, geo, angles, "matched", gpuids=gpuids
+                )
             elif backproject == "FDK":
                 self.backproject=algs.fdk
+            else:
+                raise ValueError(
+                    "backprojector must be 'matched' or 'FDK', got " + repr(backproject)
+                )
             IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
     def __compute_res__(self,x,w,y):

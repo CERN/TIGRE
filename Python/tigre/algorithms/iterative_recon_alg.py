@@ -60,7 +60,7 @@ class IterativeReconAlg(object):
 
     :keyword lmbda_red: (np.float64)
         Reduction of lmbda every iteration
-        lmbda=lmbda_red*lmbda. Default is 0.99
+        lmbda=lmbda_red*lmbda. Default is 1
 
     :keyword init: (str)
         Describes different initialization techniques.

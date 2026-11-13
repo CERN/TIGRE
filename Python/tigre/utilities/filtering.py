@@ -1,6 +1,5 @@
 from __future__ import division
 from __future__ import print_function
-from tigre.utilities.parkerweight import parkerweight
 import numpy as np
 from scipy.fft  import fft, ifft
 
@@ -18,10 +17,10 @@ BLOCK_BYTES = 2**21
 MAX_WORKERS = 16
 
 
-# TODO: Fix parker
 def filtering(proj, geo, angles, parker, verbose=False, workers=None):
+    # parker: False, True (q=1) or the smoothing parameter q of the Parker weights
     if parker:
-        proj=parkerweight(proj.transpose(0,2,1),geo,angles,parker).transpose(0,2,1)
+        proj=parkerweight(proj,geo,angles,float(parker))
 
     filt_len=max(64,2**nextpow2(2*geo.nDetector[1])) 
     ramp_kernel=ramp_flat(filt_len)
@@ -30,7 +29,16 @@ def filtering(proj, geo, angles, parker, verbose=False, workers=None):
     filt=filter(geo.filter,ramp_kernel[0],filt_len,d,verbose=verbose)
 
     padding = int((filt_len-geo.nDetector[1])//2 )
-    scale_factor = (geo.DSD[0]/geo.DSO[0]) * (2 * np.pi/ len(angles)) / ( 4 * geo.dDetector[1] ) 
+    if parker:
+        # Parker weights already account for the redundant rays, so scale by the
+        # angular step instead of 2*pi/nangles (as MATLAB's filtering.m does)
+        first=np.asarray(angles,dtype=float)
+        first=first[:,0] if first.ndim>1 else first
+        angle_step=np.mean(np.abs(np.diff(first))) if first.size>1 else 2*np.pi
+        angular_weight=2*angle_step
+    else:
+        angular_weight=2*np.pi/len(angles)
+    scale_factor = (geo.DSD[0]/geo.DSO[0]) * angular_weight / ( 4 * geo.dDetector[1] ) 
 
     nangles=angles.shape[0]
     nrows=int(geo.nDetector[0])

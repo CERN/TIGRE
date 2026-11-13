@@ -53,6 +53,15 @@ def FDK(proj, geo, angles, **kwargs):
     :param workers: int or None
     Number of CPU threads used for projection filtering; None selects the default
 
+    :param parker: bool or float
+    Parker weights for short scans. Default: on when the scan is circular and
+    covers less than a full circle (same rule as MATLAB). A number sets the
+    smoothing parameter q of Wesarg et al. (True means q=1).
+
+    :param dowang: bool
+    Wang weights for a detector shifted with geo.offDetector (default True;
+    skipped on short scans)
+
     :param kwargs: dict
     keyword arguments
 
@@ -95,6 +104,12 @@ def FDK(proj, geo, angles, **kwargs):
 
     gpuids = kwargs["gpuids"] if "gpuids" in kwargs else None
     dowang = kwargs["dowang"] if "dowang" in kwargs else True
+    parker = kwargs.get("parker")
+    if parker is None:
+        # Same default as MATLAB's FDK: Parker weights for short circular scans
+        a = np.asarray(angles)
+        circular = a.ndim == 1 or not np.any(a[:, 1:])
+        parker = circular and is_short_scan(angles)
 
     def zeropadding(proj, geo):
         zgeo = copy.deepcopy(geo)
@@ -229,8 +244,7 @@ def FDK(proj, geo, angles, **kwargs):
     w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx**2 + yy**2))
     np.multiply(proj, w, out=proj_filt)
 
-    proj_filt = filtering(proj_filt, geo, angles, parker=False, verbose=verbose, workers=workers)
-    # geo.proj = proj_filt
+    proj_filt = filtering(proj_filt, geo, angles, parker=parker, verbose=verbose, workers=workers)
 
     return Atb(proj_filt, geo, geo.angles, "FDK", gpuids=gpuids)
 
