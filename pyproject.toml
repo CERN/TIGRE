@@ -12,7 +12,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name="tigre"
-version="3.1.3"
+version="3.2.0"
 dependencies = [
 	"matplotlib",
 	"numpy>=1.20.0",
@@ -26,7 +26,7 @@ authors=[
 	{name = "Sam Loescher"},
 ]
 license={text="BSD-3-Clause"}
-requires-python = ">=3.10,<3.15"
+requires-python = ">=3.11,<3.15"
 
 [project.optional-dependencies]
 design = ["PyYAML"]
@@ -43,6 +43,12 @@ dev = [
 	"pre-commit~=2.10",
 ]
 
+[tool.pytest.ini_options]
+testpaths = ["Python/tests"]
+markers = [
+	"gpu: test needs a CUDA-capable GPU (skipped automatically when none is available)",
+]
+
 [tool.setuptools.packages.find]
 where = ["Python"]
 
@@ -51,19 +57,32 @@ where = ["Python"]
 
 [tool.cibuildwheel]
 build-frontend = "build[uv]"
-skip = "pp* *musl*"
+# Skip musl and the free-threaded CPython builds (cp314t...), which TIGRE's
+# Cython extensions have not been checked against. (PyPy is off by default.)
+skip = "*musl* cp3??t-*"
 archs = ["native"]
 
 [tool.cibuildwheel.linux]
-#CUDA Installation
+# CUDA installation. cibuildwheel >= 3 builds in manylinux_2_28 (AlmaLinux 8),
+# so this uses NVIDIA's RHEL 8 repository. The image's compiler is GCC 14, whose
+# C++ headers nvcc 12.8 cannot parse ("__is_nothrow_new_constructible"), so nvcc
+# is pointed at GCC 13 (gcc-toolset-13) through NVCC_PREPEND_FLAGS below; the
+# rest of the build keeps GCC 14 (same C++ ABI).
+# The package install is retried: NVIDIA's repository occasionally serves an index
+# whose metadata files are not there yet (404) while it is being updated.
 before-all = """
-rpm --import https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/7fa2af80.pub &&
-yum-config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel7/x86_64/cuda-rhel7.repo &&
-yum clean all &&
-yum -y install cuda-nvcc-12-4 cuda-cudart-devel-12-4 libcurand-devel-12-4 &&
+curl -fsSL --retry 5 --retry-delay 10 -o /etc/yum.repos.d/cuda-rhel8.repo https://developer.download.nvidia.com/compute/cuda/repos/rhel8/x86_64/cuda-rhel8.repo &&
+for attempt in 1 2 3 4 5; do
+  dnf clean all && dnf -y install cuda-nvcc-12-8 cuda-cudart-devel-12-8 libcurand-devel-12-8 gcc-toolset-13-gcc-c++ && break;
+  echo "Package install failed (attempt $attempt), retrying in 60 s";
+  sleep 60;
+done &&
+rpm -q cuda-nvcc-12-8 cuda-cudart-devel-12-8 libcurand-devel-12-8 gcc-toolset-13-gcc-c++ &&
+/opt/rh/gcc-toolset-13/root/usr/bin/g++ --version &&
 ls -al /usr/local &&
 export PATH=$PATH:/usr/local/cuda/bin &&
 export CUDA_PATH=/usr/local/cuda &&
 nvcc --version &&
 export BUILD_WITH_CUDA=1
 """
+environment = { NVCC_PREPEND_FLAGS="-ccbin /opt/rh/gcc-toolset-13/root/usr/bin/g++" }

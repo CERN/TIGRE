@@ -15,11 +15,13 @@ from setuptools import setup, find_packages, Extension
 
 # Macros for compilation
 define_macros=[("IS_FOR_PYTIGRE", None)]
-no_pinned=False
-if len(sys.argv)>2:
-    if "--no_pinned_memory" in sys.argv[2:] :
-        no_pinned=True
-        sys.argv.pop(sys.argv.index("--no_pinned_memory"))
+# Pinned (page-locked) host memory is on by default. Disable it with the
+# TIGRE_NO_PINNED_MEMORY environment variable (works with pip), or with the
+# legacy "python setup.py ... --no_pinned_memory" flag.
+no_pinned = os.environ.get("TIGRE_NO_PINNED_MEMORY", "").strip().lower() not in ("", "0", "false", "no", "off")
+if "--no_pinned_memory" in sys.argv[2:]:
+    no_pinned = True
+    sys.argv.pop(sys.argv.index("--no_pinned_memory"))
  
 if no_pinned:
     define_macros.append(("NO_PINNED_MEMORY",None))     
@@ -194,6 +196,7 @@ class BuildExtension(build_ext):
             self.compiler._cpp_extensions += [".cu", ".cuh"]
             original_compile = self.compiler.compile
             original_spawn = self.compiler.spawn
+            original_call = getattr(self.compiler, "call", None)
         else:
             original_compile = self.compiler._compile
 
@@ -241,7 +244,7 @@ class BuildExtension(build_ext):
             cflags = copy.deepcopy(extra_postargs)
             extra_postargs = None
 
-            def spawn(cmd, cflags):
+            def translate(cmd, cflags):
                 # Using regex to match src, obj and include files
                 src_regex = re.compile("/T(p|c)(.*)")
                 src_list = [m.group(2) for m in (src_regex.match(elem) for elem in cmd) if m]
@@ -284,10 +287,16 @@ class BuildExtension(build_ext):
                         cflags = COMMON_MSVC_FLAGS + cflags
                         cmd += cflags
 
-                return original_spawn(cmd)
+                return cmd
 
+            # setuptools >= 84 runs the compiler through Compiler.call (spawn is a
+            # deprecated wrapper around it); older versions use Compiler.spawn.
+            # Patch whichever one compile() uses, so .cu files still go to nvcc.
             try:
-                self.compiler.spawn = lambda cmd: spawn(cmd, cflags)
+                if original_call is not None:
+                    self.compiler.call = lambda cmd, **kwargs: original_call(translate(cmd, cflags), **kwargs)
+                else:
+                    self.compiler.spawn = lambda cmd: original_spawn(translate(cmd, cflags))
                 return original_compile(
                     sources,
                     output_dir,
@@ -299,7 +308,10 @@ class BuildExtension(build_ext):
                     depends,
                 )
             finally:
-                self.compiler.spawn = original_spawn
+                if original_call is not None:
+                    self.compiler.call = original_call
+                else:
+                    self.compiler.spawn = original_spawn
 
         # Monkey-patch the _compile method.
         if self.compiler.compiler_type == "msvc":

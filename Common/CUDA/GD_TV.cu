@@ -365,13 +365,13 @@ do { \
             cudaSetDevice(gpuids[dev]);
             
             cudaMalloc((void**)&d_image[dev]    , mem_img_each_GPU);
-            cudaMemset(         d_image[dev],0  , mem_img_each_GPU);
+            cudaMemset(         d_image[dev],0  , mem_img_each_GPU); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
             cudaMalloc((void**)&d_dimgTV[dev]   , mem_img_each_GPU);
-            cudaMemset(         d_dimgTV[dev],0 , mem_img_each_GPU);
+            cudaMemset(         d_dimgTV[dev],0 , mem_img_each_GPU); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
             cudaMalloc((void**)&d_norm2[dev]    , slices_per_split*mem_slice_image);
-            cudaMemset(         d_norm2[dev],0  , slices_per_split*mem_slice_image);
+            cudaMemset(         d_norm2[dev],0  , slices_per_split*mem_slice_image); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
             cudaMalloc((void**)&d_norm2aux[dev]   , mem_auxiliary);
-            cudaMemset(         d_norm2aux[dev],0 , mem_auxiliary);
+            cudaMemset(         d_norm2aux[dev],0 , mem_auxiliary); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
             cudaCheckErrors("Malloc  error");
             
             

@@ -10,7 +10,6 @@ from tigre.utilities.cuda_interface._gpuUtils cimport GpuIds as c_GpuIds, conver
 np.import_array()
 
 from libc.stdlib cimport malloc, free
-from tigre.utilities.errors import TigreCudaCallError
 cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
 
@@ -24,6 +23,9 @@ cdef extern from "voxel_backprojection_parallel.hpp":
 
 def cuda_raise_errors(error_code):
     if error_code:
+        # Imported here, not at module level: importing tigre from a compiled
+        # module at load time is circular when the module is imported first.
+        from tigre.utilities.errors import TigreCudaCallError
         raise TigreCudaCallError('Atb:',error_code)
 
 

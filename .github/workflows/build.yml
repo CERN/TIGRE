@@ -13,10 +13,10 @@ jobs:
         os: [ubuntu-latest]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.23.2
+        uses: pypa/cibuildwheel@v4.3.5
         # env:
         #   CIBW_SOME_OPTION: value
         #    ...
@@ -25,7 +25,7 @@ jobs:
         #   output-dir: wheelhouse
         #   config-file: "{package}/pyproject.toml"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
@@ -34,14 +34,14 @@ jobs:
     runs-on: ubuntu-latest
     container: nvidia/cuda:12.8.1-devel-ubuntu24.04
     steps:
-    - uses: actions/checkout@v4
-    - uses: astral-sh/setup-uv@v3
+    - uses: actions/checkout@v7
+    - uses: astral-sh/setup-uv@v10.3.3
       with:
         version: 0.6.9
         enable-cache: true
     - name: Build SDist
       run: uv build --sdist
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: cibw-sdist
         path: dist/*.tar.gz

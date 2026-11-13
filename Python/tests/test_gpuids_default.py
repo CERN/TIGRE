@@ -25,6 +25,8 @@ import tigre
 from tigre.utilities.Ax import Ax
 from tigre.utilities.Atb import Atb
 
+pytestmark = pytest.mark.gpu
+
 
 @pytest.fixture(scope="module")
 def small():
