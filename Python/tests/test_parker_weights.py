@@ -59,23 +59,26 @@ def test_filtering_applies_weights_and_step_scaling():
 @pytest.mark.gpu
 def test_fdk_short_scan_is_better_with_parker_weights():
     from tigre.algorithms import fdk
+    from tigre.utilities import sample_loader
 
-    geo = tigre.geometry(mode="cone", nVoxel=np.array([64, 64, 64]), default=True)
-    z, y, x = np.mgrid[:64, :64, :64].astype(np.float32)
-    phantom = np.zeros((64, 64, 64), dtype=np.float32)
-    phantom[((x - 30) ** 2 + (y - 32) ** 2 + (z - 32) ** 2) < 16 ** 2] = 1.0
-    phantom[((x - 40) ** 2 + (y - 38) ** 2 + (z - 30) ** 2) < 6 ** 2] = 2.0
+    # detector large enough that the whole head is in every projection
+    geo = tigre.geometry_default(high_resolution=False)
+    truth = sample_loader.load_head_phantom(geo.nVoxel).astype(np.float32)
     delta = np.arctan(geo.sDetector[1] / 2 / np.atleast_1d(geo.DSD)[0])
-    angles = np.linspace(0, np.pi + 2 * delta + 0.1, 200, dtype=np.float32)
-    proj = tigre.Ax(phantom, geo, angles)
 
-    with_parker = fdk(proj.copy(), geo, angles)  # on by default for short scans
-    without = fdk(proj.copy(), geo, angles, parker=False)
-    centre = np.s_[24:40, 16:48, 16:48]
+    def rel_error(img):
+        return float(np.linalg.norm(img - truth) / np.linalg.norm(truth))
 
-    def rmse(img):
-        return float(np.sqrt(np.mean((img[centre] - phantom[centre]) ** 2)))
+    full = np.linspace(0, 2 * np.pi, 360, endpoint=False, dtype=np.float32)
+    err_full = rel_error(fdk(tigre.Ax(truth, geo, full), geo, full))
 
-    assert rmse(with_parker) < 0.5 * rmse(without)
-    # the short-scan scaling keeps the overall intensity right
-    assert abs(with_parker[centre].mean() / phantom[centre].mean() - 1) < 0.1
+    short = np.linspace(0, np.pi + 2 * delta + 0.1, 200, dtype=np.float32)
+    proj = tigre.Ax(truth, geo, short)
+    err_parker = rel_error(fdk(proj.copy(), geo, short))  # on by default for short scans
+    err_plain = rel_error(fdk(proj.copy(), geo, short, parker=False))
+    print(f"full scan {err_full:.4f}, short scan with Parker {err_parker:.4f}, "
+          f"without {err_plain:.4f}")
+
+    assert err_parker < 0.8 * err_plain
+    # a short scan with Parker weights should be close to a full scan
+    assert err_parker < 2 * err_full
