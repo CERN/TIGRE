@@ -249,6 +249,8 @@ void cpy_from_host(float* device_array,float* host_array,
             buffer_length=(extra_buff/2)/5; // we need double whatever this results in, rounded down.
             
             buffer_length=min(MAX_BUFFER,buffer_length);
+            // Memory for buffer_length=1 was already checked above. Never let it be 0, or the main loop would not advance.
+            if (buffer_length<1) buffer_length=1;
             
             mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
             
@@ -461,7 +463,7 @@ void cpy_from_host(float* device_array,float* host_array,
                         is_first_chunk=!(sp*deviceCount+dev);
                         cudaSetDevice(gpuids[dev]);
                         cudaStreamSynchronize(stream[dev*nStream_device+1]);
-                        if (is_last_chunk) {cudaMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]);}
+                        if (is_last_chunk) {cudaMemsetAsync(d_src[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+1]);}
                         cpy_from_host(d_src[dev],src,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+1],  is_first_chunk,  is_last_chunk, image_size);
                     }
 
@@ -586,6 +588,12 @@ void cpy_from_host(float* device_array,float* host_array,
                             cudaMemcpyAsync(&h_pz[linear_idx_start], d_pz[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+4]);
                             
                         }
+                    }
+                    // Wait for all devices to finish copying to the host before the next split reads from it:
+                    // the first device of the next split reads its halo from what the last device of this split is writing.
+                    for(dev=0; dev<deviceCount;dev++){
+                        cudaSetDevice(gpuids[dev]);
+                        cudaDeviceSynchronize();
                     }
 
                 }
