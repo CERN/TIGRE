@@ -27,8 +27,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 PY_DEMOS = ROOT / "Python" / "demos"
 M_DEMOS = ROOT / "MATLAB" / "Demos"
 
-# Demos that need data, hardware or packages a gallery build does not have.
-NOT_RUN = {"d21_ScannerDataLoader.py", "d25_Pytorch.py"}
+# Demos that need data, hardware or packages a gallery build does not have
+# (d24 is a template: it needs your own curved-detector projections).
+NOT_RUN = {"d21_ScannerDataLoader.py", "d24_CurvedDetector.py", "d25_Pytorch.py"}
 
 # (folder, heading, intro, [(python file or None, MATLAB file or None, title, description)])
 CATALOGUE = [
