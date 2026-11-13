@@ -13,7 +13,7 @@ function [ f,resL2,qualMeasOut] = OS_AwPCSD(proj,geo,angles,maxiter,varargin)
 %   'lambda':      Sets the value of the hyperparameter for the SART iterations.
 %                  Default is 1
 %
-%   'lambdared':   Reduction of lambda.Every iteration
+%   'lambda_red':  Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
 %       'init':    Describes different initialization techniques.

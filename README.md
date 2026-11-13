@@ -99,31 +99,31 @@ MATLAB and Python builds are both fully supported.
 
 **Advanced, not required to run TIGRE**, will change the source code. Only do if performance is critical.
 
-- [Tune TIGRE for machine. Tricks to slightly speed up the code](Frontispiece/Tune_TIGRE.md)
+- [Tune TIGRE for machine. Tricks to slightly speed up the code](https://cern.github.io/TIGRE/user-guide/performance-tuning.html)
 
 
 ## Getting started
 
 Once TIGRE in installed, we strongly suggest you have a look at the Demos folder for each of the languages, [MATLAB](https://github.com/CERN/TIGRE/tree/master/MATLAB/Demos) or [Python](https://github.com/CERN/TIGRE/tree/master/Python/demos). 
 
-The [TIGRE website](https://cern.github.io/TIGRE/) is gaining a user guide and API reference, but for now all features are described and demonstrated with working code in the demos. They also serve as a tutorial of each feature. We strongly recommend you explore the first 4 demos for the basic TIGRE functionality, and look at the following ones for more advanced geometry or reconstruction functions. 
+The [TIGRE website](https://cern.github.io/TIGRE/) has a [user guide](https://cern.github.io/TIGRE/user-guide/) that explains the geometry, the operators and how to choose an algorithm. All features are also demonstrated with working code in the demos. They also serve as a tutorial of each feature. We strongly recommend you explore the first 4 demos for the basic TIGRE functionality, and look at the following ones for more advanced geometry or reconstruction functions. 
 
 ## FAQ
 
-For answers to frequently asked questions [click here](Frontispiece/FAQ.md).
+For answers to frequently asked questions [click here](https://cern.github.io/TIGRE/user-guide/troubleshooting.html).
 
 If you have new question not answered in the FAQ, please [contact us](#contact), join the [Slack group](#contact) or open a  [discussion thread](https://github.com/CERN/TIGRE/discussions).
 
 ## Gallery
 
-To see a gallery of images of different CT modalities reconstructed using TIGRE [click here](Frontispiece/Gallery.md).
+To see a gallery of images of different CT modalities reconstructed using TIGRE [click here](https://cern.github.io/TIGRE/user-guide/applications.html).
 
 <img src="https://raw.githubusercontent.com/AnderBiguri/PhDThesis/master/Applications/randofull.png" height="400">
 
 
 ## Further Reading
 
-If you want more information on TIGRE and its algorithms, [click here](Frontispiece/Further_reading.md).
+If you want more information on TIGRE and its algorithms, [click here](https://cern.github.io/TIGRE/user-guide/further-reading.html).
 
 
 ## Contact
