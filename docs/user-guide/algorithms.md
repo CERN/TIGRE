@@ -71,10 +71,12 @@ phantom with each family, so you can see the trade-offs.
 
 Both accept a `filter` option: `ram_lak` (default), `shepp_logan`,
 `cosine`, `hamming` or `hann`. Smoother filters reduce noise at the cost of
-resolution. When the detector is shifted (`offDetector`, as in half-fan
-scans), FDK applies Wang weights on full-circle scans and skips them on
-short scans, where they would leave shading (demo 26). In MATLAB, FDK also
-applies Parker weights to short scans; the Python FDK does not yet.
+resolution. On short scans (less than a full circle), FDK applies Parker
+weights so that rays measured twice are not counted twice; turn them off with
+`parker=False` (`'parker', false` in MATLAB). When the detector is shifted
+(`offDetector`, as in half-fan scans), FDK applies Wang weights on
+full-circle scans and skips them on short scans, where they would leave
+shading (demo 26).
 
 ### SART family
 
