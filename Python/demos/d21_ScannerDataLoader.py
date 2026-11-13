@@ -41,6 +41,7 @@
 ##
 import tigre.utilities.io as tigreio
 import tigre.algorithms as algs
+import numpy as np
 import tigre
 #%% Varian onboard CBCT.
 
@@ -103,7 +104,7 @@ proj,geo, angles  = tigreio.YXLONDataLoader(datafolder)
 
 # Step 1: define your geometry and angles
 geo=tigre.geometry()
-angles=
+angles = np.linspace(0, 2 * np.pi, 360, endpoint=False)  # replace with your scan's angles
 
 # Step 2: Load projections:
 #store in NP array. Use whichever python library will help you get the data loaded. 
@@ -115,12 +116,12 @@ tigre.plotproj(proj,angles)
 # you need to make sure that:
 #     1) white=metal/bone/high density and black=air.
 #         If this is not the case
-proj=-np.log(proj/(np.max(proj+1)); # Beer-Lanbert law
+proj = -np.log(proj / (np.max(proj) + 1))  # Beer-Lambert law
 #     2) rotation happens left-right instead of top-bottom.
 #        If its top bottom permute your data as required
 
 # Step 4: test
-imgfdk=algs.fdk(proj,geo,angles)
+imgFDK = algs.fdk(proj, geo, angles)
 tigre.plotimg(imgFDK,dim='z')
 # If this does not look good, possible things to check:
 # - Are the angles in the right direction? maybe they need to be inverted. 

@@ -1,6 +1,7 @@
 """Sphinx configuration for the TIGRE website and documentation."""
 
 import datetime
+import os
 import pathlib
 import re
 import sys
@@ -33,6 +34,7 @@ extensions = [
     "sphinx_copybutton",
     "tigre_citations",
     "tigre_papers",
+    "sphinx_gallery.gen_gallery",
 ]
 
 myst_enable_extensions = [
@@ -45,7 +47,7 @@ myst_heading_anchors = 3
 myst_substitutions = {"release": release}
 
 source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
-exclude_patterns = ["_build", "_generated", "papers.yaml", "Thumbs.db", ".DS_Store", "README.md"]
+exclude_patterns = ["_build", "_generated", "gallery/**/*.ipynb", "gallery/**/*.py.md5", "papers.yaml", "Thumbs.db", ".DS_Store", "README.md"]
 
 nitpicky = True
 linkcheck_anchors = False
@@ -53,6 +55,35 @@ linkcheck_ignore = [
     r"https://doi\.org/.*",  # publishers often block automated link checkers
     r"https://iopscience\.iop\.org/.*",
 ]
+
+# -- Gallery -----------------------------------------------------------------
+# The gallery is generated from Python/demos and MATLAB/Demos (see
+# _ext/tigre_gallery.py). Running the demos needs TIGRE and a GPU, so a normal
+# build only shows the code. Ander renders the outputs on a GPU machine with
+# docs/tools/build_gallery.py and keeps them on the docs-gallery branch; the
+# deploy copies that branch into docs/gallery, and sphinx-gallery reuses each
+# rendered page as long as its demo has not changed.
+
+import tigre_gallery  # noqa: E402
+
+_gallery_src = tigre_gallery.generate(pathlib.Path(__file__).resolve().parent / "_generated" / "gallery_src")
+
+sphinx_gallery_conf = {
+    "examples_dirs": [str(_gallery_src)],
+    "gallery_dirs": ["gallery"],
+    "filename_pattern": tigre_gallery.run_pattern(),
+    "plot_gallery": os.environ.get("TIGRE_GALLERY_RUN", "") == "1",
+    "example_extensions": {".py", ".m"},
+    "filetype_parsers": {".m": "Matlab"},
+    "matplotlib_animations": (True, "jshtml"),
+    "within_subsection_order": "tigre_gallery.CatalogueOrder",
+    "download_all_examples": False,
+    "remove_config_comments": True,
+    "show_memory": False,
+    "write_computation_times": False,
+    "image_scrapers": ("tigre_gallery.scraper",),
+    "first_notebook_cell": None,
+}
 
 # -- HTML output -------------------------------------------------------------
 

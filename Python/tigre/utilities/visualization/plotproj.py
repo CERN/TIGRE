@@ -199,6 +199,8 @@ class plotProj:
             repeat_delay=1000,
             frames=len(range(0, dim[self.dimint])[:: self.step]),
         )
+        # keep the animation alive as long as its figure (see plotimg.py)
+        fig._tigre_animation = self._animation
         if self.savegif is not None:
             self._animation.save(self.savegif, writer="pillow")
             self._show()
