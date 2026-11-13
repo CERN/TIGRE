@@ -28,6 +28,9 @@ authors=[
 license={text="BSD-3-Clause"}
 requires-python = ">=3.11,<3.15"
 
+[project.optional-dependencies]
+design = ["PyYAML"]
+
 [dependency-groups]
 dev = [
 	"black~=26.3",
