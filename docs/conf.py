@@ -82,6 +82,8 @@ sphinx_gallery_conf = {
     "write_computation_times": False,
     "image_scrapers": ("tigre_gallery.scraper",),
     "first_notebook_cell": None,
+    # do not print the value of a demo's last expression (e.g. "<plotImg object at 0x...>")
+    "capture_repr": (),
 }
 
 # -- HTML output -------------------------------------------------------------
