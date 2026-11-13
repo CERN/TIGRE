@@ -75,7 +75,6 @@ sphinx_gallery_conf = {
     "plot_gallery": os.environ.get("TIGRE_GALLERY_RUN", "") == "1",
     "example_extensions": {".py", ".m"},
     "filetype_parsers": {".m": "Matlab"},
-    "matplotlib_animations": (True, "jshtml"),
     "within_subsection_order": "tigre_gallery.CatalogueOrder",
     "download_all_examples": False,
     "remove_config_comments": True,

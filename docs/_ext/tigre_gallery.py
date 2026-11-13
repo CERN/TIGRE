@@ -290,19 +290,30 @@ class CatalogueOrder:
 
 
 def scraper(block, block_vars, gallery_conf, **kwargs):
-    """sphinx-gallery image scraper that also captures TIGRE's plot animations.
+    """sphinx-gallery image scraper that shows TIGRE's plot animations as GIFs.
 
-    sphinx-gallery only embeds animations stored in an example's variables, but
-    ``tigre.plotimg`` and ``tigre.plotproj`` are usually called without keeping
-    the result. They attach their animation to the figure instead, so hand those
-    to the standard matplotlib scraper here.
+    ``tigre.plotimg`` and ``tigre.plotproj`` animate through the slices of a
+    volume, and attach the animation to its figure. sphinx-gallery's own
+    animation support embeds every frame in the page as HTML, which made some
+    pages over 30 MB, so save those animations as GIF images instead and let
+    the standard matplotlib scraper handle the remaining (still) figures.
     """
-    import matplotlib.pyplot as plt
-    from sphinx_gallery.scrapers import matplotlib_scraper
+    from pathlib import PurePosixPath
 
-    example_globals = block_vars["example_globals"]
+    import matplotlib.pyplot as plt
+    from sphinx_gallery.scrapers import figure_rst, matplotlib_scraper
+
+    paths = block_vars["image_path_iterator"]
+    gifs = []
     for num in plt.get_fignums():
-        anim = getattr(plt.figure(num), "_tigre_animation", None)
-        if anim is not None:
-            example_globals[f"_tigre_animation_{num}"] = anim
-    return matplotlib_scraper(block, block_vars, gallery_conf, **kwargs)
+        fig = plt.figure(num)
+        anim = getattr(fig, "_tigre_animation", None)
+        if anim is None:
+            continue
+        gif = PurePosixPath(next(paths)).with_suffix(".gif")
+        interval = getattr(anim, "_interval", 200) or 200
+        anim.save(str(gif), writer="pillow", fps=max(1, round(1000 / interval)), dpi=72)
+        gifs.append(gif)
+        plt.close(fig)
+    rst = figure_rst(gifs, gallery_conf["src_dir"]) if gifs else ""
+    return rst + matplotlib_scraper(block, block_vars, gallery_conf, **kwargs)
