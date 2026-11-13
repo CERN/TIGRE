@@ -58,3 +58,19 @@ __all__ = [
     "ista",
     "mlem",
 ]
+
+# Preserve upstream ossart/ossart_tv spellings; aliases are additive.
+os_sart = ossart
+os_sart_tv = ossart_tv
+def fast_os_sart(data, geo=None, angles=None, niter=None, *, operator=None, **kwargs):
+    if operator is None or geo is not None or angles is not None:
+        raise ValueError("fast_os_sart is an explicit operator entry point")
+    if niter is None:
+        raise TypeError("niter is required")
+    from .operator_algorithms import fast_os_sart_operator
+    return fast_os_sart_operator(data, operator, niter=niter, **kwargs)
+__all__ += ["os_sart", "os_sart_tv", "fast_os_sart"]
+
+from .operator_exports import install as _install_operator_exports
+_install_operator_exports(globals())
+del _install_operator_exports
