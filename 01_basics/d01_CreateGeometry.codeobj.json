@@ -1,0 +1,294 @@
+{
+ "geo": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre.utilities.geometry_default",
+   "module_short": "tigre.utilities.geometry_default",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre.utilities",
+   "module_short": "tigre.utilities",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "ConeGeometryDefault"
+  }
+ ],
+ "geo.COR": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre.utilities.geometry_default",
+   "module_short": "tigre.utilities.geometry_default",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre.utilities",
+   "module_short": "tigre.utilities",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "ConeGeometryDefault"
+  }
+ ],
+ "geo.DSD": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "geo.DSO": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "geo.accuracy": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  }
+ ],
+ "geo.dDetector": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "geo.dVoxel": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "geo.mode": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "geo.nDetector": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "geo.nVoxel": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "geo.offDetector": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "geo.offOrigin": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "geo.rotDetector": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre.utilities.geometry_default",
+   "module_short": "tigre.utilities.geometry_default",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre.utilities",
+   "module_short": "tigre.utilities",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "ConeGeometryDefault"
+  }
+ ],
+ "geo.sDetector": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "geo.sVoxel": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "np.array": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "array"
+  }
+ ],
+ "np.pi": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "pi"
+  }
+ ],
+ "tigre.geometry": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "geometry"
+  }
+ ],
+ "tigre.geometry_default": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre.utilities.geometry_default",
+   "module_short": "tigre.utilities.geometry_default",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre.utilities",
+   "module_short": "tigre.utilities",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre.utilities.geometry",
+   "module_short": "tigre.utilities.geometry",
+   "name": "Geometry"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre.utilities",
+   "module_short": "tigre.utilities",
+   "name": "Geometry"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "Geometry"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "geometry_default"
+  }
+ ],
+ "tigre.plot_geometry": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "plot_geometry"
+  }
+ ]
+}
