@@ -3,6 +3,15 @@
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 
+<p align="center">
+  <a href="https://cern.github.io/TIGRE/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/_static/logo/tigre-logo-dark.svg">
+      <img alt="TIGRE" src="docs/_static/logo/tigre-logo.svg" width="330">
+    </picture>
+  </a>
+</p>
+
 TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
 ======
 
