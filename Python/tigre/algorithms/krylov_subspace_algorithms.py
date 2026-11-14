@@ -41,8 +41,8 @@ class CGLS(IterativeReconAlg):  # noqa: D101
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
     def initialize_algo(self):
-        self.__r__ = self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
-        self.__p__ = Atb(self.__r__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
+        self.__r__ = self.proj - self._project_forward(Ax,self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+        self.__p__ = self._project_adjoint(Atb,self.__r__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
         p_norm = l2norm(self.__p__.ravel())
         self.__gamma__ = p_norm * p_norm
 
@@ -69,14 +69,14 @@ class CGLS(IterativeReconAlg):  # noqa: D101
                     res_prev = copy.deepcopy(self.res)
 
                 avgtic = default_timer()
-                q = tigre.Ax(self.__p__, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+                q = self._project_forward(tigre.Ax,self.__p__, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
                 q_norm = l2norm(q)
                 alpha = self.__gamma__ / (q_norm * q_norm)
                 self.res += alpha * self.__p__
                 avgtoc = default_timer()
                 avgtime.append(abs(avgtic - avgtoc))
 
-                self.l2l[0, i] = l2norm(self.proj - tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+                self.l2l[0, i] = l2norm(self.proj - self._project_forward(tigre.Ax,self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
                 if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
                     # Undo the step that lost orthogonality.
                     self.res -= alpha * self.__p__
@@ -93,7 +93,7 @@ class CGLS(IterativeReconAlg):  # noqa: D101
                     break                 # -> outer loop, retrying this i
 
                 self.__r__ -= alpha * q
-                s = tigre.Atb(self.__r__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
+                s = self._project_adjoint(tigre.Atb,self.__r__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
                 s_norm = l2norm(s)
 
                 gamma1 = s_norm * s_norm
@@ -137,14 +137,14 @@ class LSQR(IterativeReconAlg):
 
         # Enumeration as given in the paper for 'Algorithm LSQR'
         # (1) Initialize 
-        self.__u__=self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+        self.__u__=self.proj - self._project_forward(Ax,self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
         
         normr = l2norm(self.__u__.ravel())
         self.__u__ = self.__u__/normr
 
         self.__beta__ = normr
         self.__phibar__ = normr
-        self.__v__ = Atb(self.__u__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
+        self.__v__ = self._project_adjoint(Atb,self.__u__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
 
         self.__alpha__ =l2norm(self.__v__.ravel())
         self.__v__ = self.__v__/self.__alpha__
@@ -168,14 +168,14 @@ class LSQR(IterativeReconAlg):
                 avgtic = default_timer()    
             
                 #% (3)(a)
-                self.__u__ = tigre.Ax(self.__v__, self.geo, self.angles, "Siddon", gpuids=self.gpuids) - self.__alpha__*self.__u__
+                self.__u__ = self._project_forward(tigre.Ax,self.__v__, self.geo, self.angles, "Siddon", gpuids=self.gpuids) - self.__alpha__*self.__u__
                 self.__beta__ = l2norm(self.__u__.ravel())
-                self.__u__ = self.__u__ / self.__beta__
+                self.__u__ = (self.__u__ if hasattr(self, 'operator') and self.__beta__ == 0 else self.__u__ / self.__beta__)
             
                 #% (3)(b)
-                self.__v__ = tigre.Atb(self.__u__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids) - self.__beta__*self.__v__
+                self.__v__ = self._project_adjoint(tigre.Atb,self.__u__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids) - self.__beta__*self.__v__
                 self.__alpha__ = l2norm(self.__v__.ravel())
-                self.__v__ = self.__v__ / self.__alpha__    
+                self.__v__ = (self.__v__ if hasattr(self, 'operator') and self.__alpha__ == 0 else self.__v__ / self.__alpha__)
 
                 #% (4)(a-g)
                 rho = np.sqrt(self.__rhobar__**2 + self.__beta__**2)
@@ -196,7 +196,9 @@ class LSQR(IterativeReconAlg):
                 if self.Quameasopts is not None:
                     self.error_measurement(res_prev, i)
 
-                self.l2l[0, i] = l2norm(self.proj - tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+                self.l2l[0, i] = l2norm(self.proj - self._project_forward(tigre.Ax,self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+                if hasattr(self, 'operator') and (self.__beta__ == 0 or self.__alpha__ == 0):
+                    return self.res
                 if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
                     self.res -= (phi / rho) * (self.__v__-self.__w__)/((theta / rho))
                     if self.verbose:
@@ -238,7 +240,7 @@ class hybrid_LSQR(IterativeReconAlg):
         # % Initialise matrices
 
         # (1) Initialize 
-        self.__u__=self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+        self.__u__=self.proj - self._project_forward(Ax,self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
         
         normr = l2norm(self.__u__.ravel())
         self.__u__ = self.__u__/normr
@@ -258,29 +260,35 @@ class hybrid_LSQR(IterativeReconAlg):
             
             avgtic = default_timer() 
 
-            v = Atb(self.__u__,self.geo,self.angles,backprojection_type="matched",gpuids=self.gpuids)
+            v = self._project_adjoint(Atb,self.__u__,self.geo,self.angles,backprojection_type="matched",gpuids=self.gpuids)
             
             if i>0:
                 v = np.reshape(v.ravel() - self.__beta__*self.__V__[i-1],v.shape)
     
             
-            for j in range(i-1):
-                v=np.reshape(v.ravel()-(self.__V__[j]*v.ravel())*self.__V__[j],v.shape)
+            for j in range(i if hasattr(self,'operator') else i-1):
+                coefficient=inner(self.__V__[j],v) if hasattr(self,'operator') else self.__V__[j]*v.ravel()
+                v=np.reshape(v.ravel()-coefficient*self.__V__[j],v.shape)
 
    
             alpha = l2norm(v.ravel())
+            if hasattr(self, 'operator') and alpha == 0:
+                if i > 0:
+                    self.res += np.reshape(self.__V__[:i].T @ y, self.res.shape)
+                return self.res
             v = v/alpha
             self.__V__[i] = v.ravel()
 
             #% Update U_{ii+1}
-            self.__u__ = tigre.Ax(v, self.geo, self.angles, "Siddon", gpuids=self.gpuids) - alpha*self.__u__
+            self.__u__ = self._project_forward(tigre.Ax,v, self.geo, self.angles, "Siddon", gpuids=self.gpuids) - alpha*self.__u__
             
-            for j in range(i-1):
-                self.__u__=np.reshape(self.__u__.ravel()-(self.__U__[j]*self.__u__.ravel())*self.__U__[j],self.__u__.shape)
+            for j in range(i+1 if hasattr(self,'operator') else i-1):
+                coefficient=inner(self.__U__[j],self.__u__) if hasattr(self,'operator') else self.__U__[j]*self.__u__.ravel()
+                self.__u__=np.reshape(self.__u__.ravel()-coefficient*self.__U__[j],self.__u__.shape)
                 
             
             self.__beta__  = l2norm(self.__u__.ravel())
-            self.__u__ = self.__u__ / self.__beta__ 
+            self.__u__ = (self.__u__ if hasattr(self, 'operator') and self.__beta__ == 0 else self.__u__ / self.__beta__)
             self.__U__[i+1] = self.__u__.ravel()
 
             #% Update projected matrix
@@ -308,7 +316,10 @@ class hybrid_LSQR(IterativeReconAlg):
       
 
 
-            self.l2l[0, i] = l2norm(self.proj - tigre.Ax(self.res + np.reshape(np.matmul(np.transpose(self.__V__[0:i+1]),y),self.res.shape), self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+            self.l2l[0, i] = l2norm(self.proj - self._project_forward(tigre.Ax,self.res + np.reshape(np.matmul(np.transpose(self.__V__[0:i+1]),y),self.res.shape), self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+            if hasattr(self, 'operator') and self.__beta__ == 0:
+                self.res += np.reshape(self.__V__[:i+1].T @ y, self.res.shape)
+                return self.res
             if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
                 # No restart path here, so a genuine rise ends the run. The
                 # old `re_init_at_iteration + 1 == i` test, against a sentinel
@@ -345,12 +356,12 @@ class LSMR(IterativeReconAlg):
         #% David Chin-Lung Fong and Michael Saunders //doi.org/10.1137/10079687X
         #% Enumeration as given in the paper for 'Algorithm LSMR'
         #% (1) Initialize 
-        self.__u__=self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+        self.__u__=self.proj - self._project_forward(Ax,self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
         normr = l2norm(self.__u__.ravel())
         self.__beta__ = normr
         self.__u__ = self.__u__/normr
 
-        self.__v__ = Atb(self.__u__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
+        self.__v__ = self._project_adjoint(Atb,self.__u__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
         self.__alpha__ =l2norm(self.__v__.ravel())
         self.__v__ = self.__v__/self.__alpha__
 
@@ -389,13 +400,13 @@ class LSMR(IterativeReconAlg):
                 avgtic = default_timer()  
                     
                 #% (3) Continue the bidiagonalization
-                self.__u__ = tigre.Ax(self.__v__, self.geo, self.angles, "Siddon", gpuids=self.gpuids) - self.__alpha__*self.__u__
+                self.__u__ = self._project_forward(tigre.Ax,self.__v__, self.geo, self.angles, "Siddon", gpuids=self.gpuids) - self.__alpha__*self.__u__
                 self.__beta__ = l2norm(self.__u__.ravel())
-                self.__u__ = self.__u__ / self.__beta__
+                self.__u__ = (self.__u__ if hasattr(self, 'operator') and self.__beta__ == 0 else self.__u__ / self.__beta__)
             
-                self.__v__ = tigre.Atb(self.__u__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids) - self.__beta__*self.__v__
+                self.__v__ = self._project_adjoint(tigre.Atb,self.__u__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids) - self.__beta__*self.__v__
                 self.__alpha__ = l2norm(self.__v__.ravel())
-                self.__v__ = self.__v__ / self.__alpha__  
+                self.__v__ = (self.__v__ if hasattr(self, 'operator') and self.__alpha__ == 0 else self.__v__ / self.__alpha__)
 
                 #% (4) Construct and apply rotation \hat{P}_k
                 alphahat = np.sqrt(self.__alphabar__**2 + self.lmbda**2)
@@ -459,8 +470,10 @@ class LSMR(IterativeReconAlg):
                 if self.Quameasopts is not None:
                     self.error_measurement(res_prev, i)
 
-                self.l2l[0, i] = l2norm(self.proj - tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
-                if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
+                self.l2l[0, i] = l2norm(self.proj - self._project_forward(tigre.Ax,self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+                if hasattr(self, 'operator') and (self.__beta__ == 0 or self.__alpha__ == 0):
+                    return self.res
+                if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1] and not hasattr(self,'operator'):
                     self.res -= (self.__zeta__ / (self.__rho__*self.__rhobar__)) * self.__hbar__ 
                     if self.verbose:
                         print("re-initilization of LSMR called at iteration:" + str(i))
@@ -561,29 +574,38 @@ class IRN_TV_CGLS(IterativeReconAlg):
             res_prev_inner = np.float32(np.inf)
             res_now = np.float32(np.inf)
     
-            prox_aux_1 =Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+            # np.sqrt(python float) and _norm(...) return float64
+            # SCALARS, which under NumPy 2 (NEP 50) promote every float32
+            # volume they touch to float64 - and Ax/Atb reject float64
+            # ("Input data should be float32"). Keep all scalars float32.
+
+
+            prox_aux_1 =self._project_forward(Ax,self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
             prox_aux_2 = self.Lx(W,self.res)*np.sqrt(self.lmbda, dtype=np.float32)
     
             r_aux_1 = self.proj - prox_aux_1
             r_aux_2 = -prox_aux_2
             #% Malena: changed the format, r_aux_2 is 3
             #% r = cat(3,r_aux_1, r_aux_2); % Malena: size guide, erase later, N x N x (100 + N-1)
-            p_aux_1 = tigre.Atb(r_aux_1, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
+            p_aux_1 = self._project_adjoint(tigre.Atb,r_aux_1, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
             p_aux_2 = np.sqrt(self.lmbda, dtype=np.float32)*self.Ltx(W, r_aux_2)
             p = p_aux_1 + p_aux_2
             
             gamma=np.float32(l2norm(p.ravel())**2)
 
             for i in range(self.niter):
+                if hasattr(self, 'operator') and gamma == 0:
+                    return self.res
                 res0=self.res
-                q_aux_1 = tigre.Ax(p, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+
+                q_aux_1 = self._project_forward(tigre.Ax,p, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
                 q_aux_2 = self.Lx(W,p)*np.sqrt(self.lmbda, dtype=np.float32)
 
                 #% q = cat(3, q_aux_1, q_aux_2{1},q_aux_2{2},q_aux_2{3}); % Probably never need to actually do this
                 #% alpha=gamma/norm(q(:),2)^2;
                 alpha=np.float32(gamma/(l2norm(q_aux_1.ravel())**2 + l2norm(q_aux_2[0].ravel())**2 + l2norm(q_aux_2[1].ravel())**2+l2norm(q_aux_2[2].ravel())**2))
                 self.res=self.res+alpha*p
-                aux=self.proj-tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+                aux=self.proj-self._project_forward(tigre.Ax,self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
                 #% residual norm or the original least squares (not Tikhonov).
                 #% Think if that is what we want of the NE residual
                 step = outer*self.niter+i
@@ -614,7 +636,7 @@ class IRN_TV_CGLS(IterativeReconAlg):
                 r_aux_1 = r_aux_1-alpha*q_aux_1
                 r_aux_2=r_aux_2-alpha*q_aux_2
 
-                s_aux_1 = tigre.Atb(r_aux_1, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
+                s_aux_1 = self._project_adjoint(tigre.Atb,r_aux_1, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
                 s_aux_2 =  np.sqrt(self.lmbda, dtype=np.float32) * self.Ltx(W, r_aux_2)
                 s = s_aux_1 + s_aux_2
 
@@ -683,14 +705,14 @@ class AB_GMRES(IterativeReconAlg):
 
         self.l2l = np.zeros((1, self.niter), dtype=np.float32)
         w = np.zeros((self.niter+1,np.prod(self.geo.nDetector)*len(self.angles)),dtype=np.float32)
-        r=self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+        r=self.proj - self._project_forward(Ax,self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
         w[0] = r.ravel()/l2norm(r.ravel())
         h=np.zeros((self.niter,self.niter+1),dtype=np.float32)
         for k in range(self.niter):
             if self.verbose:
                 self._estimate_time_until_completion(k)
                 
-            qk=Ax(self.backproject(np.reshape(w[k],self.proj.shape),self.geo,self.angles,gpuids=self.gpuids),self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+            qk=self._project_forward(Ax,self.backproject(np.reshape(w[k],self.proj.shape),self.geo,self.angles,gpuids=self.gpuids),self.geo, self.angles, "Siddon", gpuids=self.gpuids)
             e1=np.zeros(k+2)
             e1[0]=1
             qk = qk.ravel()
@@ -699,10 +721,13 @@ class AB_GMRES(IterativeReconAlg):
                 qk -= h[k,i]*w[i]
             
             h[k,k+1]=l2norm(qk)
-            w[k+1]=qk/h[k,k+1]
+            w[k+1]=qk if hasattr(self, 'operator') and h[k,k+1] == 0 else qk/h[k,k+1]
             y=np.linalg.lstsq(np.transpose(h[0:k+1,0:k+2]),e1*l2norm(r.ravel()),rcond=None)
             y=y[0]
-            self.l2l[0, k] = l2norm((self.proj - tigre.Ax(self.__compute_res__(self.res,w[0:k+1],y),self.geo,self.angles, "Siddon",gpuids=self.gpuids)).ravel())
+            if hasattr(self, 'operator') and h[k,k+1] == 0:
+                self.res = self.__compute_res__(self.res, w[:k+1], y)
+                return self.res
+            self.l2l[0, k] = l2norm((self.proj - self._project_forward(tigre.Ax,self.__compute_res__(self.res,w[0:k+1],y),self.geo,self.angles, "Siddon",gpuids=self.gpuids)).ravel())
             if k > 0 and self.l2l[0, k] > self.l2l[0, k - 1]:
                 # No restart path exists in GMRES here, so a genuine rise ends
                 # the run. It used to be tested as `re_init_at_iteration + 1 ==
@@ -760,7 +785,7 @@ class BA_GMRES(IterativeReconAlg):
 
         self.l2l = np.zeros((1, self.niter), dtype=np.float32)
         w = np.zeros((self.niter+1,(np.prod(self.geo.nVoxel))),dtype=np.float32)
-        r=self.backproject(self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids), self.geo, self.angles, gpuids=self.gpuids)
+        r=self.backproject(self.proj - self._project_forward(Ax,self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids), self.geo, self.angles, gpuids=self.gpuids)
         w[0] = r.ravel()/l2norm(r.ravel())
         h=np.zeros((self.niter,self.niter+1),dtype=np.float32)
 
@@ -768,7 +793,7 @@ class BA_GMRES(IterativeReconAlg):
             if self.verbose:
                 self._estimate_time_until_completion(k)
                 
-            qk=self.backproject(Ax(np.reshape(w[k],self.res.shape),self.geo,self.angles, "Siddon",gpuids=self.gpuids),self.geo, self.angles, gpuids=self.gpuids)
+            qk=self.backproject(self._project_forward(Ax,np.reshape(w[k],self.res.shape),self.geo,self.angles, "Siddon",gpuids=self.gpuids),self.geo, self.angles, gpuids=self.gpuids)
             e1=np.zeros(k+2)
             e1[0]=1
             qk = qk.ravel()
@@ -777,11 +802,14 @@ class BA_GMRES(IterativeReconAlg):
                 qk -= h[k,i]*w[i]
             
             h[k,k+1]=l2norm(qk)
-            w[k+1]=qk/h[k,k+1]
+            w[k+1]=qk if hasattr(self, 'operator') and h[k,k+1] == 0 else qk/h[k,k+1]
             y=np.linalg.lstsq(np.transpose(h[0:k+1,0:k+2]),e1*l2norm(r.ravel()),rcond=None)
             y=y[0]
+            if hasattr(self, 'operator') and h[k,k+1] == 0:
+                self.res = self.__compute_res__(self.res, w[:k+1], y)
+                return self.res
 
-            self.l2l[0, k] = l2norm((self.proj - tigre.Ax(self.__compute_res__(self.res,w[0:k+1],y), self.geo, self.angles, "Siddon", gpuids=self.gpuids)).ravel())
+            self.l2l[0, k] = l2norm((self.proj - self._project_forward(tigre.Ax,self.__compute_res__(self.res,w[0:k+1],y), self.geo, self.angles, "Siddon", gpuids=self.gpuids)).ravel())
             if k > 0 and self.l2l[0, k] > self.l2l[0, k - 1]:
                 # See the AB-GMRES note: no restart path, and the old sentinel
                 # test could only ever fire at one particular iteration.
@@ -871,17 +899,20 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
         # % Initialise matrices
 
         # (1) Initialize 
-        u=self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+        u=self.proj - self._project_forward(Ax,self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
         
-        k_aux = Ax(np.ones(self.res.shape,dtype=np.float32)/np.sqrt(np.prod(self.geo.nVoxel), dtype=np.float32), self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+        k_aux = self._project_forward(Ax,np.ones(self.res.shape,dtype=np.float32)/np.sqrt(np.prod(self.geo.nVoxel), dtype=np.float32), self.geo, self.angles, "Siddon", gpuids=self.gpuids)
         xA0 = 1/(np.sqrt(np.prod(self.geo.nVoxel), dtype=np.float32)*l2norm(k_aux.ravel())**2)*inner(k_aux,u)
         xA0 =np.ones(self.res.shape,dtype=np.float32)*xA0
 
-        k_aux = 1/(np.sqrt(np.prod(self.geo.nVoxel), dtype=np.float32)*l2norm(k_aux.ravel())**2)*Atb(k_aux, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
+        k_aux = 1/(np.sqrt(np.prod(self.geo.nVoxel), dtype=np.float32)*l2norm(k_aux.ravel())**2)*self._project_adjoint(Atb,k_aux, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
 
-        u = u - Ax(xA0, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+        u = u - self._project_forward(Ax,xA0, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
 
         normr=l2norm(u.ravel())
+        if hasattr(self, 'operator') and normr == 0:
+            self.res = self.res + xA0
+            return self.res
         u=u/normr
         self.__U__[0]=u.ravel()
 
@@ -897,21 +928,27 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
         for i in range(self.niter):
             if self.verbose:
                 self._estimate_time_until_completion(i)
-            v=Atb(u,self.geo,self.angles,backprojection_type="matched", gpuids=self.gpuids)
+            v=self._project_adjoint(Atb,u,self.geo,self.angles,backprojection_type="matched", gpuids=self.gpuids)
             for j in range(i+1):
                 self.__T__[i,j] = inner(self.__V__[j],v)
                 v = v.ravel() - self.__T__[i,j]*self.__V__[j]
             v=np.reshape(v,self.res.shape)
             self.__T__[i,i] = l2norm(v.ravel())
+            if hasattr(self, 'operator') and self.__T__[i,i] == 0:
+                self.res = x if i > 0 else self.res + xA0
+                return self.res
             v=v/self.__T__[i,i]
 
             z=self.mvT(k_aux,v)
 
-            L = sp.sparse.linalg.LinearOperator((np.prod(self.res.shape),np.prod(self.res.shape)*3), matvec=lambda x: self.Ltx(W,x).ravel(),rmatvec=lambda x: self.Lx(W,x).ravel())
-            aux_z=sp.sparse.linalg.lsqr(L,z.ravel(),iter_lim=50)
-            L = sp.sparse.linalg.LinearOperator((np.prod(self.res.shape)*3,np.prod(self.res.shape)), matvec=lambda x: self.Lx(W,x).ravel(),rmatvec=lambda x: self.Ltx(W,x).ravel())
-            z=sp.sparse.linalg.lsqr(L,aux_z[0].ravel(),iter_lim=50)
-            z=z[0].astype(np.float32)
+            if hasattr(self,'operator'):
+                z=self._operator_tv_precondition(W,z)
+            else:
+                L = sp.sparse.linalg.LinearOperator((np.prod(self.res.shape),np.prod(self.res.shape)*3), matvec=lambda x: self.Ltx(W,x).ravel(),rmatvec=lambda x: self.Lx(W,x).ravel())
+                aux_z=sp.sparse.linalg.lsqr(L,z.ravel(),iter_lim=50)
+                L = sp.sparse.linalg.LinearOperator((np.prod(self.res.shape)*3,np.prod(self.res.shape)), matvec=lambda x: self.Lx(W,x).ravel(),rmatvec=lambda x: self.Ltx(W,x).ravel())
+                z=sp.sparse.linalg.lsqr(L,aux_z[0].ravel(),iter_lim=50)
+                z=z[0].astype(np.float32)
 
             z=self.mv(k_aux,z)
 
@@ -919,12 +956,12 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
             self.__Z__[i]=z.ravel()
 
             # Update U and projected matrix M
-            u = Ax(np.reshape(z,self.res.shape), self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+            u = self._project_forward(Ax,np.reshape(z,self.res.shape), self.geo, self.angles, "Siddon", gpuids=self.gpuids)
             for j in range(i+1):
                 self.__M__[i,j] = inner(self.__U__[j],u)
                 u = u.ravel() - np.dot(self.__M__[i,j],self.__U__[j])
             self.__M__[i,i+1]=l2norm(u.ravel())
-            u=u/self.__M__[i,i+1]
+            u = u if hasattr(self, 'operator') and self.__M__[i,i+1] == 0 else u/self.__M__[i,i+1]
             u=np.reshape(u,self.proj.shape)
             self.__U__[i+1]=u.ravel()
 
@@ -947,7 +984,12 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
             d=np.matmul(np.transpose(self.__Z__[0:i+1]),y[0])
             
             x = self.res + np.reshape(d,self.res.shape) + xA0
-            self.l2l[0, i] = l2norm((self.proj - tigre.Ax(x, self.geo, self.angles, "Siddon", gpuids=self.gpuids)).ravel())
+            if hasattr(self,'operator'):
+                W=(sum(self.__D__(x,axis)**2 for axis in range(3))+1e-6)**np.float32(-.25)
+            self.l2l[0, i] = l2norm((self.proj - self._project_forward(tigre.Ax,x, self.geo, self.angles, "Siddon", gpuids=self.gpuids)).ravel())
+            if hasattr(self, 'operator') and self.__M__[i,i+1] == 0:
+                self.res = x
+                return self.res
             if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
                 # Same as hybrid_LSQR: no restart path, so stop. (The message
                 # said BA-GMRES; this is hybrid_fLSQR_TV.)

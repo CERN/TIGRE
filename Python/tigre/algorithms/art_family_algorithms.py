@@ -100,7 +100,7 @@ class SART_TV(IterativeReconAlg):
 
             getattr(self, self.dataminimizing)()
             # print("run_main_iter: gpuids = {}", self.gpuids)
-            self.res = im3ddenoise(self.res, self.tviter, self.tvlambda, self.gpuids)
+            self.res = self._volume_denoise(im3ddenoise,self.res, self.tviter, self.tvlambda, self.gpuids)
             if Quameasopts is not None:
                 self.error_measurement(res_prev, i)
 
@@ -145,7 +145,7 @@ class OSSART_TV(IterativeReconAlg):
             
             getattr(self, self.dataminimizing)()
             # print("run_main_iter: gpuids = {}", self.gpuids)
-            self.res = im3ddenoise(self.res, self.tviter, self.tvlambda, self.gpuids)
+            self.res = self._volume_denoise(im3ddenoise,self.res, self.tviter, self.tvlambda, self.gpuids)
             if Quameasopts is not None:
                 self.error_measurement(res_prev, i)
 
