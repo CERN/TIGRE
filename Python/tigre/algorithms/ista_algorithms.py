@@ -210,8 +210,8 @@ class FISTA(IterativeReconAlg):
             t = (self.__p__ + np.sqrt(self.__q__ + 4 * t ** 2,dtype=np.float32)) / 2
             self.res = x_rec + (t_old - 1) / t * (x_rec - x_rec_old)
             
-            if Quameasopts is not None:
-                self.error_measurement(res_prev, i)
+            # also records the residual norm when computel2=True
+            self.error_measurement(res_prev, i)
 
 
 fista = decorator(FISTA, name="FISTA")
@@ -240,8 +240,8 @@ class ISTA(FISTA):  # noqa: D101
 
             self.res = im3ddenoise(self.res, 20, 1.0 / lambdaForTv, self.gpuids)
             
-            if Quameasopts is not None:
-                self.error_measurement(res_prev, i)
+            # also records the residual norm when computel2=True
+            self.error_measurement(res_prev, i)
 
 
 ista = decorator(ISTA, name="ISTA")

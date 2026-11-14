@@ -351,6 +351,8 @@ class IterativeReconAlg(object):
 
             getattr(self, self.dataminimizing)()
             self.error_measurement(res_prev, i)
+            # relaxation reduction, as in MATLAB's SART/OS_SART/SIRT
+            self.lmbda *= self.lmbda_red
 
     def art_data_minimizing(self):
         geo = copy.deepcopy(self.geo)
@@ -389,6 +391,9 @@ class IterativeReconAlg(object):
         return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta, self.gpuids)
 
     def error_measurement(self, res_prev, iter):
+        if iter >= self.l2l.shape[1]:
+            # PCSD (like MATLAB's) can run one iteration past niter
+            return
         if self.Quameasopts is not None:
             self.lq[:, iter] = MQ(self.res, res_prev, self.Quameasopts)
         if self.computel2:
