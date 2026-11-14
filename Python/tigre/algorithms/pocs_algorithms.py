@@ -154,8 +154,8 @@ class initASD_POCS(IterativeReconAlg):
 
             res_prev = copy.deepcopy(self.res)
             getattr(self, self.dataminimizing)()
-            if self.Quameasopts is not None:
-                self.error_measurement(res_prev, n_iter)
+            # also records the residual norm when computel2=True
+            self.error_measurement(res_prev, n_iter)
             n_iter += 1
             g = Ax(self.res, self.geo, self.angles, gpuids=self.gpuids)
             dd = im3DNORM(g - self.proj, 2)
@@ -336,8 +336,8 @@ class initPICCS(IterativeReconAlg):
 
             res_prev = copy.deepcopy(self.res)
             getattr(self, self.dataminimizing)()
-            if self.Quameasopts is not None:
-                self.error_measurement(res_prev, n_iter)
+            # also records the residual norm when computel2=True
+            self.error_measurement(res_prev, n_iter)
             n_iter += 1
             g = Ax(self.res, self.geo, self.angles, gpuids=self.gpuids)
             dd = im3DNORM(g - self.proj, 2)
@@ -585,6 +585,7 @@ class initPCSD(IterativeReconAlg):
             d_p = im3DNORM(est_proj - self.proj, 2)
             if d_p**2 > self.epsilon:
                 getattr(self, self.dataminimizing)()
+            self.error_measurement(res_prev, n_iter - 1)
             dd = im3DNORM(Ax(self.res,self.geo,self.angles)-self.proj, 2)
             dp_vec = self.res - res_prev
             dp = im3DNORM(dp_vec, 2)

@@ -56,8 +56,7 @@ In MATLAB these are name-value pairs, for example
 `NikonDataLoader(folder, 'sampling', 'step', 'sampling_step', 10)`.
 
 Bruker folders sometimes hold more than one dataset; choose one with
-`dataset_num` in Python (a number, or `"all"`) or `'dataset_number'` in
-MATLAB.
+`dataset_number` (a number from 0, or `"all"` in Python).
 
 ### Varian on-board CBCT
 

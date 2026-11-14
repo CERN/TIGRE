@@ -35,9 +35,9 @@ class MLEM(IterativeReconAlg):  # noqa: D101
     def run_main_iter(self):
         self.res[self.res < 0.0] = 0.0
         for i in range(self.niter):
-            if self.Quameasopts is not None:
-                res_prev = copy.deepcopy(self.res)
-            self._estimate_time_until_completion(i)
+            res_prev = copy.deepcopy(self.res) if self.Quameasopts is not None else None
+            if self.verbose:
+                self._estimate_time_until_completion(i)
 
             den = Ax(self.res, self.geo, self.angles, "interpolated", gpuids=self.gpuids)
             den[den == 0.0] = np.inf
@@ -48,8 +48,8 @@ class MLEM(IterativeReconAlg):  # noqa: D101
 
             self.res = self.res * img
             self.res[self.res < 0.0] = 0.0
-            if self.Quameasopts is not None:
-                self.error_measurement(res_prev, i)
+            # also records the residual norm when computel2=True
+            self.error_measurement(res_prev, i)
 
 
 mlem = decorator(MLEM, name="mlem")

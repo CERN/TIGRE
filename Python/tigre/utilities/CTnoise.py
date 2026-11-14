@@ -2,6 +2,33 @@ import numpy as np
 import _RandomNumberGenerator as RNG
 
 def add(projections, Gaussian=None, Poisson=None):
+    """Add realistic noise to simulated projections.
+
+    Converts the line integrals to photon counts, adds Poisson (quantum) noise
+    and Gaussian (electronic) noise, and converts back. Available as
+    ``tigre.utilities.CTnoise.add``.
+
+    Parameters
+    ----------
+    projections : numpy.ndarray
+        Noise-free projections (line integrals).
+    Gaussian : numpy.ndarray, optional
+        Mean and standard deviation of the electronic noise, in photon counts,
+        shape ``(2,)``. Default ``[0, 0.5]``.
+    Poisson : float, optional
+        Photon count of an unattenuated ray (I0). Lower values give noisier
+        data. Default 60000, as MATLAB's ``addCTnoise``.
+
+    Returns
+    -------
+    numpy.ndarray
+        Noisy projections, float32, same shape.
+
+    Examples
+    --------
+    >>> from tigre.utilities import CTnoise
+    >>> noisy = CTnoise.add(proj, Poisson=1e5, Gaussian=np.array([0, 10]))
+    """
 
     if Poisson is not None:
         if not np.isscalar(Poisson):

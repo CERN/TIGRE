@@ -74,7 +74,10 @@ MAX_REL_ERROR = {
     "hybrid_lsqr": 0.12,  # measured 0.0805
     "lsmr": 0.13,  # measured 0.0886
     "irn_tv_cgls": 0.08,  # measured 0.0556
-    "hybrid_flsqr_tv": 0.33,  # measured 0.2519
+    # GCV (as in MATLAB) over-regularises this noise-free problem: lambda ~120
+    # in Python, ~250 in MATLAB's own hybrid_fLSQR_TV (error 0.37 there).
+    # With a fixed lmbda=1 the error is 0.177.
+    "hybrid_flsqr_tv": 0.45,  # measured 0.3378
     "ab_gmres": 0.12,  # measured 0.0802
     "ba_gmres": 0.12,  # measured 0.0880
     "asd_pocs": 0.06,  # measured 0.0364

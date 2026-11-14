@@ -12,6 +12,79 @@ from tigre.utilities.Ax import Ax
 from tigre.utilities.im3Dnorm import l2norm, inner
 import tigre.algorithms as algs
 import scipy.sparse.linalg
+import scipy.optimize
+
+
+def _tikhonov_gcv(lmbda, bhat, s):
+    """GCV function of a Tikhonov-regularised projected problem.
+
+    bhat are the coefficients of the right-hand side in the left singular
+    vectors (all of them), s the singular values. Same as gcv() in MATLAB's
+    hybrid_LSQR.m and hybrid_fLSQR_TV.m.
+    """
+    m, n = len(bhat), len(s)
+    t0 = np.sum(np.abs(bhat[n:m]) ** 2)
+    t1 = lmbda**2 / (np.abs(s) ** 2 + lmbda**2)
+    t2 = np.abs(bhat[0:n] * t1) ** 2
+    return (np.sum(t2) + t0) / ((np.sum(t1) + m - n) ** 2)
+
+
+def _tikhonov_discrepancy(lmbda, A, b, noise, L=None):
+    """Relative residual squared minus noise squared, for the Tikhonov
+    solution of min ||A y - b||^2 + lmbda^2 ||L y||^2 (L = I by default)."""
+    n = A.shape[1]
+    if n == 1:
+        return 0.0
+    if L is None:
+        L = np.eye(n)
+    y = np.linalg.lstsq(np.vstack((A, lmbda * L)), np.concatenate((b, np.zeros(L.shape[0]))), rcond=None)[0]
+    return (np.linalg.norm(A @ y - b) / np.linalg.norm(b)) ** 2 - noise**2
+
+
+def _forward_difference(u, axis):
+    """D u[i] = u[i] - u[i+1] along axis, 0 at the last index."""
+    out = np.zeros_like(u)
+    a = np.swapaxes(out, 0, axis)
+    b = np.swapaxes(u, 0, axis)
+    a[:-1] = b[:-1] - b[1:]
+    return out
+
+
+def _forward_difference_adjoint(y, axis):
+    """The exact adjoint of _forward_difference."""
+    out = np.zeros_like(y)
+    a = np.swapaxes(out, 0, axis)
+    b = np.swapaxes(y, 0, axis)
+    a[0] = b[0]
+    a[1:-1] = b[1:-1] - b[0:-2]
+    a[-1] = -b[-2]
+    return out
+
+
+def _tv_weights(x):
+    """Half-quadratic TV weights (|grad x|^2 + 1e-6)^(-1/4), as MATLAB build_weights."""
+    g = sum(_forward_difference(x, ax) ** 2 for ax in range(3))
+    return (g + 1e-6) ** np.float32(-1 / 4)
+
+
+def _choose_lambda(reg_param, lmbda, noiselevel, Bk, rhsk, rhskhat, Sk, normr):
+    """Regularisation parameter for the projected problem of hybrid LSQR."""
+    if reg_param == "given":
+        return float(lmbda)
+    if reg_param == "discrepancy":
+        lsqr_res = abs(rhskhat[len(Sk)]) / normr
+        if lsqr_res > noiselevel:
+            return 0.0
+        f = lambda l: _tikhonov_discrepancy(l, Bk, rhsk, noiselevel)  # noqa: E731
+        if f(0.0) * f(1e10) > 0:
+            return 0.0
+        return float(sp.optimize.brentq(f, 0.0, 1e10))
+    # generalised cross validation
+    return float(
+        sp.optimize.minimize_scalar(
+            lambda l: _tikhonov_gcv(l, rhskhat, Sk), bounds=(0.0, float(Sk[0])), method="bounded"
+        ).x
+    )
 
 
 if hasattr(time, "perf_counter"):
@@ -226,6 +299,15 @@ class hybrid_LSQR(IterativeReconAlg):
         kwargs.update(dict(W=None, V=None))
         kwargs.update(dict(blocksize=angles.shape[0]))
         self.re_init_at_iteration = 0
+        # Parameter choice, as MATLAB: a given lmbda, else the discrepancy
+        # principle if noiselevel is given, else generalised cross validation.
+        self.noiselevel = kwargs.pop("noiselevel", None)
+        if "lmbda" in kwargs:
+            self.reg_param = "given"
+        elif self.noiselevel is not None:
+            self.reg_param = "discrepancy"
+        else:
+            self.reg_param = "gcv"
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         self.__U__ = np.zeros((self.niter+1,np.prod(self.geo.nDetector)*len(self.angles)),dtype=np.float32)
         self.__V__ = np.zeros((self.niter,(np.prod(self.geo.nVoxel))),dtype=np.float32)
@@ -249,81 +331,66 @@ class hybrid_LSQR(IterativeReconAlg):
 
 
     def run_main_iter(self):
+        """Golub-Kahan bidiagonalisation with a Tikhonov-regularised projected
+        problem, as MATLAB's hybrid_LSQR.m. The regularisation parameter is the
+        one given (``lmbda``), or chosen at every iteration by the discrepancy
+        principle (``noiselevel``) or by generalised cross validation."""
         self.l2l = np.zeros((1, self.niter), dtype=np.float32)
-        avgtime = []
+        self.lambda_vec = np.zeros(self.niter)
+        x0 = self.res
         self.initialize_algo()
+        normr = float(self.__beta__)
+        y = np.zeros(1)
         for i in range(self.niter):
             if self.verbose:
                 self._estimate_time_until_completion(i)
-            
-            avgtic = default_timer() 
+            res_prev = self.res if self.Quameasopts is not None else None
 
-            v = Atb(self.__u__,self.geo,self.angles,backprojection_type="matched",gpuids=self.gpuids)
-            
-            if i>0:
-                v = np.reshape(v.ravel() - self.__beta__*self.__V__[i-1],v.shape)
-    
-            
-            for j in range(i-1):
-                v=np.reshape(v.ravel()-(self.__V__[j]*v.ravel())*self.__V__[j],v.shape)
+            # Update V_i (with full reorthogonalisation)
+            v = Atb(self.__u__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids).ravel()
+            if i > 0:
+                v = v - self.__beta__ * self.__V__[i - 1]
+            for j in range(i):
+                v = v - inner(self.__V__[j], v) * self.__V__[j]
+            alpha = l2norm(v)
+            v = v / alpha
+            self.__V__[i] = v
 
-   
-            alpha = l2norm(v.ravel())
-            v = v/alpha
-            self.__V__[i] = v.ravel()
+            # Update U_{i+1}
+            u = Ax(np.reshape(v, self.res.shape), self.geo, self.angles, "Siddon", gpuids=self.gpuids).ravel()
+            u = u - alpha * self.__u__.ravel()
+            for j in range(i + 1):
+                u = u - inner(self.__U__[j], u) * self.__U__[j]
+            self.__beta__ = l2norm(u)
+            u = u / self.__beta__
+            self.__U__[i + 1] = u
+            self.__u__ = np.reshape(u, self.proj.shape)
 
-            #% Update U_{ii+1}
-            self.__u__ = tigre.Ax(v, self.geo, self.angles, "Siddon", gpuids=self.gpuids) - alpha*self.__u__
-            
-            for j in range(i-1):
-                self.__u__=np.reshape(self.__u__.ravel()-(self.__U__[j]*self.__u__.ravel())*self.__U__[j],self.__u__.shape)
-                
-            
-            self.__beta__  = l2norm(self.__u__.ravel())
-            self.__u__ = self.__u__ / self.__beta__ 
-            self.__U__[i+1] = self.__u__.ravel()
+            # Projected (lower bidiagonal, (i+2) x (i+1)) matrix
+            self.__B__[i, i] = alpha
+            self.__B__[i, i + 1] = self.__beta__
+            Bk = np.transpose(self.__B__[0:i + 1, 0:i + 2]).astype(np.float64)
+            rhsk = self.__proj_rhs__[0:i + 2, 0].astype(np.float64)
+            Uk, Sk, VkT = np.linalg.svd(Bk)
+            rhskhat = Uk.T @ rhsk
 
-            #% Update projected matrix
-            self.__B__[i,i] = alpha
-            self.__B__[i,i+1] = self.__beta__ 
-            #% Malena. Proposed update: we should check algorithms breaks; 
-            #% 'if abs(alpha) <= eps || abs(beta) <= eps' - end and save
+            lmbda = _choose_lambda(self.reg_param, self.lmbda, self.noiselevel, Bk, rhsk, rhskhat, Sk, normr)
+            self.lambda_vec[i] = lmbda
 
-            #% Solve the projected problem 
-            #% (using the SVD of the small projected matrix)
-            Bk = self.__B__[0:i+1,0:i+2]
-            Uk, Sk, Vk = np.linalg.svd(np.transpose(Bk))
-      
-            if i==0:
-                Sk = Sk[0]
-            
-            rhsk = self.__proj_rhs__[0:i+2]
-            rhskhat = np.matmul(np.transpose(Uk),rhsk) #
-            Dk = Sk**2 + self.lmbda**2
+            yhat = Sk * rhskhat[0:i + 1] / (Sk**2 + lmbda**2)
+            y = VkT.T @ yhat
+            x = x0 + np.reshape((self.__V__[0:i + 1].T @ y).astype(np.float32), self.res.shape)
+            self.res = x
+            if self.Quameasopts is not None:
+                self.error_measurement(res_prev, i)
 
-            rhskhat = Sk * rhskhat[0:i+1,0]
-            yhat = rhskhat[0:i+1]/Dk
-            y = np.matmul(np.transpose(Vk), yhat)
-
-      
-
-
-            self.l2l[0, i] = l2norm(self.proj - tigre.Ax(self.res + np.reshape(np.matmul(np.transpose(self.__V__[0:i+1]),y),self.res.shape), self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+            self.l2l[0, i] = l2norm(self.proj - Ax(x, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
             if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
-                # No restart path here, so a genuine rise ends the run. The
-                # old `re_init_at_iteration + 1 == i` test, against a sentinel
-                # this class never reassigns, could only fire at i == 1 and
-                # ignored a rise at every other iteration.
-                print("hybrid LSQR exited due to divergence at iteration "+str(i))
-                self.res = self.res + np.reshape(np.matmul(np.transpose(self.__V__[0:i+1]),y),self.res.shape)
+                print("hybrid LSQR stopped at iteration " + str(i) + " due to loss of orthogonality.")
                 return self.res
-                
-            #% Test for convergence. 
-            #% msl: I still need to implement this. 
-            #% msl: There are suggestions on the original paper. Let's talk about it!
-        
-        self.res = self.res + np.reshape(np.matmul(np.transpose(self.__V__),y),self.res.shape)
         return self.res
+
+
 hybrid_lsqr = decorator(hybrid_LSQR, name="hybrid_lsqr")
 
 class LSMR(IterativeReconAlg): 
@@ -339,6 +406,9 @@ class LSMR(IterativeReconAlg):
         kwargs.update(dict(W=None, V=None))
         kwargs.update(dict(blocksize=angles.shape[0]))
         self.re_init_at_iteration = -1
+        # lmbda is LSMR's damping (Tikhonov) parameter; MATLAB's default is 0
+        # (plain least squares), not the shared default of 1.
+        kwargs.setdefault("lmbda", 0)
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
     def initialize_algo(self):
@@ -488,6 +558,8 @@ class IRN_TV_CGLS(IterativeReconAlg):
         kwargs.update(dict(W=None, V=None))
         kwargs.update(dict(blocksize=angles.shape[0]))
         self.re_init_at_iteration = 0
+        # lmbda weights the TV term; MATLAB's default is 10.
+        kwargs.setdefault("lmbda", 10)
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
     
@@ -506,20 +578,10 @@ class IRN_TV_CGLS(IterativeReconAlg):
     # penalised intensity there), and D^T was off by one at index n-2. Measured
     # adjoint asymmetry 6.4e-2, which is what made the inner CGLS diverge.
     def __D__(self, u, axis):
-        out = np.zeros_like(u)
-        a = np.swapaxes(out, 0, axis)
-        b = np.swapaxes(u, 0, axis)
-        a[:-1] = b[:-1] - b[1:]
-        return out
+        return _forward_difference(u, axis)
 
     def __Dt__(self, y, axis):
-        out = np.zeros_like(y)
-        a = np.swapaxes(out, 0, axis)
-        b = np.swapaxes(y, 0, axis)
-        a[0] = b[0]
-        a[1:-1] = b[1:-1] - b[0:-2]
-        a[-1] = -b[-2]
-        return out
+        return _forward_difference_adjoint(y, axis)
 
     def __build_weights__(self):
         Dxx = self.__D__(self.res, 0)
@@ -807,6 +869,15 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
         kwargs.update(dict(W=None, V=None))
         kwargs.update(dict(blocksize=angles.shape[0]))
         self.re_init_at_iteration = 0
+        # Parameter choice, as MATLAB: a given lmbda, else the discrepancy
+        # principle if noiselevel is given, else generalised cross validation.
+        self.noiselevel = kwargs.pop("noiselevel", None)
+        if "lmbda" in kwargs:
+            self.reg_param = "given"
+        elif self.noiselevel is not None:
+            self.reg_param = "discrepancy"
+        else:
+            self.reg_param = "gcv"
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
         self.__U__ = np.zeros((self.niter+1,np.prod(self.geo.nDetector)*len(self.angles)),dtype=np.float32)
         self.__V__ = np.zeros((self.niter,(np.prod(self.geo.nVoxel))),dtype=np.float32)
@@ -818,49 +889,19 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
     
 
       
-    def __build_weights__(self):
-        Dxx=np.copy(self.res)
-        Dyx=np.copy(self.res)
-        Dzx=np.copy(self.res)
+    # The same derivative operators as IRN_TV_CGLS (and MATLAB): D and its
+    # exact adjoint. The previous ones here wrote only [0:-2], leaving image
+    # values in the last slices, and the transpose was off by one.
+    def __build_weights__(self, x=None):
+        return _tv_weights(self.res if x is None else x)
 
-        Dxx[0:-2,:,:]=self.res[0:-2,:,:]-self.res[1:-1,:,:]
-        Dyx[:,0:-2,:]=self.res[:,0:-2,:]-self.res[:,1:-1,:]
-        Dzx[:,:,0:-2]=self.res[:,:,0:-2]-self.res[:,:,1:-1]
- 
-        return (Dxx**2+Dyx**2+Dzx**2+1e-6)**(-1/4)
+    def Lx(self, W, img):
+        img = np.reshape(img, self.res.shape)
+        return np.stack([W * _forward_difference(img, ax) for ax in range(3)], axis=0)
 
-    def Lx(self,W,img):
-        img=np.reshape(img,self.res.shape)
-        Dxx=np.copy(img)
-        Dyx=np.copy(img)
-        Dzx=np.copy(img)
-
-        Dxx[0:-2,:,:]=img[0:-2,:,:]-img[1:-1,:,:]
-        Dyx[:,0:-2,:]=img[:,0:-2,:]-img[:,1:-1,:]
-        Dzx[:,:,0:-2]=img[:,:,0:-2]-img[:,:,1:-1]
-
-        return np.stack((W*Dxx,W*Dyx,W*Dzx),axis=0)
-
-    def Ltx(self,W,img3):
-        img3 =np.reshape(img3,(3,*self.res.shape))
-        Wx_1 = W * img3[0,:,:,:]
-        Wx_2 = W * img3[1,:,:,:]
-        Wx_3 = W * img3[2,:,:,:]
-
-        DxtWx_1=Wx_1
-        DytWx_2=Wx_2
-        DztWx_3=Wx_3
-        
-        DxtWx_1[1:-2,:,:]=Wx_1[1:-2,:,:]-Wx_1[0:-3,:,:]
-        DxtWx_1[-1,:,:]=-Wx_1[-2,:,:]
-        
-        DytWx_2[:,1:-2,:]=Wx_2[:,1:-2,:]-Wx_2[:,0:-3,:]
-        DytWx_2[:,-1,:]=-Wx_2[:,-2,:]
-        
-        DztWx_3[:,:,1:-2]=Wx_3[:,:,1:-2]-Wx_3[:,:,0:-3]
-        DztWx_3[:,:,-1]=-Wx_3[:,:,-2]
-
-        return DxtWx_1 + DytWx_2 + DztWx_3
+    def Ltx(self, W, img3):
+        img3 = np.reshape(img3, (3, *self.res.shape))
+        return sum(_forward_difference_adjoint(W * img3[ax], ax) for ax in range(3))
 
     def mvT(self,k_aux,x ):
             return x.ravel() - k_aux.ravel()*np.sum(x.ravel())
@@ -893,6 +934,8 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
             W=self.__build_weights__()
 
         self.l2l = np.zeros((1, self.niter), dtype=np.float32)
+        self.lambda_vec = np.zeros(self.niter)
+        x0 = self.res
 
         for i in range(self.niter):
             if self.verbose:
@@ -941,12 +984,19 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
             __,ZRk =sp.linalg.qr(np.transpose(WZ),mode='economic')
             ZRksq=ZRk[0:i+1,0:i+1]
             rhsk=self.__proj_rhs__[0:i+2]
-            MZk=np.concatenate((np.transpose(Mk),self.lmbda*ZRksq))
-            rhsZk=np.concatenate((rhsk,np.zeros((i+1,1),dtype=np.float32)))
-            y = np.linalg.lstsq(MZk, rhsZk,rcond=None)
-            d=np.matmul(np.transpose(self.__Z__[0:i+1]),y[0])
-            
-            x = self.res + np.reshape(d,self.res.shape) + xA0
+            A = np.transpose(Mk).astype(np.float64)
+            R = ZRksq.astype(np.float64)
+            b = rhsk[:, 0].astype(np.float64)
+            lmbda = self._choose_lambda(A, R, b)
+            self.lambda_vec[i] = lmbda
+            MZk = np.concatenate((A, lmbda * R))
+            rhsZk = np.concatenate((b, np.zeros(i + 1)))
+            y = np.linalg.lstsq(MZk, rhsZk, rcond=None)[0]
+            d = (np.transpose(self.__Z__[0:i+1]) @ y).astype(np.float32)
+
+            x = x0 + np.reshape(d,self.res.shape) + xA0
+            # update the TV weights from the new image, as MATLAB does
+            W = self.__build_weights__(x)
             self.l2l[0, i] = l2norm((self.proj - tigre.Ax(x, self.geo, self.angles, "Siddon", gpuids=self.gpuids)).ravel())
             if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
                 # Same as hybrid_LSQR: no restart path, so stop. (The message
@@ -957,5 +1007,26 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
              
         self.res = x
         return self.res
+
+    def _choose_lambda(self, A, R, b):
+        """Regularisation parameter of min ||A y - b||^2 + lmbda^2 ||R y||^2."""
+        if self.reg_param == "given":
+            return float(self.lmbda)
+        if self.reg_param == "discrepancy":
+            noise = 1.01 * self.noiselevel
+            f = lambda l: _tikhonov_discrepancy(l, A, b, noise, R)  # noqa: E731
+            if f(0.0) > 0 or f(0.0) * f(1e10) > 0:
+                return 0.0
+            return float(sp.optimize.brentq(f, 0.0, 1e10))
+        # GCV on the standard-form problem A R^-1 (R is the square triangular
+        # factor of the projected TV term), which is what MATLAB's GSVD gives.
+        A_std = np.linalg.solve(R.T, A.T).T
+        U, s_, _ = np.linalg.svd(A_std)
+        bhat = U.T @ b
+        return float(
+            sp.optimize.minimize_scalar(
+                lambda l: _tikhonov_gcv(l, bhat, s_), bounds=(0.0, float(np.max(s_))), method="bounded"
+            ).x
+        )
 
 hybrid_flsqr_tv = decorator(hybrid_fLSQR_TV, name="hybrid_flsqr_tv")

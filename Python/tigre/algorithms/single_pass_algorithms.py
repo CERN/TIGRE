@@ -27,77 +27,61 @@ def is_short_scan(angles):
 
 
 def FDK(proj, geo, angles, **kwargs):
-    """
-    solves CT image reconstruction.
+    """FDK: filtered backprojection for cone-beam CT.
 
-    :param proj: np.array(dtype=float32),
-    Data input in the form of 3d
+    The Feldkamp-Davis-Kress algorithm. One pass, so it is fast, and usually
+    the best choice for well-sampled circular scans. Available as
+    ``tigre.algorithms.fdk``.
 
-    :param geo: tigre.utilities.geometry.Geometry
-    Geometry of detector and image (see examples/Demo code)
+    Parameters
+    ----------
+    proj : numpy.ndarray
+        Projections (line integrals), float32, shape ``(len(angles), *geo.nDetector)``.
+    geo : tigre.utilities.geometry.Geometry
+        The scanner geometry (cone beam).
+    angles : numpy.ndarray
+        Projection angles in radians, shape ``(N,)``. FDK assumes a circular
+        trajectory, so do not use it with arbitrary rotation axes.
 
-    :param angles: np.array(dtype=float32)
-    Angles of projection, shape = (nangles,3) or (nangles,)
-
-    :param filter: str
-    Type of filter used for backprojection
-    opts: "ram_lak" (default)
-          "shepp_logan"
-          "cosine"
-          "hamming"
-          "hann"
-
-    :param verbose: bool
-    Feedback print statements for algorithm progress
-
-    :param workers: int or None
-    Number of CPU threads used for projection filtering; None selects the default
-
-    :param parker: bool or float
-    Parker weights for short scans. Default: on when the scan is circular and
-    covers less than a full circle (same rule as MATLAB). A number sets the
-    smoothing parameter q of Wesarg et al. (True means q=1).
-
-    :param dowang: bool
-    Wang weights for a detector shifted with geo.offDetector (default True;
-    skipped on short scans)
-
-    :param kwargs: dict
-    keyword arguments
-
-    :return: np.array(dtype=float32)
-
-    Usage:
+    Returns
     -------
+    numpy.ndarray
+        The reconstruction, float32, shape ``geo.nVoxel``.
+
+    Other Parameters
+    ----------------
+    filter : {"ram_lak", "shepp_logan", "cosine", "hamming", "hann"}, optional
+        Filter applied to the projections. Default ``"ram_lak"``. Smoother
+        filters reduce noise at the cost of resolution.
+    parker : bool or float, optional
+        Parker weights for short scans, so that rays measured twice are not
+        counted twice. Default: on when the scan is circular and covers less
+        than a full circle (the same rule as MATLAB). A number sets the
+        smoothing parameter q of Wesarg et al. (True means q=1).
+    dowang : bool, optional
+        Wang weights for a detector shifted with ``geo.offDetector`` (half-fan
+        scans). Default True; skipped on short scans.
+    workers : int, optional
+        CPU threads used to filter the projections. Default: chosen automatically.
+    verbose : bool, optional
+        Print progress. Default False.
+    gpuids : tigre.utilities.gpu.GpuIds, optional
+        GPUs to use. Default: all available.
+
+    See Also
+    --------
+    fbp : the parallel-beam version.
+
+    Examples
+    --------
+    >>> import numpy as np
     >>> import tigre
     >>> import tigre.algorithms as algs
-    >>> import numpy
-    >>> from tigre.demos.Test_data import data_loader
-    >>> geo = tigre.geometry(mode='cone',default_geo=True,
-    >>>                         nVoxel=np.array([64,64,64]))
+    >>> from tigre.utilities import sample_loader
+    >>> geo = tigre.geometry_default(high_resolution=False)
     >>> angles = np.linspace(0, 2 * np.pi, 100, endpoint=False)
-    >>> src_img = data_loader.load_head_phantom(geo.nVoxel)
-    >>> proj = tigre.Ax(src_img,geo,angles)
-    >>> output = algs.FDK(proj,geo,angles)
-
-    tigre.demos.run() to launch ipython notebook file with examples.
-
-    --------------------------------------------------------------------
-    This file is part of the TIGRE Toolbox
-
-    Copyright (c) 2015, University of Bath and
-                        CERN-European Organization for Nuclear Research
-                        All rights reserved.
-
-    License:            Open Source under BSD.
-                        See the full license at
-                        https://github.com/CERN/TIGRE/license.txt
-
-    Contact:            tigre.toolbox@gmail.com
-    Codes:              https://github.com/CERN/TIGRE/
-    --------------------------------------------------------------------
-    Coded by:           MATLAB (original code): Ander Biguri
-                        PYTHON : Reuben Lindroos
+    >>> proj = tigre.Ax(sample_loader.load_head_phantom(geo.nVoxel), geo, angles)
+    >>> img = algs.fdk(proj, geo, angles, filter="hann")
     """
     verbose = kwargs["verbose"] if "verbose" in kwargs else False
     workers = kwargs.get("workers")
@@ -252,8 +236,43 @@ def FDK(proj, geo, angles, **kwargs):
 fdk = FDK
 
 
-def fbp(proj, geo, angles, **kwargs):  # noqa: D103
-    __doc__ = FDK.__doc__  # noqa: F841
+def fbp(proj, geo, angles, **kwargs):
+    """FBP: filtered backprojection for parallel-beam CT.
+
+    Parameters
+    ----------
+    proj : numpy.ndarray
+        Projections (line integrals), float32, shape ``(len(angles), *geo.nDetector)``.
+    geo : tigre.utilities.geometry.Geometry
+        The scanner geometry; ``geo.mode`` must be ``"parallel"``.
+    angles : numpy.ndarray
+        Projection angles in radians, shape ``(N,)``.
+
+    Returns
+    -------
+    numpy.ndarray
+        The reconstruction, float32, shape ``geo.nVoxel``.
+
+    Other Parameters
+    ----------------
+    filter : {"ram_lak", "shepp_logan", "cosine", "hamming", "hann"}, optional
+        Filter applied to the projections. Default ``"ram_lak"``.
+    workers : int, optional
+        CPU threads used to filter the projections. Default: chosen automatically.
+    verbose : bool, optional
+        Print progress. Default False.
+    gpuids : tigre.utilities.gpu.GpuIds, optional
+        GPUs to use. Default: all available.
+
+    Raises
+    ------
+    ValueError
+        If ``geo.mode`` is not ``"parallel"``.
+
+    See Also
+    --------
+    fdk : the cone-beam version.
+    """
     if geo.mode != "parallel":
         raise ValueError("Only use FBP for parallel beam. Check geo.mode.")
     geox = copy.deepcopy(geo)

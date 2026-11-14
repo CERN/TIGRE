@@ -107,11 +107,13 @@ Fast least-squares solvers. They use the `matched` backprojector, see
 | IRN-TV-CGLS | `irn_tv_cgls` | `IRN_TV_CGLS` |
 | Hybrid flexible LSQR with TV | `hybrid_flsqr_tv` | `hybrid_fLSQR_TV` |
 
-CGLS, LSQR and LSMR need early stopping. Hybrid LSQR adds regularisation and
-computes its strength automatically, which makes it less sensitive to the
-number of iterations (in MATLAB you can also set `'lambda'` or
-`'Noiselevel'` yourself). AB-GMRES and BA-GMRES are designed for projector pairs
-that are not exact transposes. The last two add TV regularisation.
+CGLS, LSQR and LSMR need early stopping. Hybrid LSQR adds Tikhonov
+regularisation and chooses its strength at every iteration (by generalised
+cross validation, or by the discrepancy principle if you give the noise level
+with `noiselevel` / `'Noiselevel'`), which makes it much less sensitive to the
+number of iterations; set `lmbda` / `'lambda'` to fix it yourself. AB-GMRES
+and BA-GMRES are designed for projector pairs that are not exact transposes.
+The last two add TV regularisation.
 
 ### Total variation
 

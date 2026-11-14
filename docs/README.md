@@ -49,3 +49,16 @@ building, and sphinx-gallery reuses a rendered page as long as its converted
 demo is unchanged. A demo changed after the last render shows code only until
 the next render. Demos that need data or other packages (`NOT_RUN` in the
 catalogue) and MATLAB-only demos are always shown as code.
+
+## API reference
+
+- **Python** (`docs/api/python/`): `autodoc` + `napoleon` pages generated from
+  the numpydoc docstrings in `Python/tigre`. The package is imported from the
+  repository without being built; its CUDA extensions (and `h5py`, `tqdm`,
+  `torch`) are mocked (`autodoc_mock_imports` in `conf.py`). The iterative
+  algorithms' docstrings are assembled from shared pieces in
+  `Python/tigre/algorithms/_docs.py`: edit them there.
+- **MATLAB** (`docs/api/matlab/`): `docs/_ext/tigre_matlab_api.py` copies each
+  function's help text (the first comment block, without the license) into
+  `_generated/matlab/<group>.md`. The functions shown are listed in its
+  `GROUPS`.

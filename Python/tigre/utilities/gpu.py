@@ -10,15 +10,30 @@ import _gpuUtils as gpuUtils
 import copy
 
 class GpuIds(object):
-    """
-    A class that holds the IDs and their (common) name
-    ```
-    gpuids = GpuIds('GeForce RTX 2080 Ti')
-    ```
-    If name is ""/None, IDs of all GPUs are hold.
-    ```
-    gpuids = GpuIds()
-    ```
+    """A set of GPUs for TIGRE to use.
+
+    Pass it to any operator or algorithm with ``gpuids=``.
+
+    Parameters
+    ----------
+    nameGPU : str, optional
+        Only GPUs with exactly this name (see :func:`getGpuNames`). Default:
+        all GPUs.
+
+    Attributes
+    ----------
+    devices : list of int
+        CUDA device numbers. Set it to choose devices by number.
+    name : str
+        The name the GPUs were selected by.
+
+    Examples
+    --------
+    >>> from tigre.utilities.gpu import GpuIds, getGpuNames
+    >>> getGpuNames()
+    ['NVIDIA RTX A6000', 'NVIDIA RTX A6000']
+    >>> gpuids = GpuIds()          # all GPUs
+    >>> gpuids.devices = [0]       # only the first one
     """
 
     def __init__(self, nameGPU=None):  # noqa: N803
@@ -43,7 +58,12 @@ class GpuIds(object):
         return single_gpu
 
 def getGpuNames():
-    """Returns a list of all installed GPUs."""
+    """Names of the installed GPUs, one per device.
+
+    Returns
+    -------
+    list of str
+    """
     return gpuUtils.getGpuNames()
 
 
@@ -53,6 +73,11 @@ def getGpuNames():
 
 
 def getGpuIds(gpuName=None):  # noqa: N803
-    """Returns the GpuIds object, which contains the IDs of devices whose name matches gpuName."""
+    """GPUs whose name matches ``gpuName``; the same as ``GpuIds(gpuName)``.
+
+    Returns
+    -------
+    GpuIds
+    """
     gpuids = GpuIds(gpuName)
     return gpuids

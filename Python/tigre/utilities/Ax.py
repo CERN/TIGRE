@@ -27,6 +27,61 @@ _try_import_Ax_ext()
 
 
 def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
+    """Forward projection: simulate the projections of an image.
+
+    Computes :math:`A x` on the GPU, where :math:`A` is the system matrix of
+    the scanner described by ``geo`` and ``angles``.
+
+    Parameters
+    ----------
+    img : numpy.ndarray
+        Image, float32, shape ``geo.nVoxel`` (``(z, y, x)``).
+    geo : tigre.utilities.geometry.Geometry
+        The scanner geometry.
+    angles : numpy.ndarray
+        Projection angles in radians: shape ``(N,)`` for rotations around z,
+        or ``(N, 3)`` for ZYZ Euler angles.
+    projection_type : {"Siddon", "interpolated"}, optional
+        ``"Siddon"`` (default; ``"ray-voxel"`` is an older name) adds up the
+        exact length of each ray inside each voxel. ``"interpolated"`` samples
+        the image along each ray every ``geo.accuracy`` voxels, with trilinear
+        interpolation.
+    gpuids : tigre.utilities.gpu.GpuIds, optional
+        GPUs to use. Default: all available.
+
+    Returns
+    -------
+    numpy.ndarray
+        Projections, float32, shape ``(N, *geo.nDetector)`` (``(angle, v, u)``).
+
+    Raises
+    ------
+    TypeError
+        If ``img`` is not float32.
+    ValueError
+        If ``img`` does not have shape ``geo.nVoxel``, or is complex.
+
+    See Also
+    --------
+    Atb : backprojection.
+
+    Notes
+    -----
+    ``Atb`` is not the exact transpose of ``Ax``; see
+    :doc:`/user-guide/projectors`.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import tigre
+    >>> from tigre.utilities import sample_loader
+    >>> geo = tigre.geometry_default(high_resolution=False)
+    >>> angles = np.linspace(0, 2 * np.pi, 100, endpoint=False)
+    >>> img = sample_loader.load_head_phantom(geo.nVoxel)
+    >>> proj = tigre.Ax(img, geo, angles)
+    >>> proj.shape
+    (100, 128, 128)
+    """
     _ensure_Ax_ext_import() # check if the import was successful, if not this will raise the original import error with the full message.
     if img.dtype != np.float32:
         raise TypeError("Input data should be float32, not " + str(img.dtype))
