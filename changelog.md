@@ -16,6 +16,10 @@ thank you.
   `manylinux_2_28`: they need glibc 2.28 or newer (e.g. RHEL/AlmaLinux 8, Ubuntu 18.10+);
   older Linux distributions should build from source.
 
+### Fixed
+- `load_head_phantom` could not find `head.mat` after `pip install .` on Linux or after
+  `pip install --user`: pip puts the file in `<prefix>/data`, which was not searched.
+
 ## 3.2.0 (2026-11-11)
 
 ### Changed
