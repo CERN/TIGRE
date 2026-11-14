@@ -44,13 +44,14 @@ plotgeometry(geo, -pi/6);
 :::
 ::::
 
-```{figure} https://i.imgur.com/mRweux3.png
+```{figure} images/geometry.jpg
 :alt: Diagram of TIGRE's cone-beam geometry, labelling the source, detector and image with their distances, sizes and offsets
 :width: 100%
 
-TIGRE's cone-beam geometry with the names of the `geo` fields. The same
-diagram is shown by `showGeoCBCTDiagram` in MATLAB, and it is figure 1 of the
-[TIGRE paper](https://doi.org/10.1088/2057-1976/2/5/055010).
+TIGRE's geometry for one projection, with the names of the `geo` fields.
+From [Biguri et al. (2025), TIGRE v3](https://doi.org/10.1088/2631-8695/adbb3a),
+figure 1 ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)). MATLAB's
+`showGeoCBCTDiagram` shows a similar diagram.
 ```
 
 ## The fields

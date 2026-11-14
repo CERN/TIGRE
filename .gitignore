@@ -73,3 +73,8 @@ MATLAB/mex_CUDA_win64.xml
 docs/_build/
 docs/_generated/
 docs/demos/
+
+# Images used by the website
+!docs/**/images/*.jpg
+!docs/**/images/*.png
+!docs/_static/**/*.png
