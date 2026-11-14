@@ -8,6 +8,10 @@ thank you.
 ## Unreleased
 
 ### Changed
+- PyTorch bindings: `At` and the gradient of `A` now use the `matched` backprojector, the
+  closest to the transpose of `Ax`; before, they used FDK weights, so gradients through
+  TIGRE were further from the true ones. Pass `backprojection_type="FDK"` to
+  `create_pytorch_operator` (or `A`/`At`) to get the old behaviour.
 - Wheels are built for Python 3.11 to 3.14 (3.14 was missing from 3.2.0), on
   `manylinux_2_28`: they need glibc 2.28 or newer (e.g. RHEL/AlmaLinux 8, Ubuntu 18.10+);
   older Linux distributions should build from source.

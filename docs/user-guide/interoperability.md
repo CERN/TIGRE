@@ -44,10 +44,11 @@ back = At(sino)     # sino: tensor whose last three dimensions are (angles, v, u
 - `create_pytorch_operator(geo, angles, gpuids)` chooses which GPUs TIGRE
   uses, independently of the GPU your tensors are on.
 - Gradients flow through both modules: the gradient of `A` is computed with
-  TIGRE's backprojector and the gradient of `At` with the forward projector.
-  As TIGRE's projector pairs are not exact transposes (see
+  TIGRE's `matched` backprojector and the gradient of `At` with the forward
+  projector. As TIGRE's projector pairs are not exact transposes (see
   [](projectors.md)), these gradients are close to, but not exactly, the true
-  ones.
+  ones. `create_pytorch_operator(..., backprojection_type="FDK")` uses FDK
+  weights instead, as earlier versions did.
 - Each call copies the data through host memory, because TIGRE's CUDA code
   works on NumPy arrays. For large batches this copy can be a noticeable
   part of the run time.
