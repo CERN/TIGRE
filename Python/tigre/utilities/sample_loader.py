@@ -6,6 +6,18 @@ import scipy.ndimage
 
 
 def load_head_phantom(number_of_voxels=None):
+    """The head phantom used in TIGRE's demos and tests.
+
+    Parameters
+    ----------
+    number_of_voxels : numpy.ndarray, optional
+        Size ``(z, y, x)`` to resample the phantom to. Default ``(128, 128, 128)``.
+
+    Returns
+    -------
+    numpy.ndarray
+        The phantom, float32, with values roughly between 0 and 1.
+    """
     if number_of_voxels is None:
         number_of_voxels = np.array((128, 128, 128))
     list_relative_path = [

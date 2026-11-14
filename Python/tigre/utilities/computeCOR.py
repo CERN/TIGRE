@@ -35,14 +35,27 @@ from scipy.interpolate import RegularGridInterpolator
 
 
 def computeCOR(data, geo, angles, slc=None):
-    """Estimate the centre of rotation, in mm at the rotation axis.
+    """Estimate the centre of rotation from the data.
 
-    :param data: projections, (n_angles, n_rows, n_cols)
-    :param geo: tigre geometry
-    :param angles: projection angles, radians
-    :param slc: detector row to use (default: the central row)
-    :return: float, the COR offset in mm - the sign convention TIGRE's
-        `geo.COR` expects
+    Finds the shift for which every ray agrees with its conjugate ray, half a
+    turn later, in one detector row (T. Liu, Optical Engineering, 2009).
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Projections, shape ``(len(angles), *geo.nDetector)``.
+    geo : Geometry
+        The scanner geometry.
+    angles : numpy.ndarray
+        Projection angles in radians. The scan should cover a full circle.
+    slc : int, optional
+        Detector row to use. Default: the central row.
+
+    Returns
+    -------
+    float
+        Centre-of-rotation offset in mm at the rotation axis, with the sign
+        ``geo.COR`` expects: set ``geo.COR`` to this value.
     """
     if slc is None:
         slc = int(np.floor(data.shape[1] / 2))

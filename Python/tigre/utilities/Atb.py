@@ -7,6 +7,48 @@ from .gpu import GpuIds
 
 
 def Atb(projections, geo, angles, backprojection_type="FDK", **kwargs):
+    """Backprojection: spread projections back over the image.
+
+    Approximates :math:`A^T b` on the GPU, where :math:`A` is the system matrix
+    of the scanner described by ``geo`` and ``angles``.
+
+    Parameters
+    ----------
+    projections : numpy.ndarray
+        Projections, float32, shape ``(N, *geo.nDetector)`` (``(angle, v, u)``).
+    geo : tigre.utilities.geometry.Geometry
+        The scanner geometry.
+    angles : numpy.ndarray
+        Projection angles in radians: shape ``(N,)`` for rotations around z,
+        or ``(N, 3)`` for ZYZ Euler angles.
+    backprojection_type : {"FDK", "matched"}, optional
+        ``"FDK"`` (default) uses the distance weights of the FDK algorithm.
+        ``"matched"`` uses weights that make it close to the transpose of
+        :func:`Ax`; the Krylov algorithms use it.
+    gpuids : tigre.utilities.gpu.GpuIds, optional
+        GPUs to use. Default: all available.
+
+    Returns
+    -------
+    numpy.ndarray
+        Image, float32, shape ``geo.nVoxel`` (``(z, y, x)``).
+
+    Raises
+    ------
+    TypeError
+        If ``projections`` is not float32.
+    ValueError
+        If ``projections`` does not have the expected shape, or is complex.
+
+    See Also
+    --------
+    Ax : forward projection.
+
+    Notes
+    -----
+    Neither backprojector is the exact transpose of :func:`Ax`; see
+    :doc:`/user-guide/projectors`.
+    """
     if projections.dtype != np.float32:
         raise TypeError("Input data should be float32, not " + str(projections.dtype))
     if not np.isreal(projections).all():

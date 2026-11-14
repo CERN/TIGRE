@@ -512,12 +512,18 @@ def decorator(IterativeReconAlg, name=None, docstring=None):  # noqa: N803
         else:
             return alg.getres()
 
-    if docstring is not None:
+    from tigre.algorithms._docs import DOCS
+
+    if name in DOCS:
+        iterativereconalg.__doc__ = DOCS[name]
+        IterativeReconAlg.__doc__ = DOCS[name]
+    elif docstring is not None:
         iterativereconalg.__doc__ = docstring + IterativeReconAlg.__doc__
     else:
         iterativereconalg.__doc__ = IterativeReconAlg.__doc__
     if name is not None:
         iterativereconalg.__name__ = name
+        iterativereconalg.__qualname__ = name
 
     return iterativereconalg
 
