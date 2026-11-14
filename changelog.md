@@ -18,7 +18,7 @@ thank you.
 
 ### Fixed
 - `load_head_phantom` could not find `head.mat` after `pip install .` on Linux or after
-  `pip install --user`: pip puts the file in `<prefix>/data`, which was not searched.
+  `pip install --user`: pip puts the file in `<prefix>/data`, which was not searched (#850).
 
 ## 3.2.0 (2026-11-11)
 
