@@ -3,6 +3,17 @@
 This guide explains how TIGRE works and how to use it on your own data. It
 assumes TIGRE is installed ([](../install/index.md)).
 
+The documentation is split by what you need at the moment:
+
+- **Learning TIGRE:** the first reconstruction below, then the
+  [demos](../demos/index.rst), which walk through every feature step by step
+  in Python and MATLAB.
+- **Doing a specific task:** the how-to guides below, such as loading
+  scanner data or fixing an error.
+- **Understanding how it works:** the concept pages below, on the geometry,
+  the projectors, the algorithms and GPU use.
+- **Looking up a function:** the [API reference](../api/index.md).
+
 ## A first reconstruction
 
 A TIGRE reconstruction needs three things: a **geometry** describing the
@@ -61,7 +72,7 @@ plotImg([img_fdk img_sart], 'Dim', 'Z');
 
 With real data, step 2 is loading your scan instead ([](loading-data.md)).
 
-## Guide
+## Concepts
 
 [](geometry.md)
 : The geometry fields, the coordinate system, and how to describe offsets,
@@ -73,11 +84,17 @@ With real data, step 2 is loading your scan instead ([](loading-data.md)).
 [](algorithms.md)
 : Which algorithm to use, and the options they share.
 
+[](gpus.md)
+: Choosing GPUs, how large problems are split, and memory use.
+
+## How-to guides
+
 [](loading-data.md)
 : Reading data from Nikon, Bruker, Varian and other scanners.
 
-[](gpus.md)
-: Choosing GPUs, how large problems are split, and memory use.
+[](interoperability.md)
+: Using TIGRE with PyTorch, CIL, ASTRA and other tools, and moving data
+  between MATLAB and Python.
 
 [](troubleshooting.md)
 : Common errors and how to fix them.
@@ -88,22 +105,39 @@ With real data, step 2 is loading your scan instead ([](loading-data.md)).
 [](proton-ct.md)
 : The MATLAB extension for proton radiography.
 
+## Background
+
 [](further-reading.md)
 : Papers and the thesis behind TIGRE.
 
-Every feature also has a demo; the [demos](../demos/index.rst) show
-them all, in Python and MATLAB.
+[](compatibility.md)
+: Versions, deprecations and what stays backwards compatible.
 
 ```{toctree}
 :hidden:
+:caption: Concepts
 
 geometry
 projectors
 algorithms
-loading-data
 gpus
+```
+
+```{toctree}
+:hidden:
+:caption: How-to guides
+
+loading-data
+interoperability
 troubleshooting
 performance-tuning
 proton-ct
+```
+
+```{toctree}
+:hidden:
+:caption: Background
+
 further-reading
+compatibility
 ```

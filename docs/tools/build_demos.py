@@ -91,6 +91,39 @@ def build() -> None:
     subprocess.run(cmd, cwd=ROOT, env=env, check=True)
 
 
+THUMB_WIDTH = 230  # thumbnails are shown at about this width on the section pages
+
+
+def shrink_thumbnails() -> None:
+    """Make the animated thumbnails light enough for the section pages.
+
+    sphinx-gallery uses a demo's animation, at full size, as its thumbnail
+    (up to 1 MB each). Keep the animation but make it smaller, with at most 32
+    frames and 64 colours, and start it half-way through: the first slice of a
+    volume is often empty, which made some thumbnails look black. Thumbnails
+    reused from the previous render are already small and are left alone.
+    """
+    from PIL import Image, ImageSequence
+
+    for path in DEMOS.glob("*/images/thumb/*.gif"):
+        im = Image.open(path)
+        if im.width <= THUMB_WIDTH:
+            continue
+        frames = [f.convert("RGB") for f in ImageSequence.Iterator(im)]
+        duration = im.info.get("duration", 100)
+        if len(frames) > 1:
+            frames = frames[len(frames) // 2:] + frames[: len(frames) // 2]
+            step = -(-len(frames) // 32)
+            frames = frames[::step]
+            duration *= step
+        height = round(frames[0].height * THUMB_WIDTH / frames[0].width)
+        frames = [f.resize((THUMB_WIDTH, height), Image.LANCZOS) for f in frames]
+        palette = frames[0].quantize(colors=64, method=Image.Quantize.MEDIANCUT)
+        frames = [f.quantize(palette=palette, dither=Image.Dither.NONE) for f in frames]
+        frames[0].save(path, save_all=True, append_images=frames[1:], loop=0,
+                       duration=duration, optimize=True, disposal=1)
+
+
 def commit() -> str:
     """Commit docs/demos as the new tip of the docs-demos branch."""
     (DEMOS / ".gitattributes").write_text("* -text\n", encoding="utf-8")
@@ -118,6 +151,7 @@ def main() -> None:
     if not args.fresh:
         restore_previous()
     build()
+    shrink_thumbnails()
     sha = commit()
     print(f"\n{BRANCH} is now {sha[:10]}.")
     if args.push:

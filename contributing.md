@@ -66,6 +66,9 @@ MATLAB tests are in `MATLAB/Tests/`.
    `Python/tests/test_krylov_restart_and_norms.py` for an example).
 4. Update the demos and documentation if you change user-facing behaviour.
 5. Add a line to [`changelog.md`](changelog.md) under the next release.
+   Do not rename, remove or change the meaning of anything public (including
+   `geo` fields and their conventions) without first deprecating it, as described
+   in the [compatibility policy](https://cern.github.io/TIGRE/user-guide/compatibility.html).
 6. Open the pull request and fill in the template.
 
 ### Code style
