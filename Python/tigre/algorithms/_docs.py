@@ -153,10 +153,10 @@ def _build(summary, *, extra=(), notes="", see_also="", references=""):
 
 
 _SART_ONE = _SART.format(lmbda_red=1)
-_LSQR_REF = ".. [1] C. C. Paige and M. A. Saunders, \"LSQR: An algorithm for sparse linear equations and sparse least squares\", ACM Trans. Math. Softw. 8 (1982). https://doi.org/10.1145/355984.355989"
-_LSMR_REF = ".. [1] D. C.-L. Fong and M. A. Saunders, \"LSMR: An iterative algorithm for sparse least-squares problems\", SIAM J. Sci. Comput. 33 (2011). https://doi.org/10.1137/10079687X"
-_ASD_REF = ".. [1] E. Y. Sidky and X. Pan, \"Image reconstruction in circular cone-beam computed tomography by constrained, total-variation minimization\", Phys. Med. Biol. 53 (2008). https://doi.org/10.1088/0031-9155/53/17/021"
-_FISTA_REF = ".. [1] A. Beck and M. Teboulle, \"A fast iterative shrinkage-thresholding algorithm for linear inverse problems\", SIAM J. Imaging Sci. 2 (2009). https://doi.org/10.1137/080716542"
+_LSQR_REF = "- C. C. Paige and M. A. Saunders, \"LSQR: An algorithm for sparse linear equations and sparse least squares\", ACM Trans. Math. Softw. 8 (1982). https://doi.org/10.1145/355984.355989"
+_LSMR_REF = "- D. C.-L. Fong and M. A. Saunders, \"LSMR: An iterative algorithm for sparse least-squares problems\", SIAM J. Sci. Comput. 33 (2011). https://doi.org/10.1137/10079687X"
+_ASD_REF = "- E. Y. Sidky and X. Pan, \"Image reconstruction in circular cone-beam computed tomography by constrained, total-variation minimization\", Phys. Med. Biol. 53 (2008). https://doi.org/10.1088/0031-9155/53/17/021"
+_FISTA_REF = "- A. Beck and M. Teboulle, \"A fast iterative shrinkage-thresholding algorithm for linear inverse problems\", SIAM J. Imaging Sci. 2 (2009). https://doi.org/10.1137/080716542"
 
 DOCS = {
     # SART family
@@ -201,7 +201,7 @@ DOCS = {
         see_also="lsqr, lsmr, hybrid_lsqr",
     ),
     "lsqr": _build(
-        "LSQR: least squares by Golub-Kahan bidiagonalisation [1]_.\n\n"
+        "LSQR: least squares by Golub-Kahan bidiagonalisation.\n\n"
         "Solves :math:`\\min_x \\|Ax - b\\|_2`. Mathematically the same as CGLS, "
         "numerically more stable.",
         extra=(_RESTART,),
@@ -210,7 +210,7 @@ DOCS = {
         references=_LSQR_REF,
     ),
     "lsmr": _build(
-        "LSMR: least squares by minimising the normal-equation residual [1]_.\n\n"
+        "LSMR: least squares by minimising the normal-equation residual.\n\n"
         "Solves :math:`\\min_x \\|Ax - b\\|_2^2 + \\lambda^2 \\|x\\|_2^2`. Its "
         "residuals decrease more smoothly than LSQR's.",
         extra=(
@@ -273,7 +273,7 @@ DOCS = {
     ),
     # TV / POCS
     "asd_pocs": _build(
-        "ASD-POCS: adaptive steepest descent, projection onto convex sets [1]_.\n\n"
+        "ASD-POCS: adaptive steepest descent, projection onto convex sets.\n\n"
         "Minimises the total variation of the image subject to "
         ":math:`\\|Ax - b\\|_2 \\le \\epsilon`. Uses one projection per data step; "
         "``os_asd_pocs`` uses subsets and is faster.",
@@ -342,7 +342,7 @@ DOCS = {
     ),
     # Proximal
     "FISTA": _build(
-        "FISTA: fast iterative shrinkage-thresholding with a TV proximal step [1]_.\n\n"
+        "FISTA: fast iterative shrinkage-thresholding with a TV proximal step.\n\n"
         "Solves :math:`\\min_x \\tfrac{1}{2}\\|Ax - b\\|_2^2 + \\lambda\\, \\mathrm{TV}(x)` "
         "with accelerated proximal gradient steps.",
         extra=(

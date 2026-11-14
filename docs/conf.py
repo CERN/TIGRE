@@ -8,6 +8,8 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent / "_ext"))
+# the tigre package, for the API reference (its CUDA modules are mocked below)
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "Python"))
 
 # -- Project information -----------------------------------------------------
 
@@ -35,7 +37,28 @@ extensions = [
     "tigre_citations",
     "tigre_papers",
     "sphinx_gallery.gen_gallery",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.napoleon",
+    "tigre_matlab_api",
 ]
+
+# -- API reference -------------------------------------------------------------
+# autodoc imports tigre without building it: the compiled CUDA extensions and
+# optional dependencies are replaced by mocks.
+autodoc_mock_imports = [
+    "_Ax", "_Atb", "_AwminTV", "_minTV", "_minPICCS", "_tv_proximal", "_tvdenoising",
+    "_gpuUtils", "_RandomNumberGenerator", "h5py", "tqdm", "torch",
+]
+autodoc_typehints = "none"
+autodoc_member_order = "bysource"
+autosummary_generate = False
+napoleon_numpy_docstring = True
+napoleon_google_docstring = True
+napoleon_use_rtype = False
+# Docstring types ("numpy.ndarray", "optional", {"a", "b"}) are descriptions,
+# not cross-references; keep nitpicky mode for everything else.
+nitpick_ignore_regex = [("py:class", r".*")]
 
 myst_enable_extensions = [
     "colon_fence",
