@@ -57,6 +57,13 @@ function [res,resL2,qualMeasOut]=SIRT(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('SIRT',proj,niter,varargin);
+if operatorHandled
+    res=operatorImage;
+    resL2=operatorResidual;
+    qualMeasOut=operatorQuality;
+    return;
+end
     if nargin < 4
         error('TIGRE:SIRT:InvalidInput','Not enough inputs')
     end
