@@ -274,7 +274,13 @@ void cpy_from_host(float* device_array,float* host_array,
         
         
         // Lets allocate auxiliary  variables.
-        float* buffer_u, *buffer_px, *buffer_py, *buffer_pz;
+        // Halo exchange e=2*dev copies the last slice of dev to dev+1, e=2*dev+1 the first slice of dev+1 to dev.
+        // Neighbours with peer access (peer_access[dev]) copy directly; for the others each variable v (u, px, py, pz)
+        // goes through its own part 4*e+v of the pinned buffer, so all of them can run at once.
+        int nExchanges=2*(deviceCount-1);
+        bool* peer_access=(bool*)malloc((deviceCount-1)*sizeof(bool));
+        float* buffer;
+        cudaEvent_t* exchange_event=(cudaEvent_t*)malloc(4*nExchanges*sizeof(cudaEvent_t));
         float* h_px, *h_py, *h_pz, *h_u;
         if(splits>1){
             
@@ -292,12 +298,32 @@ void cpy_from_host(float* device_array,float* host_array,
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
             }
             h_u=dst;
-        }else{
-            cudaMallocHost((void**)&buffer_u,  pixels_per_slice*sizeof(float));
-            cudaMallocHost((void**)&buffer_px, pixels_per_slice*sizeof(float));
-            cudaMallocHost((void**)&buffer_py, pixels_per_slice*sizeof(float));
-            cudaMallocHost((void**)&buffer_pz, pixels_per_slice*sizeof(float));
-            
+        }else if(deviceCount>1){
+            cudaMallocHost((void**)&buffer, 4*nExchanges*pixels_per_slice*sizeof(float));
+            for (dev = 0; dev < deviceCount-1; dev++){
+                int access_next=0, access_prev=0;
+                cudaDeviceCanAccessPeer(&access_next,gpuids[dev],gpuids[dev+1]);
+                cudaDeviceCanAccessPeer(&access_prev,gpuids[dev+1],gpuids[dev]);
+                peer_access[dev]=access_next && access_prev;
+                if (peer_access[dev]){
+                    // Peer access persists in the context, so an earlier call may have enabled it already.
+                    cudaSetDevice(gpuids[dev]);
+                    cudaError_t err_next=cudaDeviceEnablePeerAccess(gpuids[dev+1],0);
+                    cudaSetDevice(gpuids[dev+1]);
+                    cudaError_t err_prev=cudaDeviceEnablePeerAccess(gpuids[dev],0);
+                    if (err_next!=cudaSuccess || err_prev!=cudaSuccess){
+                        cudaGetLastError();
+                        peer_access[dev]=(err_next==cudaSuccess || err_next==cudaErrorPeerAccessAlreadyEnabled) &&
+                                         (err_prev==cudaSuccess || err_prev==cudaErrorPeerAccessAlreadyEnabled);
+                    }
+                }
+                for (int v = 0; v < 4; v++){
+                    cudaSetDevice(gpuids[dev]);
+                    cudaEventCreateWithFlags(&exchange_event[8*dev+v],cudaEventDisableTiming);
+                    cudaSetDevice(gpuids[dev+1]);
+                    cudaEventCreateWithFlags(&exchange_event[8*dev+4+v],cudaEventDisableTiming);
+                }
+            }
         }
         // We should be good to go memory wise.
         
@@ -516,52 +542,42 @@ void cpy_from_host(float* device_array,float* host_array,
                     // Essentially this code takes for each device (exceptions for the first and last devices included) "buffer_pixels" amount 
                     // of the beggining and end of each important variable and passes it to the next/previous GPU (the one containing the next/previous chunck)
 
-                    // Pass buffer_pixels amount of data from the start of the image to the previous GPU
-                    for(dev=0; dev<deviceCount;dev++){
-                        if (dev<deviceCount-1){
+                    // Every exchange only reads interior slices and writes halo slices, so they are independent. Queue all
+                    // downloads, then the uploads, each waiting for its own download, and synchronize once.
+                    float** d_var[4]={d_u, d_px, d_py, d_pz};
+                    for(dev=0; dev<deviceCount-1;dev++){
+                        for (int v = 0; v < 4; v++){
+                            int to_next=8*dev+v, to_prev=8*dev+4+v;
+                            if (peer_access[dev]){
+                                cudaSetDevice(gpuids[dev]);
+                                cudaMemcpyPeerAsync(d_var[v][dev+1], gpuids[dev+1], d_var[v][dev]+slices_per_split*pixels_per_slice, gpuids[dev], buffer_pixels*sizeof(float), stream[dev*nStream_device+1+v]);
+                                cudaSetDevice(gpuids[dev+1]);
+                                cudaMemcpyPeerAsync(d_var[v][dev]+slices_per_split*pixels_per_slice+buffer_pixels, gpuids[dev], d_var[v][dev+1]+buffer_pixels, gpuids[dev+1], buffer_pixels*sizeof(float), stream[(dev+1)*nStream_device+1+v]);
+                                continue;
+                            }
+                            cudaSetDevice(gpuids[dev]);
+                            cudaMemcpyAsync(buffer+to_next*pixels_per_slice, d_var[v][dev]+slices_per_split*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1+v]);
+                            cudaEventRecord(exchange_event[to_next],stream[dev*nStream_device+1+v]);
                             cudaSetDevice(gpuids[dev+1]);
-                            cudaMemcpyAsync(buffer_u , d_u[dev+1]+buffer_pixels , buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+1]);
-                            cudaMemcpyAsync(buffer_px, d_px[dev+1]+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+2]);
-                            cudaMemcpyAsync(buffer_py, d_py[dev+1]+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+3]);
-                            cudaMemcpyAsync(buffer_pz, d_pz[dev+1]+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+4]);
-
-                            
-                            cudaSetDevice(gpuids[dev]);
-                            cudaStreamSynchronize(stream[(dev+1)*nStream_device+1]);
-                            cudaMemcpyAsync(d_u[dev] +slices_per_split*pixels_per_slice+buffer_pixels, buffer_u , buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+1]);
-                            cudaStreamSynchronize(stream[(dev+1)*nStream_device+2]);
-                            cudaMemcpyAsync(d_px[dev]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_px, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+2]);
-                            cudaStreamSynchronize(stream[(dev+1)*nStream_device+3]);
-                            cudaMemcpyAsync(d_py[dev]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_py, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+3]);
-                            cudaStreamSynchronize(stream[(dev+1)*nStream_device+4]);
-                            cudaMemcpyAsync(d_pz[dev]+slices_per_split*pixels_per_slice+buffer_pixels, buffer_pz, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+4]);
-                            
-                            
+                            cudaMemcpyAsync(buffer+to_prev*pixels_per_slice, d_var[v][dev+1]+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+1+v]);
+                            cudaEventRecord(exchange_event[to_prev],stream[(dev+1)*nStream_device+1+v]);
                         }
+                    }
+                    for(dev=0; dev<deviceCount-1;dev++){
+                        if (peer_access[dev]) continue;
+                        for (int v = 0; v < 4; v++){
+                            int to_next=8*dev+v, to_prev=8*dev+4+v;
+                            cudaSetDevice(gpuids[dev+1]);
+                            cudaStreamWaitEvent(stream[(dev+1)*nStream_device+1+v],exchange_event[to_next],0);
+                            cudaMemcpyAsync(d_var[v][dev+1], buffer+to_next*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev+1)*nStream_device+1+v]);
+                            cudaSetDevice(gpuids[dev]);
+                            cudaStreamWaitEvent(stream[dev*nStream_device+1+v],exchange_event[to_prev],0);
+                            cudaMemcpyAsync(d_var[v][dev]+slices_per_split*pixels_per_slice+buffer_pixels, buffer+to_prev*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1+v]);
+                        }
+                    }
+                    for(dev=0; dev<deviceCount;dev++){
+                        cudaSetDevice(gpuids[dev]);
                         cudaDeviceSynchronize();
-                        // Pass buffer_pixels amoung of data of the end part of the image to the next GPU.
-                        if (dev>0){
-                            // U
-                            cudaSetDevice(gpuids[dev-1]);
-                            cudaMemcpyAsync(buffer_u,  d_u[dev-1] +slices_per_split*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+1]);
-                            cudaMemcpyAsync(buffer_px, d_px[dev-1]+slices_per_split*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+2]);
-                            cudaMemcpyAsync(buffer_py, d_py[dev-1]+slices_per_split*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+3]);
-                            cudaMemcpyAsync(buffer_pz, d_pz[dev-1]+slices_per_split*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev-1)*nStream_device+4]);
-                            
-                            
-                            cudaSetDevice(gpuids[dev]);
-                            cudaStreamSynchronize(stream[(dev-1)*nStream_device+1]);
-                            cudaMemcpyAsync(d_u[dev] ,buffer_u , buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+1]);
-                            cudaStreamSynchronize(stream[(dev-1)*nStream_device+2]);
-                            cudaMemcpyAsync(d_px[dev],buffer_px, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+2]);
-                            cudaStreamSynchronize(stream[(dev-1)*nStream_device+3]);
-                            cudaMemcpyAsync(d_py[dev],buffer_py, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+3]);
-                            cudaStreamSynchronize(stream[(dev-1)*nStream_device+4]);
-                            cudaMemcpyAsync(d_pz[dev],buffer_pz, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev)*nStream_device+4]);
-                            cudaDeviceSynchronize();
-                            
-                            
-                        }
                     }
                 // This is the case when we can't solely use GPU memory, as the total size of the images+variables exceeds total amounf of memory among GPUs.
                 // This situation requires partial results and full memory allocation in the host. 
@@ -626,12 +642,14 @@ void cpy_from_host(float* device_array,float* host_array,
             cudaFreeHost(h_px);
             cudaFreeHost(h_py);
             cudaFreeHost(h_pz);
-        }else if(splits==1){
-            cudaFreeHost(buffer_u);
-            cudaFreeHost(buffer_px);
-            cudaFreeHost(buffer_py);
-            cudaFreeHost(buffer_pz);
+        }else if(splits==1 && deviceCount>1){
+            cudaFreeHost(buffer);
+            for (int e = 0; e < 4*nExchanges; e++){
+                cudaEventDestroy(exchange_event[e]);
+            }
         }
+        free(exchange_event);
+        free(peer_access);
         
         for (int i = 0; i < nStreams; ++i)
            cudaStreamDestroy(stream[i]) ;
