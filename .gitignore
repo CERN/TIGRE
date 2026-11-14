@@ -72,4 +72,4 @@ MATLAB/mex_CUDA_win64.xml
 .idea/
 docs/_build/
 docs/_generated/
-docs/gallery/
+docs/demos/

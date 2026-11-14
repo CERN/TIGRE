@@ -3,9 +3,9 @@
 TIGRE is free to use, modify and share under the BSD licence. If you use it in
 published work, please cite it: citations are how the project shows its impact.
 
-Cite the **TIGRE v3** paper for TIGRE in general. If your work relies on
-multi-GPU or very large reconstructions, also cite the 2020 paper; the 2016
-paper describes the original MATLAB toolbox.
+These are the papers about TIGRE itself: the TIGRE v3 paper (2025), the
+multi-GPU and large-reconstruction paper (2020), and the paper on the original
+MATLAB toolbox (2016).
 
 ```{include} _generated/citations.md
 ```

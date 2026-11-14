@@ -88,14 +88,10 @@ With real data, step 2 is loading your scan instead ([](loading-data.md)).
 [](proton-ct.md)
 : The MATLAB extension for proton radiography.
 
-[](applications.md)
-: Reconstructions of real scans from medical, synchrotron and micro-CT
-  imaging.
-
 [](further-reading.md)
 : Papers and the thesis behind TIGRE.
 
-Every feature also has a demo; the [gallery](../gallery/index.rst) shows
+Every feature also has a demo; the [demos](../demos/index.rst) show
 them all, in Python and MATLAB.
 
 ```{toctree}
@@ -109,6 +105,5 @@ gpus
 troubleshooting
 performance-tuning
 proton-ct
-applications
 further-reading
 ```
