@@ -1,0 +1,329 @@
+{
+ "CGLSimg": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "SIRTimg": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "algs.cgls": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre.algorithms",
+   "module_short": "tigre.algorithms",
+   "name": "cgls"
+  }
+ ],
+ "algs.sirt": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre.algorithms",
+   "module_short": "tigre.algorithms",
+   "name": "sirt"
+  }
+ ],
+ "angles": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "angles.shape": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "tuple"
+  }
+ ],
+ "data": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "geo": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre.utilities.geometry_default",
+   "module_short": "tigre.utilities.geometry_default",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre.utilities",
+   "module_short": "tigre.utilities",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "ConeGeometryDefault"
+  }
+ ],
+ "geo.nVoxel": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "geo.offOrigin": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "head": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "np.concatenate": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "_ArrayFunctionDispatcher"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "concatenate"
+  }
+ ],
+ "np.hstack": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "_ArrayFunctionDispatcher"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "hstack"
+  }
+ ],
+ "np.linspace": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "_ArrayFunctionDispatcher"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "linspace"
+  }
+ ],
+ "np.pi": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "pi"
+  }
+ ],
+ "np.zeros": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "zeros"
+  }
+ ],
+ "sample_loader.load_head_phantom": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre.utilities.sample_loader",
+   "module_short": "tigre.utilities.sample_loader",
+   "name": "load_head_phantom"
+  }
+ ],
+ "tigre.Ax": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "Ax"
+  }
+ ],
+ "tigre.geometry_default": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre.utilities.geometry_default",
+   "module_short": "tigre.utilities.geometry_default",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre.utilities",
+   "module_short": "tigre.utilities",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "ConeGeometryDefault"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre.utilities.geometry",
+   "module_short": "tigre.utilities.geometry",
+   "name": "Geometry"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre.utilities",
+   "module_short": "tigre.utilities",
+   "name": "Geometry"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "Geometry"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "geometry_default"
+  }
+ ],
+ "tigre.plotImg": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre.utilities.visualization.plotimg",
+   "module_short": "tigre.utilities.visualization.plotimg",
+   "name": "plotImg"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre.utilities.visualization",
+   "module_short": "tigre.utilities.visualization",
+   "name": "plotImg"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre.utilities",
+   "module_short": "tigre.utilities",
+   "name": "plotImg"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "plotImg"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "tigre",
+   "module_short": "tigre",
+   "name": "plotImg"
+  }
+ ]
+}
