@@ -2,8 +2,8 @@
 
 CITATION.cff is the single source of truth for how to cite TIGRE. At build
 time this extension writes ``docs/_generated/citations.md`` (a MyST fragment)
-with a formatted reference and a BibTeX entry for the preferred citation and
-for every entry under ``references``. ``citing.md`` includes that file.
+with a formatted reference and a BibTeX entry for ``preferred-citation`` and
+for every entry under ``references``, in that order. ``citing.md`` includes that file.
 """
 
 from __future__ import annotations
@@ -110,7 +110,7 @@ def render(cff: dict) -> str:
     parts = [
         "<!-- Generated from CITATION.cff by docs/_ext/tigre_citations.py. Do not edit. -->",
         "",
-        _block(cff["preferred-citation"], _heading(cff["preferred-citation"]) + " (preferred)"),
+        _block(cff["preferred-citation"], _heading(cff["preferred-citation"])),
     ]
     for ref in cff.get("references", []):
         parts.append(_block(ref, _heading(ref)))

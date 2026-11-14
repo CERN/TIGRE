@@ -11,6 +11,16 @@ html_theme.sidebar_secondary.remove: true
 :::{grid-item}
 :columns: 12 12 6 6
 
+```{image} _static/logo/tigre-logo.svg
+:alt: TIGRE
+:class: tigre-hero-logo only-light
+```
+
+```{image} _static/logo/tigre-logo-dark.svg
+:alt: TIGRE
+:class: tigre-hero-logo only-dark
+```
+
 <p class="tigre-tagline">The Tomographic Iterative GPU-based Reconstruction toolbox: fast, flexible 3D CT reconstruction for MATLAB and Python.</p>
 
 TIGRE reconstructs tomographic images from any scanning geometry, using GPU
@@ -81,7 +91,7 @@ contributions from the community.
 
 ## Get started
 
-::::{grid} 1 2 2 4
+::::{grid} 1 2 3 5
 :gutter: 3
 
 :::{grid-item-card} Install
@@ -96,10 +106,10 @@ MATLAB and Python installation.
 Geometry, projectors, algorithms and more.
 :::
 
-:::{grid-item-card} Gallery
-:link: gallery/index
+:::{grid-item-card} Demos
+:link: demos/index
 :link-type: doc
-Worked examples from the demos.
+Worked examples in Python and MATLAB.
 :::
 
 :::{grid-item-card} Cite TIGRE
@@ -115,6 +125,7 @@ How to cite TIGRE in your work.
 
 install/index
 user-guide/index
+demos/index
 gallery/index
 api/index
 citing

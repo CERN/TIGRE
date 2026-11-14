@@ -1,6 +1,6 @@
-# Examples from real data
+# Gallery
 
-These reconstructions show TIGRE's algorithms on real scans from different
+Reconstructions of real scans made with TIGRE. They show TIGRE's algorithms on real scans from different
 kinds of CT. For papers that use TIGRE in each field, see
 [](../papers.md).
 

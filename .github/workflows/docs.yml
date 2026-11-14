@@ -40,16 +40,16 @@ jobs:
           cache-dependency-path: docs/requirements.txt
       - name: Install docs dependencies
         run: pip install -r docs/requirements.txt
-      - name: Fetch the rendered gallery
-        # Demo outputs are rendered on a GPU machine (docs/tools/build_gallery.py)
-        # and kept on the docs-gallery branch; without it the gallery shows code only.
+      - name: Fetch the rendered demos
+        # Demo outputs are rendered on a GPU machine (docs/tools/build_demos.py)
+        # and kept on the docs-demos branch; without it the demos show code only.
         run: |
-          if git ls-remote --exit-code --heads origin docs-gallery > /dev/null; then
-            git fetch --depth 1 origin docs-gallery
-            mkdir -p docs/gallery
-            git archive FETCH_HEAD | tar -x -C docs/gallery
+          if git ls-remote --exit-code --heads origin docs-demos > /dev/null; then
+            git fetch --depth 1 origin docs-demos
+            mkdir -p docs/demos
+            git archive FETCH_HEAD | tar -x -C docs/demos
           else
-            echo "No docs-gallery branch yet"
+            echo "No docs-demos branch yet"
           fi
       - name: Build HTML (warnings are errors)
         run: sphinx-build -W --keep-going -b html docs docs/_build/html

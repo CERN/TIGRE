@@ -23,12 +23,12 @@ CUDA or a GPU, and does not need TIGRE to be installed.
 
 One-time repository setting: **Settings → Pages → Source: GitHub Actions**.
 
-## Gallery
+## Demos
 
-The gallery is generated from `Python/demos` and `MATLAB/Demos` by
+The demo pages (`/demos/`) are generated from `Python/demos` and `MATLAB/Demos` by
 [sphinx-gallery](https://sphinx-gallery.github.io/). The demo files are not
-edited for the website: `docs/_ext/tigre_gallery.py` writes converted copies to
-`docs/_generated/gallery_src` at build time, using the titles, descriptions,
+edited for the website: `docs/_ext/tigre_demos.py` writes converted copies to
+`docs/_generated/demos_src` at build time, using the titles, descriptions,
 sections and Python/MATLAB pairs listed in its `CATALOGUE`. **When you add or
 rename a demo, add it to the catalogue.**
 
@@ -38,17 +38,23 @@ so outputs are rendered separately:
 ```sh
 # on a GPU machine, from an up-to-date checkout of master
 pip install -r docs/requirements.txt
-python docs/tools/build_gallery.py        # add --fresh to re-run every demo
-git push --force origin docs-gallery
+python docs/tools/build_demos.py        # add --fresh to re-run every demo
+git push --force origin docs-demos
 # then Actions > Docs > Run workflow (master) to redeploy
 ```
 
-The `docs-gallery` branch holds only the rendered `docs/gallery` folder (one
+The `docs-demos` branch holds only the rendered `docs/demos` folder (one
 commit, replaced on every render). The Docs workflow unpacks it before
 building, and sphinx-gallery reuses a rendered page as long as its converted
 demo is unchanged. A demo changed after the last render shows code only until
 the next render. Demos that need data or other packages (`NOT_RUN` in the
 catalogue) and MATLAB-only demos are always shown as code.
+
+## Gallery
+
+`docs/gallery/index.md` is a hand-written page of reconstructions of real
+scans (the old `Frontispiece/Gallery.md`). Most of its images are linked
+rather than stored in the repository.
 
 ## API reference
 

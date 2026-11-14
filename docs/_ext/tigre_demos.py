@@ -2,7 +2,7 @@
 
 The demos in ``Python/demos`` and ``MATLAB/Demos`` are meant to be run as they
 are, so they are not edited for the website. Instead, ``generate()`` writes a
-converted copy of each one to ``docs/_generated/gallery_src``:
+converted copy of each one to ``docs/_generated/demos_src``:
 
 * the demo's own header (title, license block) is replaced by the title and
   description in ``CATALOGUE`` below, as sphinx-gallery expects;
@@ -13,8 +13,8 @@ converted copy of each one to ``docs/_generated/gallery_src``:
 
 ``conf.py`` calls ``generate()`` before sphinx-gallery reads the sources. The
 output only depends on the demo files and this catalogue, so a rendered
-gallery (``docs/gallery``, kept on the ``docs-gallery`` branch) stays valid
-until one of them changes; see ``docs/tools/build_gallery.py``.
+demo pages (``docs/demos``, kept on the ``docs-demos`` branch) stays valid
+until one of them changes; see ``docs/tools/build_demos.py``.
 """
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 PY_DEMOS = ROOT / "Python" / "demos"
 M_DEMOS = ROOT / "MATLAB" / "Demos"
 
-# Demos that need data, hardware or packages a gallery build does not have
+# Demos that need data, hardware or packages a website build does not have
 # (d24 is a template: it needs your own curved-detector projections).
 NOT_RUN = {"d21_ScannerDataLoader.py", "d24_CurvedDetector.py", "d25_Pytorch.py"}
 
@@ -234,12 +234,12 @@ def _matlab_example(m: str, title: str, description: str) -> str:
 
 
 def generate(out_dir: pathlib.Path) -> pathlib.Path:
-    """Write the gallery sources to out_dir and return it."""
+    """Write the demo sources to out_dir and return it."""
     if out_dir.exists():
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True)
     (out_dir / "GALLERY_HEADER.rst").write_text(
-        _heading("Gallery")
+        _heading("Demos")
         + "\n\nWorked examples, generated from TIGRE's demos. Each page shows the Python "
         "demo and its output; open the drop-down at the top of a page for the MATLAB "
         "version. The demos themselves are in "

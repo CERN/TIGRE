@@ -116,7 +116,7 @@ If you have new question not answered in the FAQ, please [contact us](#contact),
 
 ## Gallery
 
-To see a gallery of images of different CT modalities reconstructed using TIGRE [click here](https://cern.github.io/TIGRE/user-guide/applications.html).
+To see a gallery of images of different CT modalities reconstructed using TIGRE [click here](https://cern.github.io/TIGRE/gallery/index.html).
 
 <img src="https://raw.githubusercontent.com/AnderBiguri/PhDThesis/master/Applications/randofull.png" height="400">
 

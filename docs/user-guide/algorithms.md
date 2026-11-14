@@ -128,7 +128,6 @@ total variation.
 | Adaptive-weighted PCSD | `aw_pcsd`, `os_aw_pcsd` | `AwPCSD`, `OS_AwPCSD` |
 | SART-TV | `sart_tv`, `ossart_tv` | `SART_TV` |
 | FISTA, ISTA with a TV proximal step | `fista`, `ista` | `FISTA` |
-| PICCS (prior image) | `piccs`, `os_piccs` | `PICCS` |
 
 The `os_` versions use subsets of projections, like OS-SART, and are faster.
 The options that matter most:
@@ -138,6 +137,24 @@ The options that matter most:
   per iteration). See demo 9.
 - FISTA: `hyper` (an estimate of the largest eigenvalue of $A^T A$),
   `tviter` and `tvlambda`. See demo 20.
+
+### Prior image
+
+When an earlier image of the same object is available (a planning CT, or a
+scan from a previous visit), prior image constrained compressed sensing
+(PICCS) uses it to reconstruct from far fewer or noisier projections. It works
+like ASD-POCS, but the regularisation is a mix of the TV of the image and the
+TV of its difference from the prior, so the reconstruction keeps the prior's
+structure where the data agree with it and departs from it where they do not.
+
+| Algorithm | Python | MATLAB |
+|---|---|---|
+| PICCS | `piccs`, `os_piccs` | `PICCS` |
+
+Pass the prior image with `prior=` in Python, or as the fifth argument in
+MATLAB (`PICCS(proj, geo, angles, niter, prior)`); `prior_ratio` (default
+0.2) weights the prior term against the plain TV term. The prior must be
+aligned with the current scan. See MATLAB demo 24.
 
 ### Statistical
 

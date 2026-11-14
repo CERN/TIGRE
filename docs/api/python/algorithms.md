@@ -97,6 +97,9 @@ Total variation (POCS family)
 
 .. autofunction:: os_aw_pcsd
 
+Prior image (PICCS)
+-------------------
+
 .. autofunction:: piccs
 
 .. autofunction:: os_piccs
