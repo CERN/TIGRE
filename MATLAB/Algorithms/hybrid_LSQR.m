@@ -43,6 +43,13 @@ function [x,resL2, qualMeasOut,lambda_vec]= hybrid_LSQR(proj,geo,angles,niter,va
 
 %%
 
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('hybrid_LSQR',proj,niter,varargin);
+if operatorHandled
+    x=operatorImage;
+    resL2=operatorResidual;
+    qualMeasOut=operatorQuality;
+    return;
+end
 [verbose,x0,QualMeasOpts,gpuids, lambda, NoiseLevel,gt]=parse_inputs(proj,geo,angles,varargin);
 
 %%% PARAMETER CHOICE HIERARCHY: given lambda, DP, GCV
@@ -116,6 +123,7 @@ for ii=1:niter
         end
     end
     alpha = norm(v(:),2); % msl: do we want to check if it is 0?
+    if isfield(geo,'operator_binding') && alpha==0, return; end
     v = v/alpha;
     V(:,ii) = v(:);
     
@@ -127,7 +135,7 @@ for ii=1:niter
         end
     end
     beta = norm(u(:),2);
-    u = u / beta;
+    if ~isfield(geo,'operator_binding') || beta~=0, u = u / beta; end
     U(:,ii+1) = u(:);
     
     % Update projected matrix
@@ -178,6 +186,7 @@ for ii=1:niter
     end
     aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
     resL2(ii)=im3Dnorm(aux,'L2');
+    if isfield(geo,'operator_binding') && beta==0, return; end
     if ii>1 && resL2(ii)>resL2(ii-1)
         disp(['Algorithm stoped in iteration ', num2str(ii),' due to loss of orthogonality.'])
         return;

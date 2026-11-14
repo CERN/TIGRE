@@ -40,6 +40,13 @@ function [x,errorL2, qualMeasOut,lambda_vec]= hybrid_fLSQR_TV(proj,geo,angles,ni
 
 %%
 
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('hybrid_fLSQR_TV',proj,niter,varargin);
+if operatorHandled
+    x=operatorImage;
+    errorL2=operatorResidual;
+    qualMeasOut=operatorQuality;
+    return;
+end
 [verbose,x0,QualMeasOpts,gpuids, lambda, NoiseLevel,gt]=parse_inputs(proj,geo,angles,varargin);
 
 %%% PARAMETER CHOICE HIERARCHY: given lambda, DP, GCV
@@ -105,6 +112,7 @@ k_aux = (prod(geo.nVoxel)^(-1/2))*norm(k_aux(:),2)^(-2)*Atb(k_aux,geo,angles,'ma
 u = u-Ax(xA0,geo,angles,'Siddon','gpuids',gpuids);
 
 normr = norm(u(:),2);
+if isfield(geo,'operator_binding') && normr==0, x=x0+xA0; return; end
 u = u/normr;
 U(:,1) = u(:);
 
@@ -132,12 +140,20 @@ for ii=1:niter
         v(:) = v(:) - T(jj,ii) *V(:,jj);
     end
     T(ii,ii) = norm(v(:),2);
+    if isfield(geo,'operator_binding') && T(ii,ii)==0
+        if ii==1, x=x0+xA0; end
+        return;
+    end
     v = v/T(ii,ii);
     % Choose if fixing a tolerance or a number of iterations of both
     % This should maybe be done in single precisions...
     z(:) = mvpE(k_aux, v(:), 'transp');
-    aux_z = lsqr(@(x,tflag) Ltx(W, x, tflag), z(:), [], 50);
-    z(:) = lsqr(@(x,tflag) Lx(W, x, tflag), aux_z, [], 50);
+    if isfield(geo,'operator_binding')
+        z(:)=operatorTVPrecondition(W,z);
+    else
+        aux_z = lsqr(@(x,tflag) Ltx(W, x, tflag), z(:), [], 50);
+        z(:) = lsqr(@(x,tflag) Lx(W, x, tflag), aux_z, [], 50);
+    end
     z(:) = mvpE(k_aux, z(:), 'notransp');
     z = single(z);
 
@@ -151,7 +167,7 @@ for ii=1:niter
         u(:) = u(:) - M(jj,ii) *U(:,jj);
     end
     M(ii+1,ii) = norm(u(:),2);
-    u = u / M(ii+1,ii);
+    if ~isfield(geo,'operator_binding') || M(ii+1,ii)~=0, u = u / M(ii+1,ii); end
     U(:,ii+1) = u(:);
 
     % Malena. Proposed update: we should check algorithms breaks; 

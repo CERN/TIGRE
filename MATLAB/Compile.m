@@ -158,6 +158,7 @@ end
 
 if contains(computer('arch'),'64')
     
+    mex('-largeArrayDims', './Utilities/cuda_interface/Surface_mex.cpp', '../Common/CUDA/Siddon_surface_projection.cu', '-outdir', outdir, FLAGS)
     mex('-largeArrayDims', './Utilities/cuda_interface/Ax_mex.cpp', '../Common/CUDA/ray_interpolated_projection.cu', '../Common/CUDA/Siddon_projection.cu', '../Common/CUDA/ray_interpolated_projection_parallel.cu', '../Common/CUDA/Siddon_projection_parallel.cu', '../Common/CUDA/GpuIds.cpp', '-outdir', outdir, FLAGS)
     mex('-largeArrayDims', './Utilities/cuda_interface/Atb_mex.cpp', '../Common/CUDA/voxel_backprojection.cu', '../Common/CUDA/voxel_backprojection2.cu', '../Common/CUDA/voxel_backprojection_parallel.cu', '../Common/CUDA/GpuIds.cpp', '-outdir', outdir, FLAGS)
     mex('-largeArrayDims', './Utilities/cuda_interface/minTV.cpp', '../Common/CUDA/GD_TV.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
@@ -171,6 +172,7 @@ if contains(computer('arch'),'64')
 
 else
     
+    mex('./Utilities/cuda_interface/Surface_mex.cpp', '../Common/CUDA/Siddon_surface_projection.cu', '-outdir', outdir, FLAGS)
     mex( './Utilities/cuda_interface/Ax_mex.cpp', '../Common/CUDA/ray_interpolated_projection.cu', '../Common/CUDA/Siddon_projection.cu', '../Common/CUDA/ray_interpolated_projection_parallel.cu', '../Common/CUDA/Siddon_projection_parallel.cu', '../Common/CUDA/GpuIds.cpp', '-outdir', outdir, FLAGS)
     mex( './Utilities/cuda_interface/Atb_mex.cpp', '../Common/CUDA/voxel_backprojection.cu', '../Common/CUDA/voxel_backprojection2.cu', '../Common/CUDA/voxel_backprojection_parallel.cu', '../Common/CUDA/GpuIds.cpp', '-outdir', outdir, FLAGS)
     mex( './Utilities/cuda_interface/minTV.cpp', '../Common/CUDA/GD_TV.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)

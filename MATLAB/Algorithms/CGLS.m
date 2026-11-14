@@ -45,6 +45,13 @@ function [x,resL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
 
 %%
 
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('CGLS',proj,niter,varargin);
+if operatorHandled
+    x=operatorImage;
+    resL2=operatorResidual;
+    qualMeasOut=operatorQuality;
+    return;
+end
 [verbose,x,QualMeasOpts,gpuids,gt,restart]=parse_inputs(proj,geo,angles,varargin);
 
 measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));

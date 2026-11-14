@@ -68,6 +68,13 @@ function [res,resL2,qualMeasOut]=SART_TV(proj,geo,angles,niter,varargin)
 %--------------------------------------------------------------------------
 
 %% Deal with input parameters
+[operatorHandled,operatorImage,operatorResidual,operatorQuality]=genericOperatorDispatch('SART_TV',proj,niter,varargin);
+if operatorHandled
+    res=operatorImage;
+    resL2=operatorResidual;
+    qualMeasOut=operatorQuality;
+    return;
+end
 [lambda,res,lamdbared,verbose,QualMeasOpts,TViter,TVlambda,OrderStrategy,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,varargin);
 measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
 if ~any(isnan(gt(:)))
