@@ -62,8 +62,7 @@ Codes  : https://github.com/CERN/TIGRE
 do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
-                mexPrintf("ERROR in: %s \n",msg);\
-                mexErrMsgIdAndTxt("err",cudaGetErrorString(__err));\
+                tigreCudaError("err", msg, cudaGetErrorString(__err));\
         } \
 } while (0)
     

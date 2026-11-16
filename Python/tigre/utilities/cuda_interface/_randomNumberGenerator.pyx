@@ -20,14 +20,15 @@ from tigre.utilities.cuda_interface._gpuUtils cimport GpuIds as c_GpuIds, conver
 np.import_array()
 
 from libc.stdlib cimport malloc, free 
+include "_tigre_warnings.pxi"
 
 cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
     void PyArray_CLEARFLAGS(np.ndarray arr, int flags)
 
 cdef extern from "RandomNumberGenerator.hpp":
-    cdef void poisson_1d(float* img, size_t uiLen, float* dst, c_GpuIds gpuids)
-    cdef void poisson_gaussian_1d(float* img, size_t uiLen, float fGaussMu, float fGaussSigma, float* dst, c_GpuIds gpuids)
+    cdef void poisson_1d(float* img, size_t uiLen, float* dst, c_GpuIds gpuids) except +
+    cdef void poisson_gaussian_1d(float* img, size_t uiLen, float fGaussMu, float fGaussSigma, float* dst, c_GpuIds gpuids) except +
 
 def cuda_raise_errors(error_code):
     if error_code:
@@ -58,7 +59,15 @@ def add_poisson(np.ndarray[np.float32_t, ndim=3] src, gpuids=None):
 
     cdef float* c_src = <float*> src.data
     cdef np.npy_intp c_uiSigLen = <np.npy_intp> (size_img[0] *size_img[1] *size_img[2])
-    cuda_raise_errors(poisson_1d(c_src, c_uiSigLen, c_imgout, c_gpuids[0]))
+    try:
+        cuda_raise_errors(poisson_1d(c_src, c_uiSigLen, c_imgout, c_gpuids[0]))
+    except BaseException:
+        free(c_imgout)
+        free_c_gpuids(c_gpuids)
+        raise
+    finally:
+        _raise_tigre_warnings()
+    free_c_gpuids(c_gpuids)
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
     PyArray_ENABLEFLAGS(imgout, np.NPY_ARRAY_OWNDATA)
     
@@ -91,7 +100,15 @@ def add_noise(np.ndarray[np.float32_t, ndim=3] poisson_lambda,
     cdef np.npy_intp c_uiSigLen = <np.npy_intp> (size_img[0] *size_img[1] *size_img[2])
     cdef np.float32_t c_fGaussMu = gaussian_mu
     cdef np.float32_t c_fGaussSigma = gaussian_sigma
-    cuda_raise_errors(poisson_gaussian_1d(c_src, c_uiSigLen, c_fGaussMu, c_fGaussSigma, c_imgout, c_gpuids[0]))
+    try:
+        cuda_raise_errors(poisson_gaussian_1d(c_src, c_uiSigLen, c_fGaussMu, c_fGaussSigma, c_imgout, c_gpuids[0]))
+    except BaseException:
+        free(c_imgout)
+        free_c_gpuids(c_gpuids)
+        raise
+    finally:
+        _raise_tigre_warnings()
+    free_c_gpuids(c_gpuids)
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
     PyArray_ENABLEFLAGS(imgout, np.NPY_ARRAY_OWNDATA)
     

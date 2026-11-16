@@ -50,7 +50,7 @@ markers = [
 where = ["Python"]
 
 [tool.setuptools.package-data]
-"tigre.utilities.cuda_interface" = ["*.pyx", "*.pxd", "*.cpp"]
+"tigre.utilities.cuda_interface" = ["*.pyx", "*.pxd", "*.pxi", "*.cpp"]
 
 [tool.cibuildwheel]
 build-frontend = "build[uv]"

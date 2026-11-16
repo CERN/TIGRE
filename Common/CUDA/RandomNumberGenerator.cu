@@ -56,9 +56,8 @@
 do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
-                mexPrintf("%s \n",msg);\
-                cudaDeviceReset();\
-                mexErrMsgIdAndTxt("RandomNumberGenerator:",cudaGetErrorString(__err));\
+                TIGRE_MATLAB_ONLY(cudaDeviceReset());\
+                tigreCudaError("RandomNumberGenerator:", msg, cudaGetErrorString(__err));\
         } \
 } while (0)
 

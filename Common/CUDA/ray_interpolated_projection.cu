@@ -57,15 +57,15 @@
 #include <cuda.h>
 #include "ray_interpolated_projection.hpp"
 #include "TIGRE_common.hpp"
+#include "tigre_release_on_error.hpp"
 #include <math.h>
 
 #define cudaCheckErrors(msg) \
 do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
-                mexPrintf("%s \n",msg);\
-                cudaDeviceReset();\
-                        mexErrMsgIdAndTxt("TIGRE:Ax:interpolated",cudaGetErrorString(__err));\
+                TIGRE_MATLAB_ONLY(cudaDeviceReset());\
+                tigreCudaError("TIGRE:Ax:interpolated", msg, cudaGetErrorString(__err));\
         } \
 } while (0)
     
@@ -214,6 +214,11 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     // Prepare for MultiGPU
     int deviceCount = gpuids.GetLength();
     cudaCheckErrors("Device query fail");
+    // If a CUDA error raises (Python build) before the end of this function,
+    // onError releases what it holds; see tigre_release_on_error.hpp.
+    tigre::ReleaseOnError onError;
+    std::vector<int> devIds(deviceCount);  // copied: the release actions must not hold on to gpuids
+    for (int d = 0; d < deviceCount; d++) { devIds[d] = gpuids[d]; onError.addDevice(devIds[d]); }
     if (deviceCount == 0) {
         mexErrMsgIdAndTxt("Ax:Interpolated_projection:GPUselect","There are no available device(s) that support CUDA\n");
     }
@@ -248,12 +253,18 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     }
     Geometry* geoArray = (Geometry*)malloc(splits*sizeof(Geometry));
     splitImageInterp(splits,geo,geoArray,nangles);
+    onError.add([geoArray, splits]{ freeGeoArray(splits, geoArray); });
     
     // Allocate auiliary memory for projections on the GPU to accumulate partial results
-    float ** dProjection_accum;
+    float ** dProjection_accum = 0;
     size_t num_bytes_proj = PROJ_PER_BLOCK*geo.nDetecU*geo.nDetecV * sizeof(float);
     if (!fits_in_memory){
         dProjection_accum=(float**)malloc(2*deviceCount*sizeof(float*));
+        memset(dProjection_accum, 0, 2*deviceCount*sizeof(float*));
+        onError.add([dProjection_accum, deviceCount, devIds]{
+            for (int s = 0; s < 2*deviceCount; s++) { cudaSetDevice(devIds[s/2]); cudaFree(dProjection_accum[s]); }
+            free(dProjection_accum);
+        });
         for (dev = 0; dev < deviceCount; dev++) {
             cudaSetDevice(gpuids[dev]);
             for (int i = 0; i < 2; ++i){
@@ -266,6 +277,11 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     
     // This is happening regarthless if the image fits on memory
     float** dProjection=(float**)malloc(2*deviceCount*sizeof(float*));
+    memset(dProjection, 0, 2*deviceCount*sizeof(float*));
+    onError.add([dProjection, deviceCount, devIds]{
+        for (int s = 0; s < 2*deviceCount; s++) { cudaSetDevice(devIds[s/2]); cudaFree(dProjection[s]); }
+        free(dProjection);
+    });
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(gpuids[dev]);
         
@@ -292,6 +308,8 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
 #ifndef NO_PINNED_MEMORY
     if (isHostRegisterSupported & splits>1){
         cudaHostRegister(img, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float),cudaHostRegisterPortable);
+        // The caller's array: left registered, the next call with it would fail.
+        onError.add([img]{ cudaHostUnregister(img); });
     }
     cudaCheckErrors("Error pinning memory");
 #endif
@@ -299,14 +317,18 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     
     Point3D* projParamsArrayHost = 0;
     cudaMallocHost((void**)&projParamsArrayHost,4*PROJ_PER_BLOCK*sizeof(Point3D));
+    onError.add([projParamsArrayHost]{ cudaFreeHost(projParamsArrayHost); });
     float* projFloatsArrayHost = 0;
     cudaMallocHost((void**)&projFloatsArrayHost,2*PROJ_PER_BLOCK*sizeof(float));
+    onError.add([projFloatsArrayHost]{ cudaFreeHost(projFloatsArrayHost); });
     cudaCheckErrors("Error allocating auxiliary constant memory");
     
     // Create Streams for overlapping memcopy and compute
     int nStream_device=2;
     int nStreams=deviceCount*nStream_device;
     cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
+    memset(stream, 0, nStreams*sizeof(cudaStream_t));
+    onError.add([stream, nStreams]{ for (int s = 0; s < nStreams; s++) if (stream[s]) cudaStreamDestroy(stream[s]); free(stream); });
     
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(gpuids[dev]);
@@ -327,7 +349,15 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     // Value-initialised (zeroed) so CreateTexture can tell an empty slot from one
     // holding a texture object it must destroy first.
     cudaTextureObject_t *texImg = new cudaTextureObject_t[deviceCount]();
-    cudaArray **d_cuArrTex = new cudaArray*[deviceCount];
+    cudaArray **d_cuArrTex = new cudaArray*[deviceCount]();
+    onError.add([texImg, d_cuArrTex, deviceCount, devIds]{
+        for (int d = 0; d < deviceCount; d++) {
+            cudaSetDevice(devIds[d]);
+            if (texImg[d]) cudaDestroyTextureObject(texImg[d]);
+            if (d_cuArrTex[d]) cudaFreeArray(d_cuArrTex[d]);
+        }
+        delete[] texImg; delete[] d_cuArrTex;
+    });
     for (unsigned int sp=0;sp<splits;sp++){
         // Create texture objects for all GPUs
         
@@ -504,6 +534,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     } // End image split loop.
     
     cudaCheckErrors("Main loop  fail");
+    onError.dismiss();  // from here on the function releases everything itself
     ///////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////
     for (dev = 0; dev < deviceCount; dev++){
@@ -839,7 +870,7 @@ void checkFreeMemory(const GpuIds& gpuids, size_t *mem_GPU_global){
         cudaMemGetInfo(&memfree,&memtotal);
         if(dev==0) *mem_GPU_global=memfree;
         if(memfree<memtotal/2){
-            mexErrMsgIdAndTxt("ray_interpolated_projection:ax:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+            mexWarnMsgIdAndTxt("ray_interpolated_projection:ax:GPU","One (or more) of your GPUs is being heavily used by another program (less than half of its memory is free). TIGRE will try to run anyway, but it may need to split the problem into smaller pieces (slower) or run out of GPU memory.\n");
         }
         cudaCheckErrors("Check mem error");
         *mem_GPU_global=(memfree<*mem_GPU_global)?memfree:*mem_GPU_global;

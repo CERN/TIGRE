@@ -8,6 +8,15 @@ thank you.
 ## Unreleased
 
 ### Changed
+- Python: a CUDA error now raises `RuntimeError` (with the CUDA message) instead of ending the
+  whole Python process with `exit(1)`. Ax and Atb release the GPU memory, streams, textures and
+  page-locked memory the failed call held, so TIGRE can be used again in the same process.
+  In Python, TIGRE no longer calls `cudaDeviceReset()` after an error, which would destroy every
+  other GPU allocation in the process (e.g. PyTorch's). MATLAB behaviour is unchanged (#853).
+- "One (or more) of your GPUs is being heavily used by another program" (less than half of the
+  GPU memory free) is now a warning instead of an error, in Python and MATLAB. In Python,
+  TIGRE's warnings are now Python `RuntimeWarning`s, shown once, instead of text printed on every
+  call.
 - PyTorch bindings: `At` and the gradient of `A` now use the `matched` backprojector, the
   closest to the transpose of `Ax`; before, they used FDK weights, so gradients through
   TIGRE were further from the true ones. Pass `backprojection_type="FDK"` to
@@ -17,6 +26,12 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- Atb leaked texture objects on every call (all but two of every 32-angle block), until CUDA
+  refused to create more, about a million later: "Texture object creation fail ... out of
+  memory" after a few hundred iterations however much memory was free. Ax leaked one per image
+  split (#617, #851).
+- Python: `Atb`, `minTV`, `AwminTV`, `minPICCS`, `tvdenoise` and the noise generators no longer
+  leak their small list of GPU ids on every call.
 - `load_head_phantom` could not find `head.mat` after `pip install .` on Linux or after
   `pip install --user`: pip puts the file in `<prefix>/data`, which was not searched (#850).
 

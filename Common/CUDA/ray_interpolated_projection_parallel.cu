@@ -54,14 +54,14 @@
 #include <cuda.h>
 #include "ray_interpolated_projection_parallel.hpp"
 #include "TIGRE_common.hpp"
+#include "tigre_release_on_error.hpp"
 #include <math.h>
 
 #define cudaCheckErrors(msg) \
 do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
-                mexPrintf("%s \n",msg);\
-                mexErrMsgIdAndTxt("TIGRE:Ax:interpolated_parallel",cudaGetErrorString(__err));\
+                tigreCudaError("TIGRE:Ax:interpolated_parallel", msg, cudaGetErrorString(__err));\
         } \
 } while (0)
     
@@ -198,13 +198,20 @@ int interpolation_projection_parallel(float  *  img, Geometry geo, float** resul
     
     size_t num_bytes = geo.nDetecU*geo.nDetecV *PROJ_PER_BLOCK* sizeof(float);
     float** dProjection=(float **)malloc(2*sizeof(float *));
+    dProjection[0] = 0; dProjection[1] = 0;
+    // If a CUDA error raises (Python build) before the end of this function,
+    // onError releases what it holds; see tigre_release_on_error.hpp.
+    tigre::ReleaseOnError onError;
+    onError.add([dProjection]{ cudaFree(dProjection[0]); cudaFree(dProjection[1]); free(dProjection); });
     for (int i = 0; i < 2; ++i){
         cudaMalloc((void**)&dProjection[i],   num_bytes);
         cudaCheckErrors("cudaMalloc projections fail");
     }
     // allocate streams for memory and compute
     int nStreams=2;
-    cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));;
+    cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
+    memset(stream, 0, nStreams*sizeof(cudaStream_t));
+    onError.add([stream, nStreams]{ for (int s = 0; s < nStreams; s++) if (stream[s]) cudaStreamDestroy(stream[s]); free(stream); });
     
     for (int i = 0; i < 2; ++i){
         cudaStreamCreate(&stream[i]);
@@ -216,6 +223,8 @@ int interpolation_projection_parallel(float  *  img, Geometry geo, float** resul
     cudaArray **d_cuArrTex = 0;
     texImg =(cudaTextureObject_t*)malloc(1*sizeof(cudaTextureObject_t));
     d_cuArrTex =(cudaArray**)malloc(1*sizeof(cudaArray*));
+    texImg[0] = 0; d_cuArrTex[0] = 0;
+    onError.add([texImg, d_cuArrTex]{ if (texImg[0]) cudaDestroyTextureObject(texImg[0]); if (d_cuArrTex[0]) cudaFreeArray(d_cuArrTex[0]); free(texImg); free(d_cuArrTex); });
     
     CreateTextureParallelInterp(img,geo,&d_cuArrTex[0], &texImg[0],stream);
     cudaCheckErrors("Texture allocation fail");
@@ -225,10 +234,12 @@ int interpolation_projection_parallel(float  *  img, Geometry geo, float** resul
     
     Point3D source, deltaU, deltaV, uvOrigin;
     
-    Point3D* projParamsArrayHost;
+    Point3D* projParamsArrayHost = 0;
     cudaMallocHost((void**)&projParamsArrayHost,4*PROJ_PER_BLOCK*sizeof(Point3D));
-    float* projFloatsArrayHost;
+    onError.add([projParamsArrayHost]{ cudaFreeHost(projParamsArrayHost); });
+    float* projFloatsArrayHost = 0;
     cudaMallocHost((void**)&projFloatsArrayHost,2*PROJ_PER_BLOCK*sizeof(float));
+    onError.add([projFloatsArrayHost]{ cudaFreeHost(projFloatsArrayHost); });
     
     // 16x16 gave the best performance empirically
     // Funnily that makes it compatible with most GPUs.....
@@ -281,6 +292,8 @@ int interpolation_projection_parallel(float  *  img, Geometry geo, float** resul
     cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK],dProjection[(int)(i-1)%2==0], lastangles*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[1]);
 
     
+    cudaCheckErrors("Projection fail");
+    onError.dismiss();  // from here on the function releases everything itself
     cudaDestroyTextureObject(texImg[0]);
     cudaFreeArray(d_cuArrTex[0]);
     free(texImg); texImg = 0;
