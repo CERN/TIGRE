@@ -10,15 +10,16 @@ from tigre.utilities.cuda_interface._gpuUtils cimport GpuIds as c_GpuIds, conver
 np.import_array()
 
 from libc.stdlib cimport malloc, free
+include "_tigre_warnings.pxi"
 cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
 
 cdef extern from "voxel_backprojection.hpp":
-    cdef int voxel_backprojection(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids)
+    cdef int voxel_backprojection(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids) except +
 cdef extern from "voxel_backprojection2.hpp":
-    cdef int voxel_backprojection2(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids)
+    cdef int voxel_backprojection2(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids) except +
 cdef extern from "voxel_backprojection_parallel.hpp":
-    cdef int voxel_backprojection_parallel(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids)
+    cdef int voxel_backprojection_parallel(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids) except +
 
 
 def cuda_raise_errors(error_code):
@@ -67,15 +68,22 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
 
     cdef float* c_projections = <float*> projections.data
 
-    if cone_beam:
-        if krylov_proj:
-            cuda_raise_errors(voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
+    # A CUDA error raises RuntimeError (#853); free what this call allocated first.
+    try:
+        if cone_beam:
+            if krylov_proj:
+                cuda_raise_errors(voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
+            else:
+                cuda_raise_errors(voxel_backprojection(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
         else:
-            cuda_raise_errors(voxel_backprojection(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
-
-
-    else:
-        cuda_raise_errors(voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
+            cuda_raise_errors(voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
+    except BaseException:
+        free(c_model)
+        free_c_geometry(c_geometry)
+        free_c_gpuids(c_gpuids)
+        raise
+    finally:
+        _raise_tigre_warnings()
 
     cdef np.npy_intp shape[3]
     shape[0] = <np.npy_intp> (<np.npy_long>(geometry.nVoxel[0]))
@@ -87,6 +95,6 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
     PyArray_ENABLEFLAGS(model, np.NPY_ARRAY_OWNDATA) # Attribute new memory owner
 
     free_c_geometry(c_geometry)
-
+    free_c_gpuids(c_gpuids)
 
     return model

@@ -59,9 +59,8 @@
 do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
-                cudaDeviceReset();\
-                mexPrintf("%s \n",msg);\
-                        mexErrMsgIdAndTxt("CBCT:CUDA:TVdenoising",cudaGetErrorString(__err));\
+                TIGRE_MATLAB_ONLY(cudaDeviceReset());\
+                tigreCudaError("CBCT:CUDA:TVdenoising", msg, cudaGetErrorString(__err));\
         } \
 } while (0)
 void cpy_from_host(float* device_array,float* host_array, 
@@ -659,7 +658,7 @@ void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
             cudaMemGetInfo(&memfree,&memtotal);
             if(dev==0) *mem_GPU_global=memfree;
             if(memfree<memtotal/2){
-                mexErrMsgIdAndTxt("tvDenoise:tvdenoising:GPU","One (or more) of your GPUs is being heavily used by another program (possibly graphics-based).\n Free the GPU to run TIGRE\n");
+                mexWarnMsgIdAndTxt("tvDenoise:tvdenoising:GPU","One (or more) of your GPUs is being heavily used by another program (less than half of its memory is free). TIGRE will try to run anyway, but it may need to split the problem into smaller pieces (slower) or run out of GPU memory.\n");
             }
             cudaCheckErrors("Check mem error");
             

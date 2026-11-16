@@ -52,6 +52,7 @@
 #include "voxel_backprojection_parallel.hpp"
 
 #include "TIGRE_common.hpp"
+#include "tigre_release_on_error.hpp"
 #include <math.h>
 
 // https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
@@ -59,8 +60,7 @@
 do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
-                mexPrintf("%s \n",msg);\
-                mexErrMsgIdAndTxt("CBCT:CUDA:Atb",cudaGetErrorString(__err));\
+                tigreCudaError("CBCT:CUDA:Atb", msg, cudaGetErrorString(__err));\
         } \
 } while (0)
     
@@ -298,7 +298,12 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     //If it is the first time, lets make sure our image is zeroed.
     int nStreamDevice=2;
     int nStreams=nStreamDevice;
-    cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));;
+    // If a CUDA error raises (Python build) before the end of this function,
+    // onError releases what it holds; see tigre_release_on_error.hpp.
+    tigre::ReleaseOnError onError;
+    cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
+    memset(stream, 0, nStreams*sizeof(cudaStream_t));
+    onError.add([stream, nStreams]{ for (int s = 0; s < nStreams; s++) if (stream[s]) cudaStreamDestroy(stream[s]); free(stream); });
     
     for (int i = 0; i < nStreamDevice; ++i){
         cudaStreamCreate(&stream[i]);
@@ -314,22 +319,27 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
 #endif
     if (isHostRegisterSupported){
         cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
+        // The caller's array: left registered, the next call with it would fail.
+        onError.add([projections]{ cudaHostUnregister(projections); });
     }
     cudaCheckErrors("Error pinning memory");
     
     
     // Allocate result image memory
     size_t num_bytes = geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ * sizeof(float);
-    float* dimage;
+    float* dimage = 0;
     cudaMalloc((void**)&dimage, num_bytes);
+    onError.add([dimage]{ cudaFree(dimage); });
     cudaMemset(dimage,0,num_bytes); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
     cudaCheckErrors("cudaMalloc fail");
     
     
-    Point3D* projParamsArrayHostParallel;
+    Point3D* projParamsArrayHostParallel = 0;
     cudaMallocHost((void**)&projParamsArrayHostParallel,6*PROJ_PER_KERNEL*sizeof(Point3D));
-    float* projSinCosArrayHostParallel;
+    onError.add([projParamsArrayHostParallel]{ cudaFreeHost(projParamsArrayHostParallel); });
+    float* projSinCosArrayHostParallel = 0;
     cudaMallocHost((void**)&projSinCosArrayHostParallel,3*PROJ_PER_KERNEL*sizeof(float));
+    onError.add([projSinCosArrayHostParallel]{ cudaFreeHost(projSinCosArrayHostParallel); });
     
     
     // Texture buffer objects
@@ -340,6 +350,14 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     // object it must destroy first.
     memset(texProj, 0, 2*sizeof(cudaTextureObject_t));
     d_cuArrTex =(cudaArray**)malloc(2*sizeof(cudaArray*));
+    memset(d_cuArrTex, 0, 2*sizeof(cudaArray*));
+    onError.add([texProj, d_cuArrTex]{
+        for (int s = 0; s < 2; s++) {
+            if (texProj[s]) cudaDestroyTextureObject(texProj[s]);
+            if (d_cuArrTex[s]) cudaFreeArray(d_cuArrTex[s]);
+        }
+        free(texProj); free(d_cuArrTex);
+    });
 
     
     
@@ -364,6 +382,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     
     float ** partial_projection=(float**)malloc(current_proj_split_size*sizeof(float*));
     size_t * proj_split_size=(size_t*)malloc(current_proj_split_size*sizeof(size_t*));
+    onError.add([partial_projection, proj_split_size]{ free(partial_projection); free(proj_split_size); });
     
     for(unsigned int proj_block_split=0; proj_block_split<proj_split_overlap_number;proj_block_split++){
         // Crop the last one, as its likely its not completely divisible.
@@ -481,6 +500,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     cudaDeviceSynchronize();
     cudaMemcpy(result, dimage, num_bytes, cudaMemcpyDeviceToHost);
     cudaCheckErrors("cudaMemcpy result fail");
+    onError.dismiss();  // from here on the function releases everything itself
     
     free(partial_projection);
     free(proj_split_size);
