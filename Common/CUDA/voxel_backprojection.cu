@@ -380,6 +380,9 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     cudaTextureObject_t *texProj;
     cudaArray **d_cuArrTex;
     texProj =(cudaTextureObject_t*)malloc(deviceCount*2*sizeof(cudaTextureObject_t));
+    // Zeroed so CreateTexture can tell an empty slot from one holding a texture
+    // object it must destroy first.
+    memset(texProj, 0, deviceCount*2*sizeof(cudaTextureObject_t));
     d_cuArrTex =(cudaArray**)malloc(deviceCount*2*sizeof(cudaArray*));
     
     // Auxiliary Host page-locked memory for fast and asycnornous memcpy.
@@ -588,6 +591,8 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
         }
     }
     cudaCheckErrors("cudadestroy textures result fail");
+    free(texProj);
+    free(d_cuArrTex);
     
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(gpuids[dev]);
@@ -709,6 +714,11 @@ void CreateTexture(const GpuIds& gpuids, float* projectiondata,Geometry geo,cuda
         texDescr.addressMode[1] = cudaAddressModeBorder;
         texDescr.addressMode[2] = cudaAddressModeBorder;
         texDescr.readMode = cudaReadModeElementType;
+        // Each projection block (or image split) creates a new texture object in this
+        // slot. Destroy the one it replaces, otherwise every call leaks one per block
+        // until cudaCreateTextureObject fails with "out of memory" (#617). The kernels
+        // that used it have finished: its array has just been overwritten above.
+        if (texImage[dev]) cudaDestroyTextureObject(texImage[dev]);
         cudaCreateTextureObject(&texImage[dev], &texRes, &texDescr, NULL);
     }
 }

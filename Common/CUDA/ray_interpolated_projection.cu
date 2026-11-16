@@ -324,7 +324,9 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
 
 
     
-    cudaTextureObject_t *texImg = new cudaTextureObject_t[deviceCount];
+    // Value-initialised (zeroed) so CreateTexture can tell an empty slot from one
+    // holding a texture object it must destroy first.
+    cudaTextureObject_t *texImg = new cudaTextureObject_t[deviceCount]();
     cudaArray **d_cuArrTex = new cudaArray*[deviceCount];
     for (unsigned int sp=0;sp<splits;sp++){
         // Create texture objects for all GPUs
@@ -597,6 +599,11 @@ void CreateTextureInterp(const GpuIds& gpuids,const float* imagedata,Geometry ge
         texDescr.addressMode[1] = cudaAddressModeBorder;
         texDescr.addressMode[2] = cudaAddressModeBorder;
         texDescr.readMode = cudaReadModeElementType;
+        // Each image split creates a new texture object in this slot. Destroy the one
+        // it replaces, otherwise every call that splits the image leaks one per split
+        // (same failure as #617). The kernels that used it have finished: its array
+        // has just been overwritten above.
+        if (texImage[dev]) cudaDestroyTextureObject(texImage[dev]);
         cudaCreateTextureObject(&texImage[dev], &texRes, &texDescr, NULL);
         cudaCheckErrors("Texture object creation fail");
     }
