@@ -92,7 +92,7 @@ do { \
      **/
     
 // this definitionmust go here.
-void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate);
+void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate, cudaMemcpyKind kind);
 
 __global__ void matrixConstantMultiply(const Geometry geo,float* image,float constant){
     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -315,7 +315,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
 //      Description:    Main host function for FDK backprojection (invokes the kernel)
 //______________________________________________________________________________
 
-int voxel_backprojection2(float * projections, Geometry geo, float* result,float const * const alphas, int nalpha, const GpuIds& gpuids){
+int voxel_backprojection2(float * projections, Geometry geo, float* result,float const * const alphas, int nalpha, const GpuIds& gpuids, bool gpuData){
     
     
     
@@ -326,6 +326,9 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     // If a CUDA error raises (Python build) before the end of this function,
     // onError releases what it holds; see tigre_release_on_error.hpp.
     tigre::ReleaseOnError onError;
+    if (gpuData && deviceCount != 1) {
+        mexErrMsgIdAndTxt("Atb:GPUdata", "GPU arrays can only be backprojected on one GPU, the one they are on.");
+    }
     std::vector<int> devIds(deviceCount);  // copied: the release actions must not hold on to gpuids
     for (int d = 0; d < deviceCount; d++) { devIds[d] = gpuids[d]; onError.addDevice(devIds[d]); }
     if (deviceCount == 0) {
@@ -361,13 +364,22 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     size_t num_bytes_img = (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geoArray[0].nVoxelZ* sizeof(float);
     float** dimage=(float**)malloc(deviceCount*sizeof(float*));
     memset(dimage, 0, deviceCount*sizeof(float*));
-    onError.add([dimage, deviceCount, devIds]{
-        for (int d = 0; d < deviceCount; d++) { cudaSetDevice(devIds[d]); cudaFree(dimage[d]); }
+    // GPU data, whole image in one piece: backproject straight into the caller's
+    // array instead of into a buffer that is then copied there.
+    const bool directOut = gpuData && split_image == 1 && deviceCount == 1;
+    onError.add([dimage, deviceCount, devIds, result]{
+        for (int d = 0; d < deviceCount; d++) {
+            cudaSetDevice(devIds[d]);
+            if (dimage[d] != result) cudaFree(dimage[d]);
+        }
         free(dimage);
     });
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(gpuids[dev]);
-        cudaMalloc((void**)&dimage[dev], num_bytes_img);
+        if (directOut)
+            dimage[dev] = result;
+        else
+            cudaMalloc((void**)&dimage[dev], num_bytes_img);
         cudaCheckErrors("cudaMalloc fail");
     }
         
@@ -379,6 +391,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
 #if CUDART_VERSION >= 9020
     cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
 #endif
+    if (gpuData) isHostRegisterSupported = 0;  // GPU memory: nothing to pin
     // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to
     // pin the memory is greater than the lost time in Synchronously launching the memcpys. This is only worth it when the image is too big.
     if (isHostRegisterSupported & split_image>1){
@@ -506,7 +519,8 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                         proj_split_size[proj_block_split],
                         &texProj   [(proj_block_split%2)*deviceCount],
                         stream, nStreamDevice,
-                        (proj_block_split<2)&!proj&!img_slice);// Only allocate if its the first 2 calls
+                        (proj_block_split<2)&!proj&!img_slice,// Only allocate if its the first 2 calls
+                        (gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice));
                 // Stop here if the texture could not be made (e.g. out of memory),
                 // rather than run the kernels on a broken texture.
                 cudaCheckErrors("Texture creation fail");
@@ -626,7 +640,16 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
             
             num_bytes_img_curr=(size_t)geoArray[img_slice*deviceCount+dev].nVoxelX*(size_t)geoArray[img_slice*deviceCount+dev].nVoxelY*(size_t)geoArray[img_slice*deviceCount+dev].nVoxelZ*sizeof(float);
             img_linear_idx_start=(size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geoArray[0].nVoxelZ*(size_t)(img_slice*deviceCount+dev);
-            cudaMemcpyAsync(&result[img_linear_idx_start], dimage[dev], num_bytes_img_curr, cudaMemcpyDeviceToHost,stream[dev*nStreamDevice+1]);
+            if (!directOut)
+                cudaMemcpyAsync(&result[img_linear_idx_start], dimage[dev], num_bytes_img_curr, (gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost),stream[dev*nStreamDevice+1]);
+        }
+        // The copy is asynchronous (to GPU memory, or to host memory pinned
+        // above when the image is split): finish it before the next image
+        // piece clears dimage. Without this, the cudaMemset of the next piece
+        // raced the copy and parts of the result came out as zeros.
+        for (dev = 0; dev < deviceCount; dev++){
+            cudaSetDevice(gpuids[dev]);
+            cudaDeviceSynchronize();
         }
     } // end image splits
     
@@ -652,7 +675,8 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
 
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(gpuids[dev]);
-        cudaFree(dimage[dev]);
+        if (!directOut)
+            cudaFree(dimage[dev]);
     }
     free(dimage);
     
@@ -684,7 +708,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
 
 
 
-void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate){
+void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate, cudaMemcpyKind kind){
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
     int num_devices = gpuids.GetLength();
 #if IS_FOR_MATLAB_TIGRE
@@ -710,7 +734,7 @@ void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cud
         copyParams.srcPtr   = make_cudaPitchedPtr((void *)projectiondata, extent.width*sizeof(float), extent.width, extent.height);
         copyParams.dstArray = d_cuArrTex[dev];
         copyParams.extent   = extent;
-        copyParams.kind     = cudaMemcpyHostToDevice;
+        copyParams.kind     = kind;
         cudaMemcpy3DAsync(&copyParams,stream[dev*nStreamDevice+1]);
     }
 
@@ -767,6 +791,10 @@ void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsign
     {
         // As we can overlap memcpys from H2D of the projections, we should then minimize the amount of image splits.
         // Lets assume to start with that we only need 1 stack of PROJ_PER_KERNEL projections. The rest is for the image.
+        // The smallest working set is one stack of projections and one image slice.
+        const size_t mem_slice=(size_t)geo.nVoxelX*(size_t)geo.nVoxelY*sizeof(float);
+        if (mem_GPU_global <= 2*mem_proj*PROJ_PER_KERNEL+mem_slice)
+            tigreNotEnoughGpuMemory("Atb:voxel_backprojection2:GPUmemory","Backprojection",2*mem_proj*PROJ_PER_KERNEL+mem_slice,mem_GPU_global);
         size_t mem_free=mem_GPU_global-2*mem_proj*PROJ_PER_KERNEL;
         
         *split_image=(mem_image/deviceCount+mem_free-1)/mem_free;

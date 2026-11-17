@@ -10,11 +10,15 @@ cdef extern from "TIGRE_common.hpp":
     void tigreClearWarnings()
 
 
-cdef _raise_tigre_warnings():
+cdef _raise_tigre_warnings(bint gpu_data=False, int stacklevel=2):
     cdef size_t i
     cdef size_t n = tigreWarningCount()
     messages = [(<bytes>tigreWarningText(i)).decode("utf-8", "replace") for i in range(n)]
     tigreClearWarnings()
     for message in messages:
+        # With GPU arrays the caller shares the GPU on purpose (e.g. with
+        # PyTorch), so "the GPU is heavily used" is expected, not a problem.
+        if gpu_data and "heavily used" in message:
+            continue
         # stacklevel=2: the caller of tigre.Ax/Atb/..., not TIGRE's wrapper.
-        _tigre_py_warnings.warn(message, RuntimeWarning, stacklevel=2)
+        _tigre_py_warnings.warn(message, RuntimeWarning, stacklevel=stacklevel)

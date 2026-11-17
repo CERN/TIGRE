@@ -96,7 +96,7 @@ do { \
  *
  *
  **/
-void CreateTextureParallelInterp(float* image,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,cudaStream_t* stream);
+void CreateTextureParallelInterp(float* image,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,cudaStream_t* stream, cudaMemcpyKind kind);
 __constant__ Point3D projParamsArrayDev[4*PROJ_PER_BLOCK];  // Dev means it is on device
 __constant__ float projFloatsArrayDev[2*PROJ_PER_BLOCK];  // Dev means it is on device
 
@@ -192,7 +192,15 @@ __global__ void kernelPixelDetector_parallel_interpolated( Geometry geo,
 
 
 
-int interpolation_projection_parallel(float  *  img, Geometry geo, float** result,float const * const angles,int nangles, const GpuIds& gpuids){
+int interpolation_projection_parallel(float  *  img, Geometry geo, float** result,float const * const angles,int nangles, const GpuIds& gpuids, bool gpuData){
+    // With GPU data the copies to the caller's array are device-to-device and
+    // asynchronous, so they go on the compute stream: that orders them with the
+    // kernels that reuse the double-buffered projections. (Copies to pageable
+    // host memory are synchronous, so the copy stream is safe for them.)
+    const int copyStream = gpuData ? 0 : 1;
+    // This projector runs on the current device; GPU data must be used on its own.
+    if (gpuData) cudaSetDevice(gpuids[0]);
+    const cudaMemcpyKind kindOut = gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost;
     
     
     
@@ -226,7 +234,7 @@ int interpolation_projection_parallel(float  *  img, Geometry geo, float** resul
     texImg[0] = 0; d_cuArrTex[0] = 0;
     onError.add([texImg, d_cuArrTex]{ if (texImg[0]) cudaDestroyTextureObject(texImg[0]); if (d_cuArrTex[0]) cudaFreeArray(d_cuArrTex[0]); free(texImg); free(d_cuArrTex); });
     
-    CreateTextureParallelInterp(img,geo,&d_cuArrTex[0], &texImg[0],stream);
+    CreateTextureParallelInterp(img,geo,&d_cuArrTex[0], &texImg[0],stream,(gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice));
     cudaCheckErrors("Texture allocation fail");
     //Done! Image put into texture memory.
     
@@ -284,14 +292,15 @@ int interpolation_projection_parallel(float  *  img, Geometry geo, float** resul
         kernelPixelDetector_parallel_interpolated<<<numBlocks,threadsPerBlock,0,stream[0]>>>(geo,dProjection[(int)i%2==0],i,nangles,texImg[0]);
         // copy result to host
         if (i>0)
-             cudaMemcpyAsync(result[i*PROJ_PER_BLOCK-PROJ_PER_BLOCK],dProjection[(int)i%2!=0], num_bytes, cudaMemcpyDeviceToHost,stream[1]);    
+             cudaMemcpyAsync(result[i*PROJ_PER_BLOCK-PROJ_PER_BLOCK],dProjection[(int)i%2!=0], num_bytes, kindOut,stream[copyStream]);    
     }
     cudaDeviceSynchronize();
     
     int lastangles=nangles-(i-1)*PROJ_PER_BLOCK;
-    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK],dProjection[(int)(i-1)%2==0], lastangles*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[1]);
+    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK],dProjection[(int)(i-1)%2==0], lastangles*geo.nDetecV*geo.nDetecU*sizeof(float), kindOut,stream[copyStream]);
 
     
+    if (gpuData) cudaDeviceSynchronize();  // the caller reads the result as soon as we return
     cudaCheckErrors("Projection fail");
     onError.dismiss();  // from here on the function releases everything itself
     cudaDestroyTextureObject(texImg[0]);
@@ -423,7 +432,7 @@ void computeDeltas_parallel(Geometry geo, float alpha,unsigned int i, Point3D* u
     
     *source=S;
 }
-void CreateTextureParallelInterp(float* image,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,cudaStream_t* stream){    //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
+void CreateTextureParallelInterp(float* image,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,cudaStream_t* stream, cudaMemcpyKind kind){    //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
     
     
     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
@@ -439,8 +448,14 @@ void CreateTextureParallelInterp(float* image,Geometry geo,cudaArray** d_cuArrTe
     copyParams.srcPtr   = make_cudaPitchedPtr((void *)image, extent.width*sizeof(float), extent.width, extent.height);
     copyParams.dstArray = d_cuArrTex[0];
     copyParams.extent   = extent;
-    copyParams.kind     = cudaMemcpyHostToDevice;
+    copyParams.kind     = kind;
     cudaMemcpy3DAsync(&copyParams,stream[1]);
+    // Wait for the copy: the kernels run on stream[0] and would otherwise read
+    // the texture while it is still being filled. This raced always for GPU
+    // arrays (device-to-device copies are fully asynchronous), and for host
+    // data whenever the copy outlived the call (pinned memory, or the last
+    // DMA chunk of a pageable copy).
+    cudaStreamSynchronize(stream[1]);
     
     
     //Array creation End

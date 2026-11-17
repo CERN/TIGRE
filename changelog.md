@@ -7,6 +7,13 @@ thank you.
 
 ## Unreleased
 
+### Added
+- Python: `tigre.Ax` and `tigre.Atb` take PyTorch CUDA tensors and CuPy arrays, and return
+  the same kind of array on the same GPU, without copying through host memory. This uses the
+  array's GPU only; if `gpuids` names other GPUs, the data goes through the host as before.
+- PyTorch bindings: CUDA tensors stay on the GPU (see above). If TIGRE runs out of GPU memory,
+  the bindings empty PyTorch's memory cache and try once more.
+
 ### Changed
 - Python: a CUDA error now raises `RuntimeError` (with the CUDA message) instead of ending the
   whole Python process with `exit(1)`. Ax and Atb release the GPU memory, streams, textures and
@@ -26,6 +33,24 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- MATLAB `Compile`: compiles for the GPU architectures the installed `nvcc` supports, as it
+  reports them (`nvcc --list-gpu-arch`), like the Python build. The fixed list asked CUDA
+  12.2-12.7 for `compute_120`, which needs 12.8, and compilation failed.
+- Cone-beam `Ax` and `Atb` with almost no free GPU memory (e.g. when PyTorch holds the GPU):
+  `Atb` killed the process with an integer division by zero, and `Ax` tried the whole image
+  and failed. Both now raise "out of memory" with how much memory they need, before
+  allocating anything (Python: `RuntimeError`, which the PyTorch bindings retry after
+  emptying PyTorch's cache; MATLAB: an error).
+- `Ax` with `"interpolated"` (cone and parallel) and parallel-beam Siddon started projecting
+  without waiting for the image to finish copying to the GPU, so the first block of 8-9
+  projections could be computed from a partly copied image. Seen with GPU arrays; with NumPy
+  input it could happen for cone-beam interpolated when the image was split (did not fit on
+  the GPU), as the image is then page-locked and its copy fully asynchronous.
+- `Atb` with `backprojection_type="matched"` (used by the Krylov algorithms, e.g. CGLS, LSQR)
+  could return parts of the image as zeros when the image did not fit on the GPU in one piece:
+  copying a piece out raced with clearing the GPU buffer for the next piece. Python and MATLAB.
+- PyTorch bindings: `create_pytorch_operator(geo, angles)` without `gpuids`, and `gpuids` given
+  as a list of device numbers (`["0"]`), failed: TIGRE needs a `GpuIds`. Both work now.
 - Atb leaked texture objects on every call (all but two of every 32-angle block), until CUDA
   refused to create more, about a million later: "Texture object creation fail ... out of
   memory" after a few hundred iterations however much memory was free. Ax leaked one per image
