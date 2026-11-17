@@ -361,6 +361,12 @@ def test_image_split_when_the_gpu_is_nearly_full(op, kind):
         del ballast
         give_back_cache()
     np.testing.assert_array_equal(result.numpy(), expected)
+    if op == "Atb":
+        # Atb pieces are independent slabs of the image: splitting must not
+        # change the result. (It did for "matched" on the NumPy path: parts of
+        # the image came out as zeros, a race fixed with this test.)
+        unsplit = run(data, geo, angles, kind, gpuids=on_one_gpu())
+        np.testing.assert_allclose(expected, unsplit, rtol=1e-5, atol=1e-5 * float(np.abs(unsplit).max()))
 
 
 # ---- the PyTorch operators

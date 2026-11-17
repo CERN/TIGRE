@@ -33,6 +33,9 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- `Atb` with `backprojection_type="matched"` (used by the Krylov algorithms, e.g. CGLS, LSQR)
+  could return parts of the image as zeros when the image did not fit on the GPU in one piece:
+  copying a piece out raced with clearing the GPU buffer for the next piece. Python and MATLAB.
 - PyTorch bindings: `create_pytorch_operator(geo, angles)` without `gpuids`, and `gpuids` given
   as a list of device numbers (`["0"]`), failed: TIGRE needs a `GpuIds`. Both work now.
 - Atb leaked texture objects on every call (all but two of every 32-angle block), until CUDA

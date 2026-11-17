@@ -643,13 +643,13 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
             if (!directOut)
                 cudaMemcpyAsync(&result[img_linear_idx_start], dimage[dev], num_bytes_img_curr, (gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost),stream[dev*nStreamDevice+1]);
         }
-        // A copy to GPU memory is asynchronous (one to pageable host memory is not):
-        // finish it before the next image piece reuses dimage.
-        if (gpuData && !directOut) {
-            for (dev = 0; dev < deviceCount; dev++){
-                cudaSetDevice(gpuids[dev]);
-                cudaDeviceSynchronize();
-            }
+        // The copy is asynchronous (to GPU memory, or to host memory pinned
+        // above when the image is split): finish it before the next image
+        // piece clears dimage. Without this, the cudaMemset of the next piece
+        // raced the copy and parts of the result came out as zeros.
+        for (dev = 0; dev < deviceCount; dev++){
+            cudaSetDevice(gpuids[dev]);
+            cudaDeviceSynchronize();
         }
     } // end image splits
     
