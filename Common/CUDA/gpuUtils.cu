@@ -63,6 +63,52 @@ void GetGpuName(int iDeviceId, char* pcName) {
 }
 
 
+bool UsePeerHaloExchange(int iDevA, int iDevB, bool bManySmallCopies) {
+    if (iDevA == iDevB) {
+        return false;
+    }
+#if defined(__HIP_PLATFORM_AMD__)
+    // Measured on MI355X: peer copies win for a single array per boundary (GD_TV, GD_AwTV), but several
+    // concurrent small peer copies (tv_proximal) serialize on ROCm and end up slower than staging.
+    if (bManySmallCopies) {
+        return false;
+    }
+#else
+    // Measured on V100 with NVLink only. On PCIe, peer access can be reported while the copies are slow,
+    // so require a direct link. Native peer atomics are supported over NVLink but not over PCIe, which
+    // makes them a usable proxy for "direct link" without linking against NVML.
+    int iAtomicAB = 0, iAtomicBA = 0;
+    if (cudaDeviceGetP2PAttribute(&iAtomicAB, cudaDevP2PAttrNativeAtomicSupported, iDevA, iDevB) != cudaSuccess ||
+        cudaDeviceGetP2PAttribute(&iAtomicBA, cudaDevP2PAttrNativeAtomicSupported, iDevB, iDevA) != cudaSuccess) {
+        cudaGetLastError();
+        return false;
+    }
+    if (!iAtomicAB || !iAtomicBA) {
+        return false;
+    }
+#endif
+    int iAccessAB = 0, iAccessBA = 0;
+    cudaDeviceCanAccessPeer(&iAccessAB, iDevA, iDevB);
+    cudaDeviceCanAccessPeer(&iAccessBA, iDevB, iDevA);
+    if (!iAccessAB || !iAccessBA) {
+        return false;
+    }
+    // Peer access persists in the context, so an earlier call may have enabled it already.
+    int iCurrent;
+    cudaGetDevice(&iCurrent);
+    cudaSetDevice(iDevA);
+    cudaError_t errAB = cudaDeviceEnablePeerAccess(iDevB, 0);
+    cudaSetDevice(iDevB);
+    cudaError_t errBA = cudaDeviceEnablePeerAccess(iDevA, 0);
+    cudaSetDevice(iCurrent);
+    if (errAB != cudaSuccess || errBA != cudaSuccess) {
+        cudaGetLastError();
+    }
+    return (errAB == cudaSuccess || errAB == cudaErrorPeerAccessAlreadyEnabled) &&
+           (errBA == cudaSuccess || errBA == cudaErrorPeerAccessAlreadyEnabled);
+}
+
+
 int GetGpuCount() {
     int iCudaDeviceCount = 0;
     cudaGetDeviceCount(&iCudaDeviceCount);

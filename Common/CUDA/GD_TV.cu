@@ -389,22 +389,7 @@ do { \
         }else if(deviceCount>1){
             cudaMallocHost((void**)&buffer,nExchanges*buffer_pixels*sizeof(float));
             for (dev = 0; dev < deviceCount-1; dev++){
-                int access_next=0, access_prev=0;
-                cudaDeviceCanAccessPeer(&access_next,gpuids[dev],gpuids[dev+1]);
-                cudaDeviceCanAccessPeer(&access_prev,gpuids[dev+1],gpuids[dev]);
-                peer_access[dev]=access_next && access_prev;
-                if (peer_access[dev]){
-                    // Peer access persists in the context, so an earlier call may have enabled it already.
-                    cudaSetDevice(gpuids[dev]);
-                    cudaError_t err_next=cudaDeviceEnablePeerAccess(gpuids[dev+1],0);
-                    cudaSetDevice(gpuids[dev+1]);
-                    cudaError_t err_prev=cudaDeviceEnablePeerAccess(gpuids[dev],0);
-                    if (err_next!=cudaSuccess || err_prev!=cudaSuccess){
-                        cudaGetLastError();
-                        peer_access[dev]=(err_next==cudaSuccess || err_next==cudaErrorPeerAccessAlreadyEnabled) &&
-                                         (err_prev==cudaSuccess || err_prev==cudaErrorPeerAccessAlreadyEnabled);
-                    }
-                }
+                peer_access[dev]=UsePeerHaloExchange(gpuids[dev],gpuids[dev+1],false);
                 cudaSetDevice(gpuids[dev]);
                 cudaEventCreateWithFlags(&exchange_event[2*dev],cudaEventDisableTiming);
                 cudaSetDevice(gpuids[dev+1]);

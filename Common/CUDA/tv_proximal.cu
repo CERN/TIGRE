@@ -55,6 +55,7 @@
 #define BLOCK_SIZE 10  // BLOCK_SIZE^3 must be smaller than MAXTREADS
 
 #include "tv_proximal.hpp"
+#include "gpuUtils.hpp"
 #define cudaCheckErrors(msg) \
 do { \
         cudaError_t __err = cudaGetLastError(); \
@@ -301,22 +302,7 @@ void cpy_from_host(float* device_array,float* host_array,
         }else if(deviceCount>1){
             cudaMallocHost((void**)&buffer, 4*nExchanges*pixels_per_slice*sizeof(float));
             for (dev = 0; dev < deviceCount-1; dev++){
-                int access_next=0, access_prev=0;
-                cudaDeviceCanAccessPeer(&access_next,gpuids[dev],gpuids[dev+1]);
-                cudaDeviceCanAccessPeer(&access_prev,gpuids[dev+1],gpuids[dev]);
-                peer_access[dev]=access_next && access_prev;
-                if (peer_access[dev]){
-                    // Peer access persists in the context, so an earlier call may have enabled it already.
-                    cudaSetDevice(gpuids[dev]);
-                    cudaError_t err_next=cudaDeviceEnablePeerAccess(gpuids[dev+1],0);
-                    cudaSetDevice(gpuids[dev+1]);
-                    cudaError_t err_prev=cudaDeviceEnablePeerAccess(gpuids[dev],0);
-                    if (err_next!=cudaSuccess || err_prev!=cudaSuccess){
-                        cudaGetLastError();
-                        peer_access[dev]=(err_next==cudaSuccess || err_next==cudaErrorPeerAccessAlreadyEnabled) &&
-                                         (err_prev==cudaSuccess || err_prev==cudaErrorPeerAccessAlreadyEnabled);
-                    }
-                }
+                peer_access[dev]=UsePeerHaloExchange(gpuids[dev],gpuids[dev+1],true);
                 for (int v = 0; v < 4; v++){
                     cudaSetDevice(gpuids[dev]);
                     cudaEventCreateWithFlags(&exchange_event[8*dev+v],cudaEventDisableTiming);
