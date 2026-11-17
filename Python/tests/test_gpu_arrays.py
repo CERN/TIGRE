@@ -88,6 +88,17 @@ def give_back_cache():
     torch.cuda.empty_cache()
 
 
+@pytest.fixture(autouse=True)
+def _empty_pytorch_cache_after_each_test():
+    """Give PyTorch's cached GPU memory back to CUDA after every test.
+
+    Otherwise memory a test freed stays in PyTorch's cache, invisible to the
+    tests that follow (and to TIGRE in them): after the cache test below, that
+    is nearly the whole GPU."""
+    yield
+    give_back_cache()
+
+
 def problem(mode, n=(24, 28, 32), nangles=40):
     geo = tigre.geometry(mode=mode, default=True, nVoxel=np.array(n))
     angles = np.linspace(0, 2 * np.pi, nangles, endpoint=False)
@@ -405,9 +416,11 @@ def test_pytorch_operator_when_pytorch_cache_holds_the_gpu(monkeypatch):
     emptied.clear()
     del ballast  # now in PyTorch's cache, not free for TIGRE
     try:
-        result = A(x)
-        torch.cuda.synchronize()
+        # To the host at once: the output was carved out of the cached block,
+        # which cannot go back to CUDA while any part of it is in use.
+        result = A(x).cpu()
     finally:
+        torch.cuda.synchronize()
         real_empty_cache()
     print("cache emptied {} time(s)".format(len(emptied)))
-    np.testing.assert_array_equal(result.cpu().numpy(), expected)
+    np.testing.assert_array_equal(result.numpy(), expected)
