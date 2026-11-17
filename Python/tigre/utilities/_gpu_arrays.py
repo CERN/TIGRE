@@ -159,8 +159,12 @@ def _ax(img, geo, angles, projection_type, gpuids, host_Ax):
     geox = _checked_geometry(geo, angles)
     out = _empty_like_on(img, kind, (geox.angles.shape[0], geox.nDetector[0], geox.nDetector[1]))
     _wait_for_producer(img, kind)
-    _Ax_ext_gpu(_pointer(img, kind), _pointer(out, kind), geox, geox.angles,
-                projection_type, geox.mode, gpuids=ids)
+    try:
+        _Ax_ext_gpu(_pointer(img, kind), _pointer(out, kind), geox, geox.angles,
+                    projection_type, geox.mode, gpuids=ids)
+    except BaseException:
+        out = None  # see the comment in _atb
+        raise
     return out
 
 
@@ -182,6 +186,14 @@ def _atb(projections, geo, angles, backprojection_type, gpuids, host_Atb):
                          + " not compatible with: " + str(tuple(projections.shape)))
     out = _empty_like_on(projections, kind, geox.nVoxel)
     _wait_for_producer(projections, kind)
-    _Atb_ext_gpu(_pointer(projections, kind), _pointer(out, kind), geox, geox.angles,
-                 backprojection_type, geox.mode, gpuids=ids)
+    try:
+        _Atb_ext_gpu(_pointer(projections, kind), _pointer(out, kind), geox, geox.angles,
+                     backprojection_type, geox.mode, gpuids=ids)
+    except BaseException:
+        # Do not keep the output alive through the traceback: it may have been
+        # carved out of a block in PyTorch's cache, and while it lives that whole
+        # block cannot be given back to CUDA, not even by torch.cuda.empty_cache().
+        # The PyTorch bindings retry after out-of-memory errors and rely on that.
+        out = None
+        raise
     return out

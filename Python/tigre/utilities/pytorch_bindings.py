@@ -30,8 +30,11 @@ def _call(op, x, geo, **kwargs):
     except RuntimeError as err:
         if "out of memory" not in str(err) or not torch.cuda.is_initialized():
             raise
-        torch.cuda.empty_cache()
-        return op(x, geo, geo.angles, **kwargs)
+    # Outside the except block: by now the failed attempt's exception and its
+    # traceback are gone, and with them any GPU tensor the attempt allocated,
+    # which would otherwise keep its block of the cache from being freed.
+    torch.cuda.empty_cache()
+    return op(x, geo, geo.angles, **kwargs)
 
 
 def _apply(op, x, geo, output_dimension, gpuids, **kwargs):
