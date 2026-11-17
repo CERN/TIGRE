@@ -302,7 +302,7 @@ void cpy_from_host(float* device_array,float* host_array,
         }else if(deviceCount>1){
             cudaMallocHost((void**)&buffer, 4*nExchanges*pixels_per_slice*sizeof(float));
             for (dev = 0; dev < deviceCount-1; dev++){
-                peer_access[dev]=UsePeerHaloExchange(gpuids[dev],gpuids[dev+1],true);
+                peer_access[dev]=UsePeerHaloExchange(gpuids[dev],gpuids[dev+1]);
                 for (int v = 0; v < 4; v++){
                     cudaSetDevice(gpuids[dev]);
                     cudaEventCreateWithFlags(&exchange_event[8*dev+v],cudaEventDisableTiming);

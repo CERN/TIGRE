@@ -406,7 +406,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
         }else if(deviceCount>1){
             cudaMallocHost((void**)&buffer,nExchanges*buffer_pixels*sizeof(float));
             for (dev = 0; dev < deviceCount-1; dev++){
-                peer_access[dev]=UsePeerHaloExchange(gpuids[dev],gpuids[dev+1],false);
+                peer_access[dev]=UsePeerHaloExchange(gpuids[dev],gpuids[dev+1]);
                 cudaSetDevice(gpuids[dev]);
                 cudaEventCreateWithFlags(&exchange_event[2*dev],cudaEventDisableTiming);
                 cudaSetDevice(gpuids[dev+1]);

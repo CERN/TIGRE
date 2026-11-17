@@ -63,17 +63,18 @@ void GetGpuName(int iDeviceId, char* pcName) {
 }
 
 
-bool UsePeerHaloExchange(int iDevA, int iDevB, bool bManySmallCopies) {
+bool UsePeerHaloExchange(int iDevA, int iDevB) {
+#if defined(__HIP_PLATFORM_AMD__)
+    // Measured on MI355X: enabling peer access makes the allocations done on every call slower by more than the
+    // faster exchange saves, and concurrent small peer copies serialize, so staged copies are faster end to end
+    // for every caller.
+    (void)iDevA;
+    (void)iDevB;
+    return false;
+#else
     if (iDevA == iDevB) {
         return false;
     }
-#if defined(__HIP_PLATFORM_AMD__)
-    // Measured on MI355X: peer copies win for a single array per boundary (GD_TV, GD_AwTV), but several
-    // concurrent small peer copies (tv_proximal) serialize on ROCm and end up slower than staging.
-    if (bManySmallCopies) {
-        return false;
-    }
-#else
     // Measured on V100 with NVLink only. On PCIe, peer access can be reported while the copies are slow,
     // so require a direct link. Native peer atomics are supported over NVLink but not over PCIe, which
     // makes them a usable proxy for "direct link" without linking against NVML.
@@ -86,7 +87,6 @@ bool UsePeerHaloExchange(int iDevA, int iDevB, bool bManySmallCopies) {
     if (!iAtomicAB || !iAtomicBA) {
         return false;
     }
-#endif
     int iAccessAB = 0, iAccessBA = 0;
     cudaDeviceCanAccessPeer(&iAccessAB, iDevA, iDevB);
     cudaDeviceCanAccessPeer(&iAccessBA, iDevB, iDevA);
@@ -106,6 +106,7 @@ bool UsePeerHaloExchange(int iDevA, int iDevB, bool bManySmallCopies) {
     }
     return (errAB == cudaSuccess || errAB == cudaErrorPeerAccessAlreadyEnabled) &&
            (errBA == cudaSuccess || errBA == cudaErrorPeerAccessAlreadyEnabled);
+#endif
 }
 
 
