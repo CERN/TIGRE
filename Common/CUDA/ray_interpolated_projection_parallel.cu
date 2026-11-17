@@ -450,6 +450,12 @@ void CreateTextureParallelInterp(float* image,Geometry geo,cudaArray** d_cuArrTe
     copyParams.extent   = extent;
     copyParams.kind     = kind;
     cudaMemcpy3DAsync(&copyParams,stream[1]);
+    // Wait for the copy: the kernels run on stream[0] and would otherwise read
+    // the texture while it is still being filled. This raced always for GPU
+    // arrays (device-to-device copies are fully asynchronous), and for host
+    // data whenever the copy outlived the call (pinned memory, or the last
+    // DMA chunk of a pageable copy).
+    cudaStreamSynchronize(stream[1]);
     
     
     //Array creation End

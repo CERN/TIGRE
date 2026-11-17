@@ -33,6 +33,11 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- `Ax` with `"interpolated"` (cone and parallel) and parallel-beam Siddon started projecting
+  without waiting for the image to finish copying to the GPU, so the first block of 8-9
+  projections could be computed from a partly copied image. Seen with GPU arrays; with NumPy
+  input it could happen for cone-beam interpolated when the image was split (did not fit on
+  the GPU), as the image is then page-locked and its copy fully asynchronous.
 - `Atb` with `backprojection_type="matched"` (used by the Krylov algorithms, e.g. CGLS, LSQR)
   could return parts of the image as zeros when the image did not fit on the GPU in one piece:
   copying a piece out raced with clearing the GPU buffer for the next piece. Python and MATLAB.

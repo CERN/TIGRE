@@ -647,6 +647,16 @@ void CreateTextureInterp(const GpuIds& gpuids,const float* imagedata,Geometry ge
         cudaCreateTextureObject(&texImage[dev], &texRes, &texDescr, NULL);
         cudaCheckErrors("Texture object creation fail");
     }
+    // Wait for the copies above (made on this thread's default stream): the
+    // kernels run on other streams and would otherwise read the texture while
+    // it is still being filled. This raced always for GPU arrays (device-to-
+    // device copies are fully asynchronous), and for host data whenever the copy
+    // outlived the call (pinned memory, or the last DMA chunk of a pageable
+    // copy). Siddon_projection.cu's CreateTexture already waited here.
+    for (unsigned int dev = 0; dev < num_devices; dev++){
+        cudaSetDevice(gpuids[dev]);
+        cudaDeviceSynchronize();
+    }
 }
 
 /* This code generates the geometries needed to split the image properly in

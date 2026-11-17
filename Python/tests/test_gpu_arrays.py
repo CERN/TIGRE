@@ -184,6 +184,21 @@ def test_geometry_variants_match_numpy(name):
                                       err_msg=atb_kind)
 
 
+@pytest.mark.parametrize("mode,projection_type", AX_CASES)
+def test_image_is_on_the_gpu_before_projecting(mode, projection_type):
+    """Repeated calls, compared each time: the projector must wait for the copy
+    of the image into its texture before the first block of projections. (It
+    did not, for interpolated and parallel Siddon: the first 8-9 projections
+    were sometimes computed from a partly copied image.)"""
+    geo, angles, img, _ = problem(mode, n=(64, 64, 64), nangles=36)
+    expected = tigre.Ax(img, geo, angles, projection_type, gpuids=on_one_gpu())
+    x = to_gpu(img, "torch")
+    for attempt in range(30):
+        result = tigre.Ax(x, geo, angles, projection_type).cpu().numpy()
+        bad = np.flatnonzero((result != expected).reshape(len(angles), -1).any(axis=1))
+        assert bad.size == 0, "attempt {}: projections {} differ".format(attempt, bad.tolist())
+
+
 def test_euler_angles():
     geo, _, img, _ = problem("cone")
     angles = np.random.default_rng(1).random((30, 3)) * 2 * np.pi
