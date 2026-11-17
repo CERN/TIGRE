@@ -401,34 +401,47 @@ SPLIT_CASES = [("Ax", "Siddon"), ("Ax", "interpolated"), ("Atb", "FDK"), ("Atb",
 @pytest.mark.parametrize("op,kind", SPLIT_CASES)
 def test_image_split_when_the_gpu_is_nearly_full(op, kind):
     """Model weights or other tensors take most of the GPU: TIGRE cannot hold
-    the whole image (64 MB) at once and works on it in pieces (only cone beam
+    the whole image (512 MB) at once and works on it in pieces (only cone beam
     splits).
 
     The reference is the NumPy path with the same memory free, so it splits
     the same way: splitting changes Ax results a little (sums in a different
     order, interpolation at the piece borders, and a pre-existing Siddon bug
     for rays that enter a piece through its top or bottom), so the unsplit
-    result is not the reference. The free memory is in the middle of the
-    range where both split in 3 pieces: 32-43 MB for Ax, 39-50 MB for Atb.
+    result is not the reference.
+
+    The free memory is computed from TIGRE's own rule to land in the middle of
+    the range where it splits in 3 pieces, about 40 MB from either end. (A
+    64 MB image left only ~5 MB to spare: on Linux, CUDA's own overheads took
+    that and the pieces did not fit.)
     """
-    geo = tigre.geometry(mode="cone", default=True, nVoxel=np.array([256, 256, 256]))
+    n = 512
+    geo = tigre.geometry(mode="cone", default=True, nVoxel=np.array([n, n, n]))
     angles = np.linspace(0, 2 * np.pi, 64, endpoint=False)
-    img = np.random.default_rng(0).random((256, 256, 256), dtype=np.float32)
+    img = np.random.default_rng(0).random((n, n, n), dtype=np.float32)
+    mem_image = img.nbytes
+    mem_proj = int(np.prod(geo.nDetector)) * 4
+    # TIGRE uses 95% of the free memory; minus its projection buffers (Ax: 4
+    # blocks of 9, Atb: 2 of 32), what is left must hold 1/3 to 1/2 of the image.
+    buffers = 36 * mem_proj if op == "Ax" else 64 * mem_proj
+    free_bytes = int((buffers + mem_image * 5 / 12) / 0.95)
     if op == "Ax":
-        run, data, free_mb = tigre.Ax, img, 37.5
-        out_bytes = len(angles) * int(np.prod(geo.nDetector)) * 4
+        run, data = tigre.Ax, img
+        out_bytes = len(angles) * mem_proj
     else:
-        run, data, free_mb = tigre.Atb, tigre.Ax(img, geo, angles, gpuids=on_one_gpu()), 45
-        out_bytes = img.nbytes
+        run, data = tigre.Atb, tigre.Ax(img, geo, angles, gpuids=on_one_gpu())
+        out_bytes = mem_image
+    if torch.cuda.mem_get_info()[0] < free_bytes + out_bytes + data.nbytes + 2**30:
+        pytest.skip("not enough free GPU memory for this test")
     x = to_gpu(data, "torch")
 
-    ballast = leave_free(int(free_mb * 2**20))
+    ballast = leave_free(free_bytes)
     try:
         expected = run(data, geo, angles, kind, gpuids=on_one_gpu())
     finally:
         del ballast
         give_back_cache()
-    ballast = leave_free(int(free_mb * 2**20) + out_bytes)  # the output is allocated first
+    ballast = leave_free(free_bytes + out_bytes)  # the output is allocated first
     try:
         result = run(x, geo, angles, kind).cpu()
     finally:
@@ -505,7 +518,9 @@ def test_pytorch_operator_when_pytorch_cache_holds_the_gpu(op, monkeypatch):
     emptied = []
     real_empty_cache = torch.cuda.empty_cache
     monkeypatch.setattr(torch.cuda, "empty_cache", lambda: (emptied.append(1), real_empty_cache()))
-    ballast = leave_free(expected.nbytes + 3 * 2**20)
+    # Leave ~3 MB free; the rest goes to PyTorch's cache. The output tensor is
+    # then carved out of that cache, so TIGRE itself sees only the ~3 MB.
+    ballast = leave_free(3 * 2**20)
     emptied.clear()
     del ballast  # now in PyTorch's cache, not free for TIGRE
     try:
