@@ -140,6 +140,50 @@ def test_atb_matches_numpy(framework, mode, backprojection_type):
     np.testing.assert_array_equal(to_numpy(y), proj)
 
 
+def _geometry_variant(name):
+    """Geometries beyond the default: the GPU path must match NumPy on all."""
+    if name == "fan 2D (as in #617)":
+        geo = tigre.geometry(mode="fan", nVoxel=np.array([1, 64, 64]))
+    elif name == "parallel 2D":
+        geo = tigre.geometry(mode="parallel", nVoxel=np.array([1, 64, 64]))
+    else:
+        geo = tigre.geometry(mode="cone", default=True, nVoxel=np.array([20, 36, 28]))
+        if name == "anisotropic voxels, rectangular detector":
+            geo.dVoxel = np.array([1.5, 0.75, 1.0])
+            geo.sVoxel = geo.nVoxel * geo.dVoxel
+            geo.nDetector = np.array([40, 72])
+            geo.sDetector = geo.nDetector * geo.dDetector
+        elif name == "offsets, COR, detector rotation, per-angle distances":
+            n = 37
+            geo.offOrigin = np.stack([np.linspace(-5, 5, n), np.linspace(3, -3, n), np.linspace(-2, 2, n)], 1)
+            geo.offDetector = np.array([4.0, -2.0])
+            geo.rotDetector = np.array([0.01, 0.02, 0.03])
+            geo.COR = 1.5
+            geo.DSO = np.linspace(990, 1010, n)
+            geo.DSD = geo.DSO + 536
+    angles = np.linspace(0, 2 * np.pi, 37, endpoint=False)
+    return geo, angles
+
+
+GEOMETRY_VARIANTS = ["fan 2D (as in #617)", "parallel 2D", "anisotropic voxels, rectangular detector",
+                     "offsets, COR, detector rotation, per-angle distances"]
+
+
+@pytest.mark.parametrize("name", GEOMETRY_VARIANTS)
+def test_geometry_variants_match_numpy(name):
+    geo, angles = _geometry_variant(name)
+    img = np.random.default_rng(2).random(tuple(geo.nVoxel), dtype=np.float32)
+    kinds = [("Siddon", "FDK"), ("interpolated", "matched")]
+    for ax_kind, atb_kind in kinds:
+        proj = tigre.Ax(img, geo, angles, ax_kind, gpuids=on_one_gpu())
+        result = tigre.Ax(to_gpu(img, "torch"), geo, angles, ax_kind)
+        np.testing.assert_array_equal(result.cpu().numpy(), proj, err_msg=ax_kind)
+        back = tigre.Atb(to_gpu(proj, "torch"), geo, angles, atb_kind)
+        np.testing.assert_array_equal(back.cpu().numpy(),
+                                      tigre.Atb(proj, geo, angles, atb_kind, gpuids=on_one_gpu()),
+                                      err_msg=atb_kind)
+
+
 def test_euler_angles():
     geo, _, img, _ = problem("cone")
     angles = np.random.default_rng(1).random((30, 3)) * 2 * np.pi
@@ -214,6 +258,19 @@ def test_which_gpuids_use_the_gpu_path():
     assert _gpu_arrays._gpu_path_ids([1], 1).devices == [1]
     assert _gpu_arrays._gpu_path_ids(on_one_gpu(1), 0) is None
     assert _gpu_arrays._gpu_path_ids(GpuIds._from_devices([0, 1]), 0) is None
+
+
+def test_current_device_is_kept():
+    """TIGRE switches CUDA's current device; PyTorch must not see the switch."""
+    geo, angles, img, proj = problem("cone")
+    for device in range(torch.cuda.device_count()):
+        for current in range(torch.cuda.device_count()):
+            torch.cuda.set_device(current)
+            tigre.Ax(to_gpu(img, "torch", device), geo, angles)
+            tigre.Atb(to_gpu(proj, "torch", device), geo, angles)
+            assert torch.cuda.current_device() == current
+            assert torch.empty(1, device="cuda").device.index == current
+    torch.cuda.set_device(0)
 
 
 @pytest.mark.skipif(torch.cuda.device_count() < 2, reason="needs 2 GPUs")

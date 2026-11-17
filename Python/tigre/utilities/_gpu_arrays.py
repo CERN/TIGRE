@@ -119,8 +119,31 @@ def _checked_geometry(geo, angles):
     return geox
 
 
+def _keeping_current_device(x, kind):
+    """A context that puts the caller's current CUDA device back afterwards.
+
+    TIGRE calls cudaSetDevice and leaves the last GPU it used as the current
+    one. PyTorch and CuPy take their current device from CUDA, so without this
+    a call on cuda:1 would make later `device="cuda"` tensors go to GPU 1."""
+    if kind == "torch":
+        import torch
+
+        return torch.cuda.device(x.device)
+    return x.device
+
+
 # ---- the entry points, called from Ax.py and Atb.py
 def Ax(img, geo, angles, projection_type, gpuids, host_Ax):
+    with _keeping_current_device(img, _kind(img)):
+        return _ax(img, geo, angles, projection_type, gpuids, host_Ax)
+
+
+def Atb(projections, geo, angles, backprojection_type, gpuids, host_Atb):
+    with _keeping_current_device(projections, _kind(projections)):
+        return _atb(projections, geo, angles, backprojection_type, gpuids, host_Atb)
+
+
+def _ax(img, geo, angles, projection_type, gpuids, host_Ax):
     kind = _kind(img)
     img, device = _prepare(img, kind, "Input data")
     if tuple(img.shape) != tuple(int(n) for n in geo.nVoxel):
@@ -141,7 +164,7 @@ def Ax(img, geo, angles, projection_type, gpuids, host_Ax):
     return out
 
 
-def Atb(projections, geo, angles, backprojection_type, gpuids, host_Atb):
+def _atb(projections, geo, angles, backprojection_type, gpuids, host_Atb):
     kind = _kind(projections)
     projections, device = _prepare(projections, kind, "Input data")
     ids = _gpu_path_ids(gpuids, device)
