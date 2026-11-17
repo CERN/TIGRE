@@ -702,6 +702,10 @@ void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsign
     {
         // As we can overlap memcpys from H2D of the projections, we should then minimize the amount of image splits.
         // Lets assume to start with that we only need 1 stack of PROJ_PER_KERNEL projections. The rest is for the image.
+        // The smallest working set is one stack of projections and one image slice.
+        const size_t mem_slice=(size_t)geo.nVoxelX*(size_t)geo.nVoxelY*sizeof(float);
+        if (mem_GPU_global <= 2*mem_proj*PROJ_PER_KERNEL+mem_slice)
+            tigreNotEnoughGpuMemory("Atb:voxel_backprojection:GPUmemory","Backprojection",2*mem_proj*PROJ_PER_KERNEL+mem_slice,mem_GPU_global);
         size_t mem_free=mem_GPU_global-2*mem_proj*PROJ_PER_KERNEL;
         
         *split_image=(mem_image/deviceCount+mem_free-1)/mem_free;

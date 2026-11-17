@@ -33,6 +33,11 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- Cone-beam `Ax` and `Atb` with almost no free GPU memory (e.g. when PyTorch holds the GPU):
+  `Atb` killed the process with an integer division by zero, and `Ax` tried the whole image
+  and failed. Both now raise "out of memory" with how much memory they need, before
+  allocating anything (Python: `RuntimeError`, which the PyTorch bindings retry after
+  emptying PyTorch's cache; MATLAB: an error).
 - `Ax` with `"interpolated"` (cone and parallel) and parallel-beam Siddon started projecting
   without waiting for the image to finish copying to the GPU, so the first block of 8-9
   projections could be computed from a partly copied image. Seen with GPU arrays; with NumPy

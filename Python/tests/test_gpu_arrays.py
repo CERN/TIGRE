@@ -24,6 +24,8 @@ NumPy input, the other half of the table, is covered by the existing tests
 (test_projectors_gpu.py, test_cuda_errors.py, test_texture_object_leak.py):
 that path is unchanged.
 """
+import subprocess
+import sys
 import warnings
 
 import numpy as np
@@ -479,12 +481,12 @@ def test_pytorch_operators_with_cpu_tensors():
     np.testing.assert_array_equal(At(y).numpy(), tigre.Atb(proj, geo, angles, "matched"))
 
 
-def test_pytorch_operator_when_pytorch_cache_holds_the_gpu(monkeypatch):
+@pytest.mark.parametrize("op", ["A", "At"])
+def test_pytorch_operator_when_pytorch_cache_holds_the_gpu(op, monkeypatch):
     """Training frees tensors into PyTorch's cache, which TIGRE cannot use.
-    With all but ~3 MB of the GPU in that cache, TIGRE runs out of memory, the
-    bindings give the cache back to CUDA and try again. (On Windows with the
-    sysmem fallback on, CUDA may spill to system memory instead; the result
-    must be right either way.)"""
+    With all but ~3 MB of the GPU in that cache, TIGRE reports "out of memory"
+    (before: Atb divided by zero and killed Python), the bindings give the
+    cache back to CUDA and try again."""
     from tigre.utilities.pytorch_bindings import create_pytorch_operator
 
     geo = tigre.geometry(mode="cone", default=True, nVoxel=np.array([128, 128, 128]))
@@ -492,9 +494,13 @@ def test_pytorch_operator_when_pytorch_cache_holds_the_gpu(monkeypatch):
     geo.dDetector = geo.sDetector / geo.nDetector
     angles = np.linspace(0, 2 * np.pi, 64, endpoint=False)
     img = np.random.default_rng(0).random((128, 128, 128), dtype=np.float32)
-    expected = tigre.Ax(img, geo, angles, gpuids=on_one_gpu())
-    A, _ = create_pytorch_operator(geo, angles)
-    x = to_gpu(img, "torch")
+    proj = tigre.Ax(img, geo, angles, gpuids=on_one_gpu())
+    A, At = create_pytorch_operator(geo, angles)
+    if op == "A":
+        run, x, expected = A, to_gpu(img, "torch"), proj
+    else:
+        run, x = At, to_gpu(proj, "torch")
+        expected = tigre.Atb(proj, geo, angles, "matched", gpuids=on_one_gpu())
 
     emptied = []
     real_empty_cache = torch.cuda.empty_cache
@@ -505,9 +511,60 @@ def test_pytorch_operator_when_pytorch_cache_holds_the_gpu(monkeypatch):
     try:
         # To the host at once: the output was carved out of the cached block,
         # which cannot go back to CUDA while any part of it is in use.
-        result = A(x).cpu()
+        result = run(x).cpu()
     finally:
         torch.cuda.synchronize()
         real_empty_cache()
-    print("cache emptied {} time(s)".format(len(emptied)))
+    assert len(emptied) == 1, "expected exactly one retry after emptying the cache"
     np.testing.assert_array_equal(result.numpy(), expected)
+
+
+# Run in a separate process: before the fix, Atb killed the process.
+_ALMOST_NO_MEMORY = r"""
+import sys
+import numpy as np
+import torch
+import tigre
+from tigre.utilities.gpu import GpuIds
+
+ids = GpuIds._from_devices([0])
+on_gpu = sys.argv[1] == "torch"
+geo = tigre.geometry(mode="cone", default=True, nVoxel=np.array([256, 256, 256]))
+angles = np.linspace(0, 2 * np.pi, 64, endpoint=False)
+img = np.ones((256, 256, 256), dtype=np.float32)
+proj = tigre.Ax(img, geo, angles, gpuids=ids)
+x, y = (torch.from_numpy(img).cuda(), torch.from_numpy(proj).cuda()) if on_gpu else (img, proj)
+calls = {
+    "Ax Siddon": (lambda: tigre.Ax(x, geo, angles, "Siddon", gpuids=ids), proj.nbytes),
+    "Ax interpolated": (lambda: tigre.Ax(x, geo, angles, "interpolated", gpuids=ids), proj.nbytes),
+    "Atb FDK": (lambda: tigre.Atb(y, geo, angles, "FDK", gpuids=ids), img.nbytes),
+    "Atb matched": (lambda: tigre.Atb(y, geo, angles, "matched", gpuids=ids), img.nbytes),
+}
+for name, (call, out_bytes) in calls.items():
+    torch.cuda.synchronize()
+    torch.cuda.empty_cache()
+    leave = 4 * 2**20 + (out_bytes if on_gpu else 0)  # a GPU-array output is allocated first
+    ballast = torch.empty(torch.cuda.mem_get_info()[0] - leave, dtype=torch.uint8, device="cuda")
+    try:
+        call()
+        print(name, "| no error")
+    except RuntimeError as err:
+        print(name, "| raised, out of memory:", "out of memory" in str(err))
+    del ballast
+    torch.cuda.empty_cache()
+    call()
+    print(name, "| works after")
+"""
+
+
+@pytest.mark.parametrize("framework", ["numpy", "torch"])
+def test_almost_no_free_gpu_memory_raises_instead_of_crashing(framework):
+    """With ~4 MB free, not even the smallest piece fits: TIGRE must raise
+    "out of memory" and keep working. It used to compute the split with a
+    size_t that went below zero, and Atb then divided by zero."""
+    result = subprocess.run([sys.executable, "-X", "faulthandler", "-c", _ALMOST_NO_MEMORY, framework],
+                            capture_output=True, text=True, timeout=600)
+    assert result.returncode == 0, result.stdout + result.stderr
+    for name in ["Ax Siddon", "Ax interpolated", "Atb FDK", "Atb matched"]:
+        assert name + " | raised, out of memory: True" in result.stdout, result.stdout + result.stderr
+        assert name + " | works after" in result.stdout, result.stdout + result.stderr

@@ -46,4 +46,20 @@ inline void tigreCudaError(const char* tag, const char* where, const char* what)
 }
 #define TIGRE_MATLAB_ONLY(code) code
 #endif  // IS_TIGRE_FOR_PYTHON
+
+#include <stdio.h>
+// Not even the smallest piece of the problem fits in the free GPU memory:
+// raise a clear error before allocating anything. Before, the split
+// calculation subtracted past zero (size_t) and Atb then divided by zero,
+// killing the process. The message starts with "out of memory", so callers
+// that retry after freeing memory (TIGRE's PyTorch bindings) recognise it.
+inline void tigreNotEnoughGpuMemory(const char* tag, const char* what, size_t needed, size_t available) {
+    char msg[512];
+    snprintf(msg, sizeof(msg),
+             "out of memory: %s needs at least %llu MB of free GPU memory on each GPU, "
+             "but only about %llu MB are free. Free some GPU memory (in PyTorch: "
+             "torch.cuda.empty_cache()) or use a smaller problem.\n",
+             what, (unsigned long long)(needed >> 20) + 1, (unsigned long long)(available >> 20));
+    mexErrMsgIdAndTxt(tag, msg);
+}
 #endif  // _COMMON_HPP_20201017_

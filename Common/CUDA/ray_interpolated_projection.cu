@@ -256,8 +256,13 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         // Nope nope.
         // approx free memory we have. We already have left some extra 5% free for internal stuff
         // we need a second projection memory to combine multi-GPU stuff.
+        // The smallest working set is the 4 projection buffers and one image slice.
+        const size_t mem_slice=(size_t)geo.nVoxelX*(size_t)geo.nVoxelY*sizeof(float);
+        if (mem_GPU_global <= 4*PROJ_PER_BLOCK*mem_proj+mem_slice)
+            tigreNotEnoughGpuMemory("Ax:Interpolated_projection:GPUmemory","Forward projection (interpolated)",4*PROJ_PER_BLOCK*mem_proj+mem_slice,mem_GPU_global);
         size_t mem_free=mem_GPU_global-4*PROJ_PER_BLOCK*mem_proj;
         splits=mem_image/mem_free+1;// Ceil of the truncation
+        if (splits>geo.nVoxelZ) splits=geo.nVoxelZ;  // at least one slice per piece
     }
     Geometry* geoArray = (Geometry*)malloc(splits*sizeof(Geometry));
     splitImageInterp(splits,geo,geoArray,nangles);
