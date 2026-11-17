@@ -148,12 +148,11 @@ def test_failed_calls_release_device_memory():
 def test_busy_gpu_is_a_warning_shown_once():
     """Less than half the GPU free used to be an error; now it is a warning."""
     free, total = mem_info()
-    grab = free - total // 2 + 256 * 2**20
-    if grab <= 0 or grab > free - 512 * 2**20:
-        pytest.skip("cannot leave the GPU between half full and nearly full")
     ptr = ctypes.c_void_p()
-    if CUDART.cudaMalloc(ctypes.byref(ptr), grab) != 0:
-        pytest.skip("could not allocate GPU memory to make the GPU look busy")
+    if free > total // 2 - 128 * 2**20:  # not busy yet: make it busy
+        grab = free - total // 2 + 256 * 2**20
+        if CUDART.cudaMalloc(ctypes.byref(ptr), grab) != 0:
+            pytest.skip("could not allocate GPU memory to make the GPU look busy")
     try:
         geo, angles, img = small_problem()
         proj = tigre.Ax(img, geo, angles)
@@ -165,4 +164,5 @@ def test_busy_gpu_is_a_warning_shown_once():
         assert len(busy) == 1, [str(w.message) for w in caught]
         assert issubclass(busy[0].category, RuntimeWarning)
     finally:
-        CUDART.cudaFree(ptr)
+        if ptr.value:
+            CUDART.cudaFree(ptr)
