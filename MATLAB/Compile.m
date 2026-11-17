@@ -135,7 +135,7 @@ if ispc
     setenv('CUDA_PATH',cudapath);
 end
 
-set_cuda_cc_flags(cuda_ver);
+set_cuda_cc_flags(cuda_ver, cudapath);
 
 rmpath('./Utilities/Setup');
 

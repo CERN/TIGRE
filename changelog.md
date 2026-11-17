@@ -33,6 +33,9 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- MATLAB `Compile`: compiles for the GPU architectures the installed `nvcc` supports, as it
+  reports them (`nvcc --list-gpu-arch`), like the Python build. The fixed list asked CUDA
+  12.2-12.7 for `compute_120`, which needs 12.8, and compilation failed.
 - Cone-beam `Ax` and `Atb` with almost no free GPU memory (e.g. when PyTorch holds the GPU):
   `Atb` killed the process with an integer division by zero, and `Ax` tried the whole image
   and failed. Both now raise "out of memory" with how much memory they need, before
