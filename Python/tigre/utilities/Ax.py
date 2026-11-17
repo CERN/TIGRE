@@ -2,6 +2,8 @@ import copy
 
 import numpy as np
 
+from . import _gpu_arrays
+
 _Ax_ext = None
 GpuIds = None
 def _try_import_Ax_ext():
@@ -34,8 +36,9 @@ def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
 
     Parameters
     ----------
-    img : numpy.ndarray
-        Image, float32, shape ``geo.nVoxel`` (``(z, y, x)``).
+    img : numpy.ndarray, torch.Tensor or cupy.ndarray
+        Image, float32, shape ``geo.nVoxel`` (``(z, y, x)``). A PyTorch CUDA
+        tensor or a CuPy array stays on its GPU: see Notes.
     geo : tigre.utilities.geometry.Geometry
         The scanner geometry.
     angles : numpy.ndarray
@@ -47,12 +50,13 @@ def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
         the image along each ray every ``geo.accuracy`` voxels, with trilinear
         interpolation.
     gpuids : tigre.utilities.gpu.GpuIds, optional
-        GPUs to use. Default: all available.
+        GPUs to use. Default: all available, or for a GPU array, its GPU.
 
     Returns
     -------
-    numpy.ndarray
-        Projections, float32, shape ``(N, *geo.nDetector)`` (``(angle, v, u)``).
+    numpy.ndarray, torch.Tensor or cupy.ndarray
+        Projections, float32, shape ``(N, *geo.nDetector)`` (``(angle, v, u)``),
+        the same kind of array as ``img``, on the same GPU.
 
     Raises
     ------
@@ -70,6 +74,11 @@ def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
     ``Atb`` is not the exact transpose of ``Ax``; see
     :doc:`/user-guide/projectors`.
 
+    With a PyTorch CUDA tensor or a CuPy array, the data does not go through
+    host memory: TIGRE reads ``img`` on its GPU and returns a new array there.
+    This uses that one GPU only. If ``gpuids`` names other GPUs, the image is
+    copied to the host, projected as usual and the result copied back.
+
     Examples
     --------
     >>> import numpy as np
@@ -83,6 +92,8 @@ def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
     (100, 128, 128)
     """
     _ensure_Ax_ext_import() # check if the import was successful, if not this will raise the original import error with the full message.
+    if not isinstance(img, np.ndarray) and _gpu_arrays.is_gpu_array(img):
+        return _gpu_arrays.Ax(img, geo, angles, projection_type, kwargs.get("gpuids", None), Ax)
     if img.dtype != np.float32:
         raise TypeError("Input data should be float32, not " + str(img.dtype))
     if not np.isreal(img).all():

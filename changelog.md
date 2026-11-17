@@ -7,6 +7,13 @@ thank you.
 
 ## Unreleased
 
+### Added
+- Python: `tigre.Ax` and `tigre.Atb` take PyTorch CUDA tensors and CuPy arrays, and return
+  the same kind of array on the same GPU, without copying through host memory. This uses the
+  array's GPU only; if `gpuids` names other GPUs, the data goes through the host as before.
+- PyTorch bindings: CUDA tensors stay on the GPU (see above). If TIGRE runs out of GPU memory,
+  the bindings empty PyTorch's memory cache and try once more.
+
 ### Changed
 - Python: a CUDA error now raises `RuntimeError` (with the CUDA message) instead of ending the
   whole Python process with `exit(1)`. Ax and Atb release the GPU memory, streams, textures and
@@ -26,6 +33,8 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- PyTorch bindings: `create_pytorch_operator(geo, angles)` without `gpuids`, and `gpuids` given
+  as a list of device numbers (`["0"]`), failed: TIGRE needs a `GpuIds`. Both work now.
 - Atb leaked texture objects on every call (all but two of every 32-angle block), until CUDA
   refused to create more, about a million later: "Texture object creation fail ... out of
   memory" after a few hundred iterations however much memory was free. Ax leaked one per image

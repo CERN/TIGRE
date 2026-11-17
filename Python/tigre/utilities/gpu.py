@@ -57,6 +57,14 @@ class GpuIds(object):
         single_gpu.devices = [self.devices[key]]
         return single_gpu
 
+    @classmethod
+    def _from_devices(cls, devices):
+        """GpuIds for these device numbers, without querying the GPUs."""
+        ids = cls.__new__(cls)
+        ids.name = ""
+        ids.devices = [int(d) for d in devices]
+        return ids
+
 def getGpuNames():
     """Names of the installed GPUs, one per device.
 

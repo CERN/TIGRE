@@ -6,6 +6,51 @@ import numpy as np
 
 import itertools
 
+
+def _gpuids(gpuids):
+    """None, a GpuIds, or a list of device numbers (int or str) -> None or GpuIds.
+
+    None means: a CUDA tensor runs on its own GPU, data on the host on all GPUs.
+    """
+    if gpuids is None or hasattr(gpuids, "devices"):
+        return gpuids
+    from tigre.utilities.gpu import GpuIds
+    return GpuIds._from_devices(gpuids)
+
+
+def _call(op, x, geo, **kwargs):
+    """op(x, geo, geo.angles, **kwargs), retrying once if the GPU is out of memory.
+
+    PyTorch keeps the GPU memory it freed in its cache, for its own reuse; TIGRE
+    allocates with CUDA directly and cannot use it. If TIGRE runs out of memory,
+    give that cache back to CUDA and try again.
+    """
+    try:
+        return op(x, geo, geo.angles, **kwargs)
+    except RuntimeError as err:
+        if "out of memory" not in str(err) or not torch.cuda.is_initialized():
+            raise
+        torch.cuda.empty_cache()
+        return op(x, geo, geo.angles, **kwargs)
+
+
+def _apply(op, x, geo, output_dimension, gpuids, **kwargs):
+    """Apply op (tigre.Ax or tigre.Atb) to each 3D array in x, a tensor of
+    shape (..., *3D shape). A CUDA tensor stays on the GPU (see tigre.Ax);
+    a tensor on the CPU goes through NumPy."""
+    gpuids = _gpuids(gpuids)
+    x = x.detach()
+    extra_dims = list(x.size()[:-3])
+    if x.is_cuda and not extra_dims:
+        return _call(op, x, geo, gpuids=gpuids, **kwargs)
+    output = x.new_empty(extra_dims + list(output_dimension), dtype=torch.float32)
+    if not x.is_cuda:
+        x = x.numpy()
+    for subspace in itertools.product(*[range(dim_size) for dim_size in extra_dims]):
+        result = _call(op, x[subspace], geo, gpuids=gpuids, **kwargs)
+        output[subspace] = result if torch.is_tensor(result) else torch.from_numpy(result)
+    return output
+
 class AXFunction(torch.autograd.Function):
     @staticmethod
     def forward(
@@ -22,7 +67,7 @@ class AXFunction(torch.autograd.Function):
         Args:
             volume_input (torch.Tensor): input volume tensor
             geo (Geometry): geometry
-            gpuids (List[str]): gpus on which to perform the computations
+            gpuids: GpuIds, list of device numbers, or None (see create_pytorch_operator)
             volume_dimension (List): integers describing the volume dimension
             sinogram_dimension (List): integers describing the volume dimension
             backprojection_type (str): weights of the backprojector, "matched"
@@ -31,19 +76,7 @@ class AXFunction(torch.autograd.Function):
         Returns:
             torch.Tensor: sinogram
         """
-        device = volume_input.device
-        
-        ### Might be good to add a check
-        extra_dimensions = len(volume_input.size()) - 3
-        
-        extra_dims = list(volume_input.size()[:extra_dimensions])
-        sinogram_output = volume_input.new_empty((extra_dims + sinogram_dimension), dtype=torch.float32) # type:ignore
-
-        volume_input = volume_input.detach().cpu().numpy()  
-        for subspace in itertools.product(*[range(dim_size) for dim_size in extra_dims]):
-            sinogram_output[subspace] = torch.from_numpy(
-                tigre.Ax(volume_input[subspace],geo, geo.angles, gpuids = gpuids)).to(device)
-        return sinogram_output
+        return _apply(tigre.Ax, volume_input, geo, sinogram_dimension, gpuids)
     
     @staticmethod
     def setup_context(ctx, inputs, output):
@@ -55,19 +88,8 @@ class AXFunction(torch.autograd.Function):
         
     @staticmethod
     def backward(ctx, grad_output:torch.Tensor): #type:ignore
-        device = grad_output.device
-        
-        extra_dimensions = len(grad_output.size()) - 3
-        
-        extra_dims = list(grad_output.size()[:extra_dimensions])
-        volume_output = grad_output.new_empty((extra_dims + ctx.volume_dimension), dtype=torch.float32) # type:ignore
-        
-        grad_output : np.ndarray = grad_output.detach().cpu().numpy()        
-        for subspace in itertools.product(*[range(dim_size) for dim_size in extra_dims]):
-            volume_output[subspace] = torch.from_numpy(
-                tigre.Atb(grad_output[subspace], ctx.geo, ctx.geo.angles,
-                          backprojection_type=ctx.backprojection_type, gpuids = ctx.gpuids)).to(device)
-        
+        volume_output = _apply(tigre.Atb, grad_output, ctx.geo, ctx.volume_dimension, ctx.gpuids,
+                               backprojection_type=ctx.backprojection_type)
         return volume_output, None, None, None, None, None
     
 class A(torch.nn.Module):
@@ -106,7 +128,7 @@ class ATBFunction(torch.autograd.Function):
         Args:
             sinogram_input (torch.Tensor): input sinogram tensor
             geo (Geometry): geometry
-            gpuids (List[str]): gpus on which to perform the computations
+            gpuids: GpuIds, list of device numbers, or None (see create_pytorch_operator)
             volume_dimension (List): integers describing the volume dimension
             sinogram_dimension (List): integers describing the volume dimension
             backprojection_type (str): weights of the backprojector, "matched"
@@ -115,20 +137,8 @@ class ATBFunction(torch.autograd.Function):
         Returns:
             torch.Tensor: volume
         """
-        device = sinogram_input.device
-        
-        ### Might be good to add a check
-        extra_dimensions = len(sinogram_input.size()) - 3
-        
-        extra_dims = list(sinogram_input.size()[:extra_dimensions])
-        volume_output = sinogram_input.new_empty((extra_dims + volume_dimension), dtype=torch.float32) # type:ignore
-
-        sinogram_input = sinogram_input.detach().cpu().numpy()  
-        for subspace in itertools.product(*[range(dim_size) for dim_size in extra_dims]):
-            volume_output[subspace] = torch.from_numpy(
-                tigre.Atb(sinogram_input[subspace], geo, geo.angles,
-                          backprojection_type=backprojection_type, gpuids = gpuids)).to(device)
-        return volume_output
+        return _apply(tigre.Atb, sinogram_input, geo, volume_dimension, gpuids,
+                      backprojection_type=backprojection_type)
     
     @staticmethod
     def setup_context(ctx, inputs, output):
@@ -139,18 +149,7 @@ class ATBFunction(torch.autograd.Function):
         
     @staticmethod
     def backward(ctx, grad_output:torch.Tensor): #type:ignore
-        device = grad_output.device
-        
-        extra_dimensions = len(grad_output.size()) - 3
-        
-        extra_dims = list(grad_output.size()[:extra_dimensions])
-        sinogram_output = grad_output.new_empty((extra_dims + ctx.sinogram_dimension), dtype=torch.float32) # type:ignore
-        
-        grad_output : np.ndarray = grad_output.detach().cpu().numpy()        
-        for subspace in itertools.product(*[range(dim_size) for dim_size in extra_dims]):
-            sinogram_output[subspace] = torch.from_numpy(
-                tigre.Ax(grad_output[subspace], ctx.geo, ctx.geo.angles, gpuids = ctx.gpuids)).to(device)
-        
+        sinogram_output = _apply(tigre.Ax, grad_output, ctx.geo, ctx.sinogram_dimension, ctx.gpuids)
         return sinogram_output, None, None, None, None, None
     
 class At(torch.nn.Module):
@@ -184,9 +183,13 @@ def create_pytorch_operator(geo, angles, gpuids=None, backprojection_type="match
     ``At`` and by the gradient of ``A``: "matched" (default, the
     closest to the transpose of the forward projector) or "FDK" (what earlier
     versions used).
+
+    CUDA tensors stay on their GPU: TIGRE reads and writes them there, without
+    copies through host memory. ``gpuids`` (a GpuIds or a list of device
+    numbers) is only needed to choose GPUs for tensors on the CPU, or to send
+    CUDA tensors through the host to several GPUs. Default: a CUDA tensor's
+    own GPU, all GPUs for a tensor on the CPU.
     """
-    if gpuids is None:
-        gpuids = [str(i) for i in range(torch.cuda.device_count())]
     return (A(geo, angles, gpuids, backprojection_type),
             At(geo, angles, gpuids, backprojection_type))
 

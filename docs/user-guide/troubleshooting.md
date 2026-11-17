@@ -50,8 +50,19 @@ TIGRE was not built for your GPU. Rebuild it on the computer you use, with a
 CUDA version that supports your GPU.
 
 **`One (or more) of your GPUs is being heavily used by another program`.**
-TIGRE needs at least half of each selected GPU's memory to be free. Close
-programs using the GPU, or select another GPU; see [](gpus.md).
+A warning: less than half of a selected GPU's memory is free, so TIGRE may
+run out of it. Close programs using the GPU, or select another GPU; see
+[](gpus.md). With [GPU arrays](interoperability.md#gpu-arrays) it is not
+shown, as sharing the GPU (with PyTorch, for example) is expected there.
+
+**On Windows, TIGRE or PyTorch becomes very slow when the GPU is nearly full.**
+Recent NVIDIA drivers for Windows (536.40 and newer) move GPU memory to system
+memory when the GPU runs out, instead of reporting "out of memory". Programs
+keep running, but many times slower. To get the error instead, open the NVIDIA
+Control Panel, go to *Manage 3D settings*, and set *CUDA - Sysmem Fallback
+Policy* to *Prefer No Sysmem Fallback* (for all programs, or for your
+`python.exe`). Then reduce what is on the GPU: the batch size, the image size,
+or the number of angles per call.
 
 **`the launch timed out and was terminated` or `unspecified launch failure`
 on large images.**

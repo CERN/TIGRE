@@ -41,19 +41,45 @@ back = At(sino)     # sino: tensor whose last three dimensions are (angles, v, u
 
 - Any number of leading dimensions (batch, channels) is allowed; each one is
   projected separately.
+- CUDA tensors stay on their GPU: TIGRE reads them and writes its result
+  there, with no copy through host memory (see [GPU arrays](#gpu-arrays)).
+  Tensors on the CPU go through NumPy, on all GPUs.
 - `create_pytorch_operator(geo, angles, gpuids)` chooses which GPUs TIGRE
-  uses, independently of the GPU your tensors are on.
+  uses. For CUDA tensors, leave it out: naming other GPUs, or several, makes
+  TIGRE copy the data through host memory to use them.
 - Gradients flow through both modules: the gradient of `A` is computed with
   TIGRE's `matched` backprojector and the gradient of `At` with the forward
   projector. As TIGRE's projector pairs are not exact transposes (see
   [](projectors.md)), these gradients are close to, but not exactly, the true
   ones. `create_pytorch_operator(..., backprojection_type="FDK")` uses FDK
   weights instead, as earlier versions did.
-- Each call copies the data through host memory, because TIGRE's CUDA code
-  works on NumPy arrays. For large batches this copy can be a noticeable
-  part of the run time.
+- If TIGRE runs out of GPU memory, the bindings give the memory PyTorch keeps
+  in its cache back to CUDA (`torch.cuda.empty_cache()`) and try once more.
 
 The bindings are in Python only and need `torch` installed.
+
+## GPU arrays
+
+`tigre.Ax` and `tigre.Atb` also take a PyTorch CUDA tensor or a
+[CuPy](https://cupy.dev) array, float32, and return the same kind of array on
+the same GPU. The data does not go through host memory, so this is faster
+when the data is on the GPU anyway, for example between the layers of a
+network.
+
+```python
+x = torch.from_numpy(img).cuda()
+proj = tigre.Ax(x, geo, angles)     # a CUDA tensor, on x's GPU
+back = tigre.Atb(proj, geo, angles)
+```
+
+- This uses one GPU: the one the array is on. If `gpuids` names other GPUs, or
+  several, the array is copied to the host, the usual multi-GPU code runs, and
+  the result is copied back; the result is the same.
+- The image or the projections must fit on that GPU, with room for a copy of
+  the input (TIGRE reads it through a CUDA texture). The output is a new array.
+- TIGRE waits for the work that wrote the input on PyTorch's or CuPy's current
+  stream, and has finished writing the result when the call returns.
+- The algorithms (`tigre.algorithms`) still take NumPy arrays only.
 
 ## CIL (Core Imaging Library)
 

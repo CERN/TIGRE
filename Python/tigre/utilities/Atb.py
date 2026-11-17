@@ -3,6 +3,7 @@ import copy
 import numpy as np
 from _Atb import _Atb_ext
 
+from . import _gpu_arrays
 from .gpu import GpuIds
 
 
@@ -14,8 +15,9 @@ def Atb(projections, geo, angles, backprojection_type="FDK", **kwargs):
 
     Parameters
     ----------
-    projections : numpy.ndarray
+    projections : numpy.ndarray, torch.Tensor or cupy.ndarray
         Projections, float32, shape ``(N, *geo.nDetector)`` (``(angle, v, u)``).
+        A PyTorch CUDA tensor or a CuPy array stays on its GPU: see Notes.
     geo : tigre.utilities.geometry.Geometry
         The scanner geometry.
     angles : numpy.ndarray
@@ -26,12 +28,13 @@ def Atb(projections, geo, angles, backprojection_type="FDK", **kwargs):
         ``"matched"`` uses weights that make it close to the transpose of
         :func:`Ax`; the Krylov algorithms use it.
     gpuids : tigre.utilities.gpu.GpuIds, optional
-        GPUs to use. Default: all available.
+        GPUs to use. Default: all available, or for a GPU array, its GPU.
 
     Returns
     -------
-    numpy.ndarray
-        Image, float32, shape ``geo.nVoxel`` (``(z, y, x)``).
+    numpy.ndarray, torch.Tensor or cupy.ndarray
+        Image, float32, shape ``geo.nVoxel`` (``(z, y, x)``), the same kind of
+        array as ``projections``, on the same GPU.
 
     Raises
     ------
@@ -48,7 +51,16 @@ def Atb(projections, geo, angles, backprojection_type="FDK", **kwargs):
     -----
     Neither backprojector is the exact transpose of :func:`Ax`; see
     :doc:`/user-guide/projectors`.
+
+    With a PyTorch CUDA tensor or a CuPy array, the data does not go through
+    host memory: TIGRE reads ``projections`` on its GPU and returns a new
+    array there. This uses that one GPU only. If ``gpuids`` names other GPUs,
+    the projections are copied to the host, backprojected as usual and the
+    result copied back.
     """
+    if not isinstance(projections, np.ndarray) and _gpu_arrays.is_gpu_array(projections):
+        return _gpu_arrays.Atb(projections, geo, angles, backprojection_type,
+                               kwargs.get("gpuids", None), Atb)
     if projections.dtype != np.float32:
         raise TypeError("Input data should be float32, not " + str(projections.dtype))
     if not np.isreal(projections).all():

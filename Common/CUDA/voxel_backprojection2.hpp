@@ -54,7 +54,10 @@ Codes  : https://github.com/CERN/TIGRE
 #ifndef BACKPROJECTION2_HPP
 #define BACKPROJECTION2_HPP
 
-int voxel_backprojection2(float  *  projections, Geometry geo, float* result,float const * const alphas,int nalpha, const GpuIds& gpuids);
+// gpuData = true: the image and projection pointers are GPU memory on
+// gpuids[0] (single GPU only), e.g. from a PyTorch or CuPy array. Default:
+// host memory, as always.
+int voxel_backprojection2(float  *  projections, Geometry geo, float* result,float const * const alphas,int nalpha, const GpuIds& gpuids, bool gpuData = false);
 void computeDeltasCube(Geometry geo, float alpha,int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S);
 void splitCTbackprojection(const GpuIds& gpuids,Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections);
 void computeDeltasCube(Geometry geo, int i, Point3D* xyzorigin, Point3D* deltaX, Point3D* deltaY, Point3D* deltaZ,Point3D* S);

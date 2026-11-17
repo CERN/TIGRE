@@ -94,7 +94,7 @@ do { \
      *
      **/
     
-    void CreateTexture(const GpuIds& gpuids,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool alloc);
+    void CreateTexture(const GpuIds& gpuids,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool alloc, cudaMemcpyKind kind);
 
 __constant__ Point3D projParamsArrayDev[4*PROJ_PER_BLOCK];  // Dev means it is on device
 
@@ -284,13 +284,21 @@ __global__ void kernelPixelDetector( Geometry geo,
 }
 
 
-int siddon_ray_projection(float* img, Geometry geo, float** result,float const * const angles,int nangles, const GpuIds& gpuids){
+int siddon_ray_projection(float* img, Geometry geo, float** result,float const * const angles,int nangles, const GpuIds& gpuids, bool gpuData){
     // Prepare for MultiGPU
     int deviceCount = gpuids.GetLength();
     cudaCheckErrors("Device query fail");
     // If a CUDA error raises (Python build) before the end of this function,
     // onError releases what it holds; see tigre_release_on_error.hpp.
     tigre::ReleaseOnError onError;
+    if (gpuData && deviceCount != 1) {
+        mexErrMsgIdAndTxt("Ax:GPUdata", "GPU arrays can only be projected on one GPU, the one they are on.");
+    }
+    // With GPU data the copies to and from the caller's array are device-to-device
+    // and asynchronous, so they go on the compute stream: that orders them with
+    // the kernels that reuse the double-buffered projections. (Host copies to
+    // pageable memory are synchronous, so the copy stream is safe for them.)
+    const int copyStream = gpuData ? 0 : 1;
     std::vector<int> devIds(deviceCount);  // copied: the release actions must not hold on to gpuids
     for (int d = 0; d < deviceCount; d++) { devIds[d] = gpuids[d]; onError.addDevice(devIds[d]); }
     if (deviceCount == 0) {
@@ -372,6 +380,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
 #if CUDART_VERSION >= 9020
     cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
 #endif
+    if (gpuData) isHostRegisterSupported = 0;  // GPU memory: nothing to pin
     // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to
     // pin the memory is greater than the lost time in Synchronously launching the memcpys. This is only worth it when the image is too big.
 #ifndef NO_PINNED_MEMORY
@@ -436,7 +445,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
         linear_idx_start= (size_t)sp*(size_t)geoArray[0].nVoxelX*(size_t)geoArray[0].nVoxelY*(size_t)geoArray[0].nVoxelZ;
         
         
-        CreateTexture(gpuids,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg,!sp);
+        CreateTexture(gpuids,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg,!sp,(gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice));
         cudaCheckErrors("Texture object creation fail");
         
         
@@ -510,7 +519,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
                     else
                         projection_this_block=PROJ_PER_BLOCK;
 
-                    cudaMemcpyAsync(dProjection_accum[(i%2)+dev*2], result[proj_global], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyHostToDevice,stream[dev*2+1]);
+                    cudaMemcpyAsync(dProjection_accum[(i%2)+dev*2], result[proj_global], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), (gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice),stream[dev*2+copyStream]);
                 }
                 //  2) take the results from current compute call and add it to the code in execution.
                 for (dev = 0; dev < deviceCount; dev++)
@@ -557,7 +566,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
                     else {
                         projection_this_block=PROJ_PER_BLOCK;
                     }
-                    cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(i%2))+dev*2],  projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
+                    cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(i%2))+dev*2],  projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), (gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost),stream[dev*2+copyStream]);
                 }
             }
             // Make sure Computation on kernels has finished before we launch the next batch.
@@ -582,7 +591,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
 
             cudaDeviceSynchronize(); //Not really necessary, but just in case, we los nothing. 
             cudaCheckErrors("Error at copying the last set of projections out (or in the previous copy)");
-            cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(noOfKernelCalls%2))+dev*2], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*2+1]);
+            cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(noOfKernelCalls%2))+dev*2], projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), (gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost),stream[dev*2+copyStream]);
         }
         // Make sure everyone has done their bussiness before the next image split:
         cudaDeviceSynchronize();
@@ -636,7 +645,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
 
 
 
-void CreateTexture(const GpuIds& gpuids,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool alloc)
+void CreateTexture(const GpuIds& gpuids,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool alloc, cudaMemcpyKind kind)
 {
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
@@ -658,7 +667,7 @@ void CreateTexture(const GpuIds& gpuids,const float* imagedata,Geometry geo,cuda
         copyParams.srcPtr   = make_cudaPitchedPtr((void *)imagedata, extent.width*sizeof(float), extent.width, extent.height);
         copyParams.dstArray = d_cuArrTex[dev];
         copyParams.extent   = extent;
-        copyParams.kind     = cudaMemcpyHostToDevice;
+        copyParams.kind     = kind;
         cudaMemcpy3DAsync(&copyParams);
     }
     for (unsigned int dev = 0; dev < num_devices; dev++){

@@ -52,7 +52,10 @@ Codes  : https://github.com/CERN/TIGRE
 #ifndef PROJECTION_HPP
 #define PROJECTION_HPP
 
-int interpolation_projection(float* img, Geometry geo, float** result,float const * const alphas,int nalpha, const GpuIds& gpuids);
+// gpuData = true: the image and projection pointers are GPU memory on
+// gpuids[0] (single GPU only), e.g. from a PyTorch or CuPy array. Default:
+// host memory, as always.
+int interpolation_projection(float* img, Geometry geo, float** result,float const * const alphas,int nalpha, const GpuIds& gpuids, bool gpuData = false);
 float computeMaxLength(Geometry geo, float alpha);
 void computeDeltas(Geometry geo,unsigned int i, Point3D* uvorigin, Point3D* deltaU, Point3D* deltaV, Point3D* source);
 void rollPitchYaw(Geometry geo,unsigned int i, Point3D* point);
