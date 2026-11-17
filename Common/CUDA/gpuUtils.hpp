@@ -14,5 +14,9 @@ int GetGpuIdArray(const char* kacGPUName, int* piDeviceIds, int iIdCountMax, cha
 //! @brief GPU name of index iDeviceId. Allocate 128bytes for pcName before call.
 void GetGpuName(int iDeviceId, char* pcName);
 
+//! @brief Whether the multi-GPU halo exchange between iDevA and iDevB should copy peer-to-peer instead of staging
+//! through pinned host memory. Enables peer access (both ways) only when it says yes; on HIP it always says no.
+bool UsePeerHaloExchange(int iDevA, int iDevB);
+
 #endif  // GPUUTILS_HPP
 
