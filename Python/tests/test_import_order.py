@@ -8,6 +8,12 @@ circular import)".
 
 Each case runs in a fresh interpreter, because the import order only matters
 the first time a module is loaded. No GPU is needed.
+
+On Windows a compiled module also needs the CUDA DLLs, which Python only finds
+once their folder is added to the DLL search path; `import tigre` does that
+(tigre/__init__.py). Importing a compiled module before `tigre` therefore
+fails there with "DLL load failed" for a reason unrelated to this test, so
+each case first adds the same folder, as tigre would.
 """
 import subprocess
 import sys
@@ -26,6 +32,14 @@ COMPILED_MODULES = [
 ]
 
 
+# What tigre/__init__.py does on Windows, without importing tigre.
+_CUDA_DLLS_ON_WINDOWS = (
+    "import os, sys\n"
+    "if sys.platform == 'win32' and os.environ.get('CUDA_PATH') and hasattr(os, 'add_dll_directory'):\n"
+    "    _h = os.add_dll_directory(os.path.join(os.environ['CUDA_PATH'], 'bin'))\n"
+)
+
+
 def _compiled_modules_available():
     try:
         import tigre  # noqa: F401
@@ -38,6 +52,6 @@ def _compiled_modules_available():
 @pytest.mark.skipif(not _compiled_modules_available(), reason="TIGRE's compiled modules are not built")
 @pytest.mark.parametrize("module", COMPILED_MODULES)
 def test_compiled_module_can_be_imported_before_tigre(module):
-    code = f"import {module}; import tigre; import tigre.algorithms"
+    code = _CUDA_DLLS_ON_WINDOWS + f"import {module}; import tigre; import tigre.algorithms"
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr

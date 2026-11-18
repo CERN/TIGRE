@@ -56,6 +56,7 @@
 
 #include "tv_proximal.hpp"
 #include "gpuUtils.hpp"
+#include "tigre_release_on_error.hpp"
 #define cudaCheckErrors(msg) \
 do { \
         cudaError_t __err = cudaGetLastError(); \
@@ -199,6 +200,14 @@ void cpy_from_host(float* device_array,float* host_array,
         if (!gpuids.AreEqualDevices()) {
             mexWarnMsgIdAndTxt("tvDenoise:tvdenoising:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed.");
         }
+        // onError releases what the call holds if it is left by an error (see
+        // tigre_release_on_error.hpp). Without it, an error such as out of memory
+        // left the caller's arrays registered with cudaHostRegister; a later array
+        // at the same address then used the old memory pages, and calls returned
+        // zeros without any error.
+        tigre::ReleaseOnError onError;
+        std::vector<int> devIds;
+        for (int d = 0; d < deviceCount; d++){ devIds.push_back(gpuids[d]); onError.addDevice(gpuids[d]); }
         int dev;
 
         // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
@@ -273,10 +282,14 @@ void cpy_from_host(float* device_array,float* host_array,
 #if CUDART_VERSION >= 9020
         cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
 #endif
+        // Only what this call registers is unregistered, on error or at the end.
+        bool src_registered=false, dst_registered=false;
         if (isHostRegisterSupported & splits>1){
-            cudaHostRegister(src ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
-            cudaHostRegister(dst ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
+            src_registered=tigre::hostRegister(src ,(size_t)image_size[2]*image_size[1]*image_size[0]*sizeof(float));
+            dst_registered=tigre::hostRegister(dst ,(size_t)image_size[2]*image_size[1]*image_size[0]*sizeof(float));
         }
+        if (src_registered) onError.add([src]{ cudaHostUnregister(src); });
+        if (dst_registered) onError.add([dst]{ cudaHostUnregister(dst); });
         cudaCheckErrors("Error pinning memory");
         
         
@@ -287,9 +300,13 @@ void cpy_from_host(float* device_array,float* host_array,
         // goes through its own part 4*e+v of the pinned buffer, so all of them can run at once.
         int nExchanges=2*(deviceCount-1);
         bool* peer_access=(bool*)malloc((deviceCount-1)*sizeof(bool));
-        float* buffer;
-        cudaEvent_t* exchange_event=(cudaEvent_t*)malloc(4*nExchanges*sizeof(cudaEvent_t));
-        float* h_px, *h_py, *h_pz, *h_u;
+        float* buffer=NULL;
+        cudaEvent_t* exchange_event=(cudaEvent_t*)calloc(nExchanges>0? 4*nExchanges : 1,sizeof(cudaEvent_t));
+        float* h_px=NULL, *h_py=NULL, *h_pz=NULL, *h_u;
+        onError.add([exchange_event, nExchanges, peer_access]{
+            for (int e = 0; e < 4*nExchanges; e++) if (exchange_event[e]) cudaEventDestroy(exchange_event[e]);
+            free(exchange_event); free(peer_access);
+        });
         if(splits>1){
             
             //These take A LOT of memory and A LOT of time to use. If we can avoid using them, better.
@@ -297,17 +314,21 @@ void cpy_from_host(float* device_array,float* host_array,
                 mexWarnMsgIdAndTxt("tvDenoise:tvdenoising:Memory","TV denoising requires 5 times the image memory. Your GPU(s) do not have the required memory.\n This memory will be attempted to allocate on the CPU, which may fail or slow the computation by a very significant amount.\n If you want to kill the execution: CTRL+C");
                 
                 cudaMallocHost((void**)&h_px,(size_t)image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+                onError.add([h_px]{ cudaFreeHost(h_px); });
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
                 
                 cudaMallocHost((void**)&h_py,(size_t)image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+                onError.add([h_py]{ cudaFreeHost(h_py); });
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
                 
                 cudaMallocHost((void**)&h_pz,(size_t)image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+                onError.add([h_pz]{ cudaFreeHost(h_pz); });
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
             }
             h_u=dst;
         }else if(deviceCount>1){
             cudaMallocHost((void**)&buffer, 4*nExchanges*pixels_per_slice*sizeof(float));
+            onError.add([buffer]{ cudaFreeHost(buffer); });
             for (dev = 0; dev < deviceCount-1; dev++){
                 peer_access[dev]=UsePeerHaloExchange(gpuids[dev],gpuids[dev+1]);
                 for (int v = 0; v < 4; v++){
@@ -321,25 +342,32 @@ void cpy_from_host(float* device_array,float* host_array,
         // We should be good to go memory wise.
         
         
-        float** d_src   =(float**)malloc(deviceCount*sizeof(float*));
-        float** d_u     =(float**)malloc(deviceCount*sizeof(float*));
-        float** d_px    =(float**)malloc(deviceCount*sizeof(float*));
-        float** d_py    =(float**)malloc(deviceCount*sizeof(float*));
-        float** d_pz    =(float**)malloc(deviceCount*sizeof(float*));
+        float** d_src   =(float**)calloc(deviceCount,sizeof(float*));
+        float** d_u     =(float**)calloc(deviceCount,sizeof(float*));
+        float** d_px    =(float**)calloc(deviceCount,sizeof(float*));
+        float** d_py    =(float**)calloc(deviceCount,sizeof(float*));
+        float** d_pz    =(float**)calloc(deviceCount,sizeof(float*));
+        onError.add([d_src, d_u, d_px, d_py, d_pz, deviceCount, devIds]{
+            for (int d = 0; d < deviceCount; d++){
+                cudaSetDevice(devIds[d]);
+                cudaFree(d_src[d]); cudaFree(d_u[d]); cudaFree(d_px[d]); cudaFree(d_py[d]); cudaFree(d_pz[d]);
+            }
+            free(d_src); free(d_u); free(d_px); free(d_py); free(d_pz);
+        });
         
         //Malloc
         for(dev=0;dev<deviceCount;dev++){
             cudaSetDevice(gpuids[dev]);
             // F
-            cudaMalloc((void**)&d_src[dev], mem_img_each_GPU);
+            tigre::checkMalloc(cudaMalloc((void**)&d_src[dev], mem_img_each_GPU), "tvDenoise:tvdenoising:GPU", "Total variation denoising (tvdenoise)", mem_img_each_GPU);
             // U
-            cudaMalloc((void**)&d_u [dev],  mem_img_each_GPU);
+            tigre::checkMalloc(cudaMalloc((void**)&d_u[dev], mem_img_each_GPU), "tvDenoise:tvdenoising:GPU", "Total variation denoising (tvdenoise)", mem_img_each_GPU);
             // PX
-            cudaMalloc((void**)&d_px[dev],  mem_img_each_GPU);
+            tigre::checkMalloc(cudaMalloc((void**)&d_px[dev], mem_img_each_GPU), "tvDenoise:tvdenoising:GPU", "Total variation denoising (tvdenoise)", mem_img_each_GPU);
             // PY
-            cudaMalloc((void**)&d_py[dev],  mem_img_each_GPU);
+            tigre::checkMalloc(cudaMalloc((void**)&d_py[dev], mem_img_each_GPU), "tvDenoise:tvdenoising:GPU", "Total variation denoising (tvdenoise)", mem_img_each_GPU);
             // PZ
-            cudaMalloc((void**)&d_pz[dev],  mem_img_each_GPU);
+            tigre::checkMalloc(cudaMalloc((void**)&d_pz[dev], mem_img_each_GPU), "tvDenoise:tvdenoising:GPU", "Total variation denoising (tvdenoise)", mem_img_each_GPU);
         }
         cudaDeviceSynchronize();
         cudaCheckErrors("Malloc  error");
@@ -348,7 +376,8 @@ void cpy_from_host(float* device_array,float* host_array,
         // Create streams
         int nStream_device=5;
         int nStreams=deviceCount*nStream_device;
-        cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
+        cudaStream_t* stream=(cudaStream_t*)calloc(nStreams,sizeof(cudaStream_t));
+        onError.add([stream, nStreams]{ for (int s = 0; s < nStreams; s++) if (stream[s]) cudaStreamDestroy(stream[s]); free(stream); });
         
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(gpuids[dev]);
@@ -374,6 +403,7 @@ void cpy_from_host(float* device_array,float* host_array,
         unsigned long long* offset_device=(unsigned long long*)malloc(deviceCount*sizeof(unsigned long long));
         unsigned long long* offset_host  =(unsigned long long*)malloc(deviceCount*sizeof(unsigned long long));
         unsigned long long* bytes_device =(unsigned long long*)malloc(deviceCount*sizeof(unsigned long long));
+        onError.add([offset_device, offset_host, bytes_device]{ free(offset_device); free(offset_host); free(bytes_device); });
         bool is_first_chunk;
         bool is_last_chunk;
         
@@ -623,6 +653,7 @@ void cpy_from_host(float* device_array,float* host_array,
             cudaDeviceSynchronize();
         }
         cudaCheckErrors("Copy result back");
+        onError.dismiss();  // from here on the function releases everything itself
         for(dev=0; dev<deviceCount;dev++){
             
             cudaFree(d_src[dev]);
@@ -647,10 +678,8 @@ void cpy_from_host(float* device_array,float* host_array,
         for (int i = 0; i < nStreams; ++i)
            cudaStreamDestroy(stream[i]) ;
 
-        if (isHostRegisterSupported & splits>1){
-            cudaHostUnregister(src);
-            cudaHostUnregister(dst);
-        }
+        if (src_registered) cudaHostUnregister(src);
+        if (dst_registered) cudaHostUnregister(dst);
         for(dev=0; dev<deviceCount;dev++){
             cudaSetDevice(gpuids[dev]);
             cudaDeviceSynchronize();

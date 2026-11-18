@@ -7,8 +7,13 @@ tvdenoise could end up with a buffer of 0 slices and loop forever. On master a
 and minTV/AwminTV stopped with "Assertion Failed. Logic behind splitting
 flawed!" below ~25 MB.
 
-Now: with enough memory for the smallest piece, each splits the image and
-finishes; below that, each raises "out of memory" and works again afterwards.
+Now: below the smallest piece, each raises "out of memory"; above it, each
+splits the image and finishes, or, if CUDA's own overheads still leave too
+little memory (it depends on the platform: on Linux a 16 MB case can fail where
+Windows runs), raises "out of memory" too. Either way it must work again
+afterwards: before the clean-up on error, a failed call left the caller's
+arrays registered as pinned memory, and on Linux the next call with a new array
+(often at the same address) returned all zeros without any error.
 
 What a split result should be:
 - minTV/AwminTV: the whole-GPU result up to ~1e-3. They sum the gradient norm
@@ -18,7 +23,11 @@ What a split result should be:
   separate, older problem in how the pieces are combined.
 
 The calls run in a separate process with a time limit, so a hang fails the test
-instead of stopping the test run. The GPU is filled with a PyTorch tensor.
+instead of stopping the test run. The GPU is filled with a PyTorch tensor, and
+the fill is checked and corrected after allocating (on Windows, other programs
+drawing on the GPU make the free memory reported beforehand unreliable). If it
+cannot leave the requested amount free, or another program takes memory during
+a call, the case is skipped rather than failed.
 """
 import subprocess
 import sys
@@ -53,18 +62,47 @@ calls = {
     "tvdenoise": lambda: tvdenoise(img.copy(), 10, 15.0, gpuids=ids),
 }
 reference = {name: call() for name, call in calls.items()}
+
+
+def fill(nbytes):
+    # Leave about nbytes free. Measure what is free after allocating and correct
+    # the size: on Windows, with other programs drawing on the GPU, the free
+    # memory reported before allocating can be off by a lot.
+    tolerance = min(8 * 2**20, max(2 * 2**20, nbytes // 8))
+    torch.cuda.synchronize()
+    torch.cuda.empty_cache()
+    size = torch.cuda.mem_get_info()[0] - nbytes
+    for _ in range(4):
+        if size <= 0:
+            return None
+        ballast = torch.empty(size, dtype=torch.uint8, device="cuda")
+        torch.cuda.synchronize()
+        now = torch.cuda.mem_get_info()[0]
+        if abs(now - nbytes) <= tolerance:
+            return ballast
+        del ballast
+        torch.cuda.empty_cache()
+        size += now - nbytes
+    return None
+
+
 for free_mb in [int(a) for a in sys.argv[1:]]:
     for name, call in calls.items():
-        torch.cuda.synchronize()
-        torch.cuda.empty_cache()
-        ballast = torch.empty(torch.cuda.mem_get_info()[0] - free_mb * 2**20, dtype=torch.uint8, device="cuda")
+        ballast = fill(free_mb * 2**20)
+        if ballast is None:
+            print("{} {} MB | could not leave that much free".format(name, free_mb), flush=True)
+            continue
         try:
             result = call()
             ref = reference[name]
             err = float(np.abs(result - ref).max() / np.abs(ref).max()) if np.isfinite(result).all() else float("inf")
             print("{} {} MB | ran, relative difference {:.2e}".format(name, free_mb, err), flush=True)
         except RuntimeError as e:
-            print("{} {} MB | raised, out of memory: {}".format(name, free_mb, "out of memory" in str(e)), flush=True)
+            torch.cuda.synchronize()
+            if torch.cuda.mem_get_info()[0] < free_mb * 2**20 - 16 * 2**20:
+                print("{} {} MB | another program took GPU memory".format(name, free_mb), flush=True)
+            else:
+                print("{} {} MB | raised, out of memory: {}".format(name, free_mb, "out of memory" in str(e)), flush=True)
         del ballast
         torch.cuda.empty_cache()
         np.testing.assert_array_equal(call(), reference[name])
@@ -85,8 +123,12 @@ def test_tv_with_little_free_memory(free_mb):
         prefix = "{} {} MB | ".format(name, free_mb)
         line = next((ln for ln in result.stdout.splitlines() if ln.startswith(prefix)), None)
         assert line is not None, out
+        if line.endswith(("could not leave that much free", "another program took GPU memory")):
+            pytest.skip(line)  # other programs on the GPU changed its free memory under the test
         if free_mb == FREE_MB[0]:
             assert line == prefix + "raised, out of memory: True", out
+        elif line == prefix + "raised, out of memory: True":
+            pass  # a clean "out of memory" is acceptable here; "works after" below is what matters
         else:
             assert "ran" in line, out
             err = float(line.rsplit(" ", 1)[1])

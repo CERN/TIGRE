@@ -54,6 +54,7 @@ Codes  : https://github.com/CERN/TIGRE
 #define MAXTHREADS 1024
 
 #include "PICCS.hpp"
+#include "tigre_release_on_error.hpp"
 
 
 
@@ -285,26 +286,31 @@ bool isnan_cuda(float* vec, size_t size){
         size_t total_pixels = (size_t)image_size[0]*image_size[1]  * image_size[2] ;
         size_t mem_size = sizeof(float) * total_pixels;
         
-        float *d_image,*d_prior,*d_dpiccsTV, *d_dimgTV,*d_aux_small,*d_aux_image, *d_norm2;
+        float *d_image=NULL,*d_prior=NULL,*d_dpiccsTV=NULL, *d_dimgTV=NULL,*d_aux_small=NULL,*d_aux_image=NULL, *d_norm2=NULL;
+        // Release the device buffers if the call is left by an error (see
+        // tigre_release_on_error.hpp); cudaFree(NULL) does nothing.
+        tigre::ReleaseOnError onError;
+        onError.add([&]{ cudaFree(d_image); cudaFree(d_prior); cudaFree(d_dpiccsTV); cudaFree(d_dimgTV);
+                         cudaFree(d_aux_small); cudaFree(d_aux_image); cudaFree(d_norm2); });
         // memory for image
-        cudaMalloc(&d_image, mem_size);
-        cudaMalloc(&d_prior, mem_size);
+        tigre::checkMalloc(cudaMalloc(&d_image, mem_size), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", mem_size);
+        tigre::checkMalloc(cudaMalloc(&d_prior, mem_size), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", mem_size);
 
         cudaCheckErrors("Malloc Image error");
         cudaMemcpy(d_image, img, mem_size, cudaMemcpyHostToDevice);
         cudaMemcpy(d_prior, prior, mem_size, cudaMemcpyHostToDevice);
         cudaCheckErrors("Memory Malloc and Memset: SRC");
         // memory for df
-        cudaMalloc(&d_dimgTV, mem_size);
-        cudaMalloc(&d_dpiccsTV, mem_size);
+        tigre::checkMalloc(cudaMalloc(&d_dimgTV, mem_size), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", mem_size);
+        tigre::checkMalloc(cudaMalloc(&d_dpiccsTV, mem_size), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", mem_size);
         cudaCheckErrors("Memory Malloc and Memset: TV");
-        cudaMalloc(&d_norm2, mem_size);
+        tigre::checkMalloc(cudaMalloc(&d_norm2, mem_size), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", mem_size);
         cudaCheckErrors("Memory Malloc and Memset: TV");
-        cudaMalloc(&d_aux_image, mem_size);
+        tigre::checkMalloc(cudaMalloc(&d_aux_image, mem_size), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", mem_size);
         cudaCheckErrors("Memory Malloc and Memset: TV");
         
         // memory for L2norm auxiliar
-        cudaMalloc(&d_aux_small, sizeof(float)*(total_pixels + MAXTHREADS - 1) / MAXTHREADS);
+        tigre::checkMalloc(cudaMalloc(&d_aux_small, sizeof(float)*(total_pixels + MAXTHREADS - 1) / MAXTHREADS), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", sizeof(float)*(total_pixels + MAXTHREADS - 1) / MAXTHREADS);
         cudaCheckErrors("Memory Malloc and Memset: NORMAux");
         
         
@@ -389,6 +395,7 @@ bool isnan_cuda(float* vec, size_t size){
         
         cudaMemcpy(dst, d_image, mem_size, cudaMemcpyDeviceToHost);
         cudaCheckErrors("Copy result back");
+        onError.dismiss();  // from here on the function releases everything itself
         
         cudaFree(d_image);
         cudaFree(d_dimgTV);
