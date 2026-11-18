@@ -33,6 +33,11 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- `tvdenoise` (Python; `im3DDenoise` in MATLAB, also used by FISTA and other TV algorithms)
+  could loop forever when the image did not fit on the GPU and was split: for some amounts of
+  free memory it computed a buffer of 0 slices. `minTV`/`AwminTV` stopped with "Assertion
+  Failed. Logic behind splitting flawed!" when free memory was low. All three now split
+  correctly whenever the smallest piece fits, and raise "out of memory" otherwise (#858).
 - MATLAB `Compile`: compiles for the GPU architectures the installed `nvcc` supports, as it
   reports them (`nvcc --list-gpu-arch`), like the Python build. The fixed list asked CUDA
   12.2-12.7 for `compute_120`, which needs 12.8, and compilation failed.
