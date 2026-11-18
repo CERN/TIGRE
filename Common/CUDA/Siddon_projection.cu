@@ -195,90 +195,59 @@ __global__ void kernelPixelDetector( Geometry geo,
         return;
     }
 
-    // Compute max/min image INDEX for intersection eq(11-19)
-    // Discussion about ternary operator in CUDA: https://stackoverflow.com/questions/7104384/in-cuda-why-is-a-b010-more-efficient-than-an-if-else-version
-    float imin,imax,jmin,jmax,kmin,kmax;
-    // for X
-    if( source.x<pixel1D.x){
-        imin=(am==axm)? 1.0f             : ceilf (source.x+am*ray.x);
-        imax=(aM==axM)? geo.nVoxelX      : floorf(source.x+aM*ray.x);
-    }else{
-        imax=(am==axm)? geo.nVoxelX-1.0f : floorf(source.x+am*ray.x);
-        imin=(aM==axM)? 0.0f             : ceilf (source.x+aM*ray.x);
-    }
-    // for Y
-    if( source.y<pixel1D.y){
-        jmin=(am==aym)? 1.0f             : ceilf (source.y+am*ray.y);
-        jmax=(aM==ayM)? geo.nVoxelY      : floorf(source.y+aM*ray.y);
-    }else{
-        jmax=(am==aym)? geo.nVoxelY-1.0f : floorf(source.y+am*ray.y);
-        jmin=(aM==ayM)? 0.0f             : ceilf (source.y+aM*ray.y);
-    }
-    // for Z
-    if( source.z<pixel1D.z){
-        kmin=(am==azm)? 1.0f             : ceilf (source.z+am*ray.z);
-        kmax=(aM==azM)? geo.nVoxelZ      : floorf(source.z+aM*ray.z);
-    }else{
-        kmax=(am==azm)? geo.nVoxelZ-1.0f : floorf(source.z+am*ray.z);
-        kmin=(aM==azM)? 0.0f             : ceilf (source.z+aM*ray.z);
-    }
-    
-    // get intersection point N1. eq(20-21) [(also eq 9-10)]
-    float ax,ay,az;
-    ax=(source.x<pixel1D.x)?  __fdividef(imin-source.x,ray.x) :  __fdividef(imax-source.x,ray.x);
-    ay=(source.y<pixel1D.y)?  __fdividef(jmin-source.y,ray.y) :  __fdividef(jmax-source.y,ray.y);
-    az=(source.z<pixel1D.z)?  __fdividef(kmin-source.z,ray.z) :  __fdividef(kmax-source.z,ray.z);
-    
-    // If its Infinite (i.e. ray is parallel to axis), make sure its positive
-    ax=(isinf(ax))? abs(ax) : ax;
-    ay=(isinf(ay))? abs(ay) : ay;
-    az=(isinf(az))? abs(az) : az;    
-       
-    
-    // get index of first intersection. eq (26) and (19)
-    unsigned long i,j,k;
-    float aminc=fminf(fminf(ax,ay),az);
-    i=(unsigned long)floorf(source.x+ (aminc+am)*0.5f*ray.x);
-    j=(unsigned long)floorf(source.y+ (aminc+am)*0.5f*ray.y);
-    k=(unsigned long)floorf(source.z+ (aminc+am)*0.5f*ray.z);
-    // Initialize
-    float ac=am;
-    //eq (28), unit anlges
-    float axu,ayu,azu;
-    axu=__frcp_rd(fabsf(ray.x));
-    ayu=__frcp_rd(fabsf(ray.y));
-    azu=__frcp_rd(fabsf(ray.z));
+    // Walk the voxels the ray crosses, from where it enters the box (am) to where
+    // it leaves (aM), adding up length x value.
+    //
+    // The first voxel is the one the ray is in just after entering. When the
+    // entry point lies on a voxel boundary of another axis too, the direction
+    // decides the side: moving up, floor(); moving down, ceil()-1. The next
+    // crossing on each axis is then computed from that voxel's own faces, so the
+    // two always agree. Before, the first voxel came from a midpoint and the
+    // first crossings from ceil/floor of the entry point, separately; on such
+    // rays they disagreed, giving a wrong first voxel or the whole ray one voxel
+    // off along an axis. Rare for the whole image, but common when the image is
+    // split in pieces, where many rays enter a piece through its z faces (#859).
+    float pX=source.x+am*ray.x;
+    float pY=source.y+am*ray.y;
+    float pZ=source.z+am*ray.z;
+    long i=(ray.x<0.0f)? (long)ceilf(pX)-1 : (long)floorf(pX);
+    long j=(ray.y<0.0f)? (long)ceilf(pY)-1 : (long)floorf(pY);
+    long k=(ray.z<0.0f)? (long)ceilf(pZ)-1 : (long)floorf(pZ);
+    i=(i<0)? 0 : ((i>(long)geo.nVoxelX-1)? (long)geo.nVoxelX-1 : i);
+    j=(j<0)? 0 : ((j>(long)geo.nVoxelY-1)? (long)geo.nVoxelY-1 : j);
+    k=(k<0)? 0 : ((k>(long)geo.nVoxelZ-1)? (long)geo.nVoxelZ-1 : k);
+
+    // Parameter of the next voxel boundary on each axis (infinite if the ray is
+    // parallel to it), and the step between boundaries, eq (28).
+    float ax=(ray.x>0.0f)? __fdividef((float)(i+1)-source.x,ray.x) : ((ray.x<0.0f)? __fdividef((float)i-source.x,ray.x) : INFINITY);
+    float ay=(ray.y>0.0f)? __fdividef((float)(j+1)-source.y,ray.y) : ((ray.y<0.0f)? __fdividef((float)j-source.y,ray.y) : INFINITY);
+    float az=(ray.z>0.0f)? __fdividef((float)(k+1)-source.z,ray.z) : ((ray.z<0.0f)? __fdividef((float)k-source.z,ray.z) : INFINITY);
+    float axu=__frcp_rd(fabsf(ray.x));
+    float ayu=__frcp_rd(fabsf(ray.y));
+    float azu=__frcp_rd(fabsf(ray.z));
     // eq(29), direction of update
-    float iu,ju,ku;
-    iu=(source.x< pixel1D.x)? 1.0f : -1.0f;
-    ju=(source.y< pixel1D.y)? 1.0f : -1.0f;
-    ku=(source.z< pixel1D.z)? 1.0f : -1.0f;
-    
+    long iu=(ray.x<0.0f)? -1 : 1;
+    long ju=(ray.y<0.0f)? -1 : 1;
+    long ku=(ray.z<0.0f)? -1 : 1;
+
     float maxlength=__fsqrt_rd(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
     float sum=0.0f;
-    unsigned long Np=(imax-imin+1)+(jmax-jmin+1)+(kmax-kmin+1); // Number of intersections
-    // Go iterating over the line, intersection by intersection. If double point, no worries, 0 will be computed
-    i+=0.5f;
-    j+=0.5f;
-    k+=0.5f;
-    for (unsigned long ii=0;ii<Np;ii++){
+    float ac=am;
+    // At most one step per voxel boundary, plus slack: the loop always ends, even
+    // if rounding never quite lets a crossing reach aM.
+    const long maxsteps=(long)geo.nVoxelX+(long)geo.nVoxelY+(long)geo.nVoxelZ+3;
+    for (long step=0; step<maxsteps; step++){
+        float aminc=fminf(fminf(ax,ay),az);
+        sum+=(fminf(aminc,aM)-ac)*tex3D<float>(tex, i+0.5f, j+0.5f, k+0.5f);
+        if (aminc>=aM)
+            break;
         if (ax==aminc){
-            sum+=(ax-ac)*tex3D<float>(tex, i, j, k);
-            i=i+iu;
-            ac=ax;
-            ax+=axu;
+            i+=iu; ac=ax; ax+=axu;
         }else if(ay==aminc){
-            sum+=(ay-ac)*tex3D<float>(tex, i, j, k);
-            j=j+ju;
-            ac=ay;
-            ay+=ayu;
-        }else if(az==aminc){
-            sum+=(az-ac)*tex3D<float>(tex, i, j, k);
-            k=k+ku;
-            ac=az;
-            az+=azu;
+            j+=ju; ac=ay; ay+=ayu;
+        }else{
+            k+=ku; ac=az; az+=azu;
         }
-        aminc=fminf(fminf(ax,ay),az);
     }
     detector[idx]=sum*maxlength;
 }

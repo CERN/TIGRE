@@ -33,6 +33,11 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- Cone-beam Siddon `Ax` got some rays wrong (by up to ~20%) when the image was split in
+  pieces because it did not fit on the GPU: for rays entering a piece exactly on a voxel
+  boundary, the first voxel and the first boundary crossings disagreed. The traversal now
+  derives both from the same voxel. Results without splitting change only at rounding
+  level (#859).
 - `tvdenoise` (Python; `im3DDenoise` in MATLAB, also used by FISTA and other TV algorithms)
   could loop forever when the image did not fit on the GPU and was split: for some amounts of
   free memory it computed a buffer of 0 slices. `minTV`/`AwminTV` stopped with "Assertion
