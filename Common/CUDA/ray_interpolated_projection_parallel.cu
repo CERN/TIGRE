@@ -288,6 +288,10 @@ int interpolation_projection_parallel(float  *  img, Geometry geo, float** resul
         cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*4*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[0]);
         cudaMemcpyToSymbolAsync(projFloatsArrayDev, projFloatsArrayHost, sizeof(float)*2*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[0]);
         cudaStreamSynchronize(stream[0]);
+        // The kernel below overwrites the buffer whose copy-out (of batch i-2) went on
+        // stream[1]: make sure it has finished. Today that copy is to pageable host
+        // memory and done when cudaMemcpyAsync returns, but nothing guarantees it (#860).
+        cudaStreamSynchronize(stream[1]);
         
         kernelPixelDetector_parallel_interpolated<<<numBlocks,threadsPerBlock,0,stream[0]>>>(geo,dProjection[(int)i%2==0],i,nangles,texImg[0]);
         // copy result to host
