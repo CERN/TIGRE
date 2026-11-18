@@ -119,20 +119,20 @@ do { \
         if (z >= depth || y >= rows || x >= cols)
             return;
         unsigned long size2d = rows*cols;
-        unsigned long long idx = z * size2d + y * cols + x;
+        size_t idx = (size_t)z * size2d + y * cols + x;
 
         float uidx = u[idx];
 
         if ( z - 1 >= 0 && z<depth) {
-            grad[0] = (uidx-u[(z-1)*size2d + y*cols + x]) ;
+            grad[0] = (uidx-u[(size_t)(z-1)*size2d + y*cols + x]) ;
         }
         
         if ( y - 1 >= 0 && y<rows){
-            grad[1] = (uidx-u[z*size2d + (y-1)*cols + x]) ;
+            grad[1] = (uidx-u[(size_t)z*size2d + (y-1)*cols + x]) ;
         }
         
         if ( x - 1 >= 0 && x<cols) {
-            grad[2] = (uidx-u[z*size2d + y*cols + (x-1)]);
+            grad[2] = (uidx-u[(size_t)z*size2d + y*cols + (x-1)]);
         }
     }
     
@@ -141,7 +141,7 @@ do { \
         unsigned long x = threadIdx.x + blockIdx.x * blockDim.x;
         unsigned long y = threadIdx.y + blockIdx.y * blockDim.y;
         unsigned long z = threadIdx.z + blockIdx.z * blockDim.z;
-        unsigned long long idx = z * rows * cols + y * cols + x;
+        size_t idx = (size_t)z * (rows * cols) + y * cols + x;
         if ( x >= cols || y >= rows || z >= depth )
             return;
         
@@ -174,7 +174,7 @@ do { \
         extern __shared__ volatile float sdata[];
         //http://stackoverflow.com/a/35133396/1485872
         size_t tid = threadIdx.x;
-        size_t i = blockIdx.x*blockDim.x + tid;
+        size_t i = (size_t)blockIdx.x*blockDim.x + tid;
         size_t gridSize = blockDim.x*gridDim.x;
         float mySum = 0;
         float value=0;
@@ -222,7 +222,7 @@ do { \
         extern __shared__ volatile float sdata[];
         //http://stackoverflow.com/a/35133396/1485872
         size_t tid = threadIdx.x;
-        size_t i = blockIdx.x*blockDim.x + tid;
+        size_t i = (size_t)blockIdx.x*blockDim.x + tid;
         size_t gridSize = blockDim.x*gridDim.x;
         float mySum = 0;
        // float value=0;
@@ -283,7 +283,7 @@ bool isnan_cuda(float* vec, size_t size){
      
         
     
-        size_t total_pixels = image_size[0] * image_size[1]  * image_size[2] ;
+        size_t total_pixels = (size_t)image_size[0]*image_size[1]  * image_size[2] ;
         size_t mem_size = sizeof(float) * total_pixels;
         
         float *d_image=NULL,*d_prior=NULL,*d_dpiccsTV=NULL, *d_dimgTV=NULL,*d_aux_small=NULL,*d_aux_image=NULL, *d_norm2=NULL;

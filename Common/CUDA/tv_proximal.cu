@@ -85,23 +85,23 @@ void cpy_from_host(float* device_array,float* host_array,
             float dz, float dy, float dx)
     {
         long size2d = rows*cols;
-        long idx = z * size2d + y * cols + x;
+        size_t idx = (size_t)z * size2d + y * cols + x;
         float _div = 0.0f;
         
         if ( z - 1 >= 0 ) {
-            _div += (pz[idx] - pz[(z-1)*size2d + y*cols + x]) / dz;
+            _div += (pz[idx] - pz[(size_t)(z-1)*size2d + y*cols + x]) / dz;
         } else {
             _div += pz[idx];
         }
         
         if ( y - 1 >= 0 ) {
-            _div += (py[idx] - py[z*size2d + (y-1)*cols + x]) / dy;
+            _div += (py[idx] - py[(size_t)z*size2d + (y-1)*cols + x]) / dy;
         } else {
             _div += py[idx];
         }
         
         if ( x - 1 >= 0 ) {
-            _div += (px[idx] - px[z*size2d + y*cols + (x-1)]) / dx;
+            _div += (px[idx] - px[(size_t)z*size2d + y*cols + (x-1)]) / dx;
         } else {
             _div += px[idx];
         }
@@ -116,20 +116,20 @@ void cpy_from_host(float* device_array,float* host_array,
             float dz, float dy, float dx)
     {
         long size2d = rows*cols;
-        long idx = z * size2d + y * cols + x;
+        size_t idx = (size_t)z * size2d + y * cols + x;
         
         float uidx = u[idx];
         
         if ( z + 1 < depth ) {
-            grad[0] = (u[(z+1)*size2d + y*cols + x] - uidx) / dz;
+            grad[0] = (u[(size_t)(z+1)*size2d + y*cols + x] - uidx) / dz;
         }
         
         if ( y + 1 < rows ) {
-            grad[1] = (u[z*size2d + (y+1)*cols + x] - uidx) / dy;
+            grad[1] = (u[(size_t)z*size2d + (y+1)*cols + x] - uidx) / dy;
         }
         
         if ( x + 1 < cols ) {
-            grad[2] = (u[z*size2d + y*cols + (x+1)] - uidx) / dx;
+            grad[2] = (u[(size_t)z*size2d + y*cols + (x+1)] - uidx) / dx;
         }
     }
     
@@ -143,7 +143,7 @@ void cpy_from_host(float* device_array,float* host_array,
         long x = threadIdx.x + blockIdx.x * blockDim.x;
         long y = threadIdx.y + blockIdx.y * blockDim.y;
         long z = threadIdx.z + blockIdx.z * blockDim.z;
-        long idx = z * rows * cols + y * cols + x;
+        size_t idx = (size_t)z * (rows * cols) + y * cols + x;
         
         if ( x >= cols || y >= rows || z >= depth )
             return;
@@ -162,7 +162,7 @@ void cpy_from_host(float* device_array,float* host_array,
         long x = threadIdx.x + blockIdx.x * blockDim.x;
         long y = threadIdx.y + blockIdx.y * blockDim.y;
         long z = threadIdx.z + blockIdx.z * blockDim.z;
-        long idx = z * rows * cols + y * cols + x;
+        size_t idx = (size_t)z * (rows * cols) + y * cols + x;
         
         if ( x >= cols || y >= rows || z >= depth )
             return;
@@ -217,8 +217,8 @@ void cpy_from_host(float* device_array,float* host_array,
         
         
         // %5 of free memory should be enough, we have almost no variables in these kernels
-       size_t total_pixels           = image_size[0] * image_size[1] * image_size[2] ;
-       const size_t pixels_per_slice = image_size[0] * image_size[1] ;
+       size_t total_pixels           = (size_t)image_size[0]*image_size[1] * image_size[2] ;
+       const size_t pixels_per_slice = (size_t)image_size[0]*image_size[1] ;
        const size_t mem_slice_image  = sizeof(float)* pixels_per_slice  ;
        const size_t mem_size_image   = sizeof(float)* total_pixels;
         
@@ -313,15 +313,15 @@ void cpy_from_host(float* device_array,float* host_array,
             if (buffer_length<maxIter){ // if we do only 1 big iter, they are not needed.
                 mexWarnMsgIdAndTxt("tvDenoise:tvdenoising:Memory","TV denoising requires 5 times the image memory. Your GPU(s) do not have the required memory.\n This memory will be attempted to allocate on the CPU, which may fail or slow the computation by a very significant amount.\n If you want to kill the execution: CTRL+C");
                 
-                cudaMallocHost((void**)&h_px,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+                cudaMallocHost((void**)&h_px,(size_t)image_size[0]*image_size[1]*image_size[2]*sizeof(float));
                 onError.add([h_px]{ cudaFreeHost(h_px); });
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
                 
-                cudaMallocHost((void**)&h_py,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+                cudaMallocHost((void**)&h_py,(size_t)image_size[0]*image_size[1]*image_size[2]*sizeof(float));
                 onError.add([h_py]{ cudaFreeHost(h_py); });
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
                 
-                cudaMallocHost((void**)&h_pz,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+                cudaMallocHost((void**)&h_pz,(size_t)image_size[0]*image_size[1]*image_size[2]*sizeof(float));
                 onError.add([h_pz]{ cudaFreeHost(h_pz); });
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
             }

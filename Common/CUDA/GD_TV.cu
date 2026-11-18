@@ -97,20 +97,20 @@ do { \
             long z, long y, long x,
             long depth, long rows, long cols){
         unsigned long size2d = rows*cols;
-        unsigned long long idx = z * size2d + y * cols + x;
+        size_t idx = (size_t)z * size2d + y * cols + x;
         
         float uidx = u[idx];
         
         if ( z - 1 >= 0 && z<depth) {
-            grad[0] = (uidx-u[(z-1)*size2d + y*cols + x]) ;
+            grad[0] = (uidx-u[(size_t)(z-1)*size2d + y*cols + x]) ;
         }
         
         if ( y - 1 >= 0 && y<rows){
-            grad[1] = (uidx-u[z*size2d + (y-1)*cols + x]) ;
+            grad[1] = (uidx-u[(size_t)z*size2d + (y-1)*cols + x]) ;
         }
         
         if ( x - 1 >= 0 && x<cols) {
-            grad[2] = (uidx-u[z*size2d + y*cols + (x-1)]);
+            grad[2] = (uidx-u[(size_t)z*size2d + y*cols + (x-1)]);
         }
     }
     
@@ -119,7 +119,7 @@ do { \
         unsigned long x = threadIdx.x + blockIdx.x * blockDim.x;
         unsigned long y = threadIdx.y + blockIdx.y * blockDim.y;
         unsigned long z = threadIdx.z + blockIdx.z * blockDim.z;
-        unsigned long long idx = z * rows * cols + y * cols + x;
+        size_t idx = (size_t)z * (rows * cols) + y * cols + x;
         if ( x >= cols || y >= rows || z >= depth )
             return;
         
@@ -155,7 +155,7 @@ do { \
         extern __shared__ volatile float sdata[];
         //http://stackoverflow.com/a/35133396/1485872
         size_t tid = threadIdx.x;
-        size_t i = blockIdx.x*blockDim.x + tid;
+        size_t i = (size_t)blockIdx.x*blockDim.x + tid;
         size_t gridSize = blockDim.x*gridDim.x;
         float mySum = 0;
         float value=0;
@@ -204,7 +204,7 @@ do { \
         extern __shared__ volatile float sdata[];
         //http://stackoverflow.com/a/35133396/1485872
         size_t tid = threadIdx.x;
-        size_t i = blockIdx.x*blockDim.x + tid;
+        size_t i = (size_t)blockIdx.x*blockDim.x + tid;
         size_t gridSize = blockDim.x*gridDim.x;
         float mySum = 0;
         // float value=0;
@@ -291,8 +291,8 @@ do { \
         
         
         // %5 of free memory should be enough, we have almost no variables in these kernels
-        size_t total_pixels              = image_size[0] * image_size[1]  * image_size[2] ;
-        size_t mem_slice_image           = sizeof(float)* image_size[0] * image_size[1]  ;
+        size_t total_pixels              = (size_t)image_size[0]*image_size[1]  * image_size[2] ;
+        size_t mem_slice_image           = sizeof(float)* (size_t)image_size[0]*image_size[1]  ;
         size_t mem_size_image            = sizeof(float)* total_pixels;
         size_t mem_auxiliary             = sizeof(float)* (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
         
@@ -363,7 +363,7 @@ do { \
         
          // Assert
        
-        if ((slices_per_split+buffer_length*2)*image_size[0]*image_size[1]* sizeof(float)!= mem_img_each_GPU){
+        if ((slices_per_split+buffer_length*2)*(size_t)image_size[0]*image_size[1]* sizeof(float)!= mem_img_each_GPU){
             mexErrMsgIdAndTxt("GD_TV:GPU","Assertion Failed. Memory needed calculation broken! Please tell: ander.biguri@gmail.com\n");
         }
         
@@ -400,7 +400,7 @@ do { \
             
             
         }
-       unsigned long long buffer_pixels=buffer_length*image_size[0]*image_size[1];
+       unsigned long long buffer_pixels=buffer_length*(size_t)image_size[0]*image_size[1];
         // Halo exchange e=2*dev copies the last slices of dev to dev+1, e=2*dev+1 the first slices of dev+1 to dev.
         // Neighbours with peer access (peer_access[dev]) copy directly; the others go through their own part of
         // the pinned buffer, so all of them can run at once.
@@ -494,8 +494,8 @@ do { \
                 // Copy image to memory
                 for (dev = 0; dev < deviceCount; dev++){
                     curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                    curr_pixels=curr_slices*image_size[0]*image_size[1];
-                    linear_idx_start=image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
+                    curr_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
+                    linear_idx_start=(size_t)image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
                     
                     // Check if its the first or last chunck
                     is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
@@ -559,7 +559,7 @@ do { \
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         // no need to copy the 2 aux slices here
                         cudaStreamSynchronize(stream[dev*nStream_device]);
-                        cudaMemcpyAsync(d_norm2[dev], d_dimgTV[dev]+buffer_pixels, image_size[0]*image_size[1]*curr_slices*sizeof(float), cudaMemcpyDeviceToDevice,stream[dev*nStream_device+1]);
+                        cudaMemcpyAsync(d_norm2[dev], d_dimgTV[dev]+buffer_pixels, (size_t)image_size[0]*image_size[1]*curr_slices*sizeof(float), cudaMemcpyDeviceToDevice,stream[dev*nStream_device+1]);
                     }
                     
                     
@@ -568,7 +568,7 @@ do { \
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
                         
                         size_t dimblockRed = MAXTHREADS;
                         size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
@@ -580,7 +580,7 @@ do { \
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
                         size_t dimblockRed = MAXTHREADS;
                         size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
 
@@ -621,7 +621,7 @@ do { \
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
                         //NORMALIZE
                         //in a Tesla, maximum blocks =15 SM * 4 blocks/SM
                         divideArrayScalar  <<<60,MAXTHREADS,0,stream[dev*nStream_device]>>>(d_dimgTV[dev]+buffer_pixels,(float)sqrt(totalsum),total_pixels);
@@ -639,7 +639,7 @@ do { \
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
                         
                         substractArrays<<<60,MAXTHREADS,0,stream[dev*nStream_device]>>>(d_image[dev]+buffer_pixels,d_dimgTV[dev]+buffer_pixels, total_pixels);
                     }
@@ -658,7 +658,7 @@ do { \
                         if (peer_access[dev]) continue;
                         int to_next=2*dev, to_prev=2*dev+1;
                         cudaSetDevice(gpuids[dev]);
-                        cudaMemcpyAsync(buffer+to_next*buffer_pixels, d_image[dev]+(size_t)slices_per_split*image_size[0]*image_size[1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
+                        cudaMemcpyAsync(buffer+to_next*buffer_pixels, d_image[dev]+(size_t)slices_per_split*(size_t)image_size[0]*image_size[1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
                         cudaEventRecord(exchange_event[to_next],stream[dev*nStream_device+1]);
                         cudaSetDevice(gpuids[dev+1]);
                         cudaMemcpyAsync(buffer+to_prev*buffer_pixels, d_image[dev+1]+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device]);
@@ -667,10 +667,10 @@ do { \
                     for(dev=0; dev<deviceCount-1;dev++){
                         int to_next=2*dev, to_prev=2*dev+1;
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
                         if (peer_access[dev]){
                             cudaSetDevice(gpuids[dev]);
-                            cudaMemcpyPeerAsync(d_image[dev+1], gpuids[dev+1], d_image[dev]+(size_t)slices_per_split*image_size[0]*image_size[1], gpuids[dev], buffer_pixels*sizeof(float), stream[dev*nStream_device+1]);
+                            cudaMemcpyPeerAsync(d_image[dev+1], gpuids[dev+1], d_image[dev]+(size_t)slices_per_split*(size_t)image_size[0]*image_size[1], gpuids[dev], buffer_pixels*sizeof(float), stream[dev*nStream_device+1]);
                             cudaSetDevice(gpuids[dev+1]);
                             cudaMemcpyPeerAsync(d_image[dev]+total_pixels+buffer_pixels, gpuids[dev], d_image[dev+1]+buffer_pixels, gpuids[dev+1], buffer_pixels*sizeof(float), stream[(dev+1)*nStream_device]);
                             continue;
@@ -689,8 +689,8 @@ do { \
                         cudaSetDevice(gpuids[dev]);
                         
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                        linear_idx_start=image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
-                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        linear_idx_start=(size_t)image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
+                        total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
                         cudaMemcpyAsync(&dst[linear_idx_start], d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
                     }
                 }
@@ -711,8 +711,8 @@ do { \
                 cudaSetDevice(gpuids[dev]);
                 
                 curr_slices=((dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*dev;
-                total_pixels=curr_slices*image_size[0]*image_size[1];
-                cudaMemcpy(dst+slices_per_split*image_size[0]*image_size[1]*dev, d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
+                total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
+                cudaMemcpy(dst+slices_per_split*(size_t)image_size[0]*image_size[1]*dev, d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
             }
         }
         cudaCheckErrors("Copy result back");

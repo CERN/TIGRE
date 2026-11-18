@@ -204,7 +204,7 @@ int interpolation_projection_parallel(float  *  img, Geometry geo, float** resul
     
     
     
-    size_t num_bytes = geo.nDetecU*geo.nDetecV *PROJ_PER_BLOCK* sizeof(float);
+    size_t num_bytes = (size_t)geo.nDetecU*geo.nDetecV *PROJ_PER_BLOCK* sizeof(float);
     float** dProjection=(float **)malloc(2*sizeof(float *));
     dProjection[0] = 0; dProjection[1] = 0;
     // If a CUDA error raises (Python build) before the end of this function,
@@ -301,7 +301,7 @@ int interpolation_projection_parallel(float  *  img, Geometry geo, float** resul
     cudaDeviceSynchronize();
     
     int lastangles=nangles-(i-1)*PROJ_PER_BLOCK;
-    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK],dProjection[(int)(i-1)%2==0], lastangles*geo.nDetecV*geo.nDetecU*sizeof(float), kindOut,stream[copyStream]);
+    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK],dProjection[(int)(i-1)%2==0], (size_t)lastangles*geo.nDetecV*geo.nDetecU*sizeof(float), kindOut,stream[copyStream]);
 
     
     if (gpuData) cudaDeviceSynchronize();  // the caller reads the result as soon as we return

@@ -70,6 +70,13 @@ thank you.
   leak their small list of GPU ids on every call.
 - `load_head_phantom` could not find `head.mat` after `pip install .` on Linux or after
   `pip install --user`: pip puts the file in `<prefix>/data`, which was not searched (#850).
+- Large problems: several sizes were computed with 32-bit integers and wrapped around. Matched
+  `Atb` failed or left part of the image unscaled above 2^31 voxels on one GPU (e.g. 1300³);
+  parallel-beam `Atb` could not allocate an image above 2^31 voxels. On Windows, where `long`
+  is 32-bit: Python `Ax` allocated too small a buffer once the projections reached 16 GiB
+  (e.g. 2048² x 1024 angles) and wrote past its end; `minTV`, `AwminTV`, `tvdenoise` and
+  `minPICCS` got their sizes and offsets wrong above 2^31 voxels. Above ~15,400² detector pixels,
+  `Ax` copy sizes overflowed too. All now use 64-bit sizes.
 
 ## 3.2.0 (2026-11-11)
 

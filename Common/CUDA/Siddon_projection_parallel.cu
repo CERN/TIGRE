@@ -519,7 +519,7 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
     cudaDeviceSynchronize();
     
     int lastangles=nangles-(i-1)*PROJ_PER_BLOCK;
-    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK],dProjection[(int)(i-1)%2==0], lastangles*geo.nDetecV*geo.nDetecU*sizeof(float), kindOut,stream[copyStream]);
+    cudaMemcpyAsync(result[(i-1)*PROJ_PER_BLOCK],dProjection[(int)(i-1)%2==0], (size_t)lastangles*geo.nDetecV*geo.nDetecU*sizeof(float), kindOut,stream[copyStream]);
 
     
 
