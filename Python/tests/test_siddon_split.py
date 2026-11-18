@@ -8,8 +8,8 @@ crossings disagreed. That is rare for the whole image but common for pieces.
 
 Here the GPU is filled (with plain CUDA memory, no PyTorch needed) so TIGRE
 must split a 512^3 image, and the result is compared with the unsplit one. The
-pieces add up in a different order, so they agree up to rounding, not bit for
-bit.
+pieces add up in a different order, so they agree up to rounding (~1e-5), not
+bit for bit.
 """
 import ctypes
 import os
@@ -51,6 +51,25 @@ def free_bytes():
     return free.value
 
 
+def fill_gpu(leave, tolerance=8 * 2**20):
+    """cudaMalloc so that about `leave` bytes stay free; returns the pointer.
+
+    Measures what is free after allocating and corrects the size: on Windows,
+    with other programs drawing on the GPU, the free memory reported before
+    allocating can be off by a lot."""
+    size = free_bytes() - leave
+    for _ in range(4):
+        ptr = ctypes.c_void_p()
+        if size <= 0 or CUDART.cudaMalloc(ctypes.byref(ptr), size) != 0:
+            break
+        now = free_bytes()
+        if abs(now - leave) <= tolerance:
+            return ptr
+        CUDART.cudaFree(ptr)
+        size += now - leave
+    pytest.skip("could not leave {} MB free on the GPU (other programs using it?)".format(leave >> 20))
+
+
 @pytest.mark.skipif(CUDART is None, reason="CUDA runtime not loadable via ctypes")
 def test_siddon_split_matches_unsplit():
     n = 512
@@ -69,15 +88,18 @@ def test_siddon_split_matches_unsplit():
         pytest.skip("not enough free GPU memory for this test")
 
     whole = tigre.Ax(img, geo, angles, "Siddon", gpuids=one_gpu)
-    ptr = ctypes.c_void_p()
-    if CUDART.cudaMalloc(ctypes.byref(ptr), free_bytes() - leave) != 0:
-        pytest.skip("could not fill the GPU")
+    ptr = fill_gpu(leave)
     try:
         split = tigre.Ax(img, geo, angles, "Siddon", gpuids=one_gpu)
+    except RuntimeError as e:
+        if "out of memory" in str(e) and free_bytes() < leave - 16 * 2**20:
+            pytest.skip("another program took GPU memory during the test")
+        raise
     finally:
         CUDART.cudaFree(ptr)
 
     diff = np.abs(split - whole) / np.abs(whole).max()
-    # Before the fix: up to ~0.2. Now rounding: float32 sums along ~1000 voxels.
-    assert diff.max() < 1e-3, "max {:.2e} at (angle, v, u) = {}, {:.2%} of pixels above 1e-3".format(
-        diff.max(), np.unravel_index(diff.argmax(), diff.shape), (diff > 1e-3).mean())
+    # Before the fix: up to ~0.2. The pieces add up in a different order, and
+    # each ray's sum is accurate to ~1e-5 (float32 emulation: ~3e-6).
+    assert diff.max() < 1e-4, "max {:.2e} at (angle, v, u) = {}, {:.2%} of pixels above 1e-4".format(
+        diff.max(), np.unravel_index(diff.argmax(), diff.shape), (diff > 1e-4).mean())

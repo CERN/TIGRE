@@ -210,43 +210,55 @@ __global__ void kernelPixelDetector( Geometry geo,
     float pX=source.x+am*ray.x;
     float pY=source.y+am*ray.y;
     float pZ=source.z+am*ray.z;
-    long i=(ray.x<0.0f)? (long)ceilf(pX)-1 : (long)floorf(pX);
-    long j=(ray.y<0.0f)? (long)ceilf(pY)-1 : (long)floorf(pY);
-    long k=(ray.z<0.0f)? (long)ceilf(pZ)-1 : (long)floorf(pZ);
-    i=(i<0)? 0 : ((i>(long)geo.nVoxelX-1)? (long)geo.nVoxelX-1 : i);
-    j=(j<0)? 0 : ((j>(long)geo.nVoxelY-1)? (long)geo.nVoxelY-1 : j);
-    k=(k<0)? 0 : ((k>(long)geo.nVoxelZ-1)? (long)geo.nVoxelZ-1 : k);
+    // (int: 32-bit indices convert to float faster than 64-bit ones.)
+    int i=(ray.x<0.0f)? (int)ceilf(pX)-1 : (int)floorf(pX);
+    int j=(ray.y<0.0f)? (int)ceilf(pY)-1 : (int)floorf(pY);
+    int k=(ray.z<0.0f)? (int)ceilf(pZ)-1 : (int)floorf(pZ);
+    i=(i<0)? 0 : ((i>(int)geo.nVoxelX-1)? (int)geo.nVoxelX-1 : i);
+    j=(j<0)? 0 : ((j>(int)geo.nVoxelY-1)? (int)geo.nVoxelY-1 : j);
+    k=(k<0)? 0 : ((k>(int)geo.nVoxelZ-1)? (int)geo.nVoxelZ-1 : k);
 
     // Parameter of the next voxel boundary on each axis (infinite if the ray is
-    // parallel to it), and the step between boundaries, eq (28).
-    float ax=(ray.x>0.0f)? __fdividef((float)(i+1)-source.x,ray.x) : ((ray.x<0.0f)? __fdividef((float)i-source.x,ray.x) : INFINITY);
-    float ay=(ray.y>0.0f)? __fdividef((float)(j+1)-source.y,ray.y) : ((ray.y<0.0f)? __fdividef((float)j-source.y,ray.y) : INFINITY);
-    float az=(ray.z>0.0f)? __fdividef((float)(k+1)-source.z,ray.z) : ((ray.z<0.0f)? __fdividef((float)k-source.z,ray.z) : INFINITY);
-    float axu=__frcp_rd(fabsf(ray.x));
-    float ayu=__frcp_rd(fabsf(ray.y));
-    float azu=__frcp_rd(fabsf(ray.z));
-    // eq(29), direction of update
-    long iu=(ray.x<0.0f)? -1 : 1;
-    long ju=(ray.y<0.0f)? -1 : 1;
-    long ku=(ray.z<0.0f)? -1 : 1;
+    // parallel to it). The boundary at coordinate b is at b*rX+oX. Each one is
+    // computed from the voxel index, not by adding a step to the previous one
+    // (eq 28): in float32 those additions drift over the ~1000 boundaries of a
+    // large image (errors of 2e-4 typical, 2e-3 at worst, at 512^3); this way
+    // the error stays ~3e-6. Same cost: one fused multiply-add per step.
+    float rX=(ray.x!=0.0f)? 1.0f/ray.x : 0.0f;
+    float rY=(ray.y!=0.0f)? 1.0f/ray.y : 0.0f;
+    float rZ=(ray.z!=0.0f)? 1.0f/ray.z : 0.0f;
+    float oX=-source.x*rX;
+    float oY=-source.y*rY;
+    float oZ=-source.z*rZ;
+    // eq(29), direction of update; the boundary ahead is the voxel's upper face
+    // when moving up (index+1), its lower face when moving down (index).
+    int iu=(ray.x<0.0f)? -1 : 1;
+    int ju=(ray.y<0.0f)? -1 : 1;
+    int ku=(ray.z<0.0f)? -1 : 1;
+    int ib=(iu>0)? 1 : 0;
+    int jb=(ju>0)? 1 : 0;
+    int kb=(ku>0)? 1 : 0;
+    float ax=(ray.x!=0.0f)? fmaf((float)(i+ib),rX,oX) : INFINITY;
+    float ay=(ray.y!=0.0f)? fmaf((float)(j+jb),rY,oY) : INFINITY;
+    float az=(ray.z!=0.0f)? fmaf((float)(k+kb),rZ,oZ) : INFINITY;
 
     float maxlength=__fsqrt_rd(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
     float sum=0.0f;
     float ac=am;
     // At most one step per voxel boundary, plus slack: the loop always ends, even
     // if rounding never quite lets a crossing reach aM.
-    const long maxsteps=(long)geo.nVoxelX+(long)geo.nVoxelY+(long)geo.nVoxelZ+3;
-    for (long step=0; step<maxsteps; step++){
+    const int maxsteps=(int)geo.nVoxelX+(int)geo.nVoxelY+(int)geo.nVoxelZ+3;
+    for (int step=0; step<maxsteps; step++){
         float aminc=fminf(fminf(ax,ay),az);
         sum+=(fminf(aminc,aM)-ac)*tex3D<float>(tex, i+0.5f, j+0.5f, k+0.5f);
         if (aminc>=aM)
             break;
         if (ax==aminc){
-            i+=iu; ac=ax; ax+=axu;
+            i+=iu; ac=ax; ax=fmaf((float)(i+ib),rX,oX);
         }else if(ay==aminc){
-            j+=ju; ac=ay; ay+=ayu;
+            j+=ju; ac=ay; ay=fmaf((float)(j+jb),rY,oY);
         }else{
-            k+=ku; ac=az; az+=azu;
+            k+=ku; ac=az; az=fmaf((float)(k+kb),rZ,oZ);
         }
     }
     detector[idx]=sum*maxlength;

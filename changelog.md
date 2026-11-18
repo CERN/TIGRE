@@ -36,8 +36,11 @@ thank you.
 - Cone-beam Siddon `Ax` got some rays wrong (by up to ~20%) when the image was split in
   pieces because it did not fit on the GPU: for rays entering a piece exactly on a voxel
   boundary, the first voxel and the first boundary crossings disagreed. The traversal now
-  derives both from the same voxel. Results without splitting change only at rounding
-  level (#859).
+  derives both from the same voxel (#859).
+- Cone-beam Siddon `Ax` is more accurate, at the same speed: it added up the step between
+  voxel boundaries in single precision, which drifted by up to ~2e-3 (relative) along rays
+  through a 512³ image. It now computes each boundary from the voxel index, with an error
+  of ~1e-5. Siddon projections change by up to that drift, towards the exact value (#859).
 - `tvdenoise` (Python; `im3DDenoise` in MATLAB, also used by FISTA and other TV algorithms)
   could loop forever when the image did not fit on the GPU and was split: for some amounts of
   free memory it computed a buffer of 0 slices. `minTV`/`AwminTV` stopped with "Assertion

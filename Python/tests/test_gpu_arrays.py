@@ -24,6 +24,7 @@ NumPy input, the other half of the table, is covered by the existing tests
 (test_projectors_gpu.py, test_cuda_errors.py, test_texture_object_leak.py):
 that path is unchanged.
 """
+import contextlib
 import subprocess
 import sys
 import warnings
@@ -72,22 +73,61 @@ def on_one_gpu(device=0):
     return GpuIds._from_devices([device])
 
 
-def leave_free(nbytes):
-    """Allocate a PyTorch tensor so that about nbytes of the GPU stay free."""
+def leave_free(nbytes, tolerance=8 * 2**20):
+    """Allocate a PyTorch tensor so that about nbytes of the GPU stay free.
+
+    It measures what is free after allocating and corrects the size: on Windows,
+    with other programs drawing on the GPU, the free memory reported before
+    allocating can be off by a lot."""
     torch.cuda.synchronize()
     torch.cuda.empty_cache()
     free, _ = torch.cuda.mem_get_info()
     if free <= nbytes + 64 * 2**20:
         pytest.skip("not enough free GPU memory for this test")
-    try:
-        return torch.empty(free - nbytes, dtype=torch.uint8, device="cuda")
-    except RuntimeError:
-        pytest.skip("could not fill the GPU")
+    size = free - nbytes
+    for _ in range(4):
+        try:
+            ballast = torch.empty(size, dtype=torch.uint8, device="cuda")
+        except RuntimeError:
+            pytest.skip("could not fill the GPU")
+        torch.cuda.synchronize()
+        now = torch.cuda.mem_get_info()[0]
+        if abs(now - nbytes) <= tolerance:
+            return ballast
+        del ballast
+        torch.cuda.empty_cache()
+        size += now - nbytes
+        if size <= 0:
+            break
+    pytest.skip("could not leave {} MB free: {} MB free after filling (other programs using "
+                "the GPU?)".format(nbytes >> 20, now >> 20))
 
 
 def give_back_cache():
     torch.cuda.synchronize()
     torch.cuda.empty_cache()
+
+
+@contextlib.contextmanager
+def only_free(nbytes):
+    """Run the body with only about nbytes of the GPU free (see leave_free).
+
+    If the body runs out of memory because another program took GPU memory in
+    the meantime, the test is skipped rather than failed."""
+    ballast = leave_free(nbytes)
+    try:
+        yield
+    except RuntimeError as e:
+        if "out of memory" in str(e):
+            torch.cuda.synchronize()
+            now = torch.cuda.mem_get_info()[0]
+            if now < nbytes - 16 * 2**20:
+                pytest.skip("another program took GPU memory during the test: {} MB free, {} MB "
+                            "expected".format(now >> 20, nbytes >> 20))
+        raise
+    finally:
+        del ballast
+        give_back_cache()
 
 
 @pytest.fixture(autouse=True)
@@ -435,18 +475,11 @@ def test_image_split_when_the_gpu_is_nearly_full(op, kind):
         pytest.skip("not enough free GPU memory for this test")
     x = to_gpu(data, "torch")
 
-    ballast = leave_free(free_bytes)
-    try:
+    with only_free(free_bytes):
         expected = run(data, geo, angles, kind, gpuids=on_one_gpu())
-    finally:
-        del ballast
-        give_back_cache()
-    ballast = leave_free(free_bytes + out_bytes)  # the output is allocated first
-    try:
-        result = run(x, geo, angles, kind).cpu()
-    finally:
-        del ballast
-        give_back_cache()
+    with only_free(free_bytes + out_bytes):  # the output is allocated first
+        result = run(x, geo, angles, kind)
+    result = result.cpu()
     np.testing.assert_array_equal(result.numpy(), expected)
     if op == "Atb":
         # Atb pieces are independent slabs of the image: splitting must not
