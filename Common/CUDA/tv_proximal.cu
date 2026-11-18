@@ -80,27 +80,27 @@ void cpy_from_host(float* device_array,float* host_array,
 
     __device__ __inline__
             float divergence(const float* pz, const float* py, const float* px,
-            long long z, long long y, long long x, long long depth, long long rows, long long cols,
+            long z, long y, long x, long depth, long rows, long cols,
             float dz, float dy, float dx)
     {
-        long long size2d = rows*cols;
-        long long idx = z * size2d + y * cols + x;
+        long size2d = rows*cols;
+        size_t idx = (size_t)z * size2d + y * cols + x;
         float _div = 0.0f;
         
         if ( z - 1 >= 0 ) {
-            _div += (pz[idx] - pz[(z-1)*size2d + y*cols + x]) / dz;
+            _div += (pz[idx] - pz[(size_t)(z-1)*size2d + y*cols + x]) / dz;
         } else {
             _div += pz[idx];
         }
         
         if ( y - 1 >= 0 ) {
-            _div += (py[idx] - py[z*size2d + (y-1)*cols + x]) / dy;
+            _div += (py[idx] - py[(size_t)z*size2d + (y-1)*cols + x]) / dy;
         } else {
             _div += py[idx];
         }
         
         if ( x - 1 >= 0 ) {
-            _div += (px[idx] - px[z*size2d + y*cols + (x-1)]) / dx;
+            _div += (px[idx] - px[(size_t)z*size2d + y*cols + (x-1)]) / dx;
         } else {
             _div += px[idx];
         }
@@ -110,25 +110,25 @@ void cpy_from_host(float* device_array,float* host_array,
     
     __device__ __inline__
             void gradient(const float* u, float* grad,
-            long long z, long long y, long long x,
-            long long depth, long long rows, long long cols,
+            long z, long y, long x,
+            long depth, long rows, long cols,
             float dz, float dy, float dx)
     {
-        long long size2d = rows*cols;
-        long long idx = z * size2d + y * cols + x;
+        long size2d = rows*cols;
+        size_t idx = (size_t)z * size2d + y * cols + x;
         
         float uidx = u[idx];
         
         if ( z + 1 < depth ) {
-            grad[0] = (u[(z+1)*size2d + y*cols + x] - uidx) / dz;
+            grad[0] = (u[(size_t)(z+1)*size2d + y*cols + x] - uidx) / dz;
         }
         
         if ( y + 1 < rows ) {
-            grad[1] = (u[z*size2d + (y+1)*cols + x] - uidx) / dy;
+            grad[1] = (u[(size_t)z*size2d + (y+1)*cols + x] - uidx) / dy;
         }
         
         if ( x + 1 < cols ) {
-            grad[2] = (u[z*size2d + y*cols + (x+1)] - uidx) / dx;
+            grad[2] = (u[(size_t)z*size2d + y*cols + (x+1)] - uidx) / dx;
         }
     }
     
@@ -136,13 +136,13 @@ void cpy_from_host(float* device_array,float* host_array,
     __global__
             void update_u(const float* f, const float* pz, const float* py, const float* px, float* u,
             float tau, float lambda,
-            long long depth, long long rows, long long cols,
+            long depth, long rows, long cols,
             float dz, float dy, float dx)
     {
-        long long x = threadIdx.x + blockIdx.x * blockDim.x;
-        long long y = threadIdx.y + blockIdx.y * blockDim.y;
-        long long z = threadIdx.z + blockIdx.z * blockDim.z;
-        long long idx = z * rows * cols + y * cols + x;
+        long x = threadIdx.x + blockIdx.x * blockDim.x;
+        long y = threadIdx.y + blockIdx.y * blockDim.y;
+        long z = threadIdx.z + blockIdx.z * blockDim.z;
+        size_t idx = (size_t)z * (rows * cols) + y * cols + x;
         
         if ( x >= cols || y >= rows || z >= depth )
             return;
@@ -155,13 +155,13 @@ void cpy_from_host(float* device_array,float* host_array,
     
     __global__
             void update_p(const float* u, float* pz, float* py, float* px,
-            float tau, long long depth, long long rows, long long cols,
+            float tau, long depth, long rows, long cols,
             float dz, float dy, float dx)
     {
-        long long x = threadIdx.x + blockIdx.x * blockDim.x;
-        long long y = threadIdx.y + blockIdx.y * blockDim.y;
-        long long z = threadIdx.z + blockIdx.z * blockDim.z;
-        long long idx = z * rows * cols + y * cols + x;
+        long x = threadIdx.x + blockIdx.x * blockDim.x;
+        long y = threadIdx.y + blockIdx.y * blockDim.y;
+        long z = threadIdx.z + blockIdx.z * blockDim.z;
+        size_t idx = (size_t)z * (rows * cols) + y * cols + x;
         
         if ( x >= cols || y >= rows || z >= depth )
             return;

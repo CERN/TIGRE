@@ -94,32 +94,32 @@ do { \
     
     __device__ __inline__
             void gradient(const float* u, float* grad,
-            long long z, long long y, long long x,
-            long long depth, long long rows, long long cols){
-        unsigned long long size2d = rows*cols;
-        unsigned long long idx = z * size2d + y * cols + x;
+            long z, long y, long x,
+            long depth, long rows, long cols){
+        unsigned long size2d = rows*cols;
+        size_t idx = (size_t)z * size2d + y * cols + x;
         
         float uidx = u[idx];
         
         if ( z - 1 >= 0 && z<depth) {
-            grad[0] = (uidx-u[(z-1)*size2d + y*cols + x]) ;
+            grad[0] = (uidx-u[(size_t)(z-1)*size2d + y*cols + x]) ;
         }
         
         if ( y - 1 >= 0 && y<rows){
-            grad[1] = (uidx-u[z*size2d + (y-1)*cols + x]) ;
+            grad[1] = (uidx-u[(size_t)z*size2d + (y-1)*cols + x]) ;
         }
         
         if ( x - 1 >= 0 && x<cols) {
-            grad[2] = (uidx-u[z*size2d + y*cols + (x-1)]);
+            grad[2] = (uidx-u[(size_t)z*size2d + y*cols + (x-1)]);
         }
     }
     
     __global__ void gradientTV(const float* f, float* dftv,
-            long long depth, long long rows, long long cols,const float delta){
-        unsigned long long x = threadIdx.x + blockIdx.x * blockDim.x;
-        unsigned long long y = threadIdx.y + blockIdx.y * blockDim.y;
-        unsigned long long z = threadIdx.z + blockIdx.z * blockDim.z;
-        unsigned long long idx = z * rows * cols + y * cols + x;
+            long depth, long rows, long cols,const float delta){
+        unsigned long x = threadIdx.x + blockIdx.x * blockDim.x;
+        unsigned long y = threadIdx.y + blockIdx.y * blockDim.y;
+        unsigned long z = threadIdx.z + blockIdx.z * blockDim.z;
+        size_t idx = (size_t)z * (rows * cols) + y * cols + x;
         if ( x >= cols || y >= rows || z >= depth )
             return;
         
