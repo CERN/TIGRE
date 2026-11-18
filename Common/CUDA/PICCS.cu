@@ -201,7 +201,7 @@ do { \
         __syncthreads();
         
         
-#if (__CUDART_VERSION >= 9000)
+#if (CUDART_VERSION >= 9000)
         if ( tid < 32 )
         {
             mySum = sdata[tid] + sdata[tid + 32];
@@ -248,7 +248,7 @@ do { \
         __syncthreads();
         
         
-#if (__CUDART_VERSION >= 9000)
+#if (CUDART_VERSION >= 9000)
         if ( tid < 32 )
         {
             mySum = sdata[tid] + sdata[tid + 32];
