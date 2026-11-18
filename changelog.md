@@ -38,7 +38,9 @@ thank you.
   Without splitting this was rare (e.g. 1 in 50,000 rays, 256³, off by up to 14%); when the
   image was split in pieces because it did not fit on the GPU, it was common. The traversal
   now derives both from the same voxel (#859).
-- Cone-beam Siddon `Ax` is more accurate, at the same speed: it added up the step between
+- Cone-beam Siddon `Ax` is 1.5-1.8x faster (kernel time, RTX 4070) and more accurate. Faster:
+  the loop fetches the voxel value once per step for all threads, instead of inside each
+  branch, and needs no integer-to-float conversions. More accurate: it added up the step between
   voxel boundaries in single precision, which drifted by up to ~2e-3 (relative) along rays
   through a 512³ image. It now computes each boundary from the voxel index, with an error
   of ~1e-5. Siddon projections change by up to that drift, towards the exact value (#859).

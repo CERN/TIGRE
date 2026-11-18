@@ -210,7 +210,8 @@ __global__ void kernelPixelDetector( Geometry geo,
     float pX=source.x+am*ray.x;
     float pY=source.y+am*ray.y;
     float pZ=source.z+am*ray.z;
-    // (int: 32-bit indices convert to float faster than 64-bit ones.)
+    // 32-bit int: converting a 64-bit integer to float is very slow on the GPU
+    // (64-bit indices made this kernel 5-8x slower, measured on an RTX 4070).
     int i=(ray.x<0.0f)? (int)ceilf(pX)-1 : (int)floorf(pX);
     int j=(ray.y<0.0f)? (int)ceilf(pY)-1 : (int)floorf(pY);
     int k=(ray.z<0.0f)? (int)ceilf(pZ)-1 : (int)floorf(pZ);
@@ -218,47 +219,60 @@ __global__ void kernelPixelDetector( Geometry geo,
     j=(j<0)? 0 : ((j>(int)geo.nVoxelY-1)? (int)geo.nVoxelY-1 : j);
     k=(k<0)? 0 : ((k>(int)geo.nVoxelZ-1)? (int)geo.nVoxelZ-1 : k);
 
+    // From here on, the current voxel is kept as the float coordinates of its
+    // centre (index + 0.5), which is what the texture fetch takes: no
+    // int-to-float conversion in the loop. Exact: integers + 0.5 are exact in
+    // float up to 2^23 voxels per axis.
+    float cX=(float)i+0.5f;
+    float cY=(float)j+0.5f;
+    float cZ=(float)k+0.5f;
+    // eq(29), direction of update, and the offset from the centre to the face
+    // ahead: +0.5 moving up, -0.5 moving down.
+    float sX=(ray.x<0.0f)? -1.0f : 1.0f;
+    float sY=(ray.y<0.0f)? -1.0f : 1.0f;
+    float sZ=(ray.z<0.0f)? -1.0f : 1.0f;
+    float hX=0.5f*sX;
+    float hY=0.5f*sY;
+    float hZ=0.5f*sZ;
+
     // Parameter of the next voxel boundary on each axis (infinite if the ray is
-    // parallel to it). The boundary at coordinate b is at b*rX+oX. Each one is
-    // computed from the voxel index, not by adding a step to the previous one
-    // (eq 28): in float32 those additions drift over the ~1000 boundaries of a
-    // large image (errors of 2e-4 typical, 2e-3 at worst, at 512^3); this way
-    // the error stays ~3e-6. Same cost: one fused multiply-add per step.
+    // parallel to it): the boundary at coordinate b is at b*rX+oX. Each one is
+    // computed from the voxel, not by adding a step to the previous one (eq 28):
+    // in float32 those additions drift over the ~1000 boundaries of a large
+    // image (errors of 2e-4 typical, 2e-3 at worst, at 512^3); this way the
+    // error stays ~1e-5.
     float rX=(ray.x!=0.0f)? 1.0f/ray.x : 0.0f;
     float rY=(ray.y!=0.0f)? 1.0f/ray.y : 0.0f;
     float rZ=(ray.z!=0.0f)? 1.0f/ray.z : 0.0f;
     float oX=-source.x*rX;
     float oY=-source.y*rY;
     float oZ=-source.z*rZ;
-    // eq(29), direction of update; the boundary ahead is the voxel's upper face
-    // when moving up (index+1), its lower face when moving down (index).
-    int iu=(ray.x<0.0f)? -1 : 1;
-    int ju=(ray.y<0.0f)? -1 : 1;
-    int ku=(ray.z<0.0f)? -1 : 1;
-    int ib=(iu>0)? 1 : 0;
-    int jb=(ju>0)? 1 : 0;
-    int kb=(ku>0)? 1 : 0;
-    float ax=(ray.x!=0.0f)? fmaf((float)(i+ib),rX,oX) : INFINITY;
-    float ay=(ray.y!=0.0f)? fmaf((float)(j+jb),rY,oY) : INFINITY;
-    float az=(ray.z!=0.0f)? fmaf((float)(k+kb),rZ,oZ) : INFINITY;
+    float ax=(ray.x!=0.0f)? fmaf(cX+hX,rX,oX) : INFINITY;
+    float ay=(ray.y!=0.0f)? fmaf(cY+hY,rY,oY) : INFINITY;
+    float az=(ray.z!=0.0f)? fmaf(cZ+hZ,rZ,oZ) : INFINITY;
 
     float maxlength=__fsqrt_rd(ray.x*ray.x*geo.dVoxelX*geo.dVoxelX+ray.y*ray.y*geo.dVoxelY*geo.dVoxelY+ray.z*ray.z*geo.dVoxelZ*geo.dVoxelZ);
     float sum=0.0f;
     float ac=am;
     // At most one step per voxel boundary, plus slack: the loop always ends, even
     // if rounding never quite lets a crossing reach aM.
+    //
+    // The texture fetch comes first and is the same for all threads; only the
+    // update depends on which axis is crossed. (Master fetched inside each of
+    // the three branches: when the threads of a warp crossed different axes,
+    // the warp ran up to three fetches per step. This loop is ~1.5-1.8x faster.)
     const int maxsteps=(int)geo.nVoxelX+(int)geo.nVoxelY+(int)geo.nVoxelZ+3;
     for (int step=0; step<maxsteps; step++){
         float aminc=fminf(fminf(ax,ay),az);
-        sum+=(fminf(aminc,aM)-ac)*tex3D<float>(tex, i+0.5f, j+0.5f, k+0.5f);
+        sum+=(fminf(aminc,aM)-ac)*tex3D<float>(tex, cX, cY, cZ);
         if (aminc>=aM)
             break;
         if (ax==aminc){
-            i+=iu; ac=ax; ax=fmaf((float)(i+ib),rX,oX);
+            cX+=sX; ac=ax; ax=fmaf(cX+hX,rX,oX);
         }else if(ay==aminc){
-            j+=ju; ac=ay; ay=fmaf((float)(j+jb),rY,oY);
+            cY+=sY; ac=ay; ay=fmaf(cY+hY,rY,oY);
         }else{
-            k+=ku; ac=az; az=fmaf((float)(k+kb),rZ,oZ);
+            cZ+=sZ; ac=az; az=fmaf(cZ+hZ,rZ,oZ);
         }
     }
     detector[idx]=sum*maxlength;
