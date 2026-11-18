@@ -33,10 +33,11 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
-- Cone-beam Siddon `Ax` got some rays wrong (by up to ~20%) when the image was split in
-  pieces because it did not fit on the GPU: for rays entering a piece exactly on a voxel
-  boundary, the first voxel and the first boundary crossings disagreed. The traversal now
-  derives both from the same voxel (#859).
+- Cone-beam Siddon `Ax` got some rays wrong (by up to ~20%): for rays entering the image
+  exactly on a voxel boundary, the first voxel and the first boundary crossings disagreed.
+  Without splitting this was rare (e.g. 1 in 50,000 rays, 256³, off by up to 14%); when the
+  image was split in pieces because it did not fit on the GPU, it was common. The traversal
+  now derives both from the same voxel (#859).
 - Cone-beam Siddon `Ax` is more accurate, at the same speed: it added up the step between
   voxel boundaries in single precision, which drifted by up to ~2e-3 (relative) along rays
   through a 512³ image. It now computes each boundary from the voxel index, with an error
