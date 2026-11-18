@@ -7,8 +7,13 @@ tvdenoise could end up with a buffer of 0 slices and loop forever. On master a
 and minTV/AwminTV stopped with "Assertion Failed. Logic behind splitting
 flawed!" below ~25 MB.
 
-Now: with enough memory for the smallest piece, each splits the image and
-finishes; below that, each raises "out of memory" and works again afterwards.
+Now: below the smallest piece, each raises "out of memory"; above it, each
+splits the image and finishes, or, if CUDA's own overheads still leave too
+little memory (it depends on the platform: on Linux a 16 MB case can fail where
+Windows runs), raises "out of memory" too. Either way it must work again
+afterwards: before the clean-up on error, a failed call left the caller's
+arrays registered as pinned memory, and on Linux the next call with a new array
+(often at the same address) returned all zeros without any error.
 
 What a split result should be:
 - minTV/AwminTV: the whole-GPU result up to ~1e-3. They sum the gradient norm
@@ -122,6 +127,8 @@ def test_tv_with_little_free_memory(free_mb):
             pytest.skip(line)  # other programs on the GPU changed its free memory under the test
         if free_mb == FREE_MB[0]:
             assert line == prefix + "raised, out of memory: True", out
+        elif line == prefix + "raised, out of memory: True":
+            pass  # a clean "out of memory" is acceptable here; "works after" below is what matters
         else:
             assert "ran" in line, out
             err = float(line.rsplit(" ", 1)[1])

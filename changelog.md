@@ -38,6 +38,12 @@ thank you.
   free memory it computed a buffer of 0 slices. `minTV`/`AwminTV` stopped with "Assertion
   Failed. Logic behind splitting flawed!" when free memory was low. All three now split
   correctly whenever the smallest piece fits, and raise "out of memory" otherwise (#858).
+- `minTV`, `AwminTV`, `tvdenoise` and `minPICCS` now release everything they hold when they
+  stop with an error (e.g. out of memory), as `Ax`/`Atb` do since #857. Before, an error left
+  the caller's arrays registered as pinned memory; on Linux the next call, with a new array at
+  the same address, then returned all zeros without any error, or failed with "part or all of
+  the requested memory range is already mapped". A failed GPU allocation in these functions now
+  reports "out of memory" instead of "invalid argument".
 - MATLAB `Compile`: compiles for the GPU architectures the installed `nvcc` supports, as it
   reports them (`nvcc --list-gpu-arch`), like the Python build. The fixed list asked CUDA
   12.2-12.7 for `compute_120`, which needs 12.8, and compilation failed.
