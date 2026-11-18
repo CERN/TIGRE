@@ -80,11 +80,11 @@ void cpy_from_host(float* device_array,float* host_array,
 
     __device__ __inline__
             float divergence(const float* pz, const float* py, const float* px,
-            long z, long y, long x, long depth, long rows, long cols,
+            long long z, long long y, long long x, long long depth, long long rows, long long cols,
             float dz, float dy, float dx)
     {
-        long size2d = rows*cols;
-        long idx = z * size2d + y * cols + x;
+        long long size2d = rows*cols;
+        long long idx = z * size2d + y * cols + x;
         float _div = 0.0f;
         
         if ( z - 1 >= 0 ) {
@@ -110,12 +110,12 @@ void cpy_from_host(float* device_array,float* host_array,
     
     __device__ __inline__
             void gradient(const float* u, float* grad,
-            long z, long y, long x,
-            long depth, long rows, long cols,
+            long long z, long long y, long long x,
+            long long depth, long long rows, long long cols,
             float dz, float dy, float dx)
     {
-        long size2d = rows*cols;
-        long idx = z * size2d + y * cols + x;
+        long long size2d = rows*cols;
+        long long idx = z * size2d + y * cols + x;
         
         float uidx = u[idx];
         
@@ -136,13 +136,13 @@ void cpy_from_host(float* device_array,float* host_array,
     __global__
             void update_u(const float* f, const float* pz, const float* py, const float* px, float* u,
             float tau, float lambda,
-            long depth, long rows, long cols,
+            long long depth, long long rows, long long cols,
             float dz, float dy, float dx)
     {
-        long x = threadIdx.x + blockIdx.x * blockDim.x;
-        long y = threadIdx.y + blockIdx.y * blockDim.y;
-        long z = threadIdx.z + blockIdx.z * blockDim.z;
-        long idx = z * rows * cols + y * cols + x;
+        long long x = threadIdx.x + blockIdx.x * blockDim.x;
+        long long y = threadIdx.y + blockIdx.y * blockDim.y;
+        long long z = threadIdx.z + blockIdx.z * blockDim.z;
+        long long idx = z * rows * cols + y * cols + x;
         
         if ( x >= cols || y >= rows || z >= depth )
             return;
@@ -155,13 +155,13 @@ void cpy_from_host(float* device_array,float* host_array,
     
     __global__
             void update_p(const float* u, float* pz, float* py, float* px,
-            float tau, long depth, long rows, long cols,
+            float tau, long long depth, long long rows, long long cols,
             float dz, float dy, float dx)
     {
-        long x = threadIdx.x + blockIdx.x * blockDim.x;
-        long y = threadIdx.y + blockIdx.y * blockDim.y;
-        long z = threadIdx.z + blockIdx.z * blockDim.z;
-        long idx = z * rows * cols + y * cols + x;
+        long long x = threadIdx.x + blockIdx.x * blockDim.x;
+        long long y = threadIdx.y + blockIdx.y * blockDim.y;
+        long long z = threadIdx.z + blockIdx.z * blockDim.z;
+        long long idx = z * rows * cols + y * cols + x;
         
         if ( x >= cols || y >= rows || z >= depth )
             return;
@@ -208,8 +208,8 @@ void cpy_from_host(float* device_array,float* host_array,
         
         
         // %5 of free memory should be enough, we have almost no variables in these kernels
-       size_t total_pixels           = image_size[0] * image_size[1] * image_size[2] ;
-       const size_t pixels_per_slice = image_size[0] * image_size[1] ;
+       size_t total_pixels           = (size_t)image_size[0]*image_size[1] * image_size[2] ;
+       const size_t pixels_per_slice = (size_t)image_size[0]*image_size[1] ;
        const size_t mem_slice_image  = sizeof(float)* pixels_per_slice  ;
        const size_t mem_size_image   = sizeof(float)* total_pixels;
         
@@ -296,13 +296,13 @@ void cpy_from_host(float* device_array,float* host_array,
             if (buffer_length<maxIter){ // if we do only 1 big iter, they are not needed.
                 mexWarnMsgIdAndTxt("tvDenoise:tvdenoising:Memory","TV denoising requires 5 times the image memory. Your GPU(s) do not have the required memory.\n This memory will be attempted to allocate on the CPU, which may fail or slow the computation by a very significant amount.\n If you want to kill the execution: CTRL+C");
                 
-                cudaMallocHost((void**)&h_px,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+                cudaMallocHost((void**)&h_px,(size_t)image_size[0]*image_size[1]*image_size[2]*sizeof(float));
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
                 
-                cudaMallocHost((void**)&h_py,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+                cudaMallocHost((void**)&h_py,(size_t)image_size[0]*image_size[1]*image_size[2]*sizeof(float));
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
                 
-                cudaMallocHost((void**)&h_pz,image_size[0]*image_size[1]*image_size[2]*sizeof(float));
+                cudaMallocHost((void**)&h_pz,(size_t)image_size[0]*image_size[1]*image_size[2]*sizeof(float));
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
             }
             h_u=dst;

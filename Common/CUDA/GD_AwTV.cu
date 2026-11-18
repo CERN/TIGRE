@@ -94,9 +94,9 @@ do { \
     
     __device__ __inline__
             void gradient(const float* u, float* grad,
-            long z, long y, long x,
-            long depth, long rows, long cols){
-        unsigned long size2d = rows*cols;
+            long long z, long long y, long long x,
+            long long depth, long long rows, long long cols){
+        unsigned long long size2d = rows*cols;
         unsigned long long idx = z * size2d + y * cols + x;
         
         float uidx = u[idx];
@@ -115,10 +115,10 @@ do { \
     }
     
     __global__ void gradientTV(const float* f, float* dftv,
-            long depth, long rows, long cols,const float delta){
-        unsigned long x = threadIdx.x + blockIdx.x * blockDim.x;
-        unsigned long y = threadIdx.y + blockIdx.y * blockDim.y;
-        unsigned long z = threadIdx.z + blockIdx.z * blockDim.z;
+            long long depth, long long rows, long long cols,const float delta){
+        unsigned long long x = threadIdx.x + blockIdx.x * blockDim.x;
+        unsigned long long y = threadIdx.y + blockIdx.y * blockDim.y;
+        unsigned long long z = threadIdx.z + blockIdx.z * blockDim.z;
         unsigned long long idx = z * rows * cols + y * cols + x;
         if ( x >= cols || y >= rows || z >= depth )
             return;
@@ -176,7 +176,7 @@ do { \
         extern __shared__ volatile float sdata[];
         //http://stackoverflow.com/a/35133396/1485872
         size_t tid = threadIdx.x;
-        size_t i = blockIdx.x*blockDim.x + tid;
+        size_t i = (size_t)blockIdx.x*blockDim.x + tid;
         size_t gridSize = blockDim.x*gridDim.x;
         float mySum = 0;
         float value=0;
@@ -225,7 +225,7 @@ do { \
         extern __shared__ volatile float sdata[];
         //http://stackoverflow.com/a/35133396/1485872
         size_t tid = threadIdx.x;
-        size_t i = blockIdx.x*blockDim.x + tid;
+        size_t i = (size_t)blockIdx.x*blockDim.x + tid;
         size_t gridSize = blockDim.x*gridDim.x;
         float mySum = 0;
         // float value=0;
@@ -298,8 +298,8 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
         
         
         // %5 of free memory should be enough, we have almost no variables in these kernels
-        size_t total_pixels              = image_size[0] * image_size[1]  * image_size[2] ;
-        size_t mem_slice_image           = sizeof(float)* image_size[0] * image_size[1]  ;
+        size_t total_pixels              = (size_t)image_size[0]*image_size[1]  * image_size[2] ;
+        size_t mem_slice_image           = sizeof(float)* (size_t)image_size[0]*image_size[1]  ;
         size_t mem_size_image            = sizeof(float)* total_pixels;
         size_t mem_auxiliary             = sizeof(float)* (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
         
@@ -370,7 +370,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
         
          // Assert
        
-        if ((slices_per_split+buffer_length*2)*image_size[0]*image_size[1]* sizeof(float)!= mem_img_each_GPU){
+        if ((slices_per_split+buffer_length*2)*(size_t)image_size[0]*image_size[1]* sizeof(float)!= mem_img_each_GPU){
             mexErrMsgIdAndTxt("minimizeAwTV:GD_AwTV:GPU","Assertion Failed. Memory needed calculation broken! Please tell: ander.biguri@gmail.com\n");
         }
         
@@ -400,7 +400,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
             
             
         }
-       unsigned long long buffer_pixels=buffer_length*image_size[0]*image_size[1];
+       unsigned long long buffer_pixels=buffer_length*(size_t)image_size[0]*image_size[1];
         // Halo exchange e=2*dev copies the last slices of dev to dev+1, e=2*dev+1 the first slices of dev+1 to dev.
         // Neighbours with peer access (peer_access[dev]) copy directly; the others go through their own part of
         // the pinned buffer, so all of them can run at once.
@@ -482,8 +482,8 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                 // Copy image to memory
                 for (dev = 0; dev < deviceCount; dev++){
                     curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                    curr_pixels=curr_slices*image_size[0]*image_size[1];
-                    linear_idx_start=image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
+                    curr_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
+                    linear_idx_start=(size_t)image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
                     
                     // Check if its the first or last chunck
                     is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
@@ -547,7 +547,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         // no need to copy the 2 aux slices here
                         cudaStreamSynchronize(stream[dev*nStream_device]);
-                        cudaMemcpyAsync(d_norm2[dev], d_dimgTV[dev]+buffer_pixels, image_size[0]*image_size[1]*curr_slices*sizeof(float), cudaMemcpyDeviceToDevice,stream[dev*nStream_device+1]);
+                        cudaMemcpyAsync(d_norm2[dev], d_dimgTV[dev]+buffer_pixels, (size_t)image_size[0]*image_size[1]*curr_slices*sizeof(float), cudaMemcpyDeviceToDevice,stream[dev*nStream_device+1]);
                     }
                     
                     
@@ -556,7 +556,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
                         
                         size_t dimblockRed = MAXTHREADS;
                         size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
@@ -568,7 +568,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
                         size_t dimblockRed = MAXTHREADS;
                         size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
 
@@ -609,7 +609,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
                         //NORMALIZE
                         //in a Tesla, maximum blocks =15 SM * 4 blocks/SM
                         divideArrayScalar  <<<60,MAXTHREADS,0,stream[dev*nStream_device]>>>(d_dimgTV[dev]+buffer_pixels,(float)sqrt(totalsum),total_pixels);
@@ -627,7 +627,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
                         
                         substractArrays<<<60,MAXTHREADS,0,stream[dev*nStream_device]>>>(d_image[dev]+buffer_pixels,d_dimgTV[dev]+buffer_pixels, total_pixels);
                     }
@@ -646,7 +646,7 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                         if (peer_access[dev]) continue;
                         int to_next=2*dev, to_prev=2*dev+1;
                         cudaSetDevice(gpuids[dev]);
-                        cudaMemcpyAsync(buffer+to_next*buffer_pixels, d_image[dev]+(size_t)slices_per_split*image_size[0]*image_size[1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
+                        cudaMemcpyAsync(buffer+to_next*buffer_pixels, d_image[dev]+(size_t)slices_per_split*(size_t)image_size[0]*image_size[1], buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
                         cudaEventRecord(exchange_event[to_next],stream[dev*nStream_device+1]);
                         cudaSetDevice(gpuids[dev+1]);
                         cudaMemcpyAsync(buffer+to_prev*buffer_pixels, d_image[dev+1]+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device]);
@@ -655,10 +655,10 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                     for(dev=0; dev<deviceCount-1;dev++){
                         int to_next=2*dev, to_prev=2*dev+1;
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
                         if (peer_access[dev]){
                             cudaSetDevice(gpuids[dev]);
-                            cudaMemcpyPeerAsync(d_image[dev+1], gpuids[dev+1], d_image[dev]+(size_t)slices_per_split*image_size[0]*image_size[1], gpuids[dev], buffer_pixels*sizeof(float), stream[dev*nStream_device+1]);
+                            cudaMemcpyPeerAsync(d_image[dev+1], gpuids[dev+1], d_image[dev]+(size_t)slices_per_split*(size_t)image_size[0]*image_size[1], gpuids[dev], buffer_pixels*sizeof(float), stream[dev*nStream_device+1]);
                             cudaSetDevice(gpuids[dev+1]);
                             cudaMemcpyPeerAsync(d_image[dev]+total_pixels+buffer_pixels, gpuids[dev], d_image[dev+1]+buffer_pixels, gpuids[dev+1], buffer_pixels*sizeof(float), stream[(dev+1)*nStream_device]);
                             continue;
@@ -677,8 +677,8 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                         cudaSetDevice(gpuids[dev]);
                         
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
-                        linear_idx_start=image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
-                        total_pixels=curr_slices*image_size[0]*image_size[1];
+                        linear_idx_start=(size_t)image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
+                        total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
                         cudaMemcpyAsync(&dst[linear_idx_start], d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
                     }
                 }
@@ -699,8 +699,8 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                 cudaSetDevice(gpuids[dev]);
                 
                 curr_slices=((dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*dev;
-                total_pixels=curr_slices*image_size[0]*image_size[1];
-                cudaMemcpy(dst+slices_per_split*image_size[0]*image_size[1]*dev, d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
+                total_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
+                cudaMemcpy(dst+slices_per_split*(size_t)image_size[0]*image_size[1]*dev, d_image[dev]+buffer_pixels,total_pixels*sizeof(float), cudaMemcpyDeviceToHost);
             }
         }
         cudaCheckErrors("Copy result back");

@@ -327,7 +327,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     
     
     // Allocate result image memory
-    size_t num_bytes = geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ * sizeof(float);
+    size_t num_bytes = (size_t)geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ * sizeof(float);
     float* dimage = 0;
     if (gpuData) {
         dimage = result;  // already on the GPU: write the image straight into it

@@ -37,7 +37,7 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
         raise MemoryError("Error reading GPU Ids")
     
     cdef int total_projections = angles.shape[0]
-    cdef unsigned long nDetectorPixels = <unsigned long>geometry.nDetector[0] * <int>geometry.nDetector[1]
+    cdef size_t nDetectorPixels = <size_t>geometry.nDetector[0] * <size_t>geometry.nDetector[1]  # not unsigned long: 32-bit on Windows
 
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
     if not c_geometry:
@@ -120,7 +120,7 @@ def _Ax_ext_gpu(size_t img_ptr, size_t projections_ptr, geometry, np.ndarray[np.
     if not c_gpuids:
         raise MemoryError("Error reading GPU Ids")
     cdef int total_projections = angles.shape[0]
-    cdef unsigned long nDetectorPixels = <unsigned long>geometry.nDetector[0] * <int>geometry.nDetector[1]
+    cdef size_t nDetectorPixels = <size_t>geometry.nDetector[0] * <size_t>geometry.nDetector[1]  # not unsigned long: 32-bit on Windows
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
     if not c_geometry:
         free_c_gpuids(c_gpuids)

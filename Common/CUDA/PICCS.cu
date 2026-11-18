@@ -107,8 +107,8 @@ do { \
     }
     __device__ __inline__
             void gradient(const float* u, float* grad,
-            long z, long y, long x,
-            long depth, long rows, long cols)
+            long long z, long long y, long long x,
+            long long depth, long long rows, long long cols)
     {
         // gradientTV() also asks for the x+1, y+1 and z+1 neighbours, which
         // fall outside the image on its last column, row and slice. Leave
@@ -117,7 +117,7 @@ do { \
         // unlike GD_TV.cu), and the values only ever fed zero numerators.
         if (z >= depth || y >= rows || x >= cols)
             return;
-        unsigned long size2d = rows*cols;
+        unsigned long long size2d = rows*cols;
         unsigned long long idx = z * size2d + y * cols + x;
 
         float uidx = u[idx];
@@ -136,10 +136,10 @@ do { \
     }
     
     __global__ void gradientTV(const float* f, float* dftv,
-            long depth, long rows, long cols){
-        unsigned long x = threadIdx.x + blockIdx.x * blockDim.x;
-        unsigned long y = threadIdx.y + blockIdx.y * blockDim.y;
-        unsigned long z = threadIdx.z + blockIdx.z * blockDim.z;
+            long long depth, long long rows, long long cols){
+        unsigned long long x = threadIdx.x + blockIdx.x * blockDim.x;
+        unsigned long long y = threadIdx.y + blockIdx.y * blockDim.y;
+        unsigned long long z = threadIdx.z + blockIdx.z * blockDim.z;
         unsigned long long idx = z * rows * cols + y * cols + x;
         if ( x >= cols || y >= rows || z >= depth )
             return;
@@ -173,7 +173,7 @@ do { \
         extern __shared__ volatile float sdata[];
         //http://stackoverflow.com/a/35133396/1485872
         size_t tid = threadIdx.x;
-        size_t i = blockIdx.x*blockDim.x + tid;
+        size_t i = (size_t)blockIdx.x*blockDim.x + tid;
         size_t gridSize = blockDim.x*gridDim.x;
         float mySum = 0;
         float value=0;
@@ -221,7 +221,7 @@ do { \
         extern __shared__ volatile float sdata[];
         //http://stackoverflow.com/a/35133396/1485872
         size_t tid = threadIdx.x;
-        size_t i = blockIdx.x*blockDim.x + tid;
+        size_t i = (size_t)blockIdx.x*blockDim.x + tid;
         size_t gridSize = blockDim.x*gridDim.x;
         float mySum = 0;
        // float value=0;
@@ -282,7 +282,7 @@ bool isnan_cuda(float* vec, size_t size){
      
         
     
-        size_t total_pixels = image_size[0] * image_size[1]  * image_size[2] ;
+        size_t total_pixels = (size_t)image_size[0]*image_size[1]  * image_size[2] ;
         size_t mem_size = sizeof(float) * total_pixels;
         
         float *d_image,*d_prior,*d_dpiccsTV, *d_dimgTV,*d_aux_small,*d_aux_image, *d_norm2;
