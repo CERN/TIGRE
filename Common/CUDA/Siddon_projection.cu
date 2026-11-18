@@ -575,9 +575,14 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
                 }
             }
             // Make sure Computation on kernels has finished before we launch the next batch.
+            // ...and the copy-out of the batch before it (copy stream), which reads the
+            // buffer the next kernel writes. Today that copy goes to pageable host memory
+            // and is already finished when cudaMemcpyAsync returns, but nothing else
+            // guarantees it (a page-locked result would race), see #860.
             for (dev = 0; dev < deviceCount; dev++){
                 cudaSetDevice(gpuids[dev]);
                 cudaStreamSynchronize(stream[dev*2]);
+                cudaStreamSynchronize(stream[dev*2+1]);
             }
         }
         
