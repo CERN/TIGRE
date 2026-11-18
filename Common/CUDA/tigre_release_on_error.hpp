@@ -35,6 +35,7 @@
 #include <stddef.h>
 #include <functional>
 #include <vector>
+#include "TIGRE_common.hpp"
 
 namespace tigre {
 
@@ -86,6 +87,37 @@ private:
     std::vector<int> devices_;
     std::vector<std::function<void()> > actions_;
 };
+
+// Register the caller's host array as pinned memory, if it is not already.
+// Returns true only if this call registered it, i.e. if the caller of
+// hostRegister must unregister it. An array that is already registered (for
+// example pinned by the user, or by PyTorch) is used as it is and left alone.
+// Any other failure is left for the caller's error check.
+inline bool hostRegister(void* ptr, size_t bytes) {
+    cudaError_t err = cudaHostRegister(ptr, bytes, cudaHostRegisterPortable);
+    if (err == cudaErrorHostMemoryAlreadyRegistered) {
+        cudaGetLastError();  // not an error for us
+        return false;
+    }
+    return err == cudaSuccess;
+}
+
+// Check a cudaMalloc. Out of memory is reported as such, with a message that
+// starts with "out of memory" (see tigreNotEnoughGpuMemory), so that it reads
+// the same as TIGRE's own memory check and callers that retry after freeing
+// memory recognise it. Checking each cudaMalloc matters: a failed cudaMalloc
+// leaves a null pointer, and the cudaMemset that usually follows replaces the
+// "out of memory" error with "invalid argument".
+inline void checkMalloc(cudaError_t err, const char* tag, const char* what, size_t bytes) {
+    if (err == cudaSuccess) return;
+    cudaGetLastError();
+    if (err == cudaErrorMemoryAllocation) {
+        size_t free_bytes = 0, total_bytes = 0;
+        cudaMemGetInfo(&free_bytes, &total_bytes);
+        tigreNotEnoughGpuMemory(tag, what, bytes, free_bytes);
+    }
+    tigreCudaError(tag, "Malloc error", cudaGetErrorString(err));
+}
 
 }  // namespace tigre
 

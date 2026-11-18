@@ -56,6 +56,7 @@
 
 #include "GD_TV.hpp"
 #include "gpuUtils.hpp"
+#include "tigre_release_on_error.hpp"
 
 
 
@@ -271,6 +272,15 @@ do { \
             mexWarnMsgIdAndTxt("minimizeTV:GD_TV:GPUselect","Detected one (or more) different GPUs.\n This code is not smart enough to separate the memory GPU wise if they have different computational times or memory limits.\n First GPU parameters used. If the code errors you might need to change the way GPU selection is performed.");
         }
         
+        // onError releases what the call holds if it is left by an error (see
+        // tigre_release_on_error.hpp). Without it, an error such as out of memory
+        // left the caller's arrays registered with cudaHostRegister; a later array
+        // at the same address then used the old memory pages, and calls returned
+        // zeros without any error.
+        tigre::ReleaseOnError onError;
+        std::vector<int> devIds;
+        for (int d = 0; d < deviceCount; d++){ devIds.push_back(gpuids[d]); onError.addDevice(gpuids[d]); }
+
         int dev;
         
         // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
@@ -362,22 +372,29 @@ do { \
         
         
         
-        float** d_image=    (float**)malloc(deviceCount*sizeof(float*));
-        float** d_dimgTV=   (float**)malloc(deviceCount*sizeof(float*));
-        float** d_norm2aux= (float**)malloc(deviceCount*sizeof(float*));
-        float** d_norm2=    (float**)malloc(deviceCount*sizeof(float*));
+        float** d_image=    (float**)calloc(deviceCount,sizeof(float*));
+        float** d_dimgTV=   (float**)calloc(deviceCount,sizeof(float*));
+        float** d_norm2aux= (float**)calloc(deviceCount,sizeof(float*));
+        float** d_norm2=    (float**)calloc(deviceCount,sizeof(float*));
+        onError.add([d_image, d_dimgTV, d_norm2aux, d_norm2, deviceCount, devIds]{
+            for (int d = 0; d < deviceCount; d++){
+                cudaSetDevice(devIds[d]);
+                cudaFree(d_image[d]); cudaFree(d_dimgTV[d]); cudaFree(d_norm2aux[d]); cudaFree(d_norm2[d]);
+            }
+            free(d_image); free(d_dimgTV); free(d_norm2aux); free(d_norm2);
+        });
          
         // allocate memory in each GPU
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(gpuids[dev]);
             
-            cudaMalloc((void**)&d_image[dev]    , mem_img_each_GPU);
+            tigre::checkMalloc(cudaMalloc((void**)&d_image[dev], mem_img_each_GPU), "GD_TV:GPU", "Total variation minimization (minTV)", mem_img_each_GPU);
             cudaMemset(         d_image[dev],0  , mem_img_each_GPU); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
-            cudaMalloc((void**)&d_dimgTV[dev]   , mem_img_each_GPU);
+            tigre::checkMalloc(cudaMalloc((void**)&d_dimgTV[dev], mem_img_each_GPU), "GD_TV:GPU", "Total variation minimization (minTV)", mem_img_each_GPU);
             cudaMemset(         d_dimgTV[dev],0 , mem_img_each_GPU); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
-            cudaMalloc((void**)&d_norm2[dev]    , slices_per_split*mem_slice_image);
+            tigre::checkMalloc(cudaMalloc((void**)&d_norm2[dev], slices_per_split*mem_slice_image), "GD_TV:GPU", "Total variation minimization (minTV)", slices_per_split*mem_slice_image);
             cudaMemset(         d_norm2[dev],0  , slices_per_split*mem_slice_image); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
-            cudaMalloc((void**)&d_norm2aux[dev]   , mem_auxiliary);
+            tigre::checkMalloc(cudaMalloc((void**)&d_norm2aux[dev], mem_auxiliary), "GD_TV:GPU", "Total variation minimization (minTV)", mem_auxiliary);
             cudaMemset(         d_norm2aux[dev],0 , mem_auxiliary); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
             cudaCheckErrors("Malloc  error");
             
@@ -389,12 +406,13 @@ do { \
         // the pinned buffer, so all of them can run at once.
         int nExchanges=2*(deviceCount-1);
         bool* peer_access=(bool*)malloc((deviceCount-1)*sizeof(bool));
-        float* buffer;
-        cudaEvent_t* exchange_event=(cudaEvent_t*)malloc(nExchanges*sizeof(cudaEvent_t));
+        float* buffer=NULL;
+        cudaEvent_t* exchange_event=(cudaEvent_t*)calloc(nExchanges>0? nExchanges : 1,sizeof(cudaEvent_t));
         if(splits>1){
             mexWarnMsgIdAndTxt("minimizeTV:GD_TV:Image_split","Your image can not be fully split between the available GPUs. The computation of minTV will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
         }else if(deviceCount>1){
             cudaMallocHost((void**)&buffer,nExchanges*buffer_pixels*sizeof(float));
+            onError.add([buffer]{ cudaFreeHost(buffer); });
             for (dev = 0; dev < deviceCount-1; dev++){
                 peer_access[dev]=UsePeerHaloExchange(gpuids[dev],gpuids[dev+1]);
                 cudaSetDevice(gpuids[dev]);
@@ -408,15 +426,23 @@ do { \
         
         // Lets try to make the host memory pinned:
         // We laredy queried the GPU and assuemd they are the same, thus should have the same attributes.
+        onError.add([exchange_event, nExchanges, peer_access]{
+            for (int e = 0; e < nExchanges; e++) if (exchange_event[e]) cudaEventDestroy(exchange_event[e]);
+            free(exchange_event); free(peer_access);
+        });
         int isHostRegisterSupported = 0;
 #if CUDART_VERSION >= 9020
         cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,gpuids[0]);
 #endif
         // splits>2 is completely empirical observation
+        // Only what this call registers is unregistered, on error or at the end.
+        bool img_registered=false, dst_registered=false;
         if (isHostRegisterSupported & splits>2){
-            cudaHostRegister(img ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
-            cudaHostRegister(dst ,image_size[2]*image_size[1]*image_size[0]*sizeof(float),cudaHostRegisterPortable);
+            img_registered=tigre::hostRegister(img ,(size_t)image_size[2]*image_size[1]*image_size[0]*sizeof(float));
+            dst_registered=tigre::hostRegister(dst ,(size_t)image_size[2]*image_size[1]*image_size[0]*sizeof(float));
         }
+        if (img_registered) onError.add([img]{ cudaHostUnregister(img); });
+        if (dst_registered) onError.add([dst]{ cudaHostUnregister(dst); });
         cudaCheckErrors("Error pinning memory");
 
         
@@ -424,7 +450,8 @@ do { \
                 // Create streams
         int nStream_device=2;
         int nStreams=deviceCount*nStream_device;
-        cudaStream_t* stream=(cudaStream_t*)malloc(nStreams*sizeof(cudaStream_t));
+        cudaStream_t* stream=(cudaStream_t*)calloc(nStreams,sizeof(cudaStream_t));
+        onError.add([stream, nStreams]{ for (int s = 0; s < nStreams; s++) if (stream[s]) cudaStreamDestroy(stream[s]); free(stream); });
         
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(gpuids[dev]);
@@ -442,6 +469,7 @@ do { \
         float sum_curr_spl;
         float * sumnorm2;
         cudaMallocHost((void**)&sumnorm2,deviceCount*sizeof(float));
+        onError.add([sumnorm2]{ cudaFreeHost(sumnorm2); });
         
         unsigned int curr_slices;
         unsigned long long curr_pixels;
@@ -449,6 +477,7 @@ do { \
         unsigned long long* offset_device=(unsigned long long*)malloc(deviceCount*sizeof(unsigned long long));
         unsigned long long* offset_host  =(unsigned long long*)malloc(deviceCount*sizeof(unsigned long long));
         unsigned long long* bytes_device =(unsigned long long*)malloc(deviceCount*sizeof(unsigned long long));
+        onError.add([offset_device, offset_host, bytes_device]{ free(offset_device); free(offset_host); free(bytes_device); });
         bool is_first_chunk;
         bool is_last_chunk;
         for(unsigned int i=0;i<maxIter;i+=(buffer_length-1)){
@@ -687,6 +716,7 @@ do { \
             }
         }
         cudaCheckErrors("Copy result back");
+        onError.dismiss();  // from here on the function releases everything itself
         
         for(dev=0; dev<deviceCount;dev++){
             cudaSetDevice(gpuids[dev]);
@@ -704,10 +734,8 @@ do { \
         free(exchange_event);
         free(peer_access);
         
-        if (isHostRegisterSupported& splits>2){
-            cudaHostUnregister(img);
-            cudaHostUnregister(dst);
-        }
+        if (img_registered) cudaHostUnregister(img);
+        if (dst_registered) cudaHostUnregister(dst);
         for (int i = 0; i < nStreams; ++i)
            cudaStreamDestroy(stream[i]) ;
         
