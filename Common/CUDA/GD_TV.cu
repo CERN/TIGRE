@@ -302,6 +302,13 @@ do { \
             slices_per_split=(image_size[2]+deviceCount-1)/deviceCount;
             mem_img_each_GPU=mem_slice_image*((slices_per_split+buffer_length*2));
         }else{
+            // The smallest working set: on each GPU, 3 images of one slice plus the
+            // minimum overlap (2 slices on each side), and the auxiliary memory. If
+            // not even that fits, say so now: the sizes below are unsigned and would
+            // wrap around past zero.
+            const size_t mem_min=3*mem_slice_image*(1+2*2)+mem_auxiliary;
+            if (mem_GPU_global<=mem_min)
+                tigreNotEnoughGpuMemory("GD_TV:GPUmemory","Total variation minimization (minTV)",mem_min,mem_GPU_global);
             // As mem_auxiliary is not expected to be a large value (for a 2000^3 image is around 28Mbytes), lets for now assume we need it all
             size_t mem_free=mem_GPU_global-mem_auxiliary;
             
@@ -312,8 +319,9 @@ do { \
             mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
             
             // if the new stuff does not fit in the GPU, it means we are in the edge case where adding that extra slice will overflow memory
-            if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
-                // one more split should do the job, as its an edge case.
+            // One more split usually does it; with very little memory it may take more
+            // (one slice per piece always fits, checked above).
+            while (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary && slices_per_split>1){
                 splits++;
                 //recompute for later
                 slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits); // amount of slices that fit on a GPU. Later we add 2 to these, as we need them for overlap
