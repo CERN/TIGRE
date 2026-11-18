@@ -84,8 +84,14 @@ def test_no_builtin_sum_over_arrays():
     array - element by element, 40x slower than np.dot and less accurate. It
     is the kind of line that reads as harmless, so guard it."""
     import inspect
+    import re
     from tigre.algorithms import krylov_subspace_algorithms as K
     src = inspect.getsource(K)
+    # Allowed: adding up a few whole arrays, e.g. the gradient along the 3 axes,
+    # sum(f(x, ax) for ax in range(3)). Each term is an array, so the additions
+    # are NumPy's; only the loop over the 3 terms is Python's.
+    few_arrays = re.compile(r"for \w+ in range\(\d\)\)")
     offenders = [ln.strip() for ln in src.splitlines()
-                 if "=sum(" in ln.replace(" ", "") and "avgtime" not in ln]
+                 if "=sum(" in ln.replace(" ", "") and "avgtime" not in ln
+                 and not few_arrays.search(ln)]
     assert not offenders, offenders
