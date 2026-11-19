@@ -18,6 +18,10 @@ thank you.
   array's GPU only; if `gpuids` names other GPUs, the data goes through the host as before.
 - PyTorch bindings: CUDA tensors stay on the GPU (see above). If TIGRE runs out of GPU memory,
   the bindings empty PyTorch's memory cache and try once more.
+- Parallel beam: `Ax` (Siddon and interpolated) and `Atb` use all the GPUs in `gpuids`, as cone beam
+  does: `Ax` shares the angles between the GPUs, `Atb` the image slices. Before, they ran on the first
+  GPU only. Like cone beam, they now also work when the image does not fit on the GPU: they split it
+  in pieces along z (before, they failed with a CUDA error) (#286, #295).
 
 ### Changed
 - Python tests: rare edge cases and stress tests (little free GPU memory, thousands of repeated
