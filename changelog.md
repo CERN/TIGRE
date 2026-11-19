@@ -38,6 +38,10 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- Python: `Ax` and `Atb` changed the `GpuIds` they were given when there were fewer angles
+  (`Ax`) or image slices (`Atb`) than GPUs, keeping only as many GPUs as needed. Algorithms
+  that project one angle at a time (SART, ASD_POCS, AwASD_POCS) then ran on one GPU after the
+  first angle, for the projections and for the TV step. They now trim a copy (#855).
 - `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB, used by FISTA and SART-TV), when the
   image did not fit on the GPU and was split in pieces: a piece read its halo slices from host
   memory that the previous piece had already advanced, so the result differed from the unsplit
