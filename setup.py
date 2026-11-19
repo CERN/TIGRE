@@ -46,7 +46,7 @@ BACKEND_PENDING = {
 def _detect_cuda():
     for var in ("CUDA_HOME", "CUDA_PATH"):
         if os.environ.get(var):
-            return "$" + var + " is set"
+            return var + " is set"
     if shutil.which("nvcc"):
         return "nvcc is on the PATH"
     if IS_WINDOWS:
@@ -60,7 +60,7 @@ def _detect_cuda():
 def _detect_hip():
     for var in ("ROCM_PATH", "HIP_PATH"):
         if os.environ.get(var):
-            return "$" + var + " is set"
+            return var + " is set"
     if shutil.which("hipcc"):
         return "hipcc is on the PATH"
     if not IS_WINDOWS and os.path.exists("/opt/rocm/bin/hipcc"):
