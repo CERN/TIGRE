@@ -275,7 +275,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         geoArray = (Geometry*)malloc(splits*sizeof(Geometry));
         splitImageInterp(splits,geo,geoArray,nangles);
         const cudaExtent extent = make_cudaExtent(geoArray[0].nVoxelX, geoArray[0].nVoxelY, geoArray[0].nVoxelZ);
-        if (tigre::tryMalloc3DArrays(devIds.data(), deviceCount, d_cuArrTex, extent, (splits>1 ? 4 : 2)*num_bytes_proj, "Ax:Interpolated_projection:GPU"))
+        if (tigre::tryMalloc3DArrays(devIds.data(), deviceCount, d_cuArrTex, extent, (splits>1 ? 4 : 2), num_bytes_proj, "Ax:Interpolated_projection:GPU"))
             break;
         const unsigned long piece=geoArray[0].nVoxelZ;
         freeGeoArray(splits, geoArray);
@@ -306,7 +306,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         for (dev = 0; dev < deviceCount; dev++) {
             cudaSetDevice(gpuids[dev]);
             for (int i = 0; i < 2; ++i){
-                cudaMalloc((void**)&dProjection_accum[dev*2+i], num_bytes_proj);
+                tigre::checkMalloc(cudaMalloc((void**)&dProjection_accum[dev*2+i], num_bytes_proj), "Ax:Interpolated_projection:GPUmemory", "Forward projection (interpolated)", num_bytes_proj);
                 cudaMemset(dProjection_accum[dev*2+i],0,num_bytes_proj); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
                 cudaCheckErrors("cudaMallocauxiliarty projections fail");
             }
@@ -324,7 +324,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         cudaSetDevice(gpuids[dev]);
         
         for (int i = 0; i < 2; ++i){
-            cudaMalloc((void**)&dProjection[dev*2+i],   num_bytes_proj);
+            tigre::checkMalloc(cudaMalloc((void**)&dProjection[dev*2+i], num_bytes_proj), "Ax:Interpolated_projection:GPUmemory", "Forward projection (interpolated)", num_bytes_proj);
             cudaMemset(dProjection[dev*2+i]  ,0,num_bytes_proj); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
             cudaCheckErrors("cudaMalloc projections fail");
         }

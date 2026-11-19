@@ -119,12 +119,13 @@ inline void checkMalloc(cudaError_t err, const char* tag, const char* what, size
     tigreCudaError(tag, "Malloc error", cudaGetErrorString(err));
 }
 
-// Allocate a float 3D array (an image texture) of this extent on each device, and check that extra_bytes more
-// can be allocated on top (allocated and freed again). True if it all fitted. If the GPU memory runs out, frees
-// what it allocated, clears the error and returns false, so that the caller can split the problem in smaller
-// pieces and try again. A 3D array needs more GPU memory than its raw size (alignment, layout), so this can fail
-// where an estimate from the free memory said it fits. Other CUDA errors are raised.
-inline bool tryMalloc3DArrays(const int* devs, int ndev, cudaArray** arr, cudaExtent extent, size_t extra_bytes, const char* tag) {
+// Allocate a float 3D array (an image texture) of this extent on each device, and check that n_buffers buffers of
+// buffer_bytes each can be allocated on top (allocated and freed again, separately: each allocation is rounded up
+// to the driver's page size). True if it all fitted. If the GPU memory runs out, frees what it allocated, clears
+// the error and returns false, so that the caller can split the problem in smaller pieces and try again. A 3D
+// array needs more GPU memory than its raw size (alignment, layout), so this can fail where an estimate from the
+// free memory said it fits. Other CUDA errors are raised.
+inline bool tryMalloc3DArrays(const int* devs, int ndev, cudaArray** arr, cudaExtent extent, int n_buffers, size_t buffer_bytes, const char* tag) {
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);  // float
     bool ok = true;
     for (int d = 0; d < ndev && ok; d++) {
@@ -132,10 +133,10 @@ inline bool tryMalloc3DArrays(const int* devs, int ndev, cudaArray** arr, cudaEx
         arr[d] = NULL;
         cudaError_t err = cudaMalloc3DArray(&arr[d], &channelDesc, extent);
         if (err != cudaSuccess) arr[d] = NULL;
-        if (err == cudaSuccess && extra_bytes > 0) {
-            void* probe = NULL;
-            err = cudaMalloc(&probe, extra_bytes);
-            if (err == cudaSuccess) cudaFree(probe);
+        if (err == cudaSuccess && n_buffers > 0) {
+            std::vector<void*> probe(n_buffers, (void*)NULL);
+            for (int b = 0; b < n_buffers && err == cudaSuccess; b++) err = cudaMalloc(&probe[b], buffer_bytes);
+            for (int b = 0; b < n_buffers; b++) if (probe[b]) cudaFree(probe[b]);
         }
         if (err != cudaSuccess) {
             cudaGetLastError();
