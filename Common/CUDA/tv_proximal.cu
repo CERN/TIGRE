@@ -302,9 +302,11 @@ void cpy_from_host(float* device_array,float* host_array,
         
         
         // Lets allocate auxiliary  variables.
-        // Halo exchange e=2*dev copies the last slice of dev to dev+1, e=2*dev+1 the first slice of dev+1 to dev.
-        // Neighbours with peer access (peer_access[dev]) copy directly; for the others each variable v (u, px, py, pz)
-        // goes through its own part 4*e+v of the pinned buffer, so all of them can run at once.
+        // Halo exchange e=2*dev copies the last buffer_length slices of dev to dev+1, e=2*dev+1 the first buffer_length
+        // slices of dev+1 to dev. Neighbours with peer access (peer_access[dev]) copy directly; for the others each
+        // variable v (u, px, py, pz) goes through its own part 4*e+v of the pinned buffer, buffer_length slices each,
+        // so all of them can run at once. (Each part used to be one slice: with buffer_length>1 the parts overlapped
+        // and the last one wrote past the end of the buffer, #891.)
         int nExchanges=2*(deviceCount-1);
         bool* peer_access=(bool*)malloc((deviceCount-1)*sizeof(bool));
         float* buffer=NULL;
@@ -343,7 +345,7 @@ void cpy_from_host(float* device_array,float* host_array,
             }
             h_u=dst;
         }else if(deviceCount>1){
-            cudaMallocHost((void**)&buffer, 4*nExchanges*pixels_per_slice*sizeof(float));
+            cudaMallocHost((void**)&buffer, 4*nExchanges*(size_t)buffer_length*pixels_per_slice*sizeof(float));
             onError.add([buffer]{ cudaFreeHost(buffer); });
             for (dev = 0; dev < deviceCount-1; dev++){
                 peer_access[dev]=UsePeerHaloExchange(gpuids[dev],gpuids[dev+1]);
@@ -621,10 +623,10 @@ void cpy_from_host(float* device_array,float* host_array,
                                 continue;
                             }
                             cudaSetDevice(gpuids[dev]);
-                            cudaMemcpyAsync(buffer+to_next*pixels_per_slice, d_var[v][dev]+slices_per_split*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1+v]);
+                            cudaMemcpyAsync(buffer+to_next*buffer_pixels, d_var[v][dev]+slices_per_split*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1+v]);
                             cudaEventRecord(exchange_event[to_next],stream[dev*nStream_device+1+v]);
                             cudaSetDevice(gpuids[dev+1]);
-                            cudaMemcpyAsync(buffer+to_prev*pixels_per_slice, d_var[v][dev+1]+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+1+v]);
+                            cudaMemcpyAsync(buffer+to_prev*buffer_pixels, d_var[v][dev+1]+buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost,stream[(dev+1)*nStream_device+1+v]);
                             cudaEventRecord(exchange_event[to_prev],stream[(dev+1)*nStream_device+1+v]);
                         }
                     }
@@ -634,10 +636,10 @@ void cpy_from_host(float* device_array,float* host_array,
                             int to_next=8*dev+v, to_prev=8*dev+4+v;
                             cudaSetDevice(gpuids[dev+1]);
                             cudaStreamWaitEvent(stream[(dev+1)*nStream_device+1+v],exchange_event[to_next],0);
-                            cudaMemcpyAsync(d_var[v][dev+1], buffer+to_next*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev+1)*nStream_device+1+v]);
+                            cudaMemcpyAsync(d_var[v][dev+1], buffer+to_next*buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[(dev+1)*nStream_device+1+v]);
                             cudaSetDevice(gpuids[dev]);
                             cudaStreamWaitEvent(stream[dev*nStream_device+1+v],exchange_event[to_prev],0);
-                            cudaMemcpyAsync(d_var[v][dev]+slices_per_split*pixels_per_slice+buffer_pixels, buffer+to_prev*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1+v]);
+                            cudaMemcpyAsync(d_var[v][dev]+slices_per_split*pixels_per_slice+buffer_pixels, buffer+to_prev*buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1+v]);
                         }
                     }
                     for(dev=0; dev<deviceCount;dev++){
