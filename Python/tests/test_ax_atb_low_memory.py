@@ -24,7 +24,7 @@ import sys
 
 import pytest
 
-pytestmark = pytest.mark.gpu
+pytestmark = [pytest.mark.gpu, pytest.mark.extended]  # extended: not run by a plain `pytest`, see contributing.md
 torch = pytest.importorskip("torch")
 if not torch.cuda.is_available():
     pytest.skip("PyTorch cannot use the GPU", allow_module_level=True)

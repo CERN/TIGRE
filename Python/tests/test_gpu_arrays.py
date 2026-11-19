@@ -438,6 +438,7 @@ def test_no_busy_gpu_warning_on_the_gpu_path():
 SPLIT_CASES = [("Ax", "Siddon"), ("Ax", "interpolated"), ("Atb", "FDK"), ("Atb", "matched")]
 
 
+@pytest.mark.extended
 @pytest.mark.parametrize("op,kind", SPLIT_CASES)
 def test_image_split_when_the_gpu_is_nearly_full(op, kind):
     """Model weights or other tensors take most of the GPU: TIGRE cannot hold
@@ -605,6 +606,7 @@ for name, (call, out_bytes) in calls.items():
 """
 
 
+@pytest.mark.extended
 @pytest.mark.parametrize("framework", ["numpy", "torch"])
 def test_almost_no_free_gpu_memory_raises_instead_of_crashing(framework):
     """With ~4 MB free, not even the smallest piece fits: TIGRE must raise

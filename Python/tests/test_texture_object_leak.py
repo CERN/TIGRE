@@ -18,7 +18,7 @@ import pytest
 
 import tigre
 
-pytestmark = pytest.mark.gpu
+pytestmark = [pytest.mark.gpu, pytest.mark.extended]  # extended: not run by a plain `pytest`, see contributing.md
 
 BLOCK = 32                 # PROJ_PER_KERNEL in the backprojectors
 NANGLES = BLOCK * 400      # 400 blocks: 398 texture objects leaked per call before the fix

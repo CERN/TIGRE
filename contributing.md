@@ -51,8 +51,22 @@ pytest
 Tests live in `Python/tests/`. Tests that need a GPU are marked with
 `@pytest.mark.gpu` (or `pytestmark = pytest.mark.gpu` for a whole file) and are
 skipped automatically on machines without one, which is how they run on GitHub
-Actions. Please run the full suite on a GPU machine before submitting changes to
+Actions. Please run the suite on a GPU machine before submitting changes to
 projectors, kernels or algorithms.
+
+A plain `pytest` runs the core suite (a few minutes with a GPU). Tests for rare
+edge cases and stress tests, such as running with almost no free GPU memory,
+thousands of repeated calls or images that must be split, are marked
+`extended` and are not run by default:
+
+```bash
+pytest -m extended                     # only the extended tests
+pytest -m "extended or not extended"   # everything
+```
+
+Run the extended tests too when you change CUDA code, memory handling or how
+the image is split between GPUs. Mark a new test `extended` if it guards a rare
+case and takes long or needs a particular amount of free GPU memory.
 
 MATLAB tests are in `MATLAB/Tests/`.
 
