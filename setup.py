@@ -2,6 +2,7 @@ import copy
 import glob
 import os
 from os.path import join as pjoin
+import platform
 import re
 import subprocess
 import sys
@@ -27,6 +28,88 @@ if no_pinned:
     define_macros.append(("NO_PINNED_MEMORY",None))     
 
 IS_WINDOWS = sys.platform == "win32"
+
+
+# GPU backend. TIGRE_BACKEND=cuda|hip|sycl|metal chooses it; when it is not set,
+# the first backend whose compiler is installed is used, in this order. CUDA is
+# first, so machines that build CUDA today keep doing so (for example a laptop
+# with an NVIDIA GPU and an Intel integrated GPU). Only CUDA is built in this
+# version; the others are being added (see BACKEND_PENDING).
+BACKENDS = ("cuda", "hip", "sycl", "metal")
+BACKEND_PENDING = {
+    "hip": "AMD GPUs, https://github.com/CERN/TIGRE/pull/747",
+    "sycl": "Intel GPUs, https://github.com/CERN/TIGRE/issues/885",
+    "metal": "Apple Silicon, https://github.com/CERN/TIGRE/issues/876",
+}
+
+
+def _detect_cuda():
+    for var in ("CUDA_HOME", "CUDA_PATH"):
+        if os.environ.get(var):
+            return var + " is set"
+    if shutil.which("nvcc"):
+        return "nvcc is on the PATH"
+    if IS_WINDOWS:
+        if glob.glob("C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v*.*/bin/nvcc.exe"):
+            return "CUDA is installed in C:/Program Files/NVIDIA GPU Computing Toolkit"
+    elif os.path.exists("/usr/local/cuda/bin/nvcc"):
+        return "CUDA is installed in /usr/local/cuda"
+    return None
+
+
+def _detect_hip():
+    for var in ("ROCM_PATH", "HIP_PATH"):
+        if os.environ.get(var):
+            return var + " is set"
+    if shutil.which("hipcc"):
+        return "hipcc is on the PATH"
+    if not IS_WINDOWS and os.path.exists("/opt/rocm/bin/hipcc"):
+        return "ROCm is installed in /opt/rocm"
+    return None
+
+
+def _detect_sycl():
+    compiler = "icx" if IS_WINDOWS else "icpx"
+    if shutil.which(compiler):
+        return compiler + " (oneAPI DPC++) is on the PATH"
+    return None
+
+
+def _detect_metal():
+    if sys.platform == "darwin" and platform.machine() == "arm64":
+        return "this is a Mac with Apple Silicon"
+    return None
+
+
+def select_backend():
+    """Return (backend, reason): from TIGRE_BACKEND, or the first compiler found."""
+    requested = os.environ.get("TIGRE_BACKEND", "").strip().lower()
+    if requested:
+        if requested not in BACKENDS:
+            raise RuntimeError(
+                "TIGRE_BACKEND=" + requested + " is not known. Use one of: " + ", ".join(BACKENDS) + "."
+            )
+        return requested, "set by TIGRE_BACKEND"
+    detectors = {"cuda": _detect_cuda, "hip": _detect_hip, "sycl": _detect_sycl, "metal": _detect_metal}
+    for backend in BACKENDS:
+        reason = detectors[backend]()
+        if reason:
+            return backend, reason
+    raise RuntimeError(
+        "TIGRE could not find a GPU compiler. Install the CUDA toolkit (NVIDIA GPUs) and make "
+        "sure nvcc is on the PATH, or set CUDA_HOME or CUDA_PATH to its folder. To choose a "
+        "backend yourself, set TIGRE_BACKEND to one of: " + ", ".join(BACKENDS) + "."
+    )
+
+
+BACKEND, BACKEND_REASON = select_backend()
+if BACKEND in BACKEND_PENDING:
+    raise RuntimeError(
+        "TIGRE: the " + BACKEND + " backend (" + BACKEND_REASON + ") is not available in this "
+        "version of TIGRE yet; it is being added for " + BACKEND_PENDING[BACKEND] + ". "
+        "To build for NVIDIA GPUs instead, install the CUDA toolkit and set TIGRE_BACKEND=cuda."
+    )
+print("TIGRE: building the " + BACKEND + " backend (" + BACKEND_REASON + ").")
 
 
 # Code from https://github.com/pytorch/pytorch/blob/master/torch/utils/cpp_extension.py

@@ -70,6 +70,28 @@ Your Windows user name must not contain spaces.
 6. Check the installation by running `Demos/d03_generateData.m`. If it runs
    without errors, TIGRE is installed.
 
+## Choosing the GPU backend
+
+TIGRE is compiled for one GPU backend. `Compile` uses the first one whose
+compiler it finds, in this order: `cuda` (NVIDIA: `CUDA_PATH` or `CUDA_HOME`,
+`nvcc` on the `PATH`, or the default CUDA install location), `hip` (AMD:
+`ROCM_PATH` or `HIP_PATH`, `hipcc` on the `PATH`, or `/opt/rocm`), `sycl`
+(Intel: `icpx`, or `icx` on Windows, on the `PATH`) and `metal` (a Mac with
+Apple Silicon). It prints which one it chose and why. To choose one yourself:
+
+```matlab
+Compile -backend cuda
+```
+
+or set the `TIGRE_BACKEND` environment variable, as for the Python build.
+
+At the moment only `cuda` can be compiled. The others are being added: `hip` in
+[#747](https://github.com/CERN/TIGRE/pull/747), `sycl` in
+[#885](https://github.com/CERN/TIGRE/issues/885) and `metal` in
+[#876](https://github.com/CERN/TIGRE/issues/876). If `Compile` picks one of
+them, it stops and says so; run `Compile -backend cuda` to compile for NVIDIA
+GPUs.
+
 ## Advanced: disable pinned memory
 
 TIGRE uses pinned (page-locked) host memory to overlap memory transfers with
