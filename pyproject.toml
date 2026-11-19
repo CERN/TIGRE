@@ -3,7 +3,7 @@ line-length = 100
 
 [build-system]
 requires = [
-	"setuptools",
+	"setuptools>=77",
 	"wheel",
 	"Cython",
 	"numpy<2.5.1",
@@ -25,7 +25,8 @@ authors=[
 	{name = "Reuben Lindroos"},
 	{name = "Sam Loescher"},
 ]
-license={text="BSD-3-Clause"}
+license="BSD-3-Clause"
+license-files=["LICENSE.txt"]
 requires-python = ">=3.11,<3.15"
 
 [dependency-groups]
