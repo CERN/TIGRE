@@ -8,9 +8,10 @@ thank you.
 ## Unreleased
 
 ### Added
-- Python build: the `TIGRE_BACKEND` environment variable (`cuda`, `hip`, `sycl` or `metal`)
-  chooses the GPU backend. When it is not set, the build uses the first backend whose compiler
-  is installed, CUDA first, and prints which one it chose. Only `cuda` can be built so far; the
+- Python and MATLAB builds: the GPU backend (`cuda`, `hip`, `sycl` or `metal`) is chosen with the
+  `TIGRE_BACKEND` environment variable, or in MATLAB with `Compile -backend <name>`. When neither
+  is given, the build uses the first backend whose compiler is installed, CUDA first, and prints
+  which one it chose. Only `cuda` can be built so far; the
   others stop with a message pointing to the work that adds them (#747, #885, #876).
 - Python: `tigre.Ax` and `tigre.Atb` take PyTorch CUDA tensors and CuPy arrays, and return
   the same kind of array on the same GPU, without copying through host memory. This uses the
