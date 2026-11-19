@@ -317,7 +317,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
     size_t mem_proj=                  (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
     
     // Does everything fit in the GPUs?
-    const bool fits_in_memory = mem_image+2*PROJ_PER_BLOCK*mem_proj<mem_GPU_global;
+    bool fits_in_memory = mem_image+2*PROJ_PER_BLOCK*mem_proj<mem_GPU_global;
     unsigned int splits=1;
     if (!fits_in_memory) {
         // Nope nope.
@@ -331,13 +331,38 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
         splits=mem_image/mem_free+1;// Ceil of the truncation
         if (splits>geo.nVoxelZ) splits=geo.nVoxelZ;  // at least one slice per piece
     }
-    Geometry* geoArray = (Geometry*)malloc(splits*sizeof(Geometry));
-    splitImage(splits,geo,geoArray,nangles);
+    size_t num_bytes_proj = (size_t)PROJ_PER_BLOCK*geo.nDetecU*geo.nDetecV * sizeof(float);
+    // The image texture (a 3D array on each GPU, for the largest piece) is allocated first. A 3D array needs more
+    // GPU memory than its raw size, so it can fail where the estimate above said it fits: then split the image in
+    // more pieces and try again, down to one slice per piece. The projection buffers allocated below are tried
+    // with it (allocated and freed), so that they fit too.
+    cudaArray **d_cuArrTex = new cudaArray*[deviceCount]();
+    Geometry* geoArray = NULL;
+    while (true){
+        geoArray = (Geometry*)malloc(splits*sizeof(Geometry));
+        splitImage(splits,geo,geoArray,nangles);
+        const cudaExtent extent = make_cudaExtent(geoArray[0].nVoxelX, geoArray[0].nVoxelY, geoArray[0].nVoxelZ);
+        if (tigre::tryMalloc3DArrays(devIds.data(), deviceCount, d_cuArrTex, extent, (splits>1 ? 4 : 2)*num_bytes_proj, "Ax:Siddon_projection:GPU"))
+            break;
+        const unsigned long piece=geoArray[0].nVoxelZ;
+        freeGeoArray(splits, geoArray);
+        if (piece<=1 || splits>=geo.nVoxelZ){
+            delete[] d_cuArrTex;
+            size_t free_bytes=0, total_bytes=0;
+            cudaMemGetInfo(&free_bytes, &total_bytes);
+            tigreNotEnoughGpuMemory("Ax:Siddon_projection:GPUmemory","Forward projection (Siddon)",4*num_bytes_proj+(size_t)geo.nVoxelX*geo.nVoxelY*sizeof(float),free_bytes);
+        }
+        while (splits<geo.nVoxelZ && (geo.nVoxelZ+splits-1)/splits>=piece) splits++;  // smaller pieces
+    }
+    fits_in_memory = (splits==1);
     onError.add([geoArray, splits]{ freeGeoArray(splits, geoArray); });
+    onError.add([d_cuArrTex, deviceCount, devIds]{
+        for (int d = 0; d < deviceCount; d++) { cudaSetDevice(devIds[d]); if (d_cuArrTex[d]) cudaFreeArray(d_cuArrTex[d]); }
+        delete[] d_cuArrTex;
+    });
     
     // Allocate axuiliary memory for projections on the GPU to accumulate partial results
     float ** dProjection_accum = 0;
-    size_t num_bytes_proj = (size_t)PROJ_PER_BLOCK*geo.nDetecU*geo.nDetecV * sizeof(float);
     if (!fits_in_memory){
         dProjection_accum=(float**)malloc(2*deviceCount*sizeof(float*));
         memset(dProjection_accum, 0, 2*deviceCount*sizeof(float*));
@@ -425,14 +450,12 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
     // Value-initialised (zeroed) so CreateTexture can tell an empty slot from one
     // holding a texture object it must destroy first.
     cudaTextureObject_t *texImg = new cudaTextureObject_t[deviceCount]();
-    cudaArray **d_cuArrTex = new cudaArray*[deviceCount]();
-    onError.add([texImg, d_cuArrTex, deviceCount, devIds]{
+    onError.add([texImg, deviceCount, devIds]{
         for (int d = 0; d < deviceCount; d++) {
             cudaSetDevice(devIds[d]);
             if (texImg[d]) cudaDestroyTextureObject(texImg[d]);
-            if (d_cuArrTex[d]) cudaFreeArray(d_cuArrTex[d]);
         }
-        delete[] texImg; delete[] d_cuArrTex;
+        delete[] texImg;
     });
     
     for (unsigned int sp=0;sp<splits;sp++){
@@ -445,7 +468,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
         linear_idx_start= (size_t)sp*(size_t)geoArray[0].nVoxelX*(size_t)geoArray[0].nVoxelY*(size_t)geoArray[0].nVoxelZ;
         
         
-        CreateTexture(gpuids,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg,!sp,(gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice));
+        CreateTexture(gpuids,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg,false,(gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice));  // arrays allocated above
         cudaCheckErrors("Texture object creation fail");
         
         
@@ -662,7 +685,7 @@ void CreateTexture(const GpuIds& gpuids,const float* imagedata,Geometry geo,cuda
             //cudaArray Descriptor
             cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
             //cuda Array
-            cudaMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent);
+            tigre::checkMalloc(cudaMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent), "Ax:Siddon_projection:GPUmemory", "Forward projection (Siddon)", (size_t)extent.width*extent.height*extent.depth*sizeof(float));
         }
     }
     for (unsigned int dev = 0; dev < num_devices; dev++){

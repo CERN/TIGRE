@@ -625,7 +625,7 @@ void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuAr
         cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
         //cuda Array
         if (alloc){
-        cudaMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent);
+        tigre::checkMalloc(cudaMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent), "Atb:voxel_backprojection_parallel:GPUmemory", "Backprojection (parallel beam)", (size_t)extent.width*extent.height*extent.depth*sizeof(float));
         cudaCheckErrors("Texture memory allocation fail");
         }
         cudaMemcpy3DParms copyParams = {0};

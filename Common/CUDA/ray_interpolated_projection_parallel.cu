@@ -444,7 +444,7 @@ void CreateTextureParallelInterp(float* image,Geometry geo,cudaArray** d_cuArrTe
     //cudaArray Descriptor
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
     //cuda Array
-    cudaMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent);
+    tigre::checkMalloc(cudaMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent), "Ax:Interpolated_projection_parallel:GPUmemory", "Forward projection (interpolated, parallel beam)", (size_t)extent.width*extent.height*extent.depth*sizeof(float));
     
     
     cudaMemcpy3DParms copyParams = {0};
