@@ -33,6 +33,13 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB, used by FISTA and SART-TV), when the
+  image did not fit on the GPU and was split in pieces: for the last piece it zeroed a dual
+  variable instead of the input, and it did not wait for each piece's results to reach host
+  memory before the next piece read from it. The result differed from the unsplit one across
+  the whole volume (e.g. 7.6e-2 of the maximum with 100 MB free); now only next to the joins
+  between pieces and at the first and last slice (4.7e-2 at the worst slice; #863 tracks the
+  rest). Based on #806.
 - Cone-beam Siddon `Ax` got some rays wrong (by up to ~20%): for rays entering the image
   exactly on a voxel boundary, the first voxel and the first boundary crossings disagreed.
   Without splitting this was rare (e.g. 1 in 50,000 rays, 256³, off by up to 14%); when the
