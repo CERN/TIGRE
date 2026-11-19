@@ -66,6 +66,7 @@ MATLAB/mex_CUDA_win64.xml
 
 # Miscellaneous
 *.pdf
+!docs/technical-notes/**/*.pdf
 *.dcm
 
 .worktrees/
