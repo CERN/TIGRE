@@ -15,6 +15,11 @@ thank you.
   the bindings empty PyTorch's memory cache and try once more.
 
 ### Changed
+- `tvdenoise`/`im3DDenoise` (and so FISTA, SART-TV and the other TV algorithms that use it): the
+  first and last z-slice of the image now use the same boundary as x and y. Before, a mirrored
+  extra slice was added beyond each end and updated with the rest, so results at the first and
+  last slice change (by up to ~10% of the maximum in strong denoising; under 1% one slice in;
+  unchanged further in). This also makes split, unsplit and multi-GPU results identical (#863).
 - Python: a CUDA error now raises `RuntimeError` (with the CUDA message) instead of ending the
   whole Python process with `exit(1)`. Ax and Atb release the GPU memory, streams, textures and
   page-locked memory the failed call held, so TIGRE can be used again in the same process.
@@ -33,6 +38,11 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB, used by FISTA and SART-TV), when the
+  image did not fit on the GPU and was split in pieces: a piece read its halo slices from host
+  memory that the previous piece had already advanced, so the result differed from the unsplit
+  one next to the joins (up to ~2e-1 of the maximum). It now gives the unsplit result exactly
+  (#863).
 - `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB, used by FISTA and SART-TV), when the
   image did not fit on the GPU and was split in pieces: for the last piece it zeroed a dual
   variable instead of the input, and it did not wait for each piece's results to reach host

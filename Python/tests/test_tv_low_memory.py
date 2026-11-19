@@ -18,9 +18,11 @@ arrays registered as pinned memory, and on Linux the next call with a new array
 What a split result should be:
 - minTV/AwminTV: the whole-GPU result up to ~1e-3. They sum the gradient norm
   piece by piece in single precision (#856), so split results differ slightly.
-- tvdenoise: only that it finishes with a finite result. Split, it differs from
-  the whole-GPU result everywhere, by up to 26% here, on master too: a
-  separate, older problem in how the pieces are combined.
+- tvdenoise: the whole-GPU result, to rounding. It has no global sum: every
+  voxel's update depends only on its neighbours, so a correct split gives the
+  same numbers. (Before #863 was fixed it differed by up to 26% here: pieces
+  read halo slices that the previous piece had already advanced, and the first
+  and last slice had a boundary of their own.)
 
 The calls run in a separate process with a time limit, so a hang fails the test
 instead of stopping the test run. The GPU is filled with a PyTorch tensor, and
@@ -133,7 +135,7 @@ def test_tv_with_little_free_memory(free_mb):
             assert "ran" in line, out
             err = float(line.rsplit(" ", 1)[1])
             if name == "tvdenoise":
-                assert err < float("inf"), out  # finite; see the module docstring
+                assert err < 1e-6, out  # see the module docstring
             else:
                 assert err < 1e-3, out
         assert prefix + "works after" in result.stdout, out
