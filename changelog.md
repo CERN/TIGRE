@@ -56,6 +56,9 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- `minTV`, `AwminTV` and `tvdenoise` failed on several GPUs (or when split for memory) when the image
+  had so few z slices that the last pieces came out empty, e.g. 5 slices on 4 GPUs, or tvdenoise of
+  one slice on 2 GPUs. The pieces are now chosen so that none is empty, using fewer GPUs if needed.
 - Python: `Ax` and `Atb` changed the `GpuIds` they were given when there were fewer angles
   (`Ax`) or image slices (`Atb`) than GPUs, keeping only as many GPUs as needed. Algorithms
   that project one angle at a time (SART, ASD_POCS, AwASD_POCS) then ran on one GPU after the
