@@ -522,8 +522,6 @@ RandomNumberGenerator_ext = Extension(
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
 )
 
-print(find_packages())
-
 setup(
     packages=find_packages(),
     include_package_data=True,
