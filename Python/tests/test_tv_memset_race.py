@@ -17,7 +17,7 @@ import tigre
 from tigre.utilities import sample_loader
 from tigre.utilities.gpu import GpuIds
 
-pytestmark = pytest.mark.gpu
+pytestmark = [pytest.mark.gpu, pytest.mark.extended]  # extended: not run by a plain `pytest`, see contributing.md
 
 REPEATS = 30
 

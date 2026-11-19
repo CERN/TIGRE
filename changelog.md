@@ -15,6 +15,10 @@ thank you.
   the bindings empty PyTorch's memory cache and try once more.
 
 ### Changed
+- Python tests: rare edge cases and stress tests (little free GPU memory, thousands of repeated
+  calls, images split between pieces) are marked `extended` and not run by a plain `pytest`
+  (on an RTX 4070 the suite goes from ~6 to ~2 minutes). Run them with `pytest -m extended`;
+  see `contributing.md`.
 - `tvdenoise`/`im3DDenoise` (and so FISTA, SART-TV and the other TV algorithms that use it): the
   first and last z-slice of the image now use the same boundary as x and y. Before, a mirrored
   extra slice was added beyond each end and updated with the rest, so results at the first and

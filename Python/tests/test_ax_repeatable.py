@@ -18,7 +18,7 @@ import pytest
 
 import tigre
 
-pytestmark = pytest.mark.gpu
+pytestmark = [pytest.mark.gpu, pytest.mark.extended]  # extended: not run by a plain `pytest`, see contributing.md
 
 CALLS = int(os.environ.get("TIGRE_REPEAT_CALLS", "2000"))
 
