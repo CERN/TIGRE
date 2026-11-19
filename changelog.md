@@ -56,6 +56,10 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB) on 2 or more GPUs without a direct link
+  between them, when the image fits only shared between the GPUs: the host buffer for the halo slices
+  had room for one slice per halo, but the halos are up to 60 slices wide, so they overwrote each other
+  (wrong results) and the last one wrote past the end of the buffer (#891; found by Einse57 in #885).
 - Python: `Ax` and `Atb` changed the `GpuIds` they were given when there were fewer angles
   (`Ax`) or image slices (`Atb`) than GPUs, keeping only as many GPUs as needed. Algorithms
   that project one angle at a time (SART, ASD_POCS, AwASD_POCS) then ran on one GPU after the
