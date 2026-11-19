@@ -36,7 +36,7 @@ else
     end
 end
 
-img=minTV(img,dtvg,ng,gpuids.devices);
+img=tigreDispatch('minTV',img,dtvg,ng,gpuids.devices);
 
 end
 

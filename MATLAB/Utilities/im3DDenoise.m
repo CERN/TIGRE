@@ -45,10 +45,10 @@ if strcmp(type,'TV')
         error('im3DDenoise: Input image of tvDenoise must be single precision');
     end
     if ndims(img)==2
-        imgO=tvDenoise(cat(3,img,img),hyper,iter,gpuids.devices);
+        imgO=tigreDispatch('tvDenoise',cat(3,img,img),hyper,iter,gpuids.devices);
         imgO=imgO(:,:,1);
     else
-        imgO=tvDenoise(img,hyper,iter,gpuids.devices);
+        imgO=tigreDispatch('tvDenoise',img,hyper,iter,gpuids.devices);
     end
     clear img;
     

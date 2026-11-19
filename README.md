@@ -41,6 +41,8 @@ application, do not hesitate to [contact us](#contact) or open a  [discussion th
  
  - [Installation instructions](#installation)
 
+ - [Apple Silicon (Metal) preview](#apple-silicon-metal-preview)
+
  - [Getting started](#getting-started)
  
  - [FAQ](#faq)
@@ -110,6 +112,16 @@ MATLAB and Python builds are both fully supported.
 
 - [Tune TIGRE for machine. Tricks to slightly speed up the code](https://cern.github.io/TIGRE/user-guide/performance-tuning.html)
 
+
+## Apple Silicon (Metal) preview
+
+> **Preview, MATLAB only.** This branch carries a preliminary Metal backend for Apple Silicon Macs, plus a portable CPU backend. It works, but it does not yet follow TIGRE's code structure and does not include the operator changes made on `master` since September 2026. It will be restructured before it is merged; see the tracking issue and [MATLAB/BACKENDS.md](MATLAB/BACKENDS.md).
+
+```matlab
+addpath(fullfile(pwd, 'MATLAB'))
+Compile('backend', 'metal')   % needs Xcode command line tools
+InitTIGRE('backend', 'metal')
+```
 
 ## Getting started
 

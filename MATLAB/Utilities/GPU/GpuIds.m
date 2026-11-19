@@ -17,10 +17,12 @@ classdef GpuIds
                 obj.name = varargin{1};
             end
             if isempty(obj.name)
-                %disp('GpuIds(none)');
-                deviceCount = getGpuCount_mex();
-                %fprintf('devCnt = %d\n', deviceCount);
-                obj.devices = int32(0:(deviceCount-1));
+                if tigreBackend() == "cuda"
+                    deviceCount = getGpuCount_mex();
+                    obj.devices = int32(0:(deviceCount-1));
+                else
+                    obj.devices = int32(0);
+                end
             else
                 obj.devices = getGpuIds(obj.name);
             end

@@ -20,12 +20,12 @@ function img=minimizeTV_prior(img,prior,dtvg,ng,ratio,varargin)
 % Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
 if nargin >= 6
-    [gpuids] = parse_inputs(varargin{6:length(varargin)});
+    [gpuids] = parse_inputs(varargin{:});
 else
     gpuids = GpuIds();
 end
 
-img=minPICCS(img,prior,dtvg,ng,ratio,gpuids.devices);
+img=tigreDispatch('minPICCS',img,prior,dtvg,ng,ratio,gpuids.devices);
 
 end
 

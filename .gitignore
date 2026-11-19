@@ -4,6 +4,8 @@ so.*
 *.tiff
 *.png
 *.mat
+!MATLAB/tests/fixtures/cuda_reference.mat
+!MATLAB/tests/fixtures/cuda_geometry_reference.mat
 ## Matlab ignore
 
 *.asv
@@ -60,6 +62,9 @@ MATLAB/mex_CUDA_win64.xml
 
 
 *.mexw64
+*.mexmaca64
+*.metallib
+*.air
 
 # IDE config
 .vscode/

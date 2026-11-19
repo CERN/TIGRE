@@ -38,7 +38,7 @@ else
     end
 end
 
-img=AwminTV(img,dtvg,ng,delta,gpuids.devices);
+img=tigreDispatch('AwminTV',img,dtvg,ng,delta,gpuids.devices);
 
 end
 

@@ -58,7 +58,7 @@ assert(isequal([size(projections,2) size(projections,1)],geo.nDetector.'),'TIGRE
 
 %% Thats it, lets call the mex function
 
-img=Atb_mex(projections,geo,angles,ptype, gpuids.devices);
+img=tigreDispatch('Atb',projections,geo,angles,ptype,gpuids.devices);
 
 end
 

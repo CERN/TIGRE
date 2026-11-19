@@ -1,114 +1,138 @@
-% This Function initializes the toolbox.
-%
-%
-%--------------------------------------------------------------------------
+function InitTIGRE(varargin)
+%INITTIGRE Initialize TIGRE and select its native compute backend.
+%   InitTIGRE() initializes the legacy CUDA backend.
+%   InitTIGRE('backend',BACKEND) selects "cuda", "cpu", or "metal" for
+%   subsequent TIGRE calls. The selection can be changed by calling
+%   InitTIGRE again and survives CLEAR because it is stored in root
+%   application data.
+
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
-% 
-% Copyright (c) 2015, University of Bath and 
+%
+% Copyright (c) 2015, University of Bath and
 %                     CERN-European Organization for Nuclear Research
 %                     All rights reserved.
 %
-% License:            Open Source under BSD. 
-%                     See the full license at
-%                     https://github.com/CERN/TIGRE/blob/master/LICENSE
-%
-% Contact:            tigre.toolbox@gmail.com
-% Codes:              https://github.com/CERN/TIGRE/
-% Coded by:           Ander Biguri
+% License: Open Source under BSD.
 %--------------------------------------------------------------------------
 
-% Add tolbox folders
-addpath('./Algorithms');
-addpath('./Utilities');
-addpath('./Utilities/Quality_measures');
-addpath('./Utilities/IO/VarianCBCT');
-addpath('./Utilities/IO/Nikon');
-addpath('./Utilities/IO/Dicom');
-addpath('./Utilities/IO/Bruker');
-addpath('./Utilities/IO/YXLON');
-addpath('./Utilities/IO/Diondo');
-addpath('./Utilities/IO/DXChange');
-addpath('./Utilities/GPU');
-addpath('./Utilities/DE');
+parser = inputParser;
+parser.FunctionName = 'InitTIGRE';
+addParameter(parser, 'backend', 'cuda', @isSupportedBackend);
+parse(parser, varargin{:});
+backend = lower(char(string(parser.Results.backend)));
 
-addpath(genpath('./Test_data'));
+matlabRoot = fileparts(mfilename('fullpath'));
+addToolboxPaths(matlabRoot);
 
-% different arch versions
+backendFolder = getBackendFolder(matlabRoot, backend);
+if ~isfolder(backendFolder)
+    error('TIGRE:InitTIGRE:BackendNotBuilt', ...
+        ['The TIGRE %s backend is not built for %s.\n' ...
+         'Build it with Compile(''backend'',''%s'') and run InitTIGRE again.'], ...
+        upper(backend), computer('arch'), backend);
+end
+
+addpath(backendFolder, '-begin');
+if strcmp(backend, 'cuda')
+    addpath(fullfile(matlabRoot, 'pCTMexFiles', legacyPlatformFolder()), '-begin');
+end
+rehash;
+entryPoints = getBackendEntryPoints(backend);
+for index = 1:numel(entryPoints)
+    if exist(entryPoints{index}, 'file') ~= 3
+        error('TIGRE:InitTIGRE:BackendNotBuilt', ...
+            ['The TIGRE %s backend binary (%s.%s) is unavailable.\n' ...
+             'Build it with Compile(''backend'',''%s'') and run InitTIGRE again.'], ...
+            upper(backend), entryPoints{index}, mexext, backend);
+    end
+end
+
+state = struct('backend', backend, ...
+               'root', matlabRoot, ...
+               'binaryFolder', backendFolder);
+setappdata(groot, 'TIGREBackendState', state);
+end
+
+function tf = isSupportedBackend(value)
+tf = (ischar(value) || (isstring(value) && isscalar(value))) && ...
+    any(strcmpi(char(string(value)), {'cuda', 'cpu', 'metal'}));
+end
+
+function addToolboxPaths(matlabRoot)
+folders = {
+    'Algorithms'
+    'Utilities'
+    fullfile('Utilities', 'Quality_measures')
+    fullfile('Utilities', 'IO', 'VarianCBCT')
+    fullfile('Utilities', 'IO', 'Nikon')
+    fullfile('Utilities', 'IO', 'Dicom')
+    fullfile('Utilities', 'IO', 'Bruker')
+    fullfile('Utilities', 'IO', 'YXLON')
+    fullfile('Utilities', 'IO', 'Diondo')
+    fullfile('Utilities', 'IO', 'DXChange')
+    fullfile('Utilities', 'GPU')
+    fullfile('Utilities', 'DE')
+    'Demos'
+    'Colormaps'
+    fullfile('Third_party_tools', 'arrow3d')
+    fullfile('Third_party_tools', 'sec2hours')
+    fullfile('Third_party_tools', 'readMHD')
+    fullfile('Third_party_tools', 'Inpaint_nans')
+    };
+
+for index = 1:numel(folders)
+    addpath(fullfile(matlabRoot, folders{index}));
+end
+addpath(genpath(fullfile(matlabRoot, 'Test_data')));
+end
+
+function folder = getBackendFolder(matlabRoot, backend)
+switch backend
+    case 'cuda'
+        folder = fullfile(matlabRoot, 'Mex_files', legacyPlatformFolder());
+    case 'cpu'
+        folder = fullfile(matlabRoot, 'Mex_files', 'cpu', computer('arch'));
+    case 'metal'
+        if ~ismac || ~strcmp(computer('arch'), 'maca64')
+            error('TIGRE:InitTIGRE:UnsupportedPlatform', ...
+                'The Metal backend requires Apple Silicon MATLAB on macOS.');
+        end
+        folder = fullfile(matlabRoot, 'Mex_files', 'metal', 'maca64');
+end
+end
+
+function names = getBackendEntryPoints(backend)
+switch backend
+    case 'cuda'
+        names = {'Ax_mex', 'Atb_mex', 'minTV', 'AwminTV', ...
+            'tvDenoise', 'minPICCS', 'AddNoise', ...
+            'getGpuCount_mex', 'getGpuName_mex'};
+    case 'cpu'
+        names = {'tigre_cpu_mex'};
+    case 'metal'
+        names = {'tigre_metal_mex'};
+end
+end
+
+function platform = legacyPlatformFolder()
 if ispc
-    if ~isempty(strfind(computer('arch'),'64'))
-        addpath('./Mex_files/win64');
-        addpath('./pCTMexFiles/win64');
+    if contains(computer('arch'), '64')
+        platform = 'win64';
     else
-        addpath('./Mex_files/win32');
-        addpath('./pCTMexFiles/win32');
+        platform = 'win32';
     end
 elseif ismac
-    if ~isempty(strfind(computer('arch'),'64'))
-        addpath('./Mex_files/mac64');
-        addpath('./pCTMexFiles/mac64');
+    if contains(computer('arch'), '64')
+        platform = 'mac64';
     else
-        addpath('./Mex_files/mac32');
-        addpath('./pCTMexFiles/mac32');
+        platform = 'mac32';
     end
 else
-    if ~isempty(strfind(computer('arch'),'64'))
-        addpath('./Mex_files/linux64');
-        addpath('./pCTMexFiles/linux64');
+    if contains(computer('arch'), '64')
+        platform = 'linux64';
     else
-        addpath('./Mex_files/linux32');
-        addpath('./pCTMexFiles/linux32');
+        platform = 'linux32';
     end
 end
-    
-addpath('./Demos');
-
-% Perceptually uniform colormaps
-addpath('./Colormaps');
-% Add third party tools from FEX
-addpath('./Third_party_tools/arrow3d'); % 3D shepp-Logan
-addpath('./Third_party_tools/sec2hours');
-addpath('./Third_party_tools/readMHD');
-addpath('./Third_party_tools/Inpaint_nans/');
-
-if ispc
-    if ~isempty(strfind(computer('arch'),'64'))
-        addpath('./Mex_files/win64');
-        addpath('./pCTMexFiles/win64');
-    else
-        addpath('./Mex_files/win32');
-        addpath('./pCTMexFiles/win32');
-    end
-elseif ismac
-    if ~isempty(strfind(computer('arch'),'64'))
-        addpath('./Mex_files/mac64');
-        addpath('./pCTMexFiles/mac64');
-    else
-        addpath('./Mex_files/mac32');
-        addpath('./pCTMexFiles/mac32');
-    end
-else
-    if ~isempty(strfind(computer('arch'),'64'))
-        addpath('./Mex_files/linux64');
-        addpath('./pCTMexFiles/linux64');
-    else
-        addpath('./Mex_files/linux32');
-        addpath('./pCTMexFiles/linux32');
-    end
 end
-
-if ispc
-    [user, sys]=memory;
-    
-    if sys.PhysicalMemory.Total<9000000000 % 8Gb
-        warning('Your Computer has 8Gb or less of RAM memory. Using image sizes of higher than 512^3 is not recommended (most likely not possible)')
-    end
-    
-    if sys.PhysicalMemory.Total<2500000000 % 2Gb
-        warning('Your Computer has 2Gb or less of RAM memory. Using image sizes of higher than 256^3 is not recommended (most likely not possible)')
-    end
-else
-    warning('TIGRE needs a big amount of memory, be careful when running big images.')
-end
-
-clear all;

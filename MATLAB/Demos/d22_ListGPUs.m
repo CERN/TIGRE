@@ -3,11 +3,12 @@ listGpuNames = getGpuNames();
 disp('listGpuNames');
 disp(listGpuNames);
 
-% Choose one of them
-%targetGpuName='';
-%targetGpuName = 'GeForce GTX 1060 6GB';
-targetGpuName = 'GeForce RTX 2080 Ti';
-%targetGpuName = 'GeForce GTX 1070';
+% Choose one of them.
+backend = tigreBackend();
+targetGpuName = listGpuNames{1};
+if backend ~= "cuda"
+    fprintf('%s exposes one logical device with ID 0.\n', upper(backend));
+end
 
 % You can get the list of GPU IDs
 gpuidarray = getGpuIds(targetGpuName);
@@ -38,10 +39,9 @@ disp(gpuidarray);
 %    gpuids.devices = int32(2:3);
 
 gpuids = GpuIds();
-gpuids.devices = int32(1:10);
 disp(gpuids);
 
-gpuids2080 = GpuIds('GeForce RTX 2080 Ti');
-disp(gpuids2080);
+selectedGpuIds = GpuIds(targetGpuName);
+disp(selectedGpuIds);
 
 

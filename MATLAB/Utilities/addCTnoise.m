@@ -67,7 +67,7 @@ for ii=1:length(opts)
         case 'Poisson'
             if default
                 I0=60000;
-                if max(proj(:)>I0)
+                if any(proj(:) > I0)
                     I0=max(proj(:))/5;
                 end
             else
@@ -88,7 +88,11 @@ for ii=1:length(opts)
         
         case 'Implementation'
             if default
-                implementation='cuda';
+                if tigreBackend() == "cuda"
+                    implementation='cuda';
+                else
+                    implementation='matlab';
+                end
             else
                 implementation=val;
             end
@@ -112,11 +116,7 @@ if strcmp(implementation, 'matlab')
         %disp('Using Statistics Toolbox');
         Im=poissrnd(Im)+randn(size(Im)).*sigma + m;
     else
-        warning(['You don''t have Image Processing Toolbox nor Statistic Toolbox.',...
-            java.lang.System.getProperty('line.separator').char,...
-            'CUDA version is used.']);
-        %disp('Using CUDA ..');
-        Im=AddNoise(Im, m, sigma);
+        Im=localNoiseFallback(Im, m, sigma);
     end
 else % if implementation == 'cuda'
     %disp('Using CUDA');
@@ -124,4 +124,11 @@ else % if implementation == 'cuda'
 end
 Im(Im<=0)=1e-6;
 proj=single(log(I0./Im))*max(proj(:));
+end
+
+function noisy = localNoiseFallback(values, meanValue, sigma)
+% Use a normal approximation when no Poisson toolbox implementation exists.
+normalApproximation = values + sqrt(max(values, 0)).*randn(size(values));
+noisy = max(round(normalApproximation), 0);
+noisy = noisy + randn(size(noisy)).*sigma + meanValue;
 end

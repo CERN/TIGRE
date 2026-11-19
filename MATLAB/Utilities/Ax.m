@@ -68,7 +68,7 @@ end
 
 %% Thats it, lets call the mex function
 %% TODO: When Ax_mex accepts class-objects, gpuids itself will be passed.
-projections=Ax_mex(img,geo,angles,ptype, gpuids.devices);
+projections=tigreDispatch('Ax',img,geo,angles,ptype,gpuids.devices);
 
 end
 

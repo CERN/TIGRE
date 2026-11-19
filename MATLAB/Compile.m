@@ -23,6 +23,17 @@ function []=Compile(varargin)
 % Codes:              https://github.com/CERN/TIGRE/
 % Coded by:           Ander Biguri
 %--------------------------------------------------------------------------
+matlabRoot = fileparts(mfilename('fullpath'));
+previousFolder = pwd;
+folderCleanup = onCleanup(@() cd(previousFolder));
+cd(matlabRoot);
+
+[backend, varargin] = extractBackend(varargin);
+if ~strcmp(backend, 'cuda')
+    compileNativeBackend(matlabRoot, backend);
+    return
+end
+
 %% Varargin
 disable_pinned=false;
 mex_xml_file="";
@@ -186,4 +197,109 @@ end
 
 disp('')
 disp('Compilation complete')
+
+end
+
+function [backend, remaining] = extractBackend(arguments)
+backend = 'cuda';
+remaining = {};
+index = 1;
+while index <= numel(arguments)
+    if (ischar(arguments{index}) || isstring(arguments{index})) && ...
+            strcmpi(char(string(arguments{index})), 'backend')
+        if index == numel(arguments)
+            error('TIGRE:Compile:InvalidBackend', ...
+                'A backend value must follow the ''backend'' option.');
+        end
+        backend = lower(char(string(arguments{index + 1})));
+        index = index + 2;
+    else
+        remaining{end + 1} = arguments{index}; %#ok<AGROW>
+        index = index + 1;
+    end
+end
+
+if ~any(strcmp(backend, {'cuda', 'cpu', 'metal'}))
+    error('TIGRE:Compile:InvalidBackend', ...
+        'Backend must be ''cuda'', ''cpu'', or ''metal''.');
+end
+end
+
+function compileNativeBackend(matlabRoot, backend)
+switch backend
+    case 'cpu'
+        outputFolder = fullfile(matlabRoot, 'Mex_files', 'cpu', computer('arch'));
+        sourceFile = fullfile(matlabRoot, '..', 'Common', 'CPU', 'tigre_cpu_mex.cpp');
+        ensureSourceExists(sourceFile);
+        ensureFolder(outputFolder);
+        if ispc
+            mex('-R2018a', sourceFile, ...
+                'COMPFLAGS=$COMPFLAGS /std:c++17 /O2', ...
+                '-outdir', outputFolder);
+        else
+            mex('-R2018a', sourceFile, ...
+                'CXXFLAGS=$CXXFLAGS -std=c++17 -O3 -pthread', ...
+                'LDFLAGS=$LDFLAGS -pthread', ...
+                '-outdir', outputFolder);
+        end
+    case 'metal'
+        if ~ismac || ~strcmp(computer('arch'), 'maca64')
+            error('TIGRE:Compile:UnsupportedPlatform', ...
+                'The Metal backend requires Apple Silicon MATLAB on macOS.');
+        end
+        outputFolder = fullfile(matlabRoot, 'Mex_files', 'metal', 'maca64');
+        mexSource = fullfile(matlabRoot, '..', 'Common', 'Metal', 'tigre_metal_mex.mm');
+        shaderSource = fullfile(matlabRoot, '..', 'Common', 'Metal', 'tigre_kernels.metal');
+        ensureSourceExists(mexSource);
+        ensureSourceExists(shaderSource);
+        ensureFolder(outputFolder);
+
+        airFile = [tempname, '.air'];
+        airCleanup = onCleanup(@() deleteIfPresent(airFile));
+        libraryFile = fullfile(outputFolder, 'tigre_kernels.metallib');
+        runBuildCommand(sprintf('xcrun -sdk macosx metal -c "%s" -o "%s"', ...
+            shaderSource, airFile), 'Metal shader compilation');
+        runBuildCommand(sprintf('xcrun -sdk macosx metallib "%s" -o "%s"', ...
+            airFile, libraryFile), 'Metal library linking');
+
+        mex('-R2018a', mexSource, ...
+            'CXXFLAGS=$CXXFLAGS -std=c++17 -O3 -fobjc-arc', ...
+            'LDFLAGS=$LDFLAGS -framework Metal -framework Foundation', ...
+            '-outdir', outputFolder);
+        clear airCleanup
+end
+
+fprintf('\n%s backend compilation complete: %s\n', upper(backend), outputFolder);
+end
+
+function ensureSourceExists(filename)
+if ~isfile(filename)
+    error('TIGRE:Compile:MissingSource', ...
+        'Required backend source file not found: %s', filename);
+end
+end
+
+function ensureFolder(folder)
+if ~isfolder(folder)
+    [created, message] = mkdir(folder);
+    if ~created
+        error('TIGRE:Compile:CreateFolderFailed', ...
+            'Unable to create output folder %s: %s', folder, message);
+    end
+end
+end
+
+function runBuildCommand(command, description)
+[status, output] = system(command);
+if status ~= 0
+    error('TIGRE:Compile:MetalBuildFailed', ...
+        '%s failed:\n%s', description, output);
+end
+end
+
+function deleteIfPresent(filename)
+if isfile(filename)
+    delete(filename);
+end
+end
 
