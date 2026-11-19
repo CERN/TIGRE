@@ -66,7 +66,8 @@ thank you.
   conversions. More accurate: it added up the step between voxel boundaries in single
   precision, which drifted by up to ~2e-3 (relative) along rays through a 512³ image. It now
   computes each boundary from its plane, with an error of ~1e-5. Siddon projections change by
-  up to that drift, towards the exact value. Parallel beam uses the same traversal (#859).
+  up to that drift, towards the exact value. Parallel beam uses the same traversal (#859), and is
+  1.7-2.0x faster on Windows and 4.4-4.8x on Linux.
   The technical note `docs/technical-notes/siddon/siddon_note.pdf` explains these changes.
 - `tvdenoise` (Python; `im3DDenoise` in MATLAB, also used by FISTA and other TV algorithms)
   could loop forever when the image did not fit on the GPU and was split: for some amounts of
