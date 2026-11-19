@@ -33,6 +33,10 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- Python: `Ax` and `Atb` changed the `GpuIds` they were given when there were fewer angles
+  (`Ax`) or image slices (`Atb`) than GPUs, keeping only as many GPUs as needed. Algorithms
+  that project one angle at a time (SART, ASD_POCS, AwASD_POCS) then ran on one GPU after the
+  first angle, for the projections and for the TV step. They now trim a copy (#855).
 - Cone-beam Siddon `Ax` got some rays wrong (by up to ~20%): for rays entering the image
   exactly on a voxel boundary, the first voxel and the first boundary crossings disagreed.
   Without splitting this was rare (e.g. 1 in 50,000 rays, 256³, off by up to 14%); when the
