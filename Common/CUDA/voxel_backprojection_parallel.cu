@@ -154,40 +154,42 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
      * const float sinalpha,
      * const float cosalpha){
      */
-    unsigned long long indY = blockIdx.y * blockDim.y + threadIdx.y;
-    unsigned long long indX = blockIdx.x * blockDim.x + threadIdx.x;
-    // unsigned long startIndZ = blockIdx.z * blockDim.z + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
-    unsigned long long startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
+    int indY = blockIdx.y * blockDim.y + threadIdx.y;
+    int indX = blockIdx.x * blockDim.x + threadIdx.x;
+    int startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     //Make sure we don't go out of bounds
     if (indX>=geo.nVoxelX || indY>=geo.nVoxelY || startIndZ>=geo.nVoxelZ)
         return;
     
     // We'll keep a local auxiliary array of values of a column of voxels that this thread will update
     float voxelColumn[VOXELS_PER_THREAD];
+    // The voxel indices as floats, converted once: converting integers to float inside the loops below
+    // costs one conversion per voxel and projection (a slow one for 64-bit integers).
+    const float fX=(float)indX, fY=(float)indY, fZ0=(float)startIndZ;
     
     // First we need to copy the curent 3D volume values from the column to our auxiliary array so that we can then
     // work on them (update them by computing values from multiple projections) locally - avoiding main memory reads/writes
     
-    unsigned long colIdx;
+    int colIdx;
     
     for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
     {
-        unsigned long long indZ = startIndZ + colIdx;
+        int indZ = startIndZ + colIdx;
         // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
         // be trying to copy the out of bounds values back to the 3D volume anyway (bounds checks will be done in the final loop where the updated values go back to the main volume)
         if(indZ>=geo.nVoxelZ)
             break;   // break the loop.
         
-        unsigned long long idx =indZ*(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY+indY*(unsigned long long)geo.nVoxelX + indX;
+        size_t idx =((size_t)indZ*geo.nVoxelY+indY)*geo.nVoxelX + indX;
         voxelColumn[colIdx] = image[idx];   // Read the current volume value that we'll update by computing values from MULTIPLE projections (not just one)
         // We'll be updating the local (register) variable, avoiding reads/writes from the slow main memory.
     }  // END copy 3D volume voxels to local array
     
     // Now iterate through projections
-    for(unsigned long projNumber=0; projNumber<PROJ_PER_KERNEL; projNumber++)
+    for(int projNumber=0; projNumber<PROJ_PER_KERNEL; projNumber++)
     {
         // Get the current parameters from parameter arrays in constant memory.
-        unsigned long indAlpha = currProjSetNumber*PROJ_PER_KERNEL+projNumber;  // This is the ABSOLUTE projection number in the projection array
+        int indAlpha = currProjSetNumber*PROJ_PER_KERNEL+projNumber;  // This is the ABSOLUTE projection number in the projection array
         
         // Our currImageVal will be updated by hovewer many projections we had left in the "remainder" - that's OK.
         if(indAlpha>=totalNoOfProjections)
@@ -210,7 +212,8 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
         for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
         {
-            unsigned long long indZ = startIndZ + colIdx;
+            int indZ = startIndZ + colIdx;
+            const float fZ=fZ0+(float)colIdx;
             
             // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
             // be trying to copy the out of bounds values anyway (bounds checks will be done in the final loop where the values go to the main volume)
@@ -220,9 +223,9 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
             Point3D P;
             S.x=DSO;
-            P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
-            P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
+            P.x=(xyzOrigin.x+fX*deltaX.x+fY*deltaY.x+fZ*deltaZ.x);
+            P.y=(xyzOrigin.y+fX*deltaX.y+fY*deltaY.y+fZ*deltaZ.y)-COR/geo.dDetecU;
+            P.z=(xyzOrigin.z+fX*deltaX.z+fY*deltaY.z+fZ*deltaZ.z);
             S.y=P.y;S.z=P.z;
             
             // This is the vector defining the line from the source to the Voxel
@@ -245,9 +248,9 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             // Get Value in the computed (U,V) and multiply by the corresponding weight.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
 #if IS_FOR_MATLAB_TIGRE
-            voxelColumn[colIdx]+=tex3D<float>(tex, v+0.5f, u+0.5f ,indAlpha+0.5f);
+            voxelColumn[colIdx]+=tex3D<float>(tex, v+0.5f, u+0.5f ,(float)indAlpha+0.5f);
 #else
-            voxelColumn[colIdx]+=tex3D<float>(tex, u+0.5f, v+0.5f ,indAlpha+0.5f);
+            voxelColumn[colIdx]+=tex3D<float>(tex, u+0.5f, v+0.5f ,(float)indAlpha+0.5f);
 #endif
             
         }  // END iterating through column of voxels
@@ -257,13 +260,13 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
     // And finally copy the updated local voxelColumn array back to our 3D volume (main memory)
     for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
     {
-        unsigned long long indZ = startIndZ + colIdx;
+        int indZ = startIndZ + colIdx;
         // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
         // be trying to copy the out of bounds values back to the 3D volume anyway (bounds checks will be done in the final loop where the values go to the main volume)
         if(indZ>=geo.nVoxelZ)
             break;   // break the loop.
         
-        unsigned long long idx =indZ*(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY+indY*(unsigned long long)geo.nVoxelX + indX;
+        size_t idx =((size_t)indZ*geo.nVoxelY+indY)*geo.nVoxelX + indX;
         image[idx] = voxelColumn[colIdx];   // Read the current volume value that we'll update by computing values from MULTIPLE projections (not just one)
         // We'll be updating the local (register) variable, avoiding reads/writes from the slow main memory.
         // According to references (Papenhausen), doing = is better than +=, since += requires main memory read followed by a write.
