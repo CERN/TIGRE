@@ -104,6 +104,28 @@ pip install .
 :::
 ::::
 
+### Choosing the GPU backend
+
+TIGRE is built for one GPU backend. When you build from source, it uses the
+first one whose compiler it finds, in this order:
+
+| Backend | GPUs | Found from |
+|---|---|---|
+| `cuda` | NVIDIA | `CUDA_HOME` or `CUDA_PATH`, `nvcc` on the `PATH`, or the default CUDA install location |
+| `hip` | AMD | `ROCM_PATH` or `HIP_PATH`, `hipcc` on the `PATH`, or `/opt/rocm` |
+| `sycl` | Intel | `icpx` (`icx` on Windows) on the `PATH` |
+| `metal` | Apple Silicon | a Mac with Apple Silicon |
+
+The build prints which backend it chose and why. To choose one yourself, set
+`TIGRE_BACKEND`, for example `TIGRE_BACKEND=cuda pip install .`
+(`set TIGRE_BACKEND=cuda` first on Windows).
+
+At the moment only `cuda` can be built. The others are being added: `hip` in
+[#747](https://github.com/CERN/TIGRE/pull/747), `sycl` in
+[#885](https://github.com/CERN/TIGRE/issues/885) and `metal` in
+[#876](https://github.com/CERN/TIGRE/issues/876). If the build picks one of
+them, it stops and says so; set `TIGRE_BACKEND=cuda` to build for NVIDIA GPUs.
+
 ## Conda (unofficial)
 
 CCPi Tomographic Imaging builds and maintains a conda package:
