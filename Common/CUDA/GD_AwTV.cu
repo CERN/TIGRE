@@ -164,7 +164,8 @@ do { \
         
     }
     
-    __device__ void warpReduce(volatile float *sdata, size_t tid) {
+    template<typename T>
+    __device__ void warpReduce(volatile T *sdata, size_t tid) {
         sdata[tid] += sdata[tid + 32];
         sdata[tid] += sdata[tid + 16];
         sdata[tid] += sdata[tid + 8];
@@ -222,13 +223,16 @@ do { \
         if (tid == 0) g_odata[blockIdx.x] = mySum;
     }
     
-    __global__ void  reduceSum(float *g_idata, float *g_odata, size_t n){
-        extern __shared__ volatile float sdata[];
+    // Adds the per-block partial sums of reduceNorm2 in double (#856): each GPU returns its part of the norm
+    // in double and the host adds the parts in double, so the total barely depends on how the image is split.
+    __global__ void  reduceSum(float *g_idata, double *g_odata, size_t n){
+        extern __shared__ volatile double sdata_d[];
+        volatile double* sdata = sdata_d;
         //http://stackoverflow.com/a/35133396/1485872
         size_t tid = threadIdx.x;
         size_t i = (size_t)blockIdx.x*blockDim.x + tid;
         size_t gridSize = blockDim.x*gridDim.x;
-        float mySum = 0;
+        double mySum = 0;
         // float value=0;
         while (i < n) {
             mySum += g_idata[i];
@@ -483,9 +487,9 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
 
         double totalsum_prev;
         double totalsum;
-        float sum_curr_spl;
-        float * sumnorm2;
-        cudaMallocHost((void**)&sumnorm2,deviceCount*sizeof(float));
+        double sum_curr_spl;
+        double * sumnorm2;
+        cudaMallocHost((void**)&sumnorm2,deviceCount*sizeof(double));
         onError.add([sumnorm2]{ cudaFreeHost(sumnorm2); });
         
         unsigned int curr_slices;
@@ -602,13 +606,16 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                         size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
 
                         if (dimgridRed > 1) {
-                            reduceSum << <1, dimblockRed, MAXTHREADS*sizeof(float),stream[dev*nStream_device] >> >(d_norm2aux[dev], d_norm2[dev], dimgridRed);
+                            // d_norm2 is free here (reduceNorm2 has read it) and holds more than 1024 floats: room for the double
+                            reduceSum << <1, dimblockRed, MAXTHREADS*sizeof(double),stream[dev*nStream_device] >> >(d_norm2aux[dev], (double*)d_norm2[dev], dimgridRed);
                             cudaStreamSynchronize(stream[dev*nStream_device]);
-                            cudaMemcpyAsync(&sumnorm2[dev], d_norm2[dev], sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
+                            cudaMemcpyAsync(&sumnorm2[dev], d_norm2[dev], sizeof(double), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
                         }
                         else {
                             cudaStreamSynchronize(stream[dev*nStream_device]);
-                            cudaMemcpyAsync(&sumnorm2[dev], d_norm2aux[dev], sizeof(float), cudaMemcpyDeviceToHost,stream[dev*nStream_device+1]);
+                            float onesum;
+                            cudaMemcpy(&onesum, d_norm2aux[dev], sizeof(float), cudaMemcpyDeviceToHost);
+                            sumnorm2[dev]=onesum;
                         }
                     }
                     for (dev = 0; dev < deviceCount; dev++){

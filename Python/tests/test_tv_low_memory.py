@@ -16,8 +16,10 @@ arrays registered as pinned memory, and on Linux the next call with a new array
 (often at the same address) returned all zeros without any error.
 
 What a split result should be:
-- minTV/AwminTV: the whole-GPU result up to ~1e-3. They sum the gradient norm
-  piece by piece in single precision (#856), so split results differ slightly.
+- minTV/AwminTV: the whole-GPU result up to ~1e-3. With more than one piece
+  per GPU, each step is divided by a norm gathered from the pieces' previous
+  pass (on the first pass, the piece's own norm) rather than the norm of the
+  whole image at that step, so split results differ slightly.
 - tvdenoise: the whole-GPU result, to rounding. It has no global sum: every
   voxel's update depends only on its neighbours, so a correct split gives the
   same numbers. (Before #863 was fixed it differed by up to 26% here: pieces
