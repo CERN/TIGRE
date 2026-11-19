@@ -38,11 +38,10 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
-- `Ax` and `Atb` with very little free GPU memory: when the image texture did not fit, Siddon `Ax`
-  failed with "invalid resource handle" (the allocation was not checked), and both cone-beam
-  forward projectors sized their pieces as if a texture took exactly its raw size, so they could
-  fail where smaller pieces would fit. Every texture allocation now reports "out of memory", and
-  the cone-beam forward projectors split the image in more pieces until the texture fits.
+- Python: `Ax` and `Atb` changed the `GpuIds` they were given when there were fewer angles
+  (`Ax`) or image slices (`Atb`) than GPUs, keeping only as many GPUs as needed. Algorithms
+  that project one angle at a time (SART, ASD_POCS, AwASD_POCS) then ran on one GPU after the
+  first angle, for the projections and for the TV step. They now trim a copy (#855).
 - `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB, used by FISTA and SART-TV), when the
   image did not fit on the GPU and was split in pieces: a piece read its halo slices from host
   memory that the previous piece had already advanced, so the result differed from the unsplit
