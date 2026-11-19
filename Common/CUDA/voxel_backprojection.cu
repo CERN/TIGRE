@@ -736,7 +736,7 @@ void CreateTexture(const GpuIds& gpuids, float* projectiondata,Geometry geo,cuda
             //cudaArray Descriptor
             cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
             //cuda Array
-            cudaMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent);
+            tigre::checkMalloc(cudaMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent), "Atb:voxel_backprojection:GPUmemory", "Backprojection", (size_t)extent.width*extent.height*extent.depth*sizeof(float));
             
         }
     }
