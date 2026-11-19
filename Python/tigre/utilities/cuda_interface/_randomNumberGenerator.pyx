@@ -27,8 +27,19 @@ cdef extern from "numpy/arrayobject.h":
     void PyArray_CLEARFLAGS(np.ndarray arr, int flags)
 
 cdef extern from "RandomNumberGenerator.hpp":
-    cdef void poisson_1d(float* img, size_t uiLen, float* dst, c_GpuIds gpuids) except +
-    cdef void poisson_gaussian_1d(float* img, size_t uiLen, float fGaussMu, float fGaussSigma, float* dst, c_GpuIds gpuids) except +
+    cdef void poisson_1d(float* img, size_t uiLen, float* dst, c_GpuIds gpuids, unsigned long long seed) except +
+    cdef void poisson_gaussian_1d(float* img, size_t uiLen, float fGaussMu, float fGaussSigma, float* dst, c_GpuIds gpuids, unsigned long long seed) except +
+
+
+def _seed(seed):
+    # None: a new seed for every call, drawn from NumPy's global random state (so np.random.seed() makes it
+    # reproducible). Before, the GPU generator always used 1234: every call added the same noise.
+    if seed is None:
+        return int(np.random.randint(0, 2**63 - 1, dtype=np.int64))
+    seed = int(seed)
+    if seed < 0:
+        raise ValueError("seed must be a non-negative integer")
+    return seed
 
 def cuda_raise_errors(error_code):
     if error_code:
@@ -37,7 +48,8 @@ def cuda_raise_errors(error_code):
         from tigre.utilities.errors import TigreCudaCallError
         raise TigreCudaCallError('RandomNumberGenerator::', error_code)
 
-def add_poisson(np.ndarray[np.float32_t, ndim=3] src, gpuids=None):
+def add_poisson(np.ndarray[np.float32_t, ndim=3] src, gpuids=None, seed=None):
+    seed = _seed(seed)  # first: a bad seed raises before anything is allocated
     # print("add_poisson()")
     cdef c_GpuIds* c_gpuids = convert_to_c_gpuids(gpuids)
     if not c_gpuids:
@@ -59,8 +71,9 @@ def add_poisson(np.ndarray[np.float32_t, ndim=3] src, gpuids=None):
 
     cdef float* c_src = <float*> src.data
     cdef np.npy_intp c_uiSigLen = <np.npy_intp> (size_img[0] *size_img[1] *size_img[2])
+    cdef unsigned long long c_seed = seed
     try:
-        cuda_raise_errors(poisson_1d(c_src, c_uiSigLen, c_imgout, c_gpuids[0]))
+        cuda_raise_errors(poisson_1d(c_src, c_uiSigLen, c_imgout, c_gpuids[0], c_seed))
     except BaseException:
         free(c_imgout)
         free_c_gpuids(c_gpuids)
@@ -76,7 +89,9 @@ def add_poisson(np.ndarray[np.float32_t, ndim=3] src, gpuids=None):
 def add_noise(np.ndarray[np.float32_t, ndim=3] poisson_lambda,
               np.float32_t gaussian_mu,
               np.float32_t gaussian_sigma,
-              gpuids=None):
+              gpuids=None,
+              seed=None):
+    seed = _seed(seed)  # first: a bad seed raises before anything is allocated
     # print("add_noise()")
     cdef c_GpuIds* c_gpuids = convert_to_c_gpuids(gpuids)
     if not c_gpuids:
@@ -98,10 +113,11 @@ def add_noise(np.ndarray[np.float32_t, ndim=3] poisson_lambda,
 
     cdef float* c_src = <float*> poisson_lambda.data
     cdef np.npy_intp c_uiSigLen = <np.npy_intp> (size_img[0] *size_img[1] *size_img[2])
+    cdef unsigned long long c_seed = seed
     cdef np.float32_t c_fGaussMu = gaussian_mu
     cdef np.float32_t c_fGaussSigma = gaussian_sigma
     try:
-        cuda_raise_errors(poisson_gaussian_1d(c_src, c_uiSigLen, c_fGaussMu, c_fGaussSigma, c_imgout, c_gpuids[0]))
+        cuda_raise_errors(poisson_gaussian_1d(c_src, c_uiSigLen, c_fGaussMu, c_fGaussSigma, c_imgout, c_gpuids[0], c_seed))
     except BaseException:
         free(c_imgout)
         free_c_gpuids(c_gpuids)

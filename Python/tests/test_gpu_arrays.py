@@ -442,14 +442,12 @@ SPLIT_CASES = [("Ax", "Siddon"), ("Ax", "interpolated"), ("Atb", "FDK"), ("Atb",
 @pytest.mark.parametrize("op,kind", SPLIT_CASES)
 def test_image_split_when_the_gpu_is_nearly_full(op, kind):
     """Model weights or other tensors take most of the GPU: TIGRE cannot hold
-    the whole image (512 MB) at once and works on it in pieces (only cone beam
-    splits).
+    the whole image (512 MB) at once and works on it in pieces.
 
     The reference is the NumPy path with the same memory free, so it splits
     the same way: splitting changes Ax results a little (sums in a different
-    order, interpolation at the piece borders, and a pre-existing Siddon bug
-    for rays that enter a piece through its top or bottom), so the unsplit
-    result is not the reference.
+    order, interpolation at the piece borders), so the unsplit result is not
+    the reference.
 
     The free memory is computed from TIGRE's own rule to land in the middle of
     the range where it splits in 3 pieces, about 40 MB from either end. (A

@@ -1,7 +1,7 @@
 import numpy as np
 import _RandomNumberGenerator as RNG
 
-def add(projections, Gaussian=None, Poisson=None):
+def add(projections, Gaussian=None, Poisson=None, seed=None):
     """Add realistic noise to simulated projections.
 
     Converts the line integrals to photon counts, adds Poisson (quantum) noise
@@ -18,6 +18,12 @@ def add(projections, Gaussian=None, Poisson=None):
     Poisson : float, optional
         Photon count of an unattenuated ray (I0). Lower values give noisier
         data. Default 60000, as MATLAB's ``addCTnoise``.
+    seed : int, optional
+        Seed of the GPU random number generator: the same seed gives the same
+        noise. Default: a new one for every call, drawn from NumPy's global
+        random state (so ``np.random.seed(...)`` makes a script reproducible).
+        Before TIGRE 3.3 the seed was always the same, so every call added
+        exactly the same noise.
 
     Returns
     -------
@@ -52,7 +58,7 @@ def add(projections, Gaussian=None, Poisson=None):
     max_proj = np.max(projections)
     projections = Poisson * np.exp(-projections / max_proj)
 
-    projections = RNG.add_noise(projections, Gaussian[0], Gaussian[1])
+    projections = RNG.add_noise(projections, Gaussian[0], Gaussian[1], seed=seed)
     # the Gaussian term can push a reading to zero or below, where the log is not finite
     projections[projections <= 0] = 1e-6
 

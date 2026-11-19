@@ -345,10 +345,12 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     // pin the memory is greater than the lost time in Synchronously launching the memcpys. This is only worth it when the image is too big.
    
 #ifndef NO_PINNED_MEMORY
+    // tigre::hostRegister: an array that is already page-locked (e.g. pinned by PyTorch) is used as it is and not unregistered here.
+    bool img_registered=false;
     if (isHostRegisterSupported & splits>1){
-        cudaHostRegister(img, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float),cudaHostRegisterPortable);
+        img_registered=tigre::hostRegister(img, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float));
         // The caller's array: left registered, the next call with it would fail.
-        onError.add([img]{ cudaHostUnregister(img); });
+        if (img_registered) onError.add([img]{ cudaHostUnregister(img); });
     }
     cudaCheckErrors("Error pinning memory");
 #endif
@@ -612,7 +614,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     for (int i = 0; i < nStreams; ++i)
         cudaStreamDestroy(stream[i]) ;
 #ifndef NO_PINNED_MEMORY
-    if (isHostRegisterSupported & splits>1){
+    if (img_registered){
         cudaHostUnregister(img);
     }
 #endif

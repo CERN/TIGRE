@@ -45,5 +45,6 @@
 
 #include "TIGRE_common.hpp"
 #include "GpuIds.hpp"
-void poisson_1d(const float* pfIn, size_t uiLen, float* pfOut, const GpuIds& gpuids);
-void poisson_gaussian_1d(const float* pfPoissonL, size_t uiLen, float fGaussMu, float fGaussSigma, float* pfOut, GpuIds& gpuids);
+// seed: the same seed gives the same noise. Runs on gpuids[0].
+void poisson_1d(const float* pfIn, size_t uiLen, float* pfOut, const GpuIds& gpuids, unsigned long long seed);
+void poisson_gaussian_1d(const float* pfPoissonL, size_t uiLen, float fGaussMu, float fGaussSigma, float* pfOut, GpuIds& gpuids, unsigned long long seed);
