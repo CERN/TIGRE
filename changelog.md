@@ -20,12 +20,11 @@ thank you.
   extra slice was added beyond each end and updated with the rest, so results at the first and
   last slice change (by up to ~10% of the maximum in strong denoising; under 1% one slice in;
   unchanged further in). This also makes split, unsplit and multi-GPU results identical (#863).
-- `minTV`/`AwminTV` (and so ASD_POCS, OS_ASD_POCS, AwASD_POCS, ... ): each GPU's part of the
+- `minTV`/`AwminTV` (used by ASD_POCS, OS_ASD_POCS, AwASD_POCS, ...): each GPU's part of the
   gradient norm is now summed and returned in double precision, and the parts are added in double,
-  so 2 or more GPUs give the same result as 1 (before, up to ~2e-2 of the maximum apart after 10
-  AwASD_POCS iterations). Single-GPU results change slightly too: one call by rounding, but the
-  POCS solvers amplify it (to about the same size as the old 1-vs-2-GPU difference), with the same
-  error against the true image (#856; approach and measurements by Jeff Daily).
+  so they give the same result on 2 or more GPUs as on 1 (before, up to ~5e-4 of the maximum apart
+  in one call). Single-GPU results change by rounding; the POCS solvers amplify such changes (up to
+  ~5e-3 of the maximum after 10 OS_AwASD_POCS iterations) (#856; approach by Jeff Daily).
 - Python: a CUDA error now raises `RuntimeError` (with the CUDA message) instead of ending the
   whole Python process with `exit(1)`. Ax and Atb release the GPU memory, streams, textures and
   page-locked memory the failed call held, so TIGRE can be used again in the same process.
