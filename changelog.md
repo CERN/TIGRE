@@ -33,6 +33,20 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- Cone-beam Siddon `Ax` got some rays wrong (by up to ~20%): for rays entering the image
+  exactly on a voxel boundary, the first voxel and the first boundary crossings disagreed.
+  Without splitting this was rare (e.g. 1 in 50,000 rays, 256³, off by up to 14%); when the
+  image was split in pieces because it did not fit on the GPU, it was common. The traversal
+  now derives both from the same voxel (#859).
+- Siddon `Ax` (cone and parallel beam) is faster and more accurate. Cone beam, kernel time:
+  1.4-1.9x faster on Windows (RTX 4070), 5.5-6.5x on Linux (Quadro RTX 6000), where the voxel
+  indices were 64-bit integers. Faster: the loop fetches the voxel value once per step for all
+  threads, instead of inside each branch, with 32-bit indices and no integer-to-float
+  conversions. More accurate: it added up the step between voxel boundaries in single
+  precision, which drifted by up to ~2e-3 (relative) along rays through a 512³ image. It now
+  computes each boundary from its plane, with an error of ~1e-5. Siddon projections change by
+  up to that drift, towards the exact value. Parallel beam uses the same traversal (#859).
+  The technical note `docs/technical-notes/siddon/siddon_note.pdf` explains these changes.
 - `tvdenoise` (Python; `im3DDenoise` in MATLAB, also used by FISTA and other TV algorithms)
   could loop forever when the image did not fit on the GPU and was split: for some amounts of
   free memory it computed a buffer of 0 slices. `minTV`/`AwminTV` stopped with "Assertion
