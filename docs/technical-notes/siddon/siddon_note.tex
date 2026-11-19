@@ -794,20 +794,22 @@ report the ratio with its confidence interval (Table~\ref{tab:bench}).
 \begin{table}[h]
 \centering
 \caption{\label{tab:bench}New against original kernel in TIGRE: time ratio, mean with 95\% confidence
-interval over 4--6 rounds.}
+interval over 4--6 rounds. Windows: RTX 4070; Linux: Quadro RTX 6000.}
 \small\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lcccccc}
+\begin{tabular}{llcccc}
 \toprule
-& \multicolumn{4}{c}{cone beam} & \multicolumn{2}{c}{parallel beam}\\
-\cmidrule(lr){2-5}\cmidrule(lr){6-7}
-& \multicolumn{2}{c}{Windows, RTX 4070} & \multicolumn{2}{c}{Linux, Quadro RTX 6000} & \multicolumn{2}{c}{Windows, RTX 4070}\\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
-image, angles & kernel & whole call & kernel & whole call & kernel & whole call\\
+& & \multicolumn{2}{c}{cone beam} & \multicolumn{2}{c}{parallel beam}\\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+image, angles & & Windows & Linux & Windows & Linux\\
 \midrule
-$128^3$, 360 & $0.54\pm0.02$ & $0.76\pm0.06$ & $0.152\pm0.001$ & $0.24\pm0.01$ & $0.593\pm0.005$ & $0.76\pm0.06$\\
-$256^3$, 360 & $0.56\pm0.02$ & $0.64\pm0.02$ & $0.158\pm0.001$ & $0.175\pm0.001$ & $0.530\pm0.008$ & $0.58\pm0.04$\\
-$512^3$, 360 & $0.67\pm0.01$ & $0.69\pm0.01$ & $0.177\pm0.000$ & $0.182\pm0.001$ & $0.543\pm0.010$ & $0.57\pm0.03$\\
-$768^3$, 180 & $0.69\pm0.01$ & $0.74\pm0.01$ & --- & --- & $0.506\pm0.012$ & $0.55\pm0.01$\\
+$128^3$, 360 & kernel     & $0.54\pm0.02$ & $0.152\pm0.001$ & $0.593\pm0.005$ & $0.209\pm0.001$\\
+             & whole call & $0.76\pm0.06$ & $0.24\pm0.01$   & $0.76\pm0.06$   & $0.32\pm0.04$\\
+$256^3$, 360 & kernel     & $0.56\pm0.02$ & $0.158\pm0.001$ & $0.530\pm0.008$ & $0.220\pm0.001$\\
+             & whole call & $0.64\pm0.02$ & $0.175\pm0.001$ & $0.58\pm0.04$   & $0.237\pm0.001$\\
+$512^3$, 360 & kernel     & $0.67\pm0.01$ & $0.177\pm0.000$ & $0.543\pm0.010$ & $0.227\pm0.002$\\
+             & whole call & $0.69\pm0.01$ & $0.182\pm0.001$ & $0.57\pm0.03$   & $0.231\pm0.002$\\
+$768^3$, 180 & kernel     & $0.69\pm0.01$ & ---             & $0.506\pm0.012$ & ---\\
+             & whole call & $0.74\pm0.01$ & ---             & $0.55\pm0.01$   & ---\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -816,8 +818,9 @@ For cone beam, the new kernel takes 54--69\% of the original's time on Windows a
 $512^3$, 2054\,ms of kernel time become 364\,ms), consistent with the 64-bit rows of the ablation. It was
 faster in every round for every size. The gain is smaller for larger images, plausibly because more texture
 reads miss the cache and the kernel becomes more memory-bound; we did not verify this. For parallel beam the
-new kernel takes 51--59\% of the original's time, and its gain does not shrink with image size; TIGRE's
-original parallel-beam kernel had extra corrections in its initialisation.
+new kernel takes 51--59\% of the original's time on Windows and 21--23\% on Linux (at $512^3$, 1569\,ms of
+kernel time become 355\,ms); on Windows its gain does not shrink with image size, and on Linux only slightly.
+TIGRE's original parallel-beam kernel had extra corrections in its initialisation.
 
 \section{Discussion}
 \label{sec:discussion}
@@ -851,8 +854,7 @@ Siddon's midpoint rule, takes the voxel on the positive side. This is a modellin
 error, but a symmetric treatment may be preferable for geometries that produce many such rays.
 
 \paragraph{Limitations.} Speed was measured on two GPUs of two generations, accuracy by emulation on 150 rays
-per image, and correctness in exact arithmetic on a small grid; the parallel-beam kernel was timed on Windows
-only. We did not study backprojection: TIGRE's backprojectors are voxel-driven and do not use this traversal,
+per image, and correctness in exact arithmetic on a small grid. We did not study backprojection: TIGRE's backprojectors are voxel-driven and do not use this traversal,
 but a ray-driven matched backprojector built on Jacobs' traversal would inherit both flaws.
 
 \section{Conclusion}
