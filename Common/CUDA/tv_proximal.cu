@@ -266,6 +266,8 @@ void cpy_from_host(float* device_array,float* host_array,
             // At least 1: the main loop advances by buffer_length slices, so 0 never ended.
             if (buffer_length<1) buffer_length=1;
             buffer_length=min(MAX_BUFFER,buffer_length);
+            // No wider than a piece: a piece's halo then comes from its neighbour piece only (see "carry" below).
+            buffer_length=min(slices_per_split,buffer_length);
             
             mem_img_each_GPU=(mem_slice_image*(slices_per_split+buffer_length*2));
             
@@ -303,6 +305,11 @@ void cpy_from_host(float* device_array,float* host_array,
         float* buffer=NULL;
         cudaEvent_t* exchange_event=(cudaEvent_t*)calloc(nExchanges>0? 4*nExchanges : 1,sizeof(cudaEvent_t));
         float* h_px=NULL, *h_py=NULL, *h_pz=NULL, *h_u;
+        // With splits>1 the pieces run one after another and write their results back to the host. The lower halo
+        // of the first piece of a split is the top of the last piece of the previous split, which has already been
+        // advanced by then. "carry" keeps those slices (u, px, py, pz) as they were before that piece ran, so every
+        // piece starts from neighbours at its own iteration count.
+        float* carry=NULL;
         onError.add([exchange_event, nExchanges, peer_access]{
             for (int e = 0; e < 4*nExchanges; e++) if (exchange_event[e]) cudaEventDestroy(exchange_event[e]);
             free(exchange_event); free(peer_access);
@@ -324,6 +331,10 @@ void cpy_from_host(float* device_array,float* host_array,
                 cudaMallocHost((void**)&h_pz,(size_t)image_size[0]*image_size[1]*image_size[2]*sizeof(float));
                 onError.add([h_pz]{ cudaFreeHost(h_pz); });
                 cudaCheckErrors("Malloc error on auxiliary variables on CPU.\n Your image is too big to use SART_TV or im3Ddenoise in your current machine");
+
+                cudaMallocHost((void**)&carry,4*(size_t)buffer_length*pixels_per_slice*sizeof(float));
+                onError.add([carry]{ cudaFreeHost(carry); });
+                cudaCheckErrors("Malloc error on auxiliary variables on CPU.");
             }
             h_u=dst;
         }else if(deviceCount>1){
@@ -403,7 +414,13 @@ void cpy_from_host(float* device_array,float* host_array,
         unsigned long long* offset_device=(unsigned long long*)malloc(deviceCount*sizeof(unsigned long long));
         unsigned long long* offset_host  =(unsigned long long*)malloc(deviceCount*sizeof(unsigned long long));
         unsigned long long* bytes_device =(unsigned long long*)malloc(deviceCount*sizeof(unsigned long long));
-        onError.add([offset_device, offset_host, bytes_device]{ free(offset_device); free(offset_host); free(bytes_device); });
+        // Halo slices below and above each piece: buffer_length, or fewer where the piece is closer than that to the
+        // image's first or last slice. There the kernels' own boundary conditions apply, in z as in x and y, so the
+        // result does not depend on how the image is split. On the device, a piece's interior always starts at
+        // buffer_pixels; halo_lo[dev] slices below it and halo_hi[dev] above it are used.
+        unsigned int* halo_lo=(unsigned int*)malloc(deviceCount*sizeof(unsigned int));
+        unsigned int* halo_hi=(unsigned int*)malloc(deviceCount*sizeof(unsigned int));
+        onError.add([offset_device, offset_host, bytes_device, halo_lo, halo_hi]{ free(offset_device); free(offset_host); free(bytes_device); free(halo_lo); free(halo_hi); });
         bool is_first_chunk;
         bool is_last_chunk;
         
@@ -430,9 +447,12 @@ void cpy_from_host(float* device_array,float* host_array,
                     is_first_chunk=!(sp*deviceCount+dev);
                     
                     // lets compute where we start copies and how much. This avoids 3 calls to Memcpy
-                    offset_device[dev]=buffer_pixels*is_first_chunk;
-                    offset_host[dev]=linear_idx_start-buffer_pixels*!is_first_chunk;
-                    bytes_device[dev]=curr_pixels+buffer_pixels*!is_first_chunk+buffer_pixels*!is_last_chunk;
+                    size_t start_slice=(size_t)slices_per_split*(sp*deviceCount+dev);
+                    halo_lo[dev]=(unsigned int)min((size_t)buffer_length, start_slice);
+                    halo_hi[dev]=(unsigned int)min((size_t)buffer_length, (size_t)image_size[2]-start_slice-curr_slices);
+                    offset_device[dev]=(buffer_length-halo_lo[dev])*pixels_per_slice;
+                    offset_host[dev]=linear_idx_start-halo_lo[dev]*pixels_per_slice;
+                    bytes_device[dev]=curr_pixels+(halo_lo[dev]+halo_hi[dev])*pixels_per_slice;
                 }
                 // copy data to the GPU if we are just starting
                 if(i==0){
@@ -497,12 +517,13 @@ void cpy_from_host(float* device_array,float* host_array,
                         cudaStreamSynchronize(stream[dev*nStream_device+4]);
                         if (is_last_chunk) {cudaMemsetAsync(d_pz[dev], 0, mem_img_each_GPU,stream[dev*nStream_device+4]);}
                         cpy_from_host(d_pz[dev],h_pz,bytes_device[dev], offset_device[dev],offset_host[dev], pixels_per_slice, buffer_length, stream[dev*nStream_device+4],  is_first_chunk,  is_last_chunk, image_size);
-                        // Z derivative must be negated in sign to keep Neumman conditions
-                        if (is_first_chunk){
-                            multiplyArrayScalar<<<60,MAXTREADS,0,stream[dev*nStream_device+4]>>>(d_pz[dev],             -1,  pixels_per_slice*buffer_length);    
-                        }
-                        if (is_last_chunk){
-                            multiplyArrayScalar<<<60,MAXTREADS,0,stream[dev*nStream_device+4]>>>(d_pz[dev]+bytes_device[dev],-1,  pixels_per_slice*buffer_length);    
+                    }
+                    // The lower halo of the first piece of this split: the slices the previous split had before it ran.
+                    if (sp>0){
+                        float** d_var[4]={d_u, d_px, d_py, d_pz};
+                        cudaSetDevice(gpuids[0]);
+                        for (int v = 0; v < 4; v++){
+                            cudaMemcpyAsync(d_var[v][0], carry+(size_t)v*buffer_pixels, buffer_pixels*sizeof(float), cudaMemcpyHostToDevice,stream[1+v]);
                         }
                     }
                     for (dev = 0; dev < deviceCount; dev++){ 
@@ -520,6 +541,17 @@ void cpy_from_host(float* device_array,float* host_array,
                         cudaCheckErrors("Memcpy failure on multi split");
                     }
                 }
+                // Before the last piece of this split runs, keep its top buffer_length slices for the next split.
+                // (Its interior starts at buffer_pixels and has slices_per_split >= buffer_length slices.)
+                if (splits>1 && sp<splits-1 && i>0){ // at i==0 every piece starts from src, no carry needed
+                    float** d_var[4]={d_u, d_px, d_py, d_pz};
+                    dev=deviceCount-1;
+                    cudaSetDevice(gpuids[dev]);
+                    for (int v = 0; v < 4; v++){
+                        cudaMemcpy(carry+(size_t)v*buffer_pixels, d_var[v][dev]+(size_t)slices_per_split*pixels_per_slice, buffer_pixels*sizeof(float), cudaMemcpyDeviceToHost);
+                    }
+                    cudaCheckErrors("Memcpy failure on multi split");
+                }
                 
                 // Inter interations.
                 for(unsigned int ib=0;  (ib<(buffer_length)) && ((i+ib)<maxIter);  ib++){
@@ -528,24 +560,29 @@ void cpy_from_host(float* device_array,float* host_array,
                     tau1 = (1.f/tau2) * ((1.f/6.f) - (5.f/(15.f+(i+ib))));
                     // bdim and gdim
                     
+                    // Only the piece and its halo_lo/halo_hi halo slices (see above).
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
+                        size_t off=(size_t)(buffer_length-halo_lo[dev])*pixels_per_slice;
+                        long depth=(long)curr_slices+halo_lo[dev]+halo_hi[dev];
                         dim3 block(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-                        dim3 grid((image_size[0]+block.x-1)/block.x, (image_size[1]+block.y-1)/block.y, (curr_slices+buffer_length*2+block.z-1)/block.z);
+                        dim3 grid((image_size[0]+block.x-1)/block.x, (image_size[1]+block.y-1)/block.y, (depth+block.z-1)/block.z);
                         
-                        update_u<<<grid, block,0,stream[dev*nStream_device]>>>(d_src[dev], d_pz[dev], d_py[dev], d_px[dev], d_u[dev], tau1, lambda,
-                                (long)(curr_slices+buffer_length*2), image_size[1],image_size[0],
+                        update_u<<<grid, block,0,stream[dev*nStream_device]>>>(d_src[dev]+off, d_pz[dev]+off, d_py[dev]+off, d_px[dev]+off, d_u[dev]+off, tau1, lambda,
+                                depth, image_size[1],image_size[0],
                                 spacing[2], spacing[1], spacing[0]);
                     }
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
+                        size_t off=(size_t)(buffer_length-halo_lo[dev])*pixels_per_slice;
+                        long depth=(long)curr_slices+halo_lo[dev]+halo_hi[dev];
                         dim3 block(BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
-                        dim3 grid((image_size[0]+block.x-1)/block.x, (image_size[1]+block.y-1)/block.y, (curr_slices+buffer_length*2+block.z-1)/block.z);
+                        dim3 grid((image_size[0]+block.x-1)/block.x, (image_size[1]+block.y-1)/block.y, (depth+block.z-1)/block.z);
                         
-                        update_p<<<grid, block,0,stream[dev*nStream_device]>>>(d_u[dev], d_pz[dev], d_py[dev], d_px[dev], tau2,
-                                (long)(curr_slices+buffer_length*2), image_size[1], image_size[0],
+                        update_p<<<grid, block,0,stream[dev*nStream_device]>>>(d_u[dev]+off, d_pz[dev]+off, d_py[dev]+off, d_px[dev]+off, tau2,
+                                depth, image_size[1], image_size[0],
                                 spacing[2], spacing[1], spacing[0]);
                     }
                 }// END internal iter
@@ -672,6 +709,7 @@ void cpy_from_host(float* device_array,float* host_array,
             cudaFreeHost(h_px);
             cudaFreeHost(h_py);
             cudaFreeHost(h_pz);
+            cudaFreeHost(carry);
         }else if(splits==1 && deviceCount>1){
             cudaFreeHost(buffer);
             for (int e = 0; e < 4*nExchanges; e++){
@@ -722,19 +760,8 @@ void cpy_from_host(float* device_array,float* host_array,
                    cudaStream_t stream, bool is_first_chunk, bool is_last_chunk,const long* image_size)
 {
 
-    // Initial and last cases are special. These define the boundary condition. In our case, we are using Neumann boundary condition
-    // so we need to copy the edge slice into the buffer
-    if(is_first_chunk && image_size[2] > 1){
-        for (unsigned int j=0;j<buffer_length;j++){
-            cudaMemcpyAsync(device_array+pixels_per_slice*j, host_array+pixels_per_slice*(buffer_length-j), pixels_per_slice*sizeof(float), cudaMemcpyHostToDevice,stream);
-        }
-    }
-    if(is_last_chunk && image_size[2] > 1){
-
-        for (unsigned int j=0;j<buffer_length;j++){
-           cudaMemcpyAsync(device_array+offset_device+bytes_device+pixels_per_slice*j, host_array+pixels_per_slice*(image_size[2]-j-2), pixels_per_slice*sizeof(float), cudaMemcpyHostToDevice,stream);
-        }
-    }
+    // The halo slots beyond the image's first and last slice are not used (the kernels skip them and apply
+    // their own boundary conditions there), so nothing is copied into them.
     cudaStreamSynchronize(stream);
     cudaMemcpyAsync(device_array +offset_device, host_array +offset_host,  bytes_device*sizeof(float), cudaMemcpyHostToDevice,stream);
 }
