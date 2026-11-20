@@ -81,6 +81,9 @@ thank you.
   register it). All of them now use such an array as it is and leave it alone.
 - `CTnoise.add` / `addCTnoise` ran on the current GPU whatever `gpuids` said, and leaked GPU memory if a CUDA
   error was raised (Python). They now run on the first of `gpuids` and free everything on error.
+- MATLAB `minPICCS` with 5 inputs (no `gpuids`) left alpha, the iterations and the ratio unset, so it did
+  nothing or something arbitrary; the prior's size and type were not checked (a double prior from `PICCS` was read
+  as garbage). Now all input forms are read, the prior must match the image, and `minimizeTV_prior` passes singles.
 - `AwminTV` (and `minTV`, through the shared code) on 3 or more GPUs, or split for memory, when the last piece was
   much shorter than the others: the gradient kernel's grid was sized from the last piece, so the other pieces
   could miss their last slices.
