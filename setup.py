@@ -210,10 +210,22 @@ except ValueError:
     cuda_list = re.findall(r'\d+', CUDA_VERSION)
     cuda_version = float( str(cuda_list[0] + '.' + cuda_list[1]))
 
-# Insert CUDA CC arguments
-for item in get_cuda_cc(CUDA["home"]):
-    str_arg = f"-gencode=arch=compute_{item},code=sm_{item}"
-    COMPUTE_CAPABILITY_ARGS.insert(0, str_arg)
+# GPU architectures to compile for. Default: every one this nvcc supports (as for releases). For development and
+# testing, TIGRE_CUDA_ARCH limits them, which makes the build several times faster; the result then runs only on
+# those GPUs. Examples: TIGRE_CUDA_ARCH=89 (RTX 40xx), TIGRE_CUDA_ARCH=75,89, or TIGRE_CUDA_ARCH=native (the GPUs
+# in this machine; nvcc 11.6 or newer).
+_arch = os.environ.get("TIGRE_CUDA_ARCH", "").strip().lower()
+if _arch == "native":
+    COMPUTE_CAPABILITY_ARGS.insert(0, "-arch=native")
+elif _arch:
+    for item in re.findall(r"\d+", _arch):
+        COMPUTE_CAPABILITY_ARGS.insert(0, f"-gencode=arch=compute_{item},code=sm_{item}")
+else:
+    for item in get_cuda_cc(CUDA["home"]):
+        str_arg = f"-gencode=arch=compute_{item},code=sm_{item}"
+        COMPUTE_CAPABILITY_ARGS.insert(0, str_arg)
+if _arch:
+    print("TIGRE: compiling only for the GPU architectures in TIGRE_CUDA_ARCH=" + _arch)
 
 
 # Obtain the numpy include directory.  This logic works across numpy versions.
