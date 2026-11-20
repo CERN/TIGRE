@@ -25,7 +25,8 @@ else
     gpuids = GpuIds();
 end
 
-img=minPICCS(img,prior,dtvg,ng,ratio,gpuids.devices);
+% minPICCS reads single precision: a double prior used to be read as garbage.
+img=minPICCS(single(img),single(prior),dtvg,ng,ratio,gpuids.devices);
 
 end
 
