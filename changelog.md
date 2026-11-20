@@ -65,6 +65,9 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- `minPICCS` returned NaN when the gradient was zero (e.g. a constant image, or one PICCS had already
+  flattened): it divided by the gradient norm without the small constant minTV adds. It now uses minTV's
+  normalisation.
 - MATLAB `minPICCS` with 5 inputs (no `gpuids`) left alpha, the iterations and the ratio unset, so it did
   nothing or something arbitrary; the prior's size and type were not checked (a double prior from `PICCS` was read
   as garbage). Now all input forms are read, the prior must match the image, and `minimizeTV_prior` passes singles.
