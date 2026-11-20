@@ -820,6 +820,35 @@ new kernel takes 51--59\% of the original's time on Windows and 21--23\% on Linu
 kernel time become 355\,ms); on Windows its gain does not shrink with image size, and on Linux only slightly.
 TIGRE's original parallel-beam kernel had extra corrections in its initialisation.
 
+\subsection{Comparison with ASTRA}
+\label{sec:astra}
+
+The comparisons above are between two versions of TIGRE. To place the result among GPU projectors in common
+use, we also timed TIGRE against the ASTRA Toolbox~\cite{astra2016} (version 2.5.0) on the same problems.
+ASTRA's cone-beam GPU forward projector is ray-driven with Joseph-type interpolation~\cite{joseph1982}, not an
+exact intersection-length method, so this compares projectors used for the same purpose rather than two
+implementations of one algorithm; TIGRE's own interpolated projector, which samples the ray at fixed steps
+with trilinear interpolation, is reported alongside.
+
+Both toolboxes ran in one process, on the cone-beam geometry of the previous sections at $n^3$ voxels with 360
+angles, on one GPU and on two. Inputs and outputs were host arrays, so the time includes the copies to and from
+the GPUs, which is how most users call either toolbox; on one GPU we also timed PyTorch GPU tensors in and out,
+with no host copies. ASTRA's angle and detector conventions were matched to TIGRE's on a small problem, by
+trying the eight angle conventions and four detector flips and keeping the one under which the projections of
+an asymmetric image agree, and at every size the outputs of the two toolboxes were compared, to check that both
+solved the same problem. Each round ran every operation of both toolboxes, alternating which went first; we
+report the median time and the ratio of the TIGRE time to the ASTRA time, as a mean over rounds with a 95\%
+confidence interval. The script, \path{tigre_vs_astra.py}, is next to this note; it also times
+backprojection and FDK reconstruction, which are not the subject of this note.
+
+\IfFileExists{astra_results.tex}{\input{astra_results.tex}}{%
+\begin{center}\fbox{\parbox{0.9\linewidth}{\centering\small
+Results pending: Table of TIGRE against ASTRA on one and two GPUs, from \path{tigre_vs_astra.py}.}}
+\end{center}}
+
+% TODO (Ander, before 3.3.0): discuss the results here once astra_results.tex exists, and, if relevant,
+% mention them in the abstract and the conclusion.
+
 \section{Discussion}
 \label{sec:discussion}
 
@@ -844,7 +873,7 @@ elsewhere: the consistent initialisation in Amanatides and Woo and in several CP
 evaluation of crossings in Siddon's method. To the best of our knowledge, none of the implementations we
 examined combines a consistent initialisation, crossings computed without accumulation at the cost of
 Jacobs' traversal, and a loop arranged for SIMT execution. We did not survey implementations systematically,
-and did not benchmark against them.
+and compared speed only with ASTRA (Section~\ref{sec:astra}).
 
 \paragraph{Rays inside a plane.} A ray that lies in a plane between voxels ($r_b=0$, $e_b\in\mathbb Z$) has an
 ambiguous line integral. STIR traces it twice, half a voxel to each side, and averages. Our traversal, like
@@ -869,6 +898,7 @@ from the GPU arrangement, not from the algorithm.
 \section*{Code availability}
 The implementation is part of TIGRE, \url{https://github.com/CERN/TIGRE}, from pull request \#865. The cone-beam kernel is in
 \path{Common/CUDA/Siddon_projection.cu} and the parallel-beam kernel in \path{Common/CUDA/Siddon_projection_parallel.cu}.
+The comparison with ASTRA is \path{docs/technical-notes/siddon/tigre_vs_astra.py}.
 
 \section*{Use of generative AI}
 This work and this note were done with substantial help from Claude (Anthropic), a large language model, used
