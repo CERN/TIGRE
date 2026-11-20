@@ -34,7 +34,23 @@ end
 idx=find(~cellfun('isempty', idx));
 
 gencode='';
-if nargin>1 && ~isempty(cuda_path)
+% For development and testing: TIGRE_CUDA_ARCH limits the architectures, which
+% makes Compile several times faster; the mex files then run only on those GPUs.
+% E.g. setenv('TIGRE_CUDA_ARCH','89') (RTX 40xx), '75,89', or 'native' (the GPUs
+% in this machine; nvcc 11.6 or newer). Unset it to build for all again.
+arch=strtrim(lower(getenv('TIGRE_CUDA_ARCH')));
+if strcmp(arch,'native')
+    gencode='-arch=native';
+elseif ~isempty(arch)
+    cc=str2double(regexp(arch,'\d+','match'));
+    for c=cc
+        gencode=[gencode, sprintf('-gencode=arch=compute_%d,code=sm_%d ', c, c)]; %#ok<AGROW>
+    end
+    gencode=strtrim(gencode);
+end
+if ~isempty(gencode)
+    fprintf('TIGRE: compiling only for the GPU architectures in TIGRE_CUDA_ARCH=%s\n', arch);
+elseif nargin>1 && ~isempty(cuda_path)
     gencode=gencode_from_nvcc(cuda_path);
 end
 if ~isempty(gencode)

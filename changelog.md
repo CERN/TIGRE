@@ -8,6 +8,9 @@ thank you.
 ## Unreleased
 
 ### Added
+- `TIGRE_CUDA_ARCH` (Python build and MATLAB `Compile`): compile only for the given GPU architectures (e.g.
+  `89`, `75,89`, or `native`), several times faster, for development and testing. Default unchanged: every
+  architecture nvcc supports.
 - Python and MATLAB builds: the GPU backend (`cuda`, `hip`, `sycl` or `metal`) is chosen with the
   `TIGRE_BACKEND` environment variable, or in MATLAB with `Compile -backend <name>`. When neither
   is given, the build uses the first backend whose compiler is installed, CUDA first, and prints
@@ -18,6 +21,9 @@ thank you.
   array's GPU only; if `gpuids` names other GPUs, the data goes through the host as before.
 - PyTorch bindings: CUDA tensors stay on the GPU (see above). If TIGRE runs out of GPU memory,
   the bindings empty PyTorch's memory cache and try once more.
+- Python demo `d25_Pytorch.py`: a section on passing PyTorch GPU tensors to `tigre.Ax`/`tigre.Atb`
+  directly, with a timing against the round trip through the host; the demo now runs on GPU 0 and downloads
+  MNIST to `./data/mnist` (it used GPU 3 and a path on one machine).
 - Parallel beam: `Ax` (Siddon and interpolated) and `Atb` use all the GPUs in `gpuids`, as cone beam
   does: `Ax` shares the angles between the GPUs, `Atb` the image slices. Before, they ran on the first
   GPU only. Like cone beam, they now also work when the image does not fit on the GPU: they split it
@@ -33,6 +39,10 @@ thank you.
   whichever GPU was current), works on images larger than the GPU memory, and sums the gradient norm in double.
   `PICCS.cu` keeps only the PICCS maths (the step direction); the multi-GPU and splitting code is
   `tv_gradient_descent` (`tv_gradient_descent.hpp`).
+- `CTnoise.add` (Python) and `addCTnoise` (MATLAB) add a new noise realisation on every call. Before, the
+  GPU random number generator was always seeded with 1234, so every call added exactly the same noise. The
+  new seed is drawn from NumPy's global random state (Python) or MATLAB's random stream, so
+  `np.random.seed(...)` / `rng(...)` make a script reproducible; `seed=` (Python) or `'Seed'` (MATLAB) fixes it.
 - Python tests: rare edge cases and stress tests (little free GPU memory, thousands of repeated
   calls, images split between pieces) are marked `extended` and not run by a plain `pytest`
   (on an RTX 4070 the suite goes from ~6 to ~2 minutes). Run them with `pytest -m extended`;
@@ -74,6 +84,12 @@ thank you.
 - `AwminTV` (and `minTV`, through the shared code) on 3 or more GPUs, or split for memory, when the last piece was
   much shorter than the others: the gradient kernel's grid was sized from the last piece, so the other pieces
   could miss their last slices.
+- Cone-beam `Ax`/`Atb` with a host array that is already page-locked (e.g. the NumPy view of a pinned PyTorch
+  tensor) failed with "Error pinning memory", and unregistered memory that was not theirs. So did parallel-beam
+  `Atb` and the TV functions with an array allocated page-locked (CUDA says "invalid argument" when asked to
+  register it). All of them now use such an array as it is and leave it alone.
+- `CTnoise.add` / `addCTnoise` ran on the current GPU whatever `gpuids` said, and leaked GPU memory if a CUDA
+  error was raised (Python). They now run on the first of `gpuids` and free everything on error.
 - `minTV`, `AwminTV` and `tvdenoise` failed on several GPUs (or when split for memory) when the image
   had so few z slices that the last pieces came out empty, e.g. 5 slices on 4 GPUs, or tvdenoise of
   one slice on 2 GPUs. The pieces are now chosen so that none is empty, using fewer GPUs if needed.

@@ -90,10 +90,19 @@ private:
 
 // Register the caller's host array as pinned memory, if it is not already.
 // Returns true only if this call registered it, i.e. if the caller of
-// hostRegister must unregister it. An array that is already registered (for
-// example pinned by the user, or by PyTorch) is used as it is and left alone.
+// hostRegister must unregister it. An array that is already page-locked is
+// used as it is and left alone: registered by someone else (cudaHostRegister
+// then says "already registered"), or allocated page-locked, e.g. a pinned
+// PyTorch tensor (cudaHostAlloc; cudaHostRegister then says "invalid
+// argument", so ask CUDA what the pointer is first).
 // Any other failure is left for the caller's error check.
 inline bool hostRegister(void* ptr, size_t bytes) {
+#if CUDART_VERSION >= 10000
+    cudaPointerAttributes attributes;
+    if (cudaPointerGetAttributes(&attributes, ptr) == cudaSuccess && attributes.type == cudaMemoryTypeHost)
+        return false;  // already page-locked
+    cudaGetLastError();  // CUDA 10 reports plain (pageable) memory as an error here
+#endif
     cudaError_t err = cudaHostRegister(ptr, bytes, cudaHostRegisterPortable);
     if (err == cudaErrorHostMemoryAlreadyRegistered) {
         cudaGetLastError();  // not an error for us
