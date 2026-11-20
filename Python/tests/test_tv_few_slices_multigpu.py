@@ -24,6 +24,7 @@ try:
     from _minTV import minTV
     from _AwminTV import AwminTV
     from _tv_proximal import tvdenoise
+    from _minPICCS import minPICCS
 except ImportError:
     pytest.skip("TIGRE's CUDA extensions are not built", allow_module_level=True)
 
@@ -45,6 +46,7 @@ CALLS = {
     "minTV": lambda img, ids: minTV(img, 0.01, 10, gpuids=ids),
     "AwminTV": lambda img, ids: AwminTV(img, 0.01, 10, -0.005, gpuids=ids),
     "tvdenoise": lambda img, ids: tvdenoise(img, 10, 15.0, gpuids=ids),
+    "minPICCS": lambda img, ids: minPICCS(img, 0.5 * img, 0.01, 10, 0.5, gpuids=ids),
 }
 
 

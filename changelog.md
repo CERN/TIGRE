@@ -30,6 +30,15 @@ thank you.
   in pieces along z (before, they failed with a CUDA error) (#286, #295).
 
 ### Changed
+- `minTV`/`AwminTV` (the TV step of ASD_POCS, OS_ASD_POCS, AwASD_POCS, ...): the first and last
+  z-slice of the image now use the same boundary as x and y (no neighbour beyond the edge). Before, the slices
+  beyond the image's ends were read as voxels of value 0, so even a constant image was changed at its first and
+  last slice. Results change there, and a little further in as the iterations go on (as #863 did for tvdenoise).
+  `minPICCS` already treated z like x and y.
+- `minPICCS` (PICCS) runs on the GPU code it now shares with `minTV`: it uses all the GPUs in `gpuids` (before,
+  whichever GPU was current), works on images larger than the GPU memory, and sums the gradient norm in double.
+  `PICCS.cu` keeps only the PICCS maths (the step direction); the multi-GPU and splitting code is
+  `tv_gradient_descent` (`tv_gradient_descent.hpp`).
 - `CTnoise.add` (Python) and `addCTnoise` (MATLAB) add a new noise realisation on every call. Before, the
   GPU random number generator was always seeded with 1234, so every call added exactly the same noise. The
   new seed is drawn from NumPy's global random state (Python) or MATLAB's random stream, so
@@ -66,6 +75,15 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- `minPICCS` returned NaN when the gradient was zero (e.g. a constant image, or one PICCS had already
+  flattened): it divided by the gradient norm without the small constant minTV adds. It now uses minTV's
+  normalisation.
+- MATLAB `minPICCS` with 5 inputs (no `gpuids`) left alpha, the iterations and the ratio unset, so it did
+  nothing or something arbitrary; the prior's size and type were not checked (a double prior from `PICCS` was read
+  as garbage). Now all input forms are read, the prior must match the image, and `minimizeTV_prior` passes singles.
+- `AwminTV` (and `minTV`, through the shared code) on 3 or more GPUs, or split for memory, when the last piece was
+  much shorter than the others: the gradient kernel's grid was sized from the last piece, so the other pieces
+  could miss their last slices.
 - Cone-beam `Ax`/`Atb` with a host array that is already page-locked (e.g. the NumPy view of a pinned PyTorch
   tensor) failed with "Error pinning memory", and unregistered memory that was not theirs. So did parallel-beam
   `Atb` and the TV functions with an array allocated page-locked (CUDA says "invalid argument" when asked to
