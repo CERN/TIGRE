@@ -30,10 +30,8 @@
 \algrenewcommand\algorithmicfor{\textbf{for}}
 
 \title{Siddon--Jacobs ray tracing on GPUs:\\a technical note on a consistent and accurate implementation}
-\author[1]{Ander Biguri}
-\author[2]{Claude}
-\affil[1]{Department of Applied Mathematics and Theoretical Physics (DAMTP), University of Cambridge}
-\affil[2]{Anthropic}
+\author{Ander Biguri}
+\affil{Department of Applied Mathematics and Theoretical Physics (DAMTP), University of Cambridge}
 \date{November 2026\\[4pt]\small TIGRE technical note. Accompanies CERN/TIGRE pull request \#865 (issue \#859).}
 
 \begin{document}
@@ -872,10 +870,21 @@ from the GPU arrangement, not from the algorithm.
 The implementation is part of TIGRE, \url{https://github.com/CERN/TIGRE}, from pull request \#865. The cone-beam kernel is in
 \path{Common/CUDA/Siddon_projection.cu} and the parallel-beam kernel in \path{Common/CUDA/Siddon_projection_parallel.cu}.
 
-\section*{Author contributions}
-A.~Biguri: conceptualisation, direction, testing on hardware, review and editing. Claude (Anthropic, a large
-language model): investigation, analysis, implementation, emulations, benchmarks and the first draft of this
-note, under A.~Biguri's direction.
+\section*{Use of generative AI}
+This work and this note were done with substantial help from Claude (Anthropic), a large language model, used
+as a coding and writing assistant (Claude Opus, through Claude Code and Claude Cowork). Under the author's
+direction, Claude carried out much of the investigation and analysis, wrote the revised kernels and the
+host-side code, wrote the floating-point emulations and the benchmark and test scripts, searched and read the
+literature and other implementations, and wrote the first draft of this note, including the proofs and
+figures.
+
+The author conceived and directed the work, decided what to change and how to present it, ran every test and
+benchmark on GPU hardware (the results reported here), checked the derivations and the results, and revised
+the text. The author takes full responsibility for the content of this note, including any errors. Claude is
+not an author: it cannot take responsibility for the work or for its publication.
+
+\section*{Acknowledgements}
+The author thanks Claude (Anthropic) for its assistance, as described above.
 
 \begin{thebibliography}{99}
 \bibitem{siddon1985fast} R.~L.~Siddon, ``Fast calculation of the exact radiological path for a
