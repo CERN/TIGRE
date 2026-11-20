@@ -61,8 +61,9 @@ thank you.
 
 ### Fixed
 - Cone-beam `Ax`/`Atb` with a host array that is already page-locked (e.g. the NumPy view of a pinned PyTorch
-  tensor) failed with "Error pinning memory", and unregistered memory that was not theirs; they now use it as
-  it is and leave it alone, as the other operators already did.
+  tensor) failed with "Error pinning memory", and unregistered memory that was not theirs. So did parallel-beam
+  `Atb` and the TV functions with an array allocated page-locked (CUDA says "invalid argument" when asked to
+  register it). All of them now use such an array as it is and leave it alone.
 - `CTnoise.add` / `addCTnoise` ran on the current GPU whatever `gpuids` said, and leaked GPU memory if a CUDA
   error was raised (Python). They now run on the first of `gpuids` and free everything on error.
 - `minTV`, `AwminTV` and `tvdenoise` failed on several GPUs (or when split for memory) when the image
