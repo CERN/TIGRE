@@ -394,14 +394,16 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     if (gpuData) isHostRegisterSupported = 0;  // GPU memory: nothing to pin
     // empirical testing shows that when the image split is smaller than 1 (also implies the image is not very big), the time to
     // pin the memory is greater than the lost time in Synchronously launching the memcpys. This is only worth it when the image is too big.
+    // tigre::hostRegister: an array that is already page-locked (e.g. pinned by PyTorch) is used as it is and not unregistered here.
+    bool result_registered=false, projections_registered=false;
     if (isHostRegisterSupported & split_image>1){
-        cudaHostRegister(result, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float),cudaHostRegisterPortable);
-        onError.add([result]{ cudaHostUnregister(result); });
+        result_registered=tigre::hostRegister(result, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float));
+        if (result_registered) onError.add([result]{ cudaHostUnregister(result); });
     }
     if (isHostRegisterSupported ){
-        cudaHostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float),cudaHostRegisterPortable);
+        projections_registered=tigre::hostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float));
         // The caller's array: left registered, the next call with it would fail.
-        onError.add([projections]{ cudaHostUnregister(projections); });
+        if (projections_registered) onError.add([projections]{ cudaHostUnregister(projections); });
     }
     cudaCheckErrors("Error pinning memory");
 
@@ -687,10 +689,10 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     
     freeGeoArray(split_image*deviceCount,geoArray);
 #ifndef NO_PINNED_MEMORY     
-    if (isHostRegisterSupported & split_image>1){
+    if (result_registered){
         cudaHostUnregister(result);
     }
-    if (isHostRegisterSupported){
+    if (projections_registered){
         cudaHostUnregister(projections);
     }
 #endif 
