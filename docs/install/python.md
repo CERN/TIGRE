@@ -120,11 +120,33 @@ The build prints which backend it chose and why. To choose one yourself, set
 `TIGRE_BACKEND`, for example `TIGRE_BACKEND=cuda pip install .`
 (`set TIGRE_BACKEND=cuda` first on Windows).
 
-At the moment only `cuda` can be built. The others are being added: `hip` in
-[#747](https://github.com/CERN/TIGRE/pull/747), `sycl` in
-[#885](https://github.com/CERN/TIGRE/issues/885) and `metal` in
+At the moment `cuda` and `hip` can be built. The others are being added:
+`sycl` in [#885](https://github.com/CERN/TIGRE/issues/885) and `metal` in
 [#876](https://github.com/CERN/TIGRE/issues/876). If the build picks one of
 them, it stops and says so; set `TIGRE_BACKEND=cuda` to build for NVIDIA GPUs.
+
+### AMD GPUs (ROCm)
+
+The `hip` backend compiles the same `.cu` sources with `hipcc` from
+[ROCm](https://rocm.docs.amd.com/) and links the HIP runtime (`amdhip64`)
+instead of `cudart`. You need ROCm 7.2 or newer and a supported AMD GPU.
+
+```sh
+export TIGRE_BACKEND=hip
+export ROCM_PATH=/opt/rocm
+export HIP_ARCH=gfx90a
+pip install . --no-build-isolation
+```
+
+- `ROCM_PATH` points to the ROCm install (default `/opt/rocm`).
+- `HIP_ARCH` is the target GPU architecture for `--offload-arch`. Pass a
+  comma-separated list to build for several, for example
+  `HIP_ARCH=gfx90a,gfx1100,gfx1201`.
+- On Windows, also set `HIPCC` to the ROCm `clang++` (for example
+  `%ROCM_PATH%\lib\llvm\bin\clang++.exe`).
+
+Tested on Linux with gfx90a (Instinct MI250X) and gfx1100 (Radeon PRO W7800),
+and on Windows with gfx1201 (RDNA4) and gfx1151 (Radeon 8060S).
 
 ## Conda (unofficial)
 
