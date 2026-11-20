@@ -1,4 +1,4 @@
-"""minTV and AwminTV give the same result on 2 GPUs as on 1 (#856).
+"""minTV, AwminTV and minPICCS give the same result on 2 GPUs as on 1 (#856).
 
 Each step divides the TV gradient by its norm. Each GPU sums its part of the
 norm and the host adds the parts. The parts used to come back in single
@@ -21,6 +21,7 @@ from tigre.utilities.gpu import GpuIds  # noqa: E402
 try:
     from _minTV import minTV
     from _AwminTV import AwminTV
+    from _minPICCS import minPICCS
 except ImportError:
     pytest.skip("TIGRE's CUDA extensions are not built", allow_module_level=True)
 
@@ -41,13 +42,16 @@ if _n_gpus < 2:
 
 @pytest.mark.parametrize("n", [256, 250])  # 250: the GPUs' parts do not end on reduction-block boundaries
 @pytest.mark.parametrize("alpha", [0.002, 0.6])
-@pytest.mark.parametrize("name", ["minTV", "AwminTV"])
+@pytest.mark.parametrize("name", ["minTV", "AwminTV", "minPICCS"])
 def test_two_gpus_match_one(name, alpha, n):
     img = np.random.default_rng(0).random((n, n, n), dtype=np.float32)
     if name == "minTV":
         call = lambda ids: minTV(img.copy(), alpha, 10, gpuids=ids)
-    else:
+    elif name == "AwminTV":
         call = lambda ids: AwminTV(img.copy(), alpha, 10, -0.005, gpuids=ids)
+    else:  # PICCS runs on minTV's code since 3.3, so on several GPUs too
+        prior = np.random.default_rng(1).random((n, n, n), dtype=np.float32)
+        call = lambda ids: minPICCS(img.copy(), prior, alpha, 10, 0.5, gpuids=ids)
     one = call(_gpus([0]))
     two = call(_gpus([0, 1]))
     err = float(np.abs(two - one).max() / np.abs(one).max())

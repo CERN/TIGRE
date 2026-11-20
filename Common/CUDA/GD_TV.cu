@@ -55,6 +55,7 @@
 #define MAX_BUFFER 60
 
 #include "GD_TV.hpp"
+#include "tv_gradient_descent.hpp"
 #include "gpuUtils.hpp"
 #include "tigre_release_on_error.hpp"
 
@@ -92,30 +93,36 @@ do { \
         }
     }
     
+    // Backward differences at voxel (z,y,x) of the buffer; 0 outside the image. In x and y the image is
+    // [0,cols) and [0,rows); in z it is the slots [zlo,zhi) of the buffer (see TVPiece in
+    // tv_gradient_descent.hpp). Before, z was not limited to [zlo,zhi): the zero-filled halo slots beyond the
+    // image's first and last slice were read as voxels of value 0, so a constant image was not left unchanged.
     __device__ __inline__
             void gradient(const float* u, float* grad,
             long z, long y, long x,
-            long depth, long rows, long cols){
+            long zlo, long zhi, long rows, long cols){
+        if (z < zlo || z >= zhi || y >= rows || x >= cols)
+            return;
         unsigned long size2d = rows*cols;
         size_t idx = (size_t)z * size2d + y * cols + x;
         
         float uidx = u[idx];
         
-        if ( z - 1 >= 0 && z<depth) {
+        if ( z - 1 >= zlo) {
             grad[0] = (uidx-u[(size_t)(z-1)*size2d + y*cols + x]) ;
         }
         
-        if ( y - 1 >= 0 && y<rows){
+        if ( y - 1 >= 0){
             grad[1] = (uidx-u[(size_t)z*size2d + (y-1)*cols + x]) ;
         }
         
-        if ( x - 1 >= 0 && x<cols) {
+        if ( x - 1 >= 0) {
             grad[2] = (uidx-u[(size_t)z*size2d + y*cols + (x-1)]);
         }
     }
     
     __global__ void gradientTV(const float* f, float* dftv,
-            long depth, long rows, long cols){
+            long depth, long zlo, long zhi, long rows, long cols){
         unsigned long x = threadIdx.x + blockIdx.x * blockDim.x;
         unsigned long y = threadIdx.y + blockIdx.y * blockDim.y;
         unsigned long z = threadIdx.z + blockIdx.z * blockDim.z;
@@ -128,10 +135,10 @@ do { \
         float dfi[3]={0.f,0.f,0.f}; // dfi== \partial f_{i+1,j,k}
         float dfj[3]={0.f,0.f,0.f};
         float dfk[3]={0.f,0.f,0.f};
-        gradient(f,df  ,z  ,y  ,x  , depth,rows,cols);
-        gradient(f,dfi ,z  ,y  ,x+1, depth,rows,cols);
-        gradient(f,dfj ,z  ,y+1,x  , depth,rows,cols);
-        gradient(f,dfk ,z+1,y  ,x  , depth,rows,cols);
+        gradient(f,df  ,z  ,y  ,x  , zlo,zhi,rows,cols);
+        gradient(f,dfi ,z  ,y  ,x+1, zlo,zhi,rows,cols);
+        gradient(f,dfj ,z  ,y+1,x  , zlo,zhi,rows,cols);
+        gradient(f,dfk ,z+1,y  ,x  , zlo,zhi,rows,cols);
         float eps=0.00000001; //% avoid division by zero
         
         dftv[idx]=(df[0]+df[1]+df[2])/(sqrt(df[0] *df[0] +df[1] *df[1] +df[2] *df[2])+eps)
@@ -256,7 +263,11 @@ do { \
     
     
 // main function
-    void pocs_tv(float* img,float* dst,float alpha,const long* image_size, int maxIter, const GpuIds& gpuids){
+    // See tv_gradient_descent.hpp. (This was minTV's own function; minTV and PICCS now share it.)
+    void tv_gradient_descent(const float* img, const float* const* extra, int nExtra,
+                             TVStepDirection step, const void* params,
+                             float* dst, float alpha, const long* image_size, int maxIter, const GpuIds& gpuids,
+                             const char* what){
         
         
        
@@ -298,6 +309,8 @@ do { \
         size_t total_pixels              = (size_t)image_size[0]*image_size[1]  * image_size[2] ;
         size_t mem_slice_image           = sizeof(float)* (size_t)image_size[0]*image_size[1]  ;
         size_t mem_size_image            = sizeof(float)* total_pixels;
+        // Image-sized buffers on each GPU: image, step direction, its copy for the norm, and the extra inputs.
+        const unsigned int nImages = 3 + (unsigned int)nExtra;
         size_t mem_auxiliary             = sizeof(float)* (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
         
         // Decide how are we handling the distribution of computation
@@ -311,7 +324,7 @@ do { \
         if (image_size[2]<4){deviceCount=1;}
 
         unsigned int splits=1; // if the number does not fit in an uint, you have more serious trouble than this.
-        if(mem_GPU_global> 3*mem_size_image+3*(deviceCount-1)*mem_slice_image*buffer_length+mem_auxiliary){
+        if(mem_GPU_global> nImages*mem_size_image+nImages*(deviceCount-1)*mem_slice_image*buffer_length+mem_auxiliary){
             // We only need to split if we have extra GPUs
             slices_per_split=(image_size[2]+deviceCount-1)/deviceCount;
             // No empty pieces (see tvPiecesWithoutEmpty); this may use fewer GPUs or smaller pieces.
@@ -322,13 +335,13 @@ do { \
             // minimum overlap (2 slices on each side), and the auxiliary memory. If
             // not even that fits, say so now: the sizes below are unsigned and would
             // wrap around past zero.
-            const size_t mem_min=3*mem_slice_image*(1+2*2)+mem_auxiliary;
+            const size_t mem_min=nImages*mem_slice_image*(1+2*2)+mem_auxiliary;
             if (mem_GPU_global<=mem_min)
-                tigreNotEnoughGpuMemory("GD_TV:GPUmemory","Total variation minimization (minTV)",mem_min,mem_GPU_global);
+                tigreNotEnoughGpuMemory("GD_TV:GPUmemory",what,mem_min,mem_GPU_global);
             // As mem_auxiliary is not expected to be a large value (for a 2000^3 image is around 28Mbytes), lets for now assume we need it all
             size_t mem_free=mem_GPU_global-mem_auxiliary;
             
-            splits=(unsigned int)(ceil(((float)(3*mem_size_image)/(float)(deviceCount))/mem_free));
+            splits=(unsigned int)(ceil(((float)(nImages*mem_size_image)/(float)(deviceCount))/mem_free));
             // Now, there is an overhead here, as each splits should have 2 slices more, to account for overlap of images.
             // lets make sure these 2 slices fit, if they do not, add 1 to splits.
             slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits);
@@ -337,7 +350,7 @@ do { \
             // if the new stuff does not fit in the GPU, it means we are in the edge case where adding that extra slice will overflow memory
             // One more split usually does it; with very little memory it may take more
             // (one slice per piece always fits, checked above).
-            while (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary && slices_per_split>1){
+            while (mem_GPU_global< nImages*mem_img_each_GPU+mem_auxiliary && slices_per_split>1){
                 splits++;
                 //recompute for later
                 slices_per_split=(image_size[2]+deviceCount*splits-1)/(deviceCount*splits); // amount of slices that fit on a GPU. Later we add 2 to these, as we need them for overlap
@@ -351,9 +364,9 @@ do { \
             // How many EXTRA buffer slices should be able to fit in here??!?!
             // Only do it if there are splits needed. 
             if(splits>1){
-                mem_free=mem_GPU_global-(3*mem_img_each_GPU+mem_auxiliary);
+                mem_free=mem_GPU_global-(nImages*mem_img_each_GPU+mem_auxiliary);
                 unsigned int extra_buff=(mem_free/mem_slice_image); 
-                buffer_length=(extra_buff/2)/3; // we need double whatever this results in, rounded down.
+                buffer_length=(extra_buff/2)/nImages; // we need double whatever this results in, rounded down.
                 buffer_length=max(buffer_length,2);// minimum 2
                 buffer_length=min(MAX_BUFFER,buffer_length);
 
@@ -364,7 +377,7 @@ do { \
             }
 
             // Assert
-            if (mem_GPU_global< 3*mem_img_each_GPU+mem_auxiliary){
+            if (mem_GPU_global< nImages*mem_img_each_GPU+mem_auxiliary){
                 mexErrMsgIdAndTxt("GD_TV:GPU","Assertion Failed. Logic behind splitting flawed! Please tell: ander.biguri@gmail.com\n");
             }
         }
@@ -385,26 +398,33 @@ do { \
         float** d_dimgTV=   (float**)calloc(deviceCount,sizeof(float*));
         float** d_norm2aux= (float**)calloc(deviceCount,sizeof(float*));
         float** d_norm2=    (float**)calloc(deviceCount,sizeof(float*));
-        onError.add([d_image, d_dimgTV, d_norm2aux, d_norm2, deviceCount, devIds]{
+        // The extra input volumes on each GPU (d_extra[dev*nExtra+k]), split and haloed like the image.
+        float** d_extra=    (float**)calloc(deviceCount*nExtra+1,sizeof(float*));
+        onError.add([d_image, d_dimgTV, d_norm2aux, d_norm2, d_extra, nExtra, deviceCount, devIds]{
             for (int d = 0; d < deviceCount; d++){
                 cudaSetDevice(devIds[d]);
                 cudaFree(d_image[d]); cudaFree(d_dimgTV[d]); cudaFree(d_norm2aux[d]); cudaFree(d_norm2[d]);
+                for (int k = 0; k < nExtra; k++) cudaFree(d_extra[d*nExtra+k]);
             }
-            free(d_image); free(d_dimgTV); free(d_norm2aux); free(d_norm2);
+            free(d_image); free(d_dimgTV); free(d_norm2aux); free(d_norm2); free(d_extra);
         });
          
         // allocate memory in each GPU
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(gpuids[dev]);
             
-            tigre::checkMalloc(cudaMalloc((void**)&d_image[dev], mem_img_each_GPU), "GD_TV:GPU", "Total variation minimization (minTV)", mem_img_each_GPU);
+            tigre::checkMalloc(cudaMalloc((void**)&d_image[dev], mem_img_each_GPU), "GD_TV:GPU", what, mem_img_each_GPU);
             cudaMemset(         d_image[dev],0  , mem_img_each_GPU); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
-            tigre::checkMalloc(cudaMalloc((void**)&d_dimgTV[dev], mem_img_each_GPU), "GD_TV:GPU", "Total variation minimization (minTV)", mem_img_each_GPU);
+            tigre::checkMalloc(cudaMalloc((void**)&d_dimgTV[dev], mem_img_each_GPU), "GD_TV:GPU", what, mem_img_each_GPU);
             cudaMemset(         d_dimgTV[dev],0 , mem_img_each_GPU); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
-            tigre::checkMalloc(cudaMalloc((void**)&d_norm2[dev], slices_per_split*mem_slice_image), "GD_TV:GPU", "Total variation minimization (minTV)", slices_per_split*mem_slice_image);
+            tigre::checkMalloc(cudaMalloc((void**)&d_norm2[dev], slices_per_split*mem_slice_image), "GD_TV:GPU", what, slices_per_split*mem_slice_image);
             cudaMemset(         d_norm2[dev],0  , slices_per_split*mem_slice_image); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
-            tigre::checkMalloc(cudaMalloc((void**)&d_norm2aux[dev], mem_auxiliary), "GD_TV:GPU", "Total variation minimization (minTV)", mem_auxiliary);
+            tigre::checkMalloc(cudaMalloc((void**)&d_norm2aux[dev], mem_auxiliary), "GD_TV:GPU", what, mem_auxiliary);
             cudaMemset(         d_norm2aux[dev],0 , mem_auxiliary); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
+            for (int k = 0; k < nExtra; k++){
+                tigre::checkMalloc(cudaMalloc((void**)&d_extra[dev*nExtra+k], mem_img_each_GPU), "GD_TV:GPU", what, mem_img_each_GPU);
+                cudaMemset(         d_extra[dev*nExtra+k],0, mem_img_each_GPU); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
+            }
             cudaCheckErrors("Malloc  error");
             
             
@@ -418,7 +438,7 @@ do { \
         float* buffer=NULL;
         cudaEvent_t* exchange_event=(cudaEvent_t*)calloc(nExchanges>0? nExchanges : 1,sizeof(cudaEvent_t));
         if(splits>1){
-            mexWarnMsgIdAndTxt("minimizeTV:GD_TV:Image_split","Your image can not be fully split between the available GPUs. The computation of minTV will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
+            mexWarnMsgIdAndTxt("minimizeTV:GD_TV:Image_split","Your image does not fit on the available GPUs. The TV minimization will be significantly slowed due to the image size.\nApproximated mathematics turned on for computational speed.");
         }else if(deviceCount>1){
             cudaMallocHost((void**)&buffer,nExchanges*buffer_pixels*sizeof(float));
             onError.add([buffer]{ cudaFreeHost(buffer); });
@@ -447,10 +467,10 @@ do { \
         // Only what this call registers is unregistered, on error or at the end.
         bool img_registered=false, dst_registered=false;
         if (isHostRegisterSupported & splits>2){
-            img_registered=tigre::hostRegister(img ,(size_t)image_size[2]*image_size[1]*image_size[0]*sizeof(float));
+            img_registered=tigre::hostRegister((void*)img ,(size_t)image_size[2]*image_size[1]*image_size[0]*sizeof(float));
             dst_registered=tigre::hostRegister(dst ,(size_t)image_size[2]*image_size[1]*image_size[0]*sizeof(float));
         }
-        if (img_registered) onError.add([img]{ cudaHostUnregister(img); });
+        if (img_registered) onError.add([img]{ cudaHostUnregister((void*)img); });
         if (dst_registered) onError.add([dst]{ cudaHostUnregister(dst); });
         cudaCheckErrors("Error pinning memory");
 
@@ -521,6 +541,8 @@ do { \
                         cudaSetDevice(gpuids[dev]);
                         
                         cudaMemcpyAsync(d_image[dev]+offset_device[dev], img+offset_host[dev]  , bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
+                        for (int k = 0; k < nExtra; k++)
+                            cudaMemcpyAsync(d_extra[dev*nExtra+k]+offset_device[dev], extra[k]+offset_host[dev], bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
                         
                         
                     }
@@ -534,6 +556,8 @@ do { \
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         cudaMemcpyAsync(d_image[dev]+offset_device[dev], dst+offset_host[dev]  , bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
+                        for (int k = 0; k < nExtra; k++)  // each piece has its own part of the extra inputs
+                            cudaMemcpyAsync(d_extra[dev*nExtra+k]+offset_device[dev], extra[k]+offset_host[dev], bytes_device[dev]*sizeof(float), cudaMemcpyHostToDevice,stream[dev*nStream_device+1]);
                         
                         
                     }
@@ -546,18 +570,27 @@ do { \
                 
                 for(unsigned int ib=0;  (ib<(buffer_length-1)) && ((i+ib)<maxIter);  ib++){
                     
-                    // For the gradient
-                    dim3 blockGrad(10, 10, 10);
-                    dim3 gridGrad((image_size[0]+blockGrad.x-1)/blockGrad.x, (image_size[1]+blockGrad.y-1)/blockGrad.y, (curr_slices+buffer_length*2+blockGrad.z-1)/blockGrad.z);
-                    
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         // Compute the gradient of the TV norm
                         
-                        // I don't understand why I need to store 2 layers to compute correctly with 1 buffer. The bounding checks should
-                        // be enough but they are not.
-                        gradientTV<<<gridGrad, blockGrad,0,stream[dev*nStream_device]>>>(d_image[dev],d_dimgTV[dev],(long)(curr_slices+buffer_length*2-1), image_size[1],image_size[0]);
+                        // The step direction for this piece (the caller's functional). The image's slices in the buffer
+                        // are [zlo,zhi): the halos of the first and last piece of the whole image lie beyond it.
+                        const long piece=(long)sp*deviceCount+dev;
+                        TVPiece pc;
+                        pc.image=d_image[dev];
+                        pc.extra=d_extra+dev*nExtra;
+                        pc.direction=d_dimgTV[dev];
+                        pc.depth=(long)(curr_slices+buffer_length*2-1);
+                        pc.zlo=(piece==0)? (long)buffer_length : 0;
+                        pc.zhi=(piece==(long)deviceCount*splits-1)? (long)(buffer_length+curr_slices) : pc.depth;
+                        pc.rows=image_size[1];
+                        pc.cols=image_size[0];
+                        pc.interior_offset=buffer_pixels;
+                        pc.interior_pixels=(size_t)curr_slices*image_size[0]*image_size[1];
+                        pc.stream=stream[dev*nStream_device];
+                        step(pc, params);
                         
                     }
                     
@@ -736,7 +769,9 @@ do { \
             cudaFree(d_norm2aux[dev]);
             cudaFree(d_dimgTV[dev]);
             cudaFree(d_norm2[dev]);
+            for (int k = 0; k < nExtra; k++) cudaFree(d_extra[dev*nExtra+k]);
         }
+        free(d_image); free(d_dimgTV); free(d_norm2aux); free(d_norm2); free(d_extra);
         if (splits==1 && deviceCount>1){
             cudaFreeHost(buffer);
             for (int e = 0; e < nExchanges; e++){
@@ -746,7 +781,7 @@ do { \
         free(exchange_event);
         free(peer_access);
         
-        if (img_registered) cudaHostUnregister(img);
+        if (img_registered) cudaHostUnregister((void*)img);
         if (dst_registered) cudaHostUnregister(dst);
         for (int i = 0; i < nStreams; ++i)
            cudaStreamDestroy(stream[i]) ;
@@ -770,6 +805,17 @@ do { \
         // cudaDeviceReset();
     }
         
+// minTV: the step direction is the gradient of the TV norm.
+static void tvStepDirection(const TVPiece& pc, const void*){
+    dim3 block(10, 10, 10);
+    dim3 grid((pc.cols+block.x-1)/block.x, (pc.rows+block.y-1)/block.y, (pc.depth+block.z-1)/block.z);
+    gradientTV<<<grid, block, 0, pc.stream>>>(pc.image, pc.direction, pc.depth, pc.zlo, pc.zhi, pc.rows, pc.cols);
+}
+
+void pocs_tv(float* img,float* dst,float alpha,const long* image_size, int maxIter, const GpuIds& gpuids){
+    tv_gradient_descent(img, NULL, 0, tvStepDirection, NULL, dst, alpha, image_size, maxIter, gpuids, "Total variation minimization (minTV)");
+}
+
 void checkFreeMemory(const GpuIds& gpuids,size_t *mem_GPU_global){
         size_t memfree;
         size_t memtotal;

@@ -199,7 +199,7 @@ if contains(computer('arch'),'64')
     mex('-largeArrayDims', './Utilities/cuda_interface/AddNoise.cpp', '../Common/CUDA/RandomNumberGenerator.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex('-largeArrayDims', './Utilities/GPU/getGpuName_mex.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex('-largeArrayDims', './Utilities/GPU/getGpuCount_mex.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
-    mex('-largeArrayDims', './Utilities/cuda_interface/minPICCS.cpp', '../Common/CUDA/PICCS.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
+    mex('-largeArrayDims', './Utilities/cuda_interface/minPICCS.cpp', '../Common/CUDA/PICCS.cu', '../Common/CUDA/GD_TV.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex('-largeArrayDims', './Utilities/IO/VarianCBCT/mexReadXim.cpp', '-outdir', outdir, FLAGS)
 
 else
@@ -212,7 +212,7 @@ else
     mex( './Utilities/cuda_interface/AddNoise.cpp', '../Common/CUDA/RandomNumberGenerator.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex( './Utilities/GPU/getGpuName_mex.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex('./Utilities/GPU/getGpuCount_mex.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
-    mex('./Utilities/cuda_interface/minPICCS.cpp', '../Common/CUDA/PICCS.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
+    mex('./Utilities/cuda_interface/minPICCS.cpp', '../Common/CUDA/PICCS.cu', '../Common/CUDA/GD_TV.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex( './Utilities/IO/VarianCBCT/mexReadXim.cpp', '-outdir', outdir, FLAGS)
 
 end

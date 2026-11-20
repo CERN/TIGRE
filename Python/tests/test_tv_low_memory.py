@@ -1,4 +1,4 @@
-"""minTV, AwminTV and tvdenoise with little free GPU memory (#858).
+"""minTV, AwminTV, tvdenoise and minPICCS with little free GPU memory (#858).
 
 When the image does not fit on the GPU, these split it in pieces along z. The
 calculation of the pieces used unsigned sizes that could go below zero, and
@@ -16,7 +16,7 @@ arrays registered as pinned memory, and on Linux the next call with a new array
 (often at the same address) returned all zeros without any error.
 
 What a split result should be:
-- minTV/AwminTV: the whole-GPU result up to ~1e-3. With more than one piece
+- minTV/AwminTV/minPICCS: the whole-GPU result up to ~1e-3. With more than one piece
   per GPU, each step is divided by a norm gathered from the pieces' previous
   pass (on the first pass, the piece's own norm) rather than the norm of the
   whole image at that step, so split results differ slightly.
@@ -55,6 +55,7 @@ import tigre  # first: on Windows it puts CUDA's DLLs on the search path
 from _minTV import minTV
 from _AwminTV import AwminTV
 from _tv_proximal import tvdenoise
+from _minPICCS import minPICCS
 from tigre.utilities.gpu import GpuIds
 
 ids = GpuIds()
@@ -64,6 +65,7 @@ calls = {
     "minTV": lambda: minTV(img.copy(), 0.01, 10, gpuids=ids),
     "AwminTV": lambda: AwminTV(img.copy(), 0.01, 10, -0.005, gpuids=ids),
     "tvdenoise": lambda: tvdenoise(img.copy(), 10, 15.0, gpuids=ids),
+    "minPICCS": lambda: minPICCS(img.copy(), 0.5 * img, 0.01, 10, 0.5, gpuids=ids),
 }
 reference = {name: call() for name, call in calls.items()}
 
@@ -123,7 +125,7 @@ def test_tv_with_little_free_memory(free_mb):
         pytest.fail("hung (no result after 10 minutes); output so far:\n{}".format(e.stdout))
     out = result.stdout + result.stderr
     assert result.returncode == 0, out
-    for name in ["minTV", "AwminTV", "tvdenoise"]:
+    for name in ["minTV", "AwminTV", "tvdenoise", "minPICCS"]:
         prefix = "{} {} MB | ".format(name, free_mb)
         line = next((ln for ln in result.stdout.splitlines() if ln.startswith(prefix)), None)
         assert line is not None, out

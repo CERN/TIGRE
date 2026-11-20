@@ -50,8 +50,8 @@ Codes  : https://github.com/CERN/TIGRE
 
 
 
-#ifndef GD_TV_HPP
-#define GD_TV_HPP
+#ifndef PICCS_HPP
+#define PICCS_HPP
 #include "TIGRE_common.hpp"
 #include "GpuIds.hpp"
 
