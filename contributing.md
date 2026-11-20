@@ -37,10 +37,23 @@ pip install --group dev .        # builds the CUDA extensions and installs dev t
 Re-run `pip install .` after changing any CUDA (`Common/CUDA`) or Cython
 (`Python/tigre/utilities/cuda_interface`) code, since those need recompiling.
 
+By default the CUDA code is compiled for every GPU architecture your nvcc
+supports, which takes a while. While developing, compile only for your own GPU
+with `TIGRE_CUDA_ARCH`, several times faster (the build then runs only on that
+GPU, so don't distribute it):
+
+```bash
+TIGRE_CUDA_ARCH=native pip install .     # the GPUs in this machine (nvcc 11.6+)
+TIGRE_CUDA_ARCH=89 pip install .         # or by compute capability, e.g. 89 for RTX 40xx; 75,89 for two
+```
+
+On Windows: `set TIGRE_CUDA_ARCH=native` before `pip install .`.
+
 ### MATLAB
 
 Run `MATLAB/Compile.m` once to build the MEX files, then `InitTIGRE` at the start of
 each session to add TIGRE to the path.
+`setenv('TIGRE_CUDA_ARCH','native')` before `Compile` does the same as for Python.
 
 ## Running the tests
 

@@ -8,6 +8,9 @@ thank you.
 ## Unreleased
 
 ### Added
+- `TIGRE_CUDA_ARCH` (Python build and MATLAB `Compile`): compile only for the given GPU architectures (e.g.
+  `89`, `75,89`, or `native`), several times faster, for development and testing. Default unchanged: every
+  architecture nvcc supports.
 - Python and MATLAB builds: the GPU backend (`cuda`, `hip`, `sycl` or `metal`) is chosen with the
   `TIGRE_BACKEND` environment variable, or in MATLAB with `Compile -backend <name>`. When neither
   is given, the build uses the first backend whose compiler is installed, CUDA first, and prints
