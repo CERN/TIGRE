@@ -1,0 +1,400 @@
+# Papers citing TIGRE that were reviewed and found NOT to use it
+# (they only mention or cite TIGRE). review_queue.py skips these.
+
+- s2: 0cafcbc2b2e11b5b66c23419f5d177180fd58f2a
+  doi: 10.48550/arXiv.2602.18589
+  title: 'DM4CT: Benchmarking Diffusion Models for Computed Tomography Reconstruction'
+  decision: 'no'
+- s2: 0d3795c98a2a83d53704e5965e08461bc452dfc1
+  title: Geometry Calibration in Tomography with a Differentiable Ray-Based Model
+  decision: 'no'
+- s2: 1721a601849a3415cd96e701283b929d7cf75011
+  title: Spatial-Frequency-Aware Implicit Neural Representation of Multidimensional Signals via MLP-KAN Fusion
+  decision: 'no'
+- s2: 192c667d9f94b09686aae5c1b27c805820293aa2
+  doi: 10.1016/j.laa.2025.07.036
+  title: Insight Into Semi-Convergence of Iterative Regularization Methods
+  decision: 'no'
+- s2: 2ee2865d0130e0c2fdedfe7c4ec5fb5c1ac4c836
+  doi: 10.1002/mp.70499
+  title: 'PRISM: An open‐source framework for regularized material decomposition on a novel kV dual‐layer imager'
+  decision: 'no'
+- s2: 3f733a802a30ec4d17823bf47e15067fed0feeb4
+  doi: 10.1137/21m1464191
+  title: Convolutional Forward Models for X-Ray Computed Tomography
+  decision: 'no'
+- s2: 5728ace552cebc04ca731ca475bd0f55a6918540
+  title: 'CTorch: PyTorch-Compatible GPU-Accelerated Auto-Differentiable Projector Toolbox for Computed Tomography'
+  decision: 'no'
+- s2: 70ef73d8472f7941961b4251b1888b1a7e89cc7d
+  doi: 10.1016/j.jpdc.2026.105295
+  title: Distributed Tomographic Reconstruction with Quantization
+  decision: 'no'
+- s2: 75c1c1b074b9d55adc5b11a48c48e305131ccc54
+  doi: 10.1002/mp.17107
+  title: Software from publicly funded research should be free and open source for research.
+  decision: 'no'
+- s2: 7ce0bc2ee0cd48a53537ea3be506cd440541251e
+  doi: 10.1007/s11075-025-02167-w
+  title: Randomized and inner-product free Krylov methods for large-scale inverse problems
+  decision: 'no'
+- s2: 813c417ce0cef87db9bd31898434c868350c50d8
+  doi: 10.48550/arXiv.2310.01671
+  title: A directional regularization method for the limited-angle Helsinki Tomography Challenge using the Core Imaging Library (CIL)
+  decision: 'no'
+- s2: 85660bd550229dea8a12c38acddca184a70e108a
+  doi: 10.59324/ejtas.2023.1(5).87
+  title: 'Applications of MATLAB in Natural Sciences: A Comprehensive Review'
+  decision: 'no'
+- s2: 8a3ed21c59434fd1375b5b4ebfe4d78f5e80ca65
+  doi: 10.1016/j.softx.2026.102930
+  title: 'CanIonSynth: Synthetic CT generator for aerosol cans and ionization chambers'
+  decision: 'no'
+- s2: 96e5b4fd0df2d6303b679d2dda3f637d841eb924
+  doi: 10.1007/s11042-024-19506-z
+  title: Hybrid priority-based genetic algorithm for limited-view computed tomography
+  decision: 'no'
+- s2: 9f8491c0d21b0cc0aa60eb09b5f38f34beaad26b
+  doi: 10.3390/ph16050733
+  title: Characterization of Pharmaceutical Tablets by X-ray Tomography
+  decision: 'no'
+- s2: a5a9a52080b5b73729f0d4f89c5a35ba24eea239
+  doi: 10.1016/j.optlaseng.2023.107873
+  title: Deep learning for accelerating Radon inversion in single-cells tomographic phase imaging flow cytometry
+  decision: 'no'
+- s2: a6f2bded6639e1f4b76d9e2c425f7c11c9d7194c
+  doi: 10.1145/3447818.3460353
+  title: 'Performance portable back-projection algorithms on CPUs: agnostic data locality and vectorization optimizations'
+  decision: 'no'
+- s2: afebf9154aeedc88088f01a290c4b80dc71ff6e2
+  doi: 10.1177/08953996261433875
+  title: Branchless distance-driven and hybrid projectors in iterative cone beam CT
+  decision: 'no'
+- s2: bc3a15a6ee073332d092be7cc4631244929fa6c8
+  doi: 10.1016/j.radphyschem.2025.113140
+  title: Low-dose x-ray computed tomography image reconstruction using high-dimensional partial differential equation
+  decision: 'no'
+- s2: c831bed57aa7f982c90552922901eae0dd35f18b
+  doi: 10.1016/j.compmedimag.2025.102508
+  title: 'DLPVI: Deep learning framework integrating projection, view-by-view backprojection, and image domains for high- and ultra-sparse-view CBCT reconstruction'
+  decision: 'no'
+- s2: cedf86f7eef916040308437654d42a7d8bc483f1
+  doi: 10.3390/s24165139
+  title: Investigations into the Geometric Calibration and Systematic Effects of a Micro-CT System
+  decision: 'no'
+- s2: d558d989ac905f7fdbb104ef7a3de98a7ed1ac2c
+  doi: 10.1039/d5dd00252d
+  title: 'nDTomo: a modular Python toolkit for X-ray chemical imaging and tomography'
+  decision: 'no'
+- s2: e82f88dd6a9d61b288ecf8e6402ec0ba145d1f11
+  doi: 10.3934/ammc.2024004
+  title: 'ASTRA kernelkit: GPU-accelerated projectors for computed tomography using cupy'
+  decision: 'no'
+- s2: ee3a49e2bb7e654da44d57ca2f287c9edf5ffee8
+  doi: 10.1016/j.procir.2024.10.026
+  title: 'The X-ray computed tomography simulation in geometric metrology: a review and case study'
+  decision: 'no'
+- s2: f690332b3315580101dd8e08f4e04025347c6518
+  doi: 10.1016/j.media.2025.103454
+  title: 'Strategies for generating synthetic computed tomography-like imaging from radiographs: A scoping review'
+  decision: 'no'
+- s2: f7914052c57bbdcb175fee81c8b96a5ab6950870
+  doi: 10.1002/mp.70066
+  title: An end-to-end CT simulation framework with graphical user interface and sample scanner models
+  decision: 'no'
+- s2: fc2df7092b2a175cd3a39d9de28b20dd649c442a
+  doi: 10.1117/12.3074654
+  title: Implicit neural representation via MLPs-KANs fusion with spatial-frequency transforms
+  decision: 'no'
+- s2: 040e1eedc52681cbe6ed3aaaffec522915c16134
+  doi: 10.1016/j.revip.2023.100085
+  title: Toward the end-to-end optimization of particle physics instruments with differentiable programming
+  decision: 'no'
+- s2: 0c2a505f98180fc632444aef38c177a58d59ad35
+  doi: 10.1016/j.ndteint.2022.102755
+  title: Cone-beam computed tomography based on truncated adaptive-weight total variation
+  decision: 'no'
+- s2: 0d59a475264f3b7e1540faa714a584e38a51f9bb
+  doi: 10.31399/asm.hb.v24.a0006568
+  title: Powder Characterization for Metal Additive Manufacturing
+  decision: 'no'
+- s2: 136fc8c848ba72f9da82efb6a2cc9462a67a7c2e
+  doi: 10.1002/chem.201903284
+  title: 'X-ray diffraction mapping for cultural heritage science: a review of experimental configurations and applications.'
+  decision: 'no'
+- s2: 26c8f3c49f54bf9ea9b8a5bba12eb3981d34601f
+  doi: 10.1117/12.2534833
+  title: elsa - an elegant framework for tomographic reconstruction
+  decision: 'no'
+- s2: 3625f63671ac20e488b8231f5940a3d01c7004f6
+  doi: 10.1088/1742-6596/847/1/012019
+  title: Optical and X-ray computed tomography scanning of 3D dosimeters
+  decision: 'no'
+- s2: 406673be203f06bce8b82776fcc1bc0d26e785bb
+  doi: 10.1088/1361-6560/aadac1
+  title: 'CASToR: a generic data organization and processing code framework for multi-modal and multi-dimensional tomographic reconstruction'
+  decision: 'no'
+- s2: 4e5ad1c0d3a17df5011b90fc628cf796bf30b4a4
+  title: Deep learning for tomographic reconstruction with limited data
+  decision: 'no'
+- s2: 87b7b8cfa48d1db152826f9c19062e4d33365c27
+  doi: 10.48550/arXiv.2105.07221
+  title: 'Computational methods for large-scale inverse problems: a survey on hybrid projection methods'
+  decision: 'no'
+- s2: 91b7d2a5f2f6e789a7b1a25147f5da7036246dc3
+  doi: 10.1117/1.OE.57.2.023102
+  title: General rigid motion correction for computed tomography imaging based on locally linear embedding
+  decision: 'no'
+- s2: b58c4a09f57c3c80242bdf1efac3f1f1bc0f501a
+  doi: 10.1109/tim.2022.3164166
+  title: A 4-D Ultrasound Tomography for Industrial Process Reactors Investigation
+  decision: 'no'
+- s2: d67b7704bfb5fb87f609f31d69f5693eb8599423
+  doi: 10.1007/978-3-030-00368-5_5
+  title: From Projections to the 3D Analysis of the Regenerated Tissue
+  decision: 'no'
+- s2: d68675ef07eb7ebca2994326c72b2b003ade67b4
+  doi: 10.1117/12.2534517
+  title: 'CTL: modular open-source C++-library for CT-simulations'
+  decision: 'no'
+- s2: da38ea8068ff430483acf9812cf17eb9035592d0
+  doi: 10.1007/978-3-030-22204-8_41
+  title: 'The Path Towards Low Dose CT: The Case of Breast CBCT'
+  decision: 'no'
+- s2: e49bcc5e951e376be98757cd8c6ede1d2385c61e
+  doi: 10.1016/j.gete.2022.100380
+  title: Effect of soil saturation and grain size on coupled hydrothermal flow in fine sands based on X-ray μCT imaging
+  decision: 'no'
+- s2: f69e9349fe74b8548d9c3acd04aa43ed381e3949
+  doi: 10.1088/1361-6501/ac354a
+  title: Review of high-speed imaging with lab-based x-ray computed tomography
+  decision: 'no'
+- s2: fa3828f0de4e8e02e804e297d3fa07079c3e9f9b
+  doi: 10.1016/j.ndteint.2021.102595
+  title: 'Livermore tomography tools: Accurate, fast, and flexible software for tomographic science'
+  decision: 'no'
+- s2: 62a9fe887571b8727608165132d6a79f3510dbe3
+  doi: 10.3390/s21051921
+  title: Deep Learning Driven Noise Reduction for Reduced Flux Computed Tomography
+  decision: 'no'
+- s2: 327f4a3cb95b01c57d140ebaeffdbea1d64bf96e
+  doi: 10.1364/oe.439909
+  title: 'Tomosipo: fast, flexible, and convenient 3D tomography for complex scanning geometries in Python.'
+  decision: 'no'
+- s2: 148d7fa3704f01051e1c0c33304b2235c93087ce
+  doi: 10.3390/app11167598
+  title: Improving a Rapid Alignment Method of Tomography Projections by a Parallel Approach
+  decision: 'no'
+- s2: 6c6148c80f478221e2c509a7fe1c6e7d4773ef35
+  doi: 10.3233/XST-200666
+  title: Review of CT image reconstruction open source toolkits
+  decision: 'no'
+- s2: 69275eb2c8879ed4216c9d15df8606b20e877735
+  title: Comparative analysis of numerical methods for X-ray 3D reconstruction from sparse views
+  decision: 'no'
+- s2: 8e251137de879799a40a717142842e6799fac03e
+  doi: 10.3847/1538-4357/ae6db5
+  title: 'TomoSphero: Fast Differentiable Projector for Planetary and Solar Tomography on Spherical Grids'
+  decision: 'no'
+- s2: 03feb678959366f873bb9d6ec8248c85cc047c42
+  doi: 10.1088/1361-6560/ae7ec7
+  title: 'OMEGA V2: GPU-accelerated Python and MATLAB software for PET, SPECT, and CT reconstruction'
+  decision: 'no'
+- s2: d42ba849d9348011087366f7c8efdd1678fddd9d
+  doi: 10.3934/ammc.2025001
+  title: Benchmarking learned algorithms for computed tomography image reconstruction tasks
+  decision: 'no'
+- s2: 24002672442160b0027e539784eebdf5b51649b8
+  doi: 10.1145/3650200.3656634
+  title: Real-time High-resolution X-Ray Computed Tomography
+  decision: 'no'
+- s2: 609994ce3f6a06dd0ab819c5fd835d8868786a06
+  doi: 10.1038/s41598-021-97833-z
+  title: Multi GPU parallelization of maximum likelihood expectation maximization method for digital rock tomography data
+  decision: 'no'
+- s2: 4d0ab977ab9fcbbd7a5910bc09346e99212db192
+  doi: 10.1088/1361-6420/ab2ae9
+  title: Pocket guide to solve inverse problems with GlobalBioIm
+  decision: 'no'
+- s2: d79497ba58710d7ca01e4fc7d7f16aa22a99c0ee
+  doi: 10.1371/journal.pone.0180363
+  title: 'FUX-Sim: Implementation of a fast universal simulation/reconstruction framework for X-ray systems'
+  decision: 'no'
+- s2: 3b9d103cad117b0dad6f98cf7432d1fac2ddf99d
+  doi: 10.48550/arXiv.2608.10343
+  title: 'ENCORE: Efficient Noise Context-Aware Representation for Low-Dose CT Denoising'
+  decision: 'no'
+- s2: 59ccb4ccbff26182773853d785b0812a9da0b913
+  doi: 10.48550/arXiv.2606.16573
+  title: Transformation-driven generation of comparable projection images from multimodal anatomical scenes
+  decision: 'no'
+- s2: 2f51e04cd3d54096fa29031622659a27af50083e
+  doi: 10.48550/arXiv.2603.26509
+  title: Conditional Diffusion for 3D CT Volume Reconstruction from 2D X-rays
+  decision: 'no'
+- s2: 4747890ae402867956ce194e2758374728c36a17
+  doi: 10.48550/arXiv.2602.17892
+  title: Hybrid ABBA-GMRES for Unmatched Backprojectors in Large Scale X-Ray Computerized Tomography
+  decision: 'no'
+- s2: a8cc60005df55b4a5b87c1ac20c5345258da6b77
+  title: 'CTrex: A Research-Oriented Framework for Kernel- and Projection-Level Algorithm Development in CT Reconstruction'
+  decision: 'no'
+- s2: 78a7296bcf094b3dd9c34588b4a916f36e20da4d
+  doi: 10.1109/ISBI61048.2026.11516068
+  title: 'SplineSplat: 3D Ray Tracing for Higher-Quality Tomography'
+  decision: 'no'
+- s2: 4e9cf67635255e5240cfd46f17eba56fc1840d1e
+  doi: 10.1016/j.jcomc.2025.100662
+  title: Analysis of the Compaction Behavior of Textile Reinforcements in Low-Resolution In-Situ CT Scans via Machine-Learning and Descriptor-Based Methods
+  decision: 'no'
+- s2: c27d780448f8d29cd37c200bc6076dae3305f603
+  doi: 10.1109/TCI.2025.3611590
+  title: Generalized Ray Tracing With Basis Functions for Tomographic Projections
+  decision: 'no'
+- s2: ceed651ed24d71e0f0f8ca60dda2c2330a544a09
+  doi: 10.48550/arXiv.2511.08427
+  title: 'An update to PYRO-NN: A Python Library for Differentiable CT Operators'
+  decision: 'no'
+- s2: c0b7470d3fdbf796c217f8abe406425fb81ef42b
+  doi: 10.21105/joss.08923
+  title: 'DeepInverse: A Python package for solving imaging inverse problems with deep learning'
+  decision: 'no'
+- s2: d1099e1e365f01cfa36dcd20d7349805aaeca591
+  doi: 10.1016/j.cmpb.2024.108376
+  title: An efficient dual-domain deep learning network for sparse-view CT reconstruction
+  decision: 'no'
+- s2: 85a5e1d3e890863b94a252f4a6a988b88999ab02
+  doi: 10.1029/2023WR036514
+  title: 4D Imaging of Two‐Phase Flow in Porous Media Using Laboratory‐Based Micro‐Computed Tomography
+  decision: 'no'
+- s2: 734a8a739b31b3ca1a9d9dbb6cb6f393b3f39abe
+  doi: 10.1007/s11075-024-01878-w
+  title: 'TRIPs-Py: Techniques for regularization of inverse problems in python'
+  decision: 'no'
+- s2: 5272b5c2e3a454af2cf654180b7a0c64e3cea3a1
+  doi: 10.1109/TBME.2023.3314617
+  title: Iterative Reconstruction Algorithms in Magneto-Acousto-Electrical Computed Tomography (MAE-CT) for Image Quality Improvement
+  decision: 'no'
+- s2: fb95e90210fa6fc8c3aced4a93cb327f3123fb11
+  doi: 10.1002/mp.16532
+  title: 'MCR toolkit: A GPU-based toolkit for multi-channel reconstruction of preclinical and clinical x-ray CT data'
+  decision: 'no'
+- s2: 528ee39a36a2dc1bbadda2ede6b89969f5d0a7db
+  doi: 10.3934/ammc.2023010
+  title: 'Helsinki tomography challenge 2022: Description of the competition and dataset'
+  decision: 'no'
+- s2: 5cd83afc633a369cad57b1052a074788dd58dd80
+  doi: 10.1364/OE.485370
+  title: 'PtyLab.m/py/jl: a cross-platform, open-source inverse modeling toolbox for conventional and Fourier ptychography.'
+  decision: 'no'
+- s2: 1c05edc2a4d265d36719ffd00ea26c10c3265fb5
+  doi: 10.1088/1361-6560/ad0bdd
+  title: Exploration of differentiability in a proton computed tomography simulation framework
+  decision: 'no'
+- s2: eacb5828147a6eba92938909738037ff1656ba98
+  doi: 10.1109/TCI.2022.3215096
+  title: Towards Data-Informed Motion Artifact Reduction in Quantitative CT Using Piecewise Linear Interpolation
+  decision: 'no'
+- s2: 38c34f34b8ea38961b47a0527676f635eaf4381e
+  doi: 10.1007/s12652-022-04324-8
+  title: Fast algorithm for Joseph’s forward projection in iterative computed tomography reconstruction
+  decision: 'no'
+- s2: e14b03c6948433bb0a7b2d531963dc2a0cd75cc9
+  doi: 10.48550/arXiv.2110.13526
+  title: Software Implementation of the Krylov Methods Based Reconstruction for the 3D Cone Beam CT Operator
+  decision: 'no'
+- s2: 34eddd93c48eaf62fa63f92e92524f3eb7d9f484
+  doi: 10.5753/wscad.2021.18526
+  title: A Nonlinear UAV Control Tuning Under Communication Delay using HPC Strategies in Parameters Space
+  decision: 'no'
+- s2: 9be231bc8fedf615ce5ed8aaf69d103ad18c7bd5
+  doi: 10.1016/j.jocs.2025.102573
+  title: Cutting Voxel Projector a New Approach to Construct 3D Cone Beam CT Operator
+  decision: 'no'
+- s2: 034b9e3e349aa464bee23148de83ca3343f00c3d
+  doi: 10.1109/NSS/MIC44867.2021.9875484
+  title: Transmission Tomography Extension to the Open-source OMEGA Software
+  decision: 'no'
+- s2: b550a45d3ac7ac19a69c9f1716a713633da75713
+  doi: 10.1109/MSP.2021.3123594
+  title: 'Algorithm-Driven Advances for Scientific CT Instruments: From model-based to deep learning-based approaches'
+  decision: 'no'
+- s2: f725c52a2f4f9590c0bcbb3201d9bc4df7f34bec
+  doi: 10.1145/3458817.3476139
+  title: Scalable FBP Decomposition for Cone-Beam CT Reconstruction
+  decision: 'no'
+- s2: ec16b43653adc3534a4f1654846037fe949af72c
+  doi: 10.48550/arXiv.2006.00686
+  title: An Algorithm to Compute the X-ray Transform
+  decision: 'no'
+- s2: 3e56369444a96ba36de7c6e96aa5f774833115cb
+  doi: 10.1137/18M1206448
+  title: Fixing Nonconvergence of Algebraic Iterative Reconstruction with an Unmatched Backprojector
+  decision: 'no'
+- s2: 2d0a31784f665c56bf5079f893c03599de939fbe
+  doi: 10.1089/3dp.2018.0060
+  title: 'X-Ray Microcomputed Tomography in Additive Manufacturing: A Review of the Current Technology and Applications'
+  decision: 'no'
+- s2: f6ccbd33f3be7b2f1e4334f4d54691a45dd8f7d3
+  doi: 10.1016/j.ejmp.2017.07.024
+  title: A review of GPU-based medical image reconstruction.
+  decision: 'no'
+- openalex: W4212772333
+  doi: 10.53846/goediss-8767
+  title: Ultrafast transmission electron microscopy of a structural phase transition
+  decision: 'no'
+- openalex: W4311877506
+  doi: 10.1002/adem.202201355
+  title: 'X‐ray Tomography and Tomoscopy on Metals: A Review'
+  decision: 'no'
+- openalex: W4380785834
+  doi: 10.1007/978-981-99-1839-3_3
+  title: Deep Learning for Dental Cone-Beam Computed Tomography
+  decision: 'no'
+- openalex: W4388557701
+  doi: 10.1107/s1600577523008962
+  title: 'tomoCAM : fast model-based iterative reconstruction via GPU acceleration and non-uniform fast Fourier transforms'
+  decision: 'no'
+- openalex: W4393970875
+  doi: 10.1088/2057-1976/ad3afe
+  title: Iterative image reconstruction algorithm analysis for optical CT radiochromic gel dosimetry
+  decision: 'no'
+- openalex: W4401008577
+  doi: 10.1364/oe.559227
+  title: 'SPyRiT 3.0: an open source package for single-pixel imaging based on deep learning'
+  decision: 'no'
+- openalex: W4406457733
+  doi: 10.1109/access.2025.3530297
+  title: 'From Technical Prerequisites to Improved Care: Distributed Edge AI for Tomographic Imaging'
+  decision: 'no'
+- openalex: W4407625007
+  doi: 10.1107/s1600577525000359
+  title: Multi-stage deep learning artifact reduction for parallel-beam computed tomography
+  decision: 'no'
+- openalex: W4413233795
+  doi: 10.26434/chemrxiv-2025-h5t2x-v2
+  title: 'nDTomo: A Python-Based Software Suite for X-ray Chemical Imaging and Tomography'
+  decision: 'no'
+- openalex: W4414478759
+  doi: 10.1016/bs.hna.2025.09.001
+  title: Energy-based models for inverse imaging problems
+  decision: 'no'
+- openalex: W7151586798
+  doi: 10.70675/bee2a393z70b4z4a95z976cz4cbaf8c6fd05
+  title: 'High-level synthesis (HLS) on FPGA for inverse problems : application to tomography and radioastronomy'
+  decision: 'no'
+- openalex: W7166671440
+  doi: 10.1038/s41598-026-79689-3
+  title: Comparison of Bresenham and Siddon ray tracing algorithms for sparse view 3D reconstruction of simulated coronary vessel models
+  decision: 'no'
+- openalex: W7207842588
+  doi: 10.2139/ssrn.7387578
+  title: Computational Budgets in Imaging Systems
+  decision: 'no'
+- openalex: W7225183296
+  doi: 10.2139/ssrn.7678399
+  title: 'Resource-Constrained Computational Imaging: Integrating Reconstruction, Compression, and Real-Time Inference'
+  decision: 'no'
+- openalex: W7113205665
+  title: 'Vector-driven: Vektör haritalamasına dayalı yeni bir projeksiyonve ters projeksiyon algoritması'
+  decision: 'no'

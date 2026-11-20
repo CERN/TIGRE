@@ -103,29 +103,24 @@ blcks=22;
                         
 %% Plot the changes of image quality measures over iterations
 
-%%RMSE plot
-figure
-plot([qualitySIRT(1,:);[qualitySART(1,:) nan(1,length(qualityOSSART)-length(qualitySART))];qualityOSSART(1,:)]');
-title('Evolution of RMSE per iteration')
-legend('SIRT','SART','OS-SART')
-                   
-%%CC plot
-figure
-plot([qualitySIRT(2,:);[qualitySART(2,:) nan(1,length(qualityOSSART)-length(qualitySART))];qualityOSSART(2,:)]');
-title('Evolution of correlation coefficient (CC) per iteration')
-legend('SIRT','SART','OS-SART')
-
-%%MSSIM plot
-figure
-plot([qualitySIRT(3,:);[qualitySART(3,:) nan(1,length(qualityOSSART)-length(qualitySART))];qualityOSSART(3,:)]');
-title('Evolution of mean structural similarity index per iteration')
-legend('SIRT','SART','OS-SART')
-                        
-%%UQI plot
-figure
-plot([qualitySIRT(4,:);[qualitySART(4,:) nan(1,length(qualityOSSART)-length(qualitySART))];qualityOSSART(4,:)]');
-title('Evolution of universal quality index per iteration')
-legend('SIRT','SART','OS-SART')
+%%RMSE plot (and the other requested metrics)
+% Each algorithm may stop at a different iteration. Plot its own history
+% directly, preserving legitimate zeros and avoiding assumptions about length.
+histories={qualitySIRT,qualitySART,qualityOSSART};
+algorithmNames={'SIRT','SART','OS-SART'};
+metricNames={'RMSE','CC','MSSIM','UQI'};
+for metric=1:numel(metricNames)
+    figure;
+    hold on;
+    for algorithm=1:numel(histories)
+        values=histories{algorithm}(metric,:);
+        plot(1:numel(values),values,'DisplayName',algorithmNames{algorithm});
+    end
+    title(['Evolution of ' metricNames{metric} ' per iteration']);
+    xlabel('Iteration');
+    ylabel(metricNames{metric});
+    legend('show');
+end
 
 %% Compute the parameters for the target image
 % Knowing change of the parameters per iteration can be interesting, but

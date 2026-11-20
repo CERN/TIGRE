@@ -15,7 +15,7 @@ function [res,resL2,qualMeasOut]=OSEM(proj,geo,angles,niter,varargin)
 %   'lambda':      Sets the value of the hyperparameter. Default is 1
 %
 %   'lambda_red':  Reduction of lambda. Every iteration
-%                  lambda=lambdared*lambda. Default is 0.95
+%                  lambda=lambdared*lambda. Default is 1
 %
 %   'Init':        Describes different initialization techniques.
 %                  'none'     : Initializes the image to zeros (default)

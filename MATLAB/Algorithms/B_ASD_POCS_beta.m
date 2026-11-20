@@ -14,7 +14,7 @@ function [ fres, qualMeasOut ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargi
 %   'lambda':      Sets the value of the hyperparameter for the SART iterations.
 %                  Default is 1
 %
-%   'lambdared':   Reduction of lambda.Every  iteration
+%   'lambda_red':  Reduction of lambda.Every  iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
 %       'init':    Describes different initialization techniques.

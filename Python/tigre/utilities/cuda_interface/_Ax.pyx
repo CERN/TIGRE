@@ -10,6 +10,7 @@ from tigre.utilities.cuda_interface._gpuUtils cimport GpuIds as c_GpuIds, conver
 np.import_array()
 
 from libc.stdlib cimport malloc, free
+include "_tigre_warnings.pxi"
 
 cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
@@ -17,13 +18,13 @@ cdef extern from "numpy/arrayobject.h":
 
 
 cdef extern from "Siddon_projection.hpp":
-    cdef int siddon_ray_projection(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, const c_GpuIds& gpuids)
+    cdef int siddon_ray_projection(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, const c_GpuIds& gpuids, bint gpuData) except +
 cdef extern from "Siddon_projection_parallel.hpp":
-    cdef int siddon_ray_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, const c_GpuIds& gpuids)
+    cdef int siddon_ray_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, const c_GpuIds& gpuids, bint gpuData) except +
 cdef extern from "ray_interpolated_projection.hpp":
-    cdef int interpolation_projection(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, const c_GpuIds& gpuids)
+    cdef int interpolation_projection(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, const c_GpuIds& gpuids, bint gpuData) except +
 cdef extern from "ray_interpolated_projection_parallel.hpp":
-    cdef int interpolation_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, const c_GpuIds& gpuids)
+    cdef int interpolation_projection_parallel(float* img, c_Geometry geo, float** result, float* alphas, int nalpha, const c_GpuIds& gpuids, bint gpuData) except +
 
 def cuda_raise_errors(error_code):
     if error_code:
@@ -36,7 +37,7 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
         raise MemoryError("Error reading GPU Ids")
     
     cdef int total_projections = angles.shape[0]
-    cdef unsigned long nDetectorPixels = <unsigned long>geometry.nDetector[0] * <int>geometry.nDetector[1]
+    cdef size_t nDetectorPixels = <size_t>geometry.nDetector[0] * <size_t>geometry.nDetector[1]  # not unsigned long: 32-bit on Windows
 
     cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
     if not c_geometry:
@@ -75,16 +76,26 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     img = np.ascontiguousarray(img)
 
     cdef float* c_img = <float*> img.data
-    if cone_beam:
-        if not interpolated:
-            cuda_raise_errors(siddon_ray_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0]))
+    # A CUDA error raises RuntimeError (#853); free what this call allocated first.
+    try:
+        if cone_beam:
+            if not interpolated:
+                cuda_raise_errors(siddon_ray_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0], False))
+            else:
+                cuda_raise_errors(interpolation_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0], False))
         else:
-            cuda_raise_errors(interpolation_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0]))
-    else:
-        if not interpolated:
-            cuda_raise_errors(siddon_ray_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0]))
-        else:
-            cuda_raise_errors(interpolation_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0]))
+            if not interpolated:
+                cuda_raise_errors(siddon_ray_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0], False))
+            else:
+                cuda_raise_errors(interpolation_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0], False))
+    except BaseException:
+        free(c_projectionsNonPinned)
+        free(c_projections)
+        free_c_geometry(c_geometry)
+        free_c_gpuids(c_gpuids)
+        raise
+    finally:
+        _raise_tigre_warnings()
 
  
     cdef np.npy_intp shape[3]
@@ -99,3 +110,50 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
     free_c_geometry(c_geometry)
     free_c_gpuids(c_gpuids)
     return projections
+
+# GPU arrays (tigre.Ax/Atb with a PyTorch or CuPy CUDA array, see
+# tigre/utilities/_gpu_arrays.py). The pointers are C-contiguous float32 GPU
+# memory on the single device in gpuids; the caller has finished writing the
+# input. Returns once the GPU has finished writing the output.
+def _Ax_ext_gpu(size_t img_ptr, size_t projections_ptr, geometry, np.ndarray[np.float32_t, ndim=2] angles, projection_type="Siddon", mode="cone", gpuids=None):
+    cdef c_GpuIds* c_gpuids = convert_to_c_gpuids(gpuids)
+    if not c_gpuids:
+        raise MemoryError("Error reading GPU Ids")
+    cdef int total_projections = angles.shape[0]
+    cdef size_t nDetectorPixels = <size_t>geometry.nDetector[0] * <size_t>geometry.nDetector[1]  # not unsigned long: 32-bit on Windows
+    cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
+    if not c_geometry:
+        free_c_gpuids(c_gpuids)
+        raise MemoryError("Error reading the geometry")
+    # One pointer per projection, into the caller's GPU array.
+    cdef float* c_out = <float*> projections_ptr
+    cdef float** c_projections = <float**> malloc(total_projections * sizeof(float*))
+    if not c_projections:
+        free_c_geometry(c_geometry)
+        free_c_gpuids(c_gpuids)
+        raise MemoryError("Error creating memory to host projections")
+    cdef int i = 0
+    for i in range(total_projections):
+        c_projections[i] = &(c_out[nDetectorPixels * i])
+
+    angles = np.ascontiguousarray(angles)
+    cdef float* c_angles = <float*> angles.data
+    cdef float* c_img = <float*> img_ptr
+    interpolated = projection_type == "interpolated"
+    cone_beam = mode != "parallel"
+    try:
+        if cone_beam:
+            if not interpolated:
+                cuda_raise_errors(siddon_ray_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0], True))
+            else:
+                cuda_raise_errors(interpolation_projection(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0], True))
+        else:
+            if not interpolated:
+                cuda_raise_errors(siddon_ray_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0], True))
+            else:
+                cuda_raise_errors(interpolation_projection_parallel(c_img, c_geometry[0], c_projections, c_angles, total_projections, c_gpuids[0], True))
+    finally:
+        free(c_projections)
+        free_c_geometry(c_geometry)
+        free_c_gpuids(c_gpuids)
+        _raise_tigre_warnings(True, 3)

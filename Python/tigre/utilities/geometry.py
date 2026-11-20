@@ -8,6 +8,57 @@ import tigre
 
 
 class Geometry(object):
+    """Description of a CT scanner, used by every TIGRE operator.
+
+    Create one with :func:`tigre.geometry` (or :func:`tigre.geometry_default`)
+    and set its attributes. Python orders vector attributes like NumPy indices:
+    ``(z, y, x)`` for the image and ``(v, u)`` for the detector, the reverse of
+    MATLAB. See :doc:`/user-guide/geometry` for the coordinate system.
+
+    Attributes
+    ----------
+    DSD : float or numpy.ndarray
+        Distance from the source to the detector, in mm. One value, or one per
+        angle.
+    DSO : float or numpy.ndarray
+        Distance from the source to the origin, in mm. One value, or one per
+        angle.
+    nDetector : numpy.ndarray
+        Number of detector pixels, ``(v, u)``.
+    dDetector : numpy.ndarray
+        Size of a detector pixel, ``(v, u)``, in mm.
+    sDetector : numpy.ndarray
+        Size of the detector, ``nDetector * dDetector``.
+    nVoxel : numpy.ndarray
+        Number of voxels, ``(z, y, x)``.
+    dVoxel : numpy.ndarray
+        Size of a voxel, ``(z, y, x)``, in mm.
+    sVoxel : numpy.ndarray
+        Size of the image, ``nVoxel * dVoxel``.
+    offOrigin : numpy.ndarray, optional
+        Offset of the image centre from the origin, ``(z, y, x)``, in mm.
+        Shape ``(3,)``, or ``(N, 3)`` for one per angle (for example helical
+        scans). Default 0.
+    offDetector : numpy.ndarray, optional
+        Offset of the detector centre, ``(v, u)``, in mm. Shape ``(2,)`` or
+        ``(N, 2)``. Default 0.
+    rotDetector : numpy.ndarray, optional
+        Detector rotation ``(roll, pitch, yaw)`` in radians; roll rotates the
+        detector in its own plane. Shape ``(3,)`` or ``(N, 3)``. Default 0.
+    COR : float or numpy.ndarray, optional
+        Centre-of-rotation shift along y, in mm. One value, or one per angle.
+        Default 0. See :func:`tigre.computeCOR`.
+    accuracy : float, optional
+        Sampling step of the ``"interpolated"`` projector, in voxels. Default 0.5.
+    mode : {"cone", "parallel"}
+        Beam geometry. Default ``"cone"``.
+
+    Notes
+    -----
+    ``check_geo`` (called by every operator) checks that the sizes are
+    consistent and expands per-angle attributes; you do not need to call it.
+    """
+
     def __init__(self):
         self.mode = None
         self.n_proj = None
@@ -301,40 +352,37 @@ class ParallelGeo(Geometry):
 
 
 def geometry(mode="cone", nVoxel=None, default=False, high_resolution=True):
-    """
-    Constructor for geometry used in reconstruction of images in TIGRE
+    """Create a scanner geometry.
 
     Parameters
     ----------
-    :param mode: (str)
-        'cone' or 'parallel'
-    :param nVoxel: (np.ndarray)
-        number of voxels the reconstruction is composed of
-    :param default: (bool)
-        calculates other parameters in geometry. is by default true for
-        parallel geometry
-    :param high_resolution: (bool)
-        preset values for geometry in mode=cone. WARNING: for smaller
-        tests it is better to use this rather than setting nVoxel
-        manually.
-        if true: nVoxel = np.array([512,512,512])
-        if false: nVoxel = np.array([64,64,64])
-    :return: (tigre.geometry.Geometry)
+    mode : {"cone", "parallel", "fan"}, optional
+        ``"cone"`` (default): an empty cone-beam geometry to fill in, or the
+        default one if ``default=True``. ``"parallel"``: a parallel-beam
+        geometry with 1 mm voxels and detector pixels, sized from ``nVoxel``.
+        ``"fan"``: the default 2D fan-beam geometry.
+    nVoxel : numpy.ndarray, optional
+        Number of voxels ``(z, y, x)``. Required for ``"parallel"``; with
+        ``default=True`` it replaces the default image size.
+    default : bool, optional
+        For ``"cone"``, return :func:`tigre.geometry_default` instead of an
+        empty geometry. Default False.
+    high_resolution : bool, optional
+        With ``default=True``: a 512³ image and 512² detector (True, the
+        default) or a 64³ image and 128² detector (False).
 
-    Usage
-    -----
+    Returns
+    -------
+    Geometry
+        The geometry.
+
+    Examples
+    --------
+    >>> import numpy as np
     >>> import tigre
-    >>> #Cone beam with no preset parameters
-    >>> geo_cone = tigre.geometry(mode='cone')
-    >>> # Cone beam default, low quality
-    >>> geo_cone_default = tigre.geometry(mode='cone',high_resolution=False)
-    >>> # Cone beam with specific nVoxel requirements
-    >>> geo_cone__default2 = tigre.geometry(nVoxel=np.array([64,64,64]),
-    >>>                                     mode='cone'
-    >>>                                     default=True)
-    >>> # Parallel beam
-    >>> geo_par = tigre.geometry(mode='parallel',
-    >>>                          nVoxel=np.array([64,64,64]))
+    >>> geo = tigre.geometry()                                  # empty, fill in yourself
+    >>> geo = tigre.geometry(default=True, high_resolution=False)  # 64^3 test geometry
+    >>> geo = tigre.geometry(mode="parallel", nVoxel=np.array([64, 64, 64]))
     """
     if mode == "cone":
         if default:

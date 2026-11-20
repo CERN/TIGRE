@@ -5,10 +5,32 @@ from .geometry import Geometry
 
 # Tomosymthesis
 def staticDetectorGeo(geo,angles,rot=0) -> Geometry:
-    """
-    # angles: angle off the axis between the source and detector centre (on x-y plane)
-    #         when angles=0, the source is perpendicular to the detector
-    # rot: rotation of both source and detector around origin
+    """Geometry for a fixed detector and a source that moves on an arc.
+
+    As in digital breast tomosynthesis: the detector stays still and the
+    source moves around the origin. Per-angle ``DSD``, ``offDetector`` and
+    ``rotDetector`` are set to describe it.
+
+    Parameters
+    ----------
+    geo : Geometry
+        A cone-beam geometry for the central position (it is not modified).
+    angles : numpy.ndarray
+        Angle of the source, in radians, measured from the line through the
+        detector centre perpendicular to the detector. 0 means the source
+        faces the detector.
+    rot : float, optional
+        Rotation of the whole setup around the origin, in degrees. Default 0.
+
+    Returns
+    -------
+    Geometry
+        A new geometry. Pass ``geo.angles`` (shape ``(N, 3)``) as the angles to
+        the operators and algorithms.
+
+    See Also
+    --------
+    staticDetLinearSourceGeo, ArbitrarySourceDetMoveGeo
     """
     ngeo = copy.deepcopy(geo)
     R = ngeo.DSD-ngeo.DSO
@@ -16,18 +38,38 @@ def staticDetectorGeo(geo,angles,rot=0) -> Geometry:
     ngeo.DSD = ngeo.DSO + R*np.cos(angles)
     ngeo.offDetector = np.vstack([0*angles, R*np.sin(angles)]).T
     ngeo.rotDetector = np.vstack([0*angles, 0*angles, -angles]).T
-    angles += rot
+    angles = angles + rot  # do not modify the caller's array
     ngeo.angles = np.vstack([angles, 0*angles, 0*angles]).T
     
     return ngeo
 
 # Linear scan of source
 def staticDetLinearSourceGeo(geo,s_pos,s_rot=0,rot=0) -> Geometry:
-    """
-    # s_pos: distance along source scanning linear trajectory 
-    #        when s_pos = 0, source is aligned to the origin and detector center on x-axis
-    # s_rot: rotation angle between the source linear trajectory and detector (looking from top on x-y plane, anticlockwise)
-    # rot: source and detector rotation angle around the origin (looking from top on x-y plane, anticlockwise) 
+    """Geometry for a fixed detector and a source that moves along a line.
+
+    Parameters
+    ----------
+    geo : Geometry
+        A cone-beam geometry for the central position (it is not modified).
+    s_pos : numpy.ndarray
+        Positions of the source along its line, in mm. At 0 the source, origin
+        and detector centre are aligned on the x axis.
+    s_rot : float or numpy.ndarray, optional
+        Angle between the source's line and the detector, in degrees, seen
+        from above (x-y plane), anticlockwise. Default 0.
+    rot : float or numpy.ndarray, optional
+        Rotation of source and detector around the origin, in degrees, seen
+        from above, anticlockwise. Default 0.
+
+    Returns
+    -------
+    Geometry
+        A new geometry. Pass ``geo.angles`` (shape ``(N, 3)``) as the angles to
+        the operators and algorithms.
+
+    See Also
+    --------
+    staticDetectorGeo, ArbitrarySourceDetMoveGeo
     """
     ngeo = copy.deepcopy(geo)
     if np.isscalar(s_rot):
@@ -58,25 +100,31 @@ def staticDetLinearSourceGeo(geo,s_pos,s_rot=0,rot=0) -> Geometry:
 
 
 def ArbitrarySourceDetMoveGeo(geo,s_pos,d_pos=None,d_rot=None) -> Geometry:
-    """
-    # Source and Detector can move arbitrarily while the object is fixed
-    #
-    #   Parameters
-    #   ----------
-    #   geo:   standard cone beam geometry
-    #   s_pos: nx3 array, source movement coordinates (x,y,z), in mm
-    #           default s_pos = (DSO, 0, 0), source is on x-axis (+) 
-    #   d_pos: nx3 array, detector centre movement coordinates (x,y,z), in mm 
-    #           default d_pos = (DSO-DSD, 0, 0), detector centre on x-axis (-)
-    #   d_rot: nx3 array, detector rotation angles (roll, pitch, yaw) in degrees, 
-    #           default - no rotation, detector facing origin
-    #   Note:
-    #          a point source rotation has no effect, ignored
-    #
-    #   Returns
-    #   -------
-    #   geometry with arbitrarily specified movements of source and detector
-    #
+    """Geometry for a source and detector that move freely around a fixed object.
+
+    Parameters
+    ----------
+    geo : Geometry
+        A cone-beam geometry (it is not modified).
+    s_pos : numpy.ndarray
+        Source positions ``(x, y, z)`` in mm, shape ``(N, 3)``. The source of
+        ``geo`` sits at ``(DSO, 0, 0)``.
+    d_pos : numpy.ndarray, optional
+        Detector centre positions ``(x, y, z)`` in mm, shape ``(N, 3)``.
+        Default ``(DSO - DSD, 0, 0)`` for every position.
+    d_rot : numpy.ndarray, optional
+        Detector rotations ``(roll, pitch, yaw)`` in degrees, shape ``(N, 3)``.
+        Default: no rotation, the detector facing the origin.
+
+    Returns
+    -------
+    Geometry
+        A new geometry. Pass ``geo.angles`` (shape ``(N, 3)``) as the angles to
+        the operators and algorithms.
+
+    See Also
+    --------
+    staticDetectorGeo, staticDetLinearSourceGeo
     """
     s_pos = np.array(s_pos) if isinstance(s_pos,list) else s_pos
     ngeo = copy.deepcopy(geo)

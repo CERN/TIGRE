@@ -79,6 +79,9 @@ class SART_TV(IterativeReconAlg):
         self.tvlambda = 50 if 'tvlambda' not in kwargs else kwargs['tvlambda']
         self.tviter = 50 if 'tviter' not in kwargs else kwargs['tviter']
         # these two settings work well for nVoxel=[254,254,254]
+        # MATLAB's SART_TV reduces lambda by 0.99 per iteration by default
+        if "lmbda_red" not in kwargs:
+            kwargs.update(dict(lmbda_red=0.99))
 
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
@@ -101,8 +104,9 @@ class SART_TV(IterativeReconAlg):
             getattr(self, self.dataminimizing)()
             # print("run_main_iter: gpuids = {}", self.gpuids)
             self.res = im3ddenoise(self.res, self.tviter, self.tvlambda, self.gpuids)
-            if Quameasopts is not None:
-                self.error_measurement(res_prev, i)
+            # also records the residual norm when computel2=True
+            self.error_measurement(res_prev, i)
+            self.lmbda *= self.lmbda_red
 
 
 sart_tv = decorator(SART_TV, name="sart_tv")
@@ -124,6 +128,9 @@ class OSSART_TV(IterativeReconAlg):
         self.tvlambda = 50 if 'tvlambda' not in kwargs else kwargs['tvlambda']
         self.tviter = 50 if 'tviter' not in kwargs else kwargs['tviter']
         # these two settings work well for nVoxel=[254,254,254]
+        # MATLAB's SART_TV reduces lambda by 0.99 per iteration by default
+        if "lmbda_red" not in kwargs:
+            kwargs.update(dict(lmbda_red=0.99))
 
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
 
@@ -146,7 +153,8 @@ class OSSART_TV(IterativeReconAlg):
             getattr(self, self.dataminimizing)()
             # print("run_main_iter: gpuids = {}", self.gpuids)
             self.res = im3ddenoise(self.res, self.tviter, self.tvlambda, self.gpuids)
-            if Quameasopts is not None:
-                self.error_measurement(res_prev, i)
+            # also records the residual norm when computel2=True
+            self.error_measurement(res_prev, i)
+            self.lmbda *= self.lmbda_red
 
 ossart_tv = decorator(OSSART_TV, name="ossart_tv")

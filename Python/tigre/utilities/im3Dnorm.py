@@ -42,9 +42,19 @@ def im3DNORM(img, normind, varargin=None):
     %   defined in NORMIND
     %
     %   IMG         A 3D image
-    %   NORMIND     {non-zero int, inf, -inf, 'fro', 'nuc'}
-    %               'TV': TV norm
+    %   NORMIND     Norm order for the flattened image vector:
+    %               - 2: Euclidean norm (L2, optimized for float32 arrays)
+    %               - int or float (e.g. 1, 0, -1, -2, 1.5): vector p-norm
+    %               - inf, -inf (np.inf, -np.inf): max / min absolute value
+    %               - 'TV': Total Variation norm
     %
+    %               Note: Matrix norms 'fro' (Frobenius) and 'nuc' (nuclear)
+    %               are unsupported because im3DNORM flattens the input array
+    %               into a 1D vector (img.ravel()). Passing 'fro' or 'nuc'
+    %               will raise a ValueError.
+    %
+    %   VARARGIN    Optional arguments for specific norms:
+    %               - For 'TV': gradient type {'forward' (default), 'backward', 'central'}
     %
     %--------------------------------------------------------------------------
     %--------------------------------------------------------------------------
@@ -63,15 +73,44 @@ def im3DNORM(img, normind, varargin=None):
     % Coded by:           Ander Biguri
     %--------------------------------------------------------------------------
     """
-    if normind is [np.inf, -np.inf, "fro", "nuc"]:
-        return np.linalg.norm(img.ravel(), normind)
-    if type(normind) is int:
-        # The L2 case is the one every caller in this toolbox uses, and the one
-        # a float32 accumulator cannot compute at these sizes - see l2norm.
-        if normind == 2:
-            return l2norm(img)
-        return np.linalg.norm(img.ravel(), normind)
+    if normind is None or isinstance(normind, bool) or not np.isscalar(normind):
+        raise ValueError(f"Unsupported norm order: {normind}")
+    if isinstance(normind, (float, np.floating)) and np.isnan(normind):
+        raise ValueError(f"Unsupported norm order: {normind}")
     if normind == "TV":
-        gx, gy, gz = np.diff(img, axis=2), np.diff(img, axis=1), np.diff(img, axis=0)
+        img = np.asarray(img)
+        if img.ndim != 3:
+            raise ValueError(f"TV norm requires a 3D image, got {img.ndim}D array")
+        type_grad = "forward"
+        if varargin is not None:
+            if isinstance(varargin, (list, tuple)) and len(varargin) > 0:
+                type_grad = varargin[0]
+            elif isinstance(varargin, str):
+                type_grad = varargin
+            else:
+                raise ValueError(f"Unknown gradient option for TV norm: {varargin}")
+        if not isinstance(type_grad, str):
+            raise ValueError(f"Unknown gradient option for TV norm: {type_grad}")
+        type_grad = type_grad.lower()
+        if type_grad == "forward":
+            gx = np.pad(np.diff(img, axis=2), ((0, 0), (0, 0), (0, 1)), mode="constant")
+            gy = np.pad(np.diff(img, axis=1), ((0, 0), (0, 1), (0, 0)), mode="constant")
+            gz = np.pad(np.diff(img, axis=0), ((0, 1), (0, 0), (0, 0)), mode="constant")
+        elif type_grad == "backward":
+            gx = np.pad(np.diff(img, axis=2), ((0, 0), (0, 0), (1, 0)), mode="constant")
+            gy = np.pad(np.diff(img, axis=1), ((0, 0), (1, 0), (0, 0)), mode="constant")
+            gz = np.pad(np.diff(img, axis=0), ((1, 0), (0, 0), (0, 0)), mode="constant")
+        elif type_grad == "central":
+            gz, gy, gx = np.gradient(img)
+        else:
+            raise ValueError(f"Unknown gradient option for TV norm: {type_grad}")
         g = np.sum(np.sqrt(gx * gx + gy * gy + gz * gz))
         return g
+    # The L2 case is the one every caller in this toolbox uses, and the one
+    # a float32 accumulator cannot compute at these sizes - see l2norm.
+    if normind == 2:
+        return l2norm(img)
+    try:
+        return np.linalg.norm(np.ravel(img), normind)
+    except (ValueError, TypeError) as exc:
+        raise ValueError(f"Unsupported norm order: {normind}") from exc

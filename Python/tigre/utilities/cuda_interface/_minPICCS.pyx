@@ -16,23 +16,26 @@
 
 cimport numpy as np 
 import numpy as np
-from tigre.utilities.errors import TigreCudaCallError
 from tigre.utilities.cuda_interface._gpuUtils cimport GpuIds as c_GpuIds, convert_to_c_gpuids, free_c_gpuids
 
 np.import_array()
 
 from libc.stdlib cimport malloc, free 
+include "_tigre_warnings.pxi"
 
 cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
     void PyArray_CLEARFLAGS(np.ndarray arr, int flags)
 
 cdef extern from "PICCS.hpp":
-    cdef void piccs_tv(float* img, float* prior, float* dst, float alpha, float ratio, long* image_size, int maxiter, c_GpuIds gpuids)
+    cdef void piccs_tv(float* img, float* prior, float* dst, float alpha, float ratio, long* image_size, int maxiter, c_GpuIds gpuids) except +
 
 
 def cuda_raise_errors(error_code):
     if error_code:
+        # Imported here, not at module level: importing tigre from a compiled
+        # module at load time is circular when the module is imported first.
+        from tigre.utilities.errors import TigreCudaCallError
         raise TigreCudaCallError('minimizeTV:PICCS_TV:', error_code)
 
 
@@ -64,7 +67,15 @@ def minPICCS(np.ndarray[np.float32_t, ndim=3] src,np.ndarray[np.float32_t, ndim=
     cdef float* c_src = <float*> src.data
     cdef float* c_prior = <float*> prior.data
     cdef np.npy_intp c_maxiter = <np.npy_intp> maxiter
-    cuda_raise_errors(piccs_tv(c_src, c_prior, c_imgout, alpha, ratio, imgsize, c_maxiter, c_gpuids[0]))
+    try:
+        cuda_raise_errors(piccs_tv(c_src, c_prior, c_imgout, alpha, ratio, imgsize, c_maxiter, c_gpuids[0]))
+    except BaseException:
+        free(c_imgout)
+        free_c_gpuids(c_gpuids)
+        raise
+    finally:
+        _raise_tigre_warnings()
+    free_c_gpuids(c_gpuids)
     imgout = np.PyArray_SimpleNewFromData(3, size_img, np.NPY_FLOAT32, c_imgout)
     PyArray_ENABLEFLAGS(imgout, np.NPY_ARRAY_OWNDATA)
     

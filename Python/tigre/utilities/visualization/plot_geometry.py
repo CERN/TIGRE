@@ -63,7 +63,18 @@ def pathpatch_2d_to_3d_affine(pathpatch, mat_rot=ROT_DEFAULT, vec_trans=TRANS_DE
 
 
 def plot_geometry(geo, angle=0):
-    """Plots the given geometry."""
+    """Draw the scanner geometry in 3D: source, detector and image.
+
+    Use it to check that the image sits inside the cone of rays and that
+    offsets point the right way.
+
+    Parameters
+    ----------
+    geo : Geometry
+        The scanner geometry.
+    angle : float, optional
+        Rotation angle to draw it at, in radians. Default 0.
+    """
     import mpl_toolkits.mplot3d.art3d as art3d
     import matplotlib.pyplot as plt
 

@@ -2,6 +2,15 @@ function []=Compile(varargin)
 % This file will compile all the necessary mex files for TIGRE to work. You
 % need CUDA nvcc installed in your PC and setup with MATLAB mex.
 %
+% Options:
+%   Compile -backend cuda      GPU backend: cuda, hip, sycl or metal. If not
+%                              given, the TIGRE_BACKEND environment variable,
+%                              or else the first backend whose compiler is
+%                              installed (CUDA first). Only cuda can be
+%                              compiled so far.
+%   Compile -no_pinned_mem     compile without pinned host memory.
+%   Compile -mex_xml file.xml  Windows: the mex configuration file to use.
+%
 %
 % IMPORTANT:
 % Due to hardware limitations we
@@ -26,6 +35,7 @@ function []=Compile(varargin)
 %% Varargin
 disable_pinned=false;
 mex_xml_file="";
+requested_backend='';
 if nargin
     skip_next_arg=false;
     for i=1:length(varargin)
@@ -35,6 +45,13 @@ if nargin
         end
         if strcmp(varargin{i},'-no_pinned_mem')
             disable_pinned=true;
+        elseif strcmp(varargin{i},'-backend')
+            if length(varargin)>i
+                requested_backend=varargin{i+1};
+                skip_next_arg=true;
+            else
+                error('Error: a backend name is required for -backend (cuda, hip, sycl or metal)');
+            end
         elseif strcmp(varargin{i},'-mex_xml')
             if length(varargin)>i
                 mex_xml_file=varargin{i+1};
@@ -47,6 +64,22 @@ if nargin
         end
     end
 end
+
+%% GPU backend
+% Same rule as the Python build (setup.py): Compile -backend, else
+% TIGRE_BACKEND, else the first backend whose compiler is installed.
+addpath('./Utilities/Setup');
+[backend, backend_reason]=select_backend(requested_backend);
+pending=struct('hip','AMD GPUs, https://github.com/CERN/TIGRE/pull/747', ...
+               'sycl','Intel GPUs, https://github.com/CERN/TIGRE/issues/885', ...
+               'metal','Apple Silicon, https://github.com/CERN/TIGRE/issues/876');
+if isfield(pending,backend)
+    rmpath('./Utilities/Setup');
+    error('TIGRE:Compile:backend',['The %s backend (%s) is not available in this version of TIGRE yet; ' ...
+        'it is being added for %s. To compile for NVIDIA GPUs instead, install the CUDA toolkit and run ' ...
+        'Compile -backend cuda.'],backend,backend_reason,pending.(backend));
+end
+fprintf('TIGRE: compiling the %s backend (%s).\n',backend,backend_reason);
 
 %% FLAGS
 if disable_pinned
@@ -135,7 +168,7 @@ if ispc
     setenv('CUDA_PATH',cudapath);
 end
 
-set_cuda_cc_flags(cuda_ver);
+set_cuda_cc_flags(cuda_ver, cudapath);
 
 rmpath('./Utilities/Setup');
 
@@ -166,7 +199,7 @@ if contains(computer('arch'),'64')
     mex('-largeArrayDims', './Utilities/cuda_interface/AddNoise.cpp', '../Common/CUDA/RandomNumberGenerator.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex('-largeArrayDims', './Utilities/GPU/getGpuName_mex.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex('-largeArrayDims', './Utilities/GPU/getGpuCount_mex.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
-    mex('-largeArrayDims', './Utilities/cuda_interface/minPICCS.cpp', '../Common/CUDA/PICCS.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
+    mex('-largeArrayDims', './Utilities/cuda_interface/minPICCS.cpp', '../Common/CUDA/PICCS.cu', '../Common/CUDA/GD_TV.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex('-largeArrayDims', './Utilities/IO/VarianCBCT/mexReadXim.cpp', '-outdir', outdir, FLAGS)
 
 else
@@ -179,7 +212,7 @@ else
     mex( './Utilities/cuda_interface/AddNoise.cpp', '../Common/CUDA/RandomNumberGenerator.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex( './Utilities/GPU/getGpuName_mex.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex('./Utilities/GPU/getGpuCount_mex.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
-    mex('./Utilities/cuda_interface/minPICCS.cpp', '../Common/CUDA/PICCS.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
+    mex('./Utilities/cuda_interface/minPICCS.cpp', '../Common/CUDA/PICCS.cu', '../Common/CUDA/GD_TV.cu', '../Common/CUDA/GpuIds.cpp', '../Common/CUDA/gpuUtils.cu', '-outdir', outdir, FLAGS)
     mex( './Utilities/IO/VarianCBCT/mexReadXim.cpp', '-outdir', outdir, FLAGS)
 
 end

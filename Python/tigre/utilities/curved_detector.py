@@ -2,6 +2,29 @@ import math
 import numpy as np
 
 def flatten_detector(proj, geo, oversample=1,arclength=None):
+    """Resample projections from a curved (cylindrical) detector onto a flat one.
+
+    TIGRE's projectors assume a flat detector. Resample curved-detector data
+    with this function, then reconstruct as usual; ``geo`` must then describe
+    the flat detector returned.
+
+    Parameters
+    ----------
+    proj : numpy.ndarray
+        Projections measured on the curved detector, shape ``(N, v, u)``.
+    geo : Geometry
+        The scanner geometry; ``geo.DSD`` is the radius of the detector arc.
+    oversample : int, optional
+        Flat-detector columns per curved-detector column. Default 1.
+    arclength : float, optional
+        Angle covered by the detector arc, in radians. Default
+        ``geo.sDetector[1]``, which assumes ``sDetector`` was given as an angle.
+
+    Returns
+    -------
+    numpy.ndarray
+        Projections on the flat detector, float32, shape ``(N, v, u_flat)``.
+    """
     
     if arclength is None:
         arclength=geo.sDetector[1]

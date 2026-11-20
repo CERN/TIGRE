@@ -10,20 +10,23 @@ from tigre.utilities.cuda_interface._gpuUtils cimport GpuIds as c_GpuIds, conver
 np.import_array()
 
 from libc.stdlib cimport malloc, free
-from tigre.utilities.errors import TigreCudaCallError
+include "_tigre_warnings.pxi"
 cdef extern from "numpy/arrayobject.h":
     void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
 
 cdef extern from "voxel_backprojection.hpp":
-    cdef int voxel_backprojection(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids)
+    cdef int voxel_backprojection(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids, bint gpuData) except +
 cdef extern from "voxel_backprojection2.hpp":
-    cdef int voxel_backprojection2(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids)
+    cdef int voxel_backprojection2(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids, bint gpuData) except +
 cdef extern from "voxel_backprojection_parallel.hpp":
-    cdef int voxel_backprojection_parallel(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids)
+    cdef int voxel_backprojection_parallel(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids, bint gpuData) except +
 
 
 def cuda_raise_errors(error_code):
     if error_code:
+        # Imported here, not at module level: importing tigre from a compiled
+        # module at load time is circular when the module is imported first.
+        from tigre.utilities.errors import TigreCudaCallError
         raise TigreCudaCallError('Atb:',error_code)
 
 
@@ -65,15 +68,22 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
 
     cdef float* c_projections = <float*> projections.data
 
-    if cone_beam:
-        if krylov_proj:
-            cuda_raise_errors(voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
+    # A CUDA error raises RuntimeError (#853); free what this call allocated first.
+    try:
+        if cone_beam:
+            if krylov_proj:
+                cuda_raise_errors(voxel_backprojection2(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0], False))
+            else:
+                cuda_raise_errors(voxel_backprojection(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0], False))
         else:
-            cuda_raise_errors(voxel_backprojection(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
-
-
-    else:
-        cuda_raise_errors(voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0]))
+            cuda_raise_errors(voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0], False))
+    except BaseException:
+        free(c_model)
+        free_c_geometry(c_geometry)
+        free_c_gpuids(c_gpuids)
+        raise
+    finally:
+        _raise_tigre_warnings()
 
     cdef np.npy_intp shape[3]
     shape[0] = <np.npy_intp> (<np.npy_long>(geometry.nVoxel[0]))
@@ -85,6 +95,38 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
     PyArray_ENABLEFLAGS(model, np.NPY_ARRAY_OWNDATA) # Attribute new memory owner
 
     free_c_geometry(c_geometry)
-
+    free_c_gpuids(c_gpuids)
 
     return model
+
+# GPU arrays (tigre.Ax/Atb with a PyTorch or CuPy CUDA array, see
+# tigre/utilities/_gpu_arrays.py). The pointers are C-contiguous float32 GPU
+# memory on the single device in gpuids; the caller has finished writing the
+# input. Returns once the GPU has finished writing the output.
+def _Atb_ext_gpu(size_t projections_ptr, size_t img_ptr, geometry, np.ndarray[np.float32_t, ndim=2] angles, backprojection_type="FDK", mode="cone", gpuids=None):
+    cdef c_GpuIds* c_gpuids = convert_to_c_gpuids(gpuids)
+    if not c_gpuids:
+        raise MemoryError("Error loading gpuIds")
+    cdef int total_projections = angles.shape[0]
+    cdef c_Geometry* c_geometry = convert_to_c_geometry(geometry, total_projections)
+    if not c_geometry:
+        free_c_gpuids(c_gpuids)
+        raise MemoryError("Error reading the geometry")
+    angles = np.ascontiguousarray(angles)
+    cdef float* c_angles = <float*> angles.data
+    cdef float* c_projections = <float*> projections_ptr
+    cdef float* c_img = <float*> img_ptr
+    krylov_proj = backprojection_type != "FDK"
+    cone_beam = mode != "parallel"
+    try:
+        if cone_beam:
+            if krylov_proj:
+                cuda_raise_errors(voxel_backprojection2(c_projections, c_geometry[0], c_img, c_angles, total_projections, c_gpuids[0], True))
+            else:
+                cuda_raise_errors(voxel_backprojection(c_projections, c_geometry[0], c_img, c_angles, total_projections, c_gpuids[0], True))
+        else:
+            cuda_raise_errors(voxel_backprojection_parallel(c_projections, c_geometry[0], c_img, c_angles, total_projections, c_gpuids[0], True))
+    finally:
+        free_c_geometry(c_geometry)
+        free_c_gpuids(c_gpuids)
+        _raise_tigre_warnings(True, 3)

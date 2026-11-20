@@ -1,84 +1,77 @@
- name: Release
- 
- on:
-   push:
-     tags:
-       # Publish on any tag starting with a `v`, e.g. v1.2.3
-       - v*
- 
- jobs:
-   build_wheels:
-     name: Build wheels on ${{ matrix.os }}
-     runs-on: ${{ matrix.os }}
-     strategy:
-       matrix:
-         # macos-13 is an intel runner, macos-14 is apple silicon
-         #os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-14]
-         os: [ubuntu-latest]
+name: Release
 
-     steps:
-       - uses: actions/checkout@v4
+on:
+  push:
+    tags:
+      # Run on any tag starting with a `v`, e.g. v1.2.3
+      - v*
 
-       - name: Build wheels
-         uses: pypa/cibuildwheel@v2.23.2
-         # env:
-         #   CIBW_SOME_OPTION: value
-         #    ...
-         # with:
-         #   package-dir: .
-         #   output-dir: wheelhouse
-         #   config-file: "{package}/pyproject.toml"
+jobs:
+  check_version:
+    name: Check tag matches pyproject version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compare tag and pyproject version
+        run: |
+          VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          if [ "${GITHUB_REF_NAME}" != "v${VERSION}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match pyproject version v${VERSION}. Bump the version in pyproject.toml before tagging."
+            exit 1
+          fi
 
-       - uses: actions/upload-artifact@v4
-         with:
-           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
-           path: ./wheelhouse/*.whl
-   make_sdist:
-     name: Make SDist
-     runs-on: ubuntu-latest
-     container: nvidia/cuda:12.8.1-devel-ubuntu24.04
-     steps:
-     - uses: actions/checkout@v4
-     - uses: astral-sh/setup-uv@v3
-       with:
-         version: 0.6.9
-         enable-cache: true
-     - name: Build SDist
-       run: uv build --sdist
-     - uses: actions/upload-artifact@v4
-       with:
-         name: cibw-sdist
-         path: dist/*.tar.gz
-   pypi:
-     name: Publish to PyPI
-     needs: [build_wheels, make_sdist]
-     runs-on: ubuntu-latest
-     # Environment and permissions trusted publishing.
-     environment:
-       # Create this environment in the GitHub repository under Settings -> Environments
-       name: release
-     permissions:
-       id-token: write
-     steps:
-       - uses: actions/checkout@v4
-       - uses: astral-sh/setup-uv@v3
-         with:
-           version: 0.6.9
-           enable-cache: true
-       - name: Get Pyproject Version
-         run: |
-          export PYPROJECT_VERSION=v$(uvx --from=toml-cli toml get --toml-path=pyproject.toml project.version)
-          echo "PYPROJECT_VERSION=$PYPROJECT_VERSION" >> "$GITHUB_ENV"
-       - name: Validate version with tag
-         if: ${{ github.ref_name != env.PYPROJECT_VERSION }}
-         uses: actions/github-script@v3
-         with:
-            script: |
-              core.setFailed('Tag version ${{ github.ref_name }} does not match pyproject version ${{ env.PYPROJECT_VERSION }}')
-       - uses: actions/download-artifact@v4
-         with:
-            pattern: cibw-*
-            path: dist
-            merge-multiple: true
-       - name: Publish wheel 
-         run: uv publish --trusted-publishing always
+  build_wheels:
+    name: Build wheels on ${{ matrix.os }}
+    needs: check_version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # macos-13 is an intel runner, macos-14 is apple silicon
+        #os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-14]
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v4.3.5
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
+          path: ./wheelhouse/*.whl
+
+  make_sdist:
+    name: Make SDist
+    needs: check_version
+    runs-on: ubuntu-latest
+    container: nvidia/cuda:12.8.1-devel-ubuntu24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: 0.6.9
+          enable-cache: true
+      - name: Build SDist
+        run: uv build --sdist
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cibw-sdist
+          path: dist/*.tar.gz
+
+  # TIGRE is not published to PyPI: the `tigre` name there belongs to an
+  # unrelated project. Wheels and the sdist are attached to the GitHub Release.
+  github_release:
+    name: Attach wheels to GitHub Release
+    needs: [build_wheels, make_sdist]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: cibw-*
+          path: dist
+          merge-multiple: true
+      - name: Create or update the release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/*
+          generate_release_notes: true

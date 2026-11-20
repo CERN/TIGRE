@@ -5,6 +5,28 @@ from tigre.utilities.geometry import Geometry
 
 
 class ConeGeometryDefault(Geometry):
+    """A ready-made cone-beam geometry, for tests and examples.
+
+    Available as ``tigre.geometry_default``. Source to detector 1536 mm,
+    source to origin 1000 mm, a 256 mm cube image centred on the origin.
+
+    Parameters
+    ----------
+    high_resolution : bool, optional
+        True (default): 512³ voxels and a 512 x 512 detector of 0.8 mm pixels.
+        False: 64³ voxels and a 128 x 128 detector of 3.2 mm pixels.
+    nVoxel : numpy.ndarray, optional
+        Image size ``(z, y, x)``; the detector then has ``(nVoxel[1],
+        nVoxel[2])`` pixels of 0.8 mm. Overrides ``high_resolution``.
+
+    Examples
+    --------
+    >>> import tigre
+    >>> geo = tigre.geometry_default(high_resolution=False)
+    >>> geo.nVoxel
+    array([64, 64, 64])
+    """
+
     def __init__(self, high_resolution=True, nVoxel=None):
         
         Geometry.__init__(self)
@@ -75,6 +97,24 @@ class ConeGeometryDefault(Geometry):
             self.mode = "cone"  # parallel, cone
 
 class FanGeometryDefault(Geometry):
+    """A ready-made 2D fan-beam geometry: a one-slice cone-beam geometry.
+
+    Available as ``tigre.fan_geometry_default``.
+
+    Parameters
+    ----------
+    high_resolution : bool, optional
+        True (default): a 512 x 512 image and 512 detector pixels. False: a
+        64 x 64 image and 128 detector pixels.
+    nVoxel : numpy.ndarray, optional
+        Image size ``(1, y, x)``; must have one slice.
+
+    Raises
+    ------
+    ValueError
+        If ``nVoxel`` has more than one slice.
+    """
+
     def __init__(self, high_resolution=True, nVoxel=None):
         if nVoxel is not None and nVoxel[0] !=1:
             raise ValueError("Fan beam geometry only supports 2D images")

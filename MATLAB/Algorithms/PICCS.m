@@ -13,7 +13,7 @@ function [ f,qualMeasOut ] = PICCS(proj,geo,angles,maxiter,prior,varargin)
 %   'lambda':      Sets the value of the hyperparameter for the SART iterations.
 %                  Default is 1
 %
-%   'lambdared':   Reduction of lambda.Every iteration
+%   'lambda_red':  Reduction of lambda.Every iteration
 %                  lambda=lambdared*lambda. Default is 0.99
 %
 %   'init':        Describes diferent initialization techniques.

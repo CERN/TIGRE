@@ -90,9 +90,9 @@ qualmeas = ["RMSE", "CC", "MSSIM", "UQI"]
 
 #%% Reconstruct image using SIRT, SART and OS-SART
 # =========================================================================
-imgSIRT, qualitySIRT = algs.sirt(projections, geo, angles, 20, Quameasopts=qualmeas)
-imgSART, qualitySART = algs.sart(projections, geo, angles, 20, Quameasopts=qualmeas)
-imgOSSART, qualityOSSART = algs.ossart(projections, geo, angles, 20, Quameasopts=qualmeas)
+imgSIRT, qualitySIRT = algs.sirt(noise_projections, geo, angles, 20, Quameasopts=qualmeas)
+imgSART, qualitySART = algs.sart(noise_projections, geo, angles, 20, Quameasopts=qualmeas)
+imgOSSART, qualityOSSART = algs.ossart(noise_projections, geo, angles, 20, Quameasopts=qualmeas)
 
 #%% Plot the changes of image quality measures over iterations, i.e. how much each iteration looks like the previous iteration.
 # (without the original image one can not compute the absolute image quality, of course)
@@ -107,7 +107,7 @@ plt.gca().legend(("SIRT", "OS-SART", "SART"))
 
 ##CC plot
 plt.figure()
-plt.plot(np.vstack((qualitySIRT[0, :], qualityOSSART[0, :], qualitySART[0, :])).T)
+plt.plot(np.vstack((qualitySIRT[1, :], qualityOSSART[1, :], qualitySART[1, :])).T)
 plt.title("Evolution of CC per iteration")
 plt.xlabel("Iteration")
 plt.ylabel("CC")
@@ -115,7 +115,7 @@ plt.gca().legend(("SIRT", "OS-SART", "SART"))
 
 ##MSSIM plot
 plt.figure()
-plt.plot(np.vstack((qualitySIRT[0, :], qualityOSSART[0, :], qualitySART[0, :])).T)
+plt.plot(np.vstack((qualitySIRT[2, :], qualityOSSART[2, :], qualitySART[2, :])).T)
 plt.title("Evolution of MSSIM per iteration")
 plt.xlabel("Iteration")
 plt.ylabel("MSSIM")
@@ -124,7 +124,7 @@ plt.gca().legend(("SIRT", "OS-SART", "SART"))
 
 ##UQI plot
 plt.figure()
-plt.plot(np.vstack((qualitySIRT[0, :], qualityOSSART[0, :], qualitySART[0, :])).T)
+plt.plot(np.vstack((qualitySIRT[3, :], qualityOSSART[3, :], qualitySART[3, :])).T)
 plt.title("Evolution of UQI per iteration")
 plt.xlabel("Iteration")
 plt.ylabel("UQI")

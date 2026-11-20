@@ -1,0 +1,37 @@
+/* Small adjustments on top of pydata-sphinx-theme. */
+
+.tigre-hero {
+  padding: 0.5rem 0 1rem;
+  align-items: center;
+}
+
+.tigre-tagline {
+  font-size: 1.25rem;
+  color: var(--pst-color-text-muted);
+  margin-bottom: 1.25rem;
+}
+
+.tigre-hero img {
+  max-width: 100%;
+  border-radius: 0.4rem;
+}
+
+/* Landing page: the logo is the title, so keep the h1 for screen readers only. */
+section#tigre > h1 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.tigre-hero img.tigre-hero-logo {
+  width: 16rem;
+  border-radius: 0;
+  margin-bottom: 1rem;
+}
+
+.navbar-brand img {
+  height: 2rem;
+}

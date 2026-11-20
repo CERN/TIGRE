@@ -16,26 +16,34 @@ import csv
 
 
 def YXLONDataLoader(filepath, **kwargs):
-    # YXLONDataLoader(filepath) Loads Nikon uCT datasets into YXLON standard
-    #
-    # YXLONDataLoader(filepath, OPT=VAL, ...) uses options and values.
-    #    These are options in case you don't want to load the entire
-    #    dataset, but only particular sets of projections.
-    #    The possible arguments are:
-    #         'sampling': type of sampling. default 'equidistant' Can be:
-    #                'equidistant': equidistantly sample the entire set
-    #                     of angles. 'num_angles' should be set for partial
-    #                     loading of the data.
-    #                'step': sample the entire set of projections every
-    #                       'sampling_step' angles.
-    #                'continuous': Load the first 'num_angles' amount of
-    #                           angles only.
-    #
-    #         'num_angles': Number of total angles to load. Default all of
-    #                  them. Useful for 'equidistant' and 'continuous' loading
-    #
-    #         'sampling_step': step to load when loading projections.
-    #                 Default=1. Useful for 'step' loading.
+    """Load a YXLON micro-CT dataset: projections, geometry and angles.
+
+    Reads the scanner's geometry file, loads the projections and converts them
+    to line integrals, ready to reconstruct. See :doc:`/user-guide/loading-data`.
+
+    Parameters
+    ----------
+    filepath : str
+        Folder of the dataset.
+    sampling : {"equidistant", "step", "continuous"}, optional
+        Which projections to load. ``"equidistant"`` (default): ``num_angles``
+        projections spread evenly over the scan. ``"step"``: every
+        ``sampling_step``-th projection. ``"continuous"``: the first
+        ``num_angles`` projections.
+    num_angles : int, optional
+        Number of projections to load. Default: all.
+    sampling_step : int, optional
+        Step for ``sampling="step"``. Default 1.
+
+    Returns
+    -------
+    proj : numpy.ndarray
+        Projections (line integrals), float32, shape ``(N, v, u)``.
+    geo : tigre.utilities.geometry.Geometry
+        The scanner geometry.
+    angles : numpy.ndarray
+        Projection angles in radians.
+    """
 
     folder, geometry, angles = readYXLONGeometry(filepath)
     return loadYXLONProjections(folder, geometry, angles, **kwargs)

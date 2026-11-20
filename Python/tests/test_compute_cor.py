@@ -10,6 +10,8 @@ import pytest
 
 import tigre
 
+pytestmark = pytest.mark.gpu
+
 TOL_MM = 0.2
 
 

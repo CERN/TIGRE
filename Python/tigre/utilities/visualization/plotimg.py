@@ -8,11 +8,35 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 class plotImg:  # noqa: N801
-    """
-    plotImg(cube, dim)
-        plots figure
-    default: progressive in slices following
-        axis (dim)
+    """Show a 3D image as an animation through its slices.
+
+    Available as ``tigre.plotimg`` and ``tigre.plotImg``. The animation is kept
+    on the figure, as ``fig._tigre_animation``.
+
+    Parameters
+    ----------
+    cube : numpy.ndarray
+        Image, shape ``(z, y, x)``.
+    dim : {"x", "y", "z"}, optional
+        Axis to move along (case does not matter). Default ``"x"``.
+    slice : int, optional
+        Show only this slice, as a still image, instead of an animation.
+    step : int, optional
+        Show every ``step``-th slice. Default 1.
+    savegif : str, optional
+        Also save the animation as a GIF with this file name.
+    colormap : str, optional
+        Matplotlib colour map. Default ``"gray"``.
+    clims : sequence of two floats, optional
+        Display range ``(min, max)``. Default: the data's minimum and maximum.
+    show_plot : bool, optional
+        Call ``plt.show()``. Default: decided from the Matplotlib backend.
+
+    Examples
+    --------
+    >>> import tigre
+    >>> tigre.plotimg(img, dim="z")
+    >>> tigre.plotimg(img, dim="z", slice=32)   # one slice
     """
 
     def __init__(
@@ -144,6 +168,9 @@ class plotImg:  # noqa: N801
             repeat_delay=1000,
             frames=len(range(0, dim[self.dimint])[:: self.step]),
         )
+        # keep the animation alive as long as its figure; otherwise it can be
+        # garbage-collected before it is shown (or captured by sphinx-gallery)
+        fig._tigre_animation = ani
         if self.savegif is not None:
             ani.save(self.savegif, writer="pillow")
             self._show()

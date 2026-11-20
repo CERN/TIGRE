@@ -2,6 +2,7 @@ import copy
 import glob
 import os
 from os.path import join as pjoin
+import platform
 import re
 import subprocess
 import sys
@@ -13,15 +14,108 @@ import numpy
 from setuptools import setup, find_packages, Extension
 
 
-# Build the GPU backend with HIP/ROCm instead of CUDA. Set BUILD_WITH_HIP=1.
-# ROCM_PATH locates the ROCm install (default /opt/rocm) and HIP_ARCH selects
-# the target GPU architecture(s) for --offload-arch (comma-separated, default
-# gfx90a). On this path the .cu sources are compiled with hipcc and the GPU
-# runtime is amdhip64; the CUDA path below is unchanged.
-BUILD_WITH_HIP = os.environ.get("BUILD_WITH_HIP", "0") not in ("0", "", "false", "False")
-
 # Macros for compilation
 define_macros=[("IS_FOR_PYTIGRE", None)]
+# Pinned (page-locked) host memory is on by default. Disable it with the
+# TIGRE_NO_PINNED_MEMORY environment variable (works with pip), or with the
+# legacy "python setup.py ... --no_pinned_memory" flag.
+no_pinned = os.environ.get("TIGRE_NO_PINNED_MEMORY", "").strip().lower() not in ("", "0", "false", "no", "off")
+if "--no_pinned_memory" in sys.argv[2:]:
+    no_pinned = True
+    sys.argv.pop(sys.argv.index("--no_pinned_memory"))
+ 
+if no_pinned:
+    define_macros.append(("NO_PINNED_MEMORY",None))     
+
+IS_WINDOWS = sys.platform == "win32"
+
+
+# GPU backend. TIGRE_BACKEND=cuda|hip|sycl|metal chooses it; when it is not set,
+# the first backend whose compiler is installed is used, in this order. CUDA is
+# first, so machines that build CUDA today keep doing so (for example a laptop
+# with an NVIDIA GPU and an Intel integrated GPU). CUDA and HIP are built in this
+# version; the others are being added (see BACKEND_PENDING).
+BACKENDS = ("cuda", "hip", "sycl", "metal")
+BACKEND_PENDING = {
+    "sycl": "Intel GPUs, https://github.com/CERN/TIGRE/issues/885",
+    "metal": "Apple Silicon, https://github.com/CERN/TIGRE/issues/876",
+}
+
+
+def _detect_cuda():
+    for var in ("CUDA_HOME", "CUDA_PATH"):
+        if os.environ.get(var):
+            return var + " is set"
+    if shutil.which("nvcc"):
+        return "nvcc is on the PATH"
+    if IS_WINDOWS:
+        if glob.glob("C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v*.*/bin/nvcc.exe"):
+            return "CUDA is installed in C:/Program Files/NVIDIA GPU Computing Toolkit"
+    elif os.path.exists("/usr/local/cuda/bin/nvcc"):
+        return "CUDA is installed in /usr/local/cuda"
+    return None
+
+
+def _detect_hip():
+    for var in ("ROCM_PATH", "HIP_PATH"):
+        if os.environ.get(var):
+            return var + " is set"
+    if shutil.which("hipcc"):
+        return "hipcc is on the PATH"
+    if not IS_WINDOWS and os.path.exists("/opt/rocm/bin/hipcc"):
+        return "ROCm is installed in /opt/rocm"
+    return None
+
+
+def _detect_sycl():
+    compiler = "icx" if IS_WINDOWS else "icpx"
+    if shutil.which(compiler):
+        return compiler + " (oneAPI DPC++) is on the PATH"
+    return None
+
+
+def _detect_metal():
+    if sys.platform == "darwin" and platform.machine() == "arm64":
+        return "this is a Mac with Apple Silicon"
+    return None
+
+
+def select_backend():
+    """Return (backend, reason): from TIGRE_BACKEND, or the first compiler found."""
+    requested = os.environ.get("TIGRE_BACKEND", "").strip().lower()
+    if requested:
+        if requested not in BACKENDS:
+            raise RuntimeError(
+                "TIGRE_BACKEND=" + requested + " is not known. Use one of: " + ", ".join(BACKENDS) + "."
+            )
+        return requested, "set by TIGRE_BACKEND"
+    detectors = {"cuda": _detect_cuda, "hip": _detect_hip, "sycl": _detect_sycl, "metal": _detect_metal}
+    for backend in BACKENDS:
+        reason = detectors[backend]()
+        if reason:
+            return backend, reason
+    raise RuntimeError(
+        "TIGRE could not find a GPU compiler. Install the CUDA toolkit (NVIDIA GPUs) and make "
+        "sure nvcc is on the PATH, or set CUDA_HOME or CUDA_PATH to its folder; for AMD GPUs, "
+        "install ROCm and set ROCM_PATH to its folder. To choose a "
+        "backend yourself, set TIGRE_BACKEND to one of: " + ", ".join(BACKENDS) + "."
+    )
+
+
+BACKEND, BACKEND_REASON = select_backend()
+if BACKEND in BACKEND_PENDING:
+    raise RuntimeError(
+        "TIGRE: the " + BACKEND + " backend (" + BACKEND_REASON + ") is not available in this "
+        "version of TIGRE yet; it is being added for " + BACKEND_PENDING[BACKEND] + ". "
+        "To build for NVIDIA GPUs instead, install the CUDA toolkit and set TIGRE_BACKEND=cuda."
+    )
+print("TIGRE: building the " + BACKEND + " backend (" + BACKEND_REASON + ").")
+
+# HIP (AMD GPUs): ROCM_PATH locates the ROCm install (default /opt/rocm) and
+# HIP_ARCH selects the target GPU architecture(s) for --offload-arch
+# (comma-separated, default gfx90a). The .cu sources are compiled with hipcc and
+# the GPU runtime is amdhip64; the CUDA path below is unchanged.
+BUILD_WITH_HIP = BACKEND == "hip"
 GPU_RUNTIME_LIB = "amdhip64" if BUILD_WITH_HIP else "cudart"
 if BUILD_WITH_HIP:
     # The host .cpp TUs include the compat header and must select the hip path.
@@ -29,16 +123,6 @@ if BUILD_WITH_HIP:
     # (hipcc sets it for the .cu sources automatically).
     define_macros.append(("USE_HIP", None))
     define_macros.append(("__HIP_PLATFORM_AMD__", None))
-no_pinned=False
-if len(sys.argv)>2:
-    if "--no_pinned_memory" in sys.argv[2:] :
-        no_pinned=True
-        sys.argv.pop(sys.argv.index("--no_pinned_memory"))
- 
-if no_pinned:
-    define_macros.append(("NO_PINNED_MEMORY",None))     
-
-IS_WINDOWS = sys.platform == "win32"
 
 
 # Code from https://github.com/pytorch/pytorch/blob/master/torch/utils/cpp_extension.py
@@ -165,10 +249,22 @@ else:
         cuda_list = re.findall(r'\d+', CUDA_VERSION)
         cuda_version = float( str(cuda_list[0] + '.' + cuda_list[1]))
 
-    # Insert CUDA CC arguments
-    for item in get_cuda_cc(CUDA["home"]):
-        str_arg = f"-gencode=arch=compute_{item},code=sm_{item}"
-        COMPUTE_CAPABILITY_ARGS.insert(0, str_arg)
+    # GPU architectures to compile for. Default: every one this nvcc supports (as for releases). For development and
+    # testing, TIGRE_CUDA_ARCH limits them, which makes the build several times faster; the result then runs only on
+    # those GPUs. Examples: TIGRE_CUDA_ARCH=89 (RTX 40xx), TIGRE_CUDA_ARCH=75,89, or TIGRE_CUDA_ARCH=native (the GPUs
+    # in this machine; nvcc 11.6 or newer).
+    _arch = os.environ.get("TIGRE_CUDA_ARCH", "").strip().lower()
+    if _arch == "native":
+        COMPUTE_CAPABILITY_ARGS.insert(0, "-arch=native")
+    elif _arch:
+        for item in re.findall(r"\d+", _arch):
+            COMPUTE_CAPABILITY_ARGS.insert(0, f"-gencode=arch=compute_{item},code=sm_{item}")
+    else:
+        for item in get_cuda_cc(CUDA["home"]):
+            str_arg = f"-gencode=arch=compute_{item},code=sm_{item}"
+            COMPUTE_CAPABILITY_ARGS.insert(0, str_arg)
+    if _arch:
+        print("TIGRE: compiling only for the GPU architectures in TIGRE_CUDA_ARCH=" + _arch)
 
 
 # Obtain the numpy include directory.  This logic works across numpy versions.
@@ -234,6 +330,7 @@ class BuildExtension(build_ext):
             self.compiler._cpp_extensions += [".cu", ".cuh"]
             original_compile = self.compiler.compile
             original_spawn = self.compiler.spawn
+            original_call = getattr(self.compiler, "call", None)
         else:
             original_compile = self.compiler._compile
 
@@ -296,7 +393,7 @@ class BuildExtension(build_ext):
             cflags = copy.deepcopy(extra_postargs)
             extra_postargs = None
 
-            def spawn(cmd, cflags):
+            def translate(cmd, cflags):
                 # Using regex to match src, obj and include files
                 src_regex = re.compile("/T(p|c)(.*)")
                 src_list = [m.group(2) for m in (src_regex.match(elem) for elem in cmd) if m]
@@ -370,10 +467,16 @@ class BuildExtension(build_ext):
                         cflags = COMMON_MSVC_FLAGS + cflags
                         cmd += cflags
 
-                return original_spawn(cmd)
+                return cmd
 
+            # setuptools >= 84 runs the compiler through Compiler.call (spawn is a
+            # deprecated wrapper around it); older versions use Compiler.spawn.
+            # Patch whichever one compile() uses, so .cu files still go to nvcc.
             try:
-                self.compiler.spawn = lambda cmd: spawn(cmd, cflags)
+                if original_call is not None:
+                    self.compiler.call = lambda cmd, **kwargs: original_call(translate(cmd, cflags), **kwargs)
+                else:
+                    self.compiler.spawn = lambda cmd: original_spawn(translate(cmd, cflags))
                 return original_compile(
                     sources,
                     output_dir,
@@ -385,7 +488,10 @@ class BuildExtension(build_ext):
                     depends,
                 )
             finally:
-                self.compiler.spawn = original_spawn
+                if original_call is not None:
+                    self.compiler.call = original_call
+                else:
+                    self.compiler.spawn = original_spawn
 
         # Monkey-patch the _compile method.
         if self.compiler.compiler_type == "msvc":
@@ -426,7 +532,7 @@ def include_headers(filename_list, sdist=False):
             header[1] = ".hpp"
             header_list.append("".join(header))
 
-    filename_list += ["Common/CUDA/types_TIGRE.hpp", "Common/CUDA/errors.hpp"]
+    filename_list += ["Common/CUDA/types_TIGRE.hpp", "Common/CUDA/errors.hpp", "Common/CUDA/tigre_release_on_error.hpp"]
     return filename_list + header_list
 
 
@@ -525,6 +631,7 @@ minPICCS_ext = Extension(
         [
             "Common/CUDA/TIGRE_common.cpp",
             "Common/CUDA/PICCS.cu",
+            "Common/CUDA/GD_TV.cu",
             "Common/CUDA/GpuIds.cpp",
             "Common/CUDA/gpuUtils.cu",
             "Python/tigre/utilities/cuda_interface/_minPICCS.pyx",
@@ -596,8 +703,6 @@ RandomNumberGenerator_ext = Extension(
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
 )
-
-print(find_packages())
 
 setup(
     packages=find_packages(),

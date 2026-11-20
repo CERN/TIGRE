@@ -3,7 +3,7 @@
  * cuda_to_hip.h: CUDA -> HIP/ROCm compatibility shim for the Python/CUDA
  * backend of TIGRE.
  *
- * When USE_HIP is defined (the BUILD_WITH_HIP branch in setup.py) this header
+ * When USE_HIP is defined (TIGRE_BACKEND=hip in setup.py) this header
  * maps the small set of CUDA runtime / cuRAND symbols the GPU sources use onto
  * their hip* equivalents and provides a texture fetch (tex3D_TIGRE) that uses
  * hardware trilinear filtering where available and a software lerp where it is

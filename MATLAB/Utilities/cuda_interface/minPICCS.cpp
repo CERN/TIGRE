@@ -67,29 +67,25 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     float alpha;
     float ratio;
     GpuIds gpuids;
-    if (nrhs<5)
-        mexErrMsgIdAndTxt("TIGRE:minPICCS", "At least 2 inputs needed: Image and prior image");
-    if (nrhs>6){
-       mexErrMsgIdAndTxt("TIGRE:minPICCS", "Too many imput argumets");
+    // minPICCS(img, prior[, alpha, maxIter, ratio[, gpuids]]). (With 5 inputs alpha, maxIter and ratio used to be
+    // left unset: only the 6-input form read them.)
+    if (nrhs!=2 && nrhs!=5 && nrhs!=6)
+        mexErrMsgIdAndTxt("TIGRE:minPICCS", "Inputs: image, prior[, alpha, maxIter, ratio[, gpuids]]");
+    if (nrhs==2){
+        maxIter=100;
+        alpha=15.0f;
+        ratio=0.5;
+    } else {
+        for (int k = 2; k < 5; k++){
+            if (mxGetM(prhs[k])!=1 || mxGetN(prhs[k])!=1)
+                mexErrMsgIdAndTxt("TIGRE:minPICCS", "PICCS parameters should be 1x1");
+        }
+        alpha= (float)(mxGetScalar(prhs[2]));
+        maxIter=(int)floor(mxGetScalar(prhs[3])+0.5);
+        ratio= (float)(mxGetScalar(prhs[4]));
     }
     if (nrhs==6){
-     size_t mrows = mxGetM(prhs[2]);
-     size_t ncols = mxGetN(prhs[2]);
-     if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("TIGRE:minPICCS", "PICCS parameters shoudl be 1x1");
-     mrows = mxGetM(prhs[3]);
-     ncols = mxGetN(prhs[3]);
-     if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("TIGRE:minPICCS", "PICCS parameters shoudl be 1x1");
-     mrows = mxGetM(prhs[4]);
-     ncols = mxGetN(prhs[4]);
-     if (mrows!=1 || ncols !=1)
-        mexErrMsgIdAndTxt("TIGRE:minPICCS", "PICCS parameters shoudl be 1x1");
-     alpha= (float)(mxGetScalar(prhs[2]));
-     maxIter=(int)floor(mxGetScalar(prhs[3])+0.5);
-     ratio= (float)(mxGetScalar(prhs[4]));
-     
-     size_t uiGpuCount = mxGetN(prhs[5]);
+        size_t uiGpuCount = mxGetN(prhs[5]);
         if (uiGpuCount == 0) {
             mexErrMsgIdAndTxt( "TIGRE:minPICCS","6th parameter must be a row vector");
             return;
@@ -105,11 +101,6 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         gpuids.SetIds(iGpuCount, piDev);
         free(piDev); piDev = 0;
     }
-    if (nrhs==2){
-        maxIter=100;
-        alpha=15.0f;
-        ratio=0.5;
-    }
         
     
 ////////////////////////// First input.
@@ -120,12 +111,12 @@ void mexFunction(int  nlhs , mxArray *plhs[],
         mexErrMsgIdAndTxt("TIGRE:minPICCS", "Image is not 3D");
     }   
     mxArray const * const prior_mex = prhs[1];
-    mwSize const numDims_prior = mxGetNumberOfDimensions(image);
-    if (numDims_prior!=3){
-        mexErrMsgIdAndTxt("TIGRE:minPICCS", "Image is not 3D");
-    }
-    if(numDims_prior!=numDims)
+    // The prior is read with the image's size: it must be exactly that size (before, its own size was not checked).
+    mwSize const numDims_prior = mxGetNumberOfDimensions(prior_mex);
+    if (numDims_prior!=numDims || memcmp(mxGetDimensions(prior_mex), mxGetDimensions(image), numDims*sizeof(mwSize))!=0)
         mexErrMsgIdAndTxt("TIGRE:minPICCS", "Image and prior are not the same size");
+    if (!mxIsSingle(image) || !mxIsSingle(prior_mex))
+        mexErrMsgIdAndTxt("TIGRE:minPICCS", "Image and prior must be single");
     // Image should be dim 3
 
     // Now that input is ok, parse it to C data types.

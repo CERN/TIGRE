@@ -53,22 +53,22 @@
 
 #include "gpuUtils.hpp"
 #include "RandomNumberGenerator.hpp"
+#include "tigre_release_on_error.hpp"
 
 #define cudaCheckErrors(msg) \
 do { \
         cudaError_t __err = cudaGetLastError(); \
         if (__err != cudaSuccess) { \
-                mexPrintf("%s \n",msg);\
-                cudaDeviceReset();\
-                mexErrMsgIdAndTxt("RandomNumberGenerator:",cudaGetErrorString(__err));\
+                TIGRE_MATLAB_ONLY(cudaDeviceReset());\
+                tigreCudaError("RandomNumberGenerator:", msg, cudaGetErrorString(__err));\
         } \
 } while (0)
 
 
-__global__ void setup_kernel(curandState *state) {
+__global__ void setup_kernel(curandState *state, unsigned long long seed) {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     /* Each thread gets same seed, a different sequence number, no offset */
-    curand_init(1234, idx, 0, &state[idx]);
+    curand_init(seed, idx, 0, &state[idx]);
 }
 
 __global__ void GeneratePoisson(curandState *state, const float* pfIn, size_t uiLen, float* pfOut) {
@@ -125,35 +125,44 @@ void GetMinMax(const T_value* pfIn, size_t uiLen, T_value& tvMin, T_value& tvMax
         if (tvMin > tvVal) { tvMin = tvVal; continue;}
     }
 }
-void poisson_1d(const float* pfIn, size_t uiLen, float* pfOut, const GpuIds& gpuids) {
-    // printf("poisson_1d(pfIn = %p, uiLen = %zd, pfOut = %p)\n", pfIn, uiLen, pfOut);
+// One random sequence per GPU thread, all from "seed": the same seed gives the same noise. TIGRE's callers draw a new
+// seed for every call unless the user gives one (before, it was always 1234, so every call added the same noise).
+static void noiseOnGpu(const float* pfIn, size_t uiLen, bool gaussian, float fGaussMu, float fGaussSigma, float* pfOut,
+                       const GpuIds& gpuids, unsigned long long seed)
+{
+    if (gpuids.GetLength() > 0) cudaSetDevice(gpuids[0]);  // the first of the GPUs asked for (before: always the current one)
     float* d_pfIn = nullptr;
     float* d_pfOut = nullptr;
-    cudaMalloc((void **)&d_pfIn, uiLen * sizeof(float));
-    cudaCheckErrors("poisson_1d fail cudaMalloc 1");
-    cudaMalloc((void **)&d_pfOut, uiLen * sizeof(float));
-    cudaCheckErrors("poisson_1d fail cudaMalloc 2");
-    cudaMemcpy(d_pfIn, pfIn, uiLen*sizeof(float), cudaMemcpyHostToDevice);
-    cudaCheckErrors("poisson_1d fail cudaMemcpy 1");
-
-    // float fMin, fMax;
-    // GetMinMax(pfIn, uiLen, fMin, fMax);
-    // printf("fMin, fMax = %f, %f\n", fMin, fMax);
     curandState *curandStates = nullptr;
-    const int kiBlockDim = 1024;  // Threads per Block
-    const int kiGridDim = 64;//(uiLen+kiBlockDim-1)/kiBlockDim;
-    cudaMalloc((void **)&curandStates, kiGridDim * kiBlockDim * sizeof(curandState));
-    cudaCheckErrors("poisson_1d fail cudaMalloc 3");
-    setup_kernel<<<kiGridDim, kiBlockDim>>>(curandStates);
-    GeneratePoisson<<<kiGridDim, kiBlockDim>>>(curandStates, d_pfIn, uiLen, d_pfOut);
-    cudaMemcpy(pfOut, d_pfOut, uiLen*sizeof(float), cudaMemcpyDeviceToHost);
-    cudaCheckErrors("poisson_1d fail cudaMemcpy 2");
-    // GetMinMax(pfOut, uiLen, fMin, fMax);
-    // printf("fMin, fMax = %f, %f\n", fMin, fMax);
-    
-    cudaFree(d_pfIn); d_pfIn = nullptr;
-    cudaFree(d_pfOut); d_pfOut = nullptr;
-    cudaFree(curandStates); curandStates = nullptr;
+    // If a CUDA error raises (Python build), free what this call allocated; see tigre_release_on_error.hpp.
+    tigre::ReleaseOnError onError;
+    onError.add([&]{ cudaFree(d_pfIn); cudaFree(d_pfOut); cudaFree(curandStates); });
+    const size_t bytes = uiLen*sizeof(float);
+    tigre::checkMalloc(cudaMalloc((void **)&d_pfIn, bytes), "RandomNumberGenerator:", "Noise generation (addCTnoise)", bytes);
+    tigre::checkMalloc(cudaMalloc((void **)&d_pfOut, bytes), "RandomNumberGenerator:", "Noise generation (addCTnoise)", bytes);
+    cudaMemcpy(d_pfIn, pfIn, bytes, cudaMemcpyHostToDevice);
+    cudaCheckErrors("fail cudaMemcpy 1");
+
+    const int kiBlockDim = gaussian ? 64 : 1024;  // Threads per Block
+    const int kiGridDim = 64;
+    const size_t stateBytes = (size_t)kiGridDim * kiBlockDim * sizeof(curandState);
+    tigre::checkMalloc(cudaMalloc((void **)&curandStates, stateBytes), "RandomNumberGenerator:", "Noise generation (addCTnoise)", stateBytes);
+    setup_kernel<<<kiGridDim, kiBlockDim>>>(curandStates, seed);
+    if (gaussian)
+        GeneratePoissonAddGaussian<<<kiGridDim, kiBlockDim>>>(curandStates, d_pfIn, uiLen, fGaussMu, fGaussSigma, d_pfOut);
+    else
+        GeneratePoisson<<<kiGridDim, kiBlockDim>>>(curandStates, d_pfIn, uiLen, d_pfOut);
+    cudaMemcpy(pfOut, d_pfOut, bytes, cudaMemcpyDeviceToHost);
+    cudaCheckErrors("fail cudaMemcpy 2");
+
+    onError.dismiss();
+    cudaFree(d_pfIn);
+    cudaFree(d_pfOut);
+    cudaFree(curandStates);
+}
+
+void poisson_1d(const float* pfIn, size_t uiLen, float* pfOut, const GpuIds& gpuids, unsigned long long seed) {
+    noiseOnGpu(pfIn, uiLen, false, 0.0f, 0.0f, pfOut, gpuids, seed);
 }
 
 void poisson_gaussian_1d(const float* pfIn,
@@ -161,35 +170,8 @@ void poisson_gaussian_1d(const float* pfIn,
                         float fGaussMu,
                         float fGaussSigma,
                         float* pfOut,
-                        GpuIds& gpuids)
+                        GpuIds& gpuids,
+                        unsigned long long seed)
 {
-    // printf("poisson_gaussian_1d(pfIn = %p, uiLen = %zd, fGaussMu = %+f, fGaussSigma = %f, pfOut = %p)\n", pfIn, uiLen, fGaussMu, fGaussSigma, pfOut);
-    float* d_pfIn = nullptr;
-    float* d_pfOut = nullptr;
-    cudaMalloc((void **)&d_pfIn, uiLen * sizeof(float));
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMalloc 1");
-    cudaMalloc((void **)&d_pfOut, uiLen * sizeof(float));
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMalloc 2");
-    cudaMemcpy(d_pfIn, pfIn, uiLen*sizeof(float), cudaMemcpyHostToDevice);
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMemcpy 1");
-
-    // float fMin, fMax;
-    // GetMinMax(pfIn, uiLen, fMin, fMax);
-    // printf("fMin, fMax = %f, %f\n", fMin, fMax);
-    curandState *curandStates = nullptr;
-    const int kiBlockDim = 64;  // Threads per Block
-    const int kiGridDim = 64;//(uiLen+kiBlockDim-1)/kiBlockDim;
-    cudaMalloc((void **)&curandStates, kiGridDim * kiBlockDim * sizeof(curandState));
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMalloc 3");
-    setup_kernel<<<kiGridDim, kiBlockDim>>>(curandStates);
-    GeneratePoissonAddGaussian<<<kiGridDim, kiBlockDim>>>(curandStates, d_pfIn, uiLen, fGaussMu, fGaussSigma, d_pfOut);
-    cudaMemcpy(pfOut, d_pfOut, uiLen*sizeof(float), cudaMemcpyDeviceToHost);
-    cudaCheckErrors("poisson_gaussian_1d fail cudaMemcpy 2");
-    // GetMinMax(pfOut, uiLen, fMin, fMax);
-    // printf("fMin, fMax = %f, %f\n", fMin, fMax);
-
-
-    cudaFree(d_pfIn); d_pfIn = nullptr;
-    cudaFree(d_pfOut); d_pfOut = nullptr;
-    cudaFree(curandStates); curandStates = nullptr;
+    noiseOnGpu(pfIn, uiLen, true, fGaussMu, fGaussSigma, pfOut, gpuids, seed);
 }
