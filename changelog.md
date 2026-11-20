@@ -7,6 +7,8 @@ thank you.
 
 ## Unreleased
 
+## 3.3.0 (2026-11-20)
+
 ### Added
 - `TIGRE_CUDA_ARCH` (Python build and MATLAB `Compile`): compile only for the given GPU architectures (e.g.
   `89`, `75,89`, or `native`), several times faster, for development and testing. Default unchanged: every
@@ -102,17 +104,12 @@ thank you.
   that project one angle at a time (SART, ASD_POCS, AwASD_POCS) then ran on one GPU after the
   first angle, for the projections and for the TV step. They now trim a copy (#855).
 - `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB, used by FISTA and SART-TV), when the
-  image did not fit on the GPU and was split in pieces: a piece read its halo slices from host
-  memory that the previous piece had already advanced, so the result differed from the unsplit
-  one next to the joins (up to ~2e-1 of the maximum). It now gives the unsplit result exactly
-  (#863).
-- `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB, used by FISTA and SART-TV), when the
-  image did not fit on the GPU and was split in pieces: for the last piece it zeroed a dual
-  variable instead of the input, and it did not wait for each piece's results to reach host
-  memory before the next piece read from it. The result differed from the unsplit one across
-  the whole volume (e.g. 7.6e-2 of the maximum with 100 MB free); now only next to the joins
-  between pieces and at the first and last slice (4.7e-2 at the worst slice; #863 tracks the
-  rest). Based on #806.
+  image did not fit on the GPU and was split in pieces: for the last piece it zeroed a dual variable
+  instead of the input; it did not wait for each piece's results to reach host memory before the next
+  piece read from it; and a piece read its halo slices from host memory that the previous piece had
+  already advanced. The result differed from the unsplit one across the whole volume (e.g. 7.6e-2 of
+  the maximum with 100 MB free, up to ~2e-1 next to the joins). It now gives the unsplit result exactly
+  (#806, #863).
 - Cone-beam Siddon `Ax` got some rays wrong (by up to ~20%): for rays entering the image
   exactly on a voxel boundary, the first voxel and the first boundary crossings disagreed.
   Without splitting this was rare (e.g. 1 in 50,000 rays, 256³, off by up to 14%); when the
