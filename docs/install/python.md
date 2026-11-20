@@ -32,7 +32,7 @@ a few minutes.
 
 ::::{tab-item} Windows
 - Python 3.11–3.14
-- An NVIDIA GPU
+- An NVIDIA GPU, or an AMD GPU with ROCm (see [AMD GPUs](#amd-gpus-rocm))
 - The [CUDA toolkit](https://developer.nvidia.com/cuda-downloads)
 - [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/)
   with the C++ workload and the Windows SDK
@@ -46,7 +46,7 @@ Your Windows user name must not contain spaces.
 
 ::::{tab-item} Linux
 - Python 3.11–3.14
-- An NVIDIA GPU
+- An NVIDIA GPU, or an AMD GPU with ROCm (see [AMD GPUs](#amd-gpus-rocm))
 - The [CUDA toolkit](https://developer.nvidia.com/cuda-downloads); follow
   [NVIDIA's Linux installation guide](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/)
   carefully
@@ -127,7 +127,8 @@ them, it stops and says so; set `TIGRE_BACKEND=cuda` to build for NVIDIA GPUs.
 
 ### AMD GPUs (ROCm)
 
-The `hip` backend compiles the same `.cu` sources with `hipcc` from
+The `hip` backend builds TIGRE for Python on AMD GPUs (the MATLAB build is
+CUDA only). It compiles the same `.cu` sources with `hipcc` from
 [ROCm](https://rocm.docs.amd.com/) and links the HIP runtime (`amdhip64`)
 instead of `cudart`. You need ROCm 7.2 or newer and a supported AMD GPU.
 
@@ -135,13 +136,14 @@ instead of `cudart`. You need ROCm 7.2 or newer and a supported AMD GPU.
 export TIGRE_BACKEND=hip
 export ROCM_PATH=/opt/rocm
 export HIP_ARCH=gfx90a
-pip install . --no-build-isolation
+pip install .
 ```
 
-- `ROCM_PATH` points to the ROCm install (default `/opt/rocm`).
-- `HIP_ARCH` is the target GPU architecture for `--offload-arch`. Pass a
-  comma-separated list to build for several, for example
-  `HIP_ARCH=gfx90a,gfx1100,gfx1201`.
+- `ROCM_PATH` points to the ROCm install (default `/opt/rocm`, or the prefix
+  of the `hipcc` on your `PATH`).
+- `HIP_ARCH` is the target GPU architecture for `--offload-arch` (default
+  `gfx90a`; the build prints the one it uses). Pass a comma-separated list to
+  build for several, for example `HIP_ARCH=gfx90a,gfx1100,gfx1201`.
 - On Windows, also set `HIPCC` to the ROCm `clang++` (for example
   `%ROCM_PATH%\lib\llvm\bin\clang++.exe`).
 

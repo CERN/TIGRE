@@ -1,7 +1,8 @@
 # Install
 
-TIGRE runs on NVIDIA GPUs. It is available for Python and MATLAB; both versions
-share the same CUDA code and the same set of algorithms.
+TIGRE runs on NVIDIA GPUs, and from Python also on AMD GPUs with ROCm. It is
+available for Python and MATLAB; both versions share the same CUDA code and the
+same set of algorithms.
 
 :::{important}
 TIGRE is **not** on PyPI. `pip install tigre` installs an unrelated package
@@ -23,7 +24,8 @@ v0.1 release.
 
 - An NVIDIA GPU. When you compile TIGRE yourself, it is built for every GPU
   architecture your CUDA toolkit supports, so any GPU that your CUDA version
-  supports will work.
+  supports will work. For Python, an AMD GPU with ROCm also works; see
+  [AMD GPUs](python.md#amd-gpus-rocm).
 - Python 3.11 to 3.14, or MATLAB R2016b or newer.
 - To compile: the CUDA toolkit and a C++ compiler (MSVC on Windows, gcc on
   Linux).
