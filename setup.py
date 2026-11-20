@@ -243,6 +243,8 @@ if BUILD_WITH_HIP:
     CUDA = locate_rocm()
     cuda_version = 0.0
     HIP_OFFLOAD_ARGS = [f"--offload-arch={a}" for a in CUDA["arch"].split(",") if a]
+    print("TIGRE: compiling for the AMD GPU architectures " + CUDA["arch"]
+          + ("" if os.environ.get("HIP_ARCH") or os.environ.get("HCC_AMDGPU_TARGET") else " (the default; set HIP_ARCH to choose)"))
 else:
     CUDA, CUDA_VERSION = locate_cuda()
 
