@@ -653,4 +653,4 @@ void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuAr
         cudaCheckErrors("Texture object creation fail");
         tigre_sync_hw_linear();
     
-}
+}
