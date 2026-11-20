@@ -24,6 +24,15 @@ thank you.
   in pieces along z (before, they failed with a CUDA error) (#286, #295).
 
 ### Changed
+- `minTV`/`AwminTV` (the TV step of ASD_POCS, OS_ASD_POCS, AwASD_POCS, ...): the first and last
+  z-slice of the image now use the same boundary as x and y (no neighbour beyond the edge). Before, the slices
+  beyond the image's ends were read as voxels of value 0, so even a constant image was changed at its first and
+  last slice. Results change there, and a little further in as the iterations go on (as #863 did for tvdenoise).
+  `minPICCS` already treated z like x and y.
+- `minPICCS` (PICCS) runs on the GPU code it now shares with `minTV`: it uses all the GPUs in `gpuids` (before,
+  whichever GPU was current), works on images larger than the GPU memory, and sums the gradient norm in double.
+  `PICCS.cu` keeps only the PICCS maths (the step direction); the multi-GPU and splitting code is
+  `tv_gradient_descent` (`tv_gradient_descent.hpp`).
 - Python tests: rare edge cases and stress tests (little free GPU memory, thousands of repeated
   calls, images split between pieces) are marked `extended` and not run by a plain `pytest`
   (on an RTX 4070 the suite goes from ~6 to ~2 minutes). Run them with `pytest -m extended`;
@@ -56,6 +65,9 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- `AwminTV` (and `minTV`, through the shared code) on 3 or more GPUs, or split for memory, when the last piece was
+  much shorter than the others: the gradient kernel's grid was sized from the last piece, so the other pieces
+  could miss their last slices.
 - `minTV`, `AwminTV` and `tvdenoise` failed on several GPUs (or when split for memory) when the image
   had so few z slices that the last pieces came out empty, e.g. 5 slices on 4 GPUs, or tvdenoise of
   one slice on 2 GPUs. The pieces are now chosen so that none is empty, using fewer GPUs if needed.

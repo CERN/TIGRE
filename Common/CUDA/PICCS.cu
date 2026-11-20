@@ -1,9 +1,12 @@
 /*-------------------------------------------------------------------------
  *
- * CUDA functions for Steepest descend in POCS-type algorithms.
+ * PICCS minimization (minPICCS): steepest descent on
+ *     (1-ratio)*TV(x) + ratio*TV(x - prior)
  *
- * This file will iteratively minimize by stepest descend the total variation 
- * of the input image, with the parameters given, using GPUs.
+ * This file has the PICCS maths: the step direction. The GPU bookkeeping
+ * (several GPUs, images larger than the GPU memory, halos, the norm) is shared
+ * with minTV: tv_gradient_descent (tv_gradient_descent.hpp, in GD_TV.cu), which
+ * splits the prior like the image and calls piccsStepDirection for each piece.
  *
  * CODE by       Ander Biguri
  *
@@ -45,367 +48,73 @@ Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
 
-
-
-
-
-
-
-#define MAXTHREADS 1024
-
 #include "PICCS.hpp"
-#include "tigre_release_on_error.hpp"
+#include "tv_gradient_descent.hpp"
 
+namespace {
 
-
-
-#define cudaCheckErrors(msg) \
-do { \
-        cudaError_t __err = cudaGetLastError(); \
-        if (__err != cudaSuccess) { \
-                tigreCudaError("err", msg, cudaGetErrorString(__err));\
-        } \
-} while (0)
-    
-// CUDA kernels
-//https://stackoverflow.com/questions/21332040/simple-cuda-kernel-optimization/21340927#21340927
-    __global__ void divideArrayScalar(float* vec,float scalar,const size_t n)
-    {
-        unsigned long long i = (blockIdx.x * blockDim.x) + threadIdx.x;
-        for(; i<n; i+=gridDim.x*blockDim.x) {
-            vec[i]/=scalar;
-        }
-    }
-    __global__ void isnan_device(float* vec,const size_t n,bool* result)
-    {
-        *result = false;
-        unsigned long long i = (blockIdx.x * blockDim.x) + threadIdx.x;
-        for(; i<n; i+=gridDim.x*blockDim.x) {
-            if(isnan(vec[i]))
-                *result=true;
-        }
-    }
-    __global__ void multiplyArrayScalar(float* vec,float scalar,const size_t n)
-    {
-        unsigned long long i = (blockIdx.x * blockDim.x) + threadIdx.x;
-        for(; i<n; i+=gridDim.x*blockDim.x) {
-            vec[i]*=scalar;
-        }
-    }
-    __global__ void substractArrays(float* vec,float* vec2,const size_t n)
-    {
-        unsigned long long i = (blockIdx.x * blockDim.x) + threadIdx.x;
-        for(; i<n; i+=gridDim.x*blockDim.x) {
-            vec[i]-=vec2[i];
-        }
-    }
-    __global__ void addArrays(float* vec,float* vec2,const size_t n)
-    {
-        unsigned long long i = (blockIdx.x * blockDim.x) + threadIdx.x;
-        for(; i<n; i+=gridDim.x*blockDim.x) {
-            vec[i]+=vec2[i];
-        }
-    }
-    __device__ __inline__
-            void gradient(const float* u, float* grad,
-            long z, long y, long x,
-            long depth, long rows, long cols)
-    {
-        // gradientTV() also asks for the x+1, y+1 and z+1 neighbours, which
-        // fall outside the image on its last column, row and slice. Leave
-        // grad at zero there instead of reading u[idx]: for the last slice
-        // that read is past the end of the buffer (no halo is allocated here,
-        // unlike GD_TV.cu), and the values only ever fed zero numerators.
-        if (z >= depth || y >= rows || x >= cols)
-            return;
-        unsigned long size2d = rows*cols;
-        size_t idx = (size_t)z * size2d + y * cols + x;
-
-        float uidx = u[idx];
-
-        if ( z - 1 >= 0 && z<depth) {
-            grad[0] = (uidx-u[(size_t)(z-1)*size2d + y*cols + x]) ;
-        }
-        
-        if ( y - 1 >= 0 && y<rows){
-            grad[1] = (uidx-u[(size_t)z*size2d + (y-1)*cols + x]) ;
-        }
-        
-        if ( x - 1 >= 0 && x<cols) {
-            grad[2] = (uidx-u[(size_t)z*size2d + y*cols + (x-1)]);
-        }
-    }
-    
-    __global__ void gradientTV(const float* f, float* dftv,
-            long depth, long rows, long cols){
-        unsigned long x = threadIdx.x + blockIdx.x * blockDim.x;
-        unsigned long y = threadIdx.y + blockIdx.y * blockDim.y;
-        unsigned long z = threadIdx.z + blockIdx.z * blockDim.z;
-        size_t idx = (size_t)z * (rows * cols) + y * cols + x;
-        if ( x >= cols || y >= rows || z >= depth )
-            return;
-        
-        float df[3] ={0,0,0};
-        float dfi[3]={0,0,0}; // dfi== \partial f_{i+1,j,k}
-        float dfj[3]={0,0,0};
-        float dfk[3]={0,0,0};
-        gradient(f,df  ,z  ,y  ,x  , depth,rows,cols);
-        gradient(f,dfi ,z  ,y  ,x+1, depth,rows,cols);
-        gradient(f,dfj ,z  ,y+1,x  , depth,rows,cols);
-        gradient(f,dfk ,z+1,y  ,x  , depth,rows,cols);
-        float eps=0.000001; //% avoid division by zero
-        dftv[idx]=(df[0]+df[1]+df[2])/(sqrt(df[0] *df[0] +df[1] *df[1] +df[2] *df[2])+eps)
-        -dfi[2]/(sqrt(dfi[0]*dfi[0]+dfi[1]*dfi[1]+dfi[2]*dfi[2]) +eps)     // I wish I coudl precompute this, but if I do then Id need to recompute the gradient.
-        -dfj[1]/(sqrt(dfj[0]*dfj[0]+dfj[1]*dfj[1]+dfj[2]*dfj[2]) +eps)
-        -dfk[0]/(sqrt(dfk[0]*dfk[0]+dfk[1]*dfk[1]+dfk[2]*dfk[2]) +eps);
-        
-    }
-    
-    __device__ void warpReduce(volatile float *sdata, size_t tid) {
-        sdata[tid] += sdata[tid + 32];
-        sdata[tid] += sdata[tid + 16];
-        sdata[tid] += sdata[tid + 8];
-        sdata[tid] += sdata[tid + 4];
-        sdata[tid] += sdata[tid + 2];
-        sdata[tid] += sdata[tid + 1];
-    }
-    
-    __global__ void  reduceNorm2(float *g_idata, float *g_odata, size_t n){
-        extern __shared__ volatile float sdata[];
-        //http://stackoverflow.com/a/35133396/1485872
-        size_t tid = threadIdx.x;
-        size_t i = (size_t)blockIdx.x*blockDim.x + tid;
-        size_t gridSize = blockDim.x*gridDim.x;
-        float mySum = 0;
-        float value=0;
-        while (i < n) {
-            value=g_idata[i]; //avoid reading twice
-            mySum += value*value;
-            i += gridSize;
-        }
-        sdata[tid] = mySum;
-        __syncthreads();
-        
-        if (tid < 512)
-            sdata[tid] += sdata[tid + 512];
-        __syncthreads();
-        if (tid < 256)
-            sdata[tid] += sdata[tid + 256];
-        __syncthreads();
-        
-        if (tid < 128)
-            sdata[tid] += sdata[tid + 128];
-        __syncthreads();
-        
-        if (tid <  64)
-            sdata[tid] += sdata[tid + 64];
-        __syncthreads();
-        
-        
-#if (CUDART_VERSION >= 9000)
-        if ( tid < 32 )
-        {
-            mySum = sdata[tid] + sdata[tid + 32];
-            for (int offset = warpSize/2; offset > 0; offset /= 2) {
-                mySum += __shfl_down_sync(0xFFFFFFFF, mySum, offset,32);
-            }
-        }
-#else
-        if (tid < 32) {
-            warpReduce(sdata, tid);
-            mySum = sdata[0];
-        }
-#endif
-        if (tid == 0) g_odata[blockIdx.x] = mySum;
-    }
-    __global__ void  reduceSum(float *g_idata, float *g_odata, size_t n){
-        extern __shared__ volatile float sdata[];
-        //http://stackoverflow.com/a/35133396/1485872
-        size_t tid = threadIdx.x;
-        size_t i = (size_t)blockIdx.x*blockDim.x + tid;
-        size_t gridSize = blockDim.x*gridDim.x;
-        float mySum = 0;
-       // float value=0;
-        while (i < n) {
-            mySum += g_idata[i];
-            i += gridSize;
-        }
-        sdata[tid] = mySum;
-        __syncthreads();
-        
-        if (tid < 512)
-            sdata[tid] += sdata[tid + 512];
-        __syncthreads();
-        if (tid < 256)
-            sdata[tid] += sdata[tid + 256];
-        __syncthreads();
-        
-        if (tid < 128)
-            sdata[tid] += sdata[tid + 128];
-        __syncthreads();
-        
-        if (tid <  64)
-            sdata[tid] += sdata[tid + 64];
-        __syncthreads();
-        
-        
-#if (CUDART_VERSION >= 9000)
-        if ( tid < 32 )
-        {
-            mySum = sdata[tid] + sdata[tid + 32];
-            for (int offset = warpSize/2; offset > 0; offset /= 2) {
-                mySum += __shfl_down_sync(0xFFFFFFFF, mySum, offset,32);
-            }
-        }
-#else
-        if (tid < 32) {
-            warpReduce(sdata, tid);
-            mySum = sdata[0];
-        }
-#endif
-        if (tid == 0) g_odata[blockIdx.x] = mySum;
-    }
-    
-
-bool isnan_cuda(float* vec, size_t size){
-    bool*d_nan;
-    bool h_nan;
-    cudaMalloc((void **)&d_nan, sizeof (bool));
-    isnan_device<<<60,MAXTHREADS>>>(vec,size,d_nan);
-    cudaMemcpy(&h_nan, d_nan, sizeof(bool), cudaMemcpyDeviceToHost);
-    return h_nan;
-
+// u, or u - p when p is given.
+__device__ __inline__ float value(const float* u, const float* p, size_t i){
+    return p ? u[i]-p[i] : u[i];
 }
-    
-// main function
- void piccs_tv(const float* img,const float* prior, float* dst,float alpha,float ratio, const long* image_size, int maxIter, const GpuIds& gpuids){
-        
-     
-        
-    
-        size_t total_pixels = (size_t)image_size[0]*image_size[1]  * image_size[2] ;
-        size_t mem_size = sizeof(float) * total_pixels;
-        
-        float *d_image=NULL,*d_prior=NULL,*d_dpiccsTV=NULL, *d_dimgTV=NULL,*d_aux_small=NULL,*d_aux_image=NULL, *d_norm2=NULL;
-        // Release the device buffers if the call is left by an error (see
-        // tigre_release_on_error.hpp); cudaFree(NULL) does nothing.
-        tigre::ReleaseOnError onError;
-        onError.add([&]{ cudaFree(d_image); cudaFree(d_prior); cudaFree(d_dpiccsTV); cudaFree(d_dimgTV);
-                         cudaFree(d_aux_small); cudaFree(d_aux_image); cudaFree(d_norm2); });
-        // memory for image
-        tigre::checkMalloc(cudaMalloc(&d_image, mem_size), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", mem_size);
-        tigre::checkMalloc(cudaMalloc(&d_prior, mem_size), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", mem_size);
 
-        cudaCheckErrors("Malloc Image error");
-        cudaMemcpy(d_image, img, mem_size, cudaMemcpyHostToDevice);
-        cudaMemcpy(d_prior, prior, mem_size, cudaMemcpyHostToDevice);
-        cudaCheckErrors("Memory Malloc and Memset: SRC");
-        // memory for df
-        tigre::checkMalloc(cudaMalloc(&d_dimgTV, mem_size), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", mem_size);
-        tigre::checkMalloc(cudaMalloc(&d_dpiccsTV, mem_size), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", mem_size);
-        cudaCheckErrors("Memory Malloc and Memset: TV");
-        tigre::checkMalloc(cudaMalloc(&d_norm2, mem_size), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", mem_size);
-        cudaCheckErrors("Memory Malloc and Memset: TV");
-        tigre::checkMalloc(cudaMalloc(&d_aux_image, mem_size), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", mem_size);
-        cudaCheckErrors("Memory Malloc and Memset: TV");
-        
-        // memory for L2norm auxiliar
-        tigre::checkMalloc(cudaMalloc(&d_aux_small, sizeof(float)*(total_pixels + MAXTHREADS - 1) / MAXTHREADS), "CBCT:CUDA:PICCS", "PICCS minimization (minPICCS)", sizeof(float)*(total_pixels + MAXTHREADS - 1) / MAXTHREADS);
-        cudaCheckErrors("Memory Malloc and Memset: NORMAux");
-        
-        
-        
-        // For the gradient
-        dim3 blockGrad(10, 10, 10);
-        dim3 gridGrad((image_size[0]+blockGrad.x-1)/blockGrad.x, (image_size[1]+blockGrad.y-1)/blockGrad.y, (image_size[2]+blockGrad.z-1)/blockGrad.z);
-        
-        // For the reduction
-        float sumnorm2;
-        size_t dimblockRed = MAXTHREADS;
-        size_t dimgridRed = (total_pixels + MAXTHREADS - 1) / MAXTHREADS;
+// Backward differences at voxel (z,y,x) of u (or of u - p); 0 outside the image. In z the image is the slots
+// [zlo,zhi) of the buffer (see TVPiece).
+__device__ __inline__ void gradient(const float* u, const float* p, float* grad, long z, long y, long x,
+                                    long zlo, long zhi, long rows, long cols){
+    if (z < zlo || z >= zhi || y >= rows || x >= cols)
+        return;
+    size_t size2d = (size_t)rows*cols;
+    size_t idx = (size_t)z*size2d + y*cols + x;
+    float uidx = value(u, p, idx);
+    if (z - 1 >= zlo) grad[0] = uidx - value(u, p, idx - size2d);
+    if (y - 1 >= 0)   grad[1] = uidx - value(u, p, idx - cols);
+    if (x - 1 >= 0)   grad[2] = uidx - value(u, p, idx - 1);
+}
 
+// Gradient of the TV norm of u (or of u - p) at voxel (z,y,x).
+__device__ __inline__ float tvGradient(const float* u, const float* p, long z, long y, long x,
+                                       long zlo, long zhi, long rows, long cols, float eps){
+    float df[3]={0.f,0.f,0.f}, dfi[3]={0.f,0.f,0.f}, dfj[3]={0.f,0.f,0.f}, dfk[3]={0.f,0.f,0.f};
+    gradient(u, p, df , z  , y  , x  , zlo, zhi, rows, cols);
+    gradient(u, p, dfi, z  , y  , x+1, zlo, zhi, rows, cols);
+    gradient(u, p, dfj, z  , y+1, x  , zlo, zhi, rows, cols);
+    gradient(u, p, dfk, z+1, y  , x  , zlo, zhi, rows, cols);
+    return (df[0]+df[1]+df[2])/(sqrt(df[0]*df[0]+df[1]*df[1]+df[2]*df[2])+eps)
+          -dfi[2]/(sqrt(dfi[0]*dfi[0]+dfi[1]*dfi[1]+dfi[2]*dfi[2])+eps)
+          -dfj[1]/(sqrt(dfj[0]*dfj[0]+dfj[1]*dfj[1]+dfj[2]*dfj[2])+eps)
+          -dfk[0]/(sqrt(dfk[0]*dfk[0]+dfk[1]*dfk[1]+dfk[2]*dfk[2])+eps);
+}
 
-        for(unsigned int i=0;i<maxIter;i++){
-            
-            cudaMemcpy( d_aux_image,d_image, mem_size, cudaMemcpyDeviceToDevice);
-//             mexPrintf("Iteration %d\n",(int)i);
+// PICCS step direction: (1-ratio)*grad TV(x) + ratio*grad TV(x - prior).
+__global__ void piccsDirection(const float* x, const float* prior, float* direction, float ratio,
+                               long depth, long zlo, long zhi, long rows, long cols){
+    long ix = threadIdx.x + blockIdx.x*blockDim.x;
+    long iy = threadIdx.y + blockIdx.y*blockDim.y;
+    long iz = threadIdx.z + blockIdx.z*blockDim.z;
+    if (ix >= cols || iy >= rows || iz >= depth)
+        return;
+    const float eps = 0.000001f;  // as PICCS always had (minTV uses 1e-8)
+    direction[(size_t)iz*rows*cols + iy*cols + ix] =
+        (1-ratio)*tvGradient(x, NULL , iz, iy, ix, zlo, zhi, rows, cols, eps)
+        +   ratio*tvGradient(x, prior, iz, iy, ix, zlo, zhi, rows, cols, eps);
+}
 
-            // Compute the gradient of the TV norm
-            gradientTV<<<gridGrad, blockGrad>>>(d_image,d_dimgTV,image_size[2], image_size[1],image_size[0]);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Gradient");
-//             mexPrintf("Gradient is nan: %s\n",isnan_cuda(d_dimgTV,total_pixels) ? "true" : "false");
+struct PiccsParams { float ratio; };
 
+void piccsStepDirection(const TVPiece& pc, const void* params){
+    const float ratio = static_cast<const PiccsParams*>(params)->ratio;
+    dim3 block(10, 10, 10);
+    dim3 grid((pc.cols+block.x-1)/block.x, (pc.rows+block.y-1)/block.y, (pc.depth+block.z-1)/block.z);
+    piccsDirection<<<grid, block, 0, pc.stream>>>(pc.image, pc.extra[0], pc.direction, ratio,
+                                                  pc.depth, pc.zlo, pc.zhi, pc.rows, pc.cols);
+}
 
-            multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dimgTV,(1-ratio),   total_pixels);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Multiplication error");
+}  // namespace
 
-            substractArrays<<<60,MAXTHREADS>>>(d_aux_image,d_prior, total_pixels);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Substraction error");
-            
-            gradientTV<<<gridGrad, blockGrad>>>(d_aux_image,d_dpiccsTV,image_size[2], image_size[1],image_size[0]);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Gradient");
-//             mexPrintf("Gradient piccs is nan: %s\n",isnan_cuda(d_dimgTV,total_pixels) ? "true" : "false");
-
-            multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dpiccsTV,ratio,   total_pixels);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Multiplication error");
-//             mexPrintf("Multiplication is nan: %s\n",isnan_cuda(d_dimgTV,total_pixels) ? "true" : "false");
-                
-            
-            addArrays<<<60,MAXTHREADS>>>(d_dimgTV,d_dpiccsTV,total_pixels);
-            cudaDeviceSynchronize();
-            //NOMRALIZE via reduction
-            //mexPrintf("Pre-norm2 is nan: %s\n",isnan_cuda(d_dimgTV,total_pixels) ? "true" : "false");
-            cudaMemcpy(d_norm2, d_dimgTV, mem_size, cudaMemcpyDeviceToDevice);
-            cudaCheckErrors("Copy from gradient call error");
-            reduceNorm2 << <dimgridRed, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_norm2, d_aux_small, total_pixels);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("reduce1");
-            if (dimgridRed > 1) {
-                reduceSum << <1, dimblockRed, MAXTHREADS*sizeof(float) >> >(d_aux_small, d_norm2, dimgridRed);
-                cudaDeviceSynchronize();
-                cudaCheckErrors("reduce2");
-                cudaMemcpy(&sumnorm2, d_norm2, sizeof(float), cudaMemcpyDeviceToHost);
-                cudaCheckErrors("cudaMemcpy");
-
-            }
-            else {
-                cudaMemcpy(&sumnorm2, d_aux_small, sizeof(float), cudaMemcpyDeviceToHost);
-                cudaCheckErrors("cudaMemcpy");
-            }
-//             mexPrintf("alpha/sqrt(sumnorm2): %f\n",alpha/sqrt(sumnorm2));
-            //MULTIPLY HYPERPARAMETER sqrt(sumnorm2)
-            multiplyArrayScalar<<<60,MAXTHREADS>>>(d_dimgTV,alpha/sqrt(sumnorm2),  total_pixels);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Multiplication error");
-            //SUBSTRACT GRADIENT
-            substractArrays    <<<60,MAXTHREADS>>>(d_image,d_dimgTV, total_pixels);
-            cudaDeviceSynchronize();
-            cudaCheckErrors("Substraction error");
-//             mexPrintf("Final update is nan: %s\n",isnan_cuda(d_image,total_pixels) ? "true" : "false");
-//             mexPrintf("\n");
-            sumnorm2=0;
-        }
-        
-        cudaCheckErrors("TV minimization");
-        
-        cudaMemcpy(dst, d_image, mem_size, cudaMemcpyDeviceToHost);
-        cudaCheckErrors("Copy result back");
-        onError.dismiss();  // from here on the function releases everything itself
-        
-        cudaFree(d_image);
-        cudaFree(d_dimgTV);
-        cudaFree(d_dpiccsTV);
-        cudaFree(d_aux_image);
-        cudaFree(d_aux_small);
-        cudaFree(d_prior);
-        cudaFree(d_norm2);
-
-
-        cudaCheckErrors("Memory free");
-    }
-    
+void piccs_tv(const float* img,const float* prior, float* dst,float alpha,float ratio, const long* image_size, int maxIter, const GpuIds& gpuids){
+    PiccsParams params = {ratio};
+    const float* extra[1] = {prior};
+    tv_gradient_descent(img, extra, 1, piccsStepDirection, &params, dst, alpha, image_size, maxIter, gpuids,
+                        "PICCS minimization (minPICCS)");
+}

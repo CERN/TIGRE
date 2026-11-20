@@ -93,30 +93,35 @@ do { \
         }
     }
     
+    // Backward differences at voxel (z,y,x) of the buffer; 0 outside the image. In z the image is the slots
+    // [zlo,zhi) of the buffer: its halos hold the neighbouring GPUs' or pieces' slices, but there is nothing
+    // beyond the first and the last slice of the whole image, as in x and y (see GD_TV.cu).
     __device__ __inline__
             void gradient(const float* u, float* grad,
             long z, long y, long x,
-            long depth, long rows, long cols){
+            long zlo, long zhi, long rows, long cols){
+        if (z < zlo || z >= zhi || y >= rows || x >= cols)
+            return;
         unsigned long size2d = rows*cols;
         size_t idx = (size_t)z * size2d + y * cols + x;
         
         float uidx = u[idx];
         
-        if ( z - 1 >= 0 && z<depth) {
+        if ( z - 1 >= zlo) {
             grad[0] = (uidx-u[(size_t)(z-1)*size2d + y*cols + x]) ;
         }
         
-        if ( y - 1 >= 0 && y<rows){
+        if ( y - 1 >= 0){
             grad[1] = (uidx-u[(size_t)z*size2d + (y-1)*cols + x]) ;
         }
         
-        if ( x - 1 >= 0 && x<cols) {
+        if ( x - 1 >= 0) {
             grad[2] = (uidx-u[(size_t)z*size2d + y*cols + (x-1)]);
         }
     }
     
     __global__ void gradientTV(const float* f, float* dftv,
-            long depth, long rows, long cols,const float delta){
+            long depth, long zlo, long zhi, long rows, long cols,const float delta){
         unsigned long x = threadIdx.x + blockIdx.x * blockDim.x;
         unsigned long y = threadIdx.y + blockIdx.y * blockDim.y;
         unsigned long z = threadIdx.z + blockIdx.z * blockDim.z;
@@ -129,10 +134,10 @@ do { \
         float dfi[3]={0.f,0.f,0.f}; // dfi== \partial f_{i+1,j,k}
         float dfj[3]={0.f,0.f,0.f};
         float dfk[3]={0.f,0.f,0.f};
-        gradient(f,df  ,z  ,y  ,x  , depth,rows,cols);
-        gradient(f,dfi ,z  ,y  ,x+1, depth,rows,cols);
-        gradient(f,dfj ,z  ,y+1,x  , depth,rows,cols);
-        gradient(f,dfk ,z+1,y  ,x  , depth,rows,cols);
+        gradient(f,df  ,z  ,y  ,x  , zlo,zhi,rows,cols);
+        gradient(f,dfi ,z  ,y  ,x+1, zlo,zhi,rows,cols);
+        gradient(f,dfj ,z  ,y+1,x  , zlo,zhi,rows,cols);
+        gradient(f,dfk ,z+1,y  ,x  , zlo,zhi,rows,cols);
         float eps=0.00000001; //% avoid division by zero
         
         float wx=__expf(-(df[0]/delta)*(df[0]/delta));
@@ -564,17 +569,23 @@ void aw_pocs_tv(float* img,float* dst,float alpha,const long* image_size, int ma
                 for(unsigned int ib=0;  (ib<(buffer_length-1)) && ((i+ib)<maxIter);  ib++){
                     
                     // For the gradient
-                    dim3 blockGrad(10, 10, 10);
-                    dim3 gridGrad((image_size[0]+blockGrad.x-1)/blockGrad.x, (image_size[1]+blockGrad.y-1)/blockGrad.y, (curr_slices+buffer_length*2+blockGrad.z-1)/blockGrad.z);
                     
                     for (dev = 0; dev < deviceCount; dev++){
                         cudaSetDevice(gpuids[dev]);
                         curr_slices=((sp*deviceCount+dev+1)*slices_per_split<image_size[2])?  slices_per_split:  image_size[2]-slices_per_split*(sp*deviceCount+dev);
                         // Compute the gradient of the TV norm
                         
-                        // I don't understand why I need to store 2 layers to compute correctly with 1 buffer. The bounding checks should
-                        // be enough but they are not.
-                        gradientTV<<<gridGrad, blockGrad,0,stream[dev*nStream_device]>>>(d_image[dev],d_dimgTV[dev],(long)(curr_slices+buffer_length*2-1), image_size[1],image_size[0],delta);
+                        // The image's slices in this buffer are [zlo,zhi): the halos of the first and last piece of the
+                        // whole image lie beyond it.
+                        const long piece=(long)sp*deviceCount+dev;
+                        const long depth=(long)(curr_slices+buffer_length*2-1);
+                        const long zlo=(piece==0)? (long)buffer_length : 0;
+                        const long zhi=(piece==(long)deviceCount*splits-1)? (long)(buffer_length+curr_slices) : depth;
+                        // Grid for this piece's own depth (it was sized from whichever piece was computed last, so a
+                        // longer piece could miss its last slices).
+                        dim3 blockGrad(10, 10, 10);
+                        dim3 gridGrad((image_size[0]+blockGrad.x-1)/blockGrad.x, (image_size[1]+blockGrad.y-1)/blockGrad.y, (depth+blockGrad.z-1)/blockGrad.z);
+                        gradientTV<<<gridGrad, blockGrad,0,stream[dev*nStream_device]>>>(d_image[dev],d_dimgTV[dev],depth,zlo,zhi, image_size[1],image_size[0],delta);
                         
                     }
                     
