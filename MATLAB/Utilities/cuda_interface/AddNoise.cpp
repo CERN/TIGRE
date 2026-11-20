@@ -52,10 +52,12 @@ Codes  : https://github.com/CERN/TIGRE
 #include <CUDA/RandomNumberGenerator.hpp>
 #include <CUDA/GpuIds.hpp>
 #include <CUDA/gpuUtils.hpp>
+#include <random>
 /**
  * MEX gateway
- * AddNoise(Im, mu, sigma, "gpuids", gpuids);
+ * AddNoise(Im, mu, sigma[, seed][, "gpuids", gpuids]);
  *   poissrnd(Im)+randn(size(Im)).*sigma + mu;
+ * seed: the same seed gives the same noise; without one, a new random seed every call (addCTnoise always gives one).
  */
 
 void mexFunction(int nlhs, mxArray *plhs[],
@@ -65,19 +67,32 @@ void mexFunction(int nlhs, mxArray *plhs[],
     float fGaussMu = 0;
     float fGaussSigma = 0;
 
+    if (nrhs < 3) {
+        mexErrMsgIdAndTxt("CBCT:CUDA:RNG", "At least three input argumet required.");
+    }
+    if (nrhs > 6) {
+        mexErrMsgIdAndTxt("CBCT:CUDA:RNG", "Too many input arguments");
+    }
+    // Optional seed (4th argument, numeric), then optional "gpuids", ids (the last two).
+    const bool hasSeed = nrhs == 4 || nrhs == 6;
+    const bool hasGpuIds = nrhs == 5 || nrhs == 6;
+    if (hasSeed && (!mxIsNumeric(prhs[3]) || mxGetNumberOfElements(prhs[3]) != 1)) {
+        mexErrMsgIdAndTxt("CBCT:CUDA:RNG", "4th parameter (seed) should be a scalar");
+    }
     GpuIds gpuids;
-    if (nrhs==5) {
-        size_t iM = mxGetM(prhs[4]);
+    if (hasGpuIds) {
+        const mxArray* ids = prhs[nrhs-1];
+        size_t iM = mxGetM(ids);
         if (iM != 1) {
-            mexErrMsgIdAndTxt( "CBCT:MEX:RNG:unknown","5th parameter must be a row vector.");
+            mexErrMsgIdAndTxt( "CBCT:MEX:RNG:unknown","gpuids must be a row vector.");
             return;
         }
-        size_t uiGpuCount = mxGetN(prhs[4]);
+        size_t uiGpuCount = mxGetN(ids);
         if (uiGpuCount == 0) {
-            mexErrMsgIdAndTxt( "CBCT:MEX:RNG:unknown","5th parameter must be a row vector.");
+            mexErrMsgIdAndTxt( "CBCT:MEX:RNG:unknown","gpuids must be a row vector.");
             return;
         }
-        int* piGpuIds = (int*)mxGetData(prhs[4]);
+        int* piGpuIds = (int*)mxGetData(ids);
         gpuids.SetIds(uiGpuCount, piGpuIds);
     } else {
         int iGpuCount = GetGpuCount();
@@ -88,23 +103,26 @@ void mexFunction(int nlhs, mxArray *plhs[],
         gpuids.SetIds(iGpuCount, piDev);
         free(piDev); piDev = 0;
     }
-    if (nrhs < 3) {
-        mexErrMsgIdAndTxt("CBCT:CUDA:RNG", "At least three input argumet required.");
-    } else if (nrhs==3 || nrhs==5){
-        size_t mrows = mxGetM(prhs[1]);
-        size_t ncols = mxGetN(prhs[1]);
-        if (mrows!=1 || ncols !=1) {
-            mexErrMsgIdAndTxt("CBCT:CUDA:RNG", "2nd parameter should be 1x1");
-        }
-        mrows = mxGetM(prhs[2]);
-        ncols = mxGetN(prhs[2]);
-        if (mrows!=1 || ncols !=1) {
-            mexErrMsgIdAndTxt("CBCT:CUDA:RNG", "3rd parameter should be 1x1");
-        }
-        fGaussMu    = (float)mxGetScalar(prhs[1]);
-        fGaussSigma = (float)mxGetScalar(prhs[2]);
-    } else if (nrhs>4) {
-        mexErrMsgIdAndTxt("CBCT:CUDA:RNG", "Too many input arguments");
+    size_t mrows = mxGetM(prhs[1]);
+    size_t ncols = mxGetN(prhs[1]);
+    if (mrows!=1 || ncols !=1) {
+        mexErrMsgIdAndTxt("CBCT:CUDA:RNG", "2nd parameter should be 1x1");
+    }
+    mrows = mxGetM(prhs[2]);
+    ncols = mxGetN(prhs[2]);
+    if (mrows!=1 || ncols !=1) {
+        mexErrMsgIdAndTxt("CBCT:CUDA:RNG", "3rd parameter should be 1x1");
+    }
+    fGaussMu    = (float)mxGetScalar(prhs[1]);
+    fGaussSigma = (float)mxGetScalar(prhs[2]);
+    unsigned long long seed;
+    if (hasSeed) {
+        const double dSeed = mxGetScalar(prhs[3]);
+        if (dSeed < 0) mexErrMsgIdAndTxt("CBCT:CUDA:RNG", "seed must be non-negative");
+        seed = (unsigned long long)dSeed;
+    } else {
+        std::random_device rd;
+        seed = ((unsigned long long)rd() << 32) ^ (unsigned long long)rd();
     }
     /////////////// First input argumet.
     // First input should be an array, whose elements are lambda.
@@ -122,5 +140,5 @@ void mexFunction(int nlhs, mxArray *plhs[],
     plhs[0] = mxCreateNumericArray(numDims, size_img, mxSINGLE_CLASS, mxREAL);
     float *imgout =(float*) mxGetPr(plhs[0]);
     // call CUDA rng
-    poisson_gaussian_1d(pfLambdas, uiLen, fGaussMu, fGaussSigma, imgout, gpuids);
+    poisson_gaussian_1d(pfLambdas, uiLen, fGaussMu, fGaussSigma, imgout, gpuids, seed);
 }

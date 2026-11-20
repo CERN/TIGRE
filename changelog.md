@@ -27,6 +27,10 @@ thank you.
   in pieces along z (before, they failed with a CUDA error) (#286, #295).
 
 ### Changed
+- `CTnoise.add` (Python) and `addCTnoise` (MATLAB) add a new noise realisation on every call. Before, the
+  GPU random number generator was always seeded with 1234, so every call added exactly the same noise. The
+  new seed is drawn from NumPy's global random state (Python) or MATLAB's random stream, so
+  `np.random.seed(...)` / `rng(...)` make a script reproducible; `seed=` (Python) or `'Seed'` (MATLAB) fixes it.
 - Python tests: rare edge cases and stress tests (little free GPU memory, thousands of repeated
   calls, images split between pieces) are marked `extended` and not run by a plain `pytest`
   (on an RTX 4070 the suite goes from ~6 to ~2 minutes). Run them with `pytest -m extended`;
@@ -59,6 +63,11 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- Cone-beam `Ax`/`Atb` with a host array that is already page-locked (e.g. the NumPy view of a pinned PyTorch
+  tensor) failed with "Error pinning memory", and unregistered memory that was not theirs; they now use it as
+  it is and leave it alone, as the other operators already did.
+- `CTnoise.add` / `addCTnoise` ran on the current GPU whatever `gpuids` said, and leaked GPU memory if a CUDA
+  error was raised (Python). They now run on the first of `gpuids` and free everything on error.
 - `minTV`, `AwminTV` and `tvdenoise` failed on several GPUs (or when split for memory) when the image
   had so few z slices that the last pieces came out empty, e.g. 5 slices on 4 GPUs, or tvdenoise of
   one slice on 2 GPUs. The pieces are now chosen so that none is empty, using fewer GPUs if needed.
