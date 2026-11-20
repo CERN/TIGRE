@@ -216,13 +216,17 @@ def _is_cuda_file(path):
 
 def locate_rocm():
     """Locate the ROCm install and the target GPU architecture(s) for HIP."""
-    rocm_home = os.environ.get("ROCM_PATH") or os.environ.get("HIP_PATH") or "/opt/rocm"
+    rocm_home = os.environ.get("ROCM_PATH") or os.environ.get("HIP_PATH")
+    if not rocm_home and shutil.which("hipcc"):
+        # The backend may have been chosen because hipcc is on the PATH.
+        rocm_home = os.path.dirname(os.path.dirname(os.path.realpath(shutil.which("hipcc"))))
+    rocm_home = rocm_home or "/opt/rocm"
     hip_arch = os.environ.get("HIP_ARCH") or os.environ.get("HCC_AMDGPU_TARGET") or "gfx90a"
     include = pjoin(rocm_home, "include")
     lib = pjoin(rocm_home, "lib")
-    if not os.path.isdir(include):
+    if not os.path.isdir(pjoin(include, "hip")):
         raise EnvironmentError(
-            f"ROCm include dir not found at {include}; set ROCM_PATH to the ROCm install."
+            f"HIP headers not found in {include}; set ROCM_PATH to the ROCm install."
         )
     return {
         "home": rocm_home,
