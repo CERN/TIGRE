@@ -97,6 +97,7 @@
 #define cudaEvent_t                     hipEvent_t
 #define cudaError_t                     hipError_t
 #define cudaDeviceProp                  hipDeviceProp_t
+#define cudaMemcpyKind                  hipMemcpyKind
 
 #define cudaResourceTypeArray           hipResourceTypeArray
 #define cudaReadModeElementType         hipReadModeElementType
@@ -105,6 +106,7 @@
 #define cudaAddressModeBorder           hipAddressModeBorder
 #define cudaAddressModeClamp            hipAddressModeClamp
 #define cudaAddressModeWrap             hipAddressModeWrap
+#define cudaChannelFormatKindFloat      hipChannelFormatKindFloat
 
 #define cudaMemcpyHostToDevice          hipMemcpyHostToDevice
 #define cudaMemcpyDeviceToHost          hipMemcpyDeviceToHost
@@ -114,6 +116,7 @@
 
 #define cudaSuccess                     hipSuccess
 #define cudaErrorMemoryAllocation       hipErrorOutOfMemory
+#define cudaErrorHostMemoryAlreadyRegistered hipErrorHostMemoryAlreadyRegistered
 
 #define cudaHostRegisterPortable        hipHostRegisterPortable
 #define cudaDevAttrHostRegisterSupported hipDeviceAttributeHostRegisterSupported
@@ -143,6 +146,7 @@
 #define cudaMemcpyAsync                 hipMemcpyAsync
 #define cudaMemcpyToSymbol              hipMemcpyToSymbol
 #define cudaMemcpyToSymbolAsync         hipMemcpyToSymbolAsync
+#define cudaMemcpyPeerAsync             hipMemcpyPeerAsync
 
 /* hipMalloc3DArray requires the flags argument that cudaMalloc3DArray
  * defaults to 0. */
@@ -153,6 +157,7 @@
 #define cudaCreateChannelDesc           hipCreateChannelDesc
 #define cudaCreateTextureObject         hipCreateTextureObject
 #define cudaDestroyTextureObject        hipDestroyTextureObject
+#define cudaArrayGetInfo                hipArrayGetInfo
 
 #define make_cudaExtent                 make_hipExtent
 #define make_cudaPitchedPtr             make_hipPitchedPtr
@@ -163,8 +168,11 @@
 #define cudaStreamSynchronize           hipStreamSynchronize
 #define cudaStreamCreateWithFlags       hipStreamCreateWithFlags
 #define cudaStreamNonBlocking           hipStreamNonBlocking
+#define cudaStreamWaitEvent             hipStreamWaitEvent
 
 #define cudaEventCreate                 hipEventCreate
+#define cudaEventCreateWithFlags        hipEventCreateWithFlags
+#define cudaEventDisableTiming          hipEventDisableTiming
 #define cudaEventDestroy                hipEventDestroy
 #define cudaEventRecord                 hipEventRecord
 #define cudaEventSynchronize            hipEventSynchronize

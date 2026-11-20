@@ -21,7 +21,7 @@
  */
 #ifndef TV_GRADIENT_DESCENT_HPP
 #define TV_GRADIENT_DESCENT_HPP
-#include <cuda_runtime_api.h>
+#include "cuda_to_hip.h"
 #include "GpuIds.hpp"
 
 // One GPU's piece of the image, as the step function sees it. Every buffer has the same layout: `depth` slots
