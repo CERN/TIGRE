@@ -1,4 +1,4 @@
-# DEMO 23: ### Running TIGRE's PyTorch bindings 
+# DEMO 25: ### Running TIGRE with PyTorch: GPU tensors and the PyTorch bindings
 #
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -44,7 +44,7 @@ tigre_devices = tigre_devices[0]
 ax, atb = create_pytorch_operator(geo, angles, tigre_devices)
 
 ## Now we can create some torch tensors:
-torch_devices = 3
+torch_devices = 0  # the GPU PyTorch uses (any GPU of your machine)
 torch.cuda.set_device(torch_devices)
 print(f'Using GPU {tigre_devices} for TIGRE and GPU {torch_devices} for PyTorch')
 
@@ -55,6 +55,55 @@ sinogram = ax(input_volume)
 print(f'Input volume: {input_volume.shape}')
 print(f'Sinogram: {sinogram.shape}')
 print(f'Output volume: {atb(sinogram).shape}')
+
+# =============================================================================
+## TIGRE works directly on PyTorch GPU tensors (TIGRE 3.3)
+#
+# tigre.Ax and tigre.Atb accept a PyTorch tensor that is on the GPU (or a CuPy array) and return the same kind of
+# array, on the same GPU. The data is not copied to the host and back: TIGRE reads and writes the GPU memory of the
+# tensor itself. The operators above (create_pytorch_operator, A, At) do the same with CUDA tensors.
+#
+# Two things to know:
+#  - This uses the tensor's own GPU only. If gpuids names other GPUs, TIGRE copies the data through the host to use
+#    them (same result, slower).
+#  - TIGRE allocates GPU memory with CUDA directly, not through PyTorch's caching allocator. If it runs out of memory,
+#    the PyTorch bindings call torch.cuda.empty_cache() and try again; with tigre.Ax/Atb you can do the same.
+import time
+
+geo3d = tigre.geometry(mode="cone", default=True, nVoxel=np.array([256, 256, 256]))
+angles3d = np.linspace(0, 2 * np.pi, 360, endpoint=False)
+device = torch.device(f"cuda:{torch_devices}")
+volume = torch.rand(*geo3d.nVoxel, device=device)
+
+projections = tigre.Ax(volume, geo3d, angles3d)        # a torch.Tensor on the same GPU
+backprojection = tigre.Atb(projections, geo3d, angles3d)
+print(f"Ax: {type(projections).__name__} {tuple(projections.shape)} on {projections.device}")
+print(f"Atb: {type(backprojection).__name__} {tuple(backprojection.shape)} on {backprojection.device}")
+
+# Before TIGRE 3.3 a GPU tensor had to go through NumPy: GPU -> host -> TIGRE -> host -> GPU. Compare, on the same GPU:
+one_gpu = gpu.GpuIds()
+one_gpu.devices = [torch_devices]
+
+
+def ax_through_host(x):
+    return torch.from_numpy(tigre.Ax(x.cpu().numpy(), geo3d, angles3d, gpuids=one_gpu)).to(x.device)
+
+
+def best_time(f, repeats=3):
+    times = []
+    for _ in range(repeats):
+        torch.cuda.synchronize(device)
+        t = time.perf_counter()
+        f()
+        torch.cuda.synchronize(device)
+        times.append(time.perf_counter() - t)
+    return min(times)
+
+
+t_gpu = best_time(lambda: tigre.Ax(volume, geo3d, angles3d))
+t_host = best_time(lambda: ax_through_host(volume))
+same = torch.equal(tigre.Ax(volume, geo3d, angles3d), ax_through_host(volume))
+print(f"Ax of a GPU tensor: {t_gpu:.3f} s directly, {t_host:.3f} s through the host (same result: {same})")
 
 # =============================================================================
 ## Example of use inside a neural network
@@ -126,13 +175,13 @@ class LearnedGradient(torch.nn.Module):
 
 
 tigre_devices   = gpu.getGpuIds()
-tigre_devices = tigre_devices[3]
+tigre_devices = tigre_devices[torch_devices]  # TIGRE on the same GPU as PyTorch: the tensors stay on it
 
 ## Get dataset:
 import torchvision
 
 
-datapath = '/local/scratch/public/ab2860/data/mnist'
+datapath = './data/mnist'  # where MNIST is downloaded
 dataset = torchvision.datasets.MNIST(datapath, download=True,transform=torchvision.transforms.PILToTensor())
 # lets make it smaller. 
 dataset = torch.utils.data.Subset(dataset,  list(range(100)))
