@@ -63,8 +63,6 @@ def Atb(projections, geo, angles, backprojection_type="FDK", **kwargs):
                                kwargs.get("gpuids", None), Atb)
     if projections.dtype != np.float32:
         raise TypeError("Input data should be float32, not " + str(projections.dtype))
-    if not np.isreal(projections).all():
-        raise ValueError("Complex types not compatible for back projection.")
     geox = copy.deepcopy(geo)
     geox.check_geo(angles)
     """
