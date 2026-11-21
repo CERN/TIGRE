@@ -1,10 +1,11 @@
 import copy
 
 import numpy as np
-from tigre.utilities.cuda_interface._Atb import _Atb_ext
 
 from . import _gpu_arrays
-from .gpu import GpuIds
+from .gpu import GpuIds, _import_extension
+
+_Atb_ext = _import_extension("_Atb")._Atb_ext
 
 
 def Atb(projections, geo, angles, backprojection_type="FDK", **kwargs):
