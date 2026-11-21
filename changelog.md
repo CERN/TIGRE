@@ -7,7 +7,7 @@ thank you.
 
 ## Unreleased
 
-## 3.3.0 (2026-11-20)
+## 3.3.0 (2026-11-21)
 
 ### Added
 - `TIGRE_CUDA_ARCH` (Python build and MATLAB `Compile`): compile only for the given GPU architectures (e.g.
