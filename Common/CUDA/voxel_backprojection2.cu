@@ -93,6 +93,7 @@ do { \
     
 // this definitionmust go here.
 void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate, cudaMemcpyKind kind);
+static void matchedKernelParams(const Geometry& geo, int i, Point3D* params);  // see its definition
 
 __global__ void matrixConstantMultiply(const Geometry geo,float* image,float constant){
     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -532,7 +533,6 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                             if(currProjNumber_global>=nalpha)
                                 break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
                             
-                            Point3D deltaX,deltaY,deltaZ,xyzOrigin,source;
                             float sinalpha,cosalpha;
                             
                             geoArray[img_slice*deviceCount+dev].alpha=-alphas[currProjNumber_global*3];//we got 3 angles now.
@@ -548,34 +548,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                             projSinCosArray2Host[5*j+3]=geo.DSD[currProjNumber_global];
                             projSinCosArray2Host[5*j+4]=geo.DSO[currProjNumber_global];
                             
-                            computeDeltasCube(geoArray[img_slice*deviceCount+dev],currProjNumber_global,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
-                            
-                            // Fold what the kernel needs, in double, so that its per-projection setup is a few multiply-adds:
-                            //   [0..2] deltaX, deltaY, deltaZ: the change of the source-to-voxel vector per voxel index
-                            //   [3]    that vector at voxel (0,0,0): xyzOrigin - source, and COR (in detector pixels) in y
-                            //   [4]    (DSO-DSD-source.x, source.y+nDetecU/2, source.z+nDetecV/2): t=[4].x/vectX, u=vectY*t+[4].y
-                            //   [5]    (1/d_n, dDetecU^2, dDetecV^2) for the weight; d_n=source.x-(DSO-DSD) is the distance from
-                            //          the source to the detector plane
-                            //   [6]    unused
-                            const Geometry& g=geoArray[img_slice*deviceCount+dev];
-                            const double COR=geo.COR[currProjNumber_global], DSO=geo.DSO[currProjNumber_global], DSD=geo.DSD[currProjNumber_global];
-                            Point3D c0, tuv, wpar, unused={0,0,0};
-                            c0.x=(float)((double)xyzOrigin.x-(double)source.x);
-                            c0.y=(float)((double)xyzOrigin.y-COR/(double)g.dDetecU-(double)source.y);
-                            c0.z=(float)((double)xyzOrigin.z-(double)source.z);
-                            tuv.x=(float)(DSO-DSD-(double)source.x);
-                            tuv.y=(float)((double)source.y+(double)g.nDetecU*0.5);
-                            tuv.z=(float)((double)source.z+(double)g.nDetecV*0.5);
-                            wpar.x=(float)(1.0/((double)source.x-(DSO-DSD)));
-                            wpar.y=(float)((double)g.dDetecU*(double)g.dDetecU);
-                            wpar.z=(float)((double)g.dDetecV*(double)g.dDetecV);
-                            projParamsArray2Host[7*j]  =deltaX;		// 7*j because we have 7 Point3D values per projection
-                            projParamsArray2Host[7*j+1]=deltaY;
-                            projParamsArray2Host[7*j+2]=deltaZ;
-                            projParamsArray2Host[7*j+3]=c0;
-                            projParamsArray2Host[7*j+4]=tuv;
-                            projParamsArray2Host[7*j+5]=wpar;
-                            projParamsArray2Host[7*j+6]=unused;
+                            matchedKernelParams(geoArray[img_slice*deviceCount+dev],currProjNumber_global,&projParamsArray2Host[7*j]);  // 7 Point3D per projection
                             
                         }   // END for (preparing params for kernel call)
                         
@@ -727,6 +700,47 @@ void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cud
         cudaCreateTextureObject(&texImage[dev], &texRes, &texDescr, NULL);
     }
 }
+//______________________________________________________________________________
+//
+//      Function:       matchedKernelParams
+//
+//      Description:    The 7 Point3D that kernelPixelBackprojection reads for projection i (geo: this piece of the
+//                      image, with geo.alpha/theta/psi set for the projection). computeDeltasCube gives the voxel grid
+//                      and the source in the scaled coordinate system rotated with the projection (detector rotation
+//                      and offsets included); the rest is folded here, in double, so that the kernel's setup per
+//                      projection is a few multiply-adds:
+//                        [0..2] deltaX, deltaY, deltaZ: the change of the source-to-voxel vector per voxel index
+//                        [3]    that vector at voxel (0,0,0): xyzOrigin - source, and COR (in detector pixels) in y
+//                        [4]    (DSO-DSD-source.x, source.y+nDetecU/2, source.z+nDetecV/2): t=[4].x/vectX, u=vectY*t+[4].y
+//                        [5]    (1/d_n, dDetecU^2, dDetecV^2) for the weight; d_n=source.x-(DSO-DSD) is the distance
+//                               from the source to the detector plane
+//                        [6]    unused
+//______________________________________________________________________________
+
+static void matchedKernelParams(const Geometry& geo, int i, Point3D* params)
+{
+    Point3D deltaX, deltaY, deltaZ, xyzOrigin, source;
+    computeDeltasCube(geo, i, &xyzOrigin, &deltaX, &deltaY, &deltaZ, &source);
+    const double COR=geo.COR[i], DSO=geo.DSO[i], DSD=geo.DSD[i];
+    Point3D c0, tuv, wpar, unused={0,0,0};
+    c0.x=(float)((double)xyzOrigin.x-(double)source.x);
+    c0.y=(float)((double)xyzOrigin.y-COR/(double)geo.dDetecU-(double)source.y);
+    c0.z=(float)((double)xyzOrigin.z-(double)source.z);
+    tuv.x=(float)(DSO-DSD-(double)source.x);
+    tuv.y=(float)((double)source.y+(double)geo.nDetecU*0.5);
+    tuv.z=(float)((double)source.z+(double)geo.nDetecV*0.5);
+    wpar.x=(float)(1.0/((double)source.x-(DSO-DSD)));
+    wpar.y=(float)((double)geo.dDetecU*(double)geo.dDetecU);
+    wpar.z=(float)((double)geo.dDetecV*(double)geo.dDetecV);
+    params[0]=deltaX;
+    params[1]=deltaY;
+    params[2]=deltaZ;
+    params[3]=c0;
+    params[4]=tuv;
+    params[5]=wpar;
+    params[6]=unused;
+}
+
 #ifndef BACKPROJECTION_HPP
 void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
     

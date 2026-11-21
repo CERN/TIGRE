@@ -92,6 +92,7 @@ do { \
      **/
     
     void CreateTexture(const GpuIds& gpuids,float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream, int nStreamDevice,bool allocate, cudaMemcpyKind kind);
+    static void fdkKernelParams(const Geometry& geo, int i, float sinalpha, float cosalpha, Point3D* params);  // see its definition
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -536,7 +537,6 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
                             if(currProjNumber_global>=nalpha)
                                 break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
                             
-                            Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, /*offDetec,*/source;
                             float sinalpha,cosalpha;
                             
                             geoArray[img_slice*deviceCount+dev].alpha=-alphas[currProjNumber_global*3];//we got 3 angles now.
@@ -555,38 +555,7 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
                             projSinCosArrayHost[5*j+3]=geo.DSD[currProjNumber_global];
                             projSinCosArrayHost[5*j+4]=geo.DSO[currProjNumber_global];
                             
-                            computeDeltasCube(geoArray[img_slice*deviceCount+dev],currProjNumber_global,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
-                            
-                            offOrig.x=geo.offOrigX[currProjNumber_global];
-                            offOrig.y=geo.offOrigY[currProjNumber_global];
-                            offOrig.z=geoArray[img_slice*deviceCount+dev].offOrigZ[currProjNumber_global];
-                            
-                            // Fold what the kernel needs, in double, so that its per-projection setup is a few multiply-adds:
-                            //   [0..2] deltaX, deltaY, deltaZ: the change of the source-to-voxel vector per voxel index
-                            //   [3]    that vector at voxel (0,0,0): xyzOrigin - source, and COR (in detector pixels) in y
-                            //   [4]    (DSO-DSD-source.x, source.y+nDetecU/2, source.z+nDetecV/2): t=[4].x/vectX, u=vectY*t+[4].y
-                            //   [5]    the FDK weight's denominator, (DSO+realy*sin(alpha)-realx*cos(alpha))/DSO with realx,
-                            //          realy the voxel's centre, as w0 + i*wx + j*wy (the weight is 1/den^2)
-                            const Geometry& g=geoArray[img_slice*deviceCount+dev];
-                            const double COR=geo.COR[currProjNumber_global], DSO=geo.DSO[currProjNumber_global], DSD=geo.DSD[currProjNumber_global];
-                            Point3D c0, tuv, wden;
-                            c0.x=(float)((double)xyzOrigin.x-(double)source.x);
-                            c0.y=(float)((double)xyzOrigin.y-COR/(double)g.dDetecU-(double)source.y);
-                            c0.z=(float)((double)xyzOrigin.z-(double)source.z);
-                            tuv.x=(float)(DSO-DSD-(double)source.x);
-                            tuv.y=(float)((double)source.y+(double)g.nDetecU*0.5);
-                            tuv.z=(float)((double)source.z+(double)g.nDetecV*0.5);
-                            const double rx0=-((double)g.sVoxelX-(double)g.dVoxelX)*0.5+(double)offOrig.x;
-                            const double ry0=-((double)g.sVoxelY-(double)g.dVoxelY)*0.5+(double)offOrig.y+COR;
-                            wden.x=(float)((DSO+ry0*(double)sinalpha-rx0*(double)cosalpha)/DSO);
-                            wden.y=(float)(-(double)g.dVoxelX*(double)cosalpha/DSO);
-                            wden.z=(float)( (double)g.dVoxelY*(double)sinalpha/DSO);
-                            projParamsArrayHost[6*j]=deltaX;		// 6*j because we have 6 Point3D values per projection
-                            projParamsArrayHost[6*j+1]=deltaY;
-                            projParamsArrayHost[6*j+2]=deltaZ;
-                            projParamsArrayHost[6*j+3]=c0;
-                            projParamsArrayHost[6*j+4]=tuv;
-                            projParamsArrayHost[6*j+5]=wden;
+                            fdkKernelParams(geoArray[img_slice*deviceCount+dev],currProjNumber_global,sinalpha,cosalpha,&projParamsArrayHost[6*j]);  // 6 Point3D per projection
                         }   // END for (preparing params for kernel call)
                         
                         // Copy the prepared parameter arrays to constant memory to make it available for the kernel
@@ -879,6 +848,47 @@ void rollPitchYawT(Geometry geo,int i, Point3Ddouble* point){
     point->z=(cos_dRoll*sin_dPitch*cos_dYaw + sin_dRoll*sin_dYaw)*auxPoint.x
             +(sin_dRoll*sin_dPitch*cos_dYaw - cos_dRoll*sin_dYaw)*auxPoint.y
             +cos_dPitch*cos_dYaw*auxPoint.z;
+}
+
+//______________________________________________________________________________
+//
+//      Function:       fdkKernelParams
+//
+//      Description:    The 6 Point3D that kernelPixelBackprojectionFDK reads for projection i (geo: this piece of
+//                      the image, with geo.alpha/theta/psi set for the projection; sinalpha, cosalpha of geo.alpha).
+//                      computeDeltasCube gives the voxel grid and the source in the scaled coordinate system rotated
+//                      with the projection (detector rotation and offsets included); the rest is folded here, in
+//                      double, so that the kernel's setup per projection is a few multiply-adds:
+//                        [0..2] deltaX, deltaY, deltaZ: the change of the source-to-voxel vector per voxel index
+//                        [3]    that vector at voxel (0,0,0): xyzOrigin - source, and COR (in detector pixels) in y
+//                        [4]    (DSO-DSD-source.x, source.y+nDetecU/2, source.z+nDetecV/2): t=[4].x/vectX, u=vectY*t+[4].y
+//                        [5]    the FDK weight's denominator, (DSO+realy*sin(alpha)-realx*cos(alpha))/DSO with realx,
+//                               realy the voxel's centre, as w0 + i*wx + j*wy (the weight is 1/den^2)
+//______________________________________________________________________________
+
+static void fdkKernelParams(const Geometry& geo, int i, float sinalpha, float cosalpha, Point3D* params)
+{
+    Point3D deltaX, deltaY, deltaZ, xyzOrigin, source;
+    computeDeltasCube(geo, i, &xyzOrigin, &deltaX, &deltaY, &deltaZ, &source);
+    const double COR=geo.COR[i], DSO=geo.DSO[i], DSD=geo.DSD[i];
+    Point3D c0, tuv, wden;
+    c0.x=(float)((double)xyzOrigin.x-(double)source.x);
+    c0.y=(float)((double)xyzOrigin.y-COR/(double)geo.dDetecU-(double)source.y);
+    c0.z=(float)((double)xyzOrigin.z-(double)source.z);
+    tuv.x=(float)(DSO-DSD-(double)source.x);
+    tuv.y=(float)((double)source.y+(double)geo.nDetecU*0.5);
+    tuv.z=(float)((double)source.z+(double)geo.nDetecV*0.5);
+    const double rx0=-((double)geo.sVoxelX-(double)geo.dVoxelX)*0.5+(double)geo.offOrigX[i];
+    const double ry0=-((double)geo.sVoxelY-(double)geo.dVoxelY)*0.5+(double)geo.offOrigY[i]+COR;
+    wden.x=(float)((DSO+ry0*(double)sinalpha-rx0*(double)cosalpha)/DSO);
+    wden.y=(float)(-(double)geo.dVoxelX*(double)cosalpha/DSO);
+    wden.z=(float)( (double)geo.dVoxelY*(double)sinalpha/DSO);
+    params[0]=deltaX;
+    params[1]=deltaY;
+    params[2]=deltaZ;
+    params[3]=c0;
+    params[4]=tuv;
+    params[5]=wden;
 }
 
 //______________________________________________________________________________
