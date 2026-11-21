@@ -39,6 +39,9 @@ thank you.
   whichever GPU was current), works on images larger than the GPU memory, and sums the gradient norm in double.
   `PICCS.cu` keeps only the PICCS maths (the step direction); the multi-GPU and splitting code is
   `tv_gradient_descent` (`tv_gradient_descent.hpp`).
+- `AwminTV` runs on the same shared code (`GD_AwTV.cu` keeps only the adaptive-weighted TV step
+  direction): one copy of the multi-GPU and splitting code instead of two. Results are unchanged. Its error and
+  warning identifiers are now `minTV`'s (`GD_TV:...`).
 - `CTnoise.add` (Python) and `addCTnoise` (MATLAB) add a new noise realisation on every call. Before, the
   GPU random number generator was always seeded with 1234, so every call added exactly the same noise. The
   new seed is drawn from NumPy's global random state (Python) or MATLAB's random stream, so

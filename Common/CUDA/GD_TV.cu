@@ -809,8 +809,7 @@ do { \
         // symptom appears in the NEXT library to touch the GPU (e.g.
         // cudaErrorInvalidValue / CUDA_ERROR_INVALID_HANDLE inside CuPy
         // deallocations) rather than in TIGRE itself. All buffers are
-        // already freed explicitly above; GD_AwTV.cu has this reset
-        // commented out for the same reason.
+        // already freed explicitly above.
         // cudaDeviceReset();
     }
         
