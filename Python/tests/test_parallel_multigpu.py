@@ -15,6 +15,7 @@ pytestmark = pytest.mark.gpu
 
 import tigre  # noqa: E402
 from tigre.utilities.gpu import GpuIds  # noqa: E402
+from device_kinds import same_kind  # noqa: E402  (a GPU and the CPU device: list the GPU twice)
 
 
 def _gpus(devices):
@@ -44,7 +45,7 @@ def _problem(nangles, nvoxel):
 def test_ax_two_gpus_match_one(kind, nangles):
     geo, angles, img = _problem(nangles, [65, 64, 72])
     one = tigre.Ax(img, geo, angles, kind, gpuids=_gpus([0]))
-    two = tigre.Ax(img, geo, angles, kind, gpuids=_gpus([0, 1]))
+    two = tigre.Ax(img, geo, angles, kind, gpuids=_gpus(same_kind([0, 1])))
     np.testing.assert_array_equal(two, one)
 
 
@@ -54,6 +55,6 @@ def test_atb_two_gpus_match_one(nvoxel):
     geo, angles, img = _problem(37, nvoxel)
     proj = tigre.Ax(img, geo, angles, gpuids=_gpus([0]))
     one = tigre.Atb(proj, geo, angles, gpuids=_gpus([0]))
-    two = tigre.Atb(proj, geo, angles, gpuids=_gpus([0, 1]))
+    two = tigre.Atb(proj, geo, angles, gpuids=_gpus(same_kind([0, 1])))
     err = float(np.abs(two - one).max() / np.abs(one).max())
     assert err < 1e-5, err

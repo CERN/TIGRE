@@ -13,6 +13,8 @@ bit for bit.
 """
 import ctypes
 import os
+import subprocess
+import sys
 
 import numpy as np
 import pytest
@@ -103,3 +105,49 @@ def test_siddon_split_matches_unsplit():
     # each ray's sum is accurate to ~1e-5 (float32 emulation: ~3e-6).
     assert diff.max() < 1e-4, "max {:.2e} at (angle, v, u) = {}, {:.2%} of pixels above 1e-4".format(
         diff.max(), np.unravel_index(diff.argmax(), diff.shape), (diff > 1e-4).mean())
+
+
+SYCL_SCRIPT = r"""
+import sys
+import numpy as np
+import tigre
+
+n = 256
+geo = tigre.geometry(mode="cone", default=True, nVoxel=np.array([n, n, n]))
+angles = np.linspace(0, 2 * np.pi, 64, endpoint=False)
+img = np.random.default_rng(0).random((n, n, n), dtype=np.float32)
+np.save(sys.argv[1], tigre.Ax(img, geo, angles, "Siddon"))
+"""
+
+
+def _sycl_build():
+    try:
+        from tigre.utilities.cuda_interface import _gpuUtils
+    except ImportError:
+        return False
+    return getattr(_gpuUtils, "getBackend", lambda: "cuda")() == "sycl"
+
+
+@pytest.mark.skipif(not _sycl_build(), reason="SYCL build only (TIGRE_SYCL_MEMORY_LIMIT_MB)")
+def test_siddon_split_matches_unsplit_sycl(tmp_path):
+    # SYCL build: TIGRE_SYCL_MEMORY_LIMIT_MB caps the memory TIGRE plans with, so the
+    # 64 MB image is projected in pieces on any device. Each run is a subprocess, since
+    # the limit is read from the environment.
+    script = tmp_path / "siddon_split.py"
+    script.write_text(SYCL_SCRIPT)
+    out = {}
+    for limit in (None, 24):
+        env = dict(os.environ)
+        env.pop("TIGRE_SYCL_MEMORY_LIMIT_MB", None)
+        if limit is not None:
+            env["TIGRE_SYCL_MEMORY_LIMIT_MB"] = str(limit)
+        path = tmp_path / "ax_{}.npy".format(limit)
+        subprocess.run([sys.executable, str(script), str(path)], env=env, check=True, timeout=600)
+        out[limit] = np.load(path)
+    whole, split = out[None], out[24]
+    diff = np.abs(split - whole) / np.abs(whole).max()
+    # Before the fix: up to ~0.16 here.
+    msg = "max {:.2e} at (angle, v, u) = {}, {:.2%} of pixels above 1e-4"
+    assert diff.max() < 1e-4, msg.format(
+        diff.max(), np.unravel_index(diff.argmax(), diff.shape), (diff > 1e-4).mean()
+    )
