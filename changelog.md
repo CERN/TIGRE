@@ -39,6 +39,9 @@ thank you.
   whichever GPU was current), works on images larger than the GPU memory, and sums the gradient norm in double.
   `PICCS.cu` keeps only the PICCS maths (the step direction); the multi-GPU and splitting code is
   `tv_gradient_descent` (`tv_gradient_descent.hpp`).
+- `AwminTV` runs on the same shared code (`GD_AwTV.cu` keeps only the adaptive-weighted TV step
+  direction): one copy of the multi-GPU and splitting code instead of two. Results are unchanged. Its error and
+  warning identifiers are now `minTV`'s (`GD_TV:...`).
 - `CTnoise.add` (Python) and `addCTnoise` (MATLAB) add a new noise realisation on every call. Before, the
   GPU random number generator was always seeded with 1234, so every call added exactly the same noise. The
   new seed is drawn from NumPy's global random state (Python) or MATLAB's random stream, so
@@ -93,6 +96,15 @@ thank you.
 - `minTV`, `AwminTV` and `tvdenoise` failed on several GPUs (or when split for memory) when the image
   had so few z slices that the last pieces came out empty, e.g. 5 slices on 4 GPUs, or tvdenoise of
   one slice on 2 GPUs. The pieces are now chosen so that none is empty, using fewer GPUs if needed.
+- `minTV`, `AwminTV` and `minPICCS` read past the end, or before the start, of the image, the output and
+  PICCS's prior when a piece of the image (one per GPU, or more when it is split for memory) was thinner
+  than the halo slices copied around its neighbour: e.g. 7 slices on 3 GPUs (pieces of 3, 3 and 1), or
+  pieces of 1 slice. Depending on the memory there, this crashed, gave a copy error or did nothing visible;
+  results were not affected. The halos now stop at the image's first and last slice, as in `tvdenoise`
+  (#899; found by Einse57).
+- `minTV`, `AwminTV`, `minPICCS` and `tvdenoise` freed some of their host memory only when they failed:
+  every call lost a little, including a page-locked (pinned) allocation in `minTV`, `AwminTV` and `minPICCS`,
+  which the POCS solvers call at every iteration.
 - `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB) on 2 or more GPUs without a direct link
   between them, when the image fits only shared between the GPUs: the host buffer for the halo slices
   had room for one slice per halo, but the halos are up to 60 slices wide, so they overwrote each other
