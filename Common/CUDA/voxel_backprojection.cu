@@ -162,7 +162,8 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         return;
     
     // We'll keep a local auxiliary array of values of a column of voxels that this thread will update
-    float voxelColumn[VOXELS_PER_THREAD];
+    // Zero-initialised: voxels of the column beyond the image are computed too (no per-voxel check, see below), never stored.
+    float voxelColumn[VOXELS_PER_THREAD] = {0};
     
     // First we need to copy the curent 3D volume values from the column to our auxiliary array so that we can then
     // work on them (update them by computing values from multiple projections) locally - avoiding main memory reads/writes
@@ -195,51 +196,36 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         if(indAlpha>=totalNoOfProjections)
             break;
         
+        // The projection's parameters, folded on the host (see the main loop): the source-to-voxel vector is
+        // c0 + i*deltaX + j*deltaY + k*deltaZ for voxel (i,j,k), in the scaled coordinate system rotated with the
+        // projection (detector rotation, offsets and COR included).
         Point3D deltaX = projParamsArrayDev[6*projNumber];  // 6*projNumber because we have 6 Point3D values per projection
         Point3D deltaY = projParamsArrayDev[6*projNumber+1];
         Point3D deltaZ = projParamsArrayDev[6*projNumber+2];
-        Point3D xyzOrigin = projParamsArrayDev[6*projNumber+3];
-        Point3D xyzOffset = projParamsArrayDev[6*projNumber+4];
-        Point3D S = projParamsArrayDev[6*projNumber+5];
+        Point3D c0     = projParamsArrayDev[6*projNumber+3];
+        Point3D tuv    = projParamsArrayDev[6*projNumber+4];  // (DSO-DSD-S.x, S.y+nDetecU/2, S.z+nDetecV/2)
+        Point3D wden   = projParamsArrayDev[6*projNumber+5];  // the FDK weight's denominator: wden.x+i*wden.y+j*wden.z
         
-        float sinalpha = projSinCosArrayDev[5*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
-        float cosalpha = projSinCosArrayDev[5*projNumber+1];
-        float COR = projSinCosArrayDev[5*projNumber+2];
-        float DSD = projSinCosArrayDev[5*projNumber+3];
-        float DSO = projSinCosArrayDev[5*projNumber+4];
+        // The vector from the source to the first voxel of the column; then stepped by deltaZ (at most
+        // VOXELS_PER_THREAD-1 steps). It was rebuilt for every voxel from the indices.
+        float vectX=c0.x+fIndX*deltaX.x+fIndY*deltaY.x+fStartIndZ*deltaZ.x;
+        float vectY=c0.y+fIndX*deltaX.y+fIndY*deltaY.y+fStartIndZ*deltaZ.y;
+        float vectZ=c0.z+fIndX*deltaX.z+fIndY*deltaY.z+fStartIndZ*deltaZ.z;
+        const float tNum=tuv.x, u0=tuv.y, v0=tuv.z;
         
-        float auxCOR=COR/geo.dDetecU;
-        // "XYZ" in the scaled coordinate system, rotated with the projection angle, is affine in the voxel's indices,
-        // and so is the vector from the source to the voxel: compute it for the first voxel of the column, then step
-        // it by deltaZ (at most VOXELS_PER_THREAD-1 steps). It was rebuilt for every voxel from the indices.
-        float vectX=xyzOrigin.x+fIndX*deltaX.x+fIndY*deltaY.x+fStartIndZ*deltaZ.x -S.x;
-        float vectY=xyzOrigin.y+fIndX*deltaX.y+fIndY*deltaY.y+fStartIndZ*deltaZ.y-auxCOR -S.y;
-        float vectZ=xyzOrigin.z+fIndX*deltaX.z+fIndY*deltaY.z+fStartIndZ*deltaZ.z -S.z;
-        const float tNum=DSO-DSD-S.x;
-        const float u0=S.y+(float)geo.nDetecU*0.5f;
-        const float v0=S.z+(float)geo.nDetecV*0.5f;
-        
-        // The FDK weight depends on the voxel's x and y only: the same for the whole column.
-        float weight;
-        float realx,realy;
-        realx=-(geo.sVoxelX-geo.dVoxelX)*0.5f  +fIndX*geo.dVoxelX   +xyzOffset.x;
-        realy=-(geo.sVoxelY-geo.dVoxelY)*0.5f  +fIndY*geo.dVoxelY   +xyzOffset.y+COR;
-        weight=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
-        weight=__frcp_rd(weight*weight);
+        // The FDK weight, (DSO/(DSO+realy*sin(alpha)-realx*cos(alpha)))^2, depends on the voxel's x and y only: the
+        // same for the whole column.
+        const float w=wden.x+fIndX*wden.y+fIndY*wden.z;
+        const float weight=__fdividef(1.0f,w*w);
         // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
         const float fAlpha=(float)indAlpha+0.5f;
         
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
 #pragma unroll
+        // No bounds check per voxel: the voxels of a column that lie beyond the image (in the last block in z) are
+        // computed too, harmlessly (a texture read), and never stored (the final loop checks).
         for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
         {
-            unsigned long long indZ = startIndZ + colIdx;
-            
-            // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
-            // be trying to copy the out of bounds values anyway (bounds checks will be done in the final loop where the values go to the main volume)
-            if(indZ>=geo.nVoxelZ)
-                break;   // break the loop.
-            
             // Get the coordinates in the detector UV where the mid point of the voxel is projected.
             float t=__fdividef(tNum,vectX);
             float u=vectY*t+u0;
@@ -575,12 +561,32 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
                             offOrig.y=geo.offOrigY[currProjNumber_global];
                             offOrig.z=geoArray[img_slice*deviceCount+dev].offOrigZ[currProjNumber_global];
                             
+                            // Fold what the kernel needs, in double, so that its per-projection setup is a few multiply-adds:
+                            //   [0..2] deltaX, deltaY, deltaZ: the change of the source-to-voxel vector per voxel index
+                            //   [3]    that vector at voxel (0,0,0): xyzOrigin - source, and COR (in detector pixels) in y
+                            //   [4]    (DSO-DSD-source.x, source.y+nDetecU/2, source.z+nDetecV/2): t=[4].x/vectX, u=vectY*t+[4].y
+                            //   [5]    the FDK weight's denominator, (DSO+realy*sin(alpha)-realx*cos(alpha))/DSO with realx,
+                            //          realy the voxel's centre, as w0 + i*wx + j*wy (the weight is 1/den^2)
+                            const Geometry& g=geoArray[img_slice*deviceCount+dev];
+                            const double COR=geo.COR[currProjNumber_global], DSO=geo.DSO[currProjNumber_global], DSD=geo.DSD[currProjNumber_global];
+                            Point3D c0, tuv, wden;
+                            c0.x=(float)((double)xyzOrigin.x-(double)source.x);
+                            c0.y=(float)((double)xyzOrigin.y-COR/(double)g.dDetecU-(double)source.y);
+                            c0.z=(float)((double)xyzOrigin.z-(double)source.z);
+                            tuv.x=(float)(DSO-DSD-(double)source.x);
+                            tuv.y=(float)((double)source.y+(double)g.nDetecU*0.5);
+                            tuv.z=(float)((double)source.z+(double)g.nDetecV*0.5);
+                            const double rx0=-((double)g.sVoxelX-(double)g.dVoxelX)*0.5+(double)offOrig.x;
+                            const double ry0=-((double)g.sVoxelY-(double)g.dVoxelY)*0.5+(double)offOrig.y+COR;
+                            wden.x=(float)((DSO+ry0*(double)sinalpha-rx0*(double)cosalpha)/DSO);
+                            wden.y=(float)(-(double)g.dVoxelX*(double)cosalpha/DSO);
+                            wden.z=(float)( (double)g.dVoxelY*(double)sinalpha/DSO);
                             projParamsArrayHost[6*j]=deltaX;		// 6*j because we have 6 Point3D values per projection
                             projParamsArrayHost[6*j+1]=deltaY;
                             projParamsArrayHost[6*j+2]=deltaZ;
-                            projParamsArrayHost[6*j+3]=xyzOrigin;
-                            projParamsArrayHost[6*j+4]=offOrig;
-                            projParamsArrayHost[6*j+5]=source;
+                            projParamsArrayHost[6*j+3]=c0;
+                            projParamsArrayHost[6*j+4]=tuv;
+                            projParamsArrayHost[6*j+5]=wden;
                         }   // END for (preparing params for kernel call)
                         
                         // Copy the prepared parameter arrays to constant memory to make it available for the kernel
