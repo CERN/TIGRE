@@ -32,7 +32,7 @@ Use about 95% of the GPU's memory, and less if other programs (such as the
 desktop) use the GPU. A value larger than the memory actually free will make
 TIGRE fail. The function appears in `Siddon_projection.cu`,
 `ray_interpolated_projection.cu`, `voxel_backprojection.cu`,
-`voxel_backprojection2.cu`, `tv_proximal.cu`, `GD_TV.cu` and `GD_AwTV.cu`.
+`voxel_backprojection2.cu`, `tv_proximal.cu` and `GD_TV.cu`.
 
 ## Kernel launch sizes (small gains)
 
@@ -47,7 +47,7 @@ from changing them, and often nothing. Change one at a time, by small steps.
 | Forward projection, Siddon | `Siddon_projection.cu` | `PROJ_PER_BLOCK`, `PIXEL_SIZE_BLOCK` |
 | Forward projection, interpolated | `ray_interpolated_projection.cu` | `PROJ_PER_BLOCK`, `PIXEL_SIZE_BLOCK` |
 | TV denoising | `tv_proximal.cu` | `MAX_BUFFER`, `BLOCK_SIZE` |
-| TV gradient steps (ASD-POCS family) | `GD_TV.cu`, `GD_AwTV.cu` | `MAX_BUFFER` |
+| TV gradient steps (ASD-POCS family, PICCS) | `GD_TV.cu` | `MAX_BUFFER` |
 
 For the forward projectors, a block has
 `PIXEL_SIZE_BLOCK × PIXEL_SIZE_BLOCK × PROJ_PER_BLOCK` threads, which must not

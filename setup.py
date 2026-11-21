@@ -567,6 +567,7 @@ AwminTV_ext = Extension(
         [
             "Common/CUDA/TIGRE_common.cpp",
             "Common/CUDA/GD_AwTV.cu",
+            "Common/CUDA/GD_TV.cu",
             "Common/CUDA/GpuIds.cpp",
             "Common/CUDA/gpuUtils.cu",
             "Python/tigre/utilities/cuda_interface/_AwminTV.pyx",
