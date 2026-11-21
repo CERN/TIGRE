@@ -157,6 +157,8 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
     // work on them (update them by computing values from multiple projections) locally - avoiding main memory reads/writes
     
     unsigned long colIdx;
+    // The voxel's indices as floats, converted once per thread (they were converted for every voxel and projection).
+    const float fIndX=(float)indX, fIndY=(float)indY, fStartIndZ=(float)startIndZ;
 #pragma unroll
     for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
     {
@@ -213,6 +215,23 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
         // We know the index of the detector (u,v). Start from there.
         realDaux.x=-(DSD-DSO);
         
+        // "XYZ" in the scaled coordinate system, rotated with the projection angle, is affine in the voxel's indices,
+        // and so is the vector from the source to the voxel: compute it for the first voxel of the column, then step
+        // it by deltaZ (at most VOXELS_PER_THREAD-1 steps). It was rebuilt for every voxel from the indices.
+        float vectX=xyzOrigin.x+fIndX*deltaX.x+fIndY*deltaY.x+fStartIndZ*deltaZ.x -S.x;
+        float vectY=xyzOrigin.y+fIndX*deltaX.y+fIndY*deltaY.y+fStartIndZ*deltaZ.y-COR/geo.dDetecU -S.y;
+        float vectZ=xyzOrigin.z+fIndX*deltaX.z+fIndY*deltaY.z+fStartIndZ*deltaZ.z -S.z;
+        const float tNum=DSO-DSD-S.x;
+        const float u0=S.y+(float)geo.nDetecU*0.5f;
+        const float v0=S.z+(float)geo.nDetecV*0.5f;
+        // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
+        const float fAlpha=(float)indAlpha+0.5f;
+        //Real coordinates of Voxel: x and y are the same for the whole column, z steps by dVoxelZ.
+        Point3D realvoxel;
+        realvoxel.x=realvoxel_init.x+fIndX*geo.dVoxelX;
+        realvoxel.y=realvoxel_init.y+fIndY*geo.dVoxelY;
+        realvoxel.z=realvoxel_init.z+fStartIndZ*geo.dVoxelZ;
+        
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
 #pragma unroll
         for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
@@ -224,30 +243,15 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             if(indZ>=geo.nVoxelZ)
                 break;   // break the loop.
             
-            // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
-            Point3D P;
-            P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
-            P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
-            
-            // This is the vector defining the line from the source to the Voxel
-            float vectX,vectY,vectZ;
-            vectX=(P.x -S.x);
-            vectY=(P.y -S.y);
-            vectZ=(P.z -S.z);
-            
             // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-            float t=__fdividef(DSO-DSD-S.x,vectX);
-            float y,z;
-            y=vectY*t+S.y;
-            z=vectZ*t+S.z;
-            float u,v;
-            u=y+(float)geo.nDetecU*0.5f;
-            v=z+(float)geo.nDetecV*0.5f;
+            float t=__fdividef(tNum,vectX);
+            float u=vectY*t+u0;
+            float v=vectZ*t+v0;
+            vectX+=deltaZ.x; vectY+=deltaZ.y; vectZ+=deltaZ.z;
 #if IS_FOR_MATLAB_TIGRE
-            float sample=tex3D<float>(tex, v, u ,indAlpha+0.5f);
+            float sample=tex3D<float>(tex, v, u ,fAlpha);
 #else
-            float sample=tex3D<float>(tex, u, v ,indAlpha+0.5f);
+            float sample=tex3D<float>(tex, u, v ,fAlpha);
 #endif
             float weight=0;
             //
@@ -256,12 +260,6 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             // IMPORTANT: The weights are almost 50% of the computational time. Is there a way of speeding this up??
             //
             //Real coordinates of Voxel. Instead of reverting the transformation, its less math (faster) to compute it from the indexes.
-            Point3D realvoxel;
-            
-            realvoxel.x=realvoxel_init.x+indX*geo.dVoxelX;
-            realvoxel.y=realvoxel_init.y+indY*geo.dVoxelY;
-            realvoxel.z=realvoxel_init.z+indZ*geo.dVoxelZ;
-            
             
             
             realDaux.y=(-geo.sDetecU+geo.dDetecU)*0.5f + u*geo.dDetecU +uv0Offset.x;
@@ -281,6 +279,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             // Get Value in the computed (U,V) and multiply by the corresponding weight.
             // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
             voxelColumn[colIdx]+=sample* weight;
+            realvoxel.z+=geo.dVoxelZ;
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections

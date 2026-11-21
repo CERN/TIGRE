@@ -168,6 +168,8 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
     // work on them (update them by computing values from multiple projections) locally - avoiding main memory reads/writes
     
     unsigned long colIdx;
+    // The voxel's indices as floats, converted once per thread (they were converted for every voxel and projection).
+    const float fIndX=(float)indX, fIndY=(float)indY, fStartIndZ=(float)startIndZ;
 #pragma unroll
     for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
     {
@@ -207,6 +209,26 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         float DSO = projSinCosArrayDev[5*projNumber+4];
         
         float auxCOR=COR/geo.dDetecU;
+        // "XYZ" in the scaled coordinate system, rotated with the projection angle, is affine in the voxel's indices,
+        // and so is the vector from the source to the voxel: compute it for the first voxel of the column, then step
+        // it by deltaZ (at most VOXELS_PER_THREAD-1 steps). It was rebuilt for every voxel from the indices.
+        float vectX=xyzOrigin.x+fIndX*deltaX.x+fIndY*deltaY.x+fStartIndZ*deltaZ.x -S.x;
+        float vectY=xyzOrigin.y+fIndX*deltaX.y+fIndY*deltaY.y+fStartIndZ*deltaZ.y-auxCOR -S.y;
+        float vectZ=xyzOrigin.z+fIndX*deltaX.z+fIndY*deltaY.z+fStartIndZ*deltaZ.z -S.z;
+        const float tNum=DSO-DSD-S.x;
+        const float u0=S.y+(float)geo.nDetecU*0.5f;
+        const float v0=S.z+(float)geo.nDetecV*0.5f;
+        
+        // The FDK weight depends on the voxel's x and y only: the same for the whole column.
+        float weight;
+        float realx,realy;
+        realx=-(geo.sVoxelX-geo.dVoxelX)*0.5f  +fIndX*geo.dVoxelX   +xyzOffset.x;
+        realy=-(geo.sVoxelY-geo.dVoxelY)*0.5f  +fIndY*geo.dVoxelY   +xyzOffset.y+COR;
+        weight=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
+        weight=__frcp_rd(weight*weight);
+        // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
+        const float fAlpha=(float)indAlpha+0.5f;
+        
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
 #pragma unroll
         for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
@@ -218,44 +240,18 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             if(indZ>=geo.nVoxelZ)
                 break;   // break the loop.
             
-            // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
-            Point3D P;
-            P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-auxCOR;
-            P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
-            
-            // This is the vector defining the line from the source to the Voxel
-            float vectX,vectY,vectZ;
-            vectX=(P.x -S.x);
-            vectY=(P.y -S.y);
-            vectZ=(P.z -S.z);
-            
             // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-            float t=__fdividef(DSO-DSD-S.x,vectX);
-            float y,z;
-            y=vectY*t+S.y;
-            z=vectZ*t+S.z;
-            float u,v;
-            u=y+(float)geo.nDetecU*0.5f;
-            v=z+(float)geo.nDetecV*0.5f;
-            
-            float weight;
-            float realx,realy;
-            realx=-(geo.sVoxelX-geo.dVoxelX)*0.5f  +indX*geo.dVoxelX   +xyzOffset.x;
-            realy=-(geo.sVoxelY-geo.dVoxelY)*0.5f  +indY*geo.dVoxelY   +xyzOffset.y+COR;
-            
-            weight=__fdividef(DSO+realy*sinalpha-realx*cosalpha,DSO);
-            
-            weight=__frcp_rd(weight*weight);
+            float t=__fdividef(tNum,vectX);
+            float u=vectY*t+u0;
+            float v=vectZ*t+v0;
             
             // Get Value in the computed (U,V) and multiply by the corresponding weight.
-            // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
-            
 #if IS_FOR_MATLAB_TIGRE
-            voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,indAlpha+0.5f)*weight;
+            voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,fAlpha)*weight;
 #else
-            voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,indAlpha+0.5f)*weight;
+            voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,fAlpha)*weight;
 #endif
+            vectX+=deltaZ.x; vectY+=deltaZ.y; vectZ+=deltaZ.z;
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
