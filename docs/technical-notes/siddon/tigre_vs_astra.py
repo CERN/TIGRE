@@ -32,6 +32,7 @@ Usage (run it outside the TIGRE source tree, so that the installed TIGRE is impo
     python tigre_vs_astra.py --out win.json                   # 256^3 and 512^3, on 1 GPU and on 2 if present
     python tigre_vs_astra.py --sizes 256 512 1024 --out linux.json
     python tigre_vs_astra.py --report win.json linux.json --latex astra_results.tex
+    python tigre_vs_astra.py --report win.json linux.json --latex astra_results.tex --latex-calls "TIGRE fp Siddon"
 
 ``--report`` prints saved results again and, with ``--latex``, writes the tables for the technical note.
 GPUs are 0 and 1 of the visible ones: use CUDA_VISIBLE_DEVICES to pick others.
@@ -461,35 +462,43 @@ def print_report(res):
           "scaling ASTRA's by 'scale' (a check that the same problem was solved, not an accuracy measure).")
 
 
-def latex_tables(results, ops):
-    """One table per results file: the pairs of the operations in ops, NumPy rows then GPU-tensor rows."""
+def latex_tables(results, ops, calls=None):
+    """One table per results file: the pairs of the operations in ops (only the TIGRE calls in calls, if given),
+    NumPy rows then GPU-tensor rows. With a single call, the rows are (image, arrays) and the call is named in the
+    caption."""
     out = []
     labels = {"TIGRE fp Siddon": "fp, Siddon", "TIGRE fp interpolated": "fp, interpolated",
               "TIGRE bp matched": "bp, matched", "TIGRE bp FDK": "bp, FDK weights", "TIGRE fdk": "FDK"}
+    titles = {"TIGRE fp Siddon": "forward projection, TIGRE's Siddon projector against ASTRA's",
+              "TIGRE fp interpolated": "forward projection, TIGRE's interpolated projector against ASTRA's",
+              "TIGRE bp matched": "backprojection, TIGRE's matched weights against ASTRA's",
+              "TIGRE bp FDK": "backprojection, TIGRE's FDK weights against ASTRA's",
+              "TIGRE fdk": "FDK reconstruction"}
+    pairs = [p for p in PAIRS if p[0] in ops and (not calls or p[1] in calls)]
+    single = len(pairs) == 1
     for res in results:
         m = res["meta"]
         gcounts = sorted({r["gpus"] for r in res["runs"] if r["mode"] == "host"})
         cols = "ll" + "rrc" * len(gcounts)
+        what = (titles[pairs[0][1]] + ", ") if single else ""
         lines = [r"\begin{table}[h]", r"\centering",
-                 r"\caption{\label{tab:astra-%s}TIGRE against ASTRA, %s (%s). Time of the whole call, %d angles; "
+                 r"\caption{\label{tab:astra-%s}TIGRE against ASTRA, %s (%s): %s%d angles. Time of the whole call, "
                  r"median over %d rounds. Ratio: TIGRE time over ASTRA time, mean and 95\%% confidence interval "
-                 r"over rounds (below 1: TIGRE faster). ``tensors'': PyTorch GPU tensors in and out, no host "
-                 r"copies; otherwise NumPy arrays.}" % (
-                     m["label"], _tex(gpu_name(m["gpus"][0])), _tex(m["platform"].split("-")[0]),
+                 r"over rounds (below 1: TIGRE faster). NumPy: arrays in host memory, copies to and from the GPUs "
+                 r"included; tensors: PyTorch GPU tensors in and out, no copies.}" % (
+                     m["label"], _tex(gpu_name(m["gpus"][0])), _tex(m["platform"].split("-")[0]), what,
                      res["runs"][0]["angles"] if res["runs"] else 0, m["rounds"]),
                  r"\small\setlength{\tabcolsep}{4pt}", r"\begin{tabular}{%s}" % cols, r"\toprule"]
         lines.append("& & " + " & ".join(r"\multicolumn{3}{c}{%d GPU%s}" % (g, "s" if g > 1 else "")
                                          for g in gcounts) + r"\\")
         lines.append("".join(r"\cmidrule(lr){%d-%d}" % (3 + 3 * i, 5 + 3 * i) for i in range(len(gcounts))))
-        lines.append("image & TIGRE operation & " + " & ".join(["TIGRE ms & ASTRA ms & ratio"] * len(gcounts))
-                     + r"\\")
+        lines.append("image & %s & " % ("arrays" if single else "TIGRE operation")
+                     + " & ".join(["TIGRE ms & ASTRA ms & ratio"] * len(gcounts)) + r"\\")
         lines.append(r"\midrule")
-        for mode in ("host", "device"):
-            for n in sorted({r["n"] for r in res["runs"] if r["mode"] == mode}):
-                first = True
-                for op, tname, aname in PAIRS:
-                    if op not in ops:
-                        continue
+        for n in sorted({r["n"] for r in res["runs"]}):
+            first = True
+            for mode in ("host", "device"):
+                for op, tname, aname in pairs:
                     cells = []
                     any_value = False
                     for g in gcounts:
@@ -504,9 +513,13 @@ def latex_tables(results, ops):
                                                                          st["mean"], st["ci"]))
                     if not any_value:
                         continue
-                    image = (r"$%d^3$%s" % (n, ", tensors" if mode == "device" else "")) if first else ""
+                    image = (r"$%d^3$" % n) if first else ""
                     first = False
-                    lines.append("%s & %s & %s\\\\" % (image, labels[tname], " & ".join(cells)))
+                    if single:
+                        second = "NumPy" if mode == "host" else "tensors"
+                    else:
+                        second = labels[tname] + (", tensors" if mode == "device" else "")
+                    lines.append("%s & %s & %s\\\\" % (image, second, " & ".join(cells)))
         lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}", ""]
         out.append("\n".join(lines))
     return "\n".join(out)
@@ -557,6 +570,8 @@ def main():
     p.add_argument("--report", nargs="+", metavar="JSON", help="print saved results instead of running")
     p.add_argument("--latex", metavar="TEX", help="with --report: write the LaTeX tables here")
     p.add_argument("--latex-ops", nargs="+", default=["fp"], choices=OPS)
+    p.add_argument("--latex-calls", nargs="+", choices=[t for _, t, _ in PAIRS], metavar="CALL",
+                   help='only these TIGRE calls in the tables, e.g. "TIGRE fp Siddon"')
     args = p.parse_args()
 
     if args.report:
@@ -568,7 +583,7 @@ def main():
             print_report(res)
         if args.latex:
             with open(args.latex, "w") as fh:
-                fh.write(latex_tables(results, args.latex_ops))
+                fh.write(latex_tables(results, args.latex_ops, args.latex_calls))
             print("\nwrote " + args.latex)
         return
 

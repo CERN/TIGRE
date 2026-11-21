@@ -33,9 +33,10 @@ thank you.
 
 ### Changed
 - Backprojection (`Atb`, cone beam) is faster: the kernels step each voxel's position up its column instead of
-  rebuilding it from the indices, and `matched` computes its weight from numbers the kernel already has. Kernel
-  time: `matched` 0.77 (RTX 4070) and 0.65 (Quadro RTX 6000) of before, FDK weights 0.95 and 0.86. Results
-  change by float rounding (~5e-5 of the maximum), and `matched` as described under Fixed.
+  rebuilding it from the indices, the per-projection set-up is precomputed on the host, and `matched` computes its
+  weight from numbers the kernel already has. Kernel time, RTX 4070: `matched` 0.73 of before, FDK weights 0.91;
+  Quadro RTX 6000, measured before the host precomputation: 0.65 and 0.86. Results change by float rounding
+  (~5e-5 of the maximum), and `matched` as described under Fixed.
 - `Ax` and `Atb` with NumPy arrays no longer check `np.isreal` on the input, which the `float32` check already
   implies: it allocated two arrays the size of the input on every call (~0.1 s per call at 512³).
 - `minTV`/`AwminTV` (the TV step of ASD_POCS, OS_ASD_POCS, AwASD_POCS, ...): the first and last

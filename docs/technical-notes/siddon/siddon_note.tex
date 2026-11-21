@@ -824,30 +824,36 @@ TIGRE's original parallel-beam kernel had extra corrections in its initialisatio
 \label{sec:astra}
 
 The comparisons above are between two versions of TIGRE. To place the result among GPU projectors in common
-use, we also timed TIGRE against the ASTRA Toolbox~\cite{astra2016} (version 2.5.0) on the same problems.
-ASTRA's cone-beam GPU forward projector is ray-driven with Joseph-type interpolation~\cite{joseph1982}, not an
-exact intersection-length method, so this compares projectors used for the same purpose rather than two
-implementations of one algorithm; TIGRE's own interpolated projector, which samples the ray at fixed steps
-with trilinear interpolation, is reported alongside.
+use, we also timed TIGRE's Siddon projector against the forward projector of the ASTRA Toolbox~\cite{astra2016}
+(version 2.5.0) on the same problems. ASTRA's cone-beam GPU forward projector is ray-driven with Joseph-type
+interpolation~\cite{joseph1982}, not an exact intersection-length method, so this compares projectors used for
+the same purpose rather than two implementations of one algorithm.
 
 Both toolboxes ran in one process, on the cone-beam geometry of the previous sections at $n^3$ voxels with 360
-angles, on one GPU and on two. Inputs and outputs were host arrays, so the time includes the copies to and from
+angles, on one GPU and, on the Linux system, on two. Inputs and outputs were host arrays, so the time includes the copies to and from
 the GPUs, which is how most users call either toolbox; on one GPU we also timed PyTorch GPU tensors in and out,
 with no host copies. ASTRA's angle and detector conventions were matched to TIGRE's on a small problem, by
 trying the eight angle conventions and four detector flips and keeping the one under which the projections of
 an asymmetric image agree, and at every size the outputs of the two toolboxes were compared, to check that both
 solved the same problem. Each round ran every operation of both toolboxes, alternating which went first; we
 report the median time and the ratio of the TIGRE time to the ASTRA time, as a mean over rounds with a 95\%
-confidence interval. The script, \path{tigre_vs_astra.py}, is next to this note; it also times
-backprojection and FDK reconstruction, which are not the subject of this note.
+confidence interval. The script, \path{tigre_vs_astra.py}, is next to this note; it also times TIGRE's
+interpolated projector, backprojection and FDK reconstruction, which are not the subject of this note.
 
 \IfFileExists{astra_results.tex}{\input{astra_results.tex}}{%
 \begin{center}\fbox{\parbox{0.9\linewidth}{\centering\small
 Results pending: Table of TIGRE against ASTRA on one and two GPUs, from \path{tigre_vs_astra.py}.}}
 \end{center}}
 
-% TODO (Ander, before 3.3.0): discuss the results here once astra_results.tex exists, and, if relevant,
-% mention them in the abstract and the conclusion.
+Tables~\ref{tab:astra-windows} and~\ref{tab:astra-linux} give the results, for TIGRE 3.3.0. On one GPU, TIGRE's
+exact projector is faster than ASTRA's interpolating one in every case but one: it takes 0.53--0.92 of ASTRA's
+time on the RTX~4070, and 0.55--0.89 on the Quadro RTX~6000; the exception is GPU tensors at $512^3$ on the Quadro
+RTX~6000, where the two are equal within the confidence interval ($1.07\pm0.10$). The advantage grows with the
+image: at $1024^3$, TIGRE takes 0.55 of ASTRA's time. ASTRA gains more from a second GPU, whose time drops by a
+factor of 1.6--1.7 against 1.2--1.3 for TIGRE, so that on two GPUs the two are on par at $512^3$
+($1.10\pm0.24$) and TIGRE is faster at $1024^3$ ($0.77\pm0.04$); we did not investigate this difference. The
+outputs of the two toolboxes agreed to within $2.2\times10^{-3}$ (relative $L_2$ difference after a
+least-squares scale), the difference between the two projection models.
 
 \section{Discussion}
 \label{sec:discussion}
@@ -893,7 +899,8 @@ Amanatides and Woo and the direct evaluation of crossings of Siddon's original m
 combine them on a GPU without extra cost, by organising the step around one convergent memory read, with
 floating-point voxel centres and 32-bit indices. In TIGRE the revised projector is consistent for every ray,
 about 100 times more accurate, and 1.4--6.5 times faster, depending on the platform; most of the speed comes
-from the GPU arrangement, not from the algorithm.
+from the GPU arrangement, not from the algorithm. On one GPU it is also faster than the interpolating forward
+projector of the ASTRA Toolbox, by up to a factor of 1.9 at the sizes tested.
 
 \section*{Code availability}
 The implementation is part of TIGRE, \url{https://github.com/CERN/TIGRE}, from pull request \#865. The cone-beam kernel is in
