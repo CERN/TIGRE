@@ -244,6 +244,7 @@ def make_calls(mode, n, nang, devices, conv, ops):
             return np.empty((n, n, n), dtype=np.float32)
 
         sync = lambda: None  # noqa: E731
+        release = lambda: None  # noqa: E731
         kw = {"gpuids": ids}
     else:
         import torch
@@ -261,6 +262,9 @@ def make_calls(mode, n, nang, devices, conv, ops):
             return torch.empty((n, n, n), dtype=torch.float32, device=dev)
 
         sync = lambda: torch.cuda.synchronize(dev)  # noqa: E731
+        # Outputs freed by Python go back to PyTorch's cache, where TIGRE and ASTRA (cudaMalloc) cannot use them:
+        # return them to the GPU between calls (not timed).
+        release = torch.cuda.empty_cache
         kw = {}
 
     def done(r):
@@ -310,13 +314,13 @@ def make_calls(mode, n, nang, devices, conv, ops):
     def input_checksum():
         return float(_numpy(proj_a).sum(dtype=np.float64)), float(_numpy(proj_t).sum(dtype=np.float64))
 
-    return calls, cleanup, input_checksum, conv
+    return calls, cleanup, input_checksum, conv, release
 
 
 def bench(mode, n, nang, devices, conv, ops, rounds, reps):
     run = {"mode": mode, "n": n, "angles": nang, "gpus": len(devices), "times": {}, "agree": {}, "errors": {}}
     try:
-        calls, cleanup, checksum, conv = make_calls(mode, n, nang, devices, conv, ops)
+        calls, cleanup, checksum, conv, release = make_calls(mode, n, nang, devices, conv, ops)
     except Exception as e:  # e.g. out of memory for the inputs
         run["errors"]["setup"] = "{}: {}".format(type(e).__name__, e)
         print("  setup failed: " + run["errors"]["setup"])
@@ -344,7 +348,9 @@ def bench(mode, n, nang, devices, conv, ops, rounds, reps):
                     s, rel = agreement(out, ref_t)
                     run["agree"][tname] = {"agree": rel, "scale": s}
                 del out
+                release()
             del ref
+            release()
         names = [k for k, v in ok.items() if v]
         run["times"] = {k: [] for k in names}
         for r in range(rounds):
@@ -353,7 +359,15 @@ def bench(mode, n, nang, devices, conv, ops, rounds, reps):
                 tigre_first = r % 2 == 0
                 group.sort(key=lambda k: (k.startswith("ASTRA") == tigre_first, k))
                 for k in group:
-                    run["times"][k].append(_timed(calls[k], reps))
+                    if k not in run["times"]:
+                        continue  # failed in an earlier round
+                    try:
+                        run["times"][k].append(_timed(calls[k], reps, release))
+                    except Exception as e:  # e.g. out of GPU memory: drop this call, keep the others
+                        run["errors"][k] = "{}: {}".format(type(e).__name__, e)
+                        print("  {} failed in round {}: {}".format(k, r + 1, run["errors"][k]))
+                        del run["times"][k]
+                        release()
             print("    round {}/{}".format(r + 1, rounds), flush=True)
         after = checksum()
         if after != before:
@@ -373,13 +387,14 @@ def _try(f, name, run):
         return None
 
 
-def _timed(f, reps):
+def _timed(f, reps, release):
     ts = []
     for _ in range(reps):
         t0 = time.perf_counter()
         r = f()
         ts.append(time.perf_counter() - t0)
         del r
+        release()
     return statistics.median(ts)
 
 
