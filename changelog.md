@@ -7,6 +7,8 @@ thank you.
 
 ## Unreleased
 
+## 3.3.0 (2026-11-21)
+
 ### Added
 - `TIGRE_CUDA_ARCH` (Python build and MATLAB `Compile`): compile only for the given GPU architectures (e.g.
   `89`, `75,89`, or `native`), several times faster, for development and testing. Default unchanged: every
@@ -31,9 +33,10 @@ thank you.
 
 ### Changed
 - Backprojection (`Atb`, cone beam) is faster: the kernels step each voxel's position up its column instead of
-  rebuilding it from the indices, and `matched` computes its weight from numbers the kernel already has. Kernel
-  time: `matched` 0.77 (RTX 4070) and 0.65 (Quadro RTX 6000) of before, FDK weights 0.95 and 0.86. Results
-  change by float rounding (~5e-5 of the maximum), and `matched` as described under Fixed.
+  rebuilding it from the indices, the per-projection set-up is precomputed on the host, and `matched` computes its
+  weight from numbers the kernel already has. Kernel time, RTX 4070: `matched` 0.73 of before, FDK weights 0.91;
+  Quadro RTX 6000, measured before the host precomputation: 0.65 and 0.86. Results change by float rounding
+  (~5e-5 of the maximum), and `matched` as described under Fixed.
 - `Ax` and `Atb` with NumPy arrays no longer check `np.isreal` on the input, which the `float32` check already
   implies: it allocated two arrays the size of the input on every call (~0.1 s per call at 512³).
 - `minTV`/`AwminTV` (the TV step of ASD_POCS, OS_ASD_POCS, AwASD_POCS, ...): the first and last
@@ -126,17 +129,12 @@ thank you.
   that project one angle at a time (SART, ASD_POCS, AwASD_POCS) then ran on one GPU after the
   first angle, for the projections and for the TV step. They now trim a copy (#855).
 - `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB, used by FISTA and SART-TV), when the
-  image did not fit on the GPU and was split in pieces: a piece read its halo slices from host
-  memory that the previous piece had already advanced, so the result differed from the unsplit
-  one next to the joins (up to ~2e-1 of the maximum). It now gives the unsplit result exactly
-  (#863).
-- `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB, used by FISTA and SART-TV), when the
-  image did not fit on the GPU and was split in pieces: for the last piece it zeroed a dual
-  variable instead of the input, and it did not wait for each piece's results to reach host
-  memory before the next piece read from it. The result differed from the unsplit one across
-  the whole volume (e.g. 7.6e-2 of the maximum with 100 MB free); now only next to the joins
-  between pieces and at the first and last slice (4.7e-2 at the worst slice; #863 tracks the
-  rest). Based on #806.
+  image did not fit on the GPU and was split in pieces: for the last piece it zeroed a dual variable
+  instead of the input; it did not wait for each piece's results to reach host memory before the next
+  piece read from it; and a piece read its halo slices from host memory that the previous piece had
+  already advanced. The result differed from the unsplit one across the whole volume (e.g. 7.6e-2 of
+  the maximum with 100 MB free, up to ~2e-1 next to the joins). It now gives the unsplit result exactly
+  (#806, #863).
 - Cone-beam Siddon `Ax` got some rays wrong (by up to ~20%): for rays entering the image
   exactly on a voxel boundary, the first voxel and the first boundary crossings disagreed.
   Without splitting this was rare (e.g. 1 in 50,000 rays, 256³, off by up to 14%); when the

@@ -30,10 +30,8 @@
 \algrenewcommand\algorithmicfor{\textbf{for}}
 
 \title{Siddon--Jacobs ray tracing on GPUs:\\a technical note on a consistent and accurate implementation}
-\author[1]{Ander Biguri}
-\author[2]{Claude}
-\affil[1]{Department of Applied Mathematics and Theoretical Physics (DAMTP), University of Cambridge}
-\affil[2]{Anthropic}
+\author{Ander Biguri}
+\affil{Department of Applied Mathematics and Theoretical Physics (DAMTP), University of Cambridge}
 \date{November 2026\\[4pt]\small TIGRE technical note. Accompanies CERN/TIGRE pull request \#865 (issue \#859).}
 
 \begin{document}
@@ -822,6 +820,41 @@ new kernel takes 51--59\% of the original's time on Windows and 21--23\% on Linu
 kernel time become 355\,ms); on Windows its gain does not shrink with image size, and on Linux only slightly.
 TIGRE's original parallel-beam kernel had extra corrections in its initialisation.
 
+\subsection{Comparison with ASTRA}
+\label{sec:astra}
+
+The comparisons above are between two versions of TIGRE. To place the result among GPU projectors in common
+use, we also timed TIGRE's Siddon projector against the forward projector of the ASTRA Toolbox~\cite{astra2016}
+(version 2.5.0) on the same problems. ASTRA's cone-beam GPU forward projector is ray-driven with Joseph-type
+interpolation~\cite{joseph1982}, not an exact intersection-length method, so this compares projectors used for
+the same purpose rather than two implementations of one algorithm.
+
+Both toolboxes ran in one process, on the cone-beam geometry of the previous sections at $n^3$ voxels with 360
+angles, on one GPU and, on the Linux system, on two. Inputs and outputs were host arrays, so the time includes the copies to and from
+the GPUs, which is how most users call either toolbox; on one GPU we also timed PyTorch GPU tensors in and out,
+with no host copies. ASTRA's angle and detector conventions were matched to TIGRE's on a small problem, by
+trying the eight angle conventions and four detector flips and keeping the one under which the projections of
+an asymmetric image agree, and at every size the outputs of the two toolboxes were compared, to check that both
+solved the same problem. Each round ran every operation of both toolboxes, alternating which went first; we
+report the median time and the ratio of the TIGRE time to the ASTRA time, as a mean over rounds with a 95\%
+confidence interval. The script, \path{tigre_vs_astra.py}, is next to this note; it also times TIGRE's
+interpolated projector, backprojection and FDK reconstruction, which are not the subject of this note.
+
+\IfFileExists{astra_results.tex}{\input{astra_results.tex}}{%
+\begin{center}\fbox{\parbox{0.9\linewidth}{\centering\small
+Results pending: Table of TIGRE against ASTRA on one and two GPUs, from \path{tigre_vs_astra.py}.}}
+\end{center}}
+
+Tables~\ref{tab:astra-windows} and~\ref{tab:astra-linux} give the results, for TIGRE 3.3.0. On one GPU, TIGRE's
+exact projector is faster than ASTRA's interpolating one in every case but one: it takes 0.53--0.92 of ASTRA's
+time on the RTX~4070, and 0.55--0.89 on the Quadro RTX~6000; the exception is GPU tensors at $512^3$ on the Quadro
+RTX~6000, where the two are equal within the confidence interval ($1.07\pm0.10$). The advantage grows with the
+image: at $1024^3$, TIGRE takes 0.55 of ASTRA's time. ASTRA gains more from a second GPU, whose time drops by a
+factor of 1.6--1.7 against 1.2--1.3 for TIGRE, so that on two GPUs the two are on par at $512^3$
+($1.10\pm0.24$) and TIGRE is faster at $1024^3$ ($0.77\pm0.04$); we did not investigate this difference. The
+outputs of the two toolboxes agreed to within $2.2\times10^{-3}$ (relative $L_2$ difference after a
+least-squares scale), the difference between the two projection models.
+
 \section{Discussion}
 \label{sec:discussion}
 
@@ -846,7 +879,7 @@ elsewhere: the consistent initialisation in Amanatides and Woo and in several CP
 evaluation of crossings in Siddon's method. To the best of our knowledge, none of the implementations we
 examined combines a consistent initialisation, crossings computed without accumulation at the cost of
 Jacobs' traversal, and a loop arranged for SIMT execution. We did not survey implementations systematically,
-and did not benchmark against them.
+and compared speed only with ASTRA (Section~\ref{sec:astra}).
 
 \paragraph{Rays inside a plane.} A ray that lies in a plane between voxels ($r_b=0$, $e_b\in\mathbb Z$) has an
 ambiguous line integral. STIR traces it twice, half a voxel to each side, and averages. Our traversal, like
@@ -866,16 +899,29 @@ Amanatides and Woo and the direct evaluation of crossings of Siddon's original m
 combine them on a GPU without extra cost, by organising the step around one convergent memory read, with
 floating-point voxel centres and 32-bit indices. In TIGRE the revised projector is consistent for every ray,
 about 100 times more accurate, and 1.4--6.5 times faster, depending on the platform; most of the speed comes
-from the GPU arrangement, not from the algorithm.
+from the GPU arrangement, not from the algorithm. On one GPU it is also faster than the interpolating forward
+projector of the ASTRA Toolbox, by up to a factor of 1.9 at the sizes tested.
 
 \section*{Code availability}
 The implementation is part of TIGRE, \url{https://github.com/CERN/TIGRE}, from pull request \#865. The cone-beam kernel is in
 \path{Common/CUDA/Siddon_projection.cu} and the parallel-beam kernel in \path{Common/CUDA/Siddon_projection_parallel.cu}.
+The comparison with ASTRA is \path{docs/technical-notes/siddon/tigre_vs_astra.py}.
 
-\section*{Author contributions}
-A.~Biguri: conceptualisation, direction, testing on hardware, review and editing. Claude (Anthropic, a large
-language model): investigation, analysis, implementation, emulations, benchmarks and the first draft of this
-note, under A.~Biguri's direction.
+\section*{Use of generative AI}
+This work and this note were done with substantial help from Claude (Anthropic), a large language model, used
+as a coding and writing assistant (Claude Opus, through Claude Code and Claude Cowork). Under the author's
+direction, Claude carried out much of the investigation and analysis, wrote the revised kernels and the
+host-side code, wrote the floating-point emulations and the benchmark and test scripts, searched and read the
+literature and other implementations, and wrote the first draft of this note, including the proofs and
+figures.
+
+The author conceived and directed the work, decided what to change and how to present it, ran every test and
+benchmark on GPU hardware (the results reported here), checked the derivations and the results, and revised
+the text. The author takes full responsibility for the content of this note, including any errors. Claude is
+not an author: it cannot take responsibility for the work or for its publication.
+
+\section*{Acknowledgements}
+The author thanks Claude (Anthropic) for its assistance, as described above.
 
 \begin{thebibliography}{99}
 \bibitem{siddon1985fast} R.~L.~Siddon, ``Fast calculation of the exact radiological path for a

@@ -1,0 +1,35 @@
+\begin{table}[h]
+\centering
+\caption{\label{tab:astra-windows}TIGRE against ASTRA, NVIDIA GeForce RTX 4070 (Windows): forward projection, TIGRE's Siddon projector against ASTRA's, 360 angles. Time of the whole call, median over 4 rounds. Ratio: TIGRE time over ASTRA time, mean and 95\% confidence interval over rounds (below 1: TIGRE faster). NumPy: arrays in host memory, copies to and from the GPUs included; tensors: PyTorch GPU tensors in and out, no copies.}
+\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrc}
+\toprule
+& & \multicolumn{3}{c}{1 GPU}\\
+\cmidrule(lr){3-5}
+image & arrays & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+$256^3$ & NumPy & 37 & 55 & $0.68\pm0.05$\\
+ & tensors & 34 & 37 & $0.92\pm0.03$\\
+$512^3$ & NumPy & 267 & 507 & $0.53\pm0.01$\\
+ & tensors & 238 & 406 & $0.58\pm0.01$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\centering
+\caption{\label{tab:astra-linux}TIGRE against ASTRA, Quadro RTX 6000 (Linux): forward projection, TIGRE's Siddon projector against ASTRA's, 360 angles. Time of the whole call, median over 3 rounds. Ratio: TIGRE time over ASTRA time, mean and 95\% confidence interval over rounds (below 1: TIGRE faster). NumPy: arrays in host memory, copies to and from the GPUs included; tensors: PyTorch GPU tensors in and out, no copies.}
+\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrcrrc}
+\toprule
+& & \multicolumn{3}{c}{1 GPU} & \multicolumn{3}{c}{2 GPUs}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+image & arrays & TIGRE ms & ASTRA ms & ratio & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+$512^3$ & NumPy & 417 & 477 & $0.89\pm0.07$ & 325 & 300 & $1.10\pm0.24$\\
+ & tensors & 379 & 359 & $1.07\pm0.10$ & --- & --- & ---\\
+$1024^3$ & NumPy & 1974 & 3607 & $0.55\pm0.00$ & 1654 & 2128 & $0.77\pm0.04$\\
+ & tensors & 1696 & 3023 & $0.56\pm0.01$ & --- & --- & ---\\
+\bottomrule
+\end{tabular}
+\end{table}
