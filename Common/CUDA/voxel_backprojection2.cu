@@ -93,6 +93,7 @@ do { \
     
 // this definitionmust go here.
 void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate, cudaMemcpyKind kind);
+static void matchedKernelParams(const Geometry& geo, int i, Point3D* params);  // see its definition
 
 __global__ void matrixConstantMultiply(const Geometry geo,float* image,float constant){
     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -151,12 +152,15 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
         return;
     
     // We'll keep a local auxiliary array of values of a column of voxels that this thread will update
-    float voxelColumn[VOXELS_PER_THREAD];
+    // Zero-initialised: voxels of the column beyond the image are computed too (no per-voxel check, see below), never stored.
+    float voxelColumn[VOXELS_PER_THREAD] = {0};
     
     // First we need to copy the curent 3D volume values from the column to our auxiliary array so that we can then
     // work on them (update them by computing values from multiple projections) locally - avoiding main memory reads/writes
     
     unsigned long colIdx;
+    // The voxel's indices as floats, converted once per thread (they were converted for every voxel and projection).
+    const float fIndX=(float)indX, fIndY=(float)indY, fStartIndZ=(float)startIndZ;
 #pragma unroll
     for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
     {
@@ -182,105 +186,55 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
         if(indAlpha>=totalNoOfProjections)
             break;
         
-        Point3D deltaX = projParamsArray2Dev[7*projNumber];  // 6*projNumber because we have 6 Point3D values per projection
+        // The projection's parameters, folded on the host (see the main loop): the source-to-voxel vector is
+        // c0 + i*deltaX + j*deltaY + k*deltaZ for voxel (i,j,k), in the scaled coordinate system rotated with the
+        // projection (detector rotation, offsets and COR included).
+        Point3D deltaX = projParamsArray2Dev[7*projNumber];  // 7*projNumber because we have 7 Point3D values per projection
         Point3D deltaY = projParamsArray2Dev[7*projNumber+1];
         Point3D deltaZ = projParamsArray2Dev[7*projNumber+2];
-        Point3D xyzOrigin = projParamsArray2Dev[7*projNumber+3];
-        Point3D xyzOffset = projParamsArray2Dev[7*projNumber+4];
-        Point3D uv0Offset = projParamsArray2Dev[7*projNumber+5];
-        Point3D S = projParamsArray2Dev[7*projNumber+6];
+        Point3D c0     = projParamsArray2Dev[7*projNumber+3];
+        Point3D tuv    = projParamsArray2Dev[7*projNumber+4];  // (DSO-DSD-S.x, S.y+nDetecU/2, S.z+nDetecV/2)
+        Point3D wpar   = projParamsArray2Dev[7*projNumber+5];  // (1/d_n, dDetecU^2, dDetecV^2) for the weight
+        // "XYZ" in the scaled coordinate system, rotated with the projection angle, is affine in the voxel's indices,
+        // and so is the vector from the source to the voxel: compute it for the first voxel of the column, then step
+        // it by deltaZ (at most VOXELS_PER_THREAD-1 steps). It was rebuilt for every voxel from the indices.
+        float vectX=c0.x+fIndX*deltaX.x+fIndY*deltaY.x+fStartIndZ*deltaZ.x;
+        float vectY=c0.y+fIndX*deltaX.y+fIndY*deltaY.y+fStartIndZ*deltaZ.y;
+        float vectZ=c0.z+fIndX*deltaX.z+fIndY*deltaY.z+fStartIndZ*deltaZ.z;
+        const float tNum=tuv.x, u0=tuv.y, v0=tuv.z;
+        // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
+        const float fAlpha=(float)indAlpha+0.5f;
         
-        float sinalpha = projSinCosArray2Dev[5*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
-        float cosalpha = projSinCosArray2Dev[5*projNumber+1];
-        float COR = projSinCosArray2Dev[5*projNumber+2];
-        float DSD = projSinCosArray2Dev[5*projNumber+3];
-        float DSO = projSinCosArray2Dev[5*projNumber+4];
-        // Precomputations for the weights:
-        //Real coords of Source
-        // We already have S.x (geo.DSO), and S.y and S.z are always zero. we just need to rotate
-        Point3D realS;
-        realS.x= DSO*cosalpha;
-        realS.y=-DSO*sinalpha;
-        realS.z=0;
-        
-        
-        Point3D realvoxel_init;
-        realvoxel_init.x=-geo.sVoxelX/2+geo.dVoxelX/2+xyzOffset.x;
-        realvoxel_init.y=-geo.sVoxelY/2+geo.dVoxelY/2+xyzOffset.y;
-        realvoxel_init.z=-geo.sVoxelZ/2+geo.dVoxelZ/2+xyzOffset.z;
-        // Real XYZ coordinates of Detector.
-        Point3D realD, realDaux;
-        // We know the index of the detector (u,v). Start from there.
-        realDaux.x=-(DSD-DSO);
+        // The weight (see below). In this frame the detector is the plane x=DSO-DSD, whatever the detector's rotation, and
+        // only y and z are scaled (to detector pixels): -tNum is the distance from the source to the detector plane, and
+        // the source-to-voxel distance is |(vectX, vectY*dDetecU, vectZ*dDetecV)|.
+        const float invDn=wpar.x, dU2=wpar.y, dV2=wpar.z;
         
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
 #pragma unroll
+        // No bounds check per voxel: the voxels of a column that lie beyond the image (in the last block in z) are
+        // computed too, harmlessly (a texture read), and never stored (the final loop checks).
         for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
         {
-            unsigned long long indZ = startIndZ + colIdx;
-            
-            // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
-            // be trying to copy the out of bounds values anyway (bounds checks will be done in the final loop where the values go to the main volume)
-            if(indZ>=geo.nVoxelZ)
-                break;   // break the loop.
-            
-            // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
-            Point3D P;
-            P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
-            P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
-            
-            // This is the vector defining the line from the source to the Voxel
-            float vectX,vectY,vectZ;
-            vectX=(P.x -S.x);
-            vectY=(P.y -S.y);
-            vectZ=(P.z -S.z);
-            
             // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-            float t=__fdividef(DSO-DSD-S.x,vectX);
-            float y,z;
-            y=vectY*t+S.y;
-            z=vectZ*t+S.z;
-            float u,v;
-            u=y+(float)geo.nDetecU*0.5f;
-            v=z+(float)geo.nDetecV*0.5f;
+            float t=__fdividef(tNum,vectX);
+            float u=vectY*t+u0;
+            float v=vectZ*t+v0;
 #if IS_FOR_MATLAB_TIGRE
-            float sample=tex3D<float>(tex, v, u ,indAlpha+0.5f);
+            float sample=tex3D<float>(tex, v, u ,fAlpha);
 #else
-            float sample=tex3D<float>(tex, u, v ,indAlpha+0.5f);
+            float sample=tex3D<float>(tex, u, v ,fAlpha);
 #endif
-            float weight=0;
-            //
-            //
-            //
-            // IMPORTANT: The weights are almost 50% of the computational time. Is there a way of speeding this up??
-            //
-            //Real coordinates of Voxel. Instead of reverting the transformation, its less math (faster) to compute it from the indexes.
-            Point3D realvoxel;
-            
-            realvoxel.x=realvoxel_init.x+indX*geo.dVoxelX;
-            realvoxel.y=realvoxel_init.y+indY*geo.dVoxelY;
-            realvoxel.z=realvoxel_init.z+indZ*geo.dVoxelZ;
-            
-            
-            
-            realDaux.y=(-geo.sDetecU+geo.dDetecU)*0.5f + u*geo.dDetecU +uv0Offset.x;
-            realD.z   =(-geo.sDetecV+geo.dDetecV)*0.5f + v*geo.dDetecV +uv0Offset.y;
-            //rotate the detector
-            realD.x= realDaux.x*cosalpha  + realDaux.y*sinalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
-            realD.y=-realDaux.x*sinalpha  + realDaux.y*cosalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
-            float L,lsq;
-            
-            L = __fsqrt_rd( (realS.x-realD.x)*(realS.x-realD.x)+ (realS.y-realD.y)*(realS.y-realD.y)+ (realD.z)*(realD.z)); // Sz=0 always.
-            lsq =  (realS.x-realvoxel.x)*(realS.x-realvoxel.x)
-            + (realS.y-realvoxel.y)*(realS.y-realvoxel.y)
-            + (realS.z-realvoxel.z)*(realS.z-realvoxel.z);
-            
-            weight=__fdividef(L*L*L,(DSD*lsq));
-//             weight=1;
-            // Get Value in the computed (U,V) and multiply by the corresponding weight.
-            // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
+            // Weight L^3/(d_n*|SV|^2): L the distance from the source to where the ray through the voxel meets the
+            // detector, |SV| from the source to the voxel, d_n from the source to the detector plane (DSD if the
+            // detector is not rotated). The ray meets the detector at t times the source-to-voxel vector, so
+            // L=t*|SV| and the weight is t^3*|SV|/d_n. Before, L was rebuilt in world coordinates from (u,v) as if the
+            // detector were not rotated (and the trajectory a circle about z), half a pixel off: off by ~2e-4 for an
+            // unrotated detector and by several % for a rotated one, and about 45 instructions per voxel.
+            float lsq=vectX*vectX+dU2*vectY*vectY+dV2*vectZ*vectZ;
+            float weight=t*t*t*(lsq*rsqrtf(lsq))*invDn;
             voxelColumn[colIdx]+=sample* weight;
+            vectX+=deltaZ.x; vectY+=deltaZ.y; vectZ+=deltaZ.z;
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
@@ -579,7 +533,6 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                             if(currProjNumber_global>=nalpha)
                                 break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
                             
-                            Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec,source;
                             float sinalpha,cosalpha;
                             
                             geoArray[img_slice*deviceCount+dev].alpha=-alphas[currProjNumber_global*3];//we got 3 angles now.
@@ -595,23 +548,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                             projSinCosArray2Host[5*j+3]=geo.DSD[currProjNumber_global];
                             projSinCosArray2Host[5*j+4]=geo.DSO[currProjNumber_global];
                             
-                            computeDeltasCube(geoArray[img_slice*deviceCount+dev],currProjNumber_global,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
-                            
-                            offOrig.x=geo.offOrigX[currProjNumber_global];
-                            offOrig.y=geo.offOrigY[currProjNumber_global];
-                            offOrig.z=geoArray[img_slice*deviceCount+dev].offOrigZ[currProjNumber_global];
-                            
-                            offDetec.x=geo.offDetecU[currProjNumber_global];
-                            offDetec.y=geo.offDetecV[currProjNumber_global];
-                            offDetec.z=0;//unused
-                            
-                            projParamsArray2Host[7*j]  =deltaX;		// 7*j because we have 7 Point3D values per projection
-                            projParamsArray2Host[7*j+1]=deltaY;
-                            projParamsArray2Host[7*j+2]=deltaZ;
-                            projParamsArray2Host[7*j+3]=xyzOrigin;
-                            projParamsArray2Host[7*j+4]=offOrig;
-                            projParamsArray2Host[7*j+5]=offDetec;
-                            projParamsArray2Host[7*j+6]=source;
+                            matchedKernelParams(geoArray[img_slice*deviceCount+dev],currProjNumber_global,&projParamsArray2Host[7*j]);  // 7 Point3D per projection
                             
                         }   // END for (preparing params for kernel call)
                         
@@ -763,6 +700,47 @@ void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cud
         cudaCreateTextureObject(&texImage[dev], &texRes, &texDescr, NULL);
     }
 }
+//______________________________________________________________________________
+//
+//      Function:       matchedKernelParams
+//
+//      Description:    The 7 Point3D that kernelPixelBackprojection reads for projection i (geo: this piece of the
+//                      image, with geo.alpha/theta/psi set for the projection). computeDeltasCube gives the voxel grid
+//                      and the source in the scaled coordinate system rotated with the projection (detector rotation
+//                      and offsets included); the rest is folded here, in double, so that the kernel's setup per
+//                      projection is a few multiply-adds:
+//                        [0..2] deltaX, deltaY, deltaZ: the change of the source-to-voxel vector per voxel index
+//                        [3]    that vector at voxel (0,0,0): xyzOrigin - source, and COR (in detector pixels) in y
+//                        [4]    (DSO-DSD-source.x, source.y+nDetecU/2, source.z+nDetecV/2): t=[4].x/vectX, u=vectY*t+[4].y
+//                        [5]    (1/d_n, dDetecU^2, dDetecV^2) for the weight; d_n=source.x-(DSO-DSD) is the distance
+//                               from the source to the detector plane
+//                        [6]    unused
+//______________________________________________________________________________
+
+static void matchedKernelParams(const Geometry& geo, int i, Point3D* params)
+{
+    Point3D deltaX, deltaY, deltaZ, xyzOrigin, source;
+    computeDeltasCube(geo, i, &xyzOrigin, &deltaX, &deltaY, &deltaZ, &source);
+    const double COR=geo.COR[i], DSO=geo.DSO[i], DSD=geo.DSD[i];
+    Point3D c0, tuv, wpar, unused={0,0,0};
+    c0.x=(float)((double)xyzOrigin.x-(double)source.x);
+    c0.y=(float)((double)xyzOrigin.y-COR/(double)geo.dDetecU-(double)source.y);
+    c0.z=(float)((double)xyzOrigin.z-(double)source.z);
+    tuv.x=(float)(DSO-DSD-(double)source.x);
+    tuv.y=(float)((double)source.y+(double)geo.nDetecU*0.5);
+    tuv.z=(float)((double)source.z+(double)geo.nDetecV*0.5);
+    wpar.x=(float)(1.0/((double)source.x-(DSO-DSD)));
+    wpar.y=(float)((double)geo.dDetecU*(double)geo.dDetecU);
+    wpar.z=(float)((double)geo.dDetecV*(double)geo.dDetecV);
+    params[0]=deltaX;
+    params[1]=deltaY;
+    params[2]=deltaZ;
+    params[3]=c0;
+    params[4]=tuv;
+    params[5]=wpar;
+    params[6]=unused;
+}
+
 #ifndef BACKPROJECTION_HPP
 void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
     

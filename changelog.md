@@ -30,6 +30,12 @@ thank you.
   in pieces along z (before, they failed with a CUDA error) (#286, #295).
 
 ### Changed
+- Backprojection (`Atb`, cone beam) is faster: the kernels step each voxel's position up its column instead of
+  rebuilding it from the indices, and `matched` computes its weight from numbers the kernel already has. Kernel
+  time: `matched` 0.77 (RTX 4070) and 0.65 (Quadro RTX 6000) of before, FDK weights 0.95 and 0.86. Results
+  change by float rounding (~5e-5 of the maximum), and `matched` as described under Fixed.
+- `Ax` and `Atb` with NumPy arrays no longer check `np.isreal` on the input, which the `float32` check already
+  implies: it allocated two arrays the size of the input on every call (~0.1 s per call at 512³).
 - `minTV`/`AwminTV` (the TV step of ASD_POCS, OS_ASD_POCS, AwASD_POCS, ...): the first and last
   z-slice of the image now use the same boundary as x and y (no neighbour beyond the edge). Before, the slices
   beyond the image's ends were read as voxels of value 0, so even a constant image was changed at its first and
@@ -78,6 +84,12 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- `Atb` with `matched` weights used the wrong weight for rotated detectors (`rotDetector`) and for rotation axes
+  that are not z (3-angle `angles`): it rebuilt the detector point as if the detector were not rotated and the
+  source at z=0, and half a pixel off. The weight was off by 1.5-1.8% for a 2-degree roll or pitch, ~6.5% for
+  5 degrees on all three or a 10-degree axis tilt, and 2e-4 for an unrotated detector. It is now exact for any
+  geometry, and `matched` is as close to the adjoint of `Ax` for rotated detectors as for unrotated ones.
+  `matched` results change: ~1e-4 for unrotated detectors, up to several % for rotated ones.
 - `minPICCS` returned NaN when the gradient was zero (e.g. a constant image, or one PICCS had already
   flattened): it divided by the gradient norm without the small constant minTV adds. It now uses minTV's
   normalisation.
