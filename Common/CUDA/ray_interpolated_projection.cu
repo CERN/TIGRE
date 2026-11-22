@@ -58,6 +58,7 @@
 #include "ray_interpolated_projection.hpp"
 #include "TIGRE_common.hpp"
 #include "tigre_release_on_error.hpp"
+#include "launch_shapes.hpp"
 #include <math.h>
 
 #define cudaCheckErrors(msg) \
@@ -409,8 +410,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         
         
         int divU,divV;
-        divU=PIXEL_SIZE_BLOCK;
-        divV=PIXEL_SIZE_BLOCK;
+        tigre::detectorBlockShape(geo.nDetecU, geo.nDetecV, PIXEL_SIZE_BLOCK, &divU, &divV);  // thin detectors (fan beam)
         dim3 grid((geoArray[sp].nDetecU+divU-1)/divU,(geoArray[0].nDetecV+divV-1)/divV,1);
         dim3 block(divU,divV,PROJ_PER_BLOCK);
         
