@@ -774,8 +774,12 @@ void createGeoArray(unsigned int image_splits, Geometry geo,Geometry* geoArray, 
     
     for(unsigned int sp=0;sp<image_splits;sp++){
         geoArray[sp]=geo;
-        // All of them are splitsize, but the last one, possible
-        geoArray[sp].nVoxelZ=((sp+1)*splitsize<geo.nVoxelZ)?  splitsize:  max(geo.nVoxelZ-splitsize*sp,0);
+        // All of them are splitsize, but the last ones, possibly fewer, or none: 5 slices on 4 GPUs are pieces of
+        // 2, 2, 1 and 0 slices (the loops skip empty pieces). Counted in signed arithmetic: nVoxelZ-splitsize*sp
+        // in unsigned wrapped around to a huge value, which max(...,0) kept and int made -1, so the empty piece was
+        // launched with no blocks ("invalid argument") and copied back with a huge size (illegal memory access).
+        const long long rest=(long long)geo.nVoxelZ-(long long)splitsize*sp;
+        geoArray[sp].nVoxelZ=(int)(rest<=0 ? 0 : (rest<(long long)splitsize ? rest : (long long)splitsize));
         geoArray[sp].sVoxelZ= geoArray[sp].nVoxelZ* geoArray[sp].dVoxelZ;
         
         // We need to redefine the offsets, as now each subimage is not aligned in the origin.

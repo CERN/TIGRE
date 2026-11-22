@@ -346,6 +346,8 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
     cudaArray **d_cuArrTex = new cudaArray*[deviceCount]();
     Geometry* geoArray = NULL;
     while (true){
+        // No empty pieces: as many as the piece size needs (5 slices in 4 pieces of 2 would leave the last one empty).
+        splits=(geo.nVoxelZ+(geo.nVoxelZ+splits-1)/splits-1)/((geo.nVoxelZ+splits-1)/splits);
         geoArray = (Geometry*)malloc(splits*sizeof(Geometry));
         splitImage(splits,geo,geoArray,nangles);
         const cudaExtent extent = make_cudaExtent(geoArray[0].nVoxelX, geoArray[0].nVoxelY, geoArray[0].nVoxelZ);
@@ -743,8 +745,10 @@ void splitImage(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned in
     unsigned long splitsize=(geo.nVoxelZ+splits-1)/splits;// ceil if not divisible
     for(unsigned int sp=0;sp<splits;sp++){
         geoArray[sp]=geo;
-        // All of them are splitsize, but the last one, possible
-        geoArray[sp].nVoxelZ=((sp+1)*splitsize<geo.nVoxelZ)?  splitsize:  geo.nVoxelZ-splitsize*sp;
+        // All of them are splitsize, but the last one, possibly fewer (never none: see the callers). Signed: in
+        // unsigned, nVoxelZ-splitsize*sp wraps around for a piece past the end.
+        const long long rest=(long long)geo.nVoxelZ-(long long)splitsize*sp;
+        geoArray[sp].nVoxelZ=(int)(rest<=0 ? 0 : (rest<(long long)splitsize ? rest : (long long)splitsize));
         geoArray[sp].sVoxelZ= geoArray[sp].nVoxelZ* geoArray[sp].dVoxelZ;
         
         // We need to redefine the offsets, as now each subimage is not aligned in the origin.
