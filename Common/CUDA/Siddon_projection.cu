@@ -97,7 +97,7 @@ do { \
      *
      **/
     
-    void CreateTexture(const GpuIds& gpuids,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool alloc, cudaMemcpyKind kind);
+    void CreateTexture(const GpuIds& gpuids,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool alloc, cudaMemcpyKind kind, cudaStream_t* stream);
 
 __constant__ Point3D projParamsArrayDev[4*MAX_PROJ_PER_LAUNCH];  // Dev means it is on device
 
@@ -390,15 +390,6 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
             }
         }
     }
-    for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(devIds[dev]);
-        for (int i = 0; i < 2; ++i){
-            cudaMemset(dProjection[dev*2+i],0,num_bytes_proj);
-            if (!fits_in_memory) cudaMemset(dProjection_accum[dev*2+i],0,num_bytes_proj);
-        }
-        cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
-    }
-    cudaCheckErrors("cudaMalloc projections fail");
     
     
     //Pagelock memory for synchronous copy.
@@ -446,6 +437,16 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
         }
     }
     cudaCheckErrors("Stream creation fail");
+    // Clear the projection buffers on the stream of the kernels that write them (stream[dev*2]): that orders the
+    // clearing before the kernels, so the host does not have to wait for it.
+    for (dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(devIds[dev]);
+        for (int i = 0; i < 2; ++i){
+            cudaMemsetAsync(dProjection[dev*2+i],0,num_bytes_proj,stream[dev*2]);
+            if (!fits_in_memory) cudaMemsetAsync(dProjection_accum[dev*2+i],0,num_bytes_proj,stream[dev*2]);
+        }
+    }
+    cudaCheckErrors("Projection buffer memset fail");
 
     int nangles_device=(nangles+deviceCount-1)/deviceCount;
     int nangles_last_device=(nangles-(deviceCount-1)*nangles_device);
@@ -473,7 +474,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
         linear_idx_start= (size_t)sp*(size_t)geoArray[0].nVoxelX*(size_t)geoArray[0].nVoxelY*(size_t)geoArray[0].nVoxelZ;
         
         
-        CreateTexture(gpuids,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg,false,(gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice));  // arrays allocated above
+        CreateTexture(gpuids,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg,false,(gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice),stream);  // arrays allocated above
         cudaCheckErrors("Texture object creation fail");
         
         
@@ -677,7 +678,9 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
 
 
 
-void CreateTexture(const GpuIds& gpuids,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool alloc, cudaMemcpyKind kind)
+// The copy goes on the stream of each GPU's kernels (stream[2*dev]), which orders it before them: the host does
+// not wait for it.
+void CreateTexture(const GpuIds& gpuids,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool alloc, cudaMemcpyKind kind, cudaStream_t* stream)
 {
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
     const cudaExtent extent = make_cudaExtent(geo.nVoxelX, geo.nVoxelY, geo.nVoxelZ);
@@ -700,7 +703,7 @@ void CreateTexture(const GpuIds& gpuids,const float* imagedata,Geometry geo,cuda
         copyParams.dstArray = d_cuArrTex[dev];
         copyParams.extent   = extent;
         copyParams.kind     = kind;
-        cudaMemcpy3DAsync(&copyParams);
+        cudaMemcpy3DAsync(&copyParams,stream[2*dev]);
     }
     for (unsigned int dev = 0; dev < num_devices; dev++){
         cudaSetDevice(gpuids[dev]);
@@ -723,10 +726,6 @@ void CreateTexture(const GpuIds& gpuids,const float* imagedata,Geometry geo,cuda
         if (texImage[dev]) cudaDestroyTextureObject(texImage[dev]);
         cudaCreateTextureObject(&texImage[dev], &texRes, &texDescr, NULL);
         
-    }
-    for (unsigned int dev = 0; dev < num_devices; dev++){
-        cudaSetDevice(gpuids[dev]);
-        cudaDeviceSynchronize();
     }
     cudaCheckErrors("Texture object creation fail");
 }

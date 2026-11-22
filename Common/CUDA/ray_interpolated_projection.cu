@@ -103,7 +103,7 @@ do { \
      *
      *
      **/
-    void CreateTextureInterp(const GpuIds& gpuids,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool allocate, cudaMemcpyKind kind);
+    void CreateTextureInterp(const GpuIds& gpuids,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool allocate, cudaMemcpyKind kind, cudaStream_t* stream);
 __constant__ Point3D projParamsArrayDev[4*MAX_PROJ_PER_LAUNCH];  // Dev means it is on device
 __constant__ float projFloatsArrayDev[2*MAX_PROJ_PER_LAUNCH];  // Dev means it is on device
 
@@ -323,15 +323,6 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
             }
         }
     }
-    for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(devIds[dev]);
-        for (int i = 0; i < 2; ++i){
-            cudaMemset(dProjection[dev*2+i],0,num_bytes_proj);
-            if (!fits_in_memory) cudaMemset(dProjection_accum[dev*2+i],0,num_bytes_proj);
-        }
-        cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
-    }
-    cudaCheckErrors("cudaMalloc projections fail");
     
     
     
@@ -382,6 +373,16 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         }
     }
     cudaCheckErrors("Stream creation fail");
+    // Clear the projection buffers on the stream of the kernels that write them (stream[dev*2]): that orders the
+    // clearing before the kernels, so the host does not have to wait for it.
+    for (dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(devIds[dev]);
+        for (int i = 0; i < 2; ++i){
+            cudaMemsetAsync(dProjection[dev*2+i],0,num_bytes_proj,stream[dev*2]);
+            if (!fits_in_memory) cudaMemsetAsync(dProjection_accum[dev*2+i],0,num_bytes_proj,stream[dev*2]);
+        }
+    }
+    cudaCheckErrors("Projection buffer memset fail");
     int nangles_device=(nangles+deviceCount-1)/deviceCount;
     int nangles_last_device=(nangles-(deviceCount-1)*nangles_device);
     unsigned int noOfKernelCalls = (nangles_device+projPerLaunch-1)/projPerLaunch;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by projPerLaunch
@@ -407,7 +408,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         size_t linear_idx_start;
         // They are all the same size, except the last one.
         linear_idx_start= (size_t)sp*(size_t)geoArray[0].nVoxelX*(size_t)geoArray[0].nVoxelY*(size_t)geoArray[0].nVoxelZ;
-        CreateTextureInterp(gpuids,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg,false,(gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice));  // arrays allocated above
+        CreateTextureInterp(gpuids,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg,false,(gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice),stream);  // arrays allocated above
         cudaCheckErrors("Texture object creation fail");
         
         
@@ -625,7 +626,9 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
 //     cudaDeviceReset();
     return 0;
 }
-void CreateTextureInterp(const GpuIds& gpuids,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool allocate, cudaMemcpyKind kind)
+// The copy goes on the stream of each GPU's kernels (stream[2*dev]), which orders it before them: the host does
+// not wait for it.
+void CreateTextureInterp(const GpuIds& gpuids,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool allocate, cudaMemcpyKind kind, cudaStream_t* stream)
 {
     const unsigned int num_devices = gpuids.GetLength();
     //size_t size_image=geo.nVoxelX*geo.nVoxelY*geo.nVoxelZ;
@@ -652,7 +655,7 @@ void CreateTextureInterp(const GpuIds& gpuids,const float* imagedata,Geometry ge
         copyParams.dstArray = d_cuArrTex[dev];
         copyParams.extent   = extent;
         copyParams.kind     = kind;
-        cudaMemcpy3DAsync(&copyParams);
+        cudaMemcpy3DAsync(&copyParams,stream[2*dev]);
         //cudaCheckErrors("Texture memory data copy fail");
         //Array creation End
     }
@@ -683,16 +686,6 @@ void CreateTextureInterp(const GpuIds& gpuids,const float* imagedata,Geometry ge
         if (texImage[dev]) cudaDestroyTextureObject(texImage[dev]);
         cudaCreateTextureObject(&texImage[dev], &texRes, &texDescr, NULL);
         cudaCheckErrors("Texture object creation fail");
-    }
-    // Wait for the copies above (made on this thread's default stream): the
-    // kernels run on other streams and would otherwise read the texture while
-    // it is still being filled. This raced always for GPU arrays (device-to-
-    // device copies are fully asynchronous), and for host data whenever the copy
-    // outlived the call (pinned memory, or the last DMA chunk of a pageable
-    // copy). Siddon_projection.cu's CreateTexture already waited here.
-    for (unsigned int dev = 0; dev < num_devices; dev++){
-        cudaSetDevice(gpuids[dev]);
-        cudaDeviceSynchronize();
     }
 }
 

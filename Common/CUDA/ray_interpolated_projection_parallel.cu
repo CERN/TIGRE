@@ -307,15 +307,6 @@ int interpolation_projection_parallel(float* img, Geometry geo, float** result,f
             }
         }
     }
-    for (dev = 0; dev < deviceCount; dev++){
-        cudaSetDevice(devIds[dev]);
-        for (int i = 0; i < 2; ++i){
-            cudaMemset(dProjection[dev*2+i],0,num_bytes_proj);
-            if (!fits_in_memory) cudaMemset(dProjection_accum[dev*2+i],0,num_bytes_proj);
-        }
-        cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
-    }
-    cudaCheckErrors("cudaMalloc projections fail");
 
     // Page-lock the image when it is copied in pieces or to several GPUs: the copies are then faster and asynchronous.
     bool registered=false;
@@ -352,6 +343,16 @@ int interpolation_projection_parallel(float* img, Geometry geo, float** result,f
             cudaStreamCreate(&stream[i+dev*2]);
     }
     cudaCheckErrors("Stream creation fail");
+    // Clear the projection buffers on the stream of the kernels that write them (stream[dev*2]): that orders the
+    // clearing before the kernels, so the host does not have to wait for it.
+    for (dev = 0; dev < deviceCount; dev++){
+        cudaSetDevice(devIds[dev]);
+        for (int i = 0; i < 2; ++i){
+            cudaMemsetAsync(dProjection[dev*2+i],0,num_bytes_proj,stream[dev*2]);
+            if (!fits_in_memory) cudaMemsetAsync(dProjection_accum[dev*2+i],0,num_bytes_proj,stream[dev*2]);
+        }
+    }
+    cudaCheckErrors("Projection buffer memset fail");
 
     // Value-initialised (zeroed) so CreateTextureParallelInterp can tell an empty slot from one
     // holding a texture object it must destroy first.
@@ -623,14 +624,10 @@ void CreateTextureParallelInterp(const int* devs, int ndev, float* image, Geomet
         copyParams.dstArray = d_cuArrTex[dev];
         copyParams.extent   = extent;
         copyParams.kind     = kind;
-        cudaMemcpy3DAsync(&copyParams,stream[dev*2+1]);
+        cudaMemcpy3DAsync(&copyParams,stream[dev*2]);  // the kernels' stream: ordered before them
     }
     for (int dev = 0; dev < ndev; dev++){
         cudaSetDevice(devs[dev]);
-        // Wait for the copy: the kernels run on the other stream and would otherwise read the texture while it is
-        // still being filled (always for GPU arrays, whose device-to-device copies are fully asynchronous, and for
-        // pinned host memory).
-        cudaStreamSynchronize(stream[dev*2+1]);
         cudaResourceDesc    texRes;
         memset(&texRes, 0, sizeof(cudaResourceDesc));
         texRes.resType = cudaResourceTypeArray;
