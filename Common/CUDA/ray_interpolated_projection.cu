@@ -74,6 +74,7 @@ do { \
     
 #define MAXTREADS 1024
 #define PROJ_PER_BLOCK 9
+#define MAX_PROJ_PER_LAUNCH (PROJ_PER_BLOCK*32)  // angles in one launch on small detectors (fan beam)
 #define PIXEL_SIZE_BLOCK 9
     /*GEOMETRY DEFINITION
      *
@@ -102,8 +103,8 @@ do { \
      *
      **/
     void CreateTextureInterp(const GpuIds& gpuids,const float* imagedata,Geometry geo,cudaArray** d_cuArrTex, cudaTextureObject_t *texImage,bool allocate, cudaMemcpyKind kind);
-__constant__ Point3D projParamsArrayDev[4*PROJ_PER_BLOCK];  // Dev means it is on device
-__constant__ float projFloatsArrayDev[2*PROJ_PER_BLOCK];  // Dev means it is on device
+__constant__ Point3D projParamsArrayDev[4*MAX_PROJ_PER_LAUNCH];  // Dev means it is on device
+__constant__ float projFloatsArrayDev[2*MAX_PROJ_PER_LAUNCH];  // Dev means it is on device
 
 
 __global__ void vecAddInPlaceInterp(float *a, float *b, size_t n)
@@ -120,13 +121,14 @@ template<bool sphericalrotation>
         float* detector,
         const int currProjSetNumber,
         const int totalNoOfProjections,
+        const int projPerLaunch,
         cudaTextureObject_t tex){
     
     unsigned long long u = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned long long v = blockIdx.y * blockDim.y + threadIdx.y;
-    unsigned long long projNumber=threadIdx.z;
+    unsigned long long projNumber=blockIdx.z*blockDim.z+threadIdx.z;  // blocks of PROJ_PER_BLOCK angles stacked in z
     
-    if (u>= geo.nDetecU || v>= geo.nDetecV || projNumber>=PROJ_PER_BLOCK)
+    if (u>= geo.nDetecU || v>= geo.nDetecV || projNumber>=(unsigned long long)projPerLaunch)
         return;
     
 #if IS_FOR_MATLAB_TIGRE
@@ -135,7 +137,7 @@ template<bool sphericalrotation>
     size_t idx =  (size_t)(v * (unsigned long long)geo.nDetecU + u)+ projNumber*(unsigned long long)geo.nDetecV *(unsigned long long)geo.nDetecU ;
 #endif
 
-    unsigned long indAlpha = currProjSetNumber*PROJ_PER_BLOCK+projNumber;  // This is the ABSOLUTE projection number in the projection array
+    unsigned long indAlpha = currProjSetNumber*projPerLaunch+projNumber;  // This is the ABSOLUTE projection number in the projection array
     
     if(indAlpha>=totalNoOfProjections)
         return;
@@ -249,9 +251,12 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     
     size_t mem_image=(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
     size_t mem_proj =(unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV * sizeof(float);
+    // Angles per kernel launch: PROJ_PER_BLOCK, or a multiple of it on small detectors (fan beam), whose launches of
+    // PROJ_PER_BLOCK angles are too small to keep the GPU busy (tigre::projectionsPerLaunch).
+    const int projPerLaunch=tigre::projectionsPerLaunch(geo.nDetecV, mem_proj, PROJ_PER_BLOCK, MAX_PROJ_PER_LAUNCH);
     
     // Does everything fit in the GPUs?
-    bool fits_in_memory = mem_image+2*PROJ_PER_BLOCK*mem_proj<mem_GPU_global;
+    bool fits_in_memory = mem_image+2*projPerLaunch*mem_proj<mem_GPU_global;
     unsigned int splits=1;
     if (!fits_in_memory) {
         // Nope nope.
@@ -259,13 +264,13 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         // we need a second projection memory to combine multi-GPU stuff.
         // The smallest working set is the 4 projection buffers and one image slice.
         const size_t mem_slice=(size_t)geo.nVoxelX*(size_t)geo.nVoxelY*sizeof(float);
-        if (mem_GPU_global <= 4*PROJ_PER_BLOCK*mem_proj+mem_slice)
-            tigreNotEnoughGpuMemory("Ax:Interpolated_projection:GPUmemory","Forward projection (interpolated)",4*PROJ_PER_BLOCK*mem_proj+mem_slice,mem_GPU_global);
-        size_t mem_free=mem_GPU_global-4*PROJ_PER_BLOCK*mem_proj;
+        if (mem_GPU_global <= 4*projPerLaunch*mem_proj+mem_slice)
+            tigreNotEnoughGpuMemory("Ax:Interpolated_projection:GPUmemory","Forward projection (interpolated)",4*projPerLaunch*mem_proj+mem_slice,mem_GPU_global);
+        size_t mem_free=mem_GPU_global-4*projPerLaunch*mem_proj;
         splits=mem_image/mem_free+1;// Ceil of the truncation
         if (splits>geo.nVoxelZ) splits=geo.nVoxelZ;  // at least one slice per piece
     }
-    size_t num_bytes_proj = (size_t)PROJ_PER_BLOCK*geo.nDetecU*geo.nDetecV * sizeof(float);
+    size_t num_bytes_proj = (size_t)projPerLaunch*geo.nDetecU*geo.nDetecV * sizeof(float);
     // The image texture (a 3D array on each GPU, for the largest piece) is allocated first. A 3D array needs more
     // GPU memory than its raw size, so it can fail where the estimate above said it fits: then split the image in
     // more pieces and try again, down to one slice per piece. The projection buffers allocated below are tried
@@ -358,10 +363,10 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     Point3D source, deltaU, deltaV, uvOrigin;
     
     Point3D* projParamsArrayHost = 0;
-    cudaMallocHost((void**)&projParamsArrayHost,4*PROJ_PER_BLOCK*sizeof(Point3D));
+    cudaMallocHost((void**)&projParamsArrayHost,4*projPerLaunch*sizeof(Point3D));
     onError.add([projParamsArrayHost]{ cudaFreeHost(projParamsArrayHost); });
     float* projFloatsArrayHost = 0;
-    cudaMallocHost((void**)&projFloatsArrayHost,2*PROJ_PER_BLOCK*sizeof(float));
+    cudaMallocHost((void**)&projFloatsArrayHost,2*projPerLaunch*sizeof(float));
     onError.add([projFloatsArrayHost]{ cudaFreeHost(projFloatsArrayHost); });
     cudaCheckErrors("Error allocating auxiliary constant memory");
     
@@ -382,8 +387,8 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
     cudaCheckErrors("Stream creation fail");
     int nangles_device=(nangles+deviceCount-1)/deviceCount;
     int nangles_last_device=(nangles-(deviceCount-1)*nangles_device);
-    unsigned int noOfKernelCalls = (nangles_device+PROJ_PER_BLOCK-1)/PROJ_PER_BLOCK;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by PROJ_PER_BLOCK
-    unsigned int noOfKernelCallsLastDev = (nangles_last_device+PROJ_PER_BLOCK-1)/PROJ_PER_BLOCK; // we will use this in the memory management.
+    unsigned int noOfKernelCalls = (nangles_device+projPerLaunch-1)/projPerLaunch;  // We'll take care of bounds checking inside the loop if nalpha is not divisible by projPerLaunch
+    unsigned int noOfKernelCallsLastDev = (nangles_last_device+projPerLaunch-1)/projPerLaunch; // we will use this in the memory management.
     int projection_this_block;
 
 
@@ -411,8 +416,8 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         
         int divU,divV;
         tigre::detectorBlockShape(geo.nDetecU, geo.nDetecV, PIXEL_SIZE_BLOCK, &divU, &divV);  // thin detectors (fan beam)
-        dim3 grid((geoArray[sp].nDetecU+divU-1)/divU,(geoArray[0].nDetecV+divV-1)/divV,1);
-        dim3 block(divU,divV,PROJ_PER_BLOCK);
+        dim3 grid((geoArray[sp].nDetecU+divU-1)/divU,(geoArray[0].nDetecV+divV-1)/divV,projPerLaunch/PROJ_PER_BLOCK);
+        dim3 block(divU,divV,PROJ_PER_BLOCK);  // PROJ_PER_BLOCK angles per block, projPerLaunch/PROJ_PER_BLOCK blocks in z
         
         unsigned int proj_global;
         float maxdist;
@@ -423,11 +428,11 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                 float is_spherical=0;
                 cudaSetDevice(gpuids[dev]);
                 
-                for(unsigned int j=0; j<PROJ_PER_BLOCK; j++){
-                    proj_global=(i*PROJ_PER_BLOCK+j)+dev*nangles_device;
+                for(unsigned int j=0; j<projPerLaunch; j++){
+                    proj_global=(i*projPerLaunch+j)+dev*nangles_device;
                     if (proj_global>=nangles)
                         break;
-                     if ((i*PROJ_PER_BLOCK+j)>=nangles_device)
+                     if ((i*projPerLaunch+j)>=nangles_device)
                         break;
                     geoArray[sp].alpha=angles[proj_global*3];
                     geoArray[sp].theta=angles[proj_global*3+1];
@@ -449,17 +454,17 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                     projFloatsArrayHost[2*j+1]=floor(maxdist);
                 }
                 
-                cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*4*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[dev*nStream_device]);
-                cudaMemcpyToSymbolAsync(projFloatsArrayDev, projFloatsArrayHost, sizeof(float)*2*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[dev*nStream_device]);
+                cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*4*projPerLaunch,0,cudaMemcpyHostToDevice,stream[dev*nStream_device]);
+                cudaMemcpyToSymbolAsync(projFloatsArrayDev, projFloatsArrayHost, sizeof(float)*2*projPerLaunch,0,cudaMemcpyHostToDevice,stream[dev*nStream_device]);
                 cudaStreamSynchronize(stream[dev*nStream_device]);
                 
                 
                 //TODO: we could do this around X and Y axis too, but we would need to compute the new axis of rotation (not possible to know from jsut the angles)
                 if (!is_spherical){
-                    kernelPixelDetector<false><<<grid,block,0,stream[dev*nStream_device]>>>(geoArray[sp],dProjection[(i%2)+dev*2],i,nangles_device,texImg[dev]);
+                    kernelPixelDetector<false><<<grid,block,0,stream[dev*nStream_device]>>>(geoArray[sp],dProjection[(i%2)+dev*2],i,nangles_device,projPerLaunch,texImg[dev]);
                 }
                 else{
-                    kernelPixelDetector<true> <<<grid,block,0,stream[dev*nStream_device]>>>(geoArray[sp],dProjection[(i%2)+dev*2],i,nangles_device,texImg[dev]);
+                    kernelPixelDetector<true> <<<grid,block,0,stream[dev*nStream_device]>>>(geoArray[sp],dProjection[(i%2)+dev*2],i,nangles_device,projPerLaunch,texImg[dev]);
                 }
             }
             
@@ -480,16 +485,16 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                 {
                     cudaSetDevice(gpuids[dev]);
                     //Global index of FIRST projection on this set on this GPU
-                    proj_global=i*PROJ_PER_BLOCK+dev*nangles_device;
+                    proj_global=i*projPerLaunch+dev*nangles_device;
                     if(proj_global>=nangles) 
                         break;
 
-                    // Unless its the last projection set, we have PROJ_PER_BLOCK angles. Otherwise...
+                    // Unless its the last projection set, we have projPerLaunch angles. Otherwise...
                     if(i+1==noOfKernelCalls) //is it the last block?
-                        projection_this_block=min(nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK, //the remaining angles that this GPU had to do (almost never PROJ_PER_BLOCK)
+                        projection_this_block=min(nangles_device-(noOfKernelCalls-1)*projPerLaunch, //the remaining angles that this GPU had to do (almost never projPerLaunch)
                                                   nangles-proj_global);                              //or whichever amount is left to finish all (this is for the last GPU)
                     else
-                        projection_this_block=PROJ_PER_BLOCK;
+                        projection_this_block=projPerLaunch;
                     cudaMemcpyAsync(dProjection_accum[(i%2)+dev*2], result[proj_global], (size_t)projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), (gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyHostToDevice),stream[dev*2+copyStream]);
                 }
                 //  2) take the results from current compute call and add it to the code in execution.
@@ -497,16 +502,16 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                 {
                     cudaSetDevice(gpuids[dev]);
                     //Global index of FIRST projection on this set on this GPU
-                    proj_global=i*PROJ_PER_BLOCK+dev*nangles_device;
+                    proj_global=i*projPerLaunch+dev*nangles_device;
                     if(proj_global>=nangles) 
                         break;
 
-                    // Unless its the last projection set, we have PROJ_PER_BLOCK angles. Otherwise...
+                    // Unless its the last projection set, we have projPerLaunch angles. Otherwise...
                     if(i+1==noOfKernelCalls) //is it the last block?
-                        projection_this_block=min(nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK, //the remaining angles that this GPU had to do (almost never PROJ_PER_BLOCK)
+                        projection_this_block=min(nangles_device-(noOfKernelCalls-1)*projPerLaunch, //the remaining angles that this GPU had to do (almost never projPerLaunch)
                                                   nangles-proj_global);                              //or whichever amount is left to finish all (this is for the last GPU)
                     else
-                        projection_this_block=PROJ_PER_BLOCK;
+                        projection_this_block=projPerLaunch;
                     cudaStreamSynchronize(stream[dev*2+1]); // wait until copy is finished
                     vecAddInPlaceInterp<<<(unsigned int)(((size_t)geo.nDetecU*geo.nDetecV*projection_this_block+MAXTREADS-1)/MAXTREADS),MAXTREADS,0,stream[dev*2]>>>(dProjection[(i%2)+dev*2],dProjection_accum[(i%2)+dev*2],(size_t)geo.nDetecU*geo.nDetecV*projection_this_block);
                 }
@@ -519,23 +524,23 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
                 {
                     cudaSetDevice(gpuids[dev]);
                     //Global index of FIRST projection on previous set on this GPU
-                    proj_global=(i-1)*PROJ_PER_BLOCK+dev*nangles_device;
+                    proj_global=(i-1)*projPerLaunch+dev*nangles_device;
                     if (dev+1==deviceCount) {    //is it the last device?
                         // projections assigned to this device is >=nangles_device-(deviceCount-1) and < nangles_device
                         if (i-1 < noOfKernelCallsLastDev) {
                             // The previous set(block) was not empty.
-                            projection_this_block=min(PROJ_PER_BLOCK, nangles-proj_global);
+                            projection_this_block=min(projPerLaunch, nangles-proj_global);
                         }
                         else {
                             // The previous set was empty.
-                            // This happens if deviceCount > PROJ_PER_BLOCK+1.
-                            // e.g. PROJ_PER_BLOCK = 9, deviceCount = 11, nangles = 199.
-                            // e.g. PROJ_PER_BLOCK = 1, deviceCount =  3, nangles =   7.
+                            // This happens if deviceCount > projPerLaunch+1.
+                            // e.g. projPerLaunch = 9, deviceCount = 11, nangles = 199.
+                            // e.g. projPerLaunch = 1, deviceCount =  3, nangles =   7.
                             break;
                         }
                     }
                     else {
-                        projection_this_block=PROJ_PER_BLOCK;
+                        projection_this_block=projPerLaunch;
                     }
                     cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(i%2))+dev*2],  (size_t)projection_this_block*geo.nDetecV*geo.nDetecU*sizeof(float), (gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost),stream[dev*2+copyStream]);
                 }
@@ -558,11 +563,11 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
         {
             cudaSetDevice(gpuids[dev]);
             //Global index of FIRST projection on this set on this GPU
-            proj_global=(noOfKernelCalls-1)*PROJ_PER_BLOCK+dev*nangles_device;
+            proj_global=(noOfKernelCalls-1)*projPerLaunch+dev*nangles_device;
             if(proj_global>=nangles) 
                 break;
             // How many projections are left here?
-            projection_this_block=min(nangles_device-(noOfKernelCalls-1)*PROJ_PER_BLOCK, //the remaining angles that this GPU had to do (almost never PROJ_PER_BLOCK)
+            projection_this_block=min(nangles_device-(noOfKernelCalls-1)*projPerLaunch, //the remaining angles that this GPU had to do (almost never projPerLaunch)
                                       nangles-proj_global);                              //or whichever amount is left to finish all (this is for the last GPU)
 
             cudaDeviceSynchronize(); //Not really necessary, but just in case, we los nothing. 

@@ -32,6 +32,20 @@ inline void detectorBlockShape(unsigned long nU, unsigned long nV, int base, int
     }
 }
 
+// Angles per forward-projection launch: perBlock (one block of angles), or on a thin detector (fewer rows than
+// perBlock, e.g. fan beam) up to maxPerLaunch: there one block of angles is too little work to keep the GPU busy and
+// every launch is followed by a wait on the host. The two projection buffers stay within ~4 MB each. Measured on an
+// RTX 4070: fan-beam Ax 2-4x faster; on 3D detectors batching did not help, so they keep one block per launch.
+inline int projectionsPerLaunch(unsigned long nV, size_t bytesPerProjection, int perBlock, int maxPerLaunch) {
+    if (nV >= (unsigned long)perBlock) return perBlock;
+    const size_t budget = (size_t)4 << 20;
+    size_t k = budget / ((size_t)perBlock * (bytesPerProjection > 0 ? bytesPerProjection : 1));
+    const size_t kmax = (size_t)(maxPerLaunch / perBlock);
+    if (k < 1) k = 1;
+    if (k > kmax) k = kmax;
+    return (int)k * perBlock;
+}
+
 // Voxels per thread along z for the cone backprojectors, which give each thread a column of voxels and, for speed,
 // compute the whole column even past the end of the image. On a thin image (fan beam: one slice) most of a long
 // column would be computed for nothing, so use the longest power of two, up to maxLen, that fits in the image.
