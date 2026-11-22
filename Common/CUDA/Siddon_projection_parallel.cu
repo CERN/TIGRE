@@ -420,7 +420,7 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
 #if CUDART_VERSION >= 9020
     cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,devIds[0]);
 #endif
-    if (!gpuData && isHostRegisterSupported && (splits>1 || deviceCount>1)){
+    if (tigre::worthPageLocking(isHostRegisterSupported, gpuData, splits, deviceCount)){
         registered=tigre::hostRegister(img, mem_image);
         // The caller's array: left registered, the next call with it would fail.
         if (registered) onError.add([img]{ cudaHostUnregister(img); });

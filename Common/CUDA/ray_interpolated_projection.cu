@@ -353,7 +353,7 @@ int interpolation_projection(float  *  img, Geometry geo, float** result,float c
 #ifndef NO_PINNED_MEMORY
     // tigre::hostRegister: an array that is already page-locked (e.g. pinned by PyTorch) is used as it is and not unregistered here.
     bool img_registered=false;
-    if (isHostRegisterSupported & splits>1){
+    if (tigre::worthPageLocking(isHostRegisterSupported, gpuData, splits, deviceCount)){  // as Siddon: also with several GPUs
         img_registered=tigre::hostRegister(img, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float));
         // The caller's array: left registered, the next call with it would fail.
         if (img_registered) onError.add([img]{ cudaHostUnregister(img); });
