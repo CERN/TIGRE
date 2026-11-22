@@ -353,8 +353,20 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
         if (splits>geo.nVoxelZ) splits=geo.nVoxelZ;  // at least one slice per piece
     }
     // The image texture (a 3D array on each GPU, for the largest piece) is allocated first, with the projection
-    // buffers tried on top. A 3D array needs more GPU memory than its raw size, so it can fail where the estimate
+    // buffers on top. A 3D array needs more GPU memory than its raw size, so it can fail where the estimate
     // above said it fits: then split the image in more pieces and try again, down to one slice per piece.
+    // The projection buffers: two per GPU, and two more to add up the projections of the image pieces when the image
+    // is split. tryMalloc3DArrays allocates them with the texture, each as its own allocation, so that the check that
+    // everything fits covers them as they are used; they are handed out below.
+    float** dProjection=(float**)malloc(2*deviceCount*sizeof(float*));
+    memset(dProjection, 0, 2*deviceCount*sizeof(float*));
+    float** dProjection_accum=(float**)malloc(2*deviceCount*sizeof(float*));
+    memset(dProjection_accum, 0, 2*deviceCount*sizeof(float*));
+    onError.add([dProjection, dProjection_accum, deviceCount, devIds]{
+        for (int s = 0; s < 2*deviceCount; s++) { cudaSetDevice(devIds[s/2]); cudaFree(dProjection[s]); cudaFree(dProjection_accum[s]); }
+        free(dProjection); free(dProjection_accum);
+    });
+    std::vector<void*> projBuffers(4*(size_t)deviceCount, (void*)NULL);
     cudaArray **d_cuArrTex = new cudaArray*[deviceCount]();
     Geometry* geoArray = NULL;
     while (true){
@@ -363,7 +375,7 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
         geoArray = (Geometry*)malloc(splits*sizeof(Geometry));
         splitImageInterp(splits,geo,geoArray,nangles);
         const cudaExtent extent = make_cudaExtent(geoArray[0].nVoxelX, geoArray[0].nVoxelY, geoArray[0].nVoxelZ);
-        if (tigre::tryMalloc3DArrays(devIds.data(), deviceCount, d_cuArrTex, extent, (splits>1 ? 4 : 2), num_bytes_proj, "Ax:Siddon_projection_parallel:GPU"))
+        if (tigre::tryMalloc3DArrays(devIds.data(), deviceCount, d_cuArrTex, extent, (splits>1 ? 4 : 2), num_bytes_proj, "Ax:Siddon_projection_parallel:GPU", projBuffers.data()))
             break;
         const unsigned long piece=geoArray[0].nVoxelZ;
         freeGeoArray(splits, geoArray);
@@ -382,37 +394,22 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
         delete[] d_cuArrTex;
     });
 
-    // Buffers to add up the projections of the image pieces.
-    float ** dProjection_accum = 0;
-    if (!fits_in_memory){
-        dProjection_accum=(float**)malloc(2*deviceCount*sizeof(float*));
-        memset(dProjection_accum, 0, 2*deviceCount*sizeof(float*));
-        onError.add([dProjection_accum, deviceCount, devIds]{
-            for (int s = 0; s < 2*deviceCount; s++) { cudaSetDevice(devIds[s/2]); cudaFree(dProjection_accum[s]); }
-            free(dProjection_accum);
-        });
-        for (dev = 0; dev < deviceCount; dev++) {
-            cudaSetDevice(devIds[dev]);
+    {   // the projection buffers allocated with the texture (tryMalloc3DArrays)
+        const int nb = fits_in_memory ? 2 : 4;
+        for (dev = 0; dev < deviceCount; dev++){
             for (int i = 0; i < 2; ++i){
-                tigre::checkMalloc(cudaMalloc((void**)&dProjection_accum[dev*2+i], num_bytes_proj), "Ax:Siddon_projection_parallel:GPUmemory", "Forward projection (Siddon, parallel beam)", num_bytes_proj);
-                cudaMemset(dProjection_accum[dev*2+i],0,num_bytes_proj); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
+                dProjection[dev*2+i] = (float*)projBuffers[dev*nb+i];
+                if (!fits_in_memory) dProjection_accum[dev*2+i] = (float*)projBuffers[dev*nb+2+i];
             }
         }
-        cudaCheckErrors("cudaMalloc auxiliary projections fail");
     }
-
-    float** dProjection=(float**)malloc(2*deviceCount*sizeof(float*));
-    memset(dProjection, 0, 2*deviceCount*sizeof(float*));
-    onError.add([dProjection, deviceCount, devIds]{
-        for (int s = 0; s < 2*deviceCount; s++) { cudaSetDevice(devIds[s/2]); cudaFree(dProjection[s]); }
-        free(dProjection);
-    });
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(devIds[dev]);
         for (int i = 0; i < 2; ++i){
-            tigre::checkMalloc(cudaMalloc((void**)&dProjection[dev*2+i], num_bytes_proj), "Ax:Siddon_projection_parallel:GPUmemory", "Forward projection (Siddon, parallel beam)", num_bytes_proj);
-            cudaMemset(dProjection[dev*2+i],0,num_bytes_proj); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
+            cudaMemset(dProjection[dev*2+i],0,num_bytes_proj);
+            if (!fits_in_memory) cudaMemset(dProjection_accum[dev*2+i],0,num_bytes_proj);
         }
+        cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
     }
     cudaCheckErrors("cudaMalloc projections fail");
 
@@ -577,7 +574,7 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
     delete[] texImg;
     delete[] d_cuArrTex;
     free(dProjection);
-    if (!fits_in_memory) free(dProjection_accum);
+    free(dProjection_accum);
     free(stream);
     freeGeoArray(splits,geoArray);
     cudaFreeHost(projParamsArrayHost);
