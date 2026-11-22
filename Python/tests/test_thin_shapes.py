@@ -4,6 +4,8 @@ The forward projectors choose their thread-block shape from the detector (a thin
 beam, gets blocks along its long side), and the cone backprojectors their voxel column length from the image (a thin
 image gets shorter columns). Detectors of 9+ rows and images of 8+ slices keep the original shapes, so each test
 compares a thin problem with the same rays or voxels taken from a full-size one computed the original way.
+On a thin detector the cone backprojectors also upload all the projections into one texture, instead of chunks of
+32: the fan-beam backprojection test compares that with a 17-row detector, uploaded in chunks.
 """
 import numpy as np
 import pytest
@@ -121,3 +123,17 @@ def test_thin_image_backprojection_equals_slices(bptype, nz):
     assert thin.shape == (nz, 32, 32)
     other = n - k - nz  # the same slices counted from the other end, if offOrigin's z runs the other way
     _matches_one_of(thin, [full[k:k + nz], full[other:other + nz]], TOL, "{} slices, {}".format(nz, bptype))
+
+
+@pytest.mark.parametrize("bptype", ["FDK", "matched"])
+@pytest.mark.parametrize("nangles", [20, 100, 360])
+def test_fan_beam_backprojection_equals_tall_detector(bptype, nangles):
+    """Fan beam (a one-row detector: all projections in one texture upload) backprojected into one slice = a
+    17-row detector whose rows all hold the same values (chunks of 32 projections), into the same slice."""
+    angles = np.linspace(0, 2 * np.pi, nangles, endpoint=False)
+    fan = _cone((1, 64, 64), (1, 96))
+    proj = tigre.Ax(_image((1, 64, 64), seed=3), fan, angles, "interpolated")  # smooth along the detector
+    thin = tigre.Atb(proj, fan, angles, bptype)
+    full = tigre.Atb(np.ascontiguousarray(np.repeat(proj, 17, axis=1)), _cone((1, 64, 64), (17, 96)), angles, bptype)
+    assert thin.shape == (1, 64, 64)
+    _matches_one_of(thin, [full], TOL, "fan beam backprojection, {} angles, {}".format(nangles, bptype))

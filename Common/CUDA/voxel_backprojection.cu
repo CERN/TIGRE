@@ -309,7 +309,8 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     // Split the CT problem
     unsigned int split_image;
     unsigned int split_projections;
-    splitCTbackprojection(gpuids,geo,nalpha,&split_image,&split_projections);
+    bool one_upload;
+    splitCTbackprojection(gpuids,geo,nalpha,&split_image,&split_projections,&one_upload);
     
     
     cudaCheckErrors("Error");
@@ -449,7 +450,8 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
             current_proj_split_size=((proj+1)*current_proj_split_size<nalpha)?  current_proj_split_size:  nalpha-current_proj_split_size*proj;
             
             // We are going to split it in the same amount of kernels we need to execute.
-            proj_split_overlap_number=(current_proj_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;
+            // (all of them in one go on thin detectors: see splitCTbackprojection)
+            proj_split_overlap_number=one_upload ? 1 : (current_proj_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;
             
             // Create pointer to pointers of projections and precompute their location and size.
             if(!proj && !img_slice){
@@ -611,7 +613,7 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
     ///////// Cleaning:
     
     
-    bool two_buffers_used=((((nalpha+split_projections-1)/split_projections)+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL)>1;
+    bool two_buffers_used=!one_upload && ((((nalpha+split_projections-1)/split_projections)+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL)>1;
     for(unsigned int i=0; i<2;i++){ // 2 buffers (if needed, maybe only 1)
         if (!two_buffers_used && i==1)
             break;
@@ -656,7 +658,7 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
 }  // END voxel_backprojection
 //
 
-void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
+void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections, bool* one_upload){
     
     
     // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
@@ -702,6 +704,10 @@ void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsign
         *split_projections=(mem_proj*PROJ_PER_KERNEL*2+mem_free-1)/mem_free;
         
     }
+    // All the projections in one texture upload instead of chunks (thin detectors, see
+    // tigre::projectionsInOneUpload): only with the whole problem in one piece, and if they fit next to the image.
+    *one_upload = *split_image==1 && *split_projections==1 && tigre::projectionsInOneUpload(geo.nDetecV, nalpha) &&
+                  mem_image/deviceCount+mem_proj*(size_t)nalpha < mem_GPU_global;
 }
 
 
