@@ -135,6 +135,8 @@ __constant__ float projSinCosArrayDev[5*PROJ_PER_KERNEL];
 //      Description:    Main FDK backprojection kernel
 //______________________________________________________________________________
 
+// VPT: voxels per thread along z, VOXELS_PER_THREAD or fewer on thin images (tigre::voxelColumnLength).
+template<int VPT>
 __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,const int currProjSetNumber, const int totalNoOfProjections, cudaTextureObject_t tex)
 {
     
@@ -157,14 +159,14 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
     unsigned long long indY = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long long indX = blockIdx.x * blockDim.x + threadIdx.x;
     // unsigned long startIndZ = blockIdx.z * blockDim.z + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
-    unsigned long long startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
+    unsigned long long startIndZ = blockIdx.z * VPT + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     //Make sure we don't go out of bounds
     if (indX>=geo.nVoxelX || indY>=geo.nVoxelY || startIndZ>=geo.nVoxelZ)
         return;
     
     // We'll keep a local auxiliary array of values of a column of voxels that this thread will update
     // Zero-initialised: voxels of the column beyond the image are computed too (no per-voxel check, see below), never stored.
-    float voxelColumn[VOXELS_PER_THREAD] = {0};
+    float voxelColumn[VPT] = {0};
     
     // First we need to copy the curent 3D volume values from the column to our auxiliary array so that we can then
     // work on them (update them by computing values from multiple projections) locally - avoiding main memory reads/writes
@@ -173,7 +175,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
     // The voxel's indices as floats, converted once per thread (they were converted for every voxel and projection).
     const float fIndX=(float)indX, fIndY=(float)indY, fStartIndZ=(float)startIndZ;
 #pragma unroll
-    for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
+    for(colIdx=0; colIdx<VPT; colIdx++)
     {
         unsigned long long indZ = startIndZ + colIdx;
         // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
@@ -208,7 +210,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         Point3D wden   = projParamsArrayDev[6*projNumber+5];  // the FDK weight's denominator: wden.x+i*wden.y+j*wden.z
         
         // The vector from the source to the first voxel of the column; then stepped by deltaZ (at most
-        // VOXELS_PER_THREAD-1 steps). It was rebuilt for every voxel from the indices.
+        // VPT-1 steps). It was rebuilt for every voxel from the indices.
         float vectX=c0.x+fIndX*deltaX.x+fIndY*deltaY.x+fStartIndZ*deltaZ.x;
         float vectY=c0.y+fIndX*deltaX.y+fIndY*deltaY.y+fStartIndZ*deltaZ.y;
         float vectZ=c0.z+fIndX*deltaX.z+fIndY*deltaY.z+fStartIndZ*deltaZ.z;
@@ -225,7 +227,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
 #pragma unroll
         // No bounds check per voxel: the voxels of a column that lie beyond the image (in the last block in z) are
         // computed too, harmlessly (a texture read), and never stored (the final loop checks).
-        for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
+        for(colIdx=0; colIdx<VPT; colIdx++)
         {
             // Get the coordinates in the detector UV where the mid point of the voxel is projected.
             float t=__fdividef(tNum,vectX);
@@ -245,7 +247,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
     
     // And finally copy the updated local voxelColumn array back to our 3D volume (main memory)
 #pragma unroll
-    for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
+    for(colIdx=0; colIdx<VPT; colIdx++)
     {
         unsigned long long indZ = startIndZ + colIdx;
         // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
@@ -506,7 +508,7 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
                     // let's stick with the values from Zinsser and Keck.
                     divx=16;
                     divy=32;
-                    divz=VOXELS_PER_THREAD;      // We now only have 32 x 16 threads per block (flat tile, see below), BUT each thread works on a Z column of VOXELS_PER_THREAD voxels, so we effectively need fewer blocks!
+                    divz=tigre::voxelColumnLength(geoArray[img_slice*deviceCount+dev].nVoxelZ, VOXELS_PER_THREAD);  // We now only have 32 x 16 threads per block (flat tile, see below), BUT each thread works on a Z column of divz voxels (VOXELS_PER_THREAD, or fewer on thin images such as fan beam), so we effectively need fewer blocks!
                     
                     
                     dim3 grid((geo.nVoxelX+divx-1)/divx,
@@ -563,7 +565,12 @@ int voxel_backprojection(float  *  projections, Geometry geo, float* result,floa
                         cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*6*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev*nStreamDevice]);
                         cudaStreamSynchronize(stream[dev*nStreamDevice]);
                         
-                        kernelPixelBackprojectionFDK<<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]);
+                        switch (divz) {  // one compiled kernel per column length
+                            case 1: kernelPixelBackprojectionFDK<1><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]); break;
+                            case 2: kernelPixelBackprojectionFDK<2><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]); break;
+                            case 4: kernelPixelBackprojectionFDK<4><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]); break;
+                            default: kernelPixelBackprojectionFDK<VOXELS_PER_THREAD><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]); break;
+                        }
                     }  // END for
                     //////////////////////////////////////////////////////////////////////////////////////
                     // END RB code, Main reconstruction loop: go through projections (rotation angles) and backproject
