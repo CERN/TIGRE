@@ -270,6 +270,12 @@ int interpolation_projection_parallel(float* img, Geometry geo, float** result,f
         for (int s = 0; s < 2*deviceCount; s++) { cudaSetDevice(devIds[s/2]); cudaFree(dProjection[s]); cudaFree(dProjection_accum[s]); }
         free(dProjection); free(dProjection_accum);
     });
+    // GPU data on one GPU, image not split: the kernels write the projections straight into the caller's array, as
+    // the backprojectors do, instead of into buffers that are then copied there. Only if it is one contiguous block
+    // (it is, from Python), checked here. With a split image the pieces are added up in the buffers.
+    bool outContiguous = gpuData && deviceCount == 1;
+    for (int k = 1; outContiguous && k < nangles; k++)
+        if (result[k] != result[0] + (size_t)k*geo.nDetecU*geo.nDetecV) outContiguous = false;
     std::vector<void*> projBuffers(4*(size_t)deviceCount, (void*)NULL);
     cudaArray **d_cuArrTex = new cudaArray*[deviceCount]();
     Geometry* geoArray = NULL;
@@ -279,7 +285,7 @@ int interpolation_projection_parallel(float* img, Geometry geo, float** result,f
         geoArray = (Geometry*)malloc(splits*sizeof(Geometry));
         splitImageInterp(splits,geo,geoArray,nangles);
         const cudaExtent extent = make_cudaExtent(geoArray[0].nVoxelX, geoArray[0].nVoxelY, geoArray[0].nVoxelZ);
-        if (tigre::tryMalloc3DArrays(devIds.data(), deviceCount, d_cuArrTex, extent, (splits>1 ? 4 : 2), num_bytes_proj, "Ax:Interpolated_projection_parallel:GPU", projBuffers.data()))
+        if (tigre::tryMalloc3DArrays(devIds.data(), deviceCount, d_cuArrTex, extent, (splits>1 ? 4 : (outContiguous ? 0 : 2)), num_bytes_proj, "Ax:Interpolated_projection_parallel:GPU", projBuffers.data()))
             break;
         const unsigned long piece=geoArray[0].nVoxelZ;
         freeGeoArray(splits, geoArray);
@@ -298,9 +304,10 @@ int interpolation_projection_parallel(float* img, Geometry geo, float** result,f
         delete[] d_cuArrTex;
     });
 
+    const bool directOut = outContiguous && fits_in_memory;
     {   // the projection buffers allocated with the texture (tryMalloc3DArrays)
-        const int nb = fits_in_memory ? 2 : 4;
-        for (dev = 0; dev < deviceCount; dev++){
+        const int nb = fits_in_memory ? (directOut ? 0 : 2) : 4;
+        for (dev = 0; dev < deviceCount && nb > 0; dev++){
             for (int i = 0; i < 2; ++i){
                 dProjection[dev*2+i] = (float*)projBuffers[dev*nb+i];
                 if (!fits_in_memory) dProjection_accum[dev*2+i] = (float*)projBuffers[dev*nb+2+i];
@@ -348,7 +355,7 @@ int interpolation_projection_parallel(float* img, Geometry geo, float** result,f
     for (dev = 0; dev < deviceCount; dev++){
         cudaSetDevice(devIds[dev]);
         for (int i = 0; i < 2; ++i){
-            cudaMemsetAsync(dProjection[dev*2+i],0,num_bytes_proj,stream[dev*2]);
+            if (dProjection[dev*2+i]) cudaMemsetAsync(dProjection[dev*2+i],0,num_bytes_proj,stream[dev*2]);
             if (!fits_in_memory) cudaMemsetAsync(dProjection_accum[dev*2+i],0,num_bytes_proj,stream[dev*2]);
         }
     }
@@ -412,7 +419,7 @@ int interpolation_projection_parallel(float* img, Geometry geo, float** result,f
                 cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*4*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[dev*2]);
                 cudaMemcpyToSymbolAsync(projFloatsArrayDev, projFloatsArrayHost, sizeof(float)*2*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[dev*2]);
                 cudaStreamSynchronize(stream[dev*2]);  // the host arrays are refilled for the next GPU
-                kernelPixelDetector_parallel_interpolated<<<numBlocks,threadsPerBlock,0,stream[dev*2]>>>(geoArray[sp],dProjection[(i%2)+dev*2],i,nangles_device,texImg[dev]);
+                kernelPixelDetector_parallel_interpolated<<<numBlocks,threadsPerBlock,0,stream[dev*2]>>>(geoArray[sp],(directOut ? result[i*PROJ_PER_BLOCK] : dProjection[(i%2)+dev*2]),i,nangles_device,texImg[dev]);
             }
             cudaCheckErrors("Kernel fail");
 
@@ -442,7 +449,7 @@ int interpolation_projection_parallel(float* img, Geometry geo, float** result,f
                     if (n<0) break;
                     cudaSetDevice(devIds[dev]);
                     const unsigned int proj_global=(i-1)*PROJ_PER_BLOCK+dev*nangles_device;
-                    cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(i%2))+dev*2], (size_t)n*geo.nDetecV*geo.nDetecU*sizeof(float), kindOut, stream[dev*2+copyStream]);
+                    if (!directOut) cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(i%2))+dev*2], (size_t)n*geo.nDetecV*geo.nDetecU*sizeof(float), kindOut, stream[dev*2+copyStream]);
                 }
             }
             // Wait for this batch's kernels, and for the copy-out of the batch before it (copy stream), which reads
@@ -460,7 +467,7 @@ int interpolation_projection_parallel(float* img, Geometry geo, float** result,f
             if (n<0) break;
             cudaSetDevice(devIds[dev]);
             const unsigned int proj_global=(noOfKernelCalls-1)*PROJ_PER_BLOCK+dev*nangles_device;
-            cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(noOfKernelCalls%2))+dev*2], (size_t)n*geo.nDetecV*geo.nDetecU*sizeof(float), kindOut, stream[dev*2+copyStream]);
+            if (!directOut) cudaMemcpyAsync(result[proj_global], dProjection[(int)(!(noOfKernelCalls%2))+dev*2], (size_t)n*geo.nDetecV*geo.nDetecU*sizeof(float), kindOut, stream[dev*2+copyStream]);
         }
         // Everything done before the next piece (it reads these results back) or before returning.
         for (dev = 0; dev < deviceCount; dev++){
