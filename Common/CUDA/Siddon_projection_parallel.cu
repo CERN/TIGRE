@@ -56,6 +56,7 @@
 #include "Siddon_projection_parallel.hpp"
 #include "TIGRE_common.hpp"
 #include "tigre_release_on_error.hpp"
+#include "launch_shapes.hpp"
 #include <math.h>
 
 #define cudaCheckErrors(msg) \
@@ -458,8 +459,10 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
 
     const int nangles_device=(nangles+deviceCount-1)/deviceCount;
     const unsigned int noOfKernelCalls = (nangles_device+PROJ_PER_BLOCK-1)/PROJ_PER_BLOCK;  // the kernel checks the bounds if nangles_device is not divisible by PROJ_PER_BLOCK
-    dim3 numBlocks((geo.nDetecU+PIXEL_SIZE_BLOCK-1)/PIXEL_SIZE_BLOCK,(geo.nDetecV+PIXEL_SIZE_BLOCK-1)/PIXEL_SIZE_BLOCK,1);
-    dim3 threadsPerBlock(PIXEL_SIZE_BLOCK,PIXEL_SIZE_BLOCK,PROJ_PER_BLOCK);
+    int divU,divV;
+    tigre::detectorBlockShape(geo.nDetecU, geo.nDetecV, PIXEL_SIZE_BLOCK, &divU, &divV);  // thin detectors (2D)
+    dim3 numBlocks((geo.nDetecU+divU-1)/divU,(geo.nDetecV+divV-1)/divV,1);
+    dim3 threadsPerBlock(divU,divV,PROJ_PER_BLOCK);
     // Projections of batch i of this GPU (-1 if it has none): PROJ_PER_BLOCK, fewer for its last batch, fewer or
     // none on the last GPU.
     auto projectionsInBatch=[&](unsigned int i, int d)->int{

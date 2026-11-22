@@ -448,7 +448,7 @@ def include_headers(filename_list, sdist=False):
             header_list.append("".join(header))
 
     filename_list += ["Common/CUDA/types_TIGRE.hpp", "Common/CUDA/errors.hpp", "Common/CUDA/tigre_release_on_error.hpp",
-                      "Common/CUDA/tv_gradient_descent.hpp"]
+                      "Common/CUDA/launch_shapes.hpp", "Common/CUDA/tv_gradient_descent.hpp"]
     return filename_list + header_list
 
 
