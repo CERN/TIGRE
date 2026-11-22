@@ -37,6 +37,8 @@
 #include <vector>
 #include "TIGRE_common.hpp"
 
+#include <cstdio>
+
 namespace tigre {
 
 class ReleaseOnError {
@@ -95,7 +97,9 @@ private:
 // then says "already registered"), or allocated page-locked, e.g. a pinned
 // PyTorch tensor (cudaHostAlloc; cudaHostRegister then says "invalid
 // argument", so ask CUDA what the pointer is first).
-// Any other failure is left for the caller's error check.
+// Any other failure (typically: the system won't lock that much memory, e.g. a volume larger than Windows lets a
+// process page-lock) falls back to pageable memory with a warning: page-locking only makes the copies faster and
+// asynchronous, so the operation still completes, as images larger than the GPU must.
 inline bool hostRegister(void* ptr, size_t bytes) {
 #if CUDART_VERSION >= 10000
     cudaPointerAttributes attributes;
@@ -108,7 +112,15 @@ inline bool hostRegister(void* ptr, size_t bytes) {
         cudaGetLastError();  // not an error for us
         return false;
     }
-    return err == cudaSuccess;
+    if (err != cudaSuccess) {
+        cudaGetLastError();  // clear it: the caller's error check must not see it
+        char msg[256];
+        std::snprintf(msg, sizeof(msg), "Could not page-lock %.1f GiB of host memory (%s): using pageable memory, "
+                      "slower but correct.", bytes / 1073741824.0, cudaGetErrorString(err));
+        mexWarnMsgIdAndTxt("TIGRE:hostRegister", msg);
+        return false;
+    }
+    return true;
 }
 
 // Check a cudaMalloc. Out of memory is reported as such, with a message that
