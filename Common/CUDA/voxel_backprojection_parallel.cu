@@ -54,6 +54,7 @@
 
 #include "TIGRE_common.hpp"
 #include "tigre_release_on_error.hpp"
+#include "page_locking.hpp"
 #include <math.h>
 
 // https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
@@ -407,16 +408,20 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     }
     cudaCheckErrors("Stream creation fail");
 
-    // Page-lock the projections: the uploads are then asynchronous (and faster).
-    bool registered=false;
+    // Page-lock the projections and the result when the image is split or several GPUs are used (tigre::worthPageLocking):
+    // then the uploads are sent again for each piece or to each GPU, and the GPUs copy their pieces of the result back at
+    // the same time instead of one after another.
+    bool registered=false, result_registered=false;
     int isHostRegisterSupported = 0;
 #if CUDART_VERSION >= 9020
     cudaDeviceGetAttribute(&isHostRegisterSupported,cudaDevAttrHostRegisterSupported,devIds[0]);
 #endif
-    if (!gpuData && isHostRegisterSupported){
+    if (tigre::worthPageLocking(isHostRegisterSupported, gpuData, splits, deviceCount)){
         registered=tigre::hostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*sizeof(float));
         // The caller's array: left registered, the next call with it would fail.
         if (registered) onError.add([projections]{ cudaHostUnregister(projections); });
+        result_registered=tigre::hostRegister(result, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*sizeof(float));
+        if (result_registered) onError.add([result]{ cudaHostUnregister(result); });
     }
     cudaCheckErrors("Error pinning memory");
 
@@ -526,6 +531,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     cudaFreeHost(projSinCosArrayHostParallel);
     cudaFreeHost(projParamsArrayHostParallel);
     if (registered) cudaHostUnregister(projections);
+    if (result_registered) cudaHostUnregister(result);
     cudaCheckErrors("cudaFree fail");
     return 0;
 }  // END voxel_backprojection_parallel

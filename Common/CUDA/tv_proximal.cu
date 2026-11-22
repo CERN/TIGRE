@@ -57,6 +57,7 @@
 #include "tv_proximal.hpp"
 #include "gpuUtils.hpp"
 #include "tigre_release_on_error.hpp"
+#include "page_locking.hpp"
 #define cudaCheckErrors(msg) \
 do { \
         cudaError_t __err = cudaGetLastError(); \

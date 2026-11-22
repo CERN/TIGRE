@@ -37,8 +37,6 @@
 #include <vector>
 #include "TIGRE_common.hpp"
 
-#include <cstdio>
-
 namespace tigre {
 
 class ReleaseOnError {
@@ -89,39 +87,6 @@ private:
     std::vector<int> devices_;
     std::vector<std::function<void()> > actions_;
 };
-
-// Register the caller's host array as pinned memory, if it is not already.
-// Returns true only if this call registered it, i.e. if the caller of
-// hostRegister must unregister it. An array that is already page-locked is
-// used as it is and left alone: registered by someone else (cudaHostRegister
-// then says "already registered"), or allocated page-locked, e.g. a pinned
-// PyTorch tensor (cudaHostAlloc; cudaHostRegister then says "invalid
-// argument", so ask CUDA what the pointer is first).
-// Any other failure (typically: the system won't lock that much memory, e.g. a volume larger than Windows lets a
-// process page-lock) falls back to pageable memory with a warning: page-locking only makes the copies faster and
-// asynchronous, so the operation still completes, as images larger than the GPU must.
-inline bool hostRegister(void* ptr, size_t bytes) {
-#if CUDART_VERSION >= 10000
-    cudaPointerAttributes attributes;
-    if (cudaPointerGetAttributes(&attributes, ptr) == cudaSuccess && attributes.type == cudaMemoryTypeHost)
-        return false;  // already page-locked
-    cudaGetLastError();  // CUDA 10 reports plain (pageable) memory as an error here
-#endif
-    cudaError_t err = cudaHostRegister(ptr, bytes, cudaHostRegisterPortable);
-    if (err == cudaErrorHostMemoryAlreadyRegistered) {
-        cudaGetLastError();  // not an error for us
-        return false;
-    }
-    if (err != cudaSuccess) {
-        cudaGetLastError();  // clear it: the caller's error check must not see it
-        char msg[256];
-        std::snprintf(msg, sizeof(msg), "Could not page-lock %.1f GiB of host memory (%s): using pageable memory, "
-                      "slower but correct.", bytes / 1073741824.0, cudaGetErrorString(err));
-        mexWarnMsgIdAndTxt("TIGRE:hostRegister", msg);
-        return false;
-    }
-    return true;
-}
 
 // Check a cudaMalloc. Out of memory is reported as such, with a message that
 // starts with "out of memory" (see tigreNotEnoughGpuMemory), so that it reads

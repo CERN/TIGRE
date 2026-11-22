@@ -53,6 +53,7 @@
 #include "Siddon_projection.hpp"
 #include "TIGRE_common.hpp"
 #include "tigre_release_on_error.hpp"
+#include "page_locking.hpp"
 #include "launch_shapes.hpp"
 #include <math.h>
 
@@ -417,7 +418,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
 #ifndef NO_PINNED_MEMORY
     // tigre::hostRegister: an array that is already page-locked (e.g. pinned by PyTorch) is used as it is and not unregistered here.
     bool img_registered=false;
-    if (isHostRegisterSupported & (splits>1 |deviceCount>1)){
+    if (tigre::worthPageLocking(isHostRegisterSupported, gpuData, splits, deviceCount)){
         img_registered=tigre::hostRegister(img, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float));
         // The caller's array: left registered, the next call with it would fail.
         if (img_registered) onError.add([img]{ cudaHostUnregister(img); });

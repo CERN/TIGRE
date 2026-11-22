@@ -50,6 +50,7 @@
 #include "voxel_backprojection2.hpp"
 #include "TIGRE_common.hpp"
 #include "tigre_release_on_error.hpp"
+#include "page_locking.hpp"
 #include "launch_shapes.hpp"
 #include <math.h>
 #include "GpuIds.hpp"
@@ -353,11 +354,13 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     // pin the memory is greater than the lost time in Synchronously launching the memcpys. This is only worth it when the image is too big.
     // tigre::hostRegister: an array that is already page-locked (e.g. pinned by PyTorch) is used as it is and not unregistered here.
     bool result_registered=false, projections_registered=false;
-    if (isHostRegisterSupported & split_image>1){
+    if (tigre::worthPageLocking(isHostRegisterSupported, gpuData, split_image, deviceCount)){  // as FDK: also with several GPUs
         result_registered=tigre::hostRegister(result, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float));
         if (result_registered) onError.add([result]{ cudaHostUnregister(result); });
     }
-    if (isHostRegisterSupported ){
+    // The projections cross more than once only with several GPUs (each gets all of them) or a split image (they are
+    // sent again for each piece). Sent once, their chunks are copied while the GPU works on the previous one anyway.
+    if (tigre::worthPageLocking(isHostRegisterSupported, gpuData, split_image, deviceCount)){
         projections_registered=tigre::hostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float));
         // The caller's array: left registered, the next call with it would fail.
         if (projections_registered) onError.add([projections]{ cudaHostUnregister(projections); });
@@ -591,7 +594,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                 cudaMemcpyAsync(&result[img_linear_idx_start], dimage[dev], num_bytes_img_curr, (gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost),stream[dev*nStreamDevice+1]);
         }
         // The copy is asynchronous (to GPU memory, or to host memory pinned
-        // above when the image is split): finish it before the next image
+        // above when the image is split or several GPUs are used): finish it before the next image
         // piece clears dimage. Without this, the cudaMemset of the next piece
         // raced the copy and parts of the result came out as zeros.
         for (dev = 0; dev < deviceCount; dev++){
