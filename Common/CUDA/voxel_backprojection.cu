@@ -50,6 +50,7 @@
 #include "voxel_backprojection.hpp"
 #include "TIGRE_common.hpp"
 #include "tigre_release_on_error.hpp"
+#include "page_locking.hpp"
 #include "launch_shapes.hpp"
 #include <math.h>
 #include "GpuIds.hpp"

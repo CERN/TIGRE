@@ -54,6 +54,7 @@
 
 #include "TIGRE_common.hpp"
 #include "tigre_release_on_error.hpp"
+#include "page_locking.hpp"
 #include <math.h>
 
 // https://stackoverflow.com/questions/16282136/is-there-a-cuda-equivalent-of-perror
