@@ -366,8 +366,9 @@ int interpolation_projection_parallel(float* img, Geometry geo, float** result,f
 
     const int nangles_device=(nangles+deviceCount-1)/deviceCount;
     const unsigned int noOfKernelCalls = (nangles_device+PROJ_PER_BLOCK-1)/PROJ_PER_BLOCK;  // the kernel checks the bounds if nangles_device is not divisible by PROJ_PER_BLOCK
-    int divU,divV;
-    tigre::detectorBlockShape(geo.nDetecU, geo.nDetecV, PIXEL_SIZE_BLOCK, &divU, &divV);  // thin detectors (2D)
+    // PIXEL_SIZE_BLOCK^2 pixels per block, also on thin detectors: without several blocks of angles per launch (as in
+    // the cone projectors), the thin layout of tigre::detectorBlockShape made 2D parallel beam 16% slower (RTX 4070).
+    const int divU=PIXEL_SIZE_BLOCK, divV=PIXEL_SIZE_BLOCK;
     dim3 numBlocks((geo.nDetecU+divU-1)/divU,(geo.nDetecV+divV-1)/divV,1);
     dim3 threadsPerBlock(divU,divV,PROJ_PER_BLOCK);
     // Projections of batch i of this GPU (-1 if it has none): PROJ_PER_BLOCK, fewer for its last batch, fewer or
