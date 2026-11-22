@@ -67,6 +67,17 @@ cdef inline void free_c_geometry(Geometry* c_geom):
 # python-geometry's geometry.convert_contig_mode() is merged into this function. 
 #TODO: Change from inline to stop duplication. Discussed on slack "python-questions" 28-Mar-2017
 cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
+    # The per-angle values are read through typed memoryviews: indexing the Python arrays element by element
+    # (p_geometry.offOrigin[i][2]) made this ~0.5 ms per call at 360 angles, growing with the angles.
+    # The geometry is float32 already (cast_to_single), so the values are the same.
+    import numpy
+    cdef Py_ssize_t i
+    cdef float[:, ::1] offOrigin = numpy.ascontiguousarray(p_geometry.offOrigin, dtype=numpy.float32)
+    cdef float[::1] DSO = numpy.ascontiguousarray(p_geometry.DSO, dtype=numpy.float32)
+    cdef float[:, ::1] offDetector = numpy.ascontiguousarray(p_geometry.offDetector, dtype=numpy.float32)
+    cdef float[::1] DSD = numpy.ascontiguousarray(p_geometry.DSD, dtype=numpy.float32)
+    cdef float[:, ::1] rotDetector = numpy.ascontiguousarray(p_geometry.rotDetector, dtype=numpy.float32)
+    cdef float[::1] COR = numpy.ascontiguousarray(p_geometry.COR, dtype=numpy.float32)
     cdef Geometry* c_geom =<Geometry *>malloc(sizeof(Geometry))
 
     ### Image ###
@@ -96,11 +107,10 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     if not c_geom.DSO:
         raise MemoryError()
     for i in range (total_projections):
-        c_geom.offOrigX[i] = p_geometry.offOrigin[i][2]
-        c_geom.offOrigY[i] = p_geometry.offOrigin[i][1]
-        c_geom.offOrigZ[i] = p_geometry.offOrigin[i][0]
-    for i in range(total_projections):
-        c_geom.DSO[i] = p_geometry.DSO[i]
+        c_geom.offOrigX[i] = offOrigin[i, 2]
+        c_geom.offOrigY[i] = offOrigin[i, 1]
+        c_geom.offOrigZ[i] = offOrigin[i, 0]
+        c_geom.DSO[i] = DSO[i]
 
     ### Detector ###
     c_geom.nDetecU=p_geometry.nDetector[1]
@@ -123,10 +133,9 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     if not c_geom.DSD:
         raise MemoryError()
     for i in range (total_projections):
-        c_geom.offDetecU[i] = p_geometry.offDetector[i][1]
-        c_geom.offDetecV[i] = p_geometry.offDetector[i][0]
-    for i in range(total_projections):
-        c_geom.DSD[i] = p_geometry.DSD[i]
+        c_geom.offDetecU[i] = offDetector[i, 1]
+        c_geom.offDetecV[i] = offDetector[i, 0]
+        c_geom.DSD[i] = DSD[i]
 
     # TODO: array of 0 for each alpha
     c_geom.dRoll =<float *>malloc(total_projections * sizeof(float))
@@ -139,9 +148,9 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     if not c_geom.dYaw:
         raise MemoryError()
     for i in range (total_projections):
-        c_geom.dRoll[i] = p_geometry.rotDetector[i][2]
-        c_geom.dPitch[i] = p_geometry.rotDetector[i][1]
-        c_geom.dYaw[i] = p_geometry.rotDetector[i][0]
+        c_geom.dRoll[i] = rotDetector[i, 2]
+        c_geom.dPitch[i] = rotDetector[i, 1]
+        c_geom.dYaw[i] = rotDetector[i, 0]
 
     # The base unit we are working with in mm.
     c_geom.unitX = 1
@@ -155,7 +164,7 @@ cdef inline Geometry* convert_to_c_geometry(p_geometry, int total_projections):
     # Centre of Rotation correction.
     c_geom.COR =<float *>malloc(total_projections * sizeof(float))
     for i in range (total_projections):
-        c_geom.COR[i] = p_geometry.COR[i]
+        c_geom.COR[i] = COR[i]
 
     #Maximum length of cube
     # float maxLength; #TODO: Check this is redundant

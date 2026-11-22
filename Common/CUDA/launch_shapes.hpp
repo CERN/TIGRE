@@ -55,6 +55,16 @@ inline int voxelColumnLength(unsigned long nVoxelZ, int maxLen) {
     return len;
 }
 
+// Whether the cone backprojectors upload all the projections into one texture at once, instead of in chunks of
+// PROJ_PER_KERNEL (32), each copied while the GPU works on the previous one. On a thin detector (fewer rows than
+// thinRows: fan beam has one) a chunk is a few tens of KB and copies in microseconds, so there is nothing to hide,
+// while every chunk costs driver calls (the copy, re-creating the texture, waits): ~0.1 ms each on an RTX 4070, most
+// of a small fan-beam backprojection. Up to maxProjections, within the deepest 3D texture every CUDA GPU supports
+// (2048). The caller also checks that they fit in GPU memory next to the image.
+inline bool projectionsInOneUpload(unsigned long nDetecV, unsigned long nalpha, unsigned long thinRows = 9, unsigned long maxProjections = 2048) {
+    return nDetecV < thinRows && nalpha <= maxProjections;
+}
+
 }  // namespace tigre
 
 #endif  // TIGRE_LAUNCH_SHAPES_HPP

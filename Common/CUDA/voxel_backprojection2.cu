@@ -308,7 +308,8 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     // Split the CT problem
     unsigned int split_image;
     unsigned int split_projections;
-    splitCTbackprojection(gpuids,geo,nalpha,&split_image,&split_projections);
+    bool one_upload;
+    splitCTbackprojection(gpuids,geo,nalpha,&split_image,&split_projections,&one_upload);
     
     
     // Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the
@@ -387,12 +388,18 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     }
     
     // Kernel auxiliary variables
+    // The geometry constants of each launch are filled here and copied to __constant__ memory before the kernel.
+    // Ordinary host memory: page-locking these few KB (allocating and freeing them with cudaMallocHost and
+    // cudaFreeHost) cost ~0.45 ms per call and did not change the kernels' time (measured on an RTX 4070: the
+    // kernels read the __constant__ copy either way).
     Point3D* projParamsArray2Host = 0;
-    cudaMallocHost((void**)&projParamsArray2Host,7*PROJ_PER_KERNEL*sizeof(Point3D));
-    onError.add([projParamsArray2Host]{ cudaFreeHost(projParamsArray2Host); });
+    projParamsArray2Host=(Point3D*)malloc(7*PROJ_PER_KERNEL*sizeof(Point3D));
+    if (!projParamsArray2Host) mexErrMsgIdAndTxt("TIGRE:hostMemory","Not enough host memory for the geometry constants");
+    onError.add([projParamsArray2Host]{ free(projParamsArray2Host); });
     float* projSinCosArray2Host = 0;
-    cudaMallocHost((void**)&projSinCosArray2Host,5*PROJ_PER_KERNEL*sizeof(float));
-    onError.add([projSinCosArray2Host]{ cudaFreeHost(projSinCosArray2Host); });
+    projSinCosArray2Host=(float*)malloc(5*PROJ_PER_KERNEL*sizeof(float));
+    if (!projSinCosArray2Host) mexErrMsgIdAndTxt("TIGRE:hostMemory","Not enough host memory for the geometry constants");
+    onError.add([projSinCosArray2Host]{ free(projSinCosArray2Host); });
     
     // Texture object variables
     cudaTextureObject_t *texProj;
@@ -431,7 +438,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
         // Initialize the memory if its the first time.
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(gpuids[dev]);
-            cudaMemset(dimage[dev],0,num_bytes_img); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
+            cudaMemsetAsync(dimage[dev],0,num_bytes_img,stream[dev*nStreamDevice]); // on the kernels' stream: ordered before them
             cudaCheckErrors("memset fail");
         }
         
@@ -444,7 +451,8 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
             current_proj_split_size=((proj+1)*current_proj_split_size<nalpha)?  current_proj_split_size:  nalpha-current_proj_split_size*proj;
             
             // We are going to split it in the same amount of kernels we need to execute.
-            proj_split_overlap_number=(current_proj_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;
+            // (all of them in one go on thin detectors: see splitCTbackprojection)
+            proj_split_overlap_number=one_upload ? 1 : (current_proj_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;
             
             // Create pointer to pointers of projections and precompute their location and size.
             if(!proj && !img_slice){
@@ -611,7 +619,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     onError.dismiss();  // from here on the function releases everything itself
     
     // Clean the GPU
-    bool two_buffers_used=((((nalpha+split_projections-1)/split_projections)+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL)>1;
+    bool two_buffers_used=!one_upload && ((((nalpha+split_projections-1)/split_projections)+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL)>1;
     for(unsigned int i=0; i<2;i++){ // 2 buffers (if needed, maybe only 1)
         if (!two_buffers_used && i==1)
             break;        for (dev = 0; dev < deviceCount; dev++){
@@ -630,8 +638,8 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     }
     free(dimage);
     
-    cudaFreeHost(projSinCosArray2Host);
-    cudaFreeHost(projParamsArray2Host);
+    free(projSinCosArray2Host);
+    free(projParamsArray2Host);
     free(partial_projection);
     free(proj_split_size);
     
@@ -753,7 +761,7 @@ static void matchedKernelParams(const Geometry& geo, int i, Point3D* params)
 }
 
 #ifndef BACKPROJECTION_HPP
-void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
+void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections, bool* one_upload){
     
     
     // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
@@ -798,6 +806,10 @@ void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsign
         *split_projections=(mem_proj*PROJ_PER_KERNEL*2+mem_free-1)/mem_free;
         
     }
+    // All the projections in one texture upload instead of chunks (thin detectors, see
+    // tigre::projectionsInOneUpload): only with the whole problem in one piece, and if they fit next to the image.
+    *one_upload = *split_image==1 && *split_projections==1 && tigre::projectionsInOneUpload(geo.nDetecV, nalpha) &&
+                  mem_image/deviceCount+mem_proj*(size_t)nalpha < mem_GPU_global;
 }
 
 
