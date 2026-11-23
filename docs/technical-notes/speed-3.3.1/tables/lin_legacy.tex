@@ -1,0 +1,25 @@
+\begin{table}[H]
+\centering
+\caption{Linux, Quadro RTX 6000. The 3.3.0 note's detector (0.8\,mm pixels whatever $n$), 1 GPU. Compare with Table~\ref{tab:size1} at the same $n$.}
+\label{tab:lin-legacy}
+\small\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{NumPy arrays, 1 GPU} & \multicolumn{3}{c}{PyTorch GPU tensors, 1 GPU}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+problem & operation & TIGRE ms & ASTRA ms & ratio & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+256$^3$, 0.8 mm & fp, Siddon & 51.2 & 66.6 & \tfast{$0.77\pm0.02$} & 25.1 & 44.1 & \tfast{$0.57\pm0.00$}\\
+ & fp, interpolated & 160 & 66.6 & \tslow{$2.41\pm0.00$} & 154 & 44.1 & \tslow{$3.49\pm0.01$}\\
+ & bp, matched & 47.9 & 50.1 & \tfast{$0.96\pm0.00$} & 22.1 & 28.1 & \tfast{$0.79\pm0.00$}\\
+ & bp, FDK weights & 44.5 & 50.1 & \tfast{$0.89\pm0.01$} & 18.0 & 28.1 & \tfast{$0.64\pm0.01$}\\
+\addlinespace
+1024$^3$, 0.8 mm & fp, Siddon & 1679 & 3604 & \tfast{$0.47\pm0.00$} & 1355 & 2950 & \tfast{$0.46\pm0.00$}\\
+ & fp, interpolated & 11291 & 3604 & \tslow{$3.12\pm0.03$} & 10990 & 2950 & \tslow{$3.71\pm0.05$}\\
+ & bp, matched & 2877 & 2547 & \tslow{$1.12\pm0.01$} & 1283 & 1667 & \tfast{$0.77\pm0.00$}\\
+ & bp, FDK weights & 2621 & 2547 & \tslow{$1.02\pm0.01$} & 1002 & 1667 & \tfast{$0.60\pm0.00$}\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

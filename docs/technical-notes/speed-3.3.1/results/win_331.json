@@ -1,0 +1,4242 @@
+{
+ "meta": {
+  "tigre": "3.3.0",
+  "astra": "2.5.0",
+  "platform": "Windows-10-10.0.26300-SP0",
+  "python": "3.11.15",
+  "gpus": [
+   "GPU #0: NVIDIA GeForce RTX 4070, with 12281MB, CUDA compute capability 8.9"
+  ],
+  "label": "win-331-final",
+  "rounds": 3,
+  "reps": 2,
+  "min_time": 0.3,
+  "groups": [
+   "size",
+   "legacy",
+   "angles",
+   "shape",
+   "offset",
+   "parallel",
+   "fan",
+   "iterative",
+   "latency"
+  ],
+  "quick": false,
+  "date": "2026-11-23 20:33"
+ },
+ "runs": [
+  {
+   "key": "size: cone 128x128x128, det 128x128, 360 angles | NumPy | 1 GPU",
+   "case": "size: cone 128x128x128, det 128x128, 360 angles",
+   "group": "size",
+   "label": "128^3",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    128,
+    128,
+    128
+   ],
+   "ndet": [
+    128,
+    128
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.011766000010538846,
+     0.011513000004924834,
+     0.011420399998314679
+    ],
+    "TIGRE fp Siddon": [
+     0.0075113000348210335,
+     0.00809690001187846,
+     0.007899300020653754
+    ],
+    "TIGRE fp interpolated": [
+     0.027796699956525117,
+     0.02734795000287704,
+     0.02659555000718683
+    ],
+    "ASTRA bp": [
+     0.009494350000750273,
+     0.009421549999387935,
+     0.00943919998826459
+    ],
+    "TIGRE bp matched": [
+     0.005112699989695102,
+     0.005214800010435283,
+     0.005511750001460314
+    ],
+    "TIGRE bp FDK": [
+     0.005854499991983175,
+     0.005030500004068017,
+     0.005249700043350458
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 23,
+    "TIGRE fp Siddon": 39,
+    "TIGRE fp interpolated": 10,
+    "ASTRA bp": 8,
+    "TIGRE bp matched": 50,
+    "TIGRE bp FDK": 53
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.005617439321804778,
+     "scale": 0.9999476202277168
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00012662382139519318,
+     "scale": 0.9999613673547094
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010226549623027436,
+     "scale": 1.0020393334454076
+    },
+    "TIGRE bp FDK": {
+     "agree": 1.7319251973821236e-06,
+     "scale": 0.5425347282256959
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "size: cone 128x128x128, det 128x128, 360 angles | tensors | 1 GPU",
+   "case": "size: cone 128x128x128, det 128x128, 360 angles",
+   "group": "size",
+   "label": "128^3",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    128,
+    128,
+    128
+   ],
+   "ndet": [
+    128,
+    128
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.005807699984870851,
+     0.005802200030302629,
+     0.005812599963974208
+    ],
+    "TIGRE fp Siddon": [
+     0.005350599996745586,
+     0.005202800035476685,
+     0.005663899995852262
+    ],
+    "TIGRE fp interpolated": [
+     0.026502499997150153,
+     0.027195150003535673,
+     0.027402550011174753
+    ],
+    "ASTRA bp": [
+     0.004788050020579249,
+     0.004799299989826977,
+     0.004825150012038648
+    ],
+    "TIGRE bp matched": [
+     0.003928199992515147,
+     0.0035194000229239464,
+     0.003496799967251718
+    ],
+    "TIGRE bp FDK": [
+     0.003308099985588342,
+     0.0032978500239551067,
+     0.003544950013747439
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 50,
+    "TIGRE fp Siddon": 57,
+    "TIGRE fp interpolated": 12,
+    "ASTRA bp": 60,
+    "TIGRE bp matched": 81,
+    "TIGRE bp FDK": 84
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.005617439321804778,
+     "scale": 0.9999476202277168
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00012662382139519318,
+     "scale": 0.9999613673547094
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010226549623027436,
+     "scale": 1.0020393334454076
+    },
+    "TIGRE bp FDK": {
+     "agree": 1.7319251973821236e-06,
+     "scale": 0.5425347282256959
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "size: cone 256x256x256, det 256x256, 360 angles | NumPy | 1 GPU",
+   "case": "size: cone 256x256x256, det 256x256, 360 angles",
+   "group": "size",
+   "label": "256^3",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    256,
+    256,
+    256
+   ],
+   "ndet": [
+    256,
+    256
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.06551789998775348,
+     0.06121370004257187,
+     0.06388740002876148
+    ],
+    "TIGRE fp Siddon": [
+     0.03186749998712912,
+     0.03213499998673797,
+     0.032082099991384894
+    ],
+    "TIGRE fp interpolated": [
+     0.18287315001362003,
+     0.1813518500130158,
+     0.18026889997418039
+    ],
+    "ASTRA bp": [
+     0.054675649997079745,
+     0.05445009999675676,
+     0.05522325000492856
+    ],
+    "TIGRE bp matched": [
+     0.03252119998796843,
+     0.032470849982928485,
+     0.03109869998297654
+    ],
+    "TIGRE bp FDK": [
+     0.029313899984117597,
+     0.02864239999325946,
+     0.029093299992382526
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 5,
+    "TIGRE fp Siddon": 9,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 6,
+    "TIGRE bp matched": 10,
+    "TIGRE bp FDK": 11
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0019541761430544187,
+     "scale": 1.000016421914043
+    },
+    "TIGRE fp interpolated": {
+     "agree": 7.145560707387839e-05,
+     "scale": 1.0000012154047342
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010222012489460128,
+     "scale": 1.0020389221357304
+    },
+    "TIGRE bp FDK": {
+     "agree": 9.481402192379055e-07,
+     "scale": 1.0850694560051601
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "size: cone 256x256x256, det 256x256, 360 angles | tensors | 1 GPU",
+   "case": "size: cone 256x256x256, det 256x256, 360 angles",
+   "group": "size",
+   "label": "256^3",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    256,
+    256,
+    256
+   ],
+   "ndet": [
+    256,
+    256
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.03933830000460148,
+     0.03870410000672564,
+     0.0384943499811925
+    ],
+    "TIGRE fp Siddon": [
+     0.026872799993725494,
+     0.02786750002996996,
+     0.0271113500057254
+    ],
+    "TIGRE fp interpolated": [
+     0.17747765002422966,
+     0.1765597500198055,
+     0.175712200027192
+    ],
+    "ASTRA bp": [
+     0.03304149996256456,
+     0.032646399980876595,
+     0.033522099955007434
+    ],
+    "TIGRE bp matched": [
+     0.02163869998184964,
+     0.02113949996419251,
+     0.02126369997859001
+    ],
+    "TIGRE bp FDK": [
+     0.018562100012786686,
+     0.018423999950755388,
+     0.018320499977562577
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 8,
+    "TIGRE fp Siddon": 12,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 9,
+    "TIGRE bp matched": 15,
+    "TIGRE bp FDK": 17
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0019541761430544187,
+     "scale": 1.000016421914043
+    },
+    "TIGRE fp interpolated": {
+     "agree": 7.145560707387839e-05,
+     "scale": 1.0000012154047342
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010222012489460128,
+     "scale": 1.0020389221357304
+    },
+    "TIGRE bp FDK": {
+     "agree": 9.481402192379055e-07,
+     "scale": 1.0850694560051601
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "size: cone 512x512x512, det 512x512, 360 angles | NumPy | 1 GPU",
+   "case": "size: cone 512x512x512, det 512x512, 360 angles",
+   "group": "size",
+   "label": "512^3",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.5237834000145085,
+     0.5257381999690551,
+     0.5336521500139497
+    ],
+    "TIGRE fp Siddon": [
+     0.23985944999731146,
+     0.24129405000712723,
+     0.24125720001757145
+    ],
+    "TIGRE fp interpolated": [
+     1.3808000999852084,
+     1.3984131000179332,
+     1.3841120499710087
+    ],
+    "ASTRA bp": [
+     0.3745714999968186,
+     0.3716170499974396,
+     0.37757835001684725
+    ],
+    "TIGRE bp matched": [
+     0.2415995500050485,
+     0.24204850001842715,
+     0.24324214999796823
+    ],
+    "TIGRE bp FDK": [
+     0.22291979999863543,
+     0.21924005000619218,
+     0.21641424999688752
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005692994414141756,
+     "scale": 1.000009334676087
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00010741571895320119,
+     "scale": 0.9999839514378389
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010220854615313917,
+     "scale": 1.0020388611615507
+    },
+    "TIGRE bp FDK": {
+     "agree": 5.750319017701096e-07,
+     "scale": 2.1701389225396377
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "size: cone 512x512x512, det 512x512, 360 angles | tensors | 1 GPU",
+   "case": "size: cone 512x512x512, det 512x512, 360 angles",
+   "group": "size",
+   "label": "512^3",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.40668064999044873,
+     0.40657555000507273,
+     0.40578149998327717
+    ],
+    "TIGRE fp Siddon": [
+     0.20162020000861958,
+     0.1998373999958858,
+     0.20338844999787398
+    ],
+    "TIGRE fp interpolated": [
+     1.365806949994294,
+     1.3518811500107404,
+     1.3682130499801133
+    ],
+    "ASTRA bp": [
+     0.2508150000066962,
+     0.25345809999271296,
+     0.25517315001343377
+    ],
+    "TIGRE bp matched": [
+     0.1616696499986574,
+     0.16408170002978295,
+     0.16332794999470934
+    ],
+    "TIGRE bp FDK": [
+     0.1351511999964714,
+     0.1378512000082992,
+     0.13551100000040606
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 3
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005692994414141756,
+     "scale": 1.000009334676087
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00010741571895320119,
+     "scale": 0.9999839514378389
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010220854615313917,
+     "scale": 1.0020388611615507
+    },
+    "TIGRE bp FDK": {
+     "agree": 5.750319017701096e-07,
+     "scale": 2.1701389225396377
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "size: cone 1024x1024x1024, det 1024x1024, 360 angles | NumPy | 1 GPU",
+   "case": "size: cone 1024x1024x1024, det 1024x1024, 360 angles",
+   "group": "size",
+   "label": "1024^3",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    1024,
+    1024,
+    1024
+   ],
+   "ndet": [
+    1024,
+    1024
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     4.549356349976733,
+     4.563296149979578,
+     4.53697430001921
+    ],
+    "TIGRE fp Siddon": [
+     2.246156150009483,
+     2.1101965499983635,
+     2.1370611999882385
+    ],
+    "TIGRE fp interpolated": [
+     11.227843049971852,
+     11.303722299984656,
+     11.279737600008957
+    ],
+    "ASTRA bp": [
+     3.0598133000312373,
+     2.964164799952414,
+     2.7722034999751486
+    ],
+    "TIGRE bp matched": [
+     2.0762408999726176,
+     2.0484276000061072,
+     2.2451592999859713
+    ],
+    "TIGRE bp FDK": [
+     2.0089009500225075,
+     1.7971161999739707,
+     1.82460190000711
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0001680619199264401,
+     "scale": 1.0000021010596625
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00017503762387693298,
+     "scale": 0.9999949859163354
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010219749606641443,
+     "scale": 1.0020386902674443
+    },
+    "TIGRE bp FDK": {
+     "agree": 4.4327423747015404e-07,
+     "scale": 4.340277714700836
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "size: cone 1024x1024x1024, det 1024x1024, 360 angles | tensors | 1 GPU",
+   "case": "size: cone 1024x1024x1024, det 1024x1024, 360 angles",
+   "group": "size",
+   "label": "1024^3",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    1024,
+    1024,
+    1024
+   ],
+   "ndet": [
+    1024,
+    1024
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     24.562806599977193,
+     24.480498199991416,
+     22.543393250001827
+    ],
+    "TIGRE fp Siddon": [
+     1.7046605500217993,
+     1.6753586999839172,
+     1.6970146499807015
+    ],
+    "TIGRE fp interpolated": [
+     20.515025000000605,
+     20.41743734999909,
+     20.439322399994126
+    ],
+    "ASTRA bp": [
+     14.878350049984874,
+     14.841386450018035,
+     14.79995414998848
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0001680625466548727,
+     "scale": 1.0000020989807301
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.0005965796496218909,
+     "scale": 0.9999737197315436
+    }
+   },
+   "errors": {
+    "TIGRE bp matched": "RuntimeError: Atb:voxel_backprojection:GPUmemory: out of memory: Backprojection needs at least 261 MB of free GPU memory on each GPU, but only about 9 MB are free. Free some GPU memory (in PyTorch: torch.cuda.empty_cache()) or use a smaller problem.\n",
+    "TIGRE bp FDK": "RuntimeError: Atb:voxel_backprojection:GPUmemory: out of memory: Backprojection needs at least 261 MB of free GPU memory on each GPU, but only about 9 MB are free. Free some GPU memory (in PyTorch: torch.cuda.empty_cache()) or use a smaller problem.\n"
+   }
+  },
+  {
+   "key": "legacy: cone 256x256x256, det 256x256, 360 angles | NumPy | 1 GPU",
+   "case": "legacy: cone 256x256x256, det 256x256, 360 angles",
+   "group": "legacy",
+   "label": "256^3, 0.8 mm",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    256,
+    256,
+    256
+   ],
+   "ndet": [
+    256,
+    256
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.05822120001539588,
+     0.05626709997886792,
+     0.05678879999322817
+    ],
+    "TIGRE fp Siddon": [
+     0.03086159998201765,
+     0.032164450036361814,
+     0.03148385000531562
+    ],
+    "TIGRE fp interpolated": [
+     0.17537864999030717,
+     0.17739524997887202,
+     0.17522929998813197
+    ],
+    "ASTRA bp": [
+     0.057200899987947196,
+     0.05339305000961758,
+     0.05491969996364787
+    ],
+    "TIGRE bp matched": [
+     0.03187840001191944,
+     0.03161409997846931,
+     0.03199789996142499
+    ],
+    "TIGRE bp FDK": [
+     0.02885280002374202,
+     0.030118700000457466,
+     0.02860840002540499
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 5,
+    "TIGRE fp Siddon": 10,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 6,
+    "TIGRE bp matched": 10,
+    "TIGRE bp FDK": 11
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.002160337515026732,
+     "scale": 1.000042937899597
+    },
+    "TIGRE fp interpolated": {
+     "agree": 4.508545147698415e-05,
+     "scale": 0.9999970780983508
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0006128822312145621,
+     "scale": 1.0012438403707644
+    },
+    "TIGRE bp FDK": {
+     "agree": 3.319544987869036e-06,
+     "scale": 0.2712673637681659
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "legacy: cone 256x256x256, det 256x256, 360 angles | tensors | 1 GPU",
+   "case": "legacy: cone 256x256x256, det 256x256, 360 angles",
+   "group": "legacy",
+   "label": "256^3, 0.8 mm",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    256,
+    256,
+    256
+   ],
+   "ndet": [
+    256,
+    256
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.03744350001215935,
+     0.03727580001577735,
+     0.03699359996244311
+    ],
+    "TIGRE fp Siddon": [
+     0.027409299975261092,
+     0.026625600003171712,
+     0.027597000007517636
+    ],
+    "TIGRE fp interpolated": [
+     0.16950344998622313,
+     0.1693639499717392,
+     0.1712483000010252
+    ],
+    "ASTRA bp": [
+     0.03247229996486567,
+     0.0326216499961447,
+     0.03296085001784377
+    ],
+    "TIGRE bp matched": [
+     0.02050809998763725,
+     0.021463699988089502,
+     0.02126700000371784
+    ],
+    "TIGRE bp FDK": [
+     0.017932299990206957,
+     0.018020000017713755,
+     0.01853330002631992
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 9,
+    "TIGRE fp Siddon": 11,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 10,
+    "TIGRE bp matched": 15,
+    "TIGRE bp FDK": 17
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0021603381069407266,
+     "scale": 1.0000429350574327
+    },
+    "TIGRE fp interpolated": {
+     "agree": 4.506854427128354e-05,
+     "scale": 0.9999970752583578
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0006128822312145621,
+     "scale": 1.0012438403707644
+    },
+    "TIGRE bp FDK": {
+     "agree": 3.319544987869036e-06,
+     "scale": 0.2712673637681659
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "legacy: cone 1024x1024x1024, det 1024x1024, 360 angles | NumPy | 1 GPU",
+   "case": "legacy: cone 1024x1024x1024, det 1024x1024, 360 angles",
+   "group": "legacy",
+   "label": "1024^3, 0.8 mm",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    1024,
+    1024,
+    1024
+   ],
+   "ndet": [
+    1024,
+    1024
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     4.332308049983112,
+     4.275903850008035,
+     4.2616535499983
+    ],
+    "TIGRE fp Siddon": [
+     1.4262836500129197,
+     1.3524840000027325,
+     1.3407654000038747
+    ],
+    "TIGRE fp interpolated": [
+     12.271724649966927,
+     12.302849800005788,
+     12.29990384998382
+    ],
+    "ASTRA bp": [
+     2.655361550016096,
+     2.6613641499716323,
+     2.6205114500189666
+    ],
+    "TIGRE bp matched": [
+     1.9245217999850865,
+     1.9646994500071742,
+     1.958549100003438
+    ],
+    "TIGRE bp FDK": [
+     1.7157489499950316,
+     1.82592425000621,
+     1.7386895499948878
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.000239977731275466,
+     "scale": 1.0000027508436375
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00028874323127742825,
+     "scale": 0.9999923451219811
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010229240638553968,
+     "scale": 1.002042240673315
+    },
+    "TIGRE bp FDK": {
+     "agree": 7.003106675454399e-07,
+     "scale": 17.361109909425352
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "legacy: cone 1024x1024x1024, det 1024x1024, 360 angles | tensors | 1 GPU",
+   "case": "legacy: cone 1024x1024x1024, det 1024x1024, 360 angles",
+   "group": "legacy",
+   "label": "1024^3, 0.8 mm",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    1024,
+    1024,
+    1024
+   ],
+   "ndet": [
+    1024,
+    1024
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     17.949192049971316,
+     18.062452249985654,
+     17.536150899977656
+    ],
+    "TIGRE fp Siddon": [
+     1.0277709499932826,
+     1.0113711500016507,
+     1.0130839500052389
+    ],
+    "TIGRE fp interpolated": [
+     22.654333400016185,
+     22.581580199999735,
+     22.668426699994598
+    ],
+    "ASTRA bp": [
+     6.059416500007501,
+     6.000344349973602,
+     5.977364200021839
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0002399767365578985,
+     "scale": 1.0000027439957972
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.0002937005128040827,
+     "scale": 1.0000262483577873
+    }
+   },
+   "errors": {
+    "TIGRE bp matched": "RuntimeError: Atb:voxel_backprojection:GPUmemory: out of memory: Backprojection needs at least 261 MB of free GPU memory on each GPU, but only about 9 MB are free. Free some GPU memory (in PyTorch: torch.cuda.empty_cache()) or use a smaller problem.\n",
+    "TIGRE bp FDK": "RuntimeError: Atb:voxel_backprojection:GPUmemory: out of memory: Backprojection needs at least 261 MB of free GPU memory on each GPU, but only about 9 MB are free. Free some GPU memory (in PyTorch: torch.cuda.empty_cache()) or use a smaller problem.\n"
+   }
+  },
+  {
+   "key": "angles: cone 512x512x512, det 512x512, 45 angles | NumPy | 1 GPU",
+   "case": "angles: cone 512x512x512, det 512x512, 45 angles",
+   "group": "angles",
+   "label": "45 angles",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 45,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.11872929998207837,
+     0.1269410999957472,
+     0.11465849995147437
+    ],
+    "TIGRE fp Siddon": [
+     0.08321089998935349,
+     0.08173785000690259,
+     0.08254729997133836
+    ],
+    "TIGRE fp interpolated": [
+     0.22039159998530522,
+     0.21752060001017526,
+     0.2192594999796711
+    ],
+    "ASTRA bp": [
+     0.1230449000140652,
+     0.12330159998964518,
+     0.1236355000291951
+    ],
+    "TIGRE bp matched": [
+     0.10973960004048422,
+     0.11146499996539205,
+     0.1158978000166826
+    ],
+    "TIGRE bp FDK": [
+     0.12357080000219867,
+     0.10800120001658797,
+     0.10556950001046062
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 3,
+    "TIGRE fp Siddon": 4,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 3,
+    "TIGRE bp matched": 3,
+    "TIGRE bp FDK": 3
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005511607831388245,
+     "scale": 1.0000097525851879
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00011061093251406202,
+     "scale": 0.9999845482551456
+    },
+    "TIGRE bp matched": {
+     "agree": 0.001022101854936872,
+     "scale": 1.0020388564421407
+    },
+    "TIGRE bp FDK": {
+     "agree": 1.4293164940500284e-06,
+     "scale": 2.170138971921546
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "angles: cone 512x512x512, det 512x512, 45 angles | tensors | 1 GPU",
+   "case": "angles: cone 512x512x512, det 512x512, 45 angles",
+   "group": "angles",
+   "label": "45 angles",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 45,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.05539999998291023,
+     0.05555325001478195,
+     0.05567205001716502
+    ],
+    "TIGRE fp Siddon": [
+     0.04547340000863187,
+     0.04290679999394342,
+     0.043206450005527586
+    ],
+    "TIGRE fp interpolated": [
+     0.18220059998566285,
+     0.1810882499848958,
+     0.18147265000152402
+    ],
+    "ASTRA bp": [
+     0.04283210000721738,
+     0.04275289998622611,
+     0.04224209999665618
+    ],
+    "TIGRE bp matched": [
+     0.032950200024060905,
+     0.03291690000332892,
+     0.03300449997186661
+    ],
+    "TIGRE bp FDK": [
+     0.02815189998364076,
+     0.027863399998750538,
+     0.02776840003207326
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 6,
+    "TIGRE fp Siddon": 8,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 7,
+    "TIGRE bp matched": 9,
+    "TIGRE bp FDK": 11
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005511607831388245,
+     "scale": 1.0000097525851879
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00011061093251406202,
+     "scale": 0.9999845482551456
+    },
+    "TIGRE bp matched": {
+     "agree": 0.001022101854936872,
+     "scale": 1.0020388564421407
+    },
+    "TIGRE bp FDK": {
+     "agree": 1.4293164940500284e-06,
+     "scale": 2.170138971921546
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "angles: cone 512x512x512, det 512x512, 90 angles | NumPy | 1 GPU",
+   "case": "angles: cone 512x512x512, det 512x512, 90 angles",
+   "group": "angles",
+   "label": "90 angles",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 90,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.16152615001192316,
+     0.17313170002307743,
+     0.16226365001057275
+    ],
+    "TIGRE fp Siddon": [
+     0.12550449999980628,
+     0.10489130002679303,
+     0.10395700001390651
+    ],
+    "TIGRE fp interpolated": [
+     0.3810382000228856,
+     0.38022530000307597,
+     0.38018995002494194
+    ],
+    "ASTRA bp": [
+     0.15429805000894703,
+     0.15418805001536384,
+     0.16272165000555106
+    ],
+    "TIGRE bp matched": [
+     0.12760309997247532,
+     0.1544073999975808,
+     0.1263257999671623
+    ],
+    "TIGRE bp FDK": [
+     0.12718860001768917,
+     0.1197511000209488,
+     0.11851729999762028
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 3,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 3,
+    "TIGRE bp FDK": 3
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005578712254369126,
+     "scale": 1.0000101962153733
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00011720378736545141,
+     "scale": 0.9999825467909335
+    },
+    "TIGRE bp matched": {
+     "agree": 0.001022084332767284,
+     "scale": 1.002038843068187
+    },
+    "TIGRE bp FDK": {
+     "agree": 1.0153103755992435e-06,
+     "scale": 2.170138938611222
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "angles: cone 512x512x512, det 512x512, 90 angles | tensors | 1 GPU",
+   "case": "angles: cone 512x512x512, det 512x512, 90 angles",
+   "group": "angles",
+   "label": "90 angles",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 90,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.09333219999098219,
+     0.09397910002735443,
+     0.09347475002869032
+    ],
+    "TIGRE fp Siddon": [
+     0.06747830001404509,
+     0.06627940002363175,
+     0.06784790003439412
+    ],
+    "TIGRE fp interpolated": [
+     0.34344769999734126,
+     0.34448945001349784,
+     0.3474314500053879
+    ],
+    "ASTRA bp": [
+     0.0702820000005886,
+     0.07030869997106493,
+     0.070977000053972
+    ],
+    "TIGRE bp matched": [
+     0.050440400023944676,
+     0.050749999994877726,
+     0.050640299974475056
+    ],
+    "TIGRE bp FDK": [
+     0.04216800001449883,
+     0.04298819997347891,
+     0.04278139997040853
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 4,
+    "TIGRE fp Siddon": 5,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 5,
+    "TIGRE bp matched": 7,
+    "TIGRE bp FDK": 7
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005578712254369126,
+     "scale": 1.0000101962153733
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00011720378736545141,
+     "scale": 0.9999825467909335
+    },
+    "TIGRE bp matched": {
+     "agree": 0.001022084332767284,
+     "scale": 1.002038843068187
+    },
+    "TIGRE bp FDK": {
+     "agree": 1.0153103755992435e-06,
+     "scale": 2.170138938611222
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "angles: cone 512x512x512, det 512x512, 180 angles | NumPy | 1 GPU",
+   "case": "angles: cone 512x512x512, det 512x512, 180 angles",
+   "group": "angles",
+   "label": "180 angles",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 180,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.28356239999993704,
+     0.2852824500296265,
+     0.2840362999995705
+    ],
+    "TIGRE fp Siddon": [
+     0.15322440001182258,
+     0.14681910001672804,
+     0.14473399997223169
+    ],
+    "TIGRE fp interpolated": [
+     0.706344749982236,
+     0.7084629000164568,
+     0.7082959499966819
+    ],
+    "ASTRA bp": [
+     0.2272402500093449,
+     0.2379388500121422,
+     0.2250241500150878
+    ],
+    "TIGRE bp matched": [
+     0.16688794997753575,
+     0.18268440003157593,
+     0.18099314998835325
+    ],
+    "TIGRE bp FDK": [
+     0.1497726999805309,
+     0.14961094997124746,
+     0.1490221000276506
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 3,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005615446400995986,
+     "scale": 1.000010490280102
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00011249345827991422,
+     "scale": 0.9999834554500954
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010220832915797129,
+     "scale": 1.0020388549786126
+    },
+    "TIGRE bp FDK": {
+     "agree": 7.351081066656045e-07,
+     "scale": 2.170138930119649
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "angles: cone 512x512x512, det 512x512, 180 angles | tensors | 1 GPU",
+   "case": "angles: cone 512x512x512, det 512x512, 180 angles",
+   "group": "angles",
+   "label": "180 angles",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 180,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.19775674998527393,
+     0.1976351499906741,
+     0.1985951499955263
+    ],
+    "TIGRE fp Siddon": [
+     0.10876869998173788,
+     0.11113039997871965,
+     0.1117519999970682
+    ],
+    "TIGRE fp interpolated": [
+     0.6716442499891855,
+     0.6730152000091039,
+     0.6702101000119001
+    ],
+    "ASTRA bp": [
+     0.12744800001382828,
+     0.12873799999943003,
+     0.1288518999936059
+    ],
+    "TIGRE bp matched": [
+     0.0886309000197798,
+     0.08784834999823943,
+     0.09003434999613091
+    ],
+    "TIGRE bp FDK": [
+     0.07253720000153407,
+     0.07320329995127395,
+     0.0728699000319466
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 3,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 3,
+    "TIGRE bp matched": 4,
+    "TIGRE bp FDK": 5
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005615446400995986,
+     "scale": 1.000010490280102
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00011249345827991422,
+     "scale": 0.9999834554500954
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010220832915797129,
+     "scale": 1.0020388549786126
+    },
+    "TIGRE bp FDK": {
+     "agree": 7.351081066656045e-07,
+     "scale": 2.170138930119649
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "angles: cone 512x512x512, det 512x512, 360 angles | NumPy | 1 GPU",
+   "case": "angles: cone 512x512x512, det 512x512, 360 angles",
+   "group": "angles",
+   "label": "360 angles",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.5108836500148755,
+     0.51949134998722,
+     0.5235293500300031
+    ],
+    "TIGRE fp Siddon": [
+     0.23062390004633926,
+     0.2320542000234127,
+     0.23157544998684898
+    ],
+    "TIGRE fp interpolated": [
+     1.3723998999921605,
+     1.3522037999646273,
+     1.3774386000004597
+    ],
+    "ASTRA bp": [
+     0.37324384998646565,
+     0.3583775000006426,
+     0.364024549984606
+    ],
+    "TIGRE bp matched": [
+     0.23502849997021258,
+     0.2547034999879543,
+     0.24262205002014525
+    ],
+    "TIGRE bp FDK": [
+     0.2180571000208147,
+     0.2076311499986332,
+     0.21720114999334328
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005692994414141756,
+     "scale": 1.000009334676087
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00010741571895320119,
+     "scale": 0.9999839514378389
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010220854615313917,
+     "scale": 1.0020388611615507
+    },
+    "TIGRE bp FDK": {
+     "agree": 5.750319017701096e-07,
+     "scale": 2.1701389225396377
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "angles: cone 512x512x512, det 512x512, 360 angles | tensors | 1 GPU",
+   "case": "angles: cone 512x512x512, det 512x512, 360 angles",
+   "group": "angles",
+   "label": "360 angles",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.39990300001227297,
+     0.4000209499790799,
+     0.4004442999721505
+    ],
+    "TIGRE fp Siddon": [
+     0.19655379999312572,
+     0.19796375001897104,
+     0.20171560000744648
+    ],
+    "TIGRE fp interpolated": [
+     1.3211323500145227,
+     1.3236590499873273,
+     1.3268278000177816
+    ],
+    "ASTRA bp": [
+     0.2473912000132259,
+     0.24519324998254888,
+     0.2525166000123136
+    ],
+    "TIGRE bp matched": [
+     0.1636601499922108,
+     0.16547459998400882,
+     0.1658311499923002
+    ],
+    "TIGRE bp FDK": [
+     0.13521989999571815,
+     0.13447459996677935,
+     0.13411159999668598
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 3
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005692994414141756,
+     "scale": 1.000009334676087
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00010741571895320119,
+     "scale": 0.9999839514378389
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010220854615313917,
+     "scale": 1.0020388611615507
+    },
+    "TIGRE bp FDK": {
+     "agree": 5.750319017701096e-07,
+     "scale": 2.1701389225396377
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "angles: cone 512x512x512, det 512x512, 720 angles | NumPy | 1 GPU",
+   "case": "angles: cone 512x512x512, det 512x512, 720 angles",
+   "group": "angles",
+   "label": "720 angles",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 720,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.9365703500225209,
+     0.9531457499833778,
+     0.9444869500002824
+    ],
+    "TIGRE fp Siddon": [
+     0.40659519998007454,
+     0.4010643500078004,
+     0.40079585000057705
+    ],
+    "TIGRE fp interpolated": [
+     2.6473122499883175,
+     2.6545895999879576,
+     2.6733610500232317
+    ],
+    "ASTRA bp": [
+     0.6317543000041042,
+     0.6467364000272937,
+     0.6311377999663819
+    ],
+    "TIGRE bp matched": [
+     0.3950025500089396,
+     0.4112190500018187,
+     0.41403720001108013
+    ],
+    "TIGRE bp FDK": [
+     0.3423384499910753,
+     0.332810599997174,
+     0.32969095002044924
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005702961000082266,
+     "scale": 1.0000078495873306
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00010682045582919357,
+     "scale": 0.9999841241465376
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010220925544186252,
+     "scale": 1.0020388605704467
+    },
+    "TIGRE bp FDK": {
+     "agree": 5.276165850080072e-07,
+     "scale": 2.1701389039596233
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "angles: cone 512x512x512, det 512x512, 720 angles | tensors | 1 GPU",
+   "case": "angles: cone 512x512x512, det 512x512, 720 angles",
+   "group": "angles",
+   "label": "720 angles",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 720,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.8081133000086993,
+     0.809816499997396,
+     0.8100622500060126
+    ],
+    "TIGRE fp Siddon": [
+     0.3733275999838952,
+     0.37440300002344884,
+     0.3816381999931764
+    ],
+    "TIGRE fp interpolated": [
+     2.6240530500072055,
+     2.634980100003304,
+     2.6380940500239376
+    ],
+    "ASTRA bp": [
+     0.48067839999566786,
+     0.47955245000775903,
+     0.48529294997570105
+    ],
+    "TIGRE bp matched": [
+     0.3140753500338178,
+     0.3208747000026051,
+     0.3243664999608882
+    ],
+    "TIGRE bp FDK": [
+     0.2553660999983549,
+     0.25418139999965206,
+     0.2556812999828253
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005702961000082266,
+     "scale": 1.0000078495873306
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00010682045582919357,
+     "scale": 0.9999841241465376
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010220925544186252,
+     "scale": 1.0020388605704467
+    },
+    "TIGRE bp FDK": {
+     "agree": 5.276165850080072e-07,
+     "scale": 2.1701389039596233
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "angles: cone 512x512x512, det 512x512, 1440 angles | NumPy | 1 GPU",
+   "case": "angles: cone 512x512x512, det 512x512, 1440 angles",
+   "group": "angles",
+   "label": "1440 angles",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 1440,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     1.8608208500081673,
+     1.8752564000023995,
+     1.8601723000174388
+    ],
+    "TIGRE fp Siddon": [
+     0.743336849991465,
+     0.7643062999704853,
+     0.754542600014247
+    ],
+    "TIGRE fp interpolated": [
+     5.251051450002706,
+     5.2895045499899425,
+     5.302302299998701
+    ],
+    "ASTRA bp": [
+     1.2125926500011701,
+     1.2225465000083204,
+     1.2558035999827553
+    ],
+    "TIGRE bp matched": [
+     0.7207038500055205,
+     0.7203182500088587,
+     0.7341049000096973
+    ],
+    "TIGRE bp FDK": [
+     0.5841010500153061,
+     0.599072850018274,
+     0.5989126500207931
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005710642370144392,
+     "scale": 1.0000077220280905
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00010550466255032944,
+     "scale": 0.99998450010615
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010220906530201727,
+     "scale": 1.0020388641221107
+    },
+    "TIGRE bp FDK": {
+     "agree": 6.132199143532378e-07,
+     "scale": 2.1701389007409677
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "angles: cone 512x512x512, det 512x512, 1440 angles | tensors | 1 GPU",
+   "case": "angles: cone 512x512x512, det 512x512, 1440 angles",
+   "group": "angles",
+   "label": "1440 angles",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 1440,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     1.5307980499637779,
+     1.5324726499966346,
+     1.530465349991573
+    ],
+    "TIGRE fp Siddon": [
+     0.7275991000060458,
+     0.7311726000043564,
+     0.7395298499905039
+    ],
+    "TIGRE fp interpolated": [
+     5.23595614999067,
+     5.279693350021262,
+     5.287860450014705
+    ],
+    "ASTRA bp": [
+     0.9453765999933239,
+     0.9556088999670465,
+     0.9495754499803297
+    ],
+    "TIGRE bp matched": [
+     0.6425887499935925,
+     0.6444055000029039,
+     0.6461438499973156
+    ],
+    "TIGRE bp FDK": [
+     0.49760024997522123,
+     0.5005245999782346,
+     0.5014116500096861
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0005710642370144392,
+     "scale": 1.0000077220280905
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00010550466255032944,
+     "scale": 0.99998450010615
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010220906530201727,
+     "scale": 1.0020388641221107
+    },
+    "TIGRE bp FDK": {
+     "agree": 6.132199143532378e-07,
+     "scale": 2.1701389007409677
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "shape: cone 256x512x512, det 512x1024, 360 angles | NumPy | 1 GPU",
+   "case": "shape: cone 256x512x512, det 512x1024, 360 angles",
+   "group": "shape",
+   "label": "clinical CBCT",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    256,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    1024
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.8960724500066135,
+     0.8959802000026684,
+     0.9161746499885339
+    ],
+    "TIGRE fp Siddon": [
+     0.29779845001758076,
+     0.2969752000353765,
+     0.2983210999809671
+    ],
+    "TIGRE fp interpolated": [
+     2.531065050017787,
+     2.537553649977781,
+     2.5315349500160664
+    ],
+    "ASTRA bp": [
+     0.2762049499724526,
+     0.2736107499804348,
+     0.28157374999136664
+    ],
+    "TIGRE bp matched": [
+     0.1390532999939751,
+     0.1564488000003621,
+     0.13603685001726262
+    ],
+    "TIGRE bp FDK": [
+     0.12225129996659234,
+     0.1255138000124134,
+     0.12564919999567792
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 3
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0022703759860478786,
+     "scale": 1.0000313347272167
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.0001941258552078735,
+     "scale": 0.9999722042929164
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0007286861705785671,
+     "scale": 1.0014887469159641
+    },
+    "TIGRE bp FDK": {
+     "agree": 4.815560496602935e-07,
+     "scale": 0.6103515412170194
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "shape: cone 256x512x512, det 512x1024, 360 angles | tensors | 1 GPU",
+   "case": "shape: cone 256x512x512, det 512x1024, 360 angles",
+   "group": "shape",
+   "label": "clinical CBCT",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    256,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    1024
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.7742498999868985,
+     0.773496649984736,
+     0.7739974499854725
+    ],
+    "TIGRE fp Siddon": [
+     0.2860913000185974,
+     0.2879635500139557,
+     0.28938299999572337
+    ],
+    "TIGRE fp interpolated": [
+     2.515324550011428,
+     2.5208456000254955,
+     2.526326050021453
+    ],
+    "ASTRA bp": [
+     0.1455973000265658,
+     0.14493879996007308,
+     0.14613170002121478
+    ],
+    "TIGRE bp matched": [
+     0.09412170000723563,
+     0.09339185000862926,
+     0.09388110000872985
+    ],
+    "TIGRE bp FDK": [
+     0.07757104997290298,
+     0.07866985001601279,
+     0.07795194999198429
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 3,
+    "TIGRE bp matched": 4,
+    "TIGRE bp FDK": 4
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0022703759860478786,
+     "scale": 1.0000313347272167
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.0001941258552078735,
+     "scale": 0.9999722042929164
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0007286861705785671,
+     "scale": 1.0014887469159641
+    },
+    "TIGRE bp FDK": {
+     "agree": 4.815560496602935e-07,
+     "scale": 0.6103515412170194
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "shape: cone 256x256x256, det 1024x1024, 360 angles | NumPy | 1 GPU",
+   "case": "shape: cone 256x256x256, det 1024x1024, 360 angles",
+   "group": "shape",
+   "label": "fine detector",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    256,
+    256,
+    256
+   ],
+   "ndet": [
+    1024,
+    1024
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     1.0846713999926578,
+     1.0353537499904633,
+     1.0027025000017602
+    ],
+    "TIGRE fp Siddon": [
+     0.302426549984375,
+     0.33745719998842105,
+     0.2907229000120424
+    ],
+    "TIGRE fp interpolated": [
+     2.4136019500147086,
+     2.4012727499648463,
+     2.4084420499857515
+    ],
+    "ASTRA bp": [
+     0.28856135002570227,
+     0.248608849971788,
+     0.2572527000156697
+    ],
+    "TIGRE bp matched": [
+     0.15243839999311604,
+     0.13552919999347068,
+     0.13797539999359287
+    ],
+    "TIGRE bp FDK": [
+     0.14382404999923892,
+     0.16691240001819097,
+     0.1334629499760922
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0023568021992517846,
+     "scale": 1.0000431422661564
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00017690809136021066,
+     "scale": 0.9999865754620096
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010220992832637172,
+     "scale": 1.002038784309291
+    },
+    "TIGRE bp FDK": {
+     "agree": 4.0442842869926444e-07,
+     "scale": 0.0678168407306833
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "shape: cone 256x256x256, det 1024x1024, 360 angles | tensors | 1 GPU",
+   "case": "shape: cone 256x256x256, det 1024x1024, 360 angles",
+   "group": "shape",
+   "label": "fine detector",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    256,
+    256,
+    256
+   ],
+   "ndet": [
+    1024,
+    1024
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.7728127999871504,
+     0.7720077500271145,
+     0.7736116999876685
+    ],
+    "TIGRE fp Siddon": [
+     0.31418325001141056,
+     0.30578195000998676,
+     0.3060047999897506
+    ],
+    "TIGRE fp interpolated": [
+     2.4182992999849375,
+     2.4186764500045683,
+     2.42676475000917
+    ],
+    "ASTRA bp": [
+     0.07944964998750947,
+     0.07897949998732656,
+     0.07966674998169765
+    ],
+    "TIGRE bp matched": [
+     0.042611500015482306,
+     0.04268910002429038,
+     0.04264370002783835
+    ],
+    "TIGRE bp FDK": [
+     0.03994659997988492,
+     0.04036444998928346,
+     0.04078370000934228
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 4,
+    "TIGRE bp matched": 7,
+    "TIGRE bp FDK": 6
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0023568021992517846,
+     "scale": 1.0000431422661564
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00017690809136021066,
+     "scale": 0.9999865754620096
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010220992832637172,
+     "scale": 1.002038784309291
+    },
+    "TIGRE bp FDK": {
+     "agree": 4.0442842869926444e-07,
+     "scale": 0.0678168407306833
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "shape: cone 512x512x512, det 256x256, 360 angles | NumPy | 1 GPU",
+   "case": "shape: cone 512x512x512, det 256x256, 360 angles",
+   "group": "shape",
+   "label": "coarse detector",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    256,
+    256
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.17653724999399856,
+     0.17342349997488782,
+     0.1743197999894619
+    ],
+    "TIGRE fp Siddon": [
+     0.1401695999666117,
+     0.14177079999353737,
+     0.14531500003067777
+    ],
+    "TIGRE fp interpolated": [
+     0.4404799500189256,
+     0.44658925003022887,
+     0.44465210000635125
+    ],
+    "ASTRA bp": [
+     0.3359319500159472,
+     0.3224978500220459,
+     0.3152274500171188
+    ],
+    "TIGRE bp matched": [
+     0.23305485001765192,
+     0.24196719998144545,
+     0.23027020000154153
+    ],
+    "TIGRE bp FDK": [
+     0.21195825000177138,
+     0.22244825001689605,
+     0.22735085000749677
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 3,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0007518004044293666,
+     "scale": 1.0000122262074638
+    },
+    "TIGRE fp interpolated": {
+     "agree": 6.340188292555649e-05,
+     "scale": 1.000008109678961
+    },
+    "TIGRE bp matched": {
+     "agree": 0.001022142591902552,
+     "scale": 1.0020388783084235
+    },
+    "TIGRE bp FDK": {
+     "agree": 9.715411046187107e-07,
+     "scale": 8.680555692701567
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "shape: cone 512x512x512, det 256x256, 360 angles | tensors | 1 GPU",
+   "case": "shape: cone 512x512x512, det 256x256, 360 angles",
+   "group": "shape",
+   "label": "coarse detector",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    256,
+    256
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.10562349995598197,
+     0.10768929996993393,
+     0.10629450000124052
+    ],
+    "TIGRE fp Siddon": [
+     0.10010310000507161,
+     0.10202839999692515,
+     0.1012277000118047
+    ],
+    "TIGRE fp interpolated": [
+     0.403999650006881,
+     0.4086418999941088,
+     0.40689024998573586
+    ],
+    "ASTRA bp": [
+     0.23625230000470765,
+     0.2300645500072278,
+     0.23353950001182966
+    ],
+    "TIGRE bp matched": [
+     0.15715220000129193,
+     0.16060355000081472,
+     0.16487060001236387
+    ],
+    "TIGRE bp FDK": [
+     0.13135400001192465,
+     0.13270779995946214,
+     0.13245020003523678
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 3,
+    "TIGRE fp Siddon": 3,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 3
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0007518004044293666,
+     "scale": 1.0000122262074638
+    },
+    "TIGRE fp interpolated": {
+     "agree": 6.340188292555649e-05,
+     "scale": 1.000008109678961
+    },
+    "TIGRE bp matched": {
+     "agree": 0.001022142591902552,
+     "scale": 1.0020388783084235
+    },
+    "TIGRE bp FDK": {
+     "agree": 9.715411046187107e-07,
+     "scale": 8.680555692701567
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "offset: cone 512x512x512, det 512x512, 360 angles, det offset 0,102.4 mm | NumPy | 1 GPU",
+   "case": "offset: cone 512x512x512, det 512x512, 360 angles, det offset 0,102.4 mm",
+   "group": "offset",
+   "label": "u offset 102.4 mm",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.5071886999940034,
+     0.5143362499948125,
+     0.5064662000222597
+    ],
+    "TIGRE fp Siddon": [
+     0.20252985000843182,
+     0.202908050006954,
+     0.1960578500002157
+    ],
+    "TIGRE fp interpolated": [
+     1.3485199499991722,
+     1.3491745999781415,
+     1.3495561000017915
+    ],
+    "ASTRA bp": [
+     0.4045483499648981,
+     0.36216229997808114,
+     0.3805261499946937
+    ],
+    "TIGRE bp matched": [
+     0.24282539999694563,
+     0.2713067000149749,
+     0.23918855001102202
+    ],
+    "TIGRE bp FDK": [
+     0.22687639997457154,
+     0.22167095000622794,
+     0.2213198499812279
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.000538845950137348,
+     "scale": 1.0000098735634106
+    },
+    "TIGRE fp interpolated": {
+     "agree": 8.461478413976202e-05,
+     "scale": 0.9999843200569006
+    },
+    "TIGRE bp matched": {
+     "agree": 0.000928785688078308,
+     "scale": 1.0017382616083028
+    },
+    "TIGRE bp FDK": {
+     "agree": 2.021349012762571e-06,
+     "scale": 2.17013873869593
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "offset: cone 512x512x512, det 512x512, 360 angles, det offset 0,102.4 mm | tensors | 1 GPU",
+   "case": "offset: cone 512x512x512, det 512x512, 360 angles, det offset 0,102.4 mm",
+   "group": "offset",
+   "label": "u offset 102.4 mm",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.3980503999919165,
+     0.3980017000285443,
+     0.3976122500025667
+    ],
+    "TIGRE fp Siddon": [
+     0.166360950039234,
+     0.1665241500013508,
+     0.16760025001713075
+    ],
+    "TIGRE fp interpolated": [
+     1.3166146500152536,
+     1.3184024500078522,
+     1.3191764499933925
+    ],
+    "ASTRA bp": [
+     0.24596699999528937,
+     0.24325430003227666,
+     0.24684770000749268
+    ],
+    "TIGRE bp matched": [
+     0.16149560001213104,
+     0.16207649998250417,
+     0.164575499977218
+    ],
+    "TIGRE bp FDK": [
+     0.13335319998441264,
+     0.13257439999142662,
+     0.13392860000021756
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 2,
+    "TIGRE bp FDK": 3
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.000538845950137348,
+     "scale": 1.0000098735634106
+    },
+    "TIGRE fp interpolated": {
+     "agree": 8.461478413976202e-05,
+     "scale": 0.9999843200569006
+    },
+    "TIGRE bp matched": {
+     "agree": 0.000928785688078308,
+     "scale": 1.0017382616083028
+    },
+    "TIGRE bp FDK": {
+     "agree": 2.021349012762571e-06,
+     "scale": 2.17013873869593
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "parallel: parallel 256x256x256, det 256x256, 360 angles | NumPy | 1 GPU",
+   "case": "parallel: parallel 256x256x256, det 256x256, 360 angles",
+   "group": "parallel",
+   "label": "256^3",
+   "beam": "parallel",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    256,
+    256,
+    256
+   ],
+   "ndet": [
+    256,
+    256
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.055380299978423864,
+     0.05475494998972863,
+     0.054312850028509274
+    ],
+    "TIGRE fp Siddon": [
+     0.029918149986770004,
+     0.03014985003392212,
+     0.03013825000380166
+    ],
+    "TIGRE fp interpolated": [
+     0.161037399986526,
+     0.1571257500036154,
+     0.15801460001966916
+    ],
+    "ASTRA bp": [
+     0.05977754996274598,
+     0.05642564999288879,
+     0.05263345001731068
+    ],
+    "TIGRE bp": [
+     0.028250300034414977,
+     0.02771919994847849,
+     0.026896599971223623
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 6,
+    "TIGRE fp Siddon": 4,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 4,
+    "TIGRE bp": 9
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0001770710534656921,
+     "scale": 1.0000158867845728
+    },
+    "TIGRE fp interpolated": {
+     "agree": 5.8812102354633014e-05,
+     "scale": 0.9999905047927028
+    },
+    "TIGRE bp": {
+     "agree": 4.885300868030575e-07,
+     "scale": 1.0000000022072102
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "parallel: parallel 256x256x256, det 256x256, 360 angles | tensors | 1 GPU",
+   "case": "parallel: parallel 256x256x256, det 256x256, 360 angles",
+   "group": "parallel",
+   "label": "256^3",
+   "beam": "parallel",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    256,
+    256,
+    256
+   ],
+   "ndet": [
+    256,
+    256
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.031807900028070435,
+     0.031402649998199195,
+     0.03139990000636317
+    ],
+    "TIGRE fp Siddon": [
+     0.026589199987938628,
+     0.026978849986335263,
+     0.026977799978340045
+    ],
+    "TIGRE fp interpolated": [
+     0.15402185000129975,
+     0.15334389999043196,
+     0.15352040002471767
+    ],
+    "ASTRA bp": [
+     0.032184099982259795,
+     0.03219040000112727,
+     0.03219960001297295
+    ],
+    "TIGRE bp": [
+     0.016940199973760173,
+     0.0168971499952022,
+     0.016942499962169677
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 10,
+    "TIGRE fp Siddon": 12,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 10,
+    "TIGRE bp": 18
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0001770710534656921,
+     "scale": 1.0000158867845728
+    },
+    "TIGRE fp interpolated": {
+     "agree": 5.8812102354633014e-05,
+     "scale": 0.9999905047927028
+    },
+    "TIGRE bp": {
+     "agree": 4.885300868030575e-07,
+     "scale": 1.0000000022072102
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "parallel: parallel 512x512x512, det 512x512, 360 angles | NumPy | 1 GPU",
+   "case": "parallel: parallel 512x512x512, det 512x512, 360 angles",
+   "group": "parallel",
+   "label": "512^3",
+   "beam": "parallel",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.37782684998819605,
+     0.3880504500120878,
+     0.3912967999931425
+    ],
+    "TIGRE fp Siddon": [
+     0.24169629998505116,
+     0.22960640004021116,
+     0.22677579999435693
+    ],
+    "TIGRE fp interpolated": [
+     1.1965597000089474,
+     1.2023627000162378,
+     1.2062869000073988
+    ],
+    "ASTRA bp": [
+     0.34693164998316206,
+     0.3621621500060428,
+     0.3734781999955885
+    ],
+    "TIGRE bp": [
+     0.21727069999906234,
+     0.19973449999815784,
+     0.1998775500105694
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.00010804632417549735,
+     "scale": 1.0000040097398557
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.0001075074585858222,
+     "scale": 0.9999975074495161
+    },
+    "TIGRE bp": {
+     "agree": 3.981209567002433e-07,
+     "scale": 1.9999999975109006
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "parallel: parallel 512x512x512, det 512x512, 360 angles | tensors | 1 GPU",
+   "case": "parallel: parallel 512x512x512, det 512x512, 360 angles",
+   "group": "parallel",
+   "label": "512^3",
+   "beam": "parallel",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    512,
+    512,
+    512
+   ],
+   "ndet": [
+    512,
+    512
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.2624313500127755,
+     0.2626399000000674,
+     0.2636443999654148
+    ],
+    "TIGRE fp Siddon": [
+     0.19415629998547956,
+     0.19579024997074157,
+     0.19628644999465905
+    ],
+    "TIGRE fp interpolated": [
+     1.1662895000190474,
+     1.1641364499810152,
+     1.1656397000188008
+    ],
+    "ASTRA bp": [
+     0.23561429997789674,
+     0.23482125002192333,
+     0.23583839999628253
+    ],
+    "TIGRE bp": [
+     0.1249254000140354,
+     0.1236790000111796,
+     0.12356669997097924
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp": 3
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.00010804632417549735,
+     "scale": 1.0000040097398557
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.0001075074585858222,
+     "scale": 0.9999975074495161
+    },
+    "TIGRE bp": {
+     "agree": 3.981209567002433e-07,
+     "scale": 1.9999999975109006
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "parallel: parallel 1024x1024x1024, det 1024x1024, 360 angles | NumPy | 1 GPU",
+   "case": "parallel: parallel 1024x1024x1024, det 1024x1024, 360 angles",
+   "group": "parallel",
+   "label": "1024^3",
+   "beam": "parallel",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    1024,
+    1024,
+    1024
+   ],
+   "ndet": [
+    1024,
+    1024
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     3.194864499993855,
+     3.120135350007331,
+     3.088465350010665
+    ],
+    "TIGRE fp Siddon": [
+     2.0720739499665797,
+     1.965462500025751,
+     1.9429304000223055
+    ],
+    "TIGRE fp interpolated": [
+     9.494900099991355,
+     9.482265999977244,
+     9.4783666000003
+    ],
+    "ASTRA bp": [
+     2.5972709499765188,
+     2.5895182999956887,
+     2.5885352499899454
+    ],
+    "TIGRE bp": [
+     1.7950923500175122,
+     1.583413999993354,
+     1.5731278999883216
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0002013282762898528,
+     "scale": 1.000000944804237
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00020133421632845204,
+     "scale": 0.9999991712869364
+    },
+    "TIGRE bp": {
+     "agree": 3.6947568340998884e-07,
+     "scale": 3.999999997217248
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "parallel: parallel 1024x1024x1024, det 1024x1024, 360 angles | tensors | 1 GPU",
+   "case": "parallel: parallel 1024x1024x1024, det 1024x1024, 360 angles",
+   "group": "parallel",
+   "label": "1024^3",
+   "beam": "parallel",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    1024,
+    1024,
+    1024
+   ],
+   "ndet": [
+    1024,
+    1024
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     16.76179229997797,
+     16.737800149974646,
+     16.79861764999805
+    ],
+    "TIGRE fp Siddon": [
+     1.612559550005244,
+     1.5772813000075985,
+     1.6009620999975596
+    ],
+    "TIGRE fp interpolated": [
+     18.056877399998484,
+     17.981264250003733,
+     18.039434949983843
+    ],
+    "ASTRA bp": [
+     10.15993975001038,
+     10.181735500023933,
+     10.244028949993663
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 2,
+    "TIGRE fp Siddon": 2,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0002013282762898528,
+     "scale": 1.000000944804237
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00020133421632845204,
+     "scale": 0.9999991712869364
+    }
+   },
+   "errors": {
+    "TIGRE bp": "RuntimeError: Atb:voxel_backprojection_parallel:GPUmemory: out of memory: Backprojection (parallel beam) needs at least 261 MB of free GPU memory on each GPU, but only about 9 MB are free. Free some GPU memory (in PyTorch: torch.cuda.empty_cache()) or use a smaller problem.\n"
+   }
+  },
+  {
+   "key": "fan: fan 1x512x512, det 1x512, 360 angles | NumPy | 1 GPU",
+   "case": "fan: fan 1x512x512, det 1x512, 360 angles",
+   "group": "fan",
+   "label": "512^2",
+   "beam": "fan",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    1,
+    512,
+    512
+   ],
+   "ndet": [
+    1,
+    512
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.0012764499988406897,
+     0.0012849000049754977,
+     0.001296950038522482
+    ],
+    "TIGRE fp Siddon": [
+     0.0015094999980647117,
+     0.0015023499727249146,
+     0.0015088500222191215
+    ],
+    "TIGRE fp interpolated": [
+     0.004634000011719763,
+     0.004024600028060377,
+     0.004106700012926012
+    ],
+    "ASTRA bp": [
+     0.003592599998228252,
+     0.003709500015247613,
+     0.003622199990786612
+    ],
+    "TIGRE bp matched": [
+     0.0015878000413067639,
+     0.001561200013384223,
+     0.0015631499700248241
+    ],
+    "TIGRE bp FDK": [
+     0.0015114000416360795,
+     0.0017945999861694872,
+     0.0015024999738670886
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 200,
+    "TIGRE fp Siddon": 182,
+    "TIGRE fp interpolated": 73,
+    "ASTRA bp": 5,
+    "TIGRE bp matched": 160,
+    "TIGRE bp FDK": 149
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.00020257553926521598,
+     "scale": 1.0000047212699943
+    },
+    "TIGRE fp interpolated": {
+     "agree": 7.669450998368459e-05,
+     "scale": 0.9999958038120166
+    },
+    "TIGRE bp matched": {
+     "agree": 0.006316519423974997,
+     "scale": 1.0085295329862332
+    },
+    "TIGRE bp FDK": {
+     "agree": 0.005778741902652583,
+     "scale": 2.0986011584113786
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "fan: fan 1x512x512, det 1x512, 360 angles | tensors | 1 GPU",
+   "case": "fan: fan 1x512x512, det 1x512, 360 angles",
+   "group": "fan",
+   "label": "512^2",
+   "beam": "fan",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    1,
+    512,
+    512
+   ],
+   "ndet": [
+    1,
+    512
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.0012084500049240887,
+     0.0012124000350013375,
+     0.0011005999986082315
+    ],
+    "TIGRE fp Siddon": [
+     0.0012285999837331474,
+     0.0013902499922551215,
+     0.001215800002682954
+    ],
+    "TIGRE fp interpolated": [
+     0.003659399983007461,
+     0.00371064999490045,
+     0.0036829999880865216
+    ],
+    "ASTRA bp": [
+     0.003433399979257956,
+     0.0034002999891526997,
+     0.003405400027986616
+    ],
+    "TIGRE bp matched": [
+     0.0012208999833092093,
+     0.0012216499890200794,
+     0.00122154998825863
+    ],
+    "TIGRE bp FDK": [
+     0.0011770999990403652,
+     0.0011632500099949539,
+     0.001157949969638139
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 200,
+    "TIGRE fp Siddon": 200,
+    "TIGRE fp interpolated": 82,
+    "ASTRA bp": 88,
+    "TIGRE bp matched": 200,
+    "TIGRE bp FDK": 200
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.00020257553926521598,
+     "scale": 1.0000047212699943
+    },
+    "TIGRE fp interpolated": {
+     "agree": 7.669450998368459e-05,
+     "scale": 0.9999958038120166
+    },
+    "TIGRE bp matched": {
+     "agree": 0.006316519423974997,
+     "scale": 1.0085295329862332
+    },
+    "TIGRE bp FDK": {
+     "agree": 0.005778741902652583,
+     "scale": 2.0986011584113786
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "fan: fan 1x1024x1024, det 1x1024, 360 angles | NumPy | 1 GPU",
+   "case": "fan: fan 1x1024x1024, det 1x1024, 360 angles",
+   "group": "fan",
+   "label": "1024^2",
+   "beam": "fan",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    1,
+    1024,
+    1024
+   ],
+   "ndet": [
+    1,
+    1024
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.002677000011317432,
+     0.0027274999883957207,
+     0.0027037999825552106
+    ],
+    "TIGRE fp Siddon": [
+     0.0029894000035710633,
+     0.0030046999745536596,
+     0.0029526999860536307
+    ],
+    "TIGRE fp interpolated": [
+     0.011272199975792319,
+     0.011277500016149133,
+     0.011288599984254688
+    ],
+    "ASTRA bp": [
+     0.012067999981809407,
+     0.012078700005076826,
+     0.012180600024294108
+    ],
+    "TIGRE bp matched": [
+     0.00328469998203218,
+     0.00320909998845309,
+     0.003251599962823093
+    ],
+    "TIGRE bp FDK": [
+     0.003204300010111183,
+     0.0031058999884407967,
+     0.0030340000230353326
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 105,
+    "TIGRE fp Siddon": 82,
+    "TIGRE fp interpolated": 27,
+    "ASTRA bp": 25,
+    "TIGRE bp matched": 91,
+    "TIGRE bp FDK": 100
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 7.728114449255916e-05,
+     "scale": 1.0000005467043631
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00016125610263706617,
+     "scale": 0.9999873738058959
+    },
+    "TIGRE bp matched": {
+     "agree": 0.006316348491123245,
+     "scale": 1.008529295157537
+    },
+    "TIGRE bp FDK": {
+     "agree": 0.0057786129037127616,
+     "scale": 4.197201538385535
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "fan: fan 1x1024x1024, det 1x1024, 360 angles | tensors | 1 GPU",
+   "case": "fan: fan 1x1024x1024, det 1x1024, 360 angles",
+   "group": "fan",
+   "label": "1024^2",
+   "beam": "fan",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    1,
+    1024,
+    1024
+   ],
+   "ndet": [
+    1,
+    1024
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.0020689500379376113,
+     0.002092800015816465,
+     0.0021146999788470566
+    ],
+    "TIGRE fp Siddon": [
+     0.0021477999980561435,
+     0.002152350003598258,
+     0.002228250028565526
+    ],
+    "TIGRE fp interpolated": [
+     0.01055349997477606,
+     0.010525999998208135,
+     0.010543500015046448
+    ],
+    "ASTRA bp": [
+     0.01149730000179261,
+     0.0114929000264965,
+     0.011491699959151447
+    ],
+    "TIGRE bp matched": [
+     0.0024118999717757106,
+     0.002423600002657622,
+     0.002418300020508468
+    ],
+    "TIGRE bp FDK": [
+     0.002251149999210611,
+     0.002259800035972148,
+     0.002219299989519641
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 140,
+    "TIGRE fp Siddon": 138,
+    "TIGRE fp interpolated": 29,
+    "ASTRA bp": 27,
+    "TIGRE bp matched": 119,
+    "TIGRE bp FDK": 130
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 7.728114449255916e-05,
+     "scale": 1.0000005467043631
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00016125610263706617,
+     "scale": 0.9999873738058959
+    },
+    "TIGRE bp matched": {
+     "agree": 0.006316348491123245,
+     "scale": 1.008529295157537
+    },
+    "TIGRE bp FDK": {
+     "agree": 0.0057786129037127616,
+     "scale": 4.197201538385535
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "fan: fan 1x2048x2048, det 1x2048, 360 angles | NumPy | 1 GPU",
+   "case": "fan: fan 1x2048x2048, det 1x2048, 360 angles",
+   "group": "fan",
+   "label": "2048^2",
+   "beam": "fan",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    1,
+    2048,
+    2048
+   ],
+   "ndet": [
+    1,
+    2048
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.006897100014612079,
+     0.006927699956577271,
+     0.006766800011973828
+    ],
+    "TIGRE fp Siddon": [
+     0.007709400029852986,
+     0.007691650011111051,
+     0.007692850020248443
+    ],
+    "TIGRE fp interpolated": [
+     0.03970740002114326,
+     0.0395561000041198,
+     0.03990515001351014
+    ],
+    "ASTRA bp": [
+     0.04659029998583719,
+     0.04651170002762228,
+     0.04659380001248792
+    ],
+    "TIGRE bp matched": [
+     0.009639750001952052,
+     0.009604649996617809,
+     0.00973635000991635
+    ],
+    "TIGRE bp FDK": [
+     0.008912099990993738,
+     0.008957199985161424,
+     0.008981300052255392
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 43,
+    "TIGRE fp Siddon": 40,
+    "TIGRE fp interpolated": 8,
+    "ASTRA bp": 7,
+    "TIGRE bp matched": 32,
+    "TIGRE bp FDK": 33
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 2.4020729531687685e-05,
+     "scale": 0.9999998692326385
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00029546757195591703,
+     "scale": 1.0000080932258084
+    },
+    "TIGRE bp matched": {
+     "agree": 0.006316434302261072,
+     "scale": 1.0085295678158843
+    },
+    "TIGRE bp FDK": {
+     "agree": 0.005778647617507078,
+     "scale": 8.394404629487006
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "fan: fan 1x2048x2048, det 1x2048, 360 angles | tensors | 1 GPU",
+   "case": "fan: fan 1x2048x2048, det 1x2048, 360 angles",
+   "group": "fan",
+   "label": "2048^2",
+   "beam": "fan",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    1,
+    2048,
+    2048
+   ],
+   "ndet": [
+    1,
+    2048
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.005327399994712323,
+     0.0052961999899707735,
+     0.0052970999968238175
+    ],
+    "TIGRE fp Siddon": [
+     0.0061935000121593475,
+     0.006206099991686642,
+     0.006273799983318895
+    ],
+    "TIGRE fp interpolated": [
+     0.0383857499982696,
+     0.038285199989331886,
+     0.03827685001306236
+    ],
+    "ASTRA bp": [
+     0.044444500003010035,
+     0.04448650003178045,
+     0.04459160001715645
+    ],
+    "TIGRE bp matched": [
+     0.007199799991212785,
+     0.0072033999604173005,
+     0.0072172999498434365
+    ],
+    "TIGRE bp FDK": [
+     0.006392200011759996,
+     0.006385100015904754,
+     0.0064211999997496605
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 57,
+    "TIGRE fp Siddon": 49,
+    "TIGRE fp interpolated": 8,
+    "ASTRA bp": 7,
+    "TIGRE bp matched": 41,
+    "TIGRE bp FDK": 45
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 2.4020729531687685e-05,
+     "scale": 0.9999998692326385
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00029546757195591703,
+     "scale": 1.0000080932258084
+    },
+    "TIGRE bp matched": {
+     "agree": 0.006316434302261072,
+     "scale": 1.0085295678158843
+    },
+    "TIGRE bp FDK": {
+     "agree": 0.005778647617507078,
+     "scale": 8.394404629487006
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "fan: fan 1x4096x4096, det 1x4096, 360 angles | NumPy | 1 GPU",
+   "case": "fan: fan 1x4096x4096, det 1x4096, 360 angles",
+   "group": "fan",
+   "label": "4096^2",
+   "beam": "fan",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    1,
+    4096,
+    4096
+   ],
+   "ndet": [
+    1,
+    4096
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.024795800040010363,
+     0.02550430002156645,
+     0.024843099992722273
+    ],
+    "TIGRE fp Siddon": [
+     0.029862099996535107,
+     0.028664550016401336,
+     0.029699799983063713
+    ],
+    "TIGRE fp interpolated": [
+     0.15828925001551397,
+     0.1573991499899421,
+     0.15772555000148714
+    ],
+    "ASTRA bp": [
+     0.182775049994234,
+     0.18474815000081435,
+     0.1881160000048112
+    ],
+    "TIGRE bp matched": [
+     0.03667579998727888,
+     0.036467400030232966,
+     0.036955000017769635
+    ],
+    "TIGRE bp FDK": [
+     0.03306755001540296,
+     0.03239274999941699,
+     0.033375950006302446
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 11,
+    "TIGRE fp Siddon": 10,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 9,
+    "TIGRE bp FDK": 10
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 9.084480735831993e-06,
+     "scale": 0.9999991541090206
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.000623192370832144,
+     "scale": 1.0000485138428363
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0063168420090448105,
+     "scale": 1.0085302483233256
+    },
+    "TIGRE bp FDK": {
+     "agree": 0.005778923970413166,
+     "scale": 16.788817750733244
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "fan: fan 1x4096x4096, det 1x4096, 360 angles | tensors | 1 GPU",
+   "case": "fan: fan 1x4096x4096, det 1x4096, 360 angles",
+   "group": "fan",
+   "label": "4096^2",
+   "beam": "fan",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    1,
+    4096,
+    4096
+   ],
+   "ndet": [
+    1,
+    4096
+   ],
+   "angles": 360,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.01880394996260293,
+     0.018808749970048666,
+     0.018924250005511567
+    ],
+    "TIGRE fp Siddon": [
+     0.024401200003921986,
+     0.02412630000617355,
+     0.024171299999579787
+    ],
+    "TIGRE fp interpolated": [
+     0.15364429997862317,
+     0.15328739999677055,
+     0.1561572500213515
+    ],
+    "ASTRA bp": [
+     0.17514365003444254,
+     0.174022099992726,
+     0.17601125000510365
+    ],
+    "TIGRE bp matched": [
+     0.02677430000039749,
+     0.026308850036002696,
+     0.026698549976572394
+    ],
+    "TIGRE bp FDK": [
+     0.023063400003593415,
+     0.02286764999735169,
+     0.023391850001644343
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 16,
+    "TIGRE fp Siddon": 13,
+    "TIGRE fp interpolated": 2,
+    "ASTRA bp": 2,
+    "TIGRE bp matched": 12,
+    "TIGRE bp FDK": 14
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 9.084480735831993e-06,
+     "scale": 0.9999991541090206
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.000623192370832144,
+     "scale": 1.0000485138428363
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0063168420090448105,
+     "scale": 1.0085302483233256
+    },
+    "TIGRE bp FDK": {
+     "agree": 0.005778923970413166,
+     "scale": 16.788817750733244
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "fan: fan 1x1024x1024, det 1x1024, 1440 angles | NumPy | 1 GPU",
+   "case": "fan: fan 1x1024x1024, det 1x1024, 1440 angles",
+   "group": "fan",
+   "label": "1024^2, 1440 angles",
+   "beam": "fan",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    1,
+    1024,
+    1024
+   ],
+   "ndet": [
+    1,
+    1024
+   ],
+   "angles": 1440,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.005825800006277859,
+     0.005915699992328882,
+     0.005789300019387156
+    ],
+    "TIGRE fp Siddon": [
+     0.007193099998403341,
+     0.007117300003301352,
+     0.007133100007195026
+    ],
+    "TIGRE fp interpolated": [
+     0.03953394998097792,
+     0.03957220001029782,
+     0.03973260000930168
+    ],
+    "ASTRA bp": [
+     0.04510129999835044,
+     0.045082899974659085,
+     0.04515349998837337
+    ],
+    "TIGRE bp matched": [
+     0.008788949984591454,
+     0.00877195000066422,
+     0.008796850015642121
+    ],
+    "TIGRE bp FDK": [
+     0.008032500045374036,
+     0.008062199980486184,
+     0.008021000016015023
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 51,
+    "TIGRE fp Siddon": 43,
+    "TIGRE fp interpolated": 8,
+    "ASTRA bp": 7,
+    "TIGRE bp matched": 34,
+    "TIGRE bp FDK": 37
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 7.292012801996586e-05,
+     "scale": 1.000000634431298
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00016429792285958483,
+     "scale": 0.9999875503058322
+    },
+    "TIGRE bp matched": {
+     "agree": 0.006316371909462713,
+     "scale": 1.008529311468174
+    },
+    "TIGRE bp FDK": {
+     "agree": 0.005778631684285264,
+     "scale": 4.1972015761239145
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "fan: fan 1x1024x1024, det 1x1024, 1440 angles | tensors | 1 GPU",
+   "case": "fan: fan 1x1024x1024, det 1x1024, 1440 angles",
+   "group": "fan",
+   "label": "1024^2, 1440 angles",
+   "beam": "fan",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    1,
+    1024,
+    1024
+   ],
+   "ndet": [
+    1,
+    1024
+   ],
+   "angles": 1440,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.005045099998824298,
+     0.005037800001446158,
+     0.005052599997725338
+    ],
+    "TIGRE fp Siddon": [
+     0.006641499989200383,
+     0.006674100004602224,
+     0.006691400019917637
+    ],
+    "TIGRE fp interpolated": [
+     0.039293450012337416,
+     0.03926369998953305,
+     0.03918839999823831
+    ],
+    "ASTRA bp": [
+     0.04440620000241324,
+     0.044490500004030764,
+     0.044465400045737624
+    ],
+    "TIGRE bp matched": [
+     0.007935150002595037,
+     0.007924049976281822,
+     0.00831694999942556
+    ],
+    "TIGRE bp FDK": [
+     0.00712864997331053,
+     0.00715620000846684,
+     0.007451899989973754
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 59,
+    "TIGRE fp Siddon": 39,
+    "TIGRE fp interpolated": 8,
+    "ASTRA bp": 7,
+    "TIGRE bp matched": 38,
+    "TIGRE bp FDK": 42
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 7.292012801996586e-05,
+     "scale": 1.000000634431298
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00016429792285958483,
+     "scale": 0.9999875503058322
+    },
+    "TIGRE bp matched": {
+     "agree": 0.006316371909462713,
+     "scale": 1.008529311468174
+    },
+    "TIGRE bp FDK": {
+     "agree": 0.005778631684285264,
+     "scale": 4.1972015761239145
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "latency: cone 32x32x32, det 32x32, 100 angles | NumPy | 1 GPU",
+   "case": "latency: cone 32x32x32, det 32x32, 100 angles",
+   "group": "latency",
+   "label": "32^3",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    32,
+    32,
+    32
+   ],
+   "ndet": [
+    32,
+    32
+   ],
+   "angles": 100,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.001943000010214746,
+     0.0019425000064074993,
+     0.0020325499936006963
+    ],
+    "TIGRE fp Siddon": [
+     0.0013583000109065324,
+     0.0013324999890755862,
+     0.001333299995167181
+    ],
+    "TIGRE fp interpolated": [
+     0.0016326999757438898,
+     0.0016355999978259206,
+     0.0018532000249251723
+    ],
+    "ASTRA bp": [
+     0.0010743500024545938,
+     0.00106819998472929,
+     0.001091400015866384
+    ],
+    "TIGRE bp matched": [
+     0.0009793000062927604,
+     0.001067749981302768,
+     0.0009783499990589917
+    ],
+    "TIGRE bp FDK": [
+     0.0011562499857973307,
+     0.0010978000063914806,
+     0.0009920500160660595
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 160,
+    "TIGRE fp Siddon": 200,
+    "TIGRE fp interpolated": 189,
+    "ASTRA bp": 200,
+    "TIGRE bp matched": 200,
+    "TIGRE bp FDK": 200
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.025265641516729727,
+     "scale": 1.0015673166679642
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.001957728959410751,
+     "scale": 0.9994126930553747
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010318213354590252,
+     "scale": 1.0020462467209232
+    },
+    "TIGRE bp FDK": {
+     "agree": 1.1009056129517339e-05,
+     "scale": 0.1356336700361396
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "latency: cone 32x32x32, det 32x32, 100 angles | tensors | 1 GPU",
+   "case": "latency: cone 32x32x32, det 32x32, 100 angles",
+   "group": "latency",
+   "label": "32^3",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    32,
+    32,
+    32
+   ],
+   "ndet": [
+    32,
+    32
+   ],
+   "angles": 100,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.001267049985472113,
+     0.0012626999814528972,
+     0.0012334500206634402
+    ],
+    "TIGRE fp Siddon": [
+     0.0011156999971717596,
+     0.0008940499974414706,
+     0.000973699992755428
+    ],
+    "TIGRE fp interpolated": [
+     0.0013849500101059675,
+     0.0013346999767236412,
+     0.001334500004304573
+    ],
+    "ASTRA bp": [
+     0.000548449985217303,
+     0.0005471499753184617,
+     0.0006360499828588217
+    ],
+    "TIGRE bp matched": [
+     0.000942649960052222,
+     0.0009387499885633588,
+     0.0009366999729536474
+    ],
+    "TIGRE bp FDK": [
+     0.0009108500089496374,
+     0.0009023999737109989,
+     0.0009171499987132847
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 200,
+    "TIGRE fp Siddon": 200,
+    "TIGRE fp interpolated": 200,
+    "ASTRA bp": 200,
+    "TIGRE bp matched": 200,
+    "TIGRE bp FDK": 200
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.025265641516729727,
+     "scale": 1.0015673166679642
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.001957728959410751,
+     "scale": 0.9994126930553747
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010318213354590252,
+     "scale": 1.0020462467209232
+    },
+    "TIGRE bp FDK": {
+     "agree": 1.1009056129517339e-05,
+     "scale": 0.1356336700361396
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "latency: cone 64x64x64, det 64x64, 100 angles | NumPy | 1 GPU",
+   "case": "latency: cone 64x64x64, det 64x64, 100 angles",
+   "group": "latency",
+   "label": "64^3",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    64,
+    64,
+    64
+   ],
+   "ndet": [
+    64,
+    64
+   ],
+   "angles": 100,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.002914399985456839,
+     0.0029471500020008534,
+     0.00309134999406524
+    ],
+    "TIGRE fp Siddon": [
+     0.001754299970343709,
+     0.0017060999816749245,
+     0.0016414499841630459
+    ],
+    "TIGRE fp interpolated": [
+     0.0028204000263940543,
+     0.0026903499965555966,
+     0.002753649983787909
+    ],
+    "ASTRA bp": [
+     0.001388499978929758,
+     0.0013918500044383109,
+     0.0013974499888718128
+    ],
+    "TIGRE bp matched": [
+     0.001269600004889071,
+     0.0014859999937471002,
+     0.001282599987462163
+    ],
+    "TIGRE bp FDK": [
+     0.0013333000242710114,
+     0.0013598500227089971,
+     0.0012738999794237316
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 108,
+    "TIGRE fp Siddon": 184,
+    "TIGRE fp interpolated": 104,
+    "ASTRA bp": 198,
+    "TIGRE bp matched": 200,
+    "TIGRE bp FDK": 200
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.01279273593491197,
+     "scale": 1.000256345388515
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.0004894647228425316,
+     "scale": 0.9998546487298975
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010244941559976748,
+     "scale": 1.002040774322869
+    },
+    "TIGRE bp FDK": {
+     "agree": 5.935650518542819e-06,
+     "scale": 0.2712673531752703
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "latency: cone 64x64x64, det 64x64, 100 angles | tensors | 1 GPU",
+   "case": "latency: cone 64x64x64, det 64x64, 100 angles",
+   "group": "latency",
+   "label": "64^3",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    64,
+    64,
+    64
+   ],
+   "ndet": [
+    64,
+    64
+   ],
+   "angles": 100,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.0019097999902442098,
+     0.0019109999993816018,
+     0.0019051000126637518
+    ],
+    "TIGRE fp Siddon": [
+     0.0010189499880652875,
+     0.0010040000197477639,
+     0.0010056999744847417
+    ],
+    "TIGRE fp interpolated": [
+     0.0023173000081442297,
+     0.0022923999931663275,
+     0.0026028999709524214
+    ],
+    "ASTRA bp": [
+     0.0006322499830275774,
+     0.0006116500007919967,
+     0.0006151999987196177
+    ],
+    "TIGRE bp matched": [
+     0.0009540999599266797,
+     0.0009240499930456281,
+     0.0009203000226989388
+    ],
+    "TIGRE bp FDK": [
+     0.0009189000120386481,
+     0.0010143500112462789,
+     0.000997700000880286
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 153,
+    "TIGRE fp Siddon": 200,
+    "TIGRE fp interpolated": 79,
+    "ASTRA bp": 200,
+    "TIGRE bp matched": 200,
+    "TIGRE bp FDK": 200
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.01279273593491197,
+     "scale": 1.000256345388515
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.0004894647228425316,
+     "scale": 0.9998546487298975
+    },
+    "TIGRE bp matched": {
+     "agree": 0.0010244941559976748,
+     "scale": 1.002040774322869
+    },
+    "TIGRE bp FDK": {
+     "agree": 5.935650518542819e-06,
+     "scale": 0.2712673531752703
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "latency: cone 128x128x128, det 128x128, 100 angles | NumPy | 1 GPU",
+   "case": "latency: cone 128x128x128, det 128x128, 100 angles",
+   "group": "latency",
+   "label": "128^3",
+   "beam": "cone",
+   "mode": "host",
+   "gpus": 1,
+   "nvox": [
+    128,
+    128,
+    128
+   ],
+   "ndet": [
+    128,
+    128
+   ],
+   "angles": 100,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.005811150011140853,
+     0.005856950010638684,
+     0.005895449983654544
+    ],
+    "TIGRE fp Siddon": [
+     0.0029489999869838357,
+     0.0029349999967962503,
+     0.002939599973615259
+    ],
+    "TIGRE fp interpolated": [
+     0.008363100001588464,
+     0.00861550000263378,
+     0.008225700003094971
+    ],
+    "ASTRA bp": [
+     0.0040319499967154115,
+     0.003984600043622777,
+     0.0040536499582231045
+    ],
+    "TIGRE bp matched": [
+     0.003176799975335598,
+     0.0033247999963350594,
+     0.00318539998261258
+    ],
+    "TIGRE bp FDK": [
+     0.0031362000154331326,
+     0.00314990000333637,
+     0.0032460500369779766
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 52,
+    "TIGRE fp Siddon": 103,
+    "TIGRE fp interpolated": 37,
+    "ASTRA bp": 72,
+    "TIGRE bp matched": 93,
+    "TIGRE bp FDK": 92
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0055750206727324505,
+     "scale": 0.9999617689747619
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00012534304458625814,
+     "scale": 0.9999608872997073
+    },
+    "TIGRE bp matched": {
+     "agree": 0.001022693575647751,
+     "scale": 1.00203934302697
+    },
+    "TIGRE bp FDK": {
+     "agree": 3.1381881102272985e-06,
+     "scale": 0.542534727247916
+    }
+   },
+   "errors": {}
+  },
+  {
+   "key": "latency: cone 128x128x128, det 128x128, 100 angles | tensors | 1 GPU",
+   "case": "latency: cone 128x128x128, det 128x128, 100 angles",
+   "group": "latency",
+   "label": "128^3",
+   "beam": "cone",
+   "mode": "device",
+   "gpus": 1,
+   "nvox": [
+    128,
+    128,
+    128
+   ],
+   "ndet": [
+    128,
+    128
+   ],
+   "angles": 100,
+   "niter": 0,
+   "times": {
+    "ASTRA fp": [
+     0.0035661999718286097,
+     0.003555400006007403,
+     0.0035613999934867024
+    ],
+    "TIGRE fp Siddon": [
+     0.001879699993878603,
+     0.0018992000259459019,
+     0.0018561999895609915
+    ],
+    "TIGRE fp interpolated": [
+     0.007606949977343902,
+     0.00763695000205189,
+     0.007651849999092519
+    ],
+    "ASTRA bp": [
+     0.0016843499906826764,
+     0.0016828499792609364,
+     0.0016860999749042094
+    ],
+    "TIGRE bp matched": [
+     0.0016276999958790839,
+     0.001668699987931177,
+     0.0016297500114887953
+    ],
+    "TIGRE bp FDK": [
+     0.0016051999991759658,
+     0.001577200018800795,
+     0.0018035999964922667
+    ]
+   },
+   "reps": {
+    "ASTRA fp": 81,
+    "TIGRE fp Siddon": 151,
+    "TIGRE fp interpolated": 40,
+    "ASTRA bp": 170,
+    "TIGRE bp matched": 176,
+    "TIGRE bp FDK": 185
+   },
+   "agree": {
+    "TIGRE fp Siddon": {
+     "agree": 0.0055750206727324505,
+     "scale": 0.9999617689747619
+    },
+    "TIGRE fp interpolated": {
+     "agree": 0.00012534304458625814,
+     "scale": 0.9999608872997073
+    },
+    "TIGRE bp matched": {
+     "agree": 0.001022693575647751,
+     "scale": 1.00203934302697
+    },
+    "TIGRE bp FDK": {
+     "agree": 3.1381881102272985e-06,
+     "scale": 0.542534727247916
+    }
+   },
+   "errors": {}
+  }
+ ],
+ "calibration": {
+  "cone": {
+   "convention": {
+    "sign": 1,
+    "offset": 1.5707963267948966,
+    "flip_u": false,
+    "flip_v": false
+   },
+   "agree": 0.0005361714257519978,
+   "scale": 0.9998499550368399,
+   "next_best_agree": 0.1556890129432381
+  },
+  "parallel": {
+   "convention": {
+    "sign": 1,
+    "offset": 4.71238898038469,
+    "flip_u": true,
+    "flip_v": false
+   },
+   "agree": 0.0005111367857723576,
+   "scale": 0.9998472901356732,
+   "next_best_agree": 0.48590630781189825
+  },
+  "fan": {
+   "convention": {
+    "sign": -1,
+    "offset": 1.5707963267948966,
+    "flip_u": true,
+    "flip_v": false
+   },
+   "agree": 0.0005356232452052824,
+   "scale": 0.9998726920315069,
+   "next_best_agree": 0.12114893135241339
+  },
+  "offset": {
+   "convention": {
+    "sign": 1,
+    "offset": 1.5707963267948966,
+    "flip_u": false,
+    "flip_v": false,
+    "off_u": 1,
+    "off_v": 1
+   },
+   "agree": 0.0005247067737309416,
+   "scale": 0.999849105122129,
+   "next_best_agree": 0.39268547919961216
+  }
+ }
+}

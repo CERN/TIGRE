@@ -1,0 +1,35 @@
+\begin{table}[H]
+\centering
+\caption{Linux, Quadro RTX 6000. Cone beam size sweep on 1, 2 and 4 GPUs (NumPy arrays). Speed-up: time on 1 GPU over time on $g$ GPUs, for each toolbox on its own.}
+\label{tab:lin-size_multi}
+\small\setlength{\tabcolsep}{3.5pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{TIGRE/ASTRA ratio} & \multicolumn{2}{c}{TIGRE speed-up} & \multicolumn{2}{c}{ASTRA speed-up}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+problem & operation & 1 GPU & 2 GPUs & 4 GPUs & 2 GPUs & 4 GPUs & 2 GPUs & 4 GPUs\\
+\midrule
+128$^3$ & fp, Siddon & \tfast{$0.64\pm0.09$} & \tfast{$0.90\pm0.09$} & \tslow{$1.40\pm0.05$} & 0.78 & 0.43 & 1.12 & 0.96\\
+ & fp, interpolated & \tslow{$2.06\pm0.03$} & \tslow{$1.62\pm0.45$} & \tslow{$1.66\pm0.11$} & 1.49 & 1.21 & 1.12 & 0.96\\
+ & bp, matched & \tfast{$0.72\pm0.01$} & \tslow{$1.39\pm0.04$} & \tslow{$2.18\pm0.06$} & 0.64 & 0.30 & 1.24 & 0.90\\
+ & bp, FDK weights & \tfast{$0.71\pm0.01$} & \tslow{$1.39\pm0.04$} & \tslow{$2.17\pm0.11$} & 0.63 & 0.30 & 1.24 & 0.90\\
+\addlinespace
+256$^3$ & fp, Siddon & \tfast{$0.75\pm0.02$} & \tslow{$1.13\pm0.08$} & \tslow{$1.68\pm0.10$} & 0.87 & 0.68 & 1.33 & 1.50\\
+ & fp, interpolated & \tslow{$2.29\pm0.01$} & \tslow{$1.79\pm0.12$} & \tslow{$1.79\pm0.21$} & 1.69 & 1.99 & 1.33 & 1.50\\
+ & bp, matched & \tfast{$0.99\pm0.00$} & \tslow{$1.46\pm0.06$} & \tslow{$2.49\pm0.04$} & 1.01 & 0.73 & 1.50 & 1.83\\
+ & bp, FDK weights & \tfast{$0.89\pm0.01$} & \tslow{$1.45\pm0.06$} & \tslow{$2.48\pm0.04$} & 0.91 & 0.66 & 1.50 & 1.83\\
+\addlinespace
+512$^3$ & fp, Siddon & \tfast{$0.46\pm0.00$} & \tfast{$0.76\pm0.03$} & \tslow{$1.53\pm0.05$} & 0.88 & 0.60 & 1.45 & 1.98\\
+ & fp, interpolated & \tslow{$2.60\pm0.02$} & \tslow{$2.15\pm0.04$} & \tslow{$2.22\pm0.14$} & 1.76 & 2.31 & 1.45 & 1.98\\
+ & bp, matched & \tslow{$1.09\pm0.01$} & \tslow{$1.50\pm0.26$} & \tslow{$2.50\pm0.14$} & 1.26 & 1.10 & 1.69 & 2.53\\
+ & bp, FDK weights & \tfast{$0.97\pm0.01$} & \tslow{$1.44\pm0.25$} & \tslow{$2.60\pm0.15$} & 1.17 & 0.95 & 1.69 & 2.53\\
+\addlinespace
+1024$^3$ & fp, Siddon & \tfast{$0.48\pm0.00$} & \tfast{$0.66\pm0.01$} & \tslow{$1.26\pm0.12$} & 1.24 & 0.86 & 1.73 & 2.24\\
+ & fp, interpolated & \tslow{$2.68\pm0.02$} & \tslow{$2.65\pm0.05$} & \tslow{$2.43\pm0.21$} & 1.75 & 2.50 & 1.73 & 2.24\\
+ & bp, matched & \tslow{$1.14\pm0.01$} & \tslow{$1.37\pm0.02$} & \tslow{$2.25\pm0.06$} & 1.28 & 1.41 & 1.55 & 2.78\\
+ & bp, FDK weights & \tfast{$0.99\pm0.00$} & \tslow{$1.28\pm0.02$} & \tslow{$2.15\pm0.05$} & 1.20 & 1.28 & 1.55 & 2.78\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

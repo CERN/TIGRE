@@ -7,6 +7,33 @@ thank you.
 
 ## Unreleased
 
+### Changed
+- Faster projection operators; results are bit-identical to 3.3.0 except where noted. The technical note
+  `docs/technical-notes/speed-3.3.1/` measures them against ASTRA 2.5 on one and several GPUs.
+  - Backprojection (`Atb`): the projections are read through layered 2D textures, a bilinear fetch instead
+    of a trilinear one at the same value: 1.4–1.6× faster in 3D, 5–8× in fan beam (#912). Cone beam: no wait
+    for the GPU between the kernels of a chunk (#911). Parallel beam: the per-projection set-up is computed on
+    the host; results change by ~2e-6 (#912).
+  - Siddon `Ax`: several steps of the ray walk per pass, without branches, so that several texture reads are
+    in flight; 1, 2 or 4 steps, chosen from the ray spacing and the image size (#913, #916). The constants of
+    the next launch are computed while the kernels run (#913). 3D: 1.1–2.2× faster; fan beam: 5–10×.
+  - The fixed cost of a call: launch shapes for thin problems such as fan beam and images with few slices
+    (#904); the geometry copied from Python through typed memoryviews, buffers reused, no needless waits or
+    page-locked allocations (#907). A fan-beam `Ax` of a 256² image, 360 angles: 7.9 ms → 1.1 ms.
+  - Page-locking the caller's arrays: one rule for every operator, only when the image is split or more than
+    two GPUs are used (#905, #917).
+  - FDK: thin detectors filter several projections per FFT call, and the cosine weights are applied while
+    copying into the FFT buffer (#914); fan-beam results can change by ~3e-7 on some CPUs.
+    `tigre.utilities.filtering.filtering` takes optional `weights=` and `out=`.
+  - SIRT, SART, OS-SART, CGLS: vector updates in place, without full-size temporaries (#915).
+- Siddon technical note (`docs/technical-notes/siddon/`): revised for 3.3.1 (steps per pass, comparison with
+  ASTRA).
+
+### Fixed
+- `Atb` crashed at 1024³ with 32-bit sizes; page-locking that fails falls back to pageable memory with a
+  warning (#903).
+- Cone-beam backprojection on 4+ GPUs crashed (and broke the CUDA context) when a GPU got no slices (#906).
+
 ## 3.3.0 (2026-11-21)
 
 ### Added

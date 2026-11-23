@@ -1,0 +1,45 @@
+\begin{table}[H]
+\centering
+\caption{Windows, RTX 4070. Cone beam $512^3$, varying the number of angles, 1 GPU.}
+\label{tab:angles}
+\small\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{NumPy arrays, 1 GPU} & \multicolumn{3}{c}{PyTorch GPU tensors, 1 GPU}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+problem & operation & TIGRE ms & ASTRA ms & ratio & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+45 angles & fp, Siddon & 82.5 & 119 & \tfast{$0.69\pm0.10$} & 43.2 & 55.6 & \tfast{$0.79\pm0.07$}\\
+ & fp, interpolated & 219 & 119 & \tslow{$1.83\pm0.25$} & 181 & 55.6 & \tslow{$3.27\pm0.04$}\\
+ & bp, matched & 111 & 123 & \tfast{$0.91\pm0.06$} & 33.0 & 42.8 & \tfast{$0.77\pm0.02$}\\
+ & bp, FDK weights & 108 & 123 & \tfast{$0.91\pm0.20$}$^\dagger$ & 27.9 & 42.8 & \tfast{$0.66\pm0.01$}\\
+\addlinespace
+90 angles & fp, Siddon & 105 & 162 & \tfast{$0.67\pm0.22$} & 67.5 & 93.5 & \tfast{$0.72\pm0.03$}\\
+ & fp, interpolated & 380 & 162 & \tslow{$2.30\pm0.22$} & 344 & 93.5 & \tslow{$3.69\pm0.07$}\\
+ & bp, matched & 128 & 154 & \tfast{$0.87\pm0.29$}$^\dagger$ & 50.6 & 70.3 & \tfast{$0.72\pm0.01$}\\
+ & bp, FDK weights & 120 & 154 & \tfast{$0.78\pm0.12$} & 42.8 & 70.3 & \tfast{$0.60\pm0.01$}\\
+\addlinespace
+180 angles & fp, Siddon & 147 & 284 & \tfast{$0.52\pm0.04$} & 111 & 198 & \tfast{$0.56\pm0.02$}\\
+ & fp, interpolated & 708 & 284 & \tslow{$2.49\pm0.01$} & 672 & 198 & \tslow{$3.39\pm0.04$}\\
+ & bp, matched & 181 & 227 & \tfast{$0.77\pm0.09$} & 88.6 & 129 & \tfast{$0.69\pm0.02$}\\
+ & bp, FDK weights & 150 & 227 & \tfast{$0.65\pm0.05$} & 72.9 & 129 & \tfast{$0.57\pm0.00$}\\
+\addlinespace
+360 angles & fp, Siddon & 232 & 519 & \tfast{$0.45\pm0.01$} & 198 & 400 & \tfast{$0.50\pm0.02$}\\
+ & fp, interpolated & 1372 & 519 & \tslow{$2.64\pm0.11$} & 1324 & 400 & \tslow{$3.31\pm0.01$}\\
+ & bp, matched & 243 & 364 & \tfast{$0.67\pm0.10$} & 165 & 247 & \tfast{$0.66\pm0.02$}\\
+ & bp, FDK weights & 217 & 364 & \tfast{$0.59\pm0.02$} & 134 & 247 & \tfast{$0.54\pm0.02$}\\
+\addlinespace
+720 angles & fp, Siddon & 401 & 944 & \tfast{$0.43\pm0.02$} & 374 & 810 & \tfast{$0.47\pm0.01$}\\
+ & fp, interpolated & 2655 & 944 & \tslow{$2.81\pm0.06$} & 2635 & 810 & \tslow{$3.25\pm0.01$}\\
+ & bp, matched & 411 & 632 & \tfast{$0.64\pm0.04$} & 321 & 481 & \tfast{$0.66\pm0.02$}\\
+ & bp, FDK weights & 333 & 632 & \tfast{$0.53\pm0.03$} & 255 & 481 & \tfast{$0.53\pm0.01$}\\
+\addlinespace
+1440 angles & fp, Siddon & 755 & 1861 & \tfast{$0.40\pm0.01$} & 731 & 1531 & \tfast{$0.48\pm0.01$}\\
+ & fp, interpolated & 5290 & 1861 & \tslow{$2.83\pm0.04$} & 5280 & 1531 & \tslow{$3.44\pm0.04$}\\
+ & bp, matched & 721 & 1223 & \tfast{$0.59\pm0.01$} & 644 & 950 & \tfast{$0.68\pm0.01$}\\
+ & bp, FDK weights & 599 & 1223 & \tfast{$0.48\pm0.02$} & 501 & 950 & \tfast{$0.53\pm0.01$}\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

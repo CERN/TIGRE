@@ -1,0 +1,27 @@
+\begin{table}[H]
+\centering
+\caption{Linux, Quadro RTX 6000. Parallel beam on 1, 2 and 4 GPUs (NumPy arrays).}
+\label{tab:lin-parallel_multi}
+\small\setlength{\tabcolsep}{3.5pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{TIGRE/ASTRA ratio} & \multicolumn{2}{c}{TIGRE speed-up} & \multicolumn{2}{c}{ASTRA speed-up}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}
+problem & operation & 1 GPU & 2 GPUs & 4 GPUs & 2 GPUs & 4 GPUs & 2 GPUs & 4 GPUs\\
+\midrule
+256$^3$ & fp, Siddon & \tfast{$0.95\pm0.02$} & \tslow{$1.44\pm0.04$} & \tslow{$2.05\pm0.09$} & 0.84 & 0.63 & 1.29 & 1.36\\
+ & fp, interpolated & \tslow{$2.66\pm0.01$} & \tslow{$2.04\pm0.06$} & \tslow{$2.12\pm0.05$} & 1.68 & 1.72 & 1.29 & 1.36\\
+ & bp & \tfast{$0.87\pm0.00$} & \tslow{$1.53\pm0.06$} & \tslow{$2.65\pm0.07$} & 0.88 & 0.63 & 1.55 & 1.92\\
+\addlinespace
+512$^3$ & fp, Siddon & \tfast{$0.60\pm0.00$} & \tslow{$1.00\pm0.04$}$^\dagger$ & \tslow{$1.84\pm0.07$} & 0.86 & 0.59 & 1.46 & 1.80\\
+ & fp, interpolated & \tslow{$2.96\pm0.03$} & \tslow{$2.45\pm0.02$} & \tslow{$2.39\pm0.18$} & 1.76 & 2.25 & 1.46 & 1.80\\
+ & bp & \tfast{$0.98\pm0.01$} & \tslow{$1.67\pm0.10$} & \tslow{$2.79\pm0.10$} & 1.11 & 0.90 & 1.91 & 2.59\\
+\addlinespace
+1024$^3$ & fp, Siddon & \tfast{$0.65\pm0.00$} & \tfast{$0.86\pm0.02$} & \tslow{$1.56\pm0.13$} & 1.23 & 0.83 & 1.61 & 1.98\\
+ & fp, interpolated & \tslow{$3.26\pm0.04$} & \tslow{$3.04\pm0.05$} & \tslow{$2.70\pm0.22$} & 1.73 & 2.39 & 1.61 & 1.98\\
+ & bp & \tfast{$0.98\pm0.02$} & \tslow{$1.28\pm0.01$} & \tslow{$2.30\pm0.01$} & 1.17 & 1.20 & 1.54 & 2.81\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

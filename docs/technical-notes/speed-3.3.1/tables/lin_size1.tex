@@ -1,0 +1,35 @@
+\begin{table}[H]
+\centering
+\caption{Linux, Quadro RTX 6000. Cone beam, $n^3$ image, $n^2$ detector covering the image (409.6\,mm), 360 angles, 1 GPU.}
+\label{tab:lin-size1}
+\small\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{NumPy arrays, 1 GPU} & \multicolumn{3}{c}{PyTorch GPU tensors, 1 GPU}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+problem & operation & TIGRE ms & ASTRA ms & ratio & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+128$^3$ & fp, Siddon & 6.72 & 10.8 & \tfast{$0.64\pm0.09$} & 4.96 & 6.73 & \tfast{$0.78\pm0.18$}\\
+ & fp, interpolated & 22.3 & 10.8 & \tslow{$2.06\pm0.03$} & 21.4 & 6.73 & \tslow{$3.17\pm0.05$}\\
+ & bp, matched & 6.16 & 8.56 & \tfast{$0.72\pm0.01$} & 4.31 & 4.75 & \tfast{$0.91\pm0.00$}\\
+ & bp, FDK weights & 6.07 & 8.56 & \tfast{$0.71\pm0.01$} & 3.74 & 4.75 & \tfast{$0.79\pm0.00$}\\
+\addlinespace
+256$^3$ & fp, Siddon & 51.4 & 69.0 & \tfast{$0.75\pm0.02$} & 23.6 & 44.2 & \tfast{$0.53\pm0.00$}\\
+ & fp, interpolated & 158 & 69.0 & \tslow{$2.29\pm0.01$} & 154 & 44.2 & \tslow{$3.48\pm0.02$}\\
+ & bp, matched & 48.9 & 49.6 & \tfast{$0.99\pm0.00$} & 22.5 & 28.0 & \tfast{$0.80\pm0.01$}\\
+ & bp, FDK weights & 44.0 & 49.6 & \tfast{$0.89\pm0.01$} & 17.6 & 28.0 & \tfast{$0.63\pm0.01$}\\
+\addlinespace
+512$^3$ & fp, Siddon & 218 & 476 & \tfast{$0.46\pm0.00$} & 176 & 361 & \tfast{$0.49\pm0.01$}\\
+ & fp, interpolated & 1238 & 476 & \tslow{$2.60\pm0.02$} & 1204 & 361 & \tslow{$3.33\pm0.02$}\\
+ & bp, matched & 373 & 344 & \tslow{$1.09\pm0.01$} & 172 & 216 & \tfast{$0.79\pm0.01$}\\
+ & bp, FDK weights & 335 & 344 & \tfast{$0.97\pm0.01$} & 130 & 216 & \tfast{$0.60\pm0.00$}\\
+\addlinespace
+1024$^3$ & fp, Siddon & 1790 & 3754 & \tfast{$0.48\pm0.00$} & 1469 & 3099 & \tfast{$0.47\pm0.01$}\\
+ & fp, interpolated & 10080 & 3754 & \tslow{$2.68\pm0.02$} & 9768 & 3099 & \tslow{$3.14\pm0.05$}\\
+ & bp, matched & 3030 & 2664 & \tslow{$1.14\pm0.01$} & 1426 & 1722 & \tfast{$0.83\pm0.00$}\\
+ & bp, FDK weights & 2638 & 2664 & \tfast{$0.99\pm0.00$} & 1024 & 1722 & \tfast{$0.59\pm0.00$}\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

@@ -1,0 +1,30 @@
+\begin{table}[H]
+\centering
+\caption{Linux, Quadro RTX 6000. Non-cubic problems, 1 GPU: clinical CBCT ($256\times512\times512$ image, $512\times1024$ detector), fine detector ($256^3$ image, $1024^2$ detector), coarse detector ($512^3$ image, $256^2$ detector), 360 angles.}
+\label{tab:lin-shape}
+\small\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{NumPy arrays, 1 GPU} & \multicolumn{3}{c}{PyTorch GPU tensors, 1 GPU}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+problem & operation & TIGRE ms & ASTRA ms & ratio & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+clinical CBCT & fp, Siddon & 332 & 813 & \tfast{$0.41\pm0.01$} & 264 & 632 & \tfast{$0.42\pm0.00$}\\
+ & fp, interpolated & 2325 & 813 & \tslow{$2.86\pm0.00$} & 2279 & 632 & \tslow{$3.60\pm0.01$}\\
+ & bp, matched & 214 & 243 & \tfast{$0.88\pm0.02$} & 104 & 115 & \tfast{$0.91\pm0.01$}\\
+ & bp, FDK weights & 184 & 243 & \tfast{$0.75\pm0.03$} & 74.2 & 115 & \tfast{$0.65\pm0.00$}\\
+\addlinespace
+fine detector & fp, Siddon & 605 & 920 & \tfast{$0.65\pm0.01$} & 276 & 601 & \tfast{$0.46\pm0.01$}\\
+ & fp, interpolated & 2210 & 920 & \tslow{$2.40\pm0.02$} & 2183 & 601 & \tslow{$3.63\pm0.02$}\\
+ & bp, matched & 153 & 239 & \tfast{$0.64\pm0.01$} & 47.1 & 52.6 & \tfast{$0.90\pm0.00$}\\
+ & bp, FDK weights & 164 & 239 & \tfast{$0.70\pm0.05$} & 40.6 & 52.6 & \tfast{$0.77\pm0.02$}\\
+\addlinespace
+coarse detector & fp, Siddon & 134 & 165 & \tfast{$0.81\pm0.01$} & 90.3 & 101 & \tfast{$0.90\pm0.01$}\\
+ & fp, interpolated & 426 & 165 & \tslow{$2.58\pm0.04$} & 381 & 101 & \tslow{$3.79\pm0.00$}\\
+ & bp, matched & 368 & 315 & \tslow{$1.16\pm0.01$} & 160 & 209 & \tfast{$0.77\pm0.01$}\\
+ & bp, FDK weights & 336 & 315 & \tslow{$1.07\pm0.01$} & 125 & 209 & \tfast{$0.60\pm0.01$}\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

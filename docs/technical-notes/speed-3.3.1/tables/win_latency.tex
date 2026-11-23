@@ -1,0 +1,30 @@
+\begin{table}[H]
+\centering
+\caption{Windows, RTX 4070. Small problems (cone beam, $n^3$ image, $n^2$ detector, 100 angles), 1 GPU.}
+\label{tab:latency}
+\small\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{NumPy arrays, 1 GPU} & \multicolumn{3}{c}{PyTorch GPU tensors, 1 GPU}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+problem & operation & TIGRE ms & ASTRA ms & ratio & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+32$^3$ & fp, Siddon & 1.33 & 1.94 & \tfast{$0.68\pm0.05$} & 0.97 & 1.26 & \tfast{$0.79\pm0.21$}$^\dagger$\\
+ & fp, interpolated & 1.64 & 1.94 & \tfast{$0.86\pm0.10$} & 1.33 & 1.26 & \tslow{$1.08\pm0.05$}\\
+ & bp, matched & 0.98 & 1.07 & \tfast{$0.94\pm0.14$}$^\dagger$ & 0.94 & 0.55 & \tslow{$1.64\pm0.35$}\\
+ & bp, FDK weights & 1.10 & 1.07 & \tslow{$1.00\pm0.21$}$^\dagger$ & 0.91 & 0.55 & \tslow{$1.58\pm0.31$}\\
+\addlinespace
+64$^3$ & fp, Siddon & 1.71 & 2.95 & \tfast{$0.57\pm0.09$} & 1.01 & 1.91 & \tfast{$0.53\pm0.01$}\\
+ & fp, interpolated & 2.75 & 2.95 & \tfast{$0.92\pm0.10$}$^\dagger$ & 2.32 & 1.91 & \tslow{$1.26\pm0.23$}\\
+ & bp, matched & 1.28 & 1.39 & \tfast{$0.97\pm0.22$}$^\dagger$ & 0.92 & 0.62 & \tslow{$1.51\pm0.02$}\\
+ & bp, FDK weights & 1.33 & 1.39 & \tfast{$0.95\pm0.08$}$^\dagger$ & 1.00 & 0.62 & \tslow{$1.58\pm0.27$}\\
+\addlinespace
+128$^3$ & fp, Siddon & 2.94 & 5.86 & \tfast{$0.50\pm0.01$} & 1.88 & 3.56 & \tfast{$0.53\pm0.02$}\\
+ & fp, interpolated & 8.36 & 5.86 & \tslow{$1.44\pm0.09$} & 7.64 & 3.56 & \tslow{$2.14\pm0.02$}\\
+ & bp, matched & 3.19 & 4.03 & \tfast{$0.80\pm0.07$} & 1.63 & 1.68 & \tfast{$0.97\pm0.04$}$^\dagger$\\
+ & bp, FDK weights & 3.15 & 4.03 & \tfast{$0.79\pm0.03$} & 1.61 & 1.68 & \tfast{$0.99\pm0.18$}$^\dagger$\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

@@ -1,0 +1,20 @@
+\begin{table}[H]
+\centering
+\caption{Windows, RTX 4070. Cone beam $512^3$ with the detector shifted sideways by 102.4\,mm (a quarter of its width; ASTRA \texttt{cone\_vec}), 1 GPU.}
+\label{tab:offset}
+\small\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{NumPy arrays, 1 GPU} & \multicolumn{3}{c}{PyTorch GPU tensors, 1 GPU}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+problem & operation & TIGRE ms & ASTRA ms & ratio & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+u offset 102.4 mm & fp, Siddon & 203 & 507 & \tfast{$0.39\pm0.02$} & 167 & 398 & \tfast{$0.42\pm0.00$}\\
+ & fp, interpolated & 1349 & 507 & \tslow{$2.65\pm0.06$} & 1318 & 398 & \tslow{$3.31\pm0.01$}\\
+ & bp, matched & 243 & 381 & \tfast{$0.66\pm0.20$} & 162 & 246 & \tfast{$0.66\pm0.01$}\\
+ & bp, FDK weights & 222 & 381 & \tfast{$0.58\pm0.06$} & 133 & 246 & \tfast{$0.54\pm0.00$}\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
