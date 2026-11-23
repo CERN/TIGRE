@@ -887,10 +887,11 @@ void rollPitchYawT(Geometry geo,int i, Point3Ddouble* point){
 //                      with the projection (detector rotation and offsets included); the rest is folded here, in
 //                      double, so that the kernel's setup per projection is a few multiply-adds:
 //                        [0..2] deltaX, deltaY, deltaZ: the change of the source-to-voxel vector per voxel index
-//                        [3]    that vector at voxel (0,0,0): xyzOrigin - source, and COR (in detector pixels) in y
+//                        [3]    that vector at voxel (0,0,0): xyzOrigin - source (COR is in the voxel grid)
 //                        [4]    (DSO-DSD-source.x, source.y+nDetecU/2, source.z+nDetecV/2): t=[4].x/vectX, u=vectY*t+[4].y
 //                        [5]    the FDK weight's denominator, (DSO+realy*sin(alpha)-realx*cos(alpha))/DSO with realx,
-//                               realy the voxel's centre, as w0 + i*wx + j*wy (the weight is 1/den^2)
+//                               realy the voxel's centre (COR included, which leaves den unchanged as it is perpendicular to the
+//                               central ray), as w0 + i*wx + j*wy (the weight is 1/den^2)
 //______________________________________________________________________________
 
 static void fdkKernelParams(const Geometry& geo, int i, float sinalpha, float cosalpha, Point3D* params)
@@ -900,13 +901,13 @@ static void fdkKernelParams(const Geometry& geo, int i, float sinalpha, float co
     const double COR=geo.COR[i], DSO=geo.DSO[i], DSD=geo.DSD[i];
     Point3D c0, tuv, wden;
     c0.x=(float)((double)xyzOrigin.x-(double)source.x);
-    c0.y=(float)((double)xyzOrigin.y-COR/(double)geo.dDetecU-(double)source.y);
+    c0.y=(float)((double)xyzOrigin.y-(double)source.y);
     c0.z=(float)((double)xyzOrigin.z-(double)source.z);
     tuv.x=(float)(DSO-DSD-(double)source.x);
     tuv.y=(float)((double)source.y+(double)geo.nDetecU*0.5);
     tuv.z=(float)((double)source.z+(double)geo.nDetecV*0.5);
-    const double rx0=-((double)geo.sVoxelX-(double)geo.dVoxelX)*0.5+(double)geo.offOrigX[i];
-    const double ry0=-((double)geo.sVoxelY-(double)geo.dVoxelY)*0.5+(double)geo.offOrigY[i]+COR;
+    const double rx0=-((double)geo.sVoxelX-(double)geo.dVoxelX)*0.5+(double)geo.offOrigX[i]-COR*(double)sinalpha;
+    const double ry0=-((double)geo.sVoxelY-(double)geo.dVoxelY)*0.5+(double)geo.offOrigY[i]-COR*(double)cosalpha;  // as computeDeltasCube
     wden.x=(float)((DSO+ry0*(double)sinalpha-rx0*(double)cosalpha)/DSO);
     wden.y=(float)(-(double)geo.dVoxelX*(double)cosalpha/DSO);
     wden.z=(float)( (double)geo.dVoxelY*(double)sinalpha/DSO);
@@ -936,6 +937,10 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     P.x=-(geo.sVoxelX/2-geo.dVoxelX/2)+geo.offOrigX[i];
     P.y=-(geo.sVoxelY/2-geo.dVoxelY/2)+geo.offOrigY[i];
     P.z=-(geo.sVoxelZ/2-geo.dVoxelZ/2)+geo.offOrigZ[i];
+    // COR moves the whole scan by COR*(-sin(alpha), cos(alpha), 0), as in the projectors, so the image moves the
+    // other way. Here geo.alpha is -alpha.
+    P.x-=geo.COR[i]*sin(geo.alpha);
+    P.y-=geo.COR[i]*cos(geo.alpha);
     
     // Get coords from next voxel in each direction
     Px.x=P.x+geo.dVoxelX;       Py.x=P.x;                Pz.x=P.x;

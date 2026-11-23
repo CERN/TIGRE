@@ -729,7 +729,7 @@ void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cud
 //                      and offsets included); the rest is folded here, in double, so that the kernel's setup per
 //                      projection is a few multiply-adds:
 //                        [0..2] deltaX, deltaY, deltaZ: the change of the source-to-voxel vector per voxel index
-//                        [3]    that vector at voxel (0,0,0): xyzOrigin - source, and COR (in detector pixels) in y
+//                        [3]    that vector at voxel (0,0,0): xyzOrigin - source (COR is in the voxel grid)
 //                        [4]    (DSO-DSD-source.x, source.y+nDetecU/2, source.z+nDetecV/2): t=[4].x/vectX, u=vectY*t+[4].y
 //                        [5]    (1/d_n, dDetecU^2, dDetecV^2) for the weight; d_n=source.x-(DSO-DSD) is the distance
 //                               from the source to the detector plane
@@ -740,10 +740,10 @@ static void matchedKernelParams(const Geometry& geo, int i, Point3D* params)
 {
     Point3D deltaX, deltaY, deltaZ, xyzOrigin, source;
     computeDeltasCube(geo, i, &xyzOrigin, &deltaX, &deltaY, &deltaZ, &source);
-    const double COR=geo.COR[i], DSO=geo.DSO[i], DSD=geo.DSD[i];
+    const double DSO=geo.DSO[i], DSD=geo.DSD[i];
     Point3D c0, tuv, wpar, unused={0,0,0};
     c0.x=(float)((double)xyzOrigin.x-(double)source.x);
-    c0.y=(float)((double)xyzOrigin.y-COR/(double)geo.dDetecU-(double)source.y);
+    c0.y=(float)((double)xyzOrigin.y-(double)source.y);
     c0.z=(float)((double)xyzOrigin.z-(double)source.z);
     tuv.x=(float)(DSO-DSD-(double)source.x);
     tuv.y=(float)((double)source.y+(double)geo.nDetecU*0.5);
@@ -820,6 +820,10 @@ void computeDeltasCube(Geometry geo,int i, Point3D* xyzorigin, Point3D* deltaX, 
     P.x=-(geo.sVoxelX/2-geo.dVoxelX/2)+geo.offOrigX[i];
     P.y=-(geo.sVoxelY/2-geo.dVoxelY/2)+geo.offOrigY[i];
     P.z=-(geo.sVoxelZ/2-geo.dVoxelZ/2)+geo.offOrigZ[i];
+    // COR moves the whole scan by COR*(-sin(alpha), cos(alpha), 0), as in the projectors, so the image moves the
+    // other way. Here geo.alpha is -alpha.
+    P.x-=geo.COR[i]*sin(geo.alpha);
+    P.y-=geo.COR[i]*cos(geo.alpha);
     
     // Get coors from next voxel in each direction
     Px.x=P.x+geo.dVoxelX;      Py.x=P.x;                Pz.x=P.x;

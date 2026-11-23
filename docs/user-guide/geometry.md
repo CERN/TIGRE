@@ -72,7 +72,7 @@ uses the same one) and all angles are in radians.
 | `offOrigin` | 3, or 3 per angle | Shift of the image centre from the origin. Optional, default 0. |
 | `offDetector` | 2, or 2 per angle | Shift of the detector centre. Optional, default 0. |
 | `rotDetector` | 3, or 3 per angle | Detector rotation (roll, pitch, yaw). Optional, default 0. |
-| `COR` | 1, or one per angle | Centre-of-rotation shift, along y. Optional, default 0. |
+| `COR` | 1, or one per angle | Centre-of-rotation shift: moves source and detector together, sideways to the central ray (along y at angle 0). Optional, default 0. |
 | `accuracy` | 1 | Sampling step of the `interpolated` projector, in voxels. Optional, default 0.5. |
 | `mode` | text | `"cone"` (default) or `"parallel"`. |
 
