@@ -373,7 +373,7 @@ class IterativeReconAlg(object):
             self.update_image(geo, angle, j)
 
             if self.noneg:
-                self.res = self.res.clip(min=0)
+                np.clip(self.res, 0, None, out=self.res)
 
     def minimizeTV(self, res_prev, dtvg):
         if self.gpuids is None:
@@ -420,19 +420,27 @@ class IterativeReconAlg(object):
 
         ang_index = self.angle_index[iteration].astype(np.int32)
 
-        self.res += (
-            self.lmbda
-            * 1.0
-            / self.V[iteration]
-            * Atb(
-                self.W[ang_index]
-                * (self.proj[ang_index] - Ax(self.res, geo, angle, "Siddon", gpuids=self.gpuids)),
-                geo,
-                angle,
-                "FDK",
-                gpuids=self.gpuids,
-            )
-        )
+        # The same arithmetic as res += lmbda/V * Atb(W * (proj - Ax(res))), but in the arrays Ax and Atb return
+        # instead of in new temporaries, and without copying proj and W when the block is every angle in order
+        # (SIRT): each full-size temporary is a fresh allocation, and on host arrays these passes took as long
+        # as the projector calls.
+        whole = len(ang_index) == self.proj.shape[0] and np.array_equal(ang_index, np.arange(len(ang_index)))
+        proj = self.proj if whole else self.proj[ang_index]
+        W = self.W if whole else self.W[ang_index]
+        err = Ax(self.res, geo, angle, "Siddon", gpuids=self.gpuids)
+        if err.dtype == np.result_type(proj, W, err):
+            np.subtract(proj, err, out=err)
+            err *= W
+        else:  # a float64 proj or W: NumPy's promotion, as before
+            err = W * (proj - err)
+        upd = Atb(err, geo, angle, "FDK", gpuids=self.gpuids)
+        del err
+        factor = self.lmbda * 1.0 / self.V[iteration]
+        if upd.dtype == np.result_type(upd, factor):
+            upd *= factor
+        else:
+            upd = factor * upd
+        self.res += upd
 
     def getres(self):
         return self.res
