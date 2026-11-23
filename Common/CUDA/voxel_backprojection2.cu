@@ -355,7 +355,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     // pin the memory is greater than the lost time in Synchronously launching the memcpys. This is only worth it when the image is too big.
     // tigre::hostRegister: an array that is already page-locked (e.g. pinned by PyTorch) is used as it is and not unregistered here.
     bool result_registered=false, projections_registered=false;
-    if (tigre::worthPageLocking(isHostRegisterSupported, gpuData, split_image, deviceCount)){  // as FDK: also with several GPUs
+    if (tigre::worthPageLocking(isHostRegisterSupported, gpuData, split_image, deviceCount)){  // as FDK
         result_registered=tigre::hostRegister(result, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float));
         if (result_registered) onError.add([result]{ cudaHostUnregister(result); });
     }

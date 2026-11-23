@@ -315,7 +315,7 @@ int interpolation_projection_parallel(float* img, Geometry geo, float** result,f
         }
     }
 
-    // Page-lock the image when it is copied in pieces or to several GPUs: the copies are then faster and asynchronous.
+    // Page-lock the image when it is copied in pieces or to more than two GPUs: the copies are then faster and asynchronous.
     bool registered=false;
 #ifndef NO_PINNED_MEMORY
     int isHostRegisterSupported = 0;

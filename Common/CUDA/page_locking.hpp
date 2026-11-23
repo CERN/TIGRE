@@ -51,18 +51,20 @@ inline bool hostRegister(void* ptr, size_t bytes) {
 }
 
 // Whether to page-lock (tigre::hostRegister) the caller's image, projections or backprojection result. One rule for
-// all the projectors and backprojectors: only when the image is split or several GPUs are used.
+// all the projectors and backprojectors: only when the image is split or more than two GPUs are used.
 // Page-locking makes copies faster (24 vs 5-10 GiB/s on an RTX 4070) and asynchronous, so several GPUs can copy at
 // once, but the whole array must be locked first (~16 GiB/s, slower on freshly allocated memory) and unlocked at the
 // end. With one GPU and one piece every array crosses once, and the copies are either hidden behind the kernels (the
 // projections, streamed in chunks; the forward projections) or a single copy that locking does not make cheaper
 // overall (the image before the first kernel, the result after the last one): locking only adds time. With a split
 // image the data crosses again for every piece; with several GPUs every GPU copies (the image or the projections to
-// each of them, the result back from each), and pageable copies run one GPU after another.
+// each of them, the result back from each), and pageable copies run one GPU after another. That wins from about
+// three GPUs: on four Quadro RTX 6000 (512^3, 1024^3, NumPy arrays) not locking was 4-15% slower with four GPUs, but
+// 5-21% faster with two, where locking took longer than the copies it sped up.
 // GPU arrays are never page-locked. The forward projectors' output is never page-locked: its copies already overlap
 // the kernels. The TV functions keep their own, empirical, thresholds.
 inline bool worthPageLocking(int isHostRegisterSupported, bool gpuData, unsigned long splits, int deviceCount) {
-    return isHostRegisterSupported && !gpuData && (splits > 1 || deviceCount > 1);
+    return isHostRegisterSupported && !gpuData && (splits > 1 || deviceCount > 2);
 }
 
 }  // namespace tigre
