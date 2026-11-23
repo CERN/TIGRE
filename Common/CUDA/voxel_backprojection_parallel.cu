@@ -175,14 +175,14 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
         // detector (two divisions): for parallel rays these cancel, the detector coordinates are the voxel's own.
         float u=U.w+fIndX*U.x+fIndY*U.y+fStartIndZ*U.z;
         float v=V.w+fIndX*V.x+fIndY*V.y+fStartIndZ*V.z;
-        const float fAlpha=(float)indAlpha+0.5f;
+        const int layer=(int)indAlpha;  // the projection: a layer of the layered texture
 #pragma unroll
         for(int colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
         {
 #if IS_FOR_MATLAB_TIGRE
-            voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,fAlpha);
+            voxelColumn[colIdx]+=tex2DLayered<float>(tex, v, u, layer);
 #else
-            voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,fAlpha);
+            voxelColumn[colIdx]+=tex2DLayered<float>(tex, u, v, layer);
 #endif
             u+=U.z; v+=V.z;
         }
@@ -280,7 +280,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
             if (directOut) dimage[dev]=result;
             else           err=cudaMalloc((void**)&dimage[dev], num_bytes_img);
             for (int a = 0; a < nArrays && err==cudaSuccess; a++)
-                err=cudaMalloc3DArray(&d_cuArrTex[2*dev+a], &channelDesc, extentProj);
+                err=cudaMalloc3DArray(&d_cuArrTex[2*dev+a], &channelDesc, extentProj, cudaArrayLayered);
         }
         if (err==cudaSuccess) break;
         cudaGetLastError();
@@ -538,7 +538,7 @@ void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuAr
         cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
         //cuda Array
         if (alloc){
-        tigre::checkMalloc(cudaMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent), "Atb:voxel_backprojection_parallel:GPUmemory", "Backprojection (parallel beam)", (size_t)extent.width*extent.height*extent.depth*sizeof(float));
+        tigre::checkMalloc(cudaMalloc3DArray(&d_cuArrTex[0], &channelDesc, extent, cudaArrayLayered), "Atb:voxel_backprojection_parallel:GPUmemory", "Backprojection (parallel beam)", (size_t)extent.width*extent.height*extent.depth*sizeof(float));
         cudaCheckErrors("Texture memory allocation fail");
         }
         cudaMemcpy3DParms copyParams = {0};

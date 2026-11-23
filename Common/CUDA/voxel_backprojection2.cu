@@ -207,7 +207,7 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
         float vectZ=c0.z+fIndX*deltaX.z+fIndY*deltaY.z+fStartIndZ*deltaZ.z;
         const float tNum=tuv.x, u0=tuv.y, v0=tuv.z;
         // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
-        const float fAlpha=(float)indAlpha+0.5f;
+        const int layer=(int)indAlpha;  // the projection: a layer of the layered texture
         
         // The weight (see below). In this frame the detector is the plane x=DSO-DSD, whatever the detector's rotation, and
         // only y and z are scaled (to detector pixels): -tNum is the distance from the source to the detector plane, and
@@ -225,9 +225,9 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             float u=vectY*t+u0;
             float v=vectZ*t+v0;
 #if IS_FOR_MATLAB_TIGRE
-            float sample=tex3D<float>(tex, v, u ,fAlpha);
+            float sample=tex2DLayered<float>(tex, v, u, layer);
 #else
-            float sample=tex3D<float>(tex, u, v ,fAlpha);
+            float sample=tex2DLayered<float>(tex, u, v, layer);
 #endif
             // Weight L^3/(d_n*|SV|^2): L the distance from the source to where the ray through the voxel meets the
             // detector, |SV| from the source to the voxel, d_n from the source to the detector plane (DSD if the
@@ -688,7 +688,7 @@ void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cud
             //cudaArray Descriptor
             cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
             //cuda Array
-            tigre::checkMalloc(cudaMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent), "Atb:voxel_backprojection2:GPUmemory", "Backprojection", (size_t)extent.width*extent.height*extent.depth*sizeof(float));
+            tigre::checkMalloc(cudaMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent, cudaArrayLayered), "Atb:voxel_backprojection2:GPUmemory", "Backprojection", (size_t)extent.width*extent.height*extent.depth*sizeof(float));
             
         }
     }

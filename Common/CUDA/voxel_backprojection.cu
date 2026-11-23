@@ -223,7 +223,7 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
         const float w=wden.x+fIndX*wden.y+fIndY*wden.z;
         const float weight=__fdividef(1.0f,w*w);
         // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
-        const float fAlpha=(float)indAlpha+0.5f;
+        const int layer=(int)indAlpha;  // the projection: a layer of the layered texture
         
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
 #pragma unroll
@@ -238,9 +238,9 @@ __global__ void kernelPixelBackprojectionFDK(const Geometry geo, float* image,co
             
             // Get Value in the computed (U,V) and multiply by the corresponding weight.
 #if IS_FOR_MATLAB_TIGRE
-            voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,fAlpha)*weight;
+            voxelColumn[colIdx]+=tex2DLayered<float>(tex, v, u, layer)*weight;
 #else
-            voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,fAlpha)*weight;
+            voxelColumn[colIdx]+=tex2DLayered<float>(tex, u, v, layer)*weight;
 #endif
             vectX+=deltaZ.x; vectY+=deltaZ.y; vectZ+=deltaZ.z;
         }  // END iterating through column of voxels
@@ -739,7 +739,7 @@ void CreateTexture(const GpuIds& gpuids, float* projectiondata,Geometry geo,cuda
             //cudaArray Descriptor
             cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
             //cuda Array
-            tigre::checkMalloc(cudaMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent), "Atb:voxel_backprojection:GPUmemory", "Backprojection", (size_t)extent.width*extent.height*extent.depth*sizeof(float));
+            tigre::checkMalloc(cudaMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent, cudaArrayLayered), "Atb:voxel_backprojection:GPUmemory", "Backprojection", (size_t)extent.width*extent.height*extent.depth*sizeof(float));
             
         }
     }
