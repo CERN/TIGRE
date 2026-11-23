@@ -15,6 +15,10 @@ from tigre.utilities.parkerweight import parkerweight
 BLOCK_BYTES = 2**21
 # threads used when the caller does not choose; more than this was not faster where measured
 MAX_WORKERS = 16
+# detectors with fewer rows than this are filtered several projections per FFT call (_filter_thin), in
+# blocks of about THIN_BLOCK_BYTES of padded complex data
+THIN_ROWS = 16
+THIN_BLOCK_BYTES = 2**21
 
 
 def filtering(proj, geo, angles, parker, verbose=False, workers=None):
@@ -51,6 +55,8 @@ def filtering(proj, geo, angles, parker, verbose=False, workers=None):
     #A multiple of 16 rows, so that the FFT packs the same rows in a SIMD vector as it
     #does on a whole projection, and rounds the same way
     block=max(16,BLOCK_BYTES//(8*filt_len)//16*16)
+    if nrows<THIN_ROWS:
+        return _filter_thin(proj,nangles,nrows,filt_len,filt,cols,scale_factor,workers)
     local=threading.local()
 
     def filter_blocks(tasks):
@@ -86,6 +92,41 @@ def filtering(proj, geo, angles, parker, verbose=False, workers=None):
     else:
         filter_blocks(tasks)
 
+    return proj
+
+
+def _filter_thin(proj,nangles,nrows,filt_len,filt,cols,scale_factor,workers):
+    """Filtering for detectors with fewer than THIN_ROWS rows (fan beam has one): several projection pairs per
+    FFT call, about THIN_BLOCK_BYTES of them, instead of one pair (a few rows) per call. Same pairs (projection
+    i in the real part, i+1 in the imaginary part), same filter; on a one-row detector the Python work around
+    each call was most of the time (fan beam 512 x 360: 15 ms of filtering for 0.2 M samples, now 3 ms). The
+    FFT now packs rows of different projections in its SIMD vectors, so the values can differ from before in
+    the last bit (relative 3e-7); they do not depend on the number of workers."""
+    pairs=max(1,THIN_BLOCK_BYTES//(8*filt_len)//nrows)
+    starts=list(range(0,nangles,2*pairs))
+
+    def filter_pairs(i0):
+        i1=min(i0+2*pairs,nangles)
+        even=proj[i0:i1:2]
+        odd=proj[i0+1:i1:2]
+        fproj=np.zeros((even.shape[0],nrows,filt_len),dtype=np.complex64)
+        fproj.real[:,:,cols]=even
+        fproj.imag[:odd.shape[0],:,cols]=odd
+        f=fproj.reshape(-1,filt_len)
+        f=fft(f,axis=1,overwrite_x=True)
+        f*=filt
+        f=ifft(f,axis=1,overwrite_x=True)
+        f=f.reshape(even.shape[0],nrows,filt_len)
+        proj[i0:i1:2]=f.real[:,:,cols]*scale_factor
+        proj[i0+1:i1:2]=f.imag[:odd.shape[0],:,cols]*scale_factor
+
+    workers=min(workers,len(starts))
+    if workers>1:
+        with ThreadPoolExecutor(workers) as pool:
+            list(pool.map(filter_pairs,starts))
+    else:
+        for i0 in starts:
+            filter_pairs(i0)
     return proj
 
 
