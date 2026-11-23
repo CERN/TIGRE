@@ -7,6 +7,15 @@ thank you.
 
 ## Unreleased
 
+### Added
+- `from_vector_to_TIGRE` and `from_TIGRE_to_vector` (Python: `tigre.from_vector_to_TIGRE`,
+  `tigre.from_TIGRE_to_vector`; MATLAB: `Utilities/`): convert between a cone-beam geometry and per-view
+  vectors (source, detector centre, u, v) in the layout of ASTRA's `cone_vec`, with the first pixel as an
+  option instead of the centre. Any rigid placement of source and detector relative to the image converts
+  both ways, including static source arrays with no common rotation centre. Vector geometries TIGRE cannot
+  describe (u and v not perpendicular, pixel size changing between views) are refused, not approximated.
+  No new geometry fields and no kernel changes.
+
 ## 3.3.0 (2026-11-21)
 
 ### Added
