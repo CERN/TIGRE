@@ -149,7 +149,16 @@ class CGLS(IterativeReconAlg):  # noqa: D101
                 avgtoc = default_timer()
                 avgtime.append(abs(avgtic - avgtoc))
 
-                self.l2l[0, i] = l2norm(self.proj - tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+                # proj - Ax(res), then r and p, in the arrays already there rather than in new full-size
+                # temporaries (each a fresh allocation; on host arrays these vector passes took longer than the
+                # projector calls). The same values.
+                resid = tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+                if resid.dtype == np.result_type(self.proj, resid):
+                    np.subtract(self.proj, resid, out=resid)
+                else:
+                    resid = self.proj - resid
+                self.l2l[0, i] = l2norm(resid)
+                del resid
                 if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
                     # Undo the step that lost orthogonality.
                     self.res -= alpha * self.__p__
@@ -165,7 +174,12 @@ class CGLS(IterativeReconAlg):  # noqa: D101
                     restarted = True
                     break                 # -> outer loop, retrying this i
 
-                self.__r__ -= alpha * q
+                if q.dtype == np.result_type(q, alpha):
+                    q *= alpha
+                    self.__r__ -= q
+                else:
+                    self.__r__ -= alpha * q
+                del q
                 s = tigre.Atb(self.__r__, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
                 s_norm = l2norm(s)
 
@@ -173,7 +187,11 @@ class CGLS(IterativeReconAlg):  # noqa: D101
                 beta = gamma1 / self.__gamma__
 
                 self.__gamma__ = gamma1
-                self.__p__ = s + beta * self.__p__
+                if self.__p__.dtype == np.result_type(self.__p__, beta, s):
+                    self.__p__ *= beta
+                    self.__p__ += s
+                else:
+                    self.__p__ = s + beta * self.__p__
                 if self.Quameasopts is not None:
                     self.error_measurement(res_prev, i)
                 i += 1
