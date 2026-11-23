@@ -272,19 +272,34 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     float ac = am;
     // At most one step per voxel boundary, plus slack: the loop always ends, even
     // if rounding never quite lets a crossing reach aM.
+    //
+    // Four steps per pass, without a branch inside: each step adds its voxel, then
+    // moves to the next voxel on the axis whose boundary comes first (selects, not
+    // if/else). The fetch of each step does not wait for the sum of the one before,
+    // so the four fetches are in flight together; before, every step waited for its
+    // fetch before the next one could start, and a warp whose rays crossed different
+    // axes ran the three branches one after the other. The sums are the same: after
+    // the ray leaves (aminc>=aM), the remaining steps of the pass fetch a voxel each
+    // but add nothing.
     const int maxsteps=(int)geo.nVoxelX+(int)geo.nVoxelY+(int)geo.nVoxelZ+3;
-    for (int step=0; step<maxsteps; step++){
-        float aminc=fminf(fminf(ax,ay),az);
-        sum+=(fminf(aminc,aM)-ac)*tex3D<float>(tex, cX, cY, cZ);
-        if (aminc>=aM)
-            break;
-        if (ax==aminc){
-            cX+=sX; ac=ax; ax=fmaf(cX+hX,rX,oX);
-        }else if(ay==aminc){
-            cY+=sY; ac=ay; ay=fmaf(cY+hY,rY,oY);
-        }else{
-            cZ+=sZ; ac=az; az=fmaf(cZ+hZ,rZ,oZ);
+    bool out=false;
+    for (int step=0; step<maxsteps; step+=4){
+#pragma unroll
+        for (int s=0; s<4; s++){
+            const float aminc=fminf(fminf(ax,ay),az);
+            const float t=tex3D<float>(tex, cX, cY, cZ);
+            if (!out) sum+=(fminf(aminc,aM)-ac)*t;
+            out=out || (aminc>=aM);
+            const bool bx=(ax==aminc);
+            const bool by=!bx && (ay==aminc);
+            const bool bz=!bx && !by;
+            ac=aminc;
+            cX=bx? cX+sX : cX;  ax=bx? fmaf(cX+hX,rX,oX) : ax;
+            cY=by? cY+sY : cY;  ay=by? fmaf(cY+hY,rY,oY) : ay;
+            cZ=bz? cZ+sZ : cZ;  az=bz? fmaf(cZ+hZ,rZ,oZ) : az;
         }
+        if (out)
+            break;
     }
     detector[idx]=maxlength*sum;
 }
@@ -431,8 +446,9 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
     // Ordinary host memory: page-locking these few KB (allocating and freeing them with cudaMallocHost and
     // cudaFreeHost) cost ~0.45 ms per call and did not change the kernels' time (measured on an RTX 4070: the
     // kernels read the __constant__ copy either way).
+    // One buffer per GPU: the constants of the next launch are filled while the current kernels run.
     Point3D* projParamsArrayHost = 0;
-    projParamsArrayHost=(Point3D*)malloc(4*PROJ_PER_BLOCK*sizeof(Point3D));
+    projParamsArrayHost=(Point3D*)malloc((size_t)deviceCount*4*PROJ_PER_BLOCK*sizeof(Point3D));
     if (!projParamsArrayHost) mexErrMsgIdAndTxt("TIGRE:hostMemory","Not enough host memory for the geometry constants");
     onError.add([projParamsArrayHost]{ free(projParamsArrayHost); });
     cudaCheckErrors("Error allocating auxiliary constant memory");
@@ -493,27 +509,40 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
         CreateTextureParallel(devIds.data(),deviceCount,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg,stream,kindIn);
         cudaCheckErrors("Texture object creation fail");
 
+        // The geometry constants of launch i on GPU dev, in that GPU's part of projParamsArrayHost
+        auto fillParams=[&](unsigned int i, int dev){
+            Point3D* params=projParamsArrayHost+(size_t)dev*4*PROJ_PER_BLOCK;
+            for(unsigned int j=0; j<PROJ_PER_BLOCK; j++){
+                const unsigned int proj_global=(i*PROJ_PER_BLOCK+j)+dev*nangles_device;
+                if (proj_global>=nangles || (i*PROJ_PER_BLOCK+j)>=nangles_device)
+                    break;
+                geoArray[sp].alpha=angles[proj_global*3];
+                geoArray[sp].theta=angles[proj_global*3+1];
+                geoArray[sp].psi  =angles[proj_global*3+2];
+                //Precompute per angle constant stuff for speed
+                computeDeltas_Siddon_parallel(geoArray[sp],geoArray[sp].alpha,proj_global, &uvOrigin, &deltaU, &deltaV, &source);
+                params[4*j]=uvOrigin;
+                params[4*j+1]=deltaU;
+                params[4*j+2]=deltaV;
+                params[4*j+3]=source;
+            }
+        };
+        for (dev=0;dev<deviceCount;dev++)
+            fillParams(0,dev);
         for (unsigned int i=0; i<noOfKernelCalls; i++){
             for (dev=0;dev<deviceCount;dev++){
                 cudaSetDevice(devIds[dev]);
-                for(unsigned int j=0; j<PROJ_PER_BLOCK; j++){
-                    const unsigned int proj_global=(i*PROJ_PER_BLOCK+j)+dev*nangles_device;
-                    if (proj_global>=nangles || (i*PROJ_PER_BLOCK+j)>=nangles_device)
-                        break;
-                    geoArray[sp].alpha=angles[proj_global*3];
-                    geoArray[sp].theta=angles[proj_global*3+1];
-                    geoArray[sp].psi  =angles[proj_global*3+2];
-                    //Precompute per angle constant stuff for speed
-                    computeDeltas_Siddon_parallel(geoArray[sp],geoArray[sp].alpha,proj_global, &uvOrigin, &deltaU, &deltaV, &source);
-                    projParamsArrayHost[4*j]=uvOrigin;
-                    projParamsArrayHost[4*j+1]=deltaU;
-                    projParamsArrayHost[4*j+2]=deltaV;
-                    projParamsArrayHost[4*j+3]=source;
-                }
-                cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost, sizeof(Point3D)*4*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[dev*2]);
-                cudaStreamSynchronize(stream[dev*2]);  // projParamsArrayHost is refilled for the next GPU
+                // No wait for the GPU here: the copy is ordered after the previous kernel on this stream (which
+                // keeps reading the old constants), and from ordinary host memory it is staged before
+                // cudaMemcpyToSymbolAsync returns, so the buffer can be refilled at once.
+                cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost+(size_t)dev*4*PROJ_PER_BLOCK, sizeof(Point3D)*4*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[dev*2]);
                 kernelPixelDetector_parallel<<<numBlocks,threadsPerBlock,0,stream[dev*2]>>>(geoArray[sp],(directOut ? result[i*PROJ_PER_BLOCK] : dProjection[(i%2)+dev*2]),i,nangles_device,texImg[dev]);
             }
+            // The constants of the next launch, computed on the host while these kernels run (before, the GPU
+            // waited for them after every launch of PROJ_PER_BLOCK angles).
+            if (i+1<noOfKernelCalls)
+                for (dev=0;dev<deviceCount;dev++)
+                    fillParams(i+1,dev);
             cudaCheckErrors("Kernel fail");
 
             // Pieces after the first: add what the previous pieces gave for these projections (already in result).
