@@ -109,20 +109,11 @@ void CreateTextureParallel( float* projectiondata,Geometry geo,cudaArray** d_cuA
 const int PROJ_PER_KERNEL = 32;  // Number of 2D projections to be analyzed by a single thread. This can be tweaked to see what works best. 32 was the optimal value in the paper by Zinsser and Keck.
 const int VOXELS_PER_THREAD = 8;  // Number of voxels to be computed by s single thread. Can be tweaked to see what works best. 4 was the optimal value in the paper by Zinsser and Keck.
 
-// We have PROJ_PER_KERNEL projections and we need 6 parameters for each projection:
-//   deltaX, deltaY, deltaZ, xyzOrigin, offOrig, offDetec
-// So we need to keep PROJ_PER_KERNEL*6 values in our deltas array FOR EACH CALL to our main kernel
-// (they will be updated in the main loop before each kernel call).
-
-__constant__ Point3D projParamsArrayDevParallel[6*PROJ_PER_KERNEL];  // Dev means it is on device
-
-// We also need a corresponding array on the host side to be filled before each kernel call, then copied to the device (array in constant memory above)
-// Point3D projParamsArrayHostParallel[6*PROJ_PER_KERNEL];   // Host means it is host memory
-
-// Now we also need to store sinAlpha and cosAlpha for each projection (two floats per projection)
-__constant__ float projSinCosArrayDevParallel[3*PROJ_PER_KERNEL];
-
-// float projSinCosArrayHostParallel[3*PROJ_PER_KERNEL];
+// Per projection, the texture coordinates of the voxel (i,j,k) are linear in i, j and k (parallel rays: the voxel
+// projects straight onto the detector): u = U.w + i*U.x + j*U.y + k*U.z and v = V.w + i*V.x + j*V.y + k*V.z,
+// with U = projUVArrayDevParallel[2*p] and V = projUVArrayDevParallel[2*p+1], folded on the host (rotation,
+// offsets, COR, detector rotation and the texel centre included).
+__constant__ float4 projUVArrayDevParallel[2*PROJ_PER_KERNEL];
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // END RB, 10/31/2016: Add constant memory arrays to store parameters for all projections to be analyzed during a single kernel call
@@ -158,120 +149,49 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
      */
     unsigned long long indY = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long long indX = blockIdx.x * blockDim.x + threadIdx.x;
-    // unsigned long startIndZ = blockIdx.z * blockDim.z + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
-    unsigned long long startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
-    //Make sure we don't go out of bounds
+    unsigned long long startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // the first voxel of this thread's column
     if (indX>=geo.nVoxelX || indY>=geo.nVoxelY || startIndZ>=geo.nVoxelZ)
         return;
     
-    // We'll keep a local auxiliary array of values of a column of voxels that this thread will update
+    // The column of voxels this thread updates, kept in registers. Voxels of the column beyond the image (last block
+    // in z) are computed too, harmlessly (a texture read), and never stored.
     float voxelColumn[VOXELS_PER_THREAD];
+    const unsigned long long sliceSize=(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY;
+    const unsigned long long idx0=startIndZ*sliceSize+indY*(unsigned long long)geo.nVoxelX+indX;
+#pragma unroll
+    for(int colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
+        voxelColumn[colIdx] = (startIndZ+colIdx<geo.nVoxelZ) ? image[idx0+colIdx*sliceSize] : 0.0f;
     
-    // First we need to copy the curent 3D volume values from the column to our auxiliary array so that we can then
-    // work on them (update them by computing values from multiple projections) locally - avoiding main memory reads/writes
-    
-    unsigned long colIdx;
-    
-    for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
+    const float fIndX=(float)indX, fIndY=(float)indY, fStartIndZ=(float)startIndZ;
+    for(int projNumber=0; projNumber<PROJ_PER_KERNEL; projNumber++)
     {
-        unsigned long long indZ = startIndZ + colIdx;
-        // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
-        // be trying to copy the out of bounds values back to the 3D volume anyway (bounds checks will be done in the final loop where the updated values go back to the main volume)
-        if(indZ>=geo.nVoxelZ)
-            break;   // break the loop.
-        
-        unsigned long long idx =indZ*(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY+indY*(unsigned long long)geo.nVoxelX + indX;
-        voxelColumn[colIdx] = image[idx];   // Read the current volume value that we'll update by computing values from MULTIPLE projections (not just one)
-        // We'll be updating the local (register) variable, avoiding reads/writes from the slow main memory.
-    }  // END copy 3D volume voxels to local array
-    
-    // Now iterate through projections
-    for(unsigned long projNumber=0; projNumber<PROJ_PER_KERNEL; projNumber++)
-    {
-        // Get the current parameters from parameter arrays in constant memory.
-        unsigned long indAlpha = currProjSetNumber*PROJ_PER_KERNEL+projNumber;  // This is the ABSOLUTE projection number in the projection array
-        
-        // Our currImageVal will be updated by hovewer many projections we had left in the "remainder" - that's OK.
+        const int indAlpha = currProjSetNumber*PROJ_PER_KERNEL+projNumber;  // the projection's index in the texture
         if(indAlpha>=totalNoOfProjections)
             break;
-        
-        Point3D deltaX = projParamsArrayDevParallel[6*projNumber];  // 6*projNumber because we have 6 Point3D values per projection
-        Point3D deltaY = projParamsArrayDevParallel[6*projNumber+1];
-        Point3D deltaZ = projParamsArrayDevParallel[6*projNumber+2];
-        Point3D xyzOrigin = projParamsArrayDevParallel[6*projNumber+3];
-        Point3D xyzOffset = projParamsArrayDevParallel[6*projNumber+4];
-        Point3D S = projParamsArrayDevParallel[6*projNumber+5];
-        
-        float DSD = projSinCosArrayDevParallel[3*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
-        float DSO = projSinCosArrayDevParallel[3*projNumber+1];
-        float COR = projSinCosArrayDevParallel[3*projNumber+2];
-        
-        // Geometric trasnformations:
-        //Source, scaled XYZ coordinates
-        
-        // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
-        for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
+        const float4 U = projUVArrayDevParallel[2*projNumber];
+        const float4 V = projUVArrayDevParallel[2*projNumber+1];
+        // The first voxel of the column, then one step of (U.z, V.z) per voxel. Before, every voxel rebuilt its
+        // position from the indices (9 multiply-adds), the source on its ray and the ray's intersection with the
+        // detector (two divisions): for parallel rays these cancel, the detector coordinates are the voxel's own.
+        float u=U.w+fIndX*U.x+fIndY*U.y+fStartIndZ*U.z;
+        float v=V.w+fIndX*V.x+fIndY*V.y+fStartIndZ*V.z;
+        const float fAlpha=(float)indAlpha+0.5f;
+#pragma unroll
+        for(int colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
         {
-            unsigned long long indZ = startIndZ + colIdx;
-            
-            // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
-            // be trying to copy the out of bounds values anyway (bounds checks will be done in the final loop where the values go to the main volume)
-            if(indZ>=geo.nVoxelZ)
-                break;   // break the loop.
-            
-            // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
-            Point3D P;
-            S.x=DSO;
-            P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
-            P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
-            S.y=P.y;S.z=P.z;
-            
-            // This is the vector defining the line from the source to the Voxel
-            float vectX,vectY,vectZ;
-            vectX=(P.x -S.x);
-            vectY=(P.y -S.y);
-            vectZ=(P.z -S.z);
-            
-            // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-            float t=(DSO-DSD /*-DOD*/ - S.x)/vectX;
-            float y,z;
-            y=vectY*t+S.y;
-            z=vectZ*t+S.z;
-            float u,v;
-            u=y+geo.nDetecU/2.0f-0.5f;
-            v=z+geo.nDetecV/2.0f-0.5f;
-            
-            
-            
-            // Get Value in the computed (U,V) and multiply by the corresponding weight.
-            // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
 #if IS_FOR_MATLAB_TIGRE
-            voxelColumn[colIdx]+=tex3D<float>(tex, v+0.5f, u+0.5f ,indAlpha+0.5f);
+            voxelColumn[colIdx]+=tex3D<float>(tex, v, u ,fAlpha);
 #else
-            voxelColumn[colIdx]+=tex3D<float>(tex, u+0.5f, v+0.5f ,indAlpha+0.5f);
+            voxelColumn[colIdx]+=tex3D<float>(tex, u, v ,fAlpha);
 #endif
-            
-        }  // END iterating through column of voxels
-        
-    }  // END iterating through multiple projections
+            u+=U.z; v+=V.z;
+        }
+    }
     
-    // And finally copy the updated local voxelColumn array back to our 3D volume (main memory)
-    for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
-    {
-        unsigned long long indZ = startIndZ + colIdx;
-        // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
-        // be trying to copy the out of bounds values back to the 3D volume anyway (bounds checks will be done in the final loop where the values go to the main volume)
-        if(indZ>=geo.nVoxelZ)
-            break;   // break the loop.
-        
-        unsigned long long idx =indZ*(unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY+indY*(unsigned long long)geo.nVoxelX + indX;
-        image[idx] = voxelColumn[colIdx];   // Read the current volume value that we'll update by computing values from MULTIPLE projections (not just one)
-        // We'll be updating the local (register) variable, avoiding reads/writes from the slow main memory.
-        // According to references (Papenhausen), doing = is better than +=, since += requires main memory read followed by a write.
-        // We did all the reads into the local array at the BEGINNING of this kernel. According to Papenhausen, this type of read-write split is
-        // better for avoiding memory congestion.
-    }  // END copy updated voxels from local array to our 3D volume
+#pragma unroll
+    for(int colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
+        if (startIndZ+colIdx<geo.nVoxelZ)
+            image[idx0+colIdx*sliceSize] = voxelColumn[colIdx];  // = and not +=: the column was read at the start
     
 }  // END kernelPixelBackprojectionFDK
 
@@ -429,14 +349,9 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     // cudaFreeHost) cost ~0.45 ms per call and did not change the kernels' time (measured on an RTX 4070: the
     // kernels read the __constant__ copy either way).
 
-    Point3D* projParamsArrayHostParallel = 0;
-    projParamsArrayHostParallel=(Point3D*)malloc(6*PROJ_PER_KERNEL*sizeof(Point3D));
-    if (!projParamsArrayHostParallel) mexErrMsgIdAndTxt("TIGRE:hostMemory","Not enough host memory for the geometry constants");
-    onError.add([projParamsArrayHostParallel]{ free(projParamsArrayHostParallel); });
-    float* projSinCosArrayHostParallel = 0;
-    projSinCosArrayHostParallel=(float*)malloc(3*PROJ_PER_KERNEL*sizeof(float));
-    if (!projSinCosArrayHostParallel) mexErrMsgIdAndTxt("TIGRE:hostMemory","Not enough host memory for the geometry constants");
-    onError.add([projSinCosArrayHostParallel]{ free(projSinCosArrayHostParallel); });
+    float4* projUVArrayHostParallel=(float4*)malloc(2*PROJ_PER_KERNEL*sizeof(float4));
+    if (!projUVArrayHostParallel) mexErrMsgIdAndTxt("TIGRE:hostMemory","Not enough host memory for the geometry constants");
+    onError.add([projUVArrayHostParallel]{ free(projUVArrayHostParallel); });
 
     // Texture objects, two per GPU. Zeroed so CreateTextureParallel can tell an empty slot from one holding a
     // texture object it must destroy first.
@@ -473,26 +388,20 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
                 cudaSetDevice(devIds[dev]);
                 for (unsigned int j=0; j<nproj; j++){
                     const unsigned int p=first+j;  // global projection index
-                    Point3D deltaX,deltaY,deltaZ,xyzOrigin,offOrig,source;
+                    Point3D deltaX,deltaY,deltaZ,xyzOrigin,source;
                     g.alpha=-alphas[p*3];
                     g.theta=-alphas[p*3+1];
                     g.psi  =-alphas[p*3+2];
-                    projSinCosArrayHostParallel[3*j]  =g.DSD[p];
-                    projSinCosArrayHostParallel[3*j+1]=g.DSO[p];
-                    projSinCosArrayHostParallel[3*j+2]=g.COR[p];
                     computeDeltasCubeParallel(g,p,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
-                    offOrig.x=g.offOrigX[p];
-                    offOrig.y=g.offOrigY[p];
-                    offOrig.z=0;
-                    projParamsArrayHostParallel[6*j]  =deltaX;
-                    projParamsArrayHostParallel[6*j+1]=deltaY;
-                    projParamsArrayHostParallel[6*j+2]=deltaZ;
-                    projParamsArrayHostParallel[6*j+3]=xyzOrigin;
-                    projParamsArrayHostParallel[6*j+4]=offOrig;
-                    projParamsArrayHostParallel[6*j+5]=source;
+                    // The kernel's old per-voxel sum, folded: u = P.y - COR/dDetecU + nDetecU/2 - 0.5 and
+                    // v = P.z + nDetecV/2 - 0.5 for the voxel's position P = xyzOrigin + i*deltaX + j*deltaY +
+                    // k*deltaZ (detector units), plus 0.5 for the texel centre.
+                    const double u0=(double)xyzOrigin.y-(double)g.COR[p]/(double)geo.dDetecU+geo.nDetecU/2.0;
+                    const double v0=(double)xyzOrigin.z+geo.nDetecV/2.0;
+                    projUVArrayHostParallel[2*j]  =make_float4(deltaX.y,deltaY.y,deltaZ.y,(float)u0);
+                    projUVArrayHostParallel[2*j+1]=make_float4(deltaX.z,deltaY.z,deltaZ.z,(float)v0);
                 }
-                cudaMemcpyToSymbolAsync(projSinCosArrayDevParallel, projSinCosArrayHostParallel, sizeof(float)*3*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev*2]);
-                cudaMemcpyToSymbolAsync(projParamsArrayDevParallel, projParamsArrayHostParallel, sizeof(Point3D)*6*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev*2]);
+                cudaMemcpyToSymbolAsync(projUVArrayDevParallel, projUVArrayHostParallel, sizeof(float4)*2*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev*2]);
                 // The host arrays are refilled for the next GPU; and this also waits for the kernel of the block
                 // before, which read the texture array the next block's upload overwrites.
                 cudaStreamSynchronize(stream[dev*2]);
@@ -534,8 +443,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     free(dimage);
     free(stream);
     freeGeoArray(nPieces, geoArray);
-    free(projSinCosArrayHostParallel);
-    free(projParamsArrayHostParallel);
+    free(projUVArrayHostParallel);
     if (registered) cudaHostUnregister(projections);
     if (result_registered) cudaHostUnregister(result);
     cudaCheckErrors("cudaFree fail");
