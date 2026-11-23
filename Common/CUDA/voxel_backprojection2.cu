@@ -569,7 +569,14 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                         // Copy the prepared parameter arrays to constant memory to make it available for the kernel
                         cudaMemcpyToSymbolAsync(projSinCosArray2Dev, projSinCosArray2Host, sizeof(float)*5*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev*nStreamDevice]);
                         cudaMemcpyToSymbolAsync(projParamsArray2Dev, projParamsArray2Host, sizeof(Point3D)*7*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev*nStreamDevice]);
-                        cudaStreamSynchronize(stream[dev*nStreamDevice]);
+                        // Wait for the GPU only before the first kernel of a chunk: that also waits for the previous
+                        // chunk's kernels, which read the texture array that the next chunk's upload overwrites (two
+                        // arrays, alternating). The kernels within a chunk need no wait: each one's constants are copied
+                        // on the same stream, so the GPU applies them only after the previous kernel has finished, and the
+                        // host buffer can be refilled as soon as the copy returns (pageable memory is staged by then).
+                        // Waiting before every kernel left the GPU idle while the host prepared the next one: on thin
+                        // detectors (one upload, e.g. 12 kernels of 32 projections for 360) most of a small call.
+                        if (i==0) cudaStreamSynchronize(stream[dev*nStreamDevice]);
                         switch (divz) {  // one compiled kernel per column length
                             case 1: kernelPixelBackprojection<1><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]); break;
                             case 2: kernelPixelBackprojection<2><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]); break;

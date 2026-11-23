@@ -137,3 +137,17 @@ def test_fan_beam_backprojection_equals_tall_detector(bptype, nangles):
     full = tigre.Atb(np.ascontiguousarray(np.repeat(proj, 17, axis=1)), _cone((1, 64, 64), (17, 96)), angles, bptype)
     assert thin.shape == (1, 64, 64)
     _matches_one_of(thin, [full], TOL, "fan beam backprojection, {} angles, {}".format(nangles, bptype))
+
+
+@pytest.mark.parametrize("bptype", ["FDK", "matched"])
+def test_fan_beam_backprojection_is_repeatable(bptype):
+    """The kernels of a call are queued without waiting for each other (each one's constants are copied on the
+    same stream after the previous kernel): repeated calls give bit-identical results, with GPU work queued before
+    them, so a kernel reading the next one's constants would show."""
+    angles = np.linspace(0, 2 * np.pi, 360, endpoint=False)
+    fan = _cone((1, 128, 128), (1, 192))
+    proj = tigre.Ax(_image((1, 128, 128), seed=4), fan, angles, "interpolated")
+    first = tigre.Atb(proj, fan, angles, bptype)
+    for _ in range(10):
+        tigre.Ax(_image((1, 128, 128), seed=5), fan, angles, "interpolated")  # other GPU work in between
+        np.testing.assert_array_equal(tigre.Atb(proj, fan, angles, bptype), first)
