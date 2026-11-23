@@ -70,14 +70,15 @@ inline bool projectionsInOneUpload(unsigned long nDetecV, unsigned long nalpha, 
 // and give the same sums for any). raySpacing: how far apart neighbouring rays are where they cross the image, in
 // voxels; voxels: the size of the image, or of the piece of it in one texture. More steps per pass put more texture
 // fetches in flight, which hides their latency as long as the voxels each ray reads next are still in the cache. They
-// are when neighbouring rays are at most about a voxel apart (the usual detector, a pixel per voxel): four steps.
-// When the rays are further apart, the extra fetches in flight evict them first (Nsight Compute, 1024^3 image, rays 4
-// voxels apart: L1 hit rate 57% with one step per pass, 41% with four), and four steps were up to 1.5x slower than
-// one: two steps, and one when the image is also large. Measured on an RTX 4070 and a Quadro RTX 6000, cone beam
+// are when neighbouring rays are at most about a voxel apart (the usual detector, a pixel per voxel), or when the
+// image is small: four steps. When the rays are further apart in a larger image, the extra fetches in flight evict
+// them first (Nsight Compute, 1024^3 image, rays 4 voxels apart: L1 hit rate 57% with one step per pass, 41% with
+// four), and four steps were up to 1.5x slower than one: two steps, and one when the image is also large. Measured on an RTX 4070 and a Quadro RTX 6000, cone beam
 // 256^3..1024^3 and parallel beam 512^3, 1024^3, rays 0.5..6 voxels apart.
 inline int siddonStepsPerPass(double raySpacing, size_t voxels) {
-    if (raySpacing < 1.25) return 4;
-    if (raySpacing * cbrt((double)voxels) < 2700.0) return 2;
+    const double m = raySpacing * cbrt((double)voxels);  // ray spacing times the image's side, in voxels
+    if (raySpacing < 1.25 || m < 800.0) return 4;
+    if (m < 2700.0) return 2;
     return 1;
 }
 
