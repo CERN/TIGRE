@@ -107,6 +107,7 @@ void CreateTextureParallel(const int* devs, int ndev, float* image, Geometry geo
 __constant__ Point3D projParamsArrayDev[4*PROJ_PER_BLOCK];  // Dev means it is on device
 
 
+template<int STEPS>
 __global__ void kernelPixelDetector_parallel( Geometry geo,
         float* detector, const int currProjSetNumber, const int totalNoOfProjections, cudaTextureObject_t tex){
     
@@ -273,19 +274,19 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     // At most one step per voxel boundary, plus slack: the loop always ends, even
     // if rounding never quite lets a crossing reach aM.
     //
-    // Four steps per pass, without a branch inside: each step adds its voxel, then
-    // moves to the next voxel on the axis whose boundary comes first (selects, not
-    // if/else). The fetch of each step does not wait for the sum of the one before,
-    // so the four fetches are in flight together; before, every step waited for its
-    // fetch before the next one could start, and a warp whose rays crossed different
-    // axes ran the three branches one after the other. The sums are the same: after
-    // the ray leaves (aminc>=aM), the remaining steps of the pass fetch a voxel each
-    // but add nothing.
+    // STEPS steps per pass (1, 2 or 4, chosen on the host by siddonStepsPerPass),
+    // without a branch inside: each step adds its voxel, then moves to the next voxel
+    // on the axis whose boundary comes first (selects, not if/else). The fetch of each
+    // step does not wait for the sum of the one before, so the fetches of a pass are
+    // in flight together; before, every step waited for its fetch before the next one
+    // could start, and a warp whose rays crossed different axes ran the three branches
+    // one after the other. The sums are the same for any STEPS: after the ray leaves
+    // (aminc>=aM), the remaining steps of the pass fetch a voxel each but add nothing.
     const int maxsteps=(int)geo.nVoxelX+(int)geo.nVoxelY+(int)geo.nVoxelZ+3;
     bool out=false;
-    for (int step=0; step<maxsteps; step+=4){
+    for (int step=0; step<maxsteps; step+=STEPS){
 #pragma unroll
-        for (int s=0; s<4; s++){
+        for (int s=0; s<STEPS; s++){
             const float aminc=fminf(fminf(ax,ay),az);
             const float t=tex3D<float>(tex, cX, cY, cZ);
             if (!out) sum+=(fminf(aminc,aM)-ac)*t;
@@ -302,6 +303,16 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
             break;
     }
     detector[idx]=maxlength*sum;
+}
+
+// Launches the kernel compiled for 1, 2 or 4 steps per pass (tigre::siddonStepsPerPass).
+template<typename... Args>
+static void launchSiddonParallel(int steps, dim3 grid, dim3 block, cudaStream_t stream, Args... args){
+    switch (steps){
+        case 1:  kernelPixelDetector_parallel<1><<<grid,block,0,stream>>>(args...); break;
+        case 2:  kernelPixelDetector_parallel<2><<<grid,block,0,stream>>>(args...); break;
+        default: kernelPixelDetector_parallel<4><<<grid,block,0,stream>>>(args...); break;
+    }
 }
 
 
@@ -508,6 +519,10 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
         const size_t linear_idx_start=(size_t)sp*(size_t)geoArray[0].nVoxelX*(size_t)geoArray[0].nVoxelY*(size_t)geoArray[0].nVoxelZ;
         CreateTextureParallel(devIds.data(),deviceCount,&img[linear_idx_start],geoArray[sp],d_cuArrTex,texImg,stream,kindIn);
         cudaCheckErrors("Texture object creation fail");
+        // Steps per pass of the walk along each ray (see the kernel): from how far apart neighbouring rays are, in
+        // voxels, and the size of this piece of the image.
+        const int steps=tigre::siddonStepsPerPass(sqrt((double)geo.dDetecU/geo.dVoxelX*geo.dDetecV/geo.dVoxelZ),
+                (size_t)geoArray[sp].nVoxelX*geoArray[sp].nVoxelY*geoArray[sp].nVoxelZ);
 
         // The geometry constants of launch i on GPU dev, in that GPU's part of projParamsArrayHost
         auto fillParams=[&](unsigned int i, int dev){
@@ -536,7 +551,7 @@ int siddon_ray_projection_parallel(float* img, Geometry geo, float** result,floa
                 // keeps reading the old constants), and from ordinary host memory it is staged before
                 // cudaMemcpyToSymbolAsync returns, so the buffer can be refilled at once.
                 cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost+(size_t)dev*4*PROJ_PER_BLOCK, sizeof(Point3D)*4*PROJ_PER_BLOCK,0,cudaMemcpyHostToDevice,stream[dev*2]);
-                kernelPixelDetector_parallel<<<numBlocks,threadsPerBlock,0,stream[dev*2]>>>(geoArray[sp],(directOut ? result[i*PROJ_PER_BLOCK] : dProjection[(i%2)+dev*2]),i,nangles_device,texImg[dev]);
+                launchSiddonParallel(steps,numBlocks,threadsPerBlock,stream[dev*2],geoArray[sp],(directOut ? result[i*PROJ_PER_BLOCK] : dProjection[(i%2)+dev*2]),i,nangles_device,texImg[dev]);
             }
             // The constants of the next launch, computed on the host while these kernels run (before, the GPU
             // waited for them after every launch of PROJ_PER_BLOCK angles).
