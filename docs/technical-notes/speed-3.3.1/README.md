@@ -25,9 +25,11 @@ single server, and the thresholds TIGRE uses (Siddon steps per pass, #916; page-
 come from two GPU models. Please open an issue on GitHub with your `suite.json` and a line about the machine:
 GPUs, how they are connected (`nvidia-smi topo -m`), CPU, RAM and OS.
 
-## Remake the tables
+## Raw results
 
-`results/` holds the raw results of the note: `win_*` from the RTX 4070 (Windows) and `linux_*` from the
-Quadro RTX 6000 server, for 3.3.1 and for 3.3.0. (The 3.3.1 runs were made on master with #911–#917 merged, before the
-version number was raised, so their `meta.tigre` still reads 3.3.0.) `./regen.sh` rebuilds `tables/` from them.
-`python3 losses.py results/linux_331.json 1` lists every comparison that ASTRA wins on one GPU.
+The raw results of the note and the scripts that make its tables are in `tigre-3.3.1-speed-results.zip`,
+attached to the [TIGRE 3.3.1 release](https://github.com/CERN/TIGRE/releases/tag/v3.3.1): `results/win_*` from the
+RTX 4070 (Windows) and `results/linux_*` from the Quadro RTX 6000 server, for 3.3.1 and for 3.3.0. Unzip it into
+this folder and run `./regen.sh` to rebuild `tables/`; `python3 losses.py results/linux_331.json 1` lists every
+comparison that ASTRA wins on one GPU. (The 3.3.1 runs were made on master with #911–#917 merged, before the
+version number was raised, so their `meta.tigre` still reads 3.3.0.)
