@@ -21,10 +21,21 @@ THIN_ROWS = 16
 THIN_BLOCK_BYTES = 2**21
 
 
-def filtering(proj, geo, angles, parker, verbose=False, workers=None):
+def filtering(proj, geo, angles, parker, verbose=False, workers=None, weights=None, out=None):
     # parker: False, True (q=1) or the smoothing parameter q of the Parker weights
+    # weights: optional (nDetecV, nDetecU) array the projections are multiplied by first (FDK's cosine weights),
+    #   while each block is loaded, instead of in a pass of its own over all the projections
+    # out: optional float32 array of proj's shape for the result; proj is then not changed. Default: in place
+    if weights is not None and parker:
+        # the Parker weights act on the weighted projections: weight them all first, as before
+        proj=np.multiply(proj,weights,out=out if out is not None else np.empty(proj.shape,dtype=np.float32))
+        weights=out=None
     if parker:
         proj=parkerweight(proj,geo,angles,float(parker))
+        out=None
+    src=proj
+    if out is not None:
+        proj=out
 
     filt_len=max(64,2**nextpow2(2*geo.nDetector[1])) 
     ramp_kernel=ramp_flat(filt_len)
@@ -56,8 +67,14 @@ def filtering(proj, geo, angles, parker, verbose=False, workers=None):
     #does on a whole projection, and rounds the same way
     block=max(16,BLOCK_BYTES//(8*filt_len)//16*16)
     if nrows<THIN_ROWS:
-        return _filter_thin(proj,nangles,nrows,filt_len,filt,cols,scale_factor,workers)
+        return _filter_thin(src,proj,weights,nangles,nrows,filt_len,filt,cols,scale_factor,workers)
     local=threading.local()
+
+    def load(dst,i,r0,r1):
+        if weights is None:
+            dst[...]=src[i,r0:r1]
+        else:
+            np.multiply(src[i,r0:r1],weights[r0:r1],out=dst,casting="same_kind")
 
     def filter_blocks(tasks):
         if not hasattr(local,"fproj"):
@@ -67,10 +84,10 @@ def filtering(proj, geo, angles, parker, verbose=False, workers=None):
             #filter 2 projection at a time packing in to complex container
             fproj=local.fproj[:r1-r0]
             fproj.fill(0)
-            fproj.real[:,cols]=proj[i,r0:r1]
+            load(fproj.real[:,cols],i,r0,r1)
             #if odd number of projections filter last solo
             if i+1<nangles:
-                fproj.imag[:,cols]=proj[i+1,r0:r1]
+                load(fproj.imag[:,cols],i+1,r0,r1)
 
             fproj=fft(fproj,axis=1,overwrite_x=True)
             fproj*=filt
@@ -95,7 +112,7 @@ def filtering(proj, geo, angles, parker, verbose=False, workers=None):
     return proj
 
 
-def _filter_thin(proj,nangles,nrows,filt_len,filt,cols,scale_factor,workers):
+def _filter_thin(src,proj,weights,nangles,nrows,filt_len,filt,cols,scale_factor,workers):
     """Filtering for detectors with fewer than THIN_ROWS rows (fan beam has one): several projection pairs per
     FFT call, about THIN_BLOCK_BYTES of them, instead of one pair (a few rows) per call. Same pairs (projection
     i in the real part, i+1 in the imaginary part), same filter; on a one-row detector the Python work around
@@ -107,8 +124,11 @@ def _filter_thin(proj,nangles,nrows,filt_len,filt,cols,scale_factor,workers):
 
     def filter_pairs(i0):
         i1=min(i0+2*pairs,nangles)
-        even=proj[i0:i1:2]
-        odd=proj[i0+1:i1:2]
+        even=src[i0:i1:2]
+        odd=src[i0+1:i1:2]
+        if weights is not None:
+            even=even*weights
+            odd=odd*weights
         fproj=np.zeros((even.shape[0],nrows,filt_len),dtype=np.complex64)
         fproj.real[:,:,cols]=even
         fproj.imag[:odd.shape[0],:,cols]=odd

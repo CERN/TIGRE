@@ -214,7 +214,6 @@ def FDK(proj, geo, angles, **kwargs):
     geo.checknans()
     geo.filter = kwargs["filter"] if "filter" in kwargs else None
     # Weight
-    proj_filt = np.zeros(proj.shape, dtype=np.float32)
     xv = (
         np.arange((-geo.nDetector[1] / 2) + 0.5, 1 + (geo.nDetector[1] / 2) - 0.5)
         * geo.dDetector[1]
@@ -226,9 +225,11 @@ def FDK(proj, geo, angles, **kwargs):
     (yy, xx) = np.meshgrid(xv, yv)
 
     w = geo.DSD[0] / np.sqrt((geo.DSD[0] ** 2 + xx**2 + yy**2))
-    np.multiply(proj, w, out=proj_filt)
-
-    proj_filt = filtering(proj_filt, geo, angles, parker=parker, verbose=verbose, workers=workers)
+    # the cosine weights are applied by the filtering, block by block as it loads the projections (the same
+    # values as a separate np.multiply pass, without that pass over all the data)
+    proj_filt = np.empty(proj.shape, dtype=np.float32)
+    proj_filt = filtering(proj, geo, angles, parker=parker, verbose=verbose, workers=workers, weights=w,
+                          out=proj_filt)
 
     return Atb(proj_filt, geo, geo.angles, "FDK", gpuids=gpuids)
 
