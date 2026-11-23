@@ -66,7 +66,9 @@ def filtering(proj, geo, angles, parker, verbose=False, workers=None, weights=No
     #A multiple of 16 rows, so that the FFT packs the same rows in a SIMD vector as it
     #does on a whole projection, and rounds the same way
     block=max(16,BLOCK_BYTES//(8*filt_len)//16*16)
-    if nrows<THIN_ROWS:
+    if nrows<THIN_ROWS or (nrows%THIN_ROWS==0 and 2*nrows<=block):
+        # few rows: several projection pairs per FFT call. With a multiple of 16 rows the FFT packs the same
+        # rows in its SIMD vectors as one pair at a time does, so the values are the same as below
         return _filter_thin(src,proj,weights,nangles,nrows,filt_len,filt,cols,scale_factor,workers)
     local=threading.local()
 
