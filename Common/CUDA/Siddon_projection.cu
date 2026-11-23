@@ -110,7 +110,11 @@ __global__ void vecAddInPlace(float *a, float *b, size_t n)
         a[idx] = a[idx] + b[idx];
 }
 
-__global__ void kernelPixelDetector( Geometry geo,
+// Its own name: ray_interpolated_projection.cu has a kernelPixelDetector<bool sphericalrotation> with the same
+// parameters, and MSVC gives kernelPixelDetector<1> and kernelPixelDetector<true> the same symbol, so on Windows the
+// launch of one could look for the other ("named symbol not found").
+template<int STEPS>
+__global__ void kernelPixelDetector_siddon( Geometry geo,
         float* detector,
         const int currProjSetNumber,
         const int totalNoOfProjections,
@@ -261,19 +265,19 @@ __global__ void kernelPixelDetector( Geometry geo,
     // At most one step per voxel boundary, plus slack: the loop always ends, even
     // if rounding never quite lets a crossing reach aM.
     //
-    // Four steps per pass, without a branch inside: each step adds its voxel, then
-    // moves to the next voxel on the axis whose boundary comes first (selects, not
-    // if/else). The fetch of each step does not wait for the sum of the one before,
-    // so the four fetches are in flight together; before, every step waited for its
-    // fetch before the next one could start, and a warp whose rays crossed different
-    // axes ran the three branches one after the other. The sums are the same: after
-    // the ray leaves (aminc>=aM), the remaining steps of the pass fetch a voxel each
-    // but add nothing.
+    // STEPS steps per pass (1, 2 or 4, chosen on the host by siddonStepsPerPass),
+    // without a branch inside: each step adds its voxel, then moves to the next voxel
+    // on the axis whose boundary comes first (selects, not if/else). The fetch of each
+    // step does not wait for the sum of the one before, so the fetches of a pass are
+    // in flight together; before, every step waited for its fetch before the next one
+    // could start, and a warp whose rays crossed different axes ran the three branches
+    // one after the other. The sums are the same for any STEPS: after the ray leaves
+    // (aminc>=aM), the remaining steps of the pass fetch a voxel each but add nothing.
     const int maxsteps=(int)geo.nVoxelX+(int)geo.nVoxelY+(int)geo.nVoxelZ+3;
     bool out=false;
-    for (int step=0; step<maxsteps; step+=4){
+    for (int step=0; step<maxsteps; step+=STEPS){
 #pragma unroll
-        for (int s=0; s<4; s++){
+        for (int s=0; s<STEPS; s++){
             const float aminc=fminf(fminf(ax,ay),az);
             const float t=tex3D<float>(tex, cX, cY, cZ);
             if (!out) sum+=(fminf(aminc,aM)-ac)*t;
@@ -290,6 +294,18 @@ __global__ void kernelPixelDetector( Geometry geo,
             break;
     }
     detector[idx]=sum*maxlength;
+}
+
+
+
+// Launches the kernel compiled for 1, 2 or 4 steps per pass (tigre::siddonStepsPerPass).
+template<typename... Args>
+static void launchSiddon(int steps, dim3 grid, dim3 block, cudaStream_t stream, Args... args){
+    switch (steps){
+        case 1:  kernelPixelDetector_siddon<1><<<grid,block,0,stream>>>(args...); break;
+        case 2:  kernelPixelDetector_siddon<2><<<grid,block,0,stream>>>(args...); break;
+        default: kernelPixelDetector_siddon<4><<<grid,block,0,stream>>>(args...); break;
+    }
 }
 
 
@@ -507,6 +523,12 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
         tigre::detectorBlockShape(geo.nDetecU, geo.nDetecV, PIXEL_SIZE_BLOCK, &divU, &divV);  // thin detectors (fan beam)
         dim3 grid((geoArray[sp].nDetecU+divU-1)/divU,(geoArray[0].nDetecV+divV-1)/divV,projPerLaunch/PROJ_PER_BLOCK);
         dim3 block(divU,divV,PROJ_PER_BLOCK);  // PROJ_PER_BLOCK angles per block, projPerLaunch/PROJ_PER_BLOCK blocks in z
+        // Steps per pass of the walk along each ray (see the kernel): from how far apart neighbouring rays are where
+        // they cross the image, in voxels (a detector pixel scaled to the rotation axis), and the size of this piece.
+        const double rayU=(double)geo.dDetecU*geo.DSO[0]/geo.DSD[0]/geo.dVoxelX;
+        const double rayV=(double)geo.dDetecV*geo.DSO[0]/geo.DSD[0]/geo.dVoxelZ;
+        const int steps=tigre::siddonStepsPerPass(sqrt(rayU*rayV),
+                (size_t)geoArray[sp].nVoxelX*geoArray[sp].nVoxelY*geoArray[sp].nVoxelZ);
         
         unsigned int proj_global;
         // The geometry constants of launch i on GPU dev, in that GPU's part of projParamsArrayHost
@@ -542,7 +564,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
                 // cudaMemcpyToSymbolAsync returns, so the buffer can be refilled at once.
                 cudaMemcpyToSymbolAsync(projParamsArrayDev, projParamsArrayHost+(size_t)dev*4*projPerLaunch, sizeof(Point3D)*4*projPerLaunch,0,cudaMemcpyHostToDevice,stream[dev*2]);
                 cudaCheckErrors("kernel fail");
-                kernelPixelDetector<<<grid,block,0,stream[dev*2]>>>(geoArray[sp],(directOut ? result[i*projPerLaunch] : dProjection[(i%2)+dev*2]),i,nangles_device,projPerLaunch,texImg[dev]);
+                launchSiddon(steps,grid,block,stream[dev*2],geoArray[sp],(directOut ? result[i*projPerLaunch] : dProjection[(i%2)+dev*2]),i,nangles_device,projPerLaunch,texImg[dev]);
             }
             // The constants of the next launch, computed on the host while these kernels run: before, the GPU
             // waited for them after each launch (fan beam 1024^2, 1440 angles: 5 launches of 288 angles).
