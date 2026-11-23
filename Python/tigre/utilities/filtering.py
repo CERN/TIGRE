@@ -24,7 +24,7 @@ THIN_BLOCK_BYTES = 2**21
 def filtering(proj, geo, angles, parker, verbose=False, workers=None, weights=None, out=None):
     # parker: False, True (q=1) or the smoothing parameter q of the Parker weights
     # weights: optional (nDetecV, nDetecU) array the projections are multiplied by first (FDK's cosine weights),
-    #   while each block is loaded, instead of in a pass of its own over all the projections
+    #   while each block is copied into the FFT buffer, instead of in a pass of its own over all the projections
     # out: optional float32 array of proj's shape for the result; proj is then not changed. Default: in place
     if weights is not None and parker:
         # the Parker weights act on the weighted projections: weight them all first, as before
@@ -72,7 +72,8 @@ def filtering(proj, geo, angles, parker, verbose=False, workers=None, weights=No
         return _filter_thin(src,proj,weights,nangles,nrows,filt_len,filt,cols,scale_factor,workers)
     local=threading.local()
 
-    def load(dst,i,r0,r1):
+    def copy_rows(dst,i,r0,r1):
+        """Rows r0:r1 of projection i into dst (part of the FFT buffer), times the cosine weights if given."""
         if weights is None:
             dst[...]=src[i,r0:r1]
         else:
@@ -86,10 +87,10 @@ def filtering(proj, geo, angles, parker, verbose=False, workers=None, weights=No
             #filter 2 projection at a time packing in to complex container
             fproj=local.fproj[:r1-r0]
             fproj.fill(0)
-            load(fproj.real[:,cols],i,r0,r1)
+            copy_rows(fproj.real[:,cols],i,r0,r1)
             #if odd number of projections filter last solo
             if i+1<nangles:
-                load(fproj.imag[:,cols],i+1,r0,r1)
+                copy_rows(fproj.imag[:,cols],i+1,r0,r1)
 
             fproj=fft(fproj,axis=1,overwrite_x=True)
             fproj*=filt
