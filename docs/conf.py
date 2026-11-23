@@ -70,7 +70,8 @@ myst_heading_anchors = 3
 myst_substitutions = {"release": release}
 
 source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
-exclude_patterns = ["_build", "_generated", "demos/**/*.ipynb", "demos/**/*.py.md5", "papers.yaml", "Thumbs.db", ".DS_Store", "README.md"]
+exclude_patterns = ["_build", "_generated", "demos/**/*.ipynb", "demos/**/*.py.md5", "papers.yaml", "Thumbs.db", ".DS_Store", "README.md",
+                    "technical-notes/**/README.md"]
 
 nitpicky = True
 linkcheck_anchors = False

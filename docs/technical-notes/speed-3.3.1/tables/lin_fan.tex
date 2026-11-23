@@ -1,0 +1,40 @@
+\begin{table}[H]
+\centering
+\caption{Linux, Quadro RTX 6000. Fan beam (2D): TIGRE's one-slice cone geometry against ASTRA's \texttt{fanflat} (FP\_CUDA, BP\_CUDA, FBP\_CUDA), $n^2$ image, $n$ detector pixels, 1 GPU.}
+\label{tab:lin-fan}
+\small\setlength{\tabcolsep}{3pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{NumPy arrays, 1 GPU} & \multicolumn{3}{c}{PyTorch GPU tensors, 1 GPU}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+problem & operation & TIGRE ms & ASTRA ms & ratio & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+512$^2$ & fp, Siddon & 2.50 & 1.11 & \tslow{$2.39\pm0.60$} & 2.22 & 1.01 & \tslow{$2.20\pm0.00$}\\
+ & fp, interpolated & 4.64 & 1.11 & \tslow{$4.19\pm0.04$} & 4.36 & 1.01 & \tslow{$4.31\pm0.02$}\\
+ & bp, matched & 2.48 & 3.33 & \tfast{$0.74\pm0.00$} & 1.99 & 3.18 & \tfast{$0.63\pm0.00$}\\
+ & bp, FDK weights & 2.45 & 3.33 & \tfast{$0.73\pm0.00$} & 1.96 & 3.18 & \tfast{$0.62\pm0.00$}\\
+\addlinespace
+1024$^2$ & fp, Siddon & 3.82 & 2.28 & \tslow{$1.68\pm0.01$} & 3.11 & 1.95 & \tslow{$1.60\pm0.01$}\\
+ & fp, interpolated & 11.6 & 2.28 & \tslow{$5.10\pm0.02$} & 10.9 & 1.95 & \tslow{$5.59\pm0.01$}\\
+ & bp, matched & 3.99 & 10.7 & \tfast{$0.37\pm0.00$} & 3.16 & 10.3 & \tfast{$0.31\pm0.00$}\\
+ & bp, FDK weights & 3.87 & 10.7 & \tfast{$0.36\pm0.00$} & 3.03 & 10.3 & \tfast{$0.29\pm0.00$}\\
+\addlinespace
+2048$^2$ & fp, Siddon & 9.44 & 6.40 & \tslow{$1.48\pm0.00$} & 7.33 & 4.93 & \tslow{$1.49\pm0.00$}\\
+ & fp, interpolated & 38.6 & 6.40 & \tslow{$6.04\pm0.05$} & 36.5 & 4.93 & \tslow{$7.42\pm0.04$}\\
+ & bp, matched & 10.3 & 40.2 & \tfast{$0.26\pm0.00$} & 8.22 & 38.7 & \tfast{$0.21\pm0.00$}\\
+ & bp, FDK weights & 9.67 & 40.2 & \tfast{$0.24\pm0.00$} & 7.53 & 38.7 & \tfast{$0.19\pm0.00$}\\
+\addlinespace
+4096$^2$ & fp, Siddon & 38.9 & 21.7 & \tslow{$1.80\pm0.02$} & 32.2 & 17.3 & \tslow{$1.86\pm0.00$}\\
+ & fp, interpolated & 151 & 21.7 & \tslow{$6.98\pm0.04$} & 144 & 17.3 & \tslow{$8.30\pm0.01$}\\
+ & bp, matched & 53.9 & 165 & \tfast{$0.33\pm0.00$} & 28.9 & 155 & \tfast{$0.19\pm0.00$}\\
+ & bp, FDK weights & 51.8 & 165 & \tfast{$0.31\pm0.00$} & 26.2 & 155 & \tfast{$0.17\pm0.00$}\\
+\addlinespace
+1024$^2$, 1440 angles & fp, Siddon & 7.79 & 4.86 & \tslow{$1.61\pm0.00$} & 7.16 & 4.56 & \tslow{$1.57\pm0.01$}\\
+ & fp, interpolated & 38.1 & 4.86 & \tslow{$7.85\pm0.03$} & 37.5 & 4.56 & \tslow{$8.23\pm0.00$}\\
+ & bp, matched & 9.99 & 39.8 & \tfast{$0.25\pm0.00$} & 8.55 & 39.1 & \tfast{$0.22\pm0.00$}\\
+ & bp, FDK weights & 9.41 & 39.8 & \tfast{$0.24\pm0.00$} & 7.92 & 39.1 & \tfast{$0.20\pm0.00$}\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
