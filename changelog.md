@@ -7,6 +7,14 @@ thank you.
 
 ## Unreleased
 
+### Fixed
+- `COR` means the same in the backprojectors as in the projectors: the whole scan moves by
+  `COR*(-sin(alpha), cos(alpha), 0)`. The cone and parallel backprojectors (`FDK` and `matched`) moved it
+  along the rotated detector's u axis instead, which is the same only for an unrotated detector with
+  theta = psi = 0, so with a rotated detector or tilted angles `Atb` did not match `Ax`. The cone `FDK`
+  weight also added `COR` to the voxel's y coordinate, which changed it by about `COR*sin(alpha)/DSO`
+  even for a plain circular scan; it is now unchanged by `COR`, which is perpendicular to the central ray.
+
 ## 3.3.0 (2026-11-21)
 
 ### Added

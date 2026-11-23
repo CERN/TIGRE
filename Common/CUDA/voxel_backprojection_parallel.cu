@@ -204,7 +204,6 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
         
         float DSD = projSinCosArrayDevParallel[3*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
         float DSO = projSinCosArrayDevParallel[3*projNumber+1];
-        float COR = projSinCosArrayDevParallel[3*projNumber+2];
         
         // Geometric trasnformations:
         //Source, scaled XYZ coordinates
@@ -223,7 +222,7 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
             Point3D P;
             S.x=DSO;
             P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
+            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y);  // COR is in the voxel grid
             P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
             S.y=P.y;S.z=P.z;
             
@@ -551,6 +550,10 @@ void computeDeltasCubeParallel(Geometry geo, int i, Point3D* xyzorigin, Point3D*
     P.x=-(geo.sVoxelX/2-geo.dVoxelX/2)+geo.offOrigX[i];
     P.y=-(geo.sVoxelY/2-geo.dVoxelY/2)+geo.offOrigY[i];
     P.z=-(geo.sVoxelZ/2-geo.dVoxelZ/2)+geo.offOrigZ[i];
+    // COR moves the whole scan by COR*(-sin(alpha), cos(alpha), 0), as in the projectors, so the image moves the
+    // other way. Here geo.alpha is -alpha.
+    P.x-=geo.COR[i]*sin(geo.alpha);
+    P.y-=geo.COR[i]*cos(geo.alpha);
     
     // Get coors from next voxel in each direction
     Px.x=P.x+geo.dVoxelX;       Py.x=P.x;                Pz.x=P.x;
