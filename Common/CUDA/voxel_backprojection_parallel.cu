@@ -328,7 +328,7 @@ int voxel_backprojection_parallel(float  *  projections, Geometry geo, float* re
     }
     cudaCheckErrors("Stream creation fail");
 
-    // Page-lock the projections and the result when the image is split or several GPUs are used (tigre::worthPageLocking):
+    // Page-lock the projections and the result when the image is split or more than two GPUs are used (tigre::worthPageLocking):
     // then the uploads are sent again for each piece or to each GPU, and the GPUs copy their pieces of the result back at
     // the same time instead of one after another.
     bool registered=false, result_registered=false;
