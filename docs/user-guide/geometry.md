@@ -209,8 +209,9 @@ per-angle geometries for these cases: `tigre.staticDetectorGeo`,
 
 **Any source and detector positions (vector geometries).** A scan can also
 be given as one row of 12 numbers per view, in the layout of ASTRA's
-`cone_vec` geometry: source position, detector centre, and the vectors `u`
-and `v` from one pixel to the next along a row and down a column.
+`cone_vec` geometry: source position, detector centre, the vector `u` from
+one pixel to the next along a row, and the vector `v` from one row to the
+next.
 `from_vector_to_TIGRE` turns these into a TIGRE geometry and
 `from_TIGRE_to_vector` does the reverse (Python: `tigre.from_vector_to_TIGRE`;
 MATLAB: `[geo, angles] = from_vector_to_TIGRE(geo, vectors)`). Any rigid
