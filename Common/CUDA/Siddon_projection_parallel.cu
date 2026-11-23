@@ -272,19 +272,34 @@ __global__ void kernelPixelDetector_parallel( Geometry geo,
     float ac = am;
     // At most one step per voxel boundary, plus slack: the loop always ends, even
     // if rounding never quite lets a crossing reach aM.
+    //
+    // Four steps per pass, without a branch inside: each step adds its voxel, then
+    // moves to the next voxel on the axis whose boundary comes first (selects, not
+    // if/else). The fetch of each step does not wait for the sum of the one before,
+    // so the four fetches are in flight together; before, every step waited for its
+    // fetch before the next one could start, and a warp whose rays crossed different
+    // axes ran the three branches one after the other. The sums are the same: after
+    // the ray leaves (aminc>=aM), the remaining steps of the pass fetch a voxel each
+    // but add nothing.
     const int maxsteps=(int)geo.nVoxelX+(int)geo.nVoxelY+(int)geo.nVoxelZ+3;
-    for (int step=0; step<maxsteps; step++){
-        float aminc=fminf(fminf(ax,ay),az);
-        sum+=(fminf(aminc,aM)-ac)*tex3D<float>(tex, cX, cY, cZ);
-        if (aminc>=aM)
-            break;
-        if (ax==aminc){
-            cX+=sX; ac=ax; ax=fmaf(cX+hX,rX,oX);
-        }else if(ay==aminc){
-            cY+=sY; ac=ay; ay=fmaf(cY+hY,rY,oY);
-        }else{
-            cZ+=sZ; ac=az; az=fmaf(cZ+hZ,rZ,oZ);
+    bool out=false;
+    for (int step=0; step<maxsteps; step+=4){
+#pragma unroll
+        for (int s=0; s<4; s++){
+            const float aminc=fminf(fminf(ax,ay),az);
+            const float t=tex3D<float>(tex, cX, cY, cZ);
+            if (!out) sum+=(fminf(aminc,aM)-ac)*t;
+            out=out || (aminc>=aM);
+            const bool bx=(ax==aminc);
+            const bool by=!bx && (ay==aminc);
+            const bool bz=!bx && !by;
+            ac=aminc;
+            cX=bx? cX+sX : cX;  ax=bx? fmaf(cX+hX,rX,oX) : ax;
+            cY=by? cY+sY : cY;  ay=by? fmaf(cY+hY,rY,oY) : ay;
+            cZ=bz? cZ+sZ : cZ;  az=bz? fmaf(cZ+hZ,rZ,oZ) : az;
         }
+        if (out)
+            break;
     }
     detector[idx]=maxlength*sum;
 }
