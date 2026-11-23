@@ -201,6 +201,9 @@ def ArbitrarySourceDetectorFixedObject(
     detector_column_direction: detector column vector from pixel (0, 0) -> (1, 0),
     origin_mm: origin of the ct trajectory. The source and detector positions are translated with this value. Defaults to: None.
     use_center_correction: Calculate an arbitrary origin of the trajectory. Defaults to: True.
+
+    See :func:`tigre.from_vector_to_TIGRE` for a general conversion from per-view
+    source and detector vectors, which does not assume a common rotation centre.
     """
 
     # Assumption: CT trajectory has one rotation center.
