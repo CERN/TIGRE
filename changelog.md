@@ -7,6 +7,8 @@ thank you.
 
 ## Unreleased
 
+## 3.3.1 (2026-11-23)
+
 ### Changed
 - Faster projection operators; results are bit-identical to 3.3.0 except where noted. The technical note
   `docs/technical-notes/speed-3.3.1/` measures them against ASTRA 2.5 on one and several GPUs.
