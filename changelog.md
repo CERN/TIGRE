@@ -16,6 +16,19 @@ thank you.
   describe (u and v not perpendicular, pixel size changing between views) are refused, not approximated.
   No new geometry fields and no kernel changes.
 
+### Fixed
+- Python geometry helpers in `tigre.utilities.common_geometry` now build the scans they describe; they are
+  rebuilt on `from_vector_to_TIGRE`, with the same arguments:
+  - `staticDetLinearSourceGeo`: the "fixed" detector moved by several mm between source positions, and the
+    function failed on the default geometry (its integer `rotDetector`).
+  - `ArbitrarySourceDetMoveGeo`: the "fixed" detector moved by several mm, sources spread around the object
+    gave geometries hundreds of mm off (or NaN), and bad input raised `TypeError` instead of a message.
+    `d_rot` is still added to `rotDetector`, in its (roll, pitch, yaw) order.
+  - `ArbitrarySourceDetectorFixedObject`: detector offsets were scaled by `2*DSO/DSD` (right only at
+    magnification 2), an offset detector also misplaced the source, and a source on the -x axis raised
+    "Rotation matrix must be right handed". It no longer prints.
+  - `rotation_from_vecs` returned a reflection (`-I`) for opposite vectors; it now returns a rotation.
+
 ## 3.3.0 (2026-11-21)
 
 ### Added

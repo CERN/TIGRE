@@ -206,6 +206,8 @@ of the detector, set `COR`. TIGRE can estimate it from the data with
 **Fixed detectors and moving sources.** Python has helpers that build
 per-angle geometries for these cases: `tigre.staticDetectorGeo`,
 `tigre.staticDetLinearSourceGeo` and `tigre.ArbitrarySourceDetMoveGeo`.
+To check where they put the source and detector at each angle, pass the
+result to `tigre.from_TIGRE_to_vector` (see below).
 
 **Any source and detector positions (vector geometries).** A scan can also
 be given as one row of 12 numbers per view, in the layout of ASTRA's
