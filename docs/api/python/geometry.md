@@ -27,6 +27,13 @@ Geometries with moving sources or detectors
 
 .. autofunction:: ArbitrarySourceDetMoveGeo
 
+Per-view vectors (ASTRA's ``cone_vec`` layout)
+----------------------------------------------
+
+.. autofunction:: from_vector_to_TIGRE
+
+.. autofunction:: from_TIGRE_to_vector
+
 Curved detectors
 ----------------
 

@@ -23,6 +23,8 @@ GROUPS = {
         "Utilities/defaultGeometry.m",
         "Utilities/checkGeo.m",
         "Utilities/staticDetectorGeo.m",
+        "Utilities/from_vector_to_TIGRE.m",
+        "Utilities/from_TIGRE_to_vector.m",
         "Utilities/computeCOR.m",
         "Utilities/flatten_detector.m",
         "Utilities/plotgeometry.m",

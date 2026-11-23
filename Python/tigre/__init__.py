@@ -59,5 +59,6 @@ from .utilities.common_geometry import (
     staticDetLinearSourceGeo,
     ArbitrarySourceDetMoveGeo,
 )
+from .utilities.vector_geometry import from_vector_to_TIGRE, from_TIGRE_to_vector
 
 from . import algorithms
