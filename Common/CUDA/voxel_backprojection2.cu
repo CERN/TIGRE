@@ -114,7 +114,13 @@ __global__ void matrixConstantMultiply(const Geometry geo,float* image,float con
 // (e.g. 16.2 s vs. ~62 s).
 
 const int PROJ_PER_KERNEL = 32;  // Number of 2D projections to be analyzed by a single thread. This can be tweaked to see what works best. 32 was the optimal value in the paper by Zinsser and Keck.
+#if defined(USE_HIP)
+// 8 voxels per thread needs more than the 128 registers HIP allows a thread on some AMD GPUs (MI250X), and the
+// spilling made the backprojection about twice as slow as with 4.
+const int VOXELS_PER_THREAD = 4;
+#else
 const int VOXELS_PER_THREAD = 8;  // Number of voxels to be computed by s single thread. Can be tweaked to see what works best. 4 was the optimal value in the paper by Zinsser and Keck.
+#endif
 
 // We have PROJ_PER_KERNEL projections and we need 6 parameters for each projection:
 //   deltaX, deltaY, deltaZ, xyzOrigin, offOrig, offDetec
