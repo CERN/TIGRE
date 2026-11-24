@@ -16,6 +16,22 @@ The build already has a `TIGRE_BACKEND` setting that chooses between them
 `cuda` can be built. Help with any of these is welcome, especially testing on
 hardware the developers do not have: comment on the issue.
 
+## Corrections for real data
+
+Real X-ray data are not exactly the line integrals that reconstruction
+assumes, and two effects cause most of the difference:
+
+- **beam hardening**: the X-ray beam has a range of energies, and the
+  low-energy X-rays are absorbed first, which gives cupping and dark streaks
+  between dense objects;
+- **scattered X-rays** reaching the detector, which reduce contrast and add
+  streaks.
+
+We want TIGRE to include correction methods for both. Which methods is still
+open: if you have one you would like to see in TIGRE, or would like to
+contribute one, open a
+[Discussion](https://github.com/CERN/TIGRE/discussions).
+
 ## Everything else
 
 Other work follows what users need: bug reports, feature requests and
