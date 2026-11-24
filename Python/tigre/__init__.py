@@ -6,6 +6,10 @@ from __future__ import division, absolute_import, print_function
 # https://github.com/CERN/TIGRE/issues/349
 import os
 
+from .utilities.versions import _tigre_version, show_versions
+
+__version__ = _tigre_version()
+
 _CUDA_PATH_WIN_DIR_HANDLE = None
 def _add_cuda_path_on_windows():
     global _CUDA_PATH_WIN_DIR_HANDLE

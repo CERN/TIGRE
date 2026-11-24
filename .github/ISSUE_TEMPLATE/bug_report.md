@@ -19,8 +19,13 @@ assignees: ''
 
 ```
 
-## Specifications 
+## Specifications
 
-  - MATLAB/python version:
-  - OS:
-  - CUDA version:
+Paste the output of `tigre.show_versions()` (Python) or `tigreVersion` (MATLAB),
+which lists the versions of TIGRE, Python/MATLAB and the OS, and your GPUs:
+
+```
+
+```
+
+  - CUDA version (if you compiled TIGRE yourself):
