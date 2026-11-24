@@ -101,9 +101,10 @@ and *WDDM TDR Enabled*). Data-centre GPUs can be put in TCC mode instead.
 A failed CUDA call can leave the GPU context in a bad state. Restart MATLAB
 or the Python process.
 
-**The reconstruction is blurred, doubled or shaded.**
-This is almost always the geometry, not the algorithm. Work through the
-checklist at the end of [](geometry.md).
+**The reconstruction is blurred, doubled, shaded or full of rings.**
+This is almost always the data or the geometry, not the algorithm. Compare
+your image with the pictures in [](artefacts.md), and check the geometry step
+by step with [](geometry-walkthrough.md).
 
 **A Python algorithm ignores an option.**
 Python prints a warning, rather than raising an error, for keyword arguments
