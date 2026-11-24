@@ -9,7 +9,7 @@ thank you.
 
 ### Added
 - Python build: `TIGRE_BACKEND=hip` builds for AMD GPUs with ROCm. `ROCM_PATH` locates ROCm and
-  `HIP_ARCH` selects the GPU architectures (default `gfx90a`); `cuda` and `hip` can now be built,
+  `HIP_ARCH` selects the GPU architectures (default `gfx90a`); `cuda` and `hip` can now be built;
   `sycl` and `metal` are still pending (#747).
 
 ### Fixed

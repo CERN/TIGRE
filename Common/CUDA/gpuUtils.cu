@@ -116,8 +116,8 @@ bool tigre_hw_linear_supported() {
         fprintf(stderr,
                 "TIGRE: fp32 hardware linear texture filtering on %s: %s\n",
                 name,
-                ok ? "supported (hardware trilinear)"
-                   : "unsupported (software trilinear fallback)");
+                ok ? "supported (hardware filtering)"
+                   : "unsupported (software filtering fallback)");
         cached = ok ? 1 : 0;
     }
     return cached != 0;

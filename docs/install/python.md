@@ -46,7 +46,8 @@ a few minutes.
 ::::{tab-item} Windows
 - Python 3.11–3.14
 - An NVIDIA GPU, or an AMD GPU with ROCm (see [AMD GPUs](#amd-gpus-rocm))
-- The [CUDA toolkit](https://developer.nvidia.com/cuda-downloads)
+- The [CUDA toolkit](https://developer.nvidia.com/cuda-downloads), or
+  [ROCm](https://rocm.docs.amd.com/) for an AMD GPU
 - [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/)
   with the C++ workload and the Windows SDK
 
@@ -62,7 +63,7 @@ Your Windows user name must not contain spaces.
 - An NVIDIA GPU, or an AMD GPU with ROCm (see [AMD GPUs](#amd-gpus-rocm))
 - The [CUDA toolkit](https://developer.nvidia.com/cuda-downloads); follow
   [NVIDIA's Linux installation guide](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/)
-  carefully
+  carefully; or [ROCm](https://rocm.docs.amd.com/) for an AMD GPU
 - gcc, in a version your CUDA toolkit supports
 
 Tested on Ubuntu 16.04 and newer.
@@ -152,8 +153,8 @@ export HIP_ARCH=gfx90a
 pip install .
 ```
 
-- `ROCM_PATH` points to the ROCm install (default `/opt/rocm`, or the prefix
-  of the `hipcc` on your `PATH`).
+- `ROCM_PATH` points to the ROCm install. When it is not set, the build uses
+  `HIP_PATH`, then the prefix of the `hipcc` on your `PATH`, then `/opt/rocm`.
 - `HIP_ARCH` is the target GPU architecture for `--offload-arch` (default
   `gfx90a`; the build prints the one it uses). Pass a comma-separated list to
   build for several, for example `HIP_ARCH=gfx90a,gfx1100,gfx1201`.

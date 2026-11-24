@@ -7,23 +7,24 @@
  * maps the small set of CUDA runtime / cuRAND symbols the GPU sources use onto
  * their hip* equivalents and provides texture fetches (tex3D_TIGRE and
  * tex2DLayered_TIGRE) that use hardware linear filtering where available and a
- * software lerp where it is not. On NVIDIA the header is a thin passthrough to the CUDA runtime, so the
- * CUDA build is unchanged.
+ * software lerp where it is not. On NVIDIA the header is a thin passthrough to
+ * the CUDA runtime, so the CUDA build is unchanged.
  *
  * fp32 element-read (cudaReadModeElementType) hardware linear filtering is not
  * available on every ROCm / hardware combination: some reject creation of a
  * cudaFilterModeLinear texture, others accept it but silently point-sample.
  * tigre_hw_linear_supported() (in gpuUtils.cu) decides at runtime with a
- * verified self-test -- it creates a tiny Linear ramp texture and confirms a
- * known sample actually interpolates -- caches the verdict for the process and
- * logs it once. On CUDA it returns true without testing.
+ * verified self-test -- it creates tiny Linear ramp textures (a 3D one and a
+ * layered 2D one) and confirms a known sample of each actually interpolates --
+ * caches the verdict for the process and logs it once. On CUDA it returns true without testing.
  *
  * The backprojection kernels and the interpolated forward projector pick their
  * texture filterMode from that verdict (Linear when supported, else Point), and
  * tex3D_TIGRE (3D arrays) and tex2DLayered_TIGRE (layered 2D arrays, bilinear
  * within a layer) mirror it through the per-TU device flag tigre_hw_linear_filter:
- * when supported it forwards to the hardware tex3D<float>; otherwise it point-
- * samples the 8 neighbours through the point-filtered texture (border addressing
+ * when supported each forwards to the hardware fetch (tex3D<float> or
+ * tex2DLayered<float>); otherwise it point-samples the 8 (3D) or 4 (within the
+ * layer) neighbours through the point-filtered texture (border addressing
  * returns 0 outside the array, matching cudaAddressModeBorder) and lerps with
  * CUDA's unnormalized -0.5 texel-center convention. The texture's creation mode
  * and the sampling path are both driven from the single cached verdict so they

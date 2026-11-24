@@ -28,8 +28,8 @@ v0.1 release.
   CUDA toolkit supports. For Python, an AMD GPU with ROCm also works; see
   [AMD GPUs](python.md#amd-gpus-rocm).
 - Python 3.11 to 3.14, or MATLAB R2016b or newer.
-- To compile: the CUDA toolkit and a C++ compiler (MSVC on Windows, gcc on
-  Linux).
+- To compile: the CUDA toolkit (or ROCm, for AMD GPUs) and a C++ compiler
+  (MSVC on Windows, gcc on Linux).
 
 ```{toctree}
 :maxdepth: 2
