@@ -96,6 +96,33 @@ inline T* deviceMalloc(size_t count, int iDeviceId, const char* tag, const char*
     return (T*)deviceMallocBytes(count * sizeof(T), iDeviceId, tag, what);
 }
 
+// The image piece and the projection buffer on every device, as tryMalloc3DArrays in the CUDA build: true if all of
+// them were allocated (kept in image[d] and buffer[d]); false, with nothing left allocated, if one failed, so that
+// the caller can split the image in more pieces and try again.
+inline bool tryMallocPieces(const int* devs, int ndev, size_t image_count, size_t buffer_count, float** image, float** buffer) {
+    bool ok = true;
+    for (int d = 0; d < ndev; d++) { image[d] = NULL; buffer[d] = NULL; }
+    for (int d = 0; d < ndev && ok; d++) {
+        sycl::queue& q = tigreSyclQueue(devs[d]);
+        try {
+            image[d] = sycl::malloc_device<float>(image_count, q);
+            if (image[d]) buffer[d] = sycl::malloc_device<float>(buffer_count, q);
+        } catch (const sycl::exception&) {
+        }
+        ok = image[d] && buffer[d];
+    }
+    if (!ok) {
+        for (int d = 0; d < ndev; d++) {
+            sycl::queue& q = tigreSyclQueue(devs[d]);
+            if (image[d]) sycl::free(image[d], q);
+            if (buffer[d]) sycl::free(buffer[d], q);
+            image[d] = NULL;
+            buffer[d] = NULL;
+        }
+    }
+    return ok;
+}
+
 }  // namespace tigre
 
 #endif  // TIGRE_RELEASE_ON_ERROR_HPP

@@ -54,6 +54,7 @@
 #include "TIGRE_common.hpp"
 #include "tigre_sycl.hpp"
 #include "tigre_release_on_error.hpp"
+#include "page_locking.hpp"
 #include <math.h>
 
 #define MAXTREADS 1024
@@ -292,29 +293,43 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
             size_t mem_free=mem_GPU_global-4*PROJ_PER_BLOCK*mem_proj;
             splits=mem_image/mem_free+1;// Ceil of the truncation
             if (splits>geo.nVoxelZ) splits=geo.nVoxelZ;  // at least one slice per piece
-            // The pieces have ceil(nVoxelZ/splits) slices. Fewer pieces of that size can
-            // cover the image (e.g. 64 slices in 12 pieces: 11 of 6 slices); the pieces
-            // beyond would have a negative (wrapped around) number of slices.
-            const unsigned int slices_per_piece=(geo.nVoxelZ+splits-1)/splits;
-            splits=(geo.nVoxelZ+slices_per_piece-1)/slices_per_piece;
         }
-        Geometry* geoArray = (Geometry*)malloc(splits*sizeof(Geometry));
-        splitImage(splits,geo,geoArray,nangles);
-        onError.add([geoArray, splits]{ freeGeoArray(splits, geoArray); });
-
-        // Allocate the image (a slab of it if split) and one block of projections per device
-        size_t num_voxels_split = (size_t)geoArray[0].nVoxelX*(size_t)geoArray[0].nVoxelY*(size_t)geoArray[0].nVoxelZ;
+        // Allocate the image (a piece of it if split) and one block of projections per device. If that fails
+        // although the estimate above fits, split the image in more pieces and try again, down to one slice per
+        // piece, as the CUDA code does.
         size_t num_pixels_block = (size_t)PROJ_PER_BLOCK*(size_t)geo.nDetecU*(size_t)geo.nDetecV;
+        std::vector<int> devs(deviceCount);
+        for (dev = 0; dev < deviceCount; dev++) devs[dev] = gpuids[dev];
         std::vector<float*> dImage(deviceCount), dProjection(deviceCount);
+        Geometry* geoArray;
+        while (true) {
+            // As many pieces as their size needs: no empty pieces at the end
+            splits=(geo.nVoxelZ+(geo.nVoxelZ+splits-1)/splits-1)/((geo.nVoxelZ+splits-1)/splits);
+            geoArray = (Geometry*)malloc(splits*sizeof(Geometry));
+            splitImage(splits,geo,geoArray,nangles);
+            size_t num_voxels_split = (size_t)geoArray[0].nVoxelX*(size_t)geoArray[0].nVoxelY*(size_t)geoArray[0].nVoxelZ;
+            if (tigre::tryMallocPieces(devs.data(), deviceCount, num_voxels_split, num_pixels_block, dImage.data(), dProjection.data()))
+                break;
+            const unsigned int piece = geoArray[0].nVoxelZ;
+            freeGeoArray(splits, geoArray);
+            if (piece<=1 || splits>=geo.nVoxelZ)
+                tigreNotEnoughGpuMemory("Ax:Siddon_projection:GPUmemory","Forward projection (Siddon)",(num_pixels_block+(size_t)geo.nVoxelX*geo.nVoxelY)*sizeof(float),tigreSyclFreeMemory(gpuids[0]));
+            while (splits<geo.nVoxelZ && (geo.nVoxelZ+splits-1)/splits>=piece) splits++;
+        }
+        onError.add([geoArray, splits]{ freeGeoArray(splits, geoArray); });
         for (dev = 0; dev < deviceCount; dev++){
             sycl::queue* q = &tigreSyclQueue(gpuids[dev]);
             onError.addQueue(q);
-            float* image_d = tigre::deviceMalloc<float>(num_voxels_split, gpuids[dev], "Ax:Siddon_projection:malloc", "Forward projection (Siddon)");
-            onError.add([image_d, q]{ sycl::free(image_d, *q); });
-            float* projection_d = tigre::deviceMalloc<float>(num_pixels_block, gpuids[dev], "Ax:Siddon_projection:malloc", "Forward projection (Siddon)");
-            onError.add([projection_d, q]{ sycl::free(projection_d, *q); });
-            dImage[dev] = image_d;
-            dProjection[dev] = projection_d;
+            float* image_d = dImage[dev];
+            float* projection_d = dProjection[dev];
+            onError.add([image_d, projection_d, q]{ sycl::free(image_d, *q); sycl::free(projection_d, *q); });
+        }
+
+        // Page-lock the image for the copies to the devices only when it is worth it (split, or more than 2 devices)
+        bool img_registered = false;
+        if (tigre::worthPageLocking(tigre::hostRegisterSupported(devs.data(), deviceCount), gpuData, splits, deviceCount)) {
+            img_registered = tigre::hostRegister(img, mem_image, devs.data(), deviceCount);
+            if (img_registered) onError.add([img, devs]{ tigre::hostUnregister(img, devs.data(), (int)devs.size()); });
         }
         std::vector<float> partial(splits>1 ? num_pixels_block*deviceCount : 0);
 
@@ -390,6 +405,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
             sycl::free(dProjection[dev], q);
         }
         freeGeoArray(splits,geoArray);
+        if (img_registered) tigre::hostUnregister(img, devs.data(), deviceCount);
     } catch (const sycl::exception& e) {
         mexErrMsgIdAndTxt("Ax:Siddon_projection:SYCL", e.what());
     }
@@ -405,8 +421,9 @@ void splitImage(unsigned int splits,Geometry geo,Geometry* geoArray, unsigned in
     unsigned long splitsize=(geo.nVoxelZ+splits-1)/splits;// ceil if not divisible
     for(unsigned int sp=0;sp<splits;sp++){
         geoArray[sp]=geo;
-        // All of them are splitsize, but the last one, possible
-        geoArray[sp].nVoxelZ=((sp+1)*splitsize<geo.nVoxelZ)?  splitsize:  geo.nVoxelZ-splitsize*sp;
+        // All of them are splitsize, but the last one; signed, so that a piece beyond the image is empty
+        const long long rest=(long long)geo.nVoxelZ-(long long)splitsize*sp;
+        geoArray[sp].nVoxelZ=(int)(rest<=0 ? 0 : (rest<(long long)splitsize ? rest : (long long)splitsize));
         geoArray[sp].sVoxelZ= geoArray[sp].nVoxelZ* geoArray[sp].dVoxelZ;
         
         // We need to redefine the offsets, as now each subimage is not aligned in the origin.
