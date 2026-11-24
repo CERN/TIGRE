@@ -1,0 +1,70 @@
+name: CUDA tests (simulated H100)
+
+# Optional, non-required check. The hosted runners have no GPU, so this builds
+# the pytigre CUDA extensions and runs the Python tests that need a GPU on a
+# simulated NVIDIA H100 (https://github.com/pantheongpu/pantheonsim). A
+# simulator cannot reproduce hardware-specific behavior or timing, so it
+# complements real-GPU testing and does not replace it.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "Common/**"
+      - "Python/**"
+      - "setup.py"
+      - "pyproject.toml"
+      - ".github/workflows/gpu-sim.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  cuda-sim:
+    name: CUDA 13.0, simulated H100
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up the simulated GPU and CUDA toolkit
+        uses: pantheongpu/setup-pantheonsim@ca87fe3143b29166822b923d6050945c5179408c # v0.1.5
+        with:
+          gpu: nvidia/h100
+          cuda-toolkit: "13.0"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # setup.py compiles for every architecture nvcc lists, as SASS only
+      # (code=sm_XX). The simulator runs PTX only, so build a single
+      # compute_90 PTX target instead. The extensions already link the shared
+      # libcudart.
+      - name: Build pytigre
+        env:
+          CUDA_HOME: /usr/local/cuda-13.0
+        run: |
+          sed -i -e 's/^for item in get_cuda_cc(CUDA\["home"\]):/for item in ["90"]:/' \
+                 -e 's/code=sm_{item}/code=compute_{item}/' setup.py
+          grep -n -A2 'for item in \["90"\]' setup.py
+          python -m pip install --upgrade pip
+          python -m pip install pytest
+          python -m pip install . -v
+
+      # algorithm_test.py, stdout_test.py and test_config_gen.py are legacy
+      # scripts that do not import (tigre.demos is not packaged, StringIO is
+      # Python 2), so only the test_*.py modules are collected and
+      # test_config_gen.py is skipped.
+      - name: Run the Python tests
+        working-directory: Python/tests
+        run: |
+          vgpu run python -m pytest -v -ra -o python_files='test_*.py' \
+            --ignore=test_config_gen.py .
