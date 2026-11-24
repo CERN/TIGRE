@@ -12,6 +12,8 @@ thank you.
   to one value per angle, so reusing the same `geo` with a different number of angles failed with
   "offOrigin with shape (40, 3) not compatible". The PyTorch operators `A` and `At` no longer set
   `geo.angles` on it either. (`Ax`, `Atb`, FDK and FBP already worked on a copy.)
+- Python: `NikonDataLoader` reads `.ang` angle files with tab-separated lines (such as the SophiaBeads
+  datasets); it failed with "must be real number, not str".
 
 ## 3.3.1 (2026-11-23)
 
