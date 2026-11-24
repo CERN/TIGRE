@@ -1,3 +1,9 @@
+/*
+ * Host geometry preparation shared by the TIGRE CPU and Metal backends.
+ *
+ * CODE by       Mike Croucher (MathWorks)
+ */
+
 #ifndef TIGRE_BACKEND_GEOMETRY_HPP
 #define TIGRE_BACKEND_GEOMETRY_HPP
 

@@ -4,6 +4,8 @@
  * All numerical operations execute as Metal compute kernels. Buffers use
  * shared storage on Apple Silicon and the device, queue, library, and compute
  * pipelines remain cached for the lifetime of the loaded MEX file.
+ *
+ * CODE by       Mike Croucher (MathWorks)
  */
 
 #import <Foundation/Foundation.h>

@@ -1,3 +1,9 @@
+/*
+ * Metal compute kernels for the TIGRE Metal backend.
+ *
+ * CODE by       Mike Croucher (MathWorks)
+ */
+
 #include <metal_stdlib>
 using namespace metal;
 

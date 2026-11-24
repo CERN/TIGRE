@@ -3,6 +3,8 @@
  *
  * Computation is float32 and uses only the C++ standard library for
  * threading. Per-view geometry is prepared in double precision on the host.
+ *
+ * CODE by       Mike Croucher (MathWorks)
  */
 
 #include "mex.h"

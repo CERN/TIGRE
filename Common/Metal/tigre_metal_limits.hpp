@@ -1,3 +1,9 @@
+/*
+ * Size limits for Metal buffers and indexing in the TIGRE Metal backend.
+ *
+ * CODE by       Mike Croucher (MathWorks)
+ */
+
 #ifndef TIGRE_METAL_LIMITS_HPP
 #define TIGRE_METAL_LIMITS_HPP
 

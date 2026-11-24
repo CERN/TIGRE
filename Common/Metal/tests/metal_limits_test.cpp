@@ -1,3 +1,9 @@
+/*
+ * Standalone test of the Metal backend size limits.
+ *
+ * CODE by       Mike Croucher (MathWorks)
+ */
+
 #include "../tigre_metal_limits.hpp"
 #include <cassert>
 #include <iostream>

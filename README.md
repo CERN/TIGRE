@@ -115,7 +115,7 @@ MATLAB and Python builds are both fully supported.
 
 ## Apple Silicon (Metal) preview
 
-> **Preview, MATLAB only.** This branch carries a preliminary Metal backend for Apple Silicon Macs, plus a portable CPU backend. It works, but it does not yet follow TIGRE's code structure and does not include the operator changes made on `master` since September 2026. It will be restructured before it is merged; see the tracking issue and [MATLAB/BACKENDS.md](MATLAB/BACKENDS.md).
+> **Preview, MATLAB only.** This branch carries a preliminary Metal backend for Apple Silicon Macs, plus a portable CPU backend. It works, but it does not yet follow TIGRE's code structure and does not include the operator changes made on `master` since September 2026. Mike Croucher (MathWorks) helped with this: he wrote this preliminary backend. It will be restructured before it is merged; see the tracking issue and [MATLAB/BACKENDS.md](MATLAB/BACKENDS.md).
 
 ```matlab
 addpath(fullfile(pwd, 'MATLAB'))

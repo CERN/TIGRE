@@ -1,5 +1,7 @@
 # MATLAB compute backends
 
+The CPU and Metal backends were written by Mike Croucher (MathWorks).
+
 TIGRE's MATLAB interface supports three session-wide native backends:
 
 ```matlab
