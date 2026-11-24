@@ -29,4 +29,11 @@ See also :doc:`/user-guide/gpus`.
 .. autofunction:: tigre.utilities.gpu.getGpuNames
 
 .. autofunction:: tigre.utilities.gpu.getGpuIds
+
+Version
+-------
+
+``tigre.__version__`` is TIGRE's version as text, for example ``"3.3.1"``.
+
+.. autofunction:: tigre.show_versions
 ```

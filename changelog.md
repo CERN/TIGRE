@@ -7,6 +7,10 @@ thank you.
 
 ## Unreleased
 
+### Added
+- `tigre.__version__` and `tigre.show_versions()` (Python), and `tigreVersion` (MATLAB), which print
+  the versions of TIGRE, Python or MATLAB, the OS and the GPUs, for bug reports.
+
 ### Fixed
 - Python: the iterative algorithms no longer change the `geo` passed to them. They expanded its fields
   to one value per angle, so reusing the same `geo` with a different number of angles failed with

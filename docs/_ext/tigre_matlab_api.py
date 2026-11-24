@@ -43,6 +43,7 @@ GROUPS = {
         "Utilities/GPU/getGpuIds.m",
         "Utilities/GPU/getGpuNames.m",
         "Utilities/citeme.m",
+        "Utilities/tigreVersion.m",
     ],
     "io": [
         "Utilities/IO/Nikon/NikonDataLoader.m",
