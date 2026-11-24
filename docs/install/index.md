@@ -21,9 +21,10 @@ v0.1 release.
 
 ## Requirements at a glance
 
-- An NVIDIA GPU. When you compile TIGRE yourself, it is built for every GPU
-  architecture your CUDA toolkit supports, so any GPU that your CUDA version
-  supports will work.
+- An NVIDIA GPU. The prebuilt wheels run on compute capability 5.0
+  (Maxwell) and newer, with a driver for CUDA 12.8 (version 570 or newer).
+  When you compile TIGRE yourself, it is built for every GPU architecture your
+  CUDA toolkit supports.
 - Python 3.11 to 3.14, or MATLAB R2016b or newer.
 - To compile: the CUDA toolkit and a C++ compiler (MSVC on Windows, gcc on
   Linux).
