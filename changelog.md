@@ -7,6 +7,12 @@ thank you.
 
 ## Unreleased
 
+### Fixed
+- Python: the iterative algorithms no longer change the `geo` passed to them. They expanded its fields
+  to one value per angle, so reusing the same `geo` with a different number of angles failed with
+  "offOrigin with shape (40, 3) not compatible". The PyTorch operators `A` and `At` no longer set
+  `geo.angles` on it either. (`Ax`, `Atb`, FDK and FBP already worked on a copy.)
+
 ## 3.3.1 (2026-11-23)
 
 ### Changed

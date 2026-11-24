@@ -99,8 +99,8 @@ def main():
     base = make_geometry()
 
     def G():
-        # TIGRE's functions write per-angle copies of the geometry fields into the
-        # geo they are given, so every call gets a fresh copy.
+        # In TIGRE 3.3.1 and earlier, the iterative algorithms wrote per-angle copies
+        # of the geometry fields into the geo they were given, so every call gets a copy.
         return copy.deepcopy(base)
 
     geo = base

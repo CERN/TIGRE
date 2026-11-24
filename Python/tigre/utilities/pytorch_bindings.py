@@ -4,6 +4,7 @@ import torch
 import tigre 
 import numpy as np
 
+import copy
 import itertools
 
 
@@ -105,6 +106,7 @@ class A(torch.nn.Module):
     def __init__(self, geo:Geometry, angles, gpuids:List[str], backprojection_type:str="matched"):
         super(A, self).__init__()
         self.backprojection_type = backprojection_type
+        geo = copy.deepcopy(geo)  # leave the caller's geometry unchanged
         geo.angles = angles
         self.geo = geo
         self.gpuids = gpuids
@@ -165,6 +167,7 @@ class At(torch.nn.Module):
     def __init__(self, geo:Geometry, angles:np.array, gpuids:List[str], backprojection_type:str="matched"):
         super(At, self).__init__()
         self.backprojection_type = backprojection_type
+        geo = copy.deepcopy(geo)  # leave the caller's geometry unchanged
         geo.angles = angles
         self.geo = geo
         self.gpuids = gpuids
