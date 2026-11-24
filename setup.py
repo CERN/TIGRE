@@ -115,9 +115,9 @@ print("TIGRE: building the " + BACKEND + " backend (" + BACKEND_REASON + ").")
 # HIP_ARCH selects the target GPU architecture(s) for --offload-arch
 # (comma-separated, default gfx90a). The .cu sources are compiled with hipcc and
 # the GPU runtime is amdhip64; the CUDA path below is unchanged.
-BUILD_WITH_HIP = BACKEND == "hip"
-GPU_RUNTIME_LIB = "amdhip64" if BUILD_WITH_HIP else "cudart"
-if BUILD_WITH_HIP:
+IS_HIP = BACKEND == "hip"
+GPU_RUNTIME_LIB = "amdhip64" if IS_HIP else "cudart"
+if IS_HIP:
     # The host .cpp TUs include the compat header and must select the hip path.
     # __HIP_PLATFORM_AMD__ lets the host compiler parse <hip/hip_runtime_api.h>
     # (hipcc sets it for the .cu sources automatically).
@@ -237,7 +237,7 @@ def locate_rocm():
     }
 
 
-if BUILD_WITH_HIP:
+if IS_HIP:
     # Skip locate_cuda()/get_cuda_cc(): they shell out to nvcc, which is absent
     # on a ROCm-only host.
     CUDA = locate_rocm()
@@ -345,7 +345,7 @@ class BuildExtension(build_ext):
             cflags = copy.deepcopy(extra_postargs)
             try:
                 original_compiler = self.compiler.compiler_so
-                if _is_cuda_file(src) and BUILD_WITH_HIP:
+                if _is_cuda_file(src) and IS_HIP:
                     hipcc = CUDA["hipcc"]
                     if not isinstance(hipcc, list):
                         hipcc = [hipcc]
@@ -415,7 +415,7 @@ class BuildExtension(build_ext):
                 if len(src_list) >= 1 and len(obj_list) >= 1:
                     src = src_list[0]
                     obj = obj_list[0]
-                    if _is_cuda_file(src) and BUILD_WITH_HIP:
+                    if _is_cuda_file(src) and IS_HIP:
                         hipcc = CUDA["hipcc"]
                         rocm_home = CUDA["home"]
                         if isinstance(cflags, dict):
@@ -540,7 +540,7 @@ def include_headers(filename_list, sdist=False):
 
     filename_list += ["Common/CUDA/types_TIGRE.hpp", "Common/CUDA/errors.hpp", "Common/CUDA/tigre_release_on_error.hpp",
                       "Common/CUDA/launch_shapes.hpp", "Common/CUDA/page_locking.hpp",
-                      "Common/CUDA/tv_gradient_descent.hpp"]
+                      "Common/CUDA/tv_gradient_descent.hpp", "Common/CUDA/cuda_to_hip.h"]
     return filename_list + header_list
 
 
