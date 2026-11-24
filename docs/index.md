@@ -278,6 +278,8 @@ api/index
 citing
 papers
 technical-notes/index
+help
+contributing
 changelog
 acknowledgements
 ```
