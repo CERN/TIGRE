@@ -15,7 +15,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "Python"
 
 project = "TIGRE"
 author = "Ander Biguri and the TIGRE contributors"
-copyright = f"2015-{datetime.date.today().year}, University of Bath and CERN"
+copyright = f"2015-{datetime.date.today().year}, University of Bath and CERN (BSD licence)"
 
 
 def _version_from_cff():
@@ -67,7 +67,38 @@ myst_enable_extensions = [
     "substitution",
 ]
 myst_heading_anchors = 3
-myst_substitutions = {"release": release}
+
+
+def _changelog():
+    """Copy changelog.md for the site, with #123 turned into links to GitHub.
+
+    Returns the newest released version and its date, for the landing page.
+    """
+    text = (ROOT / "changelog.md").read_text(encoding="utf-8")
+    body = text[text.index("\n## "):]  # the intro is for contributors
+    body = re.sub(r"## Unreleased\n+(?=## )", "", body)  # nothing unreleased yet
+    linked = re.sub(r"(?<![\w/\[`])#(\d{2,4})\b",
+                    r"[#\1](https://github.com/CERN/TIGRE/pull/\1)", body)
+    out = pathlib.Path(__file__).resolve().parent / "_generated" / "changelog.md"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(linked, encoding="utf-8")
+    match = re.search(r"^## (\d+\.\d+\.\d+) \((\d{4}-\d{2}-\d{2})\)", text, flags=re.M)
+    if not match:
+        return release, ""
+    day = datetime.date.fromisoformat(match.group(2))
+    return match.group(1), f"{day.day} {day:%B %Y}"
+
+
+latest_version, latest_date = _changelog()
+_n_papers = len(re.findall(r"^- ", (pathlib.Path(__file__).resolve().parent / "papers.yaml")
+                            .read_text(encoding="utf-8"), flags=re.M))
+myst_substitutions = {
+    "release": release,
+    "latest_version": latest_version,
+    "latest_date": latest_date,
+    "papers_count": f"{_n_papers // 10 * 10}+",
+    "latest_download": f"[Download](https://github.com/CERN/TIGRE/releases/tag/v{latest_version})",
+}
 
 source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
 exclude_patterns = ["_build", "_generated", "demos/**/*.ipynb", "demos/**/*.py.md5", "papers.yaml", "Thumbs.db", ".DS_Store", "README.md",
@@ -118,6 +149,7 @@ html_static_path = ["_static"]
 html_css_files = ["custom.css"]
 html_baseurl = "https://cern.github.io/TIGRE/"
 html_favicon = "_static/logo/tigre-icon.svg"
+templates_path = ["_templates"]
 
 html_theme_options = {
     "github_url": "https://github.com/CERN/TIGRE",
@@ -128,6 +160,7 @@ html_theme_options = {
     },
     "header_links_before_dropdown": 6,
     "navbar_align": "left",
+    "navbar_end": ["navbar-version", "theme-switcher", "navbar-icon-links"],
     "show_toc_level": 2,
     "use_edit_page_button": True,
     "footer_start": ["copyright"],
@@ -142,6 +175,7 @@ html_theme_options = {
 }
 
 html_context = {
+    "latest_version": latest_version,
     "github_user": "CERN",
     "github_repo": "TIGRE",
     "github_version": "master",
@@ -150,5 +184,5 @@ html_context = {
 
 # Single-page sections have nothing to show in the left sidebar.
 html_sidebars = {
-    page: [] for page in ["index", "citing", "papers"]
+    page: [] for page in ["index", "citing", "papers", "changelog"]
 }

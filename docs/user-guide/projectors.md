@@ -55,9 +55,8 @@ Both operators require `single` arrays.
 : Follows each ray from the source to a detector pixel and adds up the exact
   length of the ray inside each voxel it crosses, times that voxel's value.
   It is fast, and it is the projector the iterative algorithms use.
-  The technical note
-  [Siddon–Jacobs ray tracing on GPUs](../technical-notes/siddon/siddon_note.pdf)
-  explains how it works, and the changes made to it in #865.
+  The technical note [](../technical-notes/siddon/index.md) explains how it
+  works, and the changes made to it in 3.3.0 and 3.3.1.
 
 `interpolated`
 : Samples the image at regular steps along each ray, using trilinear

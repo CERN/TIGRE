@@ -35,3 +35,86 @@ section#tigre > h1 {
 .navbar-brand img {
   height: 2rem;
 }
+
+/* TIGRE orange. #FC7F00 is the logo's orange: used for fills, with dark text on
+   top (7.3:1). Text links use a darker orange in light mode (#B05300, 5.1:1 on
+   white) and a lighter one in dark mode (#FF9A33, 8.9:1). */
+html[data-theme="light"] {
+  --pst-color-primary: #B05300;
+  --pst-color-primary-bg: #FFE8D1;
+  --pst-color-secondary: #8A3F00;
+  --pst-color-secondary-bg: #FFE8D1;
+  --pst-color-link: #B05300;
+  --pst-color-link-hover: #7A3700;
+  --pst-color-accent: #FC7F00;
+  --pst-color-inline-code-links: #B05300;
+  --sd-color-primary: #FC7F00;
+  --sd-color-primary-highlight: #E06F00;
+  --sd-color-primary-text: #111111;
+  --sd-color-secondary: #111111;
+  --sd-color-secondary-highlight: #333333;
+  --sd-color-secondary-text: #FFFFFF;
+}
+
+html[data-theme="dark"] {
+  --pst-color-primary: #FF9A33;
+  --pst-color-primary-bg: #3A2310;
+  --pst-color-secondary: #FFB866;
+  --pst-color-secondary-bg: #3A2310;
+  --pst-color-link: #FF9A33;
+  --pst-color-link-hover: #FFC285;
+  --pst-color-accent: #FC7F00;
+  --pst-color-inline-code-links: #FF9A33;
+  --sd-color-primary: #FC7F00;
+  --sd-color-primary-highlight: #FF9A33;
+  --sd-color-primary-text: #111111;
+  --sd-color-secondary: #F4F4F4;
+  --sd-color-secondary-highlight: #FFFFFF;
+  --sd-color-secondary-text: #111111;
+}
+
+/* Latest-release link in the navbar. */
+.tigre-version.nav-link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--pst-color-border);
+  border-radius: 999px;
+  color: var(--pst-color-text-muted);
+  white-space: nowrap;
+}
+.tigre-version.nav-link:hover {
+  color: var(--pst-color-link-hover);
+  border-color: var(--pst-color-link-hover);
+  text-decoration: none;
+}
+
+/* Landing page: buttons side by side. */
+.tigre-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.tigre-actions p { margin: 0; }
+
+/* Landing page: news line. */
+.tigre-news {
+  border-left: 4px solid var(--pst-color-accent);
+  padding: 0.5rem 1rem;
+  margin: 1.5rem 0 0.5rem;
+  background: var(--pst-color-surface);
+  border-radius: 0 0.4rem 0.4rem 0;
+}
+.tigre-news p { margin: 0; }
+
+/* Landing page: gallery strip. */
+.tigre-strip img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 0.4rem;
+}
+.tigre-strip .sd-card-body { padding: 0; }
+.tigre-strip .sd-card-body p { margin: 0; font-size: 0.85rem; padding: 0.4rem 0.75rem; }
+.tigre-strip .sd-card-body p:has(img) { padding: 0; }
