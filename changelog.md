@@ -7,6 +7,11 @@ thank you.
 
 ## Unreleased
 
+### Added
+- Python build: `TIGRE_BACKEND=hip` builds for AMD GPUs with ROCm. `ROCM_PATH` locates ROCm and
+  `HIP_ARCH` selects the GPU architectures (default `gfx90a`); `cuda` and `hip` can now be built,
+  `sycl` and `metal` are still pending (#747).
+
 ### Fixed
 - Python: the iterative algorithms no longer change the `geo` passed to them. They expanded its fields
   to one value per angle, so reusing the same `geo` with a different number of angles failed with
@@ -51,10 +56,8 @@ thank you.
 - Python and MATLAB builds: the GPU backend (`cuda`, `hip`, `sycl` or `metal`) is chosen with the
   `TIGRE_BACKEND` environment variable, or in MATLAB with `Compile -backend <name>`. When neither
   is given, the build uses the first backend whose compiler is installed, CUDA first, and prints
-  which one it chose. `cuda` can be built, and `hip` for Python; the
-  others stop with a message pointing to the work that adds them (#885, #876).
-- Python build: `TIGRE_BACKEND=hip` builds for AMD GPUs with ROCm. `ROCM_PATH` locates ROCm and
-  `HIP_ARCH` selects the GPU architectures (default `gfx90a`) (#747).
+  which one it chose. Only `cuda` can be built so far; the
+  others stop with a message pointing to the work that adds them (#747, #885, #876).
 - Python: `tigre.Ax` and `tigre.Atb` take PyTorch CUDA tensors and CuPy arrays, and return
   the same kind of array on the same GPU, without copying through host memory. This uses the
   array's GPU only; if `gpuids` names other GPUs, the data goes through the host as before.
