@@ -198,10 +198,15 @@ template<bool sphericalrotation>
         ty=vectY*i+source.y;
         tz=vectZ*i+source.z;
         
+#if defined(USE_HIP)
+        // accuracy>1 creates a point-filtered texture; the software filtering fallback in tex3D_TIGRE would interpolate it.
         if (geo.accuracy>1)
             sum += tex3D<float>(tex, tx+0.5f, ty+0.5f, tz+0.5f); // point-filtered texture
         else
             sum += tex3D_TIGRE(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
+#else
+        sum += tex3D<float>(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
+#endif
     }
     
     float deltalength=sqrtf((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
