@@ -262,6 +262,10 @@ at the University of Southampton and now at the University of Cambridge, with
 The Universities of Southampton and Cambridge do not hold the copyright or
 the licence.
 
+TIGRE has been funded by CERN, the EPSRC, the European Metrology Research
+Programme and the Accelerate Programme for Scientific Discovery; see the
+[acknowledgements](acknowledgements.md).
+
 ```{toctree}
 :hidden:
 :maxdepth: 2
@@ -275,4 +279,5 @@ citing
 papers
 technical-notes/index
 changelog
+acknowledgements
 ```

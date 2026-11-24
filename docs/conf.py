@@ -184,5 +184,5 @@ html_context = {
 
 # Single-page sections have nothing to show in the left sidebar.
 html_sidebars = {
-    page: [] for page in ["index", "citing", "papers", "changelog"]
+    page: [] for page in ["index", "citing", "papers", "changelog", "acknowledgements"]
 }
