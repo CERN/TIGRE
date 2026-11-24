@@ -162,7 +162,19 @@ sphinx_gallery_conf = {
     "show_memory": False,
     "write_computation_times": False,
     "image_scrapers": ("tigre_demos.scraper",),
-    "first_notebook_cell": None,
+    # Notebooks open in Google Colab (see _colab_button below): their first cell
+    # installs the latest release's wheel there, and does nothing elsewhere.
+    "first_notebook_cell": (
+        "# On Google Colab (with a GPU runtime), install TIGRE's prebuilt wheel.\n"
+        "# Elsewhere this cell does nothing: install TIGRE as described at\n"
+        "# https://cern.github.io/TIGRE/install/index.html\n"
+        "import sys, subprocess\n"
+        "if 'google.colab' in sys.modules:\n"
+        "    _py = f'cp{sys.version_info.major}{sys.version_info.minor}'\n"
+        "    _wheel = (f'https://github.com/CERN/TIGRE/releases/download/v" + latest_version + "/'\n"
+        "              f'tigre-" + latest_version + "-{_py}-{_py}-" + _WHEEL_PLATFORM + ".whl')\n"
+        "    subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', _wheel], check=True)"
+    ),
     # do not print the value of a demo's last expression (e.g. "<plotImg object at 0x...>")
     "capture_repr": (),
 }
@@ -239,3 +251,38 @@ html_context = {
 html_sidebars = {
     page: [] for page in ["index", "citing", "papers", "changelog", "acknowledgements"]
 }
+
+
+# -- Open in Colab --------------------------------------------------------------
+# Each Python demo page gets a button that opens its notebook in Google Colab.
+# The notebooks are on the docs-demos branch next to the rendered pages.
+_COLAB_SKIP = {"d21_ScannerDataLoader", "d24_CurvedDetector"}  # need your own data
+
+
+def _colab_button(app, docname, source):
+    parts = docname.split("/")
+    if len(parts) != 3 or parts[0] != "demos" or parts[2] in _COLAB_SKIP:
+        return
+    notebook = pathlib.Path(app.srcdir) / f"{docname}.ipynb"
+    if not notebook.exists():
+        return  # MATLAB-only demo
+    url = (f"https://colab.research.google.com/github/CERN/TIGRE/blob/docs-demos/"
+           f"{parts[1]}/{parts[2]}.ipynb")
+    button = (
+        f"\n.. button-link:: {url}\n"
+        "   :color: secondary\n"
+        "   :outline:\n\n"
+        "   Open in Colab\n\n"
+        "Runs in your browser on Google Colab: choose a GPU runtime "
+        "(*Runtime > Change runtime type*), then run the cells in order.\n"
+    )
+    text = source[0]
+    marker = text.find("\nSource: ")
+    if marker == -1:
+        return
+    end = text.find("\n", marker + 1)
+    source[0] = text[:end + 1] + button + text[end + 1:]
+
+
+def setup(app):
+    app.connect("source-read", _colab_button)
