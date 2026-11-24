@@ -4,7 +4,8 @@ TIGRE reconstructs from **line integrals**: each projection value is
 $-\log(I / I_0)$, where $I$ is the measured intensity and $I_0$ the intensity
 with nothing in the beam. The scanner loaders below read a dataset, convert
 it to line integrals and build the matching geometry and angles, so you can
-reconstruct straight away.
+reconstruct straight away. [](real-data-tutorial.md) goes through a whole
+Nikon scan, from download to the final image.
 
 ## Supported scanners
 
