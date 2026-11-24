@@ -158,7 +158,13 @@ __global__ void kernelPixelDetector_parallel_interpolated( Geometry geo,
     S.z=(source.z+pixelU*deltaU.z+pixelV*deltaV.z);
     
     // Length is the ray length in normalized space
+#if defined(USE_HIP)
+    // The sum as nvcc contracts it. A parallel-beam ray is a whole number of samples long, so ceilf below sits on
+    // an edge, and the contraction the HIP compiler picks on some GPUs (both squares rounded) can add a sample there.
+    double length=sqrtf(fmaf(S.z-P.z,S.z-P.z,fmaf(S.x-P.x,S.x-P.x,(S.y-P.y)*(S.y-P.y))));
+#else
     double length=sqrtf((S.x-P.x)*(S.x-P.x)+(S.y-P.y)*(S.y-P.y)+(S.z-P.z)*(S.z-P.z));
+#endif
     //now legth is an integer of Nsamples that are required on this line
     length=ceilf(length/geo.accuracy);//Divide the directional vector by an integer
     vectX=(P.x -S.x)/(length);
