@@ -41,6 +41,9 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "tigre_matlab_api",
+    "sphinxext.opengraph",
+    "sphinx_sitemap",
+    "notfound.extension",
 ]
 
 # -- API reference -------------------------------------------------------------
@@ -90,6 +93,29 @@ def _changelog():
 
 
 latest_version, latest_date = _changelog()
+
+# Wheels attached to each GitHub release: their platform tag comes from the
+# cibuildwheel image (manylinux_2_28 since #827). If a release changes it, update
+# _WHEEL_PLATFORM, or the install commands on the Python install page will 404.
+_WHEEL_PYTHONS = ["311", "312", "313", "314"]
+_WHEEL_PLATFORM = "manylinux_2_24_x86_64.manylinux_2_28_x86_64"
+
+
+def _wheel_commands():
+    """Write the copy-paste pip commands for the latest release's wheels."""
+    base = f"https://github.com/CERN/TIGRE/releases/download/v{latest_version}"
+    lines = ["::::{tab-set}", ":sync-group: python", ""]
+    for py in _WHEEL_PYTHONS:
+        tag = f"cp{py}"
+        wheel = f"tigre-{latest_version}-{tag}-{tag}-{_WHEEL_PLATFORM}.whl"
+        lines += [f":::{{tab-item}} Python 3.{py[1:]}", f":sync: py3{py[1:]}", "",
+                  "```sh", f"pip install {base}/{wheel}", "```", ":::", ""]
+    lines.append("::::")
+    out = pathlib.Path(__file__).resolve().parent / "_generated" / "wheels.md"
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+_wheel_commands()
 _n_papers = len(re.findall(r"^- ", (pathlib.Path(__file__).resolve().parent / "papers.yaml")
                             .read_text(encoding="utf-8"), flags=re.M))
 myst_substitutions = {
@@ -149,6 +175,33 @@ html_static_path = ["_static"]
 html_css_files = ["custom.css"]
 html_baseurl = "https://cern.github.io/TIGRE/"
 html_favicon = "_static/logo/tigre-icon.svg"
+html_extra_path = ["_extra"]  # robots.txt
+
+# Link previews (Slack, Teams, social media, email): title, description and image.
+ogp_site_url = "https://cern.github.io/TIGRE/"
+ogp_site_name = "TIGRE"
+ogp_image = "https://cern.github.io/TIGRE/_static/logo/tigre-social-preview.png"
+ogp_image_alt = "TIGRE: Tomographic Iterative GPU-based Reconstruction"
+ogp_social_cards = {"enable": False}
+
+# sitemap.xml for search engines (from html_baseurl).
+sitemap_url_scheme = "{link}"
+sitemap_excludes = ["search.html", "genindex.html", "404.html"]
+
+# A 404 page in the site's style. GitHub Pages serves 404.html for any missing
+# page, from any folder, so its links must be absolute.
+notfound_urls_prefix = "/TIGRE/"
+notfound_context = {
+    "title": "Page not found",
+    "body": (
+        "<h1>Page not found</h1>"
+        "<p>This page does not exist, or it has moved. The website was rebuilt in "
+        "November 2026, so old links may point to pages that are now elsewhere.</p>"
+        "<p>Try the search box above, or start from the <a href='/TIGRE/'>home page</a>, "
+        "the <a href='/TIGRE/install/index.html'>install guide</a> or the "
+        "<a href='/TIGRE/user-guide/index.html'>user guide</a>.</p>"
+    ),
+}
 templates_path = ["_templates"]
 
 html_theme_options = {
