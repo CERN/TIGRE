@@ -278,6 +278,8 @@ api/index
 citing
 papers
 technical-notes/index
+ecosystem
+roadmap
 help
 contributing
 changelog

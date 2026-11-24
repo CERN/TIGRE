@@ -251,7 +251,8 @@ html_context = {
 html_sidebars = {
     page: []
     for page in [
-        "index", "citing", "papers", "help", "contributing", "changelog", "acknowledgements"
+        "index", "citing", "papers", "ecosystem", "roadmap", "help", "contributing",
+        "changelog", "acknowledgements",
     ]
 }
 
