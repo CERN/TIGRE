@@ -5,9 +5,9 @@
  *
  * When USE_HIP is defined (TIGRE_BACKEND=hip in setup.py) this header
  * maps the small set of CUDA runtime / cuRAND symbols the GPU sources use onto
- * their hip* equivalents and provides a texture fetch (tex3D_TIGRE) that uses
- * hardware trilinear filtering where available and a software lerp where it is
- * not. On NVIDIA the header is a thin passthrough to the CUDA runtime, so the
+ * their hip* equivalents and provides texture fetches (tex3D_TIGRE and
+ * tex2DLayered_TIGRE) that use hardware linear filtering where available and a
+ * software lerp where it is not. On NVIDIA the header is a thin passthrough to the CUDA runtime, so the
  * CUDA build is unchanged.
  *
  * fp32 element-read (cudaReadModeElementType) hardware linear filtering is not
@@ -20,7 +20,8 @@
  *
  * The backprojection kernels and the interpolated forward projector pick their
  * texture filterMode from that verdict (Linear when supported, else Point), and
- * tex3D_TIGRE mirrors it through the per-TU device flag tigre_hw_linear_filter:
+ * tex3D_TIGRE (3D arrays) and tex2DLayered_TIGRE (layered 2D arrays, bilinear
+ * within a layer) mirror it through the per-TU device flag tigre_hw_linear_filter:
  * when supported it forwards to the hardware tex3D<float>; otherwise it point-
  * samples the 8 neighbours through the point-filtered texture (border addressing
  * returns 0 outside the array, matching cudaAddressModeBorder) and lerps with
@@ -102,6 +103,7 @@
 #define cudaResourceTypeArray           hipResourceTypeArray
 #define cudaReadModeElementType         hipReadModeElementType
 #define cudaFilterModePoint             hipFilterModePoint
+#define cudaArrayLayered                hipArrayLayered
 #define cudaFilterModeLinear            hipFilterModeLinear
 #define cudaAddressModeBorder           hipAddressModeBorder
 #define cudaAddressModeClamp            hipAddressModeClamp
@@ -150,7 +152,11 @@
 
 /* hipMalloc3DArray requires the flags argument that cudaMalloc3DArray
  * defaults to 0. */
-#define cudaMalloc3DArray(arr, desc, ext) hipMalloc3DArray((arr), (desc), (ext), 0)
+static inline hipError_t cudaMalloc3DArray(hipArray_t* array, const hipChannelFormatDesc* desc,
+                                           hipExtent extent, unsigned int flags = 0)
+{
+    return hipMalloc3DArray(array, desc, extent, flags);
+}
 #define cudaFreeArray                   hipFreeArray
 #define cudaMemcpy3D                    hipMemcpy3D
 #define cudaMemcpy3DAsync               hipMemcpy3DAsync
@@ -291,6 +297,35 @@ __device__ __forceinline__ float tex3D_TIGRE(cudaTextureObject_t tex, float x, f
     return c0 * (1.0f - dz) + c1 * dz;
 #else
     return tex3D<float>(tex, x, y, z);
+#endif
+}
+
+/*
+ * tex2DLayered_TIGRE: replacement for the interpolated tex2DLayered<float>
+ * reads, the same as tex3D_TIGRE but bilinear within one layer of a layered
+ * 2D texture.
+ */
+__device__ __forceinline__ float tex2DLayered_TIGRE(cudaTextureObject_t tex, float x, float y, int layer)
+{
+#if defined(USE_HIP)
+    if (tigre_hw_linear_filter)
+        return tex2DLayered<float>(tex, x, y, layer);
+
+    const float xb = x - 0.5f, yb = y - 0.5f;
+    const float fx = floorf(xb), fy = floorf(yb);
+    const float dx = xb - fx,   dy = yb - fy;
+
+    const float c00 = tex2DLayered<float>(tex, fx + 0.5f, fy + 0.5f, layer);
+    const float c10 = tex2DLayered<float>(tex, fx + 1.5f, fy + 0.5f, layer);
+    const float c01 = tex2DLayered<float>(tex, fx + 0.5f, fy + 1.5f, layer);
+    const float c11 = tex2DLayered<float>(tex, fx + 1.5f, fy + 1.5f, layer);
+
+    const float c0 = c00 * (1.0f - dx) + c10 * dx;
+    const float c1 = c01 * (1.0f - dx) + c11 * dx;
+
+    return c0 * (1.0f - dy) + c1 * dy;
+#else
+    return tex2DLayered<float>(tex, x, y, layer);
 #endif
 }
 #endif

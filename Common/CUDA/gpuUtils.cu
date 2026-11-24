@@ -11,23 +11,26 @@
  * Some ROCm/hardware combinations reject creation of a cudaFilterModeLinear
  * texture over an element-read float array outright; others accept it but
  * silently point-sample, which would ship wrong results. So we do not trust
- * creation success alone: we build a tiny 4x1x1 ramp texture (texel x has
+ * creation success alone: we build a tiny 4x4x4 ramp texture (texel x has
  * value x), create it Linear, then sample at x=2.0 (texel centre 1.5..2.5).
- * Hardware linear returns 1.5; point sampling returns 2.0. The result is
- * cached for the process and the verdict is logged once to stderr.
+ * Hardware linear returns 1.5; point sampling returns 2.0. Both kinds of
+ * texture the kernels read are tested, a 3D array and a layered 2D array, and
+ * hardware filtering is used only if both interpolate. The result is cached
+ * for the process and the verdict is logged once to stderr.
  */
-__global__ static void tigre_hw_linear_probe(cudaTextureObject_t tex, float* out) {
+__global__ static void tigre_hw_linear_probe(cudaTextureObject_t tex, bool layered, float* out) {
     /* x=2.0 is the midpoint between texel centres 1.5 (value 1) and 2.5 (value
      * 2): hardware linear returns 1.5, point sampling returns 2.0. y,z sit on
      * interior texel centres so border addressing does not pollute the lerp. */
-    *out = tex3D<float>(tex, 2.0f, 2.5f, 2.5f);
+    *out = layered ? tex2DLayered<float>(tex, 2.0f, 2.5f, 2) : tex3D<float>(tex, 2.0f, 2.5f, 2.5f);
 }
 
-static bool tigre_run_hw_linear_test() {
-    /* Mirror the real projection/backprojection textures: a true 3D array with
-     * cudaAddressModeBorder and cudaReadModeElementType, created Linear. Some
-     * ROCm/hardware combinations accept a 1D Linear texture but reject this 3D
-     * border-addressed one, so the probe must match the real configuration. */
+static bool tigre_probe_hw_linear(bool layered) {
+    /* Mirror the real projection/backprojection textures: a true 3D array (or a
+     * layered 2D one) with cudaAddressModeBorder and cudaReadModeElementType,
+     * created Linear. Some ROCm/hardware combinations accept a 1D Linear
+     * texture but reject this 3D border-addressed one, so the probe must match
+     * the real configuration. */
     const int nx = 4, ny = 4, nz = 4;
     float ramp[nz * ny * nx];
     for (int z = 0; z < nz; ++z)
@@ -38,7 +41,7 @@ static bool tigre_run_hw_linear_test() {
     cudaChannelFormatDesc ch = cudaCreateChannelDesc<float>();
     cudaArray_t arr = 0;
     cudaExtent ext = make_cudaExtent(nx, ny, nz);
-    if (cudaMalloc3DArray(&arr, &ch, ext) != cudaSuccess) {
+    if (cudaMalloc3DArray(&arr, &ch, ext, layered ? cudaArrayLayered : 0) != cudaSuccess) {
         cudaGetLastError();
         return false;
     }
@@ -83,7 +86,7 @@ static bool tigre_run_hw_linear_test() {
         return false;
     }
 
-    tigre_hw_linear_probe<<<1, 1>>>(tex, dout);
+    tigre_hw_linear_probe<<<1, 1>>>(tex, layered, dout);
     bool ok = (cudaDeviceSynchronize() == cudaSuccess);
     float v = 0.0f;
     if (ok && cudaMemcpy(&v, dout, sizeof(float), cudaMemcpyDeviceToHost) != cudaSuccess) {
@@ -96,6 +99,10 @@ static bool tigre_run_hw_linear_test() {
     cudaFreeArray(arr);
 
     return ok && (fabsf(v - 1.5f) < 0.05f);
+}
+
+static bool tigre_run_hw_linear_test() {
+    return tigre_probe_hw_linear(false) && tigre_probe_hw_linear(true);
 }
 
 bool tigre_hw_linear_supported() {
