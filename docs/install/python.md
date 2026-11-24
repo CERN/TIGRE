@@ -6,20 +6,33 @@ installing it in its own virtual environment (venv or conda).
 ## Prebuilt wheels (Linux)
 
 Each [GitHub release](https://github.com/CERN/TIGRE/releases) has prebuilt
-wheels for x86-64 Linux. They are built with CUDA 12.8 and bundle the CUDA
-runtime, so you need only an NVIDIA driver that supports CUDA 12.8; no CUDA
-toolkit or compiler.
+wheels for x86-64 Linux. They bundle the CUDA runtime, so you need no CUDA
+toolkit or compiler: only an NVIDIA GPU and its driver (see
+[what the wheels need](#what-the-wheels-need)).
 
-1. Open the [latest release](https://github.com/CERN/TIGRE/releases/latest)
-   and download the wheel that matches your Python version (`cp312` for
-   Python 3.12, and so on).
-2. Install it:
+To install TIGRE {{ latest_version }}, the latest release, pick your Python
+version and run the command in your environment (`python --version` tells you
+which you have):
 
-   ```sh
-   pip install tigre-X.Y.Z-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-   ```
+```{include} ../_generated/wheels.md
+```
 
-If there is no wheel for your Python version, install from source instead.
+Then [check that it works](#check-your-installation). If there is no wheel for
+your Python version, or you are on Windows, install from source instead, or try
+the [conda package](#conda-unofficial).
+
+### What the wheels need
+
+- **Linux on x86-64** with glibc 2.28 or newer: Ubuntu 18.10+, Debian 10+,
+  RHEL/Rocky/Alma 8+, Fedora 29+ and most current distributions.
+- **An NVIDIA GPU of compute capability 5.0 or newer** (Maxwell, from 2014,
+  to Blackwell). Look your GPU up on
+  [NVIDIA's list](https://developer.nvidia.com/cuda-gpus).
+- **An NVIDIA driver for CUDA 12.8**: version 570 or newer. Drivers from
+  525 on support all of CUDA 12 through NVIDIA's
+  [minor-version compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/)
+  and should also work, but have not been tested with TIGRE.
+  `nvidia-smi` prints your driver version.
 
 ## Install from source
 
@@ -163,7 +176,9 @@ the [TIGRE-conda repository](https://github.com/TomographicImaging/TIGRE-conda/i
 
 ## Check your installation
 
-This lists your GPUs and runs a small reconstruction:
+This lists your GPUs and runs a small reconstruction. Run it from a folder
+outside TIGRE's source code: inside it, Python finds the uncompiled sources
+instead of the installed package.
 
 ```python
 import numpy as np
@@ -181,8 +196,9 @@ reconstruction = algs.fdk(projections, geo, angles)
 print(reconstruction.shape)
 ```
 
-If that works, continue with the demos in `Python/demos`, starting with
-`d01_CreateGeometry.py`.
+It should print your GPUs' names and then `(64, 64, 64)`. If
+that works, continue with the [demos](../demos/index.rst). If it fails, see
+[](../user-guide/troubleshooting.md#installing).
 
 ## Advanced: disable pinned memory
 

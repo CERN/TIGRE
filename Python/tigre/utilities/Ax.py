@@ -96,8 +96,6 @@ def Ax(img, geo, angles, projection_type="Siddon", **kwargs):
         return _gpu_arrays.Ax(img, geo, angles, projection_type, kwargs.get("gpuids", None), Ax)
     if img.dtype != np.float32:
         raise TypeError("Input data should be float32, not " + str(img.dtype))
-    if not np.isreal(img).all():
-        raise ValueError("Complex types not compatible for projection.")
     if any(img.shape != geo.nVoxel):
         raise ValueError(
             "Input data should be of shape geo.nVoxel: "

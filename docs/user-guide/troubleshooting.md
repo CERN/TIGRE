@@ -23,6 +23,31 @@ you still see it, remove the unsupported `-gencode` entries from the
 `COMPFLAGS` line of your MATLAB `mex_CUDA_*.xml` file, and please open an
 issue so the build can be fixed.
 
+**`ImportError: DLL load failed while importing _Ax` (Windows).**
+TIGRE finds CUDA's DLLs through the `CUDA_PATH` environment variable. Set it
+to the CUDA toolkit TIGRE was built with (for example
+`C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.8`), open a new
+terminal, and try again. If several CUDA versions are installed, `CUDA_PATH`
+must point to the one used for the build; otherwise reinstall TIGRE with it.
+
+**`undefined symbol: cudaGetDeviceProperties_v2` or another `undefined symbol`
+error from `_Ax` (Linux).**
+Python loaded an older CUDA runtime than the one TIGRE was built with, often
+from `LD_LIBRARY_PATH` or from a CUDA bundled in a conda environment. Point
+`LD_LIBRARY_PATH` at the `lib64` folder of the CUDA used for the build, or
+reinstall TIGRE in this environment so they match.
+
+**An `ImportError` about `_Ax` or another compiled module, right after
+installing.**
+Check that you are not running Python from inside TIGRE's source folder (the
+repository, or its `Python` folder): there, `import tigre` finds the
+uncompiled sources instead of the installed package. Change to another folder
+and try again.
+
+**`CUDA driver version is insufficient for CUDA runtime version`.**
+Your NVIDIA driver is older than the CUDA that TIGRE uses. Update the driver;
+the prebuilt wheels need version 570 or newer (`nvidia-smi` shows yours).
+
 **There are many warnings during compilation.**
 They are expected and do not affect results or speed.
 
@@ -45,7 +70,8 @@ axes `(z, y, x)` and `(v, u)`; see [](geometry.md).
 When you change one of `nVoxel`, `dVoxel` or `sVoxel`, update the others to
 match. The same applies to the detector fields.
 
-**`texture memory fail` or `invalid device function`.**
+**`texture memory fail`, `invalid device function` or `no kernel image is
+available for execution on the device`.**
 TIGRE was not built for your GPU. Rebuild it on the computer you use, with a
 CUDA version that supports your GPU.
 
@@ -75,9 +101,10 @@ and *WDDM TDR Enabled*). Data-centre GPUs can be put in TCC mode instead.
 A failed CUDA call can leave the GPU context in a bad state. Restart MATLAB
 or the Python process.
 
-**The reconstruction is blurred, doubled or shaded.**
-This is almost always the geometry, not the algorithm. Work through the
-checklist at the end of [](geometry.md).
+**The reconstruction is blurred, doubled, shaded or full of rings.**
+This is almost always the data or the geometry, not the algorithm. Compare
+your image with the pictures in [](artefacts.md), and check the geometry step
+by step with [](geometry-walkthrough.md).
 
 **A Python algorithm ignores an option.**
 Python prints a warning, rather than raising an error, for keyword arguments

@@ -1,0 +1,25 @@
+\begin{table}[H]
+\centering
+\caption{Windows, RTX 4070. The 3.3.0 note's detector (0.8\,mm pixels whatever $n$), 1 GPU. Compare with Table~\ref{tab:size1} at the same $n$.}
+\label{tab:legacy}
+\small\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{NumPy arrays, 1 GPU} & \multicolumn{3}{c}{PyTorch GPU tensors, 1 GPU}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+problem & operation & TIGRE ms & ASTRA ms & ratio & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+256$^3$, 0.8 mm & fp, Siddon & 31.5 & 56.8 & \tfast{$0.55\pm0.05$} & 27.4 & 37.3 & \tfast{$0.73\pm0.04$}\\
+ & fp, interpolated & 175 & 56.8 & \tslow{$3.08\pm0.17$} & 170 & 37.3 & \tslow{$4.57\pm0.14$}\\
+ & bp, matched & 31.9 & 54.9 & \tfast{$0.58\pm0.04$} & 21.3 & 32.6 & \tfast{$0.64\pm0.03$}\\
+ & bp, FDK weights & 28.9 & 54.9 & \tfast{$0.53\pm0.08$} & 18.0 & 32.6 & \tfast{$0.56\pm0.01$}\\
+\addlinespace
+1024$^3$, 0.8 mm & fp, Siddon & 1352 & 4276 & \tfast{$0.32\pm0.02$} & 1013 & 17949 & \tfast{$0.06\pm0.00$}\\
+ & fp, interpolated & 12300 & 4276 & \tslow{$2.87\pm0.07$} & 22654 & 17949 & \tslow{$1.27\pm0.05$}\\
+ & bp, matched & 1959 & 2655 & \tfast{$0.74\pm0.03$} & --- & --- & ---\\
+ & bp, FDK weights & 1739 & 2655 & \tfast{$0.67\pm0.05$} & --- & --- & ---\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

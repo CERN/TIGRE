@@ -1,0 +1,27 @@
+\begin{table}[H]
+\centering
+\caption{Linux, Quadro RTX 6000. Parallel beam (TIGRE parallel mode, ASTRA \texttt{parallel3d}), $n^3$, 360 angles, 1 GPU.}
+\label{tab:lin-parallel1}
+\small\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{NumPy arrays, 1 GPU} & \multicolumn{3}{c}{PyTorch GPU tensors, 1 GPU}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+problem & operation & TIGRE ms & ASTRA ms & ratio & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+256$^3$ & fp, Siddon & 51.3 & 54.5 & \tfast{$0.95\pm0.02$} & 24.3 & 28.9 & \tfast{$0.84\pm0.01$}\\
+ & fp, interpolated & 145 & 54.5 & \tslow{$2.66\pm0.01$} & 136 & 28.9 & \tslow{$4.72\pm0.01$}\\
+ & bp & 42.6 & 49.2 & \tfast{$0.87\pm0.00$} & 15.2 & 26.6 & \tfast{$0.57\pm0.00$}\\
+\addlinespace
+512$^3$ & fp, Siddon & 218 & 366 & \tfast{$0.60\pm0.00$} & 173 & 252 & \tfast{$0.68\pm0.01$}\\
+ & fp, interpolated & 1085 & 366 & \tslow{$2.96\pm0.03$} & 1041 & 252 & \tslow{$4.12\pm0.02$}\\
+ & bp & 319 & 326 & \tfast{$0.98\pm0.01$} & 107 & 196 & \tfast{$0.54\pm0.00$}\\
+\addlinespace
+1024$^3$ & fp, Siddon & 1739 & 2655 & \tfast{$0.65\pm0.00$} & 1411 & 2004 & \tfast{$0.70\pm0.01$}\\
+ & fp, interpolated & 8685 & 2655 & \tslow{$3.26\pm0.04$} & 8361 & 2004 & \tslow{$4.16\pm0.06$}\\
+ & bp & 2464 & 2512 & \tfast{$0.98\pm0.02$} & 838 & 1566 & \tfast{$0.54\pm0.00$}\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

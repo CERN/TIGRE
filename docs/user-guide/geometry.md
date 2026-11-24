@@ -239,3 +239,6 @@ algorithm:
    angles.
 3. Forward-project your reconstruction with `Ax` and compare it with your
    measured projections. They should line up.
+
+[](geometry-walkthrough.md) goes through these checks step by step, and
+[](artefacts.md) shows what each common mistake looks like.

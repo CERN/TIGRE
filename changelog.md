@@ -7,6 +7,43 @@ thank you.
 
 ## Unreleased
 
+### Fixed
+- Python: the iterative algorithms no longer change the `geo` passed to them. They expanded its fields
+  to one value per angle, so reusing the same `geo` with a different number of angles failed with
+  "offOrigin with shape (40, 3) not compatible". The PyTorch operators `A` and `At` no longer set
+  `geo.angles` on it either. (`Ax`, `Atb`, FDK and FBP already worked on a copy.)
+
+## 3.3.1 (2026-11-23)
+
+### Changed
+- Faster projection operators; results are bit-identical to 3.3.0 except where noted. The technical note
+  `docs/technical-notes/speed-3.3.1/` measures them against ASTRA 2.5 on one and several GPUs.
+  - Backprojection (`Atb`): the projections are read through layered 2D textures, a bilinear fetch instead
+    of a trilinear one at the same value: 1.4–1.6× faster in 3D, 5–8× in fan beam (#912). Cone beam: no wait
+    for the GPU between the kernels of a chunk (#911). Parallel beam: the per-projection set-up is computed on
+    the host; results change by ~2e-6 (#912).
+  - Siddon `Ax`: several steps of the ray walk per pass, without branches, so that several texture reads are
+    in flight; 1, 2 or 4 steps, chosen from the ray spacing and the image size (#913, #916). The constants of
+    the next launch are computed while the kernels run (#913). 3D: 1.1–2.2× faster; fan beam: 5–10×.
+  - The fixed cost of a call: launch shapes for thin problems such as fan beam and images with few slices
+    (#904); the geometry copied from Python through typed memoryviews, buffers reused, no needless waits or
+    page-locked allocations (#907). A fan-beam `Ax` of a 256² image, 360 angles: 7.9 ms → 1.1 ms.
+  - Page-locking the caller's arrays: one rule for every operator, only when the image is split or more than
+    two GPUs are used (#905, #917).
+  - FDK: thin detectors filter several projections per FFT call, and the cosine weights are applied while
+    copying into the FFT buffer (#914); fan-beam results can change by ~3e-7 on some CPUs.
+    `tigre.utilities.filtering.filtering` takes optional `weights=` and `out=`.
+  - SIRT, SART, OS-SART, CGLS: vector updates in place, without full-size temporaries (#915).
+- Siddon technical note (`docs/technical-notes/siddon/`): revised for 3.3.1 (steps per pass, comparison with
+  ASTRA).
+
+### Fixed
+- `Atb` crashed at 1024³ with 32-bit sizes; page-locking that fails falls back to pageable memory with a
+  warning (#903).
+- Cone-beam backprojection on 4+ GPUs crashed (and broke the CUDA context) when a GPU got no slices (#906).
+
+## 3.3.0 (2026-11-21)
+
 ### Added
 - `TIGRE_CUDA_ARCH` (Python build and MATLAB `Compile`): compile only for the given GPU architectures (e.g.
   `89`, `75,89`, or `native`), several times faster, for development and testing. Default unchanged: every
@@ -32,6 +69,13 @@ thank you.
   in pieces along z (before, they failed with a CUDA error) (#286, #295).
 
 ### Changed
+- Backprojection (`Atb`, cone beam) is faster: the kernels step each voxel's position up its column instead of
+  rebuilding it from the indices, the per-projection set-up is precomputed on the host, and `matched` computes its
+  weight from numbers the kernel already has. Kernel time, RTX 4070: `matched` 0.73 of before, FDK weights 0.91;
+  Quadro RTX 6000, measured before the host precomputation: 0.65 and 0.86. Results change by float rounding
+  (~5e-5 of the maximum), and `matched` as described under Fixed.
+- `Ax` and `Atb` with NumPy arrays no longer check `np.isreal` on the input, which the `float32` check already
+  implies: it allocated two arrays the size of the input on every call (~0.1 s per call at 512³).
 - `minTV`/`AwminTV` (the TV step of ASD_POCS, OS_ASD_POCS, AwASD_POCS, ...): the first and last
   z-slice of the image now use the same boundary as x and y (no neighbour beyond the edge). Before, the slices
   beyond the image's ends were read as voxels of value 0, so even a constant image was changed at its first and
@@ -41,6 +85,9 @@ thank you.
   whichever GPU was current), works on images larger than the GPU memory, and sums the gradient norm in double.
   `PICCS.cu` keeps only the PICCS maths (the step direction); the multi-GPU and splitting code is
   `tv_gradient_descent` (`tv_gradient_descent.hpp`).
+- `AwminTV` runs on the same shared code (`GD_AwTV.cu` keeps only the adaptive-weighted TV step
+  direction): one copy of the multi-GPU and splitting code instead of two. Results are unchanged. Its error and
+  warning identifiers are now `minTV`'s (`GD_TV:...`).
 - `CTnoise.add` (Python) and `addCTnoise` (MATLAB) add a new noise realisation on every call. Before, the
   GPU random number generator was always seeded with 1234, so every call added exactly the same noise. The
   new seed is drawn from NumPy's global random state (Python) or MATLAB's random stream, so
@@ -77,6 +124,12 @@ thank you.
   older Linux distributions should build from source.
 
 ### Fixed
+- `Atb` with `matched` weights used the wrong weight for rotated detectors (`rotDetector`) and for rotation axes
+  that are not z (3-angle `angles`): it rebuilt the detector point as if the detector were not rotated and the
+  source at z=0, and half a pixel off. The weight was off by 1.5-1.8% for a 2-degree roll or pitch, ~6.5% for
+  5 degrees on all three or a 10-degree axis tilt, and 2e-4 for an unrotated detector. It is now exact for any
+  geometry, and `matched` is as close to the adjoint of `Ax` for rotated detectors as for unrotated ones.
+  `matched` results change: ~1e-4 for unrotated detectors, up to several % for rotated ones.
 - `minPICCS` returned NaN when the gradient was zero (e.g. a constant image, or one PICCS had already
   flattened): it divided by the gradient norm without the small constant minTV adds. It now uses minTV's
   normalisation.
@@ -95,6 +148,15 @@ thank you.
 - `minTV`, `AwminTV` and `tvdenoise` failed on several GPUs (or when split for memory) when the image
   had so few z slices that the last pieces came out empty, e.g. 5 slices on 4 GPUs, or tvdenoise of
   one slice on 2 GPUs. The pieces are now chosen so that none is empty, using fewer GPUs if needed.
+- `minTV`, `AwminTV` and `minPICCS` read past the end, or before the start, of the image, the output and
+  PICCS's prior when a piece of the image (one per GPU, or more when it is split for memory) was thinner
+  than the halo slices copied around its neighbour: e.g. 7 slices on 3 GPUs (pieces of 3, 3 and 1), or
+  pieces of 1 slice. Depending on the memory there, this crashed, gave a copy error or did nothing visible;
+  results were not affected. The halos now stop at the image's first and last slice, as in `tvdenoise`
+  (#899; found by Einse57).
+- `minTV`, `AwminTV`, `minPICCS` and `tvdenoise` freed some of their host memory only when they failed:
+  every call lost a little, including a page-locked (pinned) allocation in `minTV`, `AwminTV` and `minPICCS`,
+  which the POCS solvers call at every iteration.
 - `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB) on 2 or more GPUs without a direct link
   between them, when the image fits only shared between the GPUs: the host buffer for the halo slices
   had room for one slice per halo, but the halos are up to 60 slices wide, so they overwrote each other
@@ -104,17 +166,12 @@ thank you.
   that project one angle at a time (SART, ASD_POCS, AwASD_POCS) then ran on one GPU after the
   first angle, for the projections and for the TV step. They now trim a copy (#855).
 - `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB, used by FISTA and SART-TV), when the
-  image did not fit on the GPU and was split in pieces: a piece read its halo slices from host
-  memory that the previous piece had already advanced, so the result differed from the unsplit
-  one next to the joins (up to ~2e-1 of the maximum). It now gives the unsplit result exactly
-  (#863).
-- `tvdenoise` (Python; `im3DDenoise(...,'TV',...)` in MATLAB, used by FISTA and SART-TV), when the
-  image did not fit on the GPU and was split in pieces: for the last piece it zeroed a dual
-  variable instead of the input, and it did not wait for each piece's results to reach host
-  memory before the next piece read from it. The result differed from the unsplit one across
-  the whole volume (e.g. 7.6e-2 of the maximum with 100 MB free); now only next to the joins
-  between pieces and at the first and last slice (4.7e-2 at the worst slice; #863 tracks the
-  rest). Based on #806.
+  image did not fit on the GPU and was split in pieces: for the last piece it zeroed a dual variable
+  instead of the input; it did not wait for each piece's results to reach host memory before the next
+  piece read from it; and a piece read its halo slices from host memory that the previous piece had
+  already advanced. The result differed from the unsplit one across the whole volume (e.g. 7.6e-2 of
+  the maximum with 100 MB free, up to ~2e-1 next to the joins). It now gives the unsplit result exactly
+  (#806, #863).
 - Cone-beam Siddon `Ax` got some rays wrong (by up to ~20%): for rays entering the image
   exactly on a voxel boundary, the first voxel and the first boundary crossings disagreed.
   Without splitting this was rare (e.g. 1 in 50,000 rays, 256³, off by up to 14%); when the

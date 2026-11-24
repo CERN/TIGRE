@@ -1,0 +1,27 @@
+\begin{table}[H]
+\centering
+\caption{Windows, RTX 4070. Parallel beam (TIGRE parallel mode, ASTRA \texttt{parallel3d}), $n^3$, 360 angles, 1 GPU.}
+\label{tab:parallel1}
+\small\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{NumPy arrays, 1 GPU} & \multicolumn{3}{c}{PyTorch GPU tensors, 1 GPU}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+problem & operation & TIGRE ms & ASTRA ms & ratio & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+256$^3$ & fp, Siddon & 30.1 & 54.8 & \tfast{$0.55\pm0.02$} & 27.0 & 31.4 & \tfast{$0.85\pm0.03$}\\
+ & fp, interpolated & 158 & 54.8 & \tslow{$2.90\pm0.06$} & 154 & 31.4 & \tslow{$4.87\pm0.06$}\\
+ & bp & 27.7 & 56.4 & \tfast{$0.49\pm0.05$} & 16.9 & 32.2 & \tfast{$0.53\pm0.00$}\\
+\addlinespace
+512$^3$ & fp, Siddon & 230 & 388 & \tfast{$0.60\pm0.08$} & 196 & 263 & \tfast{$0.74\pm0.01$}\\
+ & fp, interpolated & 1202 & 388 & \tslow{$3.12\pm0.11$} & 1166 & 263 & \tslow{$4.43\pm0.03$}\\
+ & bp & 200 & 362 & \tfast{$0.57\pm0.12$} & 124 & 236 & \tfast{$0.53\pm0.01$}\\
+\addlinespace
+1024$^3$ & fp, Siddon & 1965 & 3120 & \tfast{$0.64\pm0.03$} & 1601 & 16762 & \tfast{$0.10\pm0.00$}\\
+ & fp, interpolated & 9482 & 3120 & \tslow{$3.03\pm0.12$} & 18039 & 16762 & \tslow{$1.08\pm0.00$}\\
+ & bp & 1583 & 2590 & \tfast{$0.64\pm0.12$} & --- & --- & ---\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

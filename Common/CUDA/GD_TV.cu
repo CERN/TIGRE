@@ -59,6 +59,7 @@
 #include "tv_gradient_descent.hpp"
 #include "gpuUtils.hpp"
 #include "tigre_release_on_error.hpp"
+#include "page_locking.hpp"
 
 
 
@@ -507,9 +508,15 @@ do { \
         unsigned long long* offset_device=(unsigned long long*)malloc(deviceCount*sizeof(unsigned long long));
         unsigned long long* offset_host  =(unsigned long long*)malloc(deviceCount*sizeof(unsigned long long));
         unsigned long long* bytes_device =(unsigned long long*)malloc(deviceCount*sizeof(unsigned long long));
-        onError.add([offset_device, offset_host, bytes_device]{ free(offset_device); free(offset_host); free(bytes_device); });
-        bool is_first_chunk;
-        bool is_last_chunk;
+        // Halo slices below and above each piece: buffer_length, or fewer where the piece is closer than that to the
+        // image's first or last slice, as in tv_proximal.cu. A piece's interior always starts at buffer_pixels on the
+        // device; the halo_lo[dev] slices below it and halo_hi[dev] above it hold the image. Before, every piece but
+        // the first and the last took buffer_length slices on each side, and next to a piece thinner than that the
+        // copies read past the start or the end of the caller's arrays (#899).
+        unsigned int* halo_lo=(unsigned int*)malloc(deviceCount*sizeof(unsigned int));
+        unsigned int* halo_hi=(unsigned int*)malloc(deviceCount*sizeof(unsigned int));
+        onError.add([offset_device, offset_host, bytes_device, halo_lo, halo_hi]{ free(offset_device); free(offset_host); free(bytes_device); free(halo_lo); free(halo_hi); });
+        const size_t slice_pixels=(size_t)image_size[0]*image_size[1];
         for(unsigned int i=0;i<maxIter;i+=(buffer_length-1)){
             if(splits>1){
                 totalsum_prev=0;
@@ -527,14 +534,13 @@ do { \
                     curr_pixels=curr_slices*(size_t)image_size[0]*image_size[1];
                     linear_idx_start=(size_t)image_size[0]*image_size[1]*slices_per_split*(sp*deviceCount+dev);
                     
-                    // Check if its the first or last chunck
-                    is_last_chunk=!((sp*deviceCount+dev)<deviceCount*splits-1);
-                    is_first_chunk=!(sp*deviceCount+dev);
-                    
                     // lets compute where we start copyes and how much. This avoids 3 calls to Memcpy
-                    offset_device[dev]=buffer_pixels*is_first_chunk;
-                    offset_host[dev]=linear_idx_start-buffer_pixels*!is_first_chunk;
-                    bytes_device[dev]=curr_pixels+buffer_pixels*!is_first_chunk+buffer_pixels*!is_last_chunk;
+                    size_t start_slice=(size_t)slices_per_split*(sp*deviceCount+dev);
+                    halo_lo[dev]=(unsigned int)min((size_t)buffer_length, start_slice);
+                    halo_hi[dev]=(unsigned int)min((size_t)buffer_length, (size_t)image_size[2]-start_slice-curr_slices);
+                    offset_device[dev]=(buffer_length-halo_lo[dev])*slice_pixels;
+                    offset_host[dev]=linear_idx_start-halo_lo[dev]*slice_pixels;
+                    bytes_device[dev]=curr_pixels+(halo_lo[dev]+halo_hi[dev])*slice_pixels;
                 }
 
                 if(i==0){
@@ -577,15 +583,16 @@ do { \
                         // Compute the gradient of the TV norm
                         
                         // The step direction for this piece (the caller's functional). The image's slices in the buffer
-                        // are [zlo,zhi): the halos of the first and last piece of the whole image lie beyond it.
-                        const long piece=(long)sp*deviceCount+dev;
+                        // are [zlo,zhi): the halo slots that would lie before the image's first slice or after its last
+                        // are outside it (see halo_lo, halo_hi).
                         TVPiece pc;
                         pc.image=d_image[dev];
                         pc.extra=d_extra+dev*nExtra;
                         pc.direction=d_dimgTV[dev];
                         pc.depth=(long)(curr_slices+buffer_length*2-1);
-                        pc.zlo=(piece==0)? (long)buffer_length : 0;
-                        pc.zhi=(piece==(long)deviceCount*splits-1)? (long)(buffer_length+curr_slices) : pc.depth;
+                        pc.zlo=(long)(buffer_length-halo_lo[dev]);
+                        pc.zhi=(long)(buffer_length+curr_slices+halo_hi[dev]);
+                        if (pc.zhi>pc.depth) pc.zhi=pc.depth;
                         pc.rows=image_size[1];
                         pc.cols=image_size[0];
                         pc.interior_offset=buffer_pixels;
@@ -781,11 +788,14 @@ do { \
         }
         free(exchange_event);
         free(peer_access);
+        free(offset_device); free(offset_host); free(bytes_device); free(halo_lo); free(halo_hi);
+        cudaFreeHost(sumnorm2);  // these were freed only on error: a pinned allocation was lost on every call
         
         if (img_registered) cudaHostUnregister((void*)img);
         if (dst_registered) cudaHostUnregister(dst);
         for (int i = 0; i < nStreams; ++i)
            cudaStreamDestroy(stream[i]) ;
+        free(stream);
         
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(gpuids[dev]);
@@ -801,8 +811,7 @@ do { \
         // symptom appears in the NEXT library to touch the GPU (e.g.
         // cudaErrorInvalidValue / CUDA_ERROR_INVALID_HANDLE inside CuPy
         // deallocations) rather than in TIGRE itself. All buffers are
-        // already freed explicitly above; GD_AwTV.cu has this reset
-        // commented out for the same reason.
+        // already freed explicitly above.
         // cudaDeviceReset();
     }
         

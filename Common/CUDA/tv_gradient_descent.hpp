@@ -1,8 +1,8 @@
 /*-------------------------------------------------------------------------
  *
  * Gradient descent on a TV-type functional, on one or several GPUs, for images
- * that may not fit on them: the GPU bookkeeping shared by minTV (GD_TV.cu) and
- * PICCS (PICCS.cu).
+ * that may not fit on them: the GPU bookkeeping shared by minTV (GD_TV.cu),
+ * AwminTV (GD_AwTV.cu) and PICCS (PICCS.cu).
  *
  * The functional itself is not here: each caller gives a function that computes
  * the step direction on one GPU, for its piece of the image. This code splits the
@@ -13,7 +13,7 @@
  * Extra input volumes (e.g. PICCS's prior) are split and haloed like the image.
  *
  * Compiled by nvcc only (it uses CUDA types); the MEX/Cython front ends include
- * GD_TV.hpp / PICCS.hpp.
+ * GD_TV.hpp / GD_AwTV.hpp / PICCS.hpp.
  * ---------------------------------------------------------------------------
  * This file is part of the TIGRE Toolbox. License: BSD, see LICENSE.
  * Contact: tigre.toolbox@gmail.com   Codes: https://github.com/CERN/TIGRE

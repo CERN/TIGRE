@@ -43,7 +43,14 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
 
     angles = np.ascontiguousarray(angles)
 
-    cdef float* c_model = <float*> malloc( <unsigned long long>geometry.nVoxel[0] * geometry.nVoxel[1] * geometry.nVoxel[2] * sizeof(float))
+    # Each factor cast to size_t: with only the first one cast, Cython multiplies the others as NumPy scalars, which
+    # are 32-bit on Windows with NumPy 1.x (np.array([1024, 1024, 1024])): the size wrapped to 0 and Atb crashed.
+    cdef size_t nVoxels = <size_t>geometry.nVoxel[0] * <size_t>geometry.nVoxel[1] * <size_t>geometry.nVoxel[2]
+    cdef float* c_model = <float*> malloc(nVoxels * sizeof(float))
+    if not c_model:
+        free_c_geometry(c_geometry)
+        free_c_gpuids(c_gpuids)
+        raise MemoryError("Atb: not enough host memory for the result ({} bytes)".format(nVoxels * sizeof(float)))
 
     cdef float* c_angles = <float*> angles.data
 

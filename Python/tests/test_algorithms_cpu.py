@@ -149,3 +149,23 @@ def test_sart_family_reduces_lambda(problem, monkeypatch):
                   W=np.ones(proj.shape, np.float32), V=np.ones((nblocks, *N_VOXEL[1:]), np.float32))
     alg.run_main_iter()
     assert alg.lmbda == pytest.approx(1.0 * 0.5**4)
+
+
+def _geo_snapshot(geo):
+    return {k: np.array(v, copy=True) if isinstance(v, np.ndarray) else v
+            for k, v in vars(geo).items()}
+
+
+@pytest.mark.parametrize("alg", ["cgls", "lsqr", "lsmr"])
+def test_algorithms_leave_geo_unchanged(problem, alg):
+    # The algorithms used to expand geo's fields to one value per angle in place,
+    # so the same geo could not be reused with a different number of angles. All
+    # iterative algorithms go through the same decorator; these three run with
+    # the dense-matrix projector.
+    A, geo, angles, proj, x_true = problem
+    before = _geo_snapshot(geo)
+    getattr(algs, alg)(proj, geo, angles, 2, verbose=False)
+    after = _geo_snapshot(geo)
+    assert after.keys() == before.keys()
+    for key in before:
+        np.testing.assert_array_equal(np.asarray(after[key]), np.asarray(before[key]), err_msg=key)

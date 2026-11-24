@@ -88,29 +88,6 @@ private:
     std::vector<std::function<void()> > actions_;
 };
 
-// Register the caller's host array as pinned memory, if it is not already.
-// Returns true only if this call registered it, i.e. if the caller of
-// hostRegister must unregister it. An array that is already page-locked is
-// used as it is and left alone: registered by someone else (cudaHostRegister
-// then says "already registered"), or allocated page-locked, e.g. a pinned
-// PyTorch tensor (cudaHostAlloc; cudaHostRegister then says "invalid
-// argument", so ask CUDA what the pointer is first).
-// Any other failure is left for the caller's error check.
-inline bool hostRegister(void* ptr, size_t bytes) {
-#if CUDART_VERSION >= 10000
-    cudaPointerAttributes attributes;
-    if (cudaPointerGetAttributes(&attributes, ptr) == cudaSuccess && attributes.type == cudaMemoryTypeHost)
-        return false;  // already page-locked
-    cudaGetLastError();  // CUDA 10 reports plain (pageable) memory as an error here
-#endif
-    cudaError_t err = cudaHostRegister(ptr, bytes, cudaHostRegisterPortable);
-    if (err == cudaErrorHostMemoryAlreadyRegistered) {
-        cudaGetLastError();  // not an error for us
-        return false;
-    }
-    return err == cudaSuccess;
-}
-
 // Check a cudaMalloc. Out of memory is reported as such, with a message that
 // starts with "out of memory" (see tigreNotEnoughGpuMemory), so that it reads
 // the same as TIGRE's own memory check and callers that retry after freeing
@@ -128,13 +105,14 @@ inline void checkMalloc(cudaError_t err, const char* tag, const char* what, size
     tigreCudaError(tag, "Malloc error", cudaGetErrorString(err));
 }
 
-// Allocate a float 3D array (an image texture) of this extent on each device, and check that n_buffers buffers of
-// buffer_bytes each can be allocated on top (allocated and freed again, separately: each allocation is rounded up
-// to the driver's page size). True if it all fitted. If the GPU memory runs out, frees what it allocated, clears
-// the error and returns false, so that the caller can split the problem in smaller pieces and try again. A 3D
-// array needs more GPU memory than its raw size (alignment, layout), so this can fail where an estimate from the
-// free memory said it fits. Other CUDA errors are raised.
-inline bool tryMalloc3DArrays(const int* devs, int ndev, cudaArray** arr, cudaExtent extent, int n_buffers, size_t buffer_bytes, const char* tag) {
+// Allocate a float 3D array (an image texture) of this extent on each device, and n_buffers buffers of
+// buffer_bytes each on top, each its own allocation (each is rounded up to the driver's page size). True if it all
+// fitted: then arr[d] and buffers[d*n_buffers+b] hold them, for the caller to use and free (if buffers is NULL,
+// the buffers are only tried, and freed again). If the GPU memory runs out, frees what it allocated, clears the
+// error and returns false, so that the caller can split the problem in smaller pieces and try again. A 3D array
+// needs more GPU memory than its raw size (alignment, layout), so this can fail where an estimate from the free
+// memory said it fits. Other CUDA errors are raised.
+inline bool tryMalloc3DArrays(const int* devs, int ndev, cudaArray** arr, cudaExtent extent, int n_buffers, size_t buffer_bytes, const char* tag, void** buffers = NULL) {
     cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc(32, 0, 0, 0, cudaChannelFormatKindFloat);  // float
     bool ok = true;
     for (int d = 0; d < ndev && ok; d++) {
@@ -145,7 +123,10 @@ inline bool tryMalloc3DArrays(const int* devs, int ndev, cudaArray** arr, cudaEx
         if (err == cudaSuccess && n_buffers > 0) {
             std::vector<void*> probe(n_buffers, (void*)NULL);
             for (int b = 0; b < n_buffers && err == cudaSuccess; b++) err = cudaMalloc(&probe[b], buffer_bytes);
-            for (int b = 0; b < n_buffers; b++) if (probe[b]) cudaFree(probe[b]);
+            for (int b = 0; b < n_buffers; b++) {
+                if (buffers && err == cudaSuccess) buffers[d*n_buffers+b] = probe[b];  // kept for the caller
+                else if (probe[b]) cudaFree(probe[b]);
+            }
         }
         if (err != cudaSuccess) {
             cudaGetLastError();
@@ -155,7 +136,9 @@ inline bool tryMalloc3DArrays(const int* devs, int ndev, cudaArray** arr, cudaEx
     }
     if (!ok) {
         for (int d = 0; d < ndev; d++) {
-            if (arr[d]) { cudaSetDevice(devs[d]); cudaFreeArray(arr[d]); arr[d] = NULL; }
+            cudaSetDevice(devs[d]);
+            if (arr[d]) { cudaFreeArray(arr[d]); arr[d] = NULL; }
+            if (buffers) for (int b = 0; b < n_buffers; b++) { if (buffers[d*n_buffers+b]) cudaFree(buffers[d*n_buffers+b]); buffers[d*n_buffers+b] = NULL; }
         }
         cudaGetLastError();
     }

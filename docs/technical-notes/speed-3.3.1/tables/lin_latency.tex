@@ -1,0 +1,30 @@
+\begin{table}[H]
+\centering
+\caption{Linux, Quadro RTX 6000. Small problems (cone beam, $n^3$ image, $n^2$ detector, 100 angles), 1 GPU.}
+\label{tab:lin-latency}
+\small\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrr}
+\toprule
+& & \multicolumn{3}{c}{NumPy arrays, 1 GPU} & \multicolumn{3}{c}{PyTorch GPU tensors, 1 GPU}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+problem & operation & TIGRE ms & ASTRA ms & ratio & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+32$^3$ & fp, Siddon & 2.20 & 3.17 & \tfast{$0.69\pm0.03$} & 1.73 & 2.09 & \tfast{$0.82\pm0.06$}\\
+ & fp, interpolated & 2.81 & 3.17 & \tfast{$0.86\pm0.06$} & 2.31 & 2.09 & \tslow{$1.10\pm0.07$}\\
+ & bp, matched & 2.16 & 2.40 & \tfast{$0.90\pm0.01$} & 1.63 & 1.45 & \tslow{$1.15\pm0.07$}\\
+ & bp, FDK weights & 2.15 & 2.40 & \tfast{$0.89\pm0.00$} & 1.62 & 1.45 & \tslow{$1.15\pm0.11$}\\
+\addlinespace
+64$^3$ & fp, Siddon & 2.26 & 3.75 & \tfast{$0.59\pm0.06$} & 1.72 & 2.62 & \tfast{$0.66\pm0.00$}\\
+ & fp, interpolated & 3.00 & 3.75 & \tfast{$0.83\pm0.12$} & 2.64 & 2.62 & \tslow{$1.01\pm0.00$}\\
+ & bp, matched & 2.13 & 2.37 & \tfast{$0.90\pm0.00$} & 1.66 & 1.46 & \tslow{$1.13\pm0.00$}\\
+ & bp, FDK weights & 2.12 & 2.37 & \tfast{$0.90\pm0.00$} & 1.62 & 1.46 & \tslow{$1.11\pm0.00$}\\
+\addlinespace
+128$^3$ & fp, Siddon & 3.71 & 6.91 & \tfast{$0.54\pm0.00$} & 2.46 & 4.75 & \tfast{$0.52\pm0.00$}\\
+ & fp, interpolated & 8.07 & 6.91 & \tslow{$1.17\pm0.00$} & 7.10 & 4.75 & \tslow{$1.50\pm0.00$}\\
+ & bp, matched & 3.64 & 4.18 & \tfast{$0.87\pm0.00$} & 2.41 & 2.26 & \tslow{$1.07\pm0.00$}\\
+ & bp, FDK weights & 3.55 & 4.18 & \tfast{$0.85\pm0.00$} & 2.21 & 2.26 & \tfast{$0.98\pm0.00$}\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

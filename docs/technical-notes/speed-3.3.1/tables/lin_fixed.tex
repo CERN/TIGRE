@@ -1,0 +1,32 @@
+\begin{table}[H]
+\centering
+\caption{Linux, Quadro RTX 6000. Each call's time split into a part that does not shrink with more GPUs (``fixed'') and a part that does, fitted as $t_g = \text{fixed} + \text{parallel}/g$ to the 1- and 4-GPU times (NumPy arrays). The measured 2-GPU time $t_2$ checks the fit.}
+\label{tab:lin-fixed}
+\small\setlength{\tabcolsep}{4pt}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrrrrr}
+\toprule
+problem & call & $t_1$ ms & $t_4$ ms & fixed ms & fixed \% & $t_2$ ms & $t_2$ fit ms\\
+\midrule
+cone 512$^3$ & TIGRE fp Siddon & 218 & 366 & 415 & 191 & 249 & 316\\
+ & TIGRE fp interpolated & 1238 & 536 & 302 & 24 & 704 & 770\\
+ & TIGRE bp matched & 373 & 338 & 326 & 87 & 297 & 350\\
+ & ASTRA fp & 476 & 240 & 162 & 34 & 328 & 319\\
+ & ASTRA bp & 344 & 136 & 67 & 19 & 204 & 206\\
+\addlinespace
+cone 1024$^3$ & TIGRE fp Siddon & 1790 & 2075 & 2170 & 121 & 1441 & 1980\\
+ & TIGRE fp interpolated & 10080 & 4039 & 2025 & 20 & 5772 & 6053\\
+ & TIGRE bp matched & 3030 & 2155 & 1864 & 61 & 2358 & 2447\\
+ & TIGRE bp FDK & 2638 & 2056 & 1861 & 71 & 2196 & 2250\\
+ & ASTRA fp & 3754 & 1679 & 988 & 26 & 2170 & 2371\\
+ & ASTRA bp & 2664 & 959 & 391 & 15 & 1719 & 1527\\
+\addlinespace
+parallel 1024$^3$ & TIGRE fp Siddon & 1739 & 2099 & 2218 & 128 & 1418 & 1979\\
+ & TIGRE fp interpolated & 8685 & 3628 & 1942 & 22 & 5016 & 5314\\
+ & TIGRE bp & 2464 & 2053 & 1916 & 78 & 2100 & 2190\\
+ & ASTRA fp & 2655 & 1339 & 900 & 34 & 1645 & 1778\\
+ & ASTRA bp & 2512 & 893 & 353 & 14 & 1636 & 1432\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

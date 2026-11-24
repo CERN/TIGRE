@@ -58,6 +58,7 @@
 #include "tv_proximal.hpp"
 #include "gpuUtils.hpp"
 #include "tigre_release_on_error.hpp"
+#include "page_locking.hpp"
 #define cudaCheckErrors(msg) \
 do { \
         cudaError_t __err = cudaGetLastError(); \
@@ -706,13 +707,15 @@ void cpy_from_host(float* device_array,float* host_array,
         cudaCheckErrors("Copy result back");
         onError.dismiss();  // from here on the function releases everything itself
         for(dev=0; dev<deviceCount;dev++){
-            
+            cudaSetDevice(gpuids[dev]);
             cudaFree(d_src[dev]);
             cudaFree(d_u [dev]);
             cudaFree(d_pz[dev]);
             cudaFree(d_py[dev]);
             cudaFree(d_px[dev]);
         }
+        free(d_src); free(d_u); free(d_px); free(d_py); free(d_pz);  // were freed only on error
+        free(offset_device); free(offset_host); free(bytes_device); free(halo_lo); free(halo_hi);
         if(splits>1 && buffer_length<maxIter){
             cudaFreeHost(h_px);
             cudaFreeHost(h_py);
@@ -729,6 +732,7 @@ void cpy_from_host(float* device_array,float* host_array,
         
         for (int i = 0; i < nStreams; ++i)
            cudaStreamDestroy(stream[i]) ;
+        free(stream);
 
         if (src_registered) cudaHostUnregister(src);
         if (dst_registered) cudaHostUnregister(dst);

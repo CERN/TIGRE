@@ -49,6 +49,8 @@
 #include "voxel_backprojection2.hpp"
 #include "TIGRE_common.hpp"
 #include "tigre_release_on_error.hpp"
+#include "page_locking.hpp"
+#include "launch_shapes.hpp"
 #include <math.h>
 #include "GpuIds.hpp"
 
@@ -92,6 +94,7 @@ do { \
     
 // this definitionmust go here.
 void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cudaArray** d_cuArrTex,unsigned int nangles, cudaTextureObject_t *texImage,cudaStream_t* stream,int nStreamDevice,bool allocate, cudaMemcpyKind kind);
+static void matchedKernelParams(const Geometry& geo, int i, Point3D* params);  // see its definition
 
 __global__ void matrixConstantMultiply(const Geometry geo,float* image,float constant){
     size_t idx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -138,26 +141,31 @@ __constant__ float projSinCosArray2Dev[5*PROJ_PER_KERNEL];
 //      Description:    Main FDK backprojection kernel
 //______________________________________________________________________________
 
+// VPT: voxels per thread along z, VOXELS_PER_THREAD or fewer on thin images (tigre::voxelColumnLength).
+template<int VPT>
 __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const int currProjSetNumber, const int totalNoOfProjections, cudaTextureObject_t tex)
 {
     
     unsigned long long indY = blockIdx.y * blockDim.y + threadIdx.y;
     unsigned long long indX = blockIdx.x * blockDim.x + threadIdx.x;
     // unsigned long startIndZ = blockIdx.z * blockDim.z + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
-    unsigned long long startIndZ = blockIdx.z * VOXELS_PER_THREAD + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
+    unsigned long long startIndZ = blockIdx.z * VPT + threadIdx.z;  // This is only STARTING z index of the column of voxels that the thread will handle
     //Make sure we don't go out of bounds
     if (indX>=geo.nVoxelX || indY>=geo.nVoxelY || startIndZ>=geo.nVoxelZ)
         return;
     
     // We'll keep a local auxiliary array of values of a column of voxels that this thread will update
-    float voxelColumn[VOXELS_PER_THREAD];
+    // Zero-initialised: voxels of the column beyond the image are computed too (no per-voxel check, see below), never stored.
+    float voxelColumn[VPT] = {0};
     
     // First we need to copy the curent 3D volume values from the column to our auxiliary array so that we can then
     // work on them (update them by computing values from multiple projections) locally - avoiding main memory reads/writes
     
     unsigned long colIdx;
+    // The voxel's indices as floats, converted once per thread (they were converted for every voxel and projection).
+    const float fIndX=(float)indX, fIndY=(float)indY, fStartIndZ=(float)startIndZ;
 #pragma unroll
-    for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
+    for(colIdx=0; colIdx<VPT; colIdx++)
     {
         unsigned long long indZ = startIndZ + colIdx;
         // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
@@ -181,112 +189,62 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
         if(indAlpha>=totalNoOfProjections)
             break;
         
-        Point3D deltaX = projParamsArray2Dev[7*projNumber];  // 6*projNumber because we have 6 Point3D values per projection
+        // The projection's parameters, folded on the host (see the main loop): the source-to-voxel vector is
+        // c0 + i*deltaX + j*deltaY + k*deltaZ for voxel (i,j,k), in the scaled coordinate system rotated with the
+        // projection (detector rotation, offsets and COR included).
+        Point3D deltaX = projParamsArray2Dev[7*projNumber];  // 7*projNumber because we have 7 Point3D values per projection
         Point3D deltaY = projParamsArray2Dev[7*projNumber+1];
         Point3D deltaZ = projParamsArray2Dev[7*projNumber+2];
-        Point3D xyzOrigin = projParamsArray2Dev[7*projNumber+3];
-        Point3D xyzOffset = projParamsArray2Dev[7*projNumber+4];
-        Point3D uv0Offset = projParamsArray2Dev[7*projNumber+5];
-        Point3D S = projParamsArray2Dev[7*projNumber+6];
+        Point3D c0     = projParamsArray2Dev[7*projNumber+3];
+        Point3D tuv    = projParamsArray2Dev[7*projNumber+4];  // (DSO-DSD-S.x, S.y+nDetecU/2, S.z+nDetecV/2)
+        Point3D wpar   = projParamsArray2Dev[7*projNumber+5];  // (1/d_n, dDetecU^2, dDetecV^2) for the weight
+        // "XYZ" in the scaled coordinate system, rotated with the projection angle, is affine in the voxel's indices,
+        // and so is the vector from the source to the voxel: compute it for the first voxel of the column, then step
+        // it by deltaZ (at most VPT-1 steps). It was rebuilt for every voxel from the indices.
+        float vectX=c0.x+fIndX*deltaX.x+fIndY*deltaY.x+fStartIndZ*deltaZ.x;
+        float vectY=c0.y+fIndX*deltaX.y+fIndY*deltaY.y+fStartIndZ*deltaZ.y;
+        float vectZ=c0.z+fIndX*deltaX.z+fIndY*deltaY.z+fStartIndZ*deltaZ.z;
+        const float tNum=tuv.x, u0=tuv.y, v0=tuv.z;
+        // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
+        const int layer=(int)indAlpha;  // the projection: a layer of the layered texture
         
-        float sinalpha = projSinCosArray2Dev[5*projNumber];     // 2*projNumber because we have 2 float (sin or cos angle) values per projection
-        float cosalpha = projSinCosArray2Dev[5*projNumber+1];
-        float COR = projSinCosArray2Dev[5*projNumber+2];
-        float DSD = projSinCosArray2Dev[5*projNumber+3];
-        float DSO = projSinCosArray2Dev[5*projNumber+4];
-        // Precomputations for the weights:
-        //Real coords of Source
-        // We already have S.x (geo.DSO), and S.y and S.z are always zero. we just need to rotate
-        Point3D realS;
-        realS.x= DSO*cosalpha;
-        realS.y=-DSO*sinalpha;
-        realS.z=0;
-        
-        
-        Point3D realvoxel_init;
-        realvoxel_init.x=-geo.sVoxelX/2+geo.dVoxelX/2+xyzOffset.x;
-        realvoxel_init.y=-geo.sVoxelY/2+geo.dVoxelY/2+xyzOffset.y;
-        realvoxel_init.z=-geo.sVoxelZ/2+geo.dVoxelZ/2+xyzOffset.z;
-        // Real XYZ coordinates of Detector.
-        Point3D realD, realDaux;
-        // We know the index of the detector (u,v). Start from there.
-        realDaux.x=-(DSD-DSO);
+        // The weight (see below). In this frame the detector is the plane x=DSO-DSD, whatever the detector's rotation, and
+        // only y and z are scaled (to detector pixels): -tNum is the distance from the source to the detector plane, and
+        // the source-to-voxel distance is |(vectX, vectY*dDetecU, vectZ*dDetecV)|.
+        const float invDn=wpar.x, dU2=wpar.y, dV2=wpar.z;
         
         // Now iterate through Z in our voxel column FOR A GIVEN PROJECTION
 #pragma unroll
-        for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
+        // No bounds check per voxel: the voxels of a column that lie beyond the image (in the last block in z) are
+        // computed too, harmlessly (a texture read), and never stored (the final loop checks).
+        for(colIdx=0; colIdx<VPT; colIdx++)
         {
-            unsigned long long indZ = startIndZ + colIdx;
-            
-            // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
-            // be trying to copy the out of bounds values anyway (bounds checks will be done in the final loop where the values go to the main volume)
-            if(indZ>=geo.nVoxelZ)
-                break;   // break the loop.
-            
-            // "XYZ" in the scaled coordinate system of the current point. The image is rotated with the projection angles.
-            Point3D P;
-            P.x=(xyzOrigin.x+indX*deltaX.x+indY*deltaY.x+indZ*deltaZ.x);
-            P.y=(xyzOrigin.y+indX*deltaX.y+indY*deltaY.y+indZ*deltaZ.y)-COR/geo.dDetecU;
-            P.z=(xyzOrigin.z+indX*deltaX.z+indY*deltaY.z+indZ*deltaZ.z);
-            
-            // This is the vector defining the line from the source to the Voxel
-            float vectX,vectY,vectZ;
-            vectX=(P.x -S.x);
-            vectY=(P.y -S.y);
-            vectZ=(P.z -S.z);
-            
             // Get the coordinates in the detector UV where the mid point of the voxel is projected.
-            float t=__fdividef(DSO-DSD-S.x,vectX);
-            float y,z;
-            y=vectY*t+S.y;
-            z=vectZ*t+S.z;
-            float u,v;
-            u=y+(float)geo.nDetecU*0.5f;
-            v=z+(float)geo.nDetecV*0.5f;
+            float t=__fdividef(tNum,vectX);
+            float u=vectY*t+u0;
+            float v=vectZ*t+v0;
 #if IS_FOR_MATLAB_TIGRE
-            float sample=tex3D_TIGRE(tex, v, u ,indAlpha+0.5f);
+            float sample=tex2DLayered_TIGRE(tex, v, u, layer);
 #else
-            float sample=tex3D_TIGRE(tex, u, v ,indAlpha+0.5f);
+            float sample=tex2DLayered_TIGRE(tex, u, v, layer);
 #endif
-            float weight=0;
-            //
-            //
-            //
-            // IMPORTANT: The weights are almost 50% of the computational time. Is there a way of speeding this up??
-            //
-            //Real coordinates of Voxel. Instead of reverting the transformation, its less math (faster) to compute it from the indexes.
-            Point3D realvoxel;
-            
-            realvoxel.x=realvoxel_init.x+indX*geo.dVoxelX;
-            realvoxel.y=realvoxel_init.y+indY*geo.dVoxelY;
-            realvoxel.z=realvoxel_init.z+indZ*geo.dVoxelZ;
-            
-            
-            
-            realDaux.y=(-geo.sDetecU+geo.dDetecU)*0.5f + u*geo.dDetecU +uv0Offset.x;
-            realD.z   =(-geo.sDetecV+geo.dDetecV)*0.5f + v*geo.dDetecV +uv0Offset.y;
-            //rotate the detector
-            realD.x= realDaux.x*cosalpha  + realDaux.y*sinalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
-            realD.y=-realDaux.x*sinalpha  + realDaux.y*cosalpha; //sin(-x)=-sin(x) , cos(-x)=cos(x)
-            float L,lsq;
-            
-            L = __fsqrt_rd( (realS.x-realD.x)*(realS.x-realD.x)+ (realS.y-realD.y)*(realS.y-realD.y)+ (realD.z)*(realD.z)); // Sz=0 always.
-            lsq =  (realS.x-realvoxel.x)*(realS.x-realvoxel.x)
-            + (realS.y-realvoxel.y)*(realS.y-realvoxel.y)
-            + (realS.z-realvoxel.z)*(realS.z-realvoxel.z);
-            
-            weight=__fdividef(L*L*L,(DSD*lsq));
-//             weight=1;
-            // Get Value in the computed (U,V) and multiply by the corresponding weight.
-            // indAlpha is the ABSOLUTE number of projection in the projection array (NOT the current number of projection set!)
+            // Weight L^3/(d_n*|SV|^2): L the distance from the source to where the ray through the voxel meets the
+            // detector, |SV| from the source to the voxel, d_n from the source to the detector plane (DSD if the
+            // detector is not rotated). The ray meets the detector at t times the source-to-voxel vector, so
+            // L=t*|SV| and the weight is t^3*|SV|/d_n. Before, L was rebuilt in world coordinates from (u,v) as if the
+            // detector were not rotated (and the trajectory a circle about z), half a pixel off: off by ~2e-4 for an
+            // unrotated detector and by several % for a rotated one, and about 45 instructions per voxel.
+            float lsq=vectX*vectX+dU2*vectY*vectY+dV2*vectZ*vectZ;
+            float weight=t*t*t*(lsq*rsqrtf(lsq))*invDn;
             voxelColumn[colIdx]+=sample* weight;
+            vectX+=deltaZ.x; vectY+=deltaZ.y; vectZ+=deltaZ.z;
         }  // END iterating through column of voxels
         
     }  // END iterating through multiple projections
     
     // And finally copy the updated local voxelColumn array back to our 3D volume (main memory)
 #pragma unroll
-    for(colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
+    for(colIdx=0; colIdx<VPT; colIdx++)
     {
         unsigned long long indZ = startIndZ + colIdx;
         // If we are out of bounds, break the loop. The voxelColumn array will be updated partially, but it is OK, because we won't
@@ -349,7 +307,8 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     // Split the CT problem
     unsigned int split_image;
     unsigned int split_projections;
-    splitCTbackprojection(gpuids,geo,nalpha,&split_image,&split_projections);
+    bool one_upload;
+    splitCTbackprojection(gpuids,geo,nalpha,&split_image,&split_projections,&one_upload);
     
     
     // Create the arrays for the geometry. The main difference is that geo.offZ has been tuned for the
@@ -395,11 +354,13 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     // pin the memory is greater than the lost time in Synchronously launching the memcpys. This is only worth it when the image is too big.
     // tigre::hostRegister: an array that is already page-locked (e.g. pinned by PyTorch) is used as it is and not unregistered here.
     bool result_registered=false, projections_registered=false;
-    if (isHostRegisterSupported & split_image>1){
+    if (tigre::worthPageLocking(isHostRegisterSupported, gpuData, split_image, deviceCount)){  // as FDK
         result_registered=tigre::hostRegister(result, (size_t)geo.nVoxelX*(size_t)geo.nVoxelY*(size_t)geo.nVoxelZ*(size_t)sizeof(float));
         if (result_registered) onError.add([result]{ cudaHostUnregister(result); });
     }
-    if (isHostRegisterSupported ){
+    // The projections cross more than once only with several GPUs (each gets all of them) or a split image (they are
+    // sent again for each piece). Sent once, their chunks are copied while the GPU works on the previous one anyway.
+    if (tigre::worthPageLocking(isHostRegisterSupported, gpuData, split_image, deviceCount)){
         projections_registered=tigre::hostRegister(projections, (size_t)geo.nDetecU*(size_t)geo.nDetecV*(size_t)nalpha*(size_t)sizeof(float));
         // The caller's array: left registered, the next call with it would fail.
         if (projections_registered) onError.add([projections]{ cudaHostUnregister(projections); });
@@ -426,12 +387,18 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     }
     
     // Kernel auxiliary variables
+    // The geometry constants of each launch are filled here and copied to __constant__ memory before the kernel.
+    // Ordinary host memory: page-locking these few KB (allocating and freeing them with cudaMallocHost and
+    // cudaFreeHost) cost ~0.45 ms per call and did not change the kernels' time (measured on an RTX 4070: the
+    // kernels read the __constant__ copy either way).
     Point3D* projParamsArray2Host = 0;
-    cudaMallocHost((void**)&projParamsArray2Host,7*PROJ_PER_KERNEL*sizeof(Point3D));
-    onError.add([projParamsArray2Host]{ cudaFreeHost(projParamsArray2Host); });
+    projParamsArray2Host=(Point3D*)malloc(7*PROJ_PER_KERNEL*sizeof(Point3D));
+    if (!projParamsArray2Host) mexErrMsgIdAndTxt("TIGRE:hostMemory","Not enough host memory for the geometry constants");
+    onError.add([projParamsArray2Host]{ free(projParamsArray2Host); });
     float* projSinCosArray2Host = 0;
-    cudaMallocHost((void**)&projSinCosArray2Host,5*PROJ_PER_KERNEL*sizeof(float));
-    onError.add([projSinCosArray2Host]{ cudaFreeHost(projSinCosArray2Host); });
+    projSinCosArray2Host=(float*)malloc(5*PROJ_PER_KERNEL*sizeof(float));
+    if (!projSinCosArray2Host) mexErrMsgIdAndTxt("TIGRE:hostMemory","Not enough host memory for the geometry constants");
+    onError.add([projSinCosArray2Host]{ free(projSinCosArray2Host); });
     
     // Texture object variables
     cudaTextureObject_t *texProj;
@@ -470,7 +437,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
         // Initialize the memory if its the first time.
         for (dev = 0; dev < deviceCount; dev++){
             cudaSetDevice(gpuids[dev]);
-            cudaMemset(dimage[dev],0,num_bytes_img); cudaDeviceSynchronize(); // built with --default-stream=per-thread: the memset is not ordered with our streams
+            cudaMemsetAsync(dimage[dev],0,num_bytes_img,stream[dev*nStreamDevice]); // on the kernels' stream: ordered before them
             cudaCheckErrors("memset fail");
         }
         
@@ -483,7 +450,8 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
             current_proj_split_size=((proj+1)*current_proj_split_size<nalpha)?  current_proj_split_size:  nalpha-current_proj_split_size*proj;
             
             // We are going to split it in the same amount of kernels we need to execute.
-            proj_split_overlap_number=(current_proj_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;
+            // (all of them in one go on thin detectors: see splitCTbackprojection)
+            proj_split_overlap_number=one_upload ? 1 : (current_proj_split_size+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL;
             
             // Create pointer to pointers of projections and precompute their location and size.
             if(!proj && !img_slice){
@@ -548,7 +516,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                     // let's stick with the values from Zinsser and Keck.
                     divx=16;
                     divy=32;
-                    divz=VOXELS_PER_THREAD;      // We now only have 32 x 16 threads per block (flat tile, see below), BUT each thread works on a Z column of VOXELS_PER_THREAD voxels, so we effectively need fewer blocks!
+                    divz=tigre::voxelColumnLength(geoArray[img_slice*deviceCount+dev].nVoxelZ, VOXELS_PER_THREAD);  // We now only have 32 x 16 threads per block (flat tile, see below), BUT each thread works on a Z column of divz voxels (VOXELS_PER_THREAD, or fewer on thin images such as fan beam), so we effectively need fewer blocks!
                     
                     
                     dim3 grid((geo.nVoxelX+divx-1)/divx,
@@ -578,7 +546,6 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                             if(currProjNumber_global>=nalpha)
                                 break;  // Exit the loop. Even when we leave the param arrays only partially filled, this is OK, since the kernel will check bounds anyway.
                             
-                            Point3D deltaX,deltaY,deltaZ,xyzOrigin, offOrig, offDetec,source;
                             float sinalpha,cosalpha;
                             
                             geoArray[img_slice*deviceCount+dev].alpha=-alphas[currProjNumber_global*3];//we got 3 angles now.
@@ -594,31 +561,27 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                             projSinCosArray2Host[5*j+3]=geo.DSD[currProjNumber_global];
                             projSinCosArray2Host[5*j+4]=geo.DSO[currProjNumber_global];
                             
-                            computeDeltasCube(geoArray[img_slice*deviceCount+dev],currProjNumber_global,&xyzOrigin,&deltaX,&deltaY,&deltaZ,&source);
-                            
-                            offOrig.x=geo.offOrigX[currProjNumber_global];
-                            offOrig.y=geo.offOrigY[currProjNumber_global];
-                            offOrig.z=geoArray[img_slice*deviceCount+dev].offOrigZ[currProjNumber_global];
-                            
-                            offDetec.x=geo.offDetecU[currProjNumber_global];
-                            offDetec.y=geo.offDetecV[currProjNumber_global];
-                            offDetec.z=0;//unused
-                            
-                            projParamsArray2Host[7*j]  =deltaX;		// 7*j because we have 7 Point3D values per projection
-                            projParamsArray2Host[7*j+1]=deltaY;
-                            projParamsArray2Host[7*j+2]=deltaZ;
-                            projParamsArray2Host[7*j+3]=xyzOrigin;
-                            projParamsArray2Host[7*j+4]=offOrig;
-                            projParamsArray2Host[7*j+5]=offDetec;
-                            projParamsArray2Host[7*j+6]=source;
+                            matchedKernelParams(geoArray[img_slice*deviceCount+dev],currProjNumber_global,&projParamsArray2Host[7*j]);  // 7 Point3D per projection
                             
                         }   // END for (preparing params for kernel call)
                         
                         // Copy the prepared parameter arrays to constant memory to make it available for the kernel
                         cudaMemcpyToSymbolAsync(projSinCosArray2Dev, projSinCosArray2Host, sizeof(float)*5*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev*nStreamDevice]);
                         cudaMemcpyToSymbolAsync(projParamsArray2Dev, projParamsArray2Host, sizeof(Point3D)*7*PROJ_PER_KERNEL,0,cudaMemcpyHostToDevice,stream[dev*nStreamDevice]);
-                        cudaStreamSynchronize(stream[dev*nStreamDevice]);
-                        kernelPixelBackprojection<<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]);
+                        // Wait for the GPU only before the first kernel of a chunk: that also waits for the previous
+                        // chunk's kernels, which read the texture array that the next chunk's upload overwrites (two
+                        // arrays, alternating). The kernels within a chunk need no wait: each one's constants are copied
+                        // on the same stream, so the GPU applies them only after the previous kernel has finished, and the
+                        // host buffer can be refilled as soon as the copy returns (pageable memory is staged by then).
+                        // Waiting before every kernel left the GPU idle while the host prepared the next one: on thin
+                        // detectors (one upload, e.g. 12 kernels of 32 projections for 360) most of a small call.
+                        if (i==0) cudaStreamSynchronize(stream[dev*nStreamDevice]);
+                        switch (divz) {  // one compiled kernel per column length
+                            case 1: kernelPixelBackprojection<1><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]); break;
+                            case 2: kernelPixelBackprojection<2><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]); break;
+                            case 4: kernelPixelBackprojection<4><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]); break;
+                            default: kernelPixelBackprojection<VOXELS_PER_THREAD><<<grid,block,0,stream[dev*nStreamDevice]>>>(geoArray[img_slice*deviceCount+dev],dimage[dev],i,proj_split_size[proj_block_split],texProj[(proj_block_split%2)*deviceCount+dev]); break;
+                        }
                         
                     }  // END for
                     //////////////////////////////////////////////////////////////////////////////////////
@@ -645,7 +608,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
                 cudaMemcpyAsync(&result[img_linear_idx_start], dimage[dev], num_bytes_img_curr, (gpuData ? cudaMemcpyDeviceToDevice : cudaMemcpyDeviceToHost),stream[dev*nStreamDevice+1]);
         }
         // The copy is asynchronous (to GPU memory, or to host memory pinned
-        // above when the image is split): finish it before the next image
+        // above when the image is split or several GPUs are used): finish it before the next image
         // piece clears dimage. Without this, the cudaMemset of the next piece
         // raced the copy and parts of the result came out as zeros.
         for (dev = 0; dev < deviceCount; dev++){
@@ -662,7 +625,7 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     onError.dismiss();  // from here on the function releases everything itself
     
     // Clean the GPU
-    bool two_buffers_used=((((nalpha+split_projections-1)/split_projections)+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL)>1;
+    bool two_buffers_used=!one_upload && ((((nalpha+split_projections-1)/split_projections)+PROJ_PER_KERNEL-1)/PROJ_PER_KERNEL)>1;
     for(unsigned int i=0; i<2;i++){ // 2 buffers (if needed, maybe only 1)
         if (!two_buffers_used && i==1)
             break;        for (dev = 0; dev < deviceCount; dev++){
@@ -681,8 +644,8 @@ int voxel_backprojection2(float * projections, Geometry geo, float* result,float
     }
     free(dimage);
     
-    cudaFreeHost(projSinCosArray2Host);
-    cudaFreeHost(projParamsArray2Host);
+    free(projSinCosArray2Host);
+    free(projParamsArray2Host);
     free(partial_projection);
     free(proj_split_size);
     
@@ -724,7 +687,7 @@ void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cud
             //cudaArray Descriptor
             cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
             //cuda Array
-            tigre::checkMalloc(cudaMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent), "Atb:voxel_backprojection2:GPUmemory", "Backprojection", (size_t)extent.width*extent.height*extent.depth*sizeof(float));
+            tigre::checkMalloc(cudaMalloc3DArray(&d_cuArrTex[dev], &channelDesc, extent, cudaArrayLayered), "Atb:voxel_backprojection2:GPUmemory", "Backprojection", (size_t)extent.width*extent.height*extent.depth*sizeof(float));
             
         }
     }
@@ -763,8 +726,49 @@ void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cud
         tigre_sync_hw_linear();
     }
 }
+//______________________________________________________________________________
+//
+//      Function:       matchedKernelParams
+//
+//      Description:    The 7 Point3D that kernelPixelBackprojection reads for projection i (geo: this piece of the
+//                      image, with geo.alpha/theta/psi set for the projection). computeDeltasCube gives the voxel grid
+//                      and the source in the scaled coordinate system rotated with the projection (detector rotation
+//                      and offsets included); the rest is folded here, in double, so that the kernel's setup per
+//                      projection is a few multiply-adds:
+//                        [0..2] deltaX, deltaY, deltaZ: the change of the source-to-voxel vector per voxel index
+//                        [3]    that vector at voxel (0,0,0): xyzOrigin - source, and COR (in detector pixels) in y
+//                        [4]    (DSO-DSD-source.x, source.y+nDetecU/2, source.z+nDetecV/2): t=[4].x/vectX, u=vectY*t+[4].y
+//                        [5]    (1/d_n, dDetecU^2, dDetecV^2) for the weight; d_n=source.x-(DSO-DSD) is the distance
+//                               from the source to the detector plane
+//                        [6]    unused
+//______________________________________________________________________________
+
+static void matchedKernelParams(const Geometry& geo, int i, Point3D* params)
+{
+    Point3D deltaX, deltaY, deltaZ, xyzOrigin, source;
+    computeDeltasCube(geo, i, &xyzOrigin, &deltaX, &deltaY, &deltaZ, &source);
+    const double COR=geo.COR[i], DSO=geo.DSO[i], DSD=geo.DSD[i];
+    Point3D c0, tuv, wpar, unused={0,0,0};
+    c0.x=(float)((double)xyzOrigin.x-(double)source.x);
+    c0.y=(float)((double)xyzOrigin.y-COR/(double)geo.dDetecU-(double)source.y);
+    c0.z=(float)((double)xyzOrigin.z-(double)source.z);
+    tuv.x=(float)(DSO-DSD-(double)source.x);
+    tuv.y=(float)((double)source.y+(double)geo.nDetecU*0.5);
+    tuv.z=(float)((double)source.z+(double)geo.nDetecV*0.5);
+    wpar.x=(float)(1.0/((double)source.x-(DSO-DSD)));
+    wpar.y=(float)((double)geo.dDetecU*(double)geo.dDetecU);
+    wpar.z=(float)((double)geo.dDetecV*(double)geo.dDetecV);
+    params[0]=deltaX;
+    params[1]=deltaY;
+    params[2]=deltaZ;
+    params[3]=c0;
+    params[4]=tuv;
+    params[5]=wpar;
+    params[6]=unused;
+}
+
 #ifndef BACKPROJECTION_HPP
-void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections){
+void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsigned int* split_image, unsigned int * split_projections, bool* one_upload){
     
     
     // We don't know if the devices are being used. lets check that. and only use the amount of memory we need.
@@ -809,6 +813,10 @@ void splitCTbackprojection(const GpuIds& gpuids, Geometry geo,int nalpha, unsign
         *split_projections=(mem_proj*PROJ_PER_KERNEL*2+mem_free-1)/mem_free;
         
     }
+    // All the projections in one texture upload instead of chunks (thin detectors, see
+    // tigre::projectionsInOneUpload): only with the whole problem in one piece, and if they fit next to the image.
+    *one_upload = *split_image==1 && *split_projections==1 && tigre::projectionsInOneUpload(geo.nDetecV, nalpha) &&
+                  mem_image/deviceCount+mem_proj*(size_t)nalpha < mem_GPU_global;
 }
 
 

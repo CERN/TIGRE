@@ -26,114 +26,59 @@ it both fast and easy to use.
 
 Read the most up to date article about tigre [here](https://iopscience.iop.org/article/10.1088/2631-8695/adbb3a).
 
-TIGRE is free to download and distribute: use it, modify it, add to it, 
-share it. Our aim is to provide a wide range of easy-to-use algorithms 
-for the tomographic community "off the shelf".  We would like to build a 
-stronger bridge between algorithm developers and imaging 
-researchers/clinicians by encouraging and supporting contributions from 
-both sides into TIGRE.
+**[Website](https://cern.github.io/TIGRE/)** ·
+**[Install](https://cern.github.io/TIGRE/install/index.html)** ·
+**[User guide](https://cern.github.io/TIGRE/user-guide/index.html)** ·
+**[Demos](https://cern.github.io/TIGRE/demos/index.html)** ·
+**[API reference](https://cern.github.io/TIGRE/api/index.html)** ·
+**[Gallery](https://cern.github.io/TIGRE/gallery/index.html)** ·
+**[Cite TIGRE](https://cern.github.io/TIGRE/citing.html)** ·
+**[Release notes](https://cern.github.io/TIGRE/changelog.html)**
 
-TIGRE remains under development as we are still adding new features 
-(e.g., motion compensation).  If you have any request for a specific 
-application, do not hesitate to [contact us](#contact) or open a  [discussion thread](https://github.com/CERN/TIGRE/discussions)!
+TIGRE is free to download and distribute: use it, modify it, add to it,
+share it. Our aim is to provide a wide range of easy-to-use algorithms
+for the tomographic community "off the shelf", and to build a bridge between
+algorithm developers and imaging researchers and clinicians. Requests and
+ideas are welcome in the [discussions](https://github.com/CERN/TIGRE/discussions).
 
- - [TIGRE features](#features)
- 
- - [Installation instructions](#installation)
+## Features
 
- - [Getting started](#getting-started)
- 
- - [FAQ](#faq)
-  
- - [Further reading](#further-reading)
- 
- - [Contact](#contact) 
- 
- - [Licensing](#licensing)
+- **MATLAB** and **Python**, with the same CUDA code, algorithms and demos.
+- Fast projection and backprojection on **GPUs**, including **multiple GPUs**
+  and images larger than GPU memory.
+- **Any geometry**: cone beam, parallel beam, fan beam, helical, tomosynthesis,
+  C-arm, curved detectors. Geometric parameters are defined per projection.
+- **Algorithms**: FDK/FBP; the SART family (SART, OS-SART, SIRT); total-variation
+  methods (ASD-POCS and its variants, SART-TV, FISTA); Krylov methods (CGLS,
+  LSQR, hybrid LSQR, LSMR, IRN-TV-CGLS, hybrid fLSQR-TV, AB/BA-GMRES); MLEM;
+  prior-image PICCS.
+- **Real data**: loaders for Nikon, Bruker, YXLON, Diondo and Varian scanners,
+  DXchange (synchrotron) and DICOM.
+- PyTorch operators with gradients, plotting, image quality metrics and TV
+  denoising.
 
-
-## TIGRE features
-
-TIGRE is a GPU-based CT reconstruction software repository that contains a wide variety of iterative algorithms.
-
-- **MATLAB** and **Python** libraries for high-performance x-ray absorption tomographic reconstruction.
-
-- State-of-the-art implementations of projection and backprojection operations on **GPUs** (including **multi-GPUs**), with a simple interface using higher level languages to facilitate the development of new methods.
-
-- **Flexible CT geometry:** Cone Beam, Parallel Beam, Digital Tomosynthesis, C-arm CT, and any other geometry.  Geometric parameters are defined per projection, not per scan.
-
-- A wide range of reconstruction algorithms for CT.
-
-    - Filtered backprojection (FBP,FDK) and variations (different filters, Parker weights, ...)
-   
-    - **Iterative algorithms**
-       
-        - Gradient-based algorithms (SART, OS-SART, SIRT, ASD-POCS, OS-ASD-POCS, B-ASD-POCS-β, PCSD, AwPCSD, Aw-ASD-POCS) with multiple tuning parameters (Nesterov acceleration, initialization, parameter reduction, ...)
-       
-        - Krylov subspace algorithms (CGLS, LSQR, hybrid LSQR, LSMR, IRN-TV-CGLS, hybrid-fLSQR-TV, AB/BA-GMRES)
-       
-        - Statistical reconstruction (MLEM)
-       
-        - Variational methods (FISTA, SART-TV) 
-       
-- TV denoising for 3D images.
-       
-- Basic image loading functionality.
-       
-- A variety of plotting functions.
-       
-- Image quality metrics.
-
-- Nikon and Varian and Phillips (DICOM) scanner data loaders. 
+See the [user guide](https://cern.github.io/TIGRE/user-guide/index.html) for
+how to choose an algorithm, and the
+[Gallery](https://cern.github.io/TIGRE/gallery/index.html) for reconstructions
+of real scans.
 
 ## Installation
 
-MATLAB and Python builds are both fully supported.
-
 > [!IMPORTANT]
 > TIGRE is **not** on PyPI. `pip install tigre` installs an unrelated package with the same name.
-> For Python, install from source (see below) or straight from GitHub:
->
-> ```sh
-> pip install git+https://github.com/CERN/TIGRE.git          # latest master
-> pip install git+https://github.com/CERN/TIGRE.git@v3.2.0   # a specific release
-> ```
->
-> Both need the CUDA toolkit and a C++ compiler, as they compile TIGRE on your machine.
-> On Linux, prebuilt wheels that need no compiler are attached to each [GitHub Release](https://github.com/CERN/TIGRE/releases).
 
-- [Installation instructions and requirements for MATLAB](https://cern.github.io/TIGRE/install/matlab.html).
+- **Python on Linux:** prebuilt wheels, no compiler needed. Copy the command for
+  your Python version from the [Python install page](https://cern.github.io/TIGRE/install/python.html).
+- **Python on Windows, or from source:** `pip install git+https://github.com/CERN/TIGRE.git`
+  (needs the CUDA toolkit and a C++ compiler; see the
+  [Python install page](https://cern.github.io/TIGRE/install/python.html)).
+- **MATLAB:** run `Compile` in the `MATLAB` folder; see the
+  [MATLAB install page](https://cern.github.io/TIGRE/install/matlab.html).
 
-- [Installation instructions and requirements for Python](https://cern.github.io/TIGRE/install/python.html). 
-
-**Advanced, not required to run TIGRE**, will change the source code. Only do if performance is critical.
-
-- [Tune TIGRE for machine. Tricks to slightly speed up the code](https://cern.github.io/TIGRE/user-guide/performance-tuning.html)
-
-
-## Getting started
-
-Once TIGRE in installed, we strongly suggest you have a look at the Demos folder for each of the languages, [MATLAB](https://github.com/CERN/TIGRE/tree/master/MATLAB/Demos) or [Python](https://github.com/CERN/TIGRE/tree/master/Python/demos). 
-
-The [TIGRE website](https://cern.github.io/TIGRE/) has a [user guide](https://cern.github.io/TIGRE/user-guide/) that explains the geometry, the operators and how to choose an algorithm. All features are also demonstrated with working code in the demos. They also serve as a tutorial of each feature. We strongly recommend you explore the first 4 demos for the basic TIGRE functionality, and look at the following ones for more advanced geometry or reconstruction functions. 
-
-## FAQ
-
-For answers to frequently asked questions [click here](https://cern.github.io/TIGRE/user-guide/troubleshooting.html).
-
-If you have new question not answered in the FAQ, please [contact us](#contact), join the [Slack group](#contact) or open a  [discussion thread](https://github.com/CERN/TIGRE/discussions).
-
-## Gallery
-
-To see a gallery of images of different CT modalities reconstructed using TIGRE [click here](https://cern.github.io/TIGRE/gallery/index.html).
-
-<img src="https://raw.githubusercontent.com/AnderBiguri/PhDThesis/master/Applications/randofull.png" height="400">
-
-
-## Further Reading
-
-If you want more information on TIGRE and its algorithms, [click here](https://cern.github.io/TIGRE/user-guide/further-reading.html).
-
+Then start with the [demos](https://cern.github.io/TIGRE/demos/index.html)
+(also in [`Python/demos`](Python/demos) and [`MATLAB/Demos`](MATLAB/Demos)).
+If something goes wrong, see
+[Troubleshooting and FAQ](https://cern.github.io/TIGRE/user-guide/troubleshooting.html).
 
 ## Contact
 

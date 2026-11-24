@@ -127,3 +127,10 @@ def test_out_of_memory_empties_the_cache_and_retries_once(operator, monkeypatch)
     with pytest.raises(RuntimeError, match="invalid argument"):
         A(torch.rand(*geo.nVoxel.tolist()))
     assert emptied == []
+
+
+def test_operators_leave_geo_unchanged(operator):
+    geo, angles, M, calls = operator
+    had_angles = hasattr(geo, "angles") and geo.angles is not None
+    pytorch_bindings.create_pytorch_operator(geo, angles, gpuids=["0"])
+    assert had_angles or getattr(geo, "angles", None) is None

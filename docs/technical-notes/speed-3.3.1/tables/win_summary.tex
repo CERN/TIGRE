@@ -1,0 +1,49 @@
+\begin{table}[H]
+\centering\small
+\caption{Summary, one GPU (RTX 4070, Windows): median ratio $t_\text{TIGRE}/t_\text{ASTRA}$ over the cases of
+each class (below 1: TIGRE faster), its range, and the median speed-up of TIGRE 3.3.1 over 3.3.0 on the same
+cases (``--'': not measured with 3.3.0).}
+\label{tab:summary}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{lllrrrr}
+\toprule
+operation & problems & arrays & cases & median & range & vs 3.3.0 \\
+\midrule
+fp Siddon & small 3D ($\le128^3$) & NumPy & 4 & \tfast{0.63} & 0.50--0.69 & 1.61$\times$ \\
+fp Siddon & small 3D ($\le128^3$) & tensors & 4 & \tfast{0.65} & 0.53--0.92 & 2.30$\times$ \\
+fp Siddon & cone $256^3$--$1024^3$ & NumPy & 15 & \tfast{0.46} & 0.29--0.81 & 1.10$\times$ \\
+fp Siddon & cone $256^3$--$1024^3$ & tensors & 15 & \tfast{0.49} & 0.06--0.95 & 1.21$\times$ \\
+fp Siddon & parallel & NumPy & 3 & \tfast{0.59} & 0.55--0.63 & -- \\
+fp Siddon & parallel & tensors & 3 & \tfast{0.75} & 0.10--0.86 & -- \\
+fp Siddon & fan (2D) & NumPy & 5 & \tslow{1.17} & 1.11--1.22 & 4.87$\times$ \\
+fp Siddon & fan (2D) & tensors & 5 & \tslow{1.17} & 1.02--1.32 & 6.57$\times$ \\
+\addlinespace[2pt]
+fp interpolated & small 3D ($\le128^3$) & NumPy & 4 & \tslow{1.18} & 0.84--2.38 & 1.25$\times$ \\
+fp interpolated & small 3D ($\le128^3$) & tensors & 4 & \tslow{1.68} & 1.06--4.68 & 1.43$\times$ \\
+fp interpolated & cone $256^3$--$1024^3$ & NumPy & 15 & \tslow{2.64} & 1.85--3.09 & 0.97$\times$ \\
+fp interpolated & cone $256^3$--$1024^3$ & tensors & 15 & \tslow{3.31} & 0.83--4.56 & 0.98$\times$ \\
+fp interpolated & parallel & NumPy & 3 & \tslow{3.04} & 2.89--3.10 & -- \\
+fp interpolated & parallel & tensors & 3 & \tslow{4.44} & 1.08--4.89 & -- \\
+fp interpolated & fan (2D) & NumPy & 5 & \tslow{5.76} & 3.20--6.79 & 2.32$\times$ \\
+fp interpolated & fan (2D) & tensors & 5 & \tslow{7.23} & 3.05--8.17 & 2.46$\times$ \\
+\addlinespace[2pt]
+bp matched & small 3D ($\le128^3$) & NumPy & 4 & \tfast{0.85} & 0.55--0.92 & 1.75$\times$ \\
+bp matched & small 3D ($\le128^3$) & tensors & 4 & \tslow{1.23} & 0.73--1.71 & 1.87$\times$ \\
+bp matched & cone $256^3$--$1024^3$ & NumPy & 15 & \tfast{0.65} & 0.50--0.90 & 1.37$\times$ \\
+bp matched & cone $256^3$--$1024^3$ & tensors & 13 & \tfast{0.67} & 0.54--0.77 & 1.47$\times$ \\
+bp matched & fan (2D) & NumPy & 5 & \tfast{0.21} & 0.19--0.43 & 5.88$\times$ \\
+bp matched & fan (2D) & tensors & 5 & \tfast{0.18} & 0.15--0.36 & 7.22$\times$ \\
+\addlinespace[2pt]
+bp FDK weights & small 3D ($\le128^3$) & NumPy & 4 & \tfast{0.87} & 0.56--1.02 & 1.71$\times$ \\
+bp FDK weights & small 3D ($\le128^3$) & tensors & 4 & \tslow{1.29} & 0.69--1.66 & 1.84$\times$ \\
+bp FDK weights & cone $256^3$--$1024^3$ & NumPy & 15 & \tfast{0.59} & 0.45--0.88 & 1.52$\times$ \\
+bp FDK weights & cone $256^3$--$1024^3$ & tensors & 13 & \tfast{0.54} & 0.51--0.65 & 1.64$\times$ \\
+bp FDK weights & fan (2D) & NumPy & 5 & \tfast{0.19} & 0.18--0.42 & 6.16$\times$ \\
+bp FDK weights & fan (2D) & tensors & 5 & \tfast{0.16} & 0.13--0.34 & 7.80$\times$ \\
+\addlinespace[2pt]
+bp & parallel & NumPy & 3 & \tfast{0.55} & 0.49--0.61 & -- \\
+bp & parallel & tensors & 2 & \tfast{0.53} & 0.52--0.53 & -- \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

@@ -5,6 +5,9 @@ sphinx-design>=0.6
 sphinx-copybutton>=0.5
 pyyaml>=6
 sphinx-gallery>=0.19
+sphinxext-opengraph>=0.9
+sphinx-sitemap>=2.6
+sphinx-notfound-page>=1.0
 matplotlib>=3.8
 # imported by autodoc for the API reference
 numpy

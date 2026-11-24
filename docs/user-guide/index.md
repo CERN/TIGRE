@@ -89,6 +89,13 @@ With real data, step 2 is loading your scan instead ([](loading-data.md)).
 
 ## How-to guides
 
+[](artefacts.md)
+: Pictures of the common mistakes (centre of rotation, angles, missing log,
+  truncation, ...) and how to fix each one.
+
+[](geometry-walkthrough.md)
+: Step by step from a scanner's numbers to a checked geometry.
+
 [](loading-data.md)
 : Reading data from Nikon, Bruker, Varian and other scanners.
 
@@ -127,6 +134,8 @@ gpus
 :hidden:
 :caption: How-to guides
 
+artefacts
+geometry-walkthrough
 loading-data
 interoperability
 troubleshooting

@@ -1,0 +1,394 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=25mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,makecell}
+\usepackage[table]{xcolor}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage[font=small]{caption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{authblk}
+\usepackage{listings}
+
+\definecolor{fastc}{RGB}{0,128,0}
+\definecolor{slowc}{RGB}{190,0,0}
+\newcommand{\tfast}[1]{\textcolor{fastc}{#1}}
+\newcommand{\tslow}[1]{\textcolor{slowc}{#1}}
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,frame=single,framerule=0.3pt,
+        rulecolor=\color{gray},language=C++,commentstyle=\color{gray!70!black},showstringspaces=false}
+
+\title{TIGRE 3.3.1 and ASTRA 2.5:\\a speed comparison of the projection operators on one and several GPUs}
+\author{Ander Biguri}
+\affil{Department of Applied Mathematics and Theoretical Physics (DAMTP), University of Cambridge}
+\date{November 2026\\[4pt]\small TIGRE technical note. Accompanies TIGRE 3.3.1 (CERN/TIGRE pull requests \#903--\#907 and \#911--\#917).}
+
+\usepackage{adjustbox}
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We compare the four projection operators of TIGRE 3.3.1 and ASTRA 2.5 --- forward projection (TIGRE's Siddon
+and interpolated projectors against ASTRA's) and backprojection (TIGRE's matched and FDK-weighted
+backprojectors against ASTRA's) --- on a desktop GPU (an RTX 4070, Windows) and on a server with four Quadro
+RTX 6000 (Linux), for cone-beam, parallel-beam and fan-beam (2D) geometries, with host (NumPy) and GPU (PyTorch)
+arrays, from $32^3$ to $1536^3$. For every case where ASTRA is faster we give the reason. On one GPU of the RTX
+4070, TIGRE 3.3.1 is faster in 129 of 205 comparisons and ASTRA in 64, 51 of which are TIGRE's interpolated
+projector, which was not optimised in this release; without it, TIGRE is faster in 127 of 151 and ASTRA in 13.
+In 3D, the Siddon projector takes about half of ASTRA's time and the backprojectors 0.54--0.67 of it; in 2D the
+backprojectors take a fifth, and the Siddon projector 1.0--1.3 times ASTRA's time, where ASTRA's interpolating
+projector does less work per ray. On several GPUs, TIGRE gains less than ASTRA from extra GPUs for problems that
+fit in one: its multi-GPU calls copy the whole image to every GPU (measured on one four-GPU server; other
+machines may differ). For the large problems TIGRE's multi-GPU
+design is for, its forward projection of a $1536^3$ image with 1536 angles takes 20.5\,s on one GPU and 10.4\,s
+on four, against ASTRA's 83.8 and 24.2\,s.
+\end{abstract}
+
+\section{Introduction}
+TIGRE~\cite{tigre2016,tigre2020multigpu,tigre2025v3} and ASTRA~\cite{astra2016} are the two open GPU toolboxes
+most used for tomographic reconstruction from Python. Their operators are often compared, and the answer
+depends on the problem: on the size of the image, on the geometry, on whether the data live on the host or on
+the GPU, and on how many GPUs share the work. A comparison made for the release of TIGRE 3.3.0 measured large
+cone-beam problems; this note covers the whole range, and it was made with a question in mind: where TIGRE is
+slower, why?
+
+Answering it led to the changes in TIGRE 3.3.1 (Section~\ref{sec:changes}). Most of them concern what a call does
+besides its kernels: allocating and freeing memory, waiting for the GPU, page-locking host memory, copying the
+geometry from Python. Those costs do not grow with the problem, so they decide the speed of small problems, of
+2D (fan-beam) problems, of iterative algorithms, which call the operators hundreds of times, and of the
+operators inside a neural network. A 2D fan-beam projection of a $256^2$ image with 360 angles took about 3\,ms in
+TIGRE 3.3.0, of which 0.2\,ms were kernels.
+
+Section~\ref{sec:setup} describes the machines and the method, Section~\ref{sec:results} the results, and
+Section~\ref{sec:why} explains each case where ASTRA is faster.
+
+\section{What changed in TIGRE 3.3.1}\label{sec:changes}
+\begin{table}[H]
+\centering\small
+\caption{Changes in TIGRE 3.3.1 that affect speed. Results are bit-identical to 3.3.0's except where a
+sum is ordered differently (parallel-beam backprojection, $2\times10^{-6}$ relative; fan-beam FDK filtering on
+some CPUs, $3\times10^{-7}$).}
+\label{tab:changes}
+\begin{tabular}{>{\raggedright}p{0.17\textwidth}>{\raggedright\arraybackslash}p{0.75\textwidth}}
+\toprule
+pull request & change \\
+\midrule
+\#904 & Launch shapes for thin problems. Forward projectors: thread blocks along the long side of a detector of
+fewer than 9 rows (a one-row fan-beam detector left 8 of 9 threads idle), and several blocks of angles per
+launch. Cone backprojectors: the column of voxels per thread matched to images of fewer than 8 slices.\\
+\#905, \#917 & One rule for page-locking the caller's arrays: only when the image is split or more than two
+GPUs are used. On one GPU, and on two, locking an array cost more than it saved.\\
+\#907 & The fixed cost of a call: the geometry copied from Python through typed memoryviews; the projection
+buffers of the memory check used instead of allocated again; buffers cleared and textures filled on the
+kernels' stream instead of waiting for the GPU; GPU arrays written to directly by the forward projectors; all
+projections in one texture on thin detectors; the per-kernel constants in ordinary host memory.\\
+\#911 & Cone backprojectors: no wait for the GPU between the kernels of a chunk of projections.\\
+\#912 & Backprojectors read the projections from a layered 2D texture (bilinear fetch) instead of a 3D
+texture (trilinear fetch at an exact projection index: the same value at half the texture rate). The
+parallel-beam kernel gets the per-projection set-up folded on the host, as the cone kernels already had.\\
+\#913, \#916 & Siddon forward projectors: several steps of the ray walk per pass, with selects instead of
+branches, so that several texture fetches are in flight at once (the same sums): four for the usual detector,
+fewer when the rays are far apart in a large image, where more fetches in flight evict each other from the
+cache (\#916); and the constants of the next kernel launch computed on the host while the current kernels run,
+instead of after waiting for them.\\
+\#914 & FDK: detectors with few rows (fan beam), or a multiple of 16 rows that fits a block twice, filtered
+several projections per FFT call; the cosine weights applied while the filtering copies each block into its FFT
+buffer, instead of in a pass of their own.\\
+\#915 & SIRT, SART, OS-SART, CGLS: vector updates in the arrays the operators return, without full-size
+temporaries. The same arithmetic.\\
+\#903, \#906 & Fixes: a crash in \texttt{Atb} at $1024^3$ with 32-bit sizes; page-locking that fails falls back to
+pageable memory; a crash of the backprojection on 4+ GPUs when a GPU gets no slices.\\
+\bottomrule
+\end{tabular}
+\end{table}
+FDK and the iterative algorithms (\#914, \#915) are not compared in this note, which covers the operators only.
+
+\section{Setup}\label{sec:setup}
+\paragraph{Machines.}
+Windows 11 (build 26300), NVIDIA GeForce RTX 4070 (12\,GB, compute capability 8.9), 32\,GB RAM, Python 3.11,
+ASTRA 2.5.0. Linux server (Ubuntu 22.04, kernel 5.15): 4 NVIDIA Quadro RTX 6000 (24\,GB each, compute capability
+7.5), 126\,GB RAM, CUDA 12.5, Python 3.12, PyTorch 2.6, ASTRA 2.5.0, TIGRE built for sm\_75. Both toolboxes are used through their Python interfaces:
+TIGRE's \texttt{Ax} and \texttt{Atb}, and ASTRA's \texttt{direct\_FP3D} and \texttt{direct\_BP3D} from
+\texttt{astra.experimental} (in 2D, \texttt{direct\_FP2D} and \texttt{direct\_BP2D}), which take host arrays or GPU tensors without copies on the Python side. Only the operators are compared:
+reconstruction algorithms (FDK, SIRT, CGLS) depend on more than the operators (filtering, vector arithmetic,
+where the data live) and are left out.
+
+\paragraph{Same problems.}
+The toolboxes use different conventions for angles, detector orientation and offsets. For each beam type the
+suite searches the ASTRA convention that reproduces TIGRE's projections on a small problem and uses it
+throughout (Table~\ref{tab:calib}), so that both compute the same projections of the same image: their results
+agree to $5\times10^{-4}$ (relative $\ell_2$; TIGRE's Siddon projector integrates exactly, ASTRA's interpolates).
+
+\paragraph{Timing.}
+Each measurement is the median of several calls, repeated until it lasts at least 0.3\,s; the two toolboxes
+alternate in rounds (three, the order changing every round), and the result is the ratio
+$t_\text{TIGRE}/t_\text{ASTRA}$ with a 95\% confidence interval over the rounds. Below 1, TIGRE is faster
+(\tfast{green}); above, ASTRA (\tslow{red}); $^\dagger$ marks an interval that contains 1. Host arrays include
+the copies to and from the GPU; GPU arrays (PyTorch tensors) do not, for either toolbox. Changes to TIGRE were
+measured the same way, alternating the two builds and using ASTRA, run in between, as a control for the
+machine's drift.
+
+\IfFileExists{tables/win_calib.tex}{\input{tables/win_calib.tex}}{}
+
+\section{Results}\label{sec:results}
+\subsection{One GPU}
+Tables~\ref{tab:summary} (RTX 4070) and~\ref{tab:lin-summary} (Quadro RTX 6000) summarise the comparisons on one
+GPU; the tables that follow give every case on the RTX 4070, and Appendix~\ref{app:linux} those on the Quadro.
+\IfFileExists{tables/win_summary.tex}{\input{tables/win_summary.tex}}{}
+\IfFileExists{tables/lin_summary.tex}{\input{tables/lin_summary.tex}}{}
+\IfFileExists{tables/win_size1.tex}{\input{tables/win_size1.tex}}{}
+\IfFileExists{tables/win_legacy.tex}{\input{tables/win_legacy.tex}}{}
+\IfFileExists{tables/win_angles.tex}{\input{tables/win_angles.tex}}{}
+\IfFileExists{tables/win_shape.tex}{\input{tables/win_shape.tex}}{}
+\IfFileExists{tables/win_offset.tex}{\input{tables/win_offset.tex}}{}
+\IfFileExists{tables/win_parallel1.tex}{\input{tables/win_parallel1.tex}}{}
+\IfFileExists{tables/win_fan.tex}{\input{tables/win_fan.tex}}{}
+\IfFileExists{tables/win_latency.tex}{\input{tables/win_latency.tex}}{}
+
+\paragraph{The fixed cost of a call.}
+Table~\ref{tab:fixedcost} follows one fan-beam call through the releases. In 3.3.0 a forward projection of a
+$256^2$ image with 360 angles took 7.9\,ms, of which 0.2\,ms were kernels; the rest was allocating and freeing
+GPU and page-locked memory, waiting for the GPU, and converting the geometry in Python, all of which cost far
+more under Windows' WDDM driver model than the kernels.
+
+\begin{table}[H]
+\centering\small
+\caption{Wall time of one fan-beam call ($256^2$ image, 360 angles, PyTorch tensors, RTX 4070), from Nsight
+Systems traces, in ms.}
+\label{tab:fixedcost}
+\begin{tabular}{lrr}
+\toprule
+version & Siddon fp & matched bp \\
+\midrule
+3.3.0 & 7.9 & -- \\
++ launch shapes (\#904) & 3.0 & 3.0 \\
++ fixed-cost changes (\#907) & 1.13 & 1.39 \\
++ no wait between kernels (\#911) & 1.13 & 1.29 \\
+ASTRA 2.5 & 1.03 & 1.35 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Several GPUs}
+Tables~\ref{tab:lin-size_multi} and~\ref{tab:lin-parallel_multi} give the times on 1, 2 and 4 GPUs of the Linux
+server, with NumPy arrays. Every problem in these tables fits in one 24\,GB GPU. At $1024^3$, two GPUs are faster
+than one for every TIGRE operator: the Siddon forward projection takes 1.79\,s on one GPU and 1.44\,s on two, faster
+than ASTRA on two (2.17\,s), and the matched backprojection 3.03 and 2.36\,s. At $512^3$ two GPUs are faster for all
+but the Siddon projector, and at $256^3$ only for the interpolated projector. On four GPUs TIGRE is slower than on two (at $1024^3$, 2.08\,s
+for the forward and 2.16\,s for the backprojection), while ASTRA keeps gaining (1.68 and 0.96\,s). TIGRE 3.3.0 took
+3.37, 2.38 and 2.21\,s for the same forward projection on 1, 2 and 4 GPUs: 3.3.1 is faster on every number of
+GPUs, but most on one, because its kernels are faster and the rest of a multi-GPU call is not.
+
+That rest is a part of each multi-GPU call that does not shrink with the number of GPUs
+(Table~\ref{tab:lin-fixed}): about 2\,s at $1024^3$ and 0.3--0.4\,s at $512^3$, almost the same for every TIGRE
+operator. We could not trace it on this server (it has no Nsight Systems); two parts of it are known. Every GPU
+needs a full set of the data it reads: a forward projection splits the angles between the GPUs, and every GPU
+gets the whole image (at $1024^3$, 4\,GB to each of them); a backprojection splits the image, and every GPU gets
+all the projections. And the caller's arrays are page-locked, so that the copies to the GPUs overlap. On two GPUs
+page-locking costs more than it saves, and TIGRE 3.3.1 does not do it there (\#917: 5--21\% faster on two GPUs
+than with page-locking, 4--15\% slower on four). The interpolated projector, whose kernels are long, is still 2.5
+times faster on four GPUs than on one.
+
+\paragraph{One machine.} All the multi-GPU results in this note come from one server: four Quadro RTX 6000
+(Turing, 2018) connected only through PCIe and the host (no NVLink;
+\texttt{nvidia-smi topo} reports \texttt{SYS} between every pair). A multi-GPU call depends on how fast the host
+feeds the GPUs, more than a one-GPU call does, so on other machines the balance between TIGRE and ASTRA, the
+number of GPUs from which TIGRE stops gaining, and the page-locking threshold of \#917 may differ. We would
+welcome measurements on other multi-GPU machines, and on other GPUs in general: the suite that produced every
+table here is in this note's folder (Code availability), and results can be shared in an issue on TIGRE's GitHub.
+\IfFileExists{tables/lin_size_multi.tex}{\input{tables/lin_size_multi.tex}}{}
+\IfFileExists{tables/lin_parallel_multi.tex}{\input{tables/lin_parallel_multi.tex}}{}
+\IfFileExists{tables/lin_fixed.tex}{\input{tables/lin_fixed.tex}}{}
+
+\subsection{Large problems: $N^3$ images, $N$ angles}\label{sec:large}
+TIGRE's multi-GPU code was designed for a different regime~\cite{tigre2020multigpu}: as many angles as voxels
+along a side, which gives several times more kernel work for each byte moved, and images larger than one GPU,
+which TIGRE splits between the GPUs and through host memory. Table~\ref{tab:paper} measures it on the Linux
+server, with NumPy arrays. At $1536^3$ the image takes 13.6\,GB and the projections as much, more than one GPU's
+24\,GB together, and both toolboxes split the problem. TIGRE's Siddon forward projection is 4.1 times faster than
+ASTRA's on one GPU and 2.3 times on four, and its FDK-weighted backprojection 1.4 times faster on one GPU. Extra
+GPUs help ASTRA more: from one GPU to four its backprojection becomes 3.4 times faster and TIGRE's 2.0 times, so
+on four GPUs ASTRA's backprojection is faster (8.3\,s, against 12.5\,s for TIGRE's matched one).
+
+\begin{table}[H]
+\centering\small
+\caption{Linux, Quadro RTX 6000. Cone beam, $N^3$ image, $N^2$ detector covering the image, $N$ angles, NumPy
+arrays: time of one call in s (median of three rounds). At $1536^3$ the image and the projections do not fit in
+one GPU together, and both toolboxes split them.}
+\label{tab:paper}
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{rrrrrrr}
+\toprule
+$N$ & GPUs & TIGRE fp Siddon & ASTRA fp & TIGRE bp matched & TIGRE bp FDK & ASTRA bp \\
+\midrule
+512 & 1 & 0.29 & 0.66 & 0.44 & 0.39 & 0.45 \\
+ & 2 & 0.31 & 0.40 & 0.33 & 0.31 & 0.26 \\
+ & 4 & 0.43 & 0.29 & 0.39 & 0.41 & 0.17 \\
+\addlinespace[2pt]
+1024 & 1 & 4.15 & 9.82 & 5.56 & 4.50 & 5.96 \\
+ & 2 & 2.67 & 5.58 & 3.62 & 3.14 & 3.37 \\
+ & 4 & 3.14 & 3.30 & 3.23 & 2.95 & 1.78 \\
+\addlinespace[2pt]
+1536 & 1 & 20.50 & 83.82 & 25.57 & 20.14 & 28.51 \\
+ & 2 & 12.53 & 43.09 & 15.74 & 13.15 & 15.51 \\
+ & 4 & 10.35 & 24.16 & 12.53 & 11.10 & 8.34 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\section{Where ASTRA is faster, and why}\label{sec:why}
+On one GPU, every one of ASTRA's wins falls in one of four causes. On the RTX 4070 they are the interpolated
+projector (51 comparisons), the 2D Siddon projector (9) and the backprojection of the smallest images with GPU
+arrays (4). On the Quadro, the same three (52, 10 and 5) and the backprojection of large images from host
+arrays (14), whose cause we have narrowed down but not confirmed. On several GPUs, ASTRA gains more from extra
+GPUs, for the reasons given in the previous section.
+
+\paragraph{The interpolated forward projector (1.0--8.3$\times$).}
+TIGRE's interpolated projector samples the image with trilinear 3D texture fetches every
+\texttt{geo.accuracy}\,=\,0.5 voxels along the ray. ASTRA's projector (Joseph's method) takes one sample per
+slice crossed, with a bilinear fetch from a layered 2D texture. A trilinear fetch costs twice a bilinear one on
+NVIDIA GPUs (the effect that made TIGRE's backprojectors faster in 3.3.1, Section~\ref{sec:changes}), and at the
+default step TIGRE takes about twice as many samples. Table~\ref{tab:interp} shows the cost of the step: at
+one sample per voxel TIGRE is still 1.7--4 times slower. A Joseph-type kernel would close the gap; it was not
+part of this release. TIGRE's Siddon projector, which computes exact intersection lengths, is the faster
+choice in 3D.
+\begin{table}[H]
+\centering\small
+\caption{TIGRE's interpolated forward projection against its sampling step (\texttt{geo.accuracy}, in voxels),
+fan beam, PyTorch tensors, ms.}
+\label{tab:interp}
+\begin{tabular}{lrrrrrr}
+\toprule
+problem & 0.25 & 0.5 (default) & 1 & 2 & TIGRE Siddon & ASTRA \\
+\midrule
+$512^2$, 360 angles & 8.84 & 4.71 & 2.67 & 1.43 & 1.45 & 1.55 \\
+$1024^2$, 720 angles & 55.9 & 28.8 & 15.2 & 5.07 & 4.81 & 3.69 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The Siddon forward projector in 2D (1.0--1.3$\times$ on the RTX 4070, 1.5--2.4$\times$ on the Quadro).}
+In 3D, TIGRE's Siddon projector takes 0.3--0.9 of ASTRA's time; in 2D fan beam it is slower. The kernel is: in
+Nsight Systems, at $1024^2$ with 720 angles, TIGRE's kernels take 2.9\,ms and ASTRA's 1.7\,ms on the RTX 4070.
+Siddon's method visits every voxel boundary the ray crosses, about $1.3N$ steps for an $N\times N$ image against
+the $N$ samples of ASTRA's 2D projector (Joseph's method), and each step chooses the next boundary. In 3D the
+same comparison favours TIGRE, because ASTRA's 3D projector pays for it in other ways (Section 5.5 of the Siddon
+note~\cite{tigre2025siddon}). Reading the image through a layered 2D texture, the change that halved the
+backprojectors' cost, made the Siddon projector 1.3--1.5 times \emph{slower}, and was not kept. The Quadro, an
+older GPU, is further behind ASTRA here.
+
+\paragraph{Backprojection of very small images with GPU arrays ($32^3$ and $64^3$).}
+With GPU tensors, TIGRE's backprojection of a $32^3$ image takes 0.94\,ms and ASTRA's 0.55\,ms on the RTX 4070.
+In an earlier run, with 0.93 and 0.62\,ms, Nsight Systems
+shows 0.09\,ms of kernels in both; TIGRE spends about 0.23\,ms in Python before the call (checking and copying
+the geometry, kept on purpose: it catches wrong geometries before they reach the GPU) and about 0.2\,ms more in
+CUDA calls than ASTRA (the projections' copy into the texture array and the per-kernel constants). From $128^3$
+TIGRE is faster.
+
+\paragraph{Backprojection from host arrays on the Quadro (1.02--1.75$\times$).}
+On the Linux server, TIGRE's backprojection with GPU arrays takes 0.6--0.9 of ASTRA's time, but with NumPy arrays
+it is slower from $512^3$, most with few angles ($512^3$, 45 angles: 240\,ms against 137\,ms). The difference is
+in what a call with host arrays adds to one with GPU arrays (Table~\ref{tab:hostcost}): for TIGRE about 207\,ms at
+$512^3$ whatever the number of angles, for ASTRA 106\,ms with 45 angles, growing with the projections it copies.
+On the RTX 4070 both add about 80\,ms. TIGRE's added time does not depend on the projections, so it is in the
+result: allocating the $512^3$ image on the host (512\,MB) and copying it back from the GPU. A likely cause is the
+host memory itself. TIGRE allocates the result with \texttt{malloc}, so the copy into it touches 131072 fresh
+4\,kB pages; ASTRA writes into an array NumPy allocated, which on Linux asks for huge pages. That would also
+explain why Windows does not show it. We have not yet confirmed it.
+
+\begin{table}[H]
+\centering\small
+\caption{What a call with NumPy arrays adds to the same call with GPU tensors: $t_\text{host}-t_\text{tensors}$
+in ms, cone $512^3$, one GPU.}
+\label{tab:hostcost}
+\begin{tabular}{llrrr}
+\toprule
+GPU & angles & TIGRE bp matched & TIGRE bp FDK & ASTRA bp \\
+\midrule
+Quadro RTX 6000 & 45 & 212 & 218 & 106 \\
+ & 180 & 206 & 209 & 115 \\
+ & 360 & 207 & 211 & 128 \\
+ & 1440 & 207 & 207 & 218 \\
+\addlinespace[2pt]
+RTX 4070 & 45 & 79 & 80 & 81 \\
+ & 180 & 92 & 77 & 99 \\
+ & 360 & 77 & 83 & 117 \\
+ & 1440 & 76 & 98 & 273 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Discussion}
+On one GPU, TIGRE 3.3.1's Siddon projector is faster than ASTRA's for every 3D problem, and both backprojectors
+for every 2D problem and every 3D one from $128^3$ ($256^3$ on the Quadro). The exception is the Linux server,
+where the backprojectors are slower than ASTRA's with host arrays from $512^3$ (Section~\ref{sec:why}). The changes that
+brought this were of two kinds. Most of 3.3.1's work removed fixed costs that did not grow with the problem and
+that had dominated small and 2D problems. The largest single change was not in the host code: reading the
+projections through a layered 2D texture instead of a 3D one halves the cost of every texture fetch in the
+backprojectors, without changing a bit of the results. ASTRA's remaining advantages come from an algorithmic
+choice (Joseph's interpolation against Siddon's exact lengths, in 2D), from the fixed cost of a call on the
+smallest images, or from the interpolated projector, which this release left as it was.
+
+On several GPUs, TIGRE gains less than ASTRA from each extra GPU for problems that fit in one. Two GPUs are now
+faster than one for large images, but four are slower than two, because every multi-GPU call copies a full set of
+its input to every GPU. That part is the next to reduce, without giving up what TIGRE's multi-GPU path is for:
+splitting the image and the projections across GPUs and through host memory, so that it reconstructs images
+larger than one GPU, on one GPU or on several~\cite{tigre2020multigpu}. In that regime TIGRE's forward projection
+is 2.3--4.1 times faster than ASTRA's, its backprojection faster on one GPU and slower on four
+(Section~\ref{sec:large}). For a problem that fits in one GPU, one or two GPUs (\texttt{gpuids}) are the fastest
+choice in TIGRE 3.3.1 on the server we measured; with one multi-GPU machine, these conclusions need checking on
+others (Section~\ref{sec:results}, ``One machine'').
+
+\appendix
+\section{Per-case results on the Linux server}\label{app:linux}
+One GPU of the Linux server (Quadro RTX 6000, Section~\ref{sec:setup}); same suite and layout as the tables of
+Section~\ref{sec:results}.
+\IfFileExists{tables/lin_size1.tex}{\input{tables/lin_size1.tex}}{}
+\IfFileExists{tables/lin_parallel1.tex}{\input{tables/lin_parallel1.tex}}{}
+\IfFileExists{tables/lin_fan.tex}{\input{tables/lin_fan.tex}}{}
+\IfFileExists{tables/lin_angles.tex}{\input{tables/lin_angles.tex}}{}
+\IfFileExists{tables/lin_shape.tex}{\input{tables/lin_shape.tex}}{}
+\IfFileExists{tables/lin_offset.tex}{\input{tables/lin_offset.tex}}{}
+\IfFileExists{tables/lin_calib.tex}{\input{tables/lin_calib.tex}}{}
+\IfFileExists{tables/lin_legacy.tex}{\input{tables/lin_legacy.tex}}{}
+\IfFileExists{tables/lin_latency.tex}{\input{tables/lin_latency.tex}}{}
+
+\section*{Code availability}
+TIGRE: \url{https://github.com/CERN/TIGRE}, release 3.3.1. The comparison suite is the file
+\path{tigre_vs_astra_suite.py} in \path{docs/technical-notes/speed-3.3.1/}, whose \path{README.md} says how to
+run it on another machine. The raw results of this note and the scripts that make its tables are attached to the
+TIGRE 3.3.1 release on GitHub.
+Results from other GPUs and multi-GPU machines are welcome as an issue on TIGRE's GitHub.
+
+\section*{Use of generative AI}
+This work and this note were done with substantial help from Claude (Anthropic), a large language model, used
+as a coding and writing assistant (Claude Opus, through Claude Code). Under the author's
+direction, Claude carried out much of the investigation and profiling, wrote the changes to TIGRE's host code and
+their tests, wrote the benchmark suite and the scripts that ran it, and wrote the first draft of this note.
+
+The author conceived and directed the work, decided what to change and how, reviewed and merged every change,
+ran the benchmarks on GPU hardware (the results reported here), checked the results, and revised the text. The
+author takes full responsibility for the content of this note, including any errors. Claude is not an author: it
+cannot take responsibility for the work or for its publication.
+
+\begin{thebibliography}{9}
+\bibitem{tigre2016} A.~Biguri, M.~Dosanjh, S.~Hancock, M.~Soleimani, ``TIGRE: a MATLAB-GPU toolbox for CBCT
+image reconstruction,'' \emph{Biomedical Physics \& Engineering Express} 2(5):055010, 2016.
+doi:10.1088/2057-1976/2/5/055010.
+\bibitem{tigre2020multigpu} A.~Biguri, R.~J.~Lindroos, R.~Bryll, H.~Towsyfyan, H.~Deyhle, I.~Harrane,
+R.~Boardman, M.~Mavrogordato, M.~Dosanjh, S.~Hancock, T.~Blumensath, ``Arbitrarily large tomography with
+iterative algorithms on multiple GPUs using the TIGRE toolbox,'' \emph{Journal of Parallel and Distributed
+Computing} 146:52--63, 2020. doi:10.1016/j.jpdc.2020.07.004.
+\bibitem{tigre2025v3} A.~Biguri, T.~Sadakane, R.~Lindroos, Y.~Liu, M.~Sabat\'e Landman, Y.~Du, M.~Lohvithee,
+S.~Kaser, S.~Hatamikia, R.~Bryll, E.~Valat, S.~Wonglee, T.~Blumensath, C.-B.~Sch\"onlieb, ``TIGRE v3: efficient
+and easy to use iterative computed tomographic reconstruction toolbox for real datasets,''
+\emph{Engineering Research Express} 7(1):015011, 2025. doi:10.1088/2631-8695/adbb3a.
+\bibitem{astra2016} W.~van~Aarle, W.~J.~Palenstijn, J.~Cant, E.~Janssens, F.~Bleichrodt, A.~Dabravolski,
+J.~De~Beenhouwer, K.~J.~Batenburg, J.~Sijbers, ``Fast and flexible X-ray tomography using the ASTRA toolbox,''
+\emph{Optics Express} 24(22):25129--25147, 2016.
+\bibitem{tigre2025siddon} A.~Biguri, ``Siddon--Jacobs ray tracing on GPUs: a technical note on a consistent and
+accurate implementation,'' TIGRE technical note, November 2026, revised for TIGRE 3.3.1.
+\end{thebibliography}
+\end{document}

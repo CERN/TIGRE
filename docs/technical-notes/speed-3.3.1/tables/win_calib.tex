@@ -1,0 +1,18 @@
+\begin{table}[H]
+\centering
+\caption{Windows, RTX 4070. Calibration: the ASTRA convention that matches TIGRE, found on a small problem for each beam type, and how well the projections agree under it (relative $L_2$ difference after a least-squares scale). ``Next best'': the best convention that gives measurably different projections.}
+\label{tab:calib}
+\small
+\begin{adjustbox}{max width=\linewidth}
+\begin{tabular}{llrrr}
+\toprule
+beam & ASTRA convention & agree & scale & next best\\
+\midrule
+cone & $\theta_A = +1\,\theta_T +90^\circ$ & 5.4e-04 & 0.9998 & 1.6e-01\\
+parallel & $\theta_A = +1\,\theta_T +270^\circ$, $u$ flipped & 5.1e-04 & 0.9998 & 4.9e-01\\
+fan & $\theta_A = -1\,\theta_T +90^\circ$, $u$ flipped & 5.4e-04 & 0.9999 & 1.2e-01\\
+offset & detector shift $+1\,u, +1\,v$ & 5.2e-04 & 0.9998 & 3.9e-01\\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}

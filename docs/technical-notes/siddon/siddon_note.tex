@@ -30,11 +30,10 @@
 \algrenewcommand\algorithmicfor{\textbf{for}}
 
 \title{Siddon--Jacobs ray tracing on GPUs:\\a technical note on a consistent and accurate implementation}
-\author[1]{Ander Biguri}
-\author[2]{Claude}
-\affil[1]{Department of Applied Mathematics and Theoretical Physics (DAMTP), University of Cambridge}
-\affil[2]{Anthropic}
-\date{November 2026\\[4pt]\small TIGRE technical note. Accompanies CERN/TIGRE pull request \#865 (issue \#859).}
+\author{Ander Biguri}
+\affil{Department of Applied Mathematics and Theoretical Physics (DAMTP), University of Cambridge}
+\date{November 2026, revised for TIGRE 3.3.1\\[4pt]\small TIGRE technical note. Accompanies CERN/TIGRE pull
+requests \#865 (issue \#859) and, for Section~\ref{sec:v331}, \#913.}
 
 \begin{document}
 \maketitle
@@ -51,7 +50,9 @@ traversal. The revision also makes the projector 1.4--6.5 times faster on the GP
 arrangement of the loop and the type of its indices. The three issues, consistency, accuracy and speed, have
 independent causes, and the speed could have been obtained while keeping Jacobs' traversal; but the revised
 traversal addresses all three at once, and the arrangement that makes it fast is also what makes the two fixes
-free. In TIGRE the projections are about 100 times more accurate and consistent for every ray.
+free. In TIGRE the projections are about 100 times more accurate and consistent for every ray. A revision for
+TIGRE 3.3.1 (Section~\ref{sec:v331}) unrolls the loop into four branch-free steps, so that several memory
+reads are in flight at once, which makes the kernel a further 1.1--1.2 times faster with the same results.
 \end{abstract}
 
 \noindent\textbf{Keywords:} computed tomography, forward projection, Siddon's algorithm,
@@ -664,6 +665,104 @@ result is a single loop, Algorithm~\ref{alg:both} (right), that is consistent, a
 who only want the speed of Section~\ref{sec:res-speed} can obtain most of it with the changes in the last
 row of Table~\ref{tab:coupling}.
 
+\subsection{Revision for TIGRE 3.3.1: several reads in flight}
+\label{sec:v331}
+
+The loop above issues one texture fetch per step, identical for all threads of a warp. But each step also ends
+with a branch on the axis crossed, and the fetch of the next step cannot be issued before that branch is
+resolved and the loop comes round. A warp therefore has one read in flight at a time, and the latency of
+each read, tens to hundreds of cycles, is hidden only by other warps. The sum does not depend on the branch:
+the coordinates of the next voxel do, but only through comparisons and additions.
+
+TIGRE 3.3.1 removes the branch and walks several steps per pass, four in what follows (the number is chosen
+per problem, as the end of this section explains). Each step selects instead of branching: with
+$b_x=(\alpha_x=\alpha_n)$, $b_y=\lnot b_x\wedge(\alpha_y=\alpha_n)$ and $b_z=\lnot b_x\wedge\lnot b_y$ (the same
+tie-breaking as before), it updates $c_x\gets b_x\,?\,c_x+s_x : c_x$ and $\alpha_x\gets b_x\,?\,\fl((c_x+h_x)r_x^{-1}+o_x) :
+\alpha_x$, and likewise for $y$ and $z$. The four steps are straight-line code, so the compiler issues their four
+fetches back to back and waits once. The loop ends after a pass, not after a step, so up to three steps run
+past $\alpha_{max}$; a flag set when $\alpha_n\ge\alpha_{max}$ keeps them from adding to the sum. They still
+fetch a voxel, outside the ray's path and with no effect, which is cheaper than the branch it replaces. Every
+operation that reaches the sum is the same as before, in the same order, so the projections are bit-for-bit
+identical (Appendix~\ref{app:code} gives the code).
+
+Table~\ref{tab:v331} shows the effect in TIGRE. For these problems, the kernel becomes 1.1--1.2 times faster in 3D. In 2D (fan beam)
+the gain is smaller, 3--13\%: there the time is set by the number of steps itself, about 1.3 times the number
+of samples an interpolating (Joseph-type) projector takes along the same ray. The same release also prepares the constants of the next kernel launch on the host
+while the current kernels run, instead of after waiting for them; that change is outside the traversal, but
+it is included in the whole-call times of Table~\ref{tab:v331} for many angles.
+
+\begin{table}[h]
+\centering
+\caption{\label{tab:v331}TIGRE 3.3.1 against 3.3.0's kernel (Sections~\ref{sec:new}--\ref{sec:coupling}):
+time of the whole forward projection relative to ASTRA's forward projector measured in the same run
+(below 1, TIGRE is faster), PyTorch tensors, RTX 4070, Windows, two alternating rounds. ``Four steps'': this
+section; ``+ launches'': with the host-side change as well.}
+\small
+\begin{tabular}{lccc}
+\toprule
+problem & one step per pass & four steps & + launches\\
+\midrule
+cone $256^3$, 360 angles     & 0.84--0.87 & 0.70--0.71 & 0.70\\
+cone $512^3$, 360 angles     & 0.59--0.60 & 0.51 & 0.50\\
+parallel $256^3$, 360 angles & 0.97--0.98 & 0.86--0.87 & 0.84\\
+parallel $512^3$, 360 angles & 0.83--0.84 & 0.75 & 0.74\\
+fan $1024^2$, 360 angles     & 1.13--1.14 & 1.05 & 1.02--1.12\\
+fan $1024^2$, 1440 angles    & 1.64--1.66 & 1.54 & 1.39--1.40\\
+fan $2048^2$, 360 angles     & 1.32--1.33 & 1.17 & 1.16--1.18\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+One more variant was tried and rejected: reading the image from a layered 2D texture (one layer per slice,
+a point fetch at an integer layer) instead of a 3D texture. In TIGRE's backprojectors the same change halves
+the cost of every fetch, because a 3D linear fetch is trilinear even when one weight is zero; but the projector
+uses point fetches, and with the layered texture it was 1.3--1.5 times \emph{slower} for most problems, in 3D
+and in 2D (faster only with a detector much coarser than the image).
+
+\paragraph{How many steps per pass.} Four steps per pass are not faster everywhere. When neighbouring rays are
+several voxels apart where they cross the image, and the image is large, the three extra fetches in flight evict
+from the texture cache the voxels that each ray reads next: for a $1024^3$ image and rays 4 voxels apart, Nsight
+Compute measures an L1 hit rate of 41\% with four steps per pass against 57\% with one, and the four-step kernel
+takes 1.5 times as long as 3.3.0's. Table~\ref{tab:steps} measures one, two and four steps per pass over the ray
+spacing $r$ (a detector pixel scaled to the rotation axis, in voxels) and the image side $n$, on both GPUs. For
+the usual detector ($r=1$, a detector pixel per voxel) four steps are the fastest on the Quadro RTX 6000 at every
+size, by up to 20\%, and within 3\% of the fastest on the RTX 4070. With coarser detectors, two steps and then
+one are faster. TIGRE 3.3.1 (pull request \#916) compiles the kernel for the three and chooses on the host: four
+steps when $r<1.25$ or $rn<800$, two when $rn<2700$, one above ($n$ is the side of the piece of the image in one
+texture, when it is split). Since the steps of a pass add to the sum in the same order whatever their number, the
+projections are bit-for-bit identical for any choice. Over a sweep of 39 problems (cone beam $256^3$--$1024^3$,
+parallel beam $512^3$ and $1024^3$, $r$ from 0.5 to 6), the choice is within 3\% of the fastest of the three on the
+RTX 4070 and within 5\% on the Quadro RTX 6000 for all but three problems (5--8\%), and it is never slower than the
+3.3.0 kernel on the RTX 4070. These thresholds come from two GPUs; others may favour slightly different ones,
+and we would welcome measurements on them (the 3.3.1 speed note~\cite{tigre331astra} says how to run the suite).
+
+\begin{table}[h]
+\centering
+\caption{\label{tab:steps}One, two and four steps per pass: time of the whole forward projection, 360 angles,
+PyTorch tensors, median of two alternating rounds; RTX 4070 relative to the 3.3.0 kernel (one step per pass with
+branches), Quadro RTX 6000 relative to one step per pass. $n^3$ image, $r$: distance between neighbouring rays at
+the rotation axis, in voxels; the detector just covers the image. In bold, the choice of TIGRE 3.3.1.}
+\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrcccccc}
+\toprule
+& & & & \multicolumn{3}{c}{RTX 4070} & \multicolumn{3}{c}{Quadro RTX 6000}\\
+\cmidrule(lr){5-7}\cmidrule(lr){8-10}
+beam & $n$ & $r$ & $rn$ & one & two & four & one & two & four\\
+\midrule
+cone     & 256 & 1 & 256 & 0.86 & 0.82 & \textbf{0.81} & 1.00 & 0.74 & \textbf{0.63}\\
+cone     & 512 & 1 & 512 & 0.89 & 0.86 & \textbf{0.84} & 1.00 & 0.71 & \textbf{0.59}\\
+cone     & 512 & 1.5 & 768 & 0.91 & 0.83 & \textbf{0.83} & 1.00 & 0.70 & \textbf{0.61}\\
+cone     & 512 & 4 & 2048 & 0.98 & \textbf{0.95} & 1.02 & 1.00 & \textbf{0.98} & 1.65\\
+cone     & 1024 & 1 & 1024 & 0.89 & 0.87 & \textbf{0.89} & 1.00 & 0.70 & \textbf{0.58}\\
+cone     & 1024 & 2 & 2048 & 0.98 & \textbf{0.91} & 1.06 & 1.00 & \textbf{0.85} & 1.11\\
+cone     & 1024 & 4 & 4096 & \textbf{1.00} & 1.15 & 1.49 & \textbf{1.00} & 0.98 & 1.16\\
+cone     & 1024 & 6 & 6144 & \textbf{1.00} & 1.16 & 1.35 & \textbf{1.00} & 1.00 & 1.08\\
+parallel & 1024 & 1 & 1024 & 0.92 & 0.90 & \textbf{0.92} & 1.00 & 0.76 & \textbf{0.66}\\
+parallel & 1024 & 4 & 4096 & \textbf{1.01} & 1.13 & 1.21 & \textbf{1.00} & 1.11 & 1.38\\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Experiments}
 \label{sec:results}
 
@@ -673,6 +772,11 @@ matter, and does the new kernel compute those rays correctly? Second, accuracy: 
 error of the incremental update described in Section~\ref{sec:drift}, and how much does the direct
 evaluation of Eq.~\eqref{eq:fma} reduce it? Third, speed: does the new traversal cost anything, and if it is
 faster, which of its changes make it so?
+
+The experiments were made with TIGRE 3.3.0's kernel. TIGRE 3.3.1's (Section~\ref{sec:v331}) computes the same sums
+in the same order, and its projections are bit-for-bit identical to 3.3.0's, so the results on correctness and
+accuracy hold for it unchanged; Section~\ref{sec:v331} gives its speed, and Section~\ref{sec:astra} its comparison
+with ASTRA.
 
 \subsection{Setup}
 
@@ -822,6 +926,70 @@ new kernel takes 51--59\% of the original's time on Windows and 21--23\% on Linu
 kernel time become 355\,ms); on Windows its gain does not shrink with image size, and on Linux only slightly.
 TIGRE's original parallel-beam kernel had extra corrections in its initialisation.
 
+\subsection{Comparison with ASTRA}
+\label{sec:astra}
+
+The comparisons above are between two versions of TIGRE. To place the result among GPU projectors in common
+use, we also timed TIGRE's Siddon projector against the forward projector of the ASTRA Toolbox~\cite{astra2016}
+(version 2.5.0) on the same problems. ASTRA's cone-beam GPU forward projector is ray-driven with Joseph-type
+interpolation~\cite{joseph1982}, not an exact intersection-length method, so this compares projectors used for
+the same purpose rather than two implementations of one algorithm.
+
+Both toolboxes ran in one process, on the cone-beam geometry of the previous sections at $n^3$ voxels with 360
+angles, on one GPU and, on the Linux system, on two. Inputs and outputs were host arrays, so the time includes the copies to and from
+the GPUs, which is how most users call either toolbox; on one GPU we also timed PyTorch GPU tensors in and out,
+with no host copies. ASTRA's angle and detector conventions were matched to TIGRE's on a small problem, by
+trying the eight angle conventions and four detector flips and keeping the one under which the projections of
+an asymmetric image agree, and at every size the outputs of the two toolboxes were compared, to check that both
+solved the same problem. Each round ran every operation of both toolboxes, alternating which went first; we
+report the median time and the ratio of the TIGRE time to the ASTRA time, as a mean over rounds with a 95\%
+confidence interval. The script, \path{tigre_vs_astra.py}, is next to this note; it also times TIGRE's
+interpolated projector, backprojection and FDK reconstruction, which are not the subject of this note.
+
+\IfFileExists{astra_results.tex}{\input{astra_results.tex}}{%
+\begin{center}\fbox{\parbox{0.9\linewidth}{\centering\small
+Results pending: Table of TIGRE against ASTRA on one and two GPUs, from \path{tigre_vs_astra.py}.}}
+\end{center}}
+
+Tables~\ref{tab:astra-windows} and~\ref{tab:astra-linux} give the results, for TIGRE 3.3.0. On one GPU, TIGRE's
+exact projector is faster than ASTRA's interpolating one in every case but one: it takes 0.53--0.92 of ASTRA's
+time on the RTX~4070, and 0.55--0.89 on the Quadro RTX~6000; the exception is GPU tensors at $512^3$ on the Quadro
+RTX~6000, where the two are equal within the confidence interval ($1.07\pm0.10$). The advantage grows with the
+image: at $1024^3$, TIGRE takes 0.55 of ASTRA's time. ASTRA gains more from a second GPU, whose time drops by a
+factor of 1.6--1.7 against 1.2--1.3 for TIGRE, so that on two GPUs the two are on par at $512^3$
+($1.10\pm0.24$) and TIGRE is faster at $1024^3$ ($0.77\pm0.04$); we did not investigate this difference. The
+outputs of the two toolboxes agreed to within $2.2\times10^{-3}$ (relative $L_2$ difference after a
+least-squares scale), the difference between the two projection models.
+
+Table~\ref{tab:astra-331} repeats the one-GPU comparison with TIGRE 3.3.1, on the same geometry (detector pixels of
+0.8\,mm), as part of a wider comparison of the two toolboxes made for that release~\cite{tigre331astra}. TIGRE
+3.3.1's projector takes 0.32--0.77 of ASTRA's time on one GPU. Where the two releases were measured on the same
+problem, 3.3.1 is further ahead: with host arrays, $0.55$ of ASTRA's time at $256^3$ on the RTX~4070 (0.68 with
+3.3.0) and 0.47 at $1024^3$ on the Quadro RTX~6000 (0.55 with 3.3.0). For problems that fit in one GPU, ASTRA still gains more from more GPUs: on
+the Linux system at $1024^3$, with a detector that just covers the image, TIGRE 3.3.1 takes 1.44\,s on two GPUs and
+ASTRA 2.17\,s, but on four 2.08 and 1.68\,s~\cite{tigre331astra}.
+
+\begin{table}[h]
+\centering
+\caption{\label{tab:astra-331}TIGRE 3.3.1 against ASTRA, one GPU: forward projection, TIGRE's Siddon projector
+against ASTRA's, 360 angles, detector pixels of 0.8\,mm. Time of the whole call in ms, median over three rounds;
+ratio as in Table~\ref{tab:astra-windows}. $^*$At $1024^3$ with GPU tensors, the image and the projections nearly
+fill the RTX~4070's 12\,GB, and ASTRA's call slows down.}
+\small\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrcrrc}
+\toprule
+& & \multicolumn{3}{c}{RTX 4070 (Windows)} & \multicolumn{3}{c}{Quadro RTX 6000 (Linux)}\\
+\cmidrule(lr){3-5}\cmidrule(lr){6-8}
+image & arrays & TIGRE ms & ASTRA ms & ratio & TIGRE ms & ASTRA ms & ratio\\
+\midrule
+$256^3$ & NumPy & 31.5 & 56.8 & $0.55\pm0.05$ & 51.2 & 66.6 & $0.77\pm0.02$\\
+ & tensors & 27.4 & 37.3 & $0.73\pm0.04$ & 25.1 & 44.1 & $0.57\pm0.00$\\
+$1024^3$ & NumPy & 1353 & 4276 & $0.32\pm0.02$ & 1679 & 3604 & $0.47\pm0.00$\\
+ & tensors & 1013 & 17949$^*$ & $0.06\pm0.00$ & 1356 & 2950 & $0.46\pm0.00$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \section{Discussion}
 \label{sec:discussion}
 
@@ -846,7 +1014,7 @@ elsewhere: the consistent initialisation in Amanatides and Woo and in several CP
 evaluation of crossings in Siddon's method. To the best of our knowledge, none of the implementations we
 examined combines a consistent initialisation, crossings computed without accumulation at the cost of
 Jacobs' traversal, and a loop arranged for SIMT execution. We did not survey implementations systematically,
-and did not benchmark against them.
+and compared speed only with ASTRA (Section~\ref{sec:astra}).
 
 \paragraph{Rays inside a plane.} A ray that lies in a plane between voxels ($r_b=0$, $e_b\in\mathbb Z$) has an
 ambiguous line integral. STIR traces it twice, half a voxel to each side, and averages. Our traversal, like
@@ -866,16 +1034,30 @@ Amanatides and Woo and the direct evaluation of crossings of Siddon's original m
 combine them on a GPU without extra cost, by organising the step around one convergent memory read, with
 floating-point voxel centres and 32-bit indices. In TIGRE the revised projector is consistent for every ray,
 about 100 times more accurate, and 1.4--6.5 times faster, depending on the platform; most of the speed comes
-from the GPU arrangement, not from the algorithm.
+from the GPU arrangement, not from the algorithm. On one GPU it is also faster than the interpolating forward
+projector of the ASTRA Toolbox, by up to a factor of 1.9 at the sizes tested with TIGRE 3.3.0, and of 3.2 with
+TIGRE 3.3.1, whose kernel walks several steps of the ray per pass.
 
 \section*{Code availability}
-The implementation is part of TIGRE, \url{https://github.com/CERN/TIGRE}, from pull request \#865. The cone-beam kernel is in
+The implementation is part of TIGRE, \url{https://github.com/CERN/TIGRE}, from pull request \#865, revised in \#913 and \#916 for TIGRE 3.3.1. The cone-beam kernel is in
 \path{Common/CUDA/Siddon_projection.cu} and the parallel-beam kernel in \path{Common/CUDA/Siddon_projection_parallel.cu}.
+The comparison with ASTRA is \path{docs/technical-notes/siddon/tigre_vs_astra.py}.
 
-\section*{Author contributions}
-A.~Biguri: conceptualisation, direction, testing on hardware, review and editing. Claude (Anthropic, a large
-language model): investigation, analysis, implementation, emulations, benchmarks and the first draft of this
-note, under A.~Biguri's direction.
+\section*{Use of generative AI}
+This work and this note were done with substantial help from Claude (Anthropic), a large language model, used
+as a coding and writing assistant (Claude Opus, through Claude Code). Under the author's
+direction, Claude carried out much of the investigation and analysis, wrote the revised kernels and the
+host-side code, wrote the floating-point emulations and the benchmark and test scripts, searched and read the
+literature and other implementations, and wrote the first draft of this note, including the proofs and
+figures.
+
+The author conceived and directed the work, decided what to change and how to present it, ran every test and
+benchmark on GPU hardware (the results reported here), checked the derivations and the results, and revised
+the text. The author takes full responsibility for the content of this note, including any errors. Claude is
+not an author: it cannot take responsibility for the work or for its publication.
+
+\section*{Acknowledgements}
+The author thanks Claude (Anthropic) for its assistance, as described above.
 
 \begin{thebibliography}{99}
 \bibitem{siddon1985fast} R.~L.~Siddon, ``Fast calculation of the exact radiological path for a
@@ -923,6 +1105,8 @@ synchrotron tomographic data,'' \emph{Journal of Synchrotron Radiation} 21(5):11
 \bibitem{tomograpy} TomograPy, \url{https://github.com/nbarbey/TomograPy}.
 \bibitem{plastimatch} plastimatch, \url{https://gitlab.com/plastimatch/plastimatch}.
 \bibitem{leap} LEAP, LivermorE AI Projector for computed tomography, \url{https://github.com/llnl/LEAP}.
+\bibitem{tigre331astra} A.~Biguri, ``TIGRE 3.3.1 and ASTRA 2.5: a speed comparison of the projection operators
+on one and several GPUs,'' TIGRE technical note, November 2026.
 \bibitem{cudaguide} NVIDIA, \emph{CUDA C++ Programming Guide}, sections on SIMT architecture and arithmetic
 instruction throughput.
 \end{thebibliography}
@@ -950,6 +1134,28 @@ for (int step=0; step<maxsteps; step++){
     if (ax==aminc){      cX+=sX; ac=ax; ax=fmaf(cX+hX,rX,oX); }
     else if(ay==aminc){  cY+=sY; ac=ay; ay=fmaf(cY+hY,rY,oY); }
     else{                cZ+=sZ; ac=az; az=fmaf(cZ+hZ,rZ,oZ); }
+}
+detector[idx]=sum*maxlength;
+\end{lstlisting}
+
+TIGRE 3.3.1 (Section~\ref{sec:v331}), the same set-up, then \texttt{STEPS} branch-free steps per pass (a
+template parameter: 1, 2 or 4, chosen on the host):
+\begin{lstlisting}
+bool out=false;
+for (int step=0; step<maxsteps; step+=STEPS){
+#pragma unroll
+    for (int s=0; s<STEPS; s++){
+        const float aminc=fminf(fminf(ax,ay),az);
+        const float t=tex3D<float>(tex, cX, cY, cZ);       // STEPS fetches in flight
+        if (!out) sum+=(fminf(aminc,aM)-ac)*t;             // nothing added after the exit
+        out=out || (aminc>=aM);
+        const bool bx=(ax==aminc), by=!bx && (ay==aminc), bz=!bx && !by;
+        ac=aminc;
+        cX=bx? cX+sX : cX;  ax=bx? fmaf(cX+hX,rX,oX) : ax;
+        cY=by? cY+sY : cY;  ay=by? fmaf(cY+hY,rY,oY) : ay;
+        cZ=bz? cZ+sZ : cZ;  az=bz? fmaf(cZ+hZ,rZ,oZ) : az;
+    }
+    if (out) break;
 }
 detector[idx]=sum*maxlength;
 \end{lstlisting}
