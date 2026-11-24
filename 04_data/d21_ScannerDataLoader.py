@@ -1,0 +1,115 @@
+"""
+Load scanner data
+=================
+
+Read Nikon, Bruker, YXLON, Diondo and Varian datasets. See :doc:`/user-guide/loading-data`.
+
+Source: `Python/demos/d21_ScannerDataLoader.py <https://github.com/CERN/TIGRE/blob/master/Python/demos/d21_ScannerDataLoader.py>`__ · `MATLAB/Demos/d21_ScannerDataLoader.m <https://github.com/CERN/TIGRE/blob/master/MATLAB/Demos/d21_ScannerDataLoader.m>`__
+
+.. dropdown:: MATLAB version of this demo
+   :icon: code
+
+   .. literalinclude:: /../MATLAB/Demos/d21_ScannerDataLoader.m
+      :language: matlab
+
+This demo is not run when the website is built.
+"""
+
+import tigre.utilities.io as tigreio
+import tigre.algorithms as algs
+import numpy as np
+import tigre
+
+# %%
+# Varian onboard CBCT.
+# --------------------
+
+###### TODO
+
+# %%
+# Nikon micro-CT
+# --------------
+
+# Nikon dataset can be loaded with the following code:
+
+datafolder='~/your_data_path/Nikon/Sample_name/'
+proj,geo, angles  = tigreio.NikonDataLoader(datafolder)
+
+# as micro-CT datasets are large, optional arguments for loading partial
+# amount of data is available:
+
+# load equidistant angles, but only few:
+proj, geo, angles  = tigreio.NikonDataLoader(datafolder,sampling='equidistant',num_angles=150)
+# load every X angles (10)
+proj, geo, angles  = tigreio.NikonDataLoader(datafolder,sampling='step',sampling_step=10)
+# load first X angles (1000)
+proj, geo, angles  = tigreio.NikonDataLoader(datafolder,sampling='continuous',num_angles=1000)
+
+# You can directly call reconstruction code now:
+
+img=algs.ossart(proj,geo,angles,100)
+img=algs.fdk(proj,geo,angles)
+
+# %%
+# Brucker Skyscan
+# ---------------
+
+datafolder='~/your_data_path/Bruker/Sample_name/'
+proj,geo, angles  = tigreio.BrukerDataLoader(datafolder)
+
+# the same options for sampling and number of angles that exist for Nikon (above) exist for Bruker data loaders.
+
+# Sometimes a folder will contain more than one dataset.
+proj,geo, angles  = tigreio.BrukerDataLoader(datafolder,dataset_num='all') # load all of them
+proj,geo, angles  = tigreio.BrukerDataLoader(datafolder,dataset_num=0) # load the first
+
+# %%
+# YXLON
+# -----
+
+datafolder='~/your_data_path/YXLON/Sample_name/'
+proj,geo, angles  = tigreio.YXLONDataLoader(datafolder)
+
+# the same options for sampling and number of angles that exist for Nikon (above) exist for Bruker data loaders.
+
+# %%
+# DICOM data (only tested on Philips Allura)
+# ------------------------------------------
+
+######## TODO
+
+# %%
+# Generic
+# -------
+
+# It is possible that your scanner is not currently supported, or that it
+# simply does not have any way of storing the information (Zeiss Xradia
+# does not store anything but the projections)
+
+# if this is the case, the general way of tackling the problem is:
+
+# Step 1: define your geometry and angles
+geo=tigre.geometry()
+angles = np.linspace(0, 2 * np.pi, 360, endpoint=False)  # replace with your scan's angles
+
+# Step 2: Load projections:
+#store in NP array. Use whichever python library will help you get the data loaded.
+
+# Step 3: validate
+
+tigre.plotproj(proj,angles)
+# you need to make sure that:
+#     1) white=metal/bone/high density and black=air.
+#         If this is not the case
+proj = -np.log(proj / (np.max(proj) + 1))  # Beer-Lambert law
+#     2) rotation happens left-right instead of top-bottom.
+#        If its top bottom permute your data as required
+
+# Step 4: test
+imgFDK = algs.fdk(proj, geo, angles)
+tigre.plotimg(imgFDK,dim='z')
+# If this does not look good, possible things to check:
+# - Are the angles in the right direction? maybe they need to be inverted.
+# - Is your geometry properly defined? mistake on geometry will be
+#   detrimental to image quality
+# - if microCT: halos around the features? COR correction needed.
