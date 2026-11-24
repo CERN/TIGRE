@@ -16,7 +16,8 @@
  * tigre_hw_linear_supported() (in gpuUtils.cu) decides at runtime with a
  * verified self-test -- it creates tiny Linear ramp textures (a 3D one and a
  * layered 2D one) and confirms a known sample of each actually interpolates --
- * caches the verdict for the process and logs it once. On CUDA it returns true without testing.
+ * caches the verdict for the process and logs it once. On CUDA it returns
+ * true without testing.
  *
  * The backprojection kernels and the interpolated forward projector pick their
  * texture filterMode from that verdict (Linear when supported, else Point), and
