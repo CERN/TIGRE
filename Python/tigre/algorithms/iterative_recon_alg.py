@@ -510,6 +510,9 @@ def decorator(IterativeReconAlg, name=None, docstring=None):  # noqa: N803
 
     def iterativereconalg(proj, geo, angles, niter, **kwargs):
 
+        # Work on a copy: check_geo() expands fields to one value per angle, and the
+        # algorithms may change others, which must not leak into the caller's geo.
+        geo = copy.deepcopy(geo)
         geo.check_geo(angles)
         alg = IterativeReconAlg(proj, geo, angles, niter, **kwargs)
         if name is not None:
