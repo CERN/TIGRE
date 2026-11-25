@@ -59,16 +59,46 @@ backprojectors on one and several GPUs. Read the
 
 </div>
 
-<figure class="tigre-compare">
-<div class="tigre-compare-frame" style="--pos: 50%">
-<img class="dark-light" src="_static/hero/coffee-cgls.webp" width="768" height="768" alt="A slice through a coffee bean reconstructed with CGLS: fine, clean structure">
-<img class="tigre-compare-fdk dark-light" src="_static/hero/coffee-fdk.webp" width="768" height="768" alt="The same slice reconstructed with FDK: the same structure, with more noise">
+<figure class="tigre-compare" aria-label="Reconstructions compared">
+<div class="tigre-compare-tabs" role="tablist" aria-label="Choose a scan">
+<button type="button" role="tab" id="tab-micro" aria-controls="panel-micro" aria-selected="true">Micro-CT</button>
+<button type="button" role="tab" id="tab-synchrotron" aria-controls="panel-synchrotron" aria-selected="false" tabindex="-1">Synchrotron</button>
+<button type="button" role="tab" id="tab-clinical" aria-controls="panel-clinical" aria-selected="false" tabindex="-1">Clinical CBCT</button>
+</div>
+<div class="tigre-compare-panel" role="tabpanel" id="panel-micro" aria-labelledby="tab-micro">
+<div class="tigre-compare-frame" style="--pos: 82%">
+<img class="dark-light" src="_static/hero/coffee-cgls.webp" width="1000" height="1000" alt="The same slice reconstructed with CGLS: the same structure, with less noise">
+<img class="tigre-compare-left-img dark-light" src="_static/hero/coffee-fdk.webp" width="1000" height="1000" alt="A slice through a coffee bean reconstructed with FDK: fine structure with grainy noise">
 <span class="tigre-compare-name tigre-compare-left" aria-hidden="true">FDK</span>
 <span class="tigre-compare-name tigre-compare-right" aria-hidden="true">CGLS</span>
-<input class="tigre-compare-range" type="range" min="0" max="100" value="50" step="1" aria-label="Move the divider between the FDK reconstruction (left) and the CGLS reconstruction (right)">
+<input class="tigre-compare-range" type="range" min="0" max="100" value="82" step="1" aria-label="Move the divider between FDK (left) and CGLS (right)">
 <span class="tigre-compare-handle" aria-hidden="true"></span>
 </div>
-<figcaption>A coffee bean, 3340 × 3340 × 900 voxels from 2134 projections. Drag the divider to compare FDK with CGLS.</figcaption>
+<p class="tigre-compare-caption">A coffee bean: 3340 × 3340 × 900 voxels from 2134 projections, larger than GPU memory. FDK against 15 iterations of CGLS; the box at the top right magnifies the marked area.</p>
+</div>
+<div class="tigre-compare-panel" role="tabpanel" id="panel-synchrotron" aria-labelledby="tab-synchrotron" hidden>
+<div class="tigre-compare-frame" style="--pos: 50%">
+<img class="dark-light" src="_static/hero/synchrotron-ospocs.webp" width="490" height="490" alt="The same slice reconstructed with OS-ASD-POCS: clear, sharp grains" loading="lazy">
+<img class="tigre-compare-left-img dark-light" src="_static/hero/synchrotron-fbp.webp" width="490" height="490" alt="A synchrotron slice reconstructed with FBP: almost pure noise" loading="lazy">
+<span class="tigre-compare-name tigre-compare-left" aria-hidden="true">FBP</span>
+<span class="tigre-compare-name tigre-compare-right" aria-hidden="true">OS-ASD-POCS</span>
+<input class="tigre-compare-range" type="range" min="0" max="100" value="50" step="1" aria-label="Move the divider between FBP (left) and OS-ASD-POCS (right)">
+<span class="tigre-compare-handle" aria-hidden="true"></span>
+</div>
+<p class="tigre-compare-caption">A synchrotron scan with the fast, low-dose settings of an in-situ experiment. FBP against 20 iterations of OS-ASD-POCS. From <a href="https://doi.org/10.1088/2631-8695/adbb3a">Biguri et al. (2025)</a>, CC BY 4.0.</p>
+</div>
+<div class="tigre-compare-panel" role="tabpanel" id="panel-clinical" aria-labelledby="tab-clinical" hidden>
+<div class="tigre-compare-frame" style="--pos: 50%; aspect-ratio: 1436 / 752">
+<img class="dark-light" src="_static/hero/lung-awpcsd.webp" width="1436" height="752" alt="A coronal chest slice from a low-dose cone-beam scan reconstructed with AwPCSD: lungs, vessels and a tumour are clear, with little noise" loading="lazy">
+<img class="tigre-compare-left-img dark-light" src="_static/hero/lung-fdk.webp" width="1436" height="752" alt="The same slice reconstructed with FDK: the same anatomy with strong grainy noise" loading="lazy">
+<span class="tigre-compare-name tigre-compare-left" aria-hidden="true">FDK</span>
+<span class="tigre-compare-name tigre-compare-right" aria-hidden="true">AwPCSD</span>
+<input class="tigre-compare-range" type="range" min="0" max="100" value="50" step="1" aria-label="Move the divider between FDK (left) and AwPCSD (right)">
+<span class="tigre-compare-handle" aria-hidden="true"></span>
+</div>
+<p class="tigre-compare-caption">Low-dose cone-beam CT of a lung cancer patient for image-guided radiotherapy. FDK against AwPCSD, an edge-preserving iterative method. From <a href="https://doi.org/10.1088/1361-6560/aa7675">Biguri et al. (2017)</a>, Physics in Medicine &amp; Biology.</p>
+</div>
+<figcaption class="tigre-compare-hint">Drag the divider, or use the arrow keys, to compare.</figcaption>
 </figure>
 
 </div>

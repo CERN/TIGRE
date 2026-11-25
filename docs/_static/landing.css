@@ -158,7 +158,7 @@ html {
   background: #000;
   border-radius: 0;
 }
-.tigre-compare-fdk {
+.tigre-compare-left-img {
   clip-path: inset(0 calc(100% - var(--pos)) 0 0);
 }
 .tigre-compare-handle {
@@ -216,6 +216,7 @@ html {
 }
 .tigre-compare-left { left: 0.75rem; }
 .tigre-compare-right { right: 0.75rem; }
+.tigre-compare-caption,
 .tigre-compare figcaption {
   text-align: left;
   margin-top: 0.75rem;
@@ -276,3 +277,34 @@ html[data-theme="dark"] .tigre-band img {
   .bd-content h1 { font-size: 1.9rem; }
   .bd-content h2 { font-size: 1.55rem; }
 }
+
+/* Tabs above the slider: one per kind of scan. */
+.tigre-compare-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+.tigre-compare-tabs [role="tab"] {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #BDBDBD;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+.tigre-compare-tabs [role="tab"]:hover { color: #FFFFFF; }
+.tigre-compare-tabs [role="tab"][aria-selected="true"] {
+  color: #FFFFFF;
+  border-bottom-color: #FC7F00;
+}
+.tigre-compare-tabs [role="tab"]:focus-visible {
+  outline: 2px solid #FFFFFF;
+  outline-offset: 2px;
+}
+.tigre-compare-caption { font-size: 0.85rem; color: #BDBDBD; margin-bottom: 0; }
+.tigre-compare-caption a { color: #FF9A33; }
+.tigre-compare-hint { margin-top: 0.35rem !important; padding: 0 !important; }
