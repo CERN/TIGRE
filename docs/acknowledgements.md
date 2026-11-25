@@ -1,3 +1,10 @@
+---
+og:description: "The people, institutions and funders behind TIGRE, the GPU toolbox for 3D CT reconstruction, over more than a decade."
+myst:
+  html_meta:
+    description: "The people, institutions and funders behind TIGRE, the GPU toolbox for 3D CT reconstruction, over more than a decade."
+---
+
 # Acknowledgements
 
 TIGRE exists thanks to everyone who has contributed code, reported bugs and

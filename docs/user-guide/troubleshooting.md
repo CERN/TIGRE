@@ -1,3 +1,10 @@
+---
+og:description: "Fixes for common TIGRE problems: installation and compilation errors, GPU and memory errors, and frequently asked questions."
+myst:
+  html_meta:
+    description: "Fixes for common TIGRE problems: installation and compilation errors, GPU and memory errors, and frequently asked questions."
+---
+
 # Troubleshooting and FAQ
 
 If your problem is not covered here, search the

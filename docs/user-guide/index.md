@@ -1,3 +1,10 @@
+---
+og:description: "The TIGRE user guide: how the toolbox works, how to set up the geometry, choose an algorithm and reconstruct your own data."
+myst:
+  html_meta:
+    description: "The TIGRE user guide: how the toolbox works, how to set up the geometry, choose an algorithm and reconstruct your own data."
+---
+
 # User guide
 
 This guide explains how TIGRE works and how to use it on your own data. It

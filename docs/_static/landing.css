@@ -71,16 +71,28 @@ html {
   padding: 2.75rem 2.5rem 2.25rem;
   border-radius: 0.5rem;
 }
+/* Text on the left, slider on the right. On narrow screens the slider comes
+   straight after the headline, before the rest of the text. */
 .tigre-band-inner {
   display: grid;
   grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-  gap: 2.5rem;
-  align-items: center;
+  grid-template-rows: 1fr auto auto 1fr;
+  grid-template-areas: ". compare" "head compare" "body compare" ". compare";
+  column-gap: 2.5rem;
 }
+.tigre-band-head { grid-area: head; }
+.tigre-band-body { grid-area: body; }
+.tigre-band-inner > .tigre-compare { grid-area: compare; align-self: center; }
 @media (max-width: 900px) {
-  .tigre-band-inner { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+  .tigre-band-inner {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: "head" "compare" "body";
+    row-gap: 1.75rem;
+  }
   .tigre-band { padding: 1.75rem 1.25rem; }
 }
+
 .tigre-band p { color: #D6D6D6; max-width: 34rem; }
 .tigre-band a:not(.sd-btn) { color: #FF9A33; }
 .tigre-band a:not(.sd-btn):hover { color: #FFC285; }
@@ -149,6 +161,7 @@ html {
   overflow: hidden;
   border-radius: 0.25rem;
   touch-action: pan-y;
+  background: #000;
 }
 .tigre-compare-frame img {
   position: absolute;
@@ -163,6 +176,7 @@ html {
 }
 .tigre-compare-handle {
   position: absolute;
+  z-index: 2;
   top: 0;
   bottom: 0;
   left: var(--pos);
@@ -202,9 +216,14 @@ html {
   outline: 3px solid #FFFFFF;
   outline-offset: 3px;
 }
+/* The names sit on either side of the divider and move with it, so it is
+   clear which method is on which side. compare.js hides a name when its side
+   is too narrow to hold it. */
 .tigre-compare-name {
   position: absolute;
+  z-index: 2;
   bottom: 0.75rem;
+  transition: opacity 0.15s;
   padding: 0.15rem 0.5rem;
   font-weight: 700;
   font-stretch: 112%;
@@ -214,8 +233,34 @@ html {
   border-radius: 0.2rem;
   pointer-events: none;
 }
-.tigre-compare-left { left: 0.75rem; }
-.tigre-compare-right { right: 0.75rem; }
+.tigre-compare-left { right: calc(100% - var(--pos) + 0.6rem); }
+.tigre-compare-right { left: calc(var(--pos) + 0.6rem); }
+.tigre-compare-name.is-hidden { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .tigre-compare-name { transition: none; }
+}
+/* The magnified box at the top right of the coffee bean. It covers the box
+   drawn in the image, and grows while the divider is held or dragged. The
+   divider cuts it at the same place as the slice (--cut, set by compare.js). */
+.tigre-compare-zoom {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+  width: 35.5%;
+  aspect-ratio: 1;
+  border: solid #FC7F00;
+  border-width: 0 0 3px 3px;
+  box-sizing: border-box;
+  pointer-events: none;
+  transition: width 0.3s ease;
+}
+.tigre-compare-frame.is-zoomed .tigre-compare-zoom { width: 64%; }
+.tigre-compare-frame .tigre-compare-zoom img { position: absolute; inset: 0; }
+.tigre-compare-zoom-left { clip-path: inset(0 var(--cut, 0) 0 0); }
+@media (prefers-reduced-motion: reduce) {
+  .tigre-compare-zoom { transition: none; }
+}
 .tigre-compare-caption,
 .tigre-compare figcaption {
   text-align: left;
@@ -308,3 +353,10 @@ html[data-theme="dark"] .tigre-band img {
 .tigre-compare-caption { font-size: 0.85rem; color: #BDBDBD; margin-bottom: 0; }
 .tigre-compare-caption a { color: #FF9A33; }
 .tigre-compare-hint { margin-top: 0.35rem !important; padding: 0 !important; }
+
+/* Narrow screens: a smaller logo and no gap under the headline, so the slider
+   starts higher. */
+@media (max-width: 900px) {
+  .tigre-band .tigre-band-head .tigre-tagline { margin-bottom: 0; }
+  .tigre-band img.tigre-hero-logo { width: 8.5rem; margin-bottom: 1rem; }
+}

@@ -1,3 +1,10 @@
+---
+og:description: "Reconstruct a real micro-CT scan with TIGRE from start to finish: download, load, check the geometry, fix the centre of rotation."
+myst:
+  html_meta:
+    description: "Reconstruct a real micro-CT scan with TIGRE from start to finish: download, load, check the geometry, fix the centre of rotation."
+---
+
 # Reconstructing a real scan, step by step
 
 This tutorial reconstructs a real micro-CT scan from start to finish: download

@@ -1,3 +1,10 @@
+---
+og:description: "Books, papers and courses to learn more about tomographic reconstruction and the algorithms in TIGRE."
+myst:
+  html_meta:
+    description: "Books, papers and courses to learn more about tomographic reconstruction and the algorithms in TIGRE."
+---
+
 # Further reading
 
 **The TIGRE papers.** The original paper describes the toolbox, its

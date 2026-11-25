@@ -1,3 +1,10 @@
+---
+og:description: "What is planned for TIGRE: support for AMD, Intel and Apple Silicon GPUs, and beam-hardening and scatter correction."
+myst:
+  html_meta:
+    description: "What is planned for TIGRE: support for AMD, Intel and Apple Silicon GPUs, and beam-hardening and scatter correction."
+---
+
 # Roadmap
 
 ## Other GPUs

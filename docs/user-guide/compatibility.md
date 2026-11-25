@@ -1,3 +1,10 @@
+---
+og:description: "How TIGRE handles versions and backwards compatibility: what can change between releases and how deprecations are announced."
+myst:
+  html_meta:
+    description: "How TIGRE handles versions and backwards compatibility: what can change between releases and how deprecations are announced."
+---
+
 # Versions and backwards compatibility
 
 This page says what you can rely on when you upgrade TIGRE, and how things

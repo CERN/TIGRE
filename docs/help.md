@@ -1,3 +1,10 @@
+---
+og:description: "Where to get help with TIGRE: the guides to check first, how to ask a question, how to report a bug and what to include."
+myst:
+  html_meta:
+    description: "Where to get help with TIGRE: the guides to check first, how to ask a question, how to report a bug and what to include."
+---
+
 # Getting help
 
 ## Check the guides first

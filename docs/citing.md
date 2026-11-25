@@ -1,3 +1,10 @@
+---
+og:description: "How to cite TIGRE in your publications: the papers describing the toolbox, with BibTeX entries."
+myst:
+  html_meta:
+    description: "How to cite TIGRE in your publications: the papers describing the toolbox, with BibTeX entries."
+---
+
 # Citing TIGRE
 
 TIGRE is free to use, modify and share under the BSD licence. If you use it in

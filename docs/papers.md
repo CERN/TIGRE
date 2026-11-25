@@ -1,3 +1,10 @@
+---
+og:description: "Published research that uses TIGRE, in medical imaging, proton CT, industrial testing, synchrotron and neutron imaging, and more."
+myst:
+  html_meta:
+    description: "Published research that uses TIGRE, in medical imaging, proton CT, industrial testing, synchrotron and neutron imaging, and more."
+---
+
 # Papers using TIGRE
 
 Research that uses TIGRE for its reconstructions or simulations, across

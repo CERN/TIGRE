@@ -1,3 +1,10 @@
+---
+og:description: "Why a CT reconstruction looks wrong: pictures of the common mistakes in geometry and data, and how to fix each one in TIGRE."
+myst:
+  html_meta:
+    description: "Why a CT reconstruction looks wrong: pictures of the common mistakes in geometry and data, and how to fix each one in TIGRE."
+---
+
 # Why does my reconstruction look wrong?
 
 When a reconstruction looks wrong, the cause is usually the data or the

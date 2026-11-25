@@ -1,3 +1,10 @@
+---
+og:description: "Set up TIGRE's geometry for your own scanner step by step: distances, detector, image size, angles, offsets and checks."
+myst:
+  html_meta:
+    description: "Set up TIGRE's geometry for your own scanner step by step: distances, detector, image size, angles, offsets and checks."
+---
+
 # Setting up the geometry for your scanner
 
 A step-by-step way to go from a scanner's numbers to a correct

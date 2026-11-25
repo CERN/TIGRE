@@ -1,3 +1,10 @@
+---
+og:description: "Reconstruct proton CT data with TIGRE: the proton CT module, its geometry and the algorithms it supports."
+myst:
+  html_meta:
+    description: "Reconstruct proton CT data with TIGRE: the proton CT module, its geometry and the algorithms it supports."
+---
+
 # Proton CT
 
 TIGRE includes a MATLAB extension, written in CUDA, that turns proton CT

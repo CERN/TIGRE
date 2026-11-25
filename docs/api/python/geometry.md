@@ -1,4 +1,11 @@
-# Geometry
+---
+og:description: "Python classes and functions to create, check and plot a TIGRE scanner geometry, and to find the centre of rotation."
+myst:
+  html_meta:
+    description: "Python classes and functions to create, check and plot a TIGRE scanner geometry, and to find the centre of rotation."
+---
+
+# Python geometry
 
 How to describe a scanner: see [](../../user-guide/geometry.md).
 
