@@ -1,4 +1,11 @@
-# Utilities
+---
+og:description: "Python utilities in TIGRE: noise simulation, TV denoising, image quality measures, phantoms, GPU selection and version information."
+myst:
+  html_meta:
+    description: "Python utilities in TIGRE: noise simulation, TV denoising, image quality measures, phantoms, GPU selection and version information."
+---
+
+# Python utilities
 
 ```{eval-rst}
 Simulation and test data

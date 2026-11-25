@@ -293,5 +293,28 @@ def _colab_button(app, docname, source):
     source[0] = text[:end + 1] + button + text[end + 1:]
 
 
+# -- Demo thumbnails -------------------------------------------------------------
+# sphinx-gallery writes the thumbnails with an empty alt text. Give each one the
+# title of its demo, so screen readers and image search know what it shows.
+_THUMB = re.compile(
+    r'(<div class="sphx-glr-thumbcontainer"[^>]*>)<img alt=""'
+    r'(.*?<div class="sphx-glr-thumbnail-title">)(.*?)(</div>)',
+    re.S,
+)
+
+
+def _thumbnail_alt(app, exception):
+    if exception is not None or app.builder.format != "html":
+        return
+    for page in pathlib.Path(app.outdir, "demos").rglob("index.html"):
+        text = page.read_text(encoding="utf-8")
+        new = _THUMB.sub(
+            lambda m: f'{m[1]}<img alt="{m[3].strip().replace(chr(34), "&quot;")}"{m[2]}{m[3]}{m[4]}', text
+        )
+        if new != text:
+            page.write_text(new, encoding="utf-8")
+
+
 def setup(app):
     app.connect("source-read", _colab_button)
+    app.connect("build-finished", _thumbnail_alt)

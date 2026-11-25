@@ -11,7 +11,7 @@ myst:
 
 <div class="tigre-band">
 <div class="tigre-band-inner">
-<div class="tigre-band-text">
+<div class="tigre-band-head">
 
 ```{image} _static/logo/tigre-logo-dark.svg
 :alt: TIGRE
@@ -19,6 +19,9 @@ myst:
 ```
 
 <p class="tigre-tagline">Fast, flexible 3D CT reconstruction on GPUs, for MATLAB and Python.</p>
+
+</div>
+<div class="tigre-band-body">
 
 TIGRE, the Tomographic Iterative GPU-based Reconstruction toolbox,
 reconstructs images from any scanning geometry with multi-GPU projectors
@@ -70,12 +73,16 @@ backprojectors on one and several GPUs. Read the
 <div class="tigre-compare-frame" style="--pos: 82%">
 <img class="dark-light" src="_static/hero/coffee-cgls.webp" width="1000" height="1000" alt="The same slice reconstructed with CGLS: the same structure, with less noise">
 <img class="tigre-compare-left-img dark-light" src="_static/hero/coffee-fdk.webp" width="1000" height="1000" alt="A slice through a coffee bean reconstructed with FDK: fine structure with grainy noise">
+<div class="tigre-compare-zoom" aria-hidden="true">
+<img src="_static/hero/coffee-zoom-cgls.webp" width="744" height="744" alt="" loading="lazy">
+<img class="tigre-compare-zoom-left" src="_static/hero/coffee-zoom-fdk.webp" width="744" height="744" alt="" loading="lazy">
+</div>
 <span class="tigre-compare-name tigre-compare-left" aria-hidden="true">FDK</span>
 <span class="tigre-compare-name tigre-compare-right" aria-hidden="true">CGLS</span>
 <input class="tigre-compare-range" type="range" min="0" max="100" value="82" step="1" aria-label="Move the divider between FDK (left) and CGLS (right)">
 <span class="tigre-compare-handle" aria-hidden="true"></span>
 </div>
-<p class="tigre-compare-caption">A coffee bean: 3340 × 3340 × 900 voxels from 2134 projections, larger than GPU memory. FDK against 15 iterations of CGLS; the box at the top right magnifies the marked area.</p>
+<p class="tigre-compare-caption">A coffee bean: 3340 × 3340 × 900 voxels from 2134 projections, larger than GPU memory. FDK against 15 iterations of CGLS. The box at the top right magnifies the marked area, and grows while you drag.</p>
 </div>
 <div class="tigre-compare-panel" role="tabpanel" id="panel-synchrotron" aria-labelledby="tab-synchrotron" hidden>
 <div class="tigre-compare-frame" style="--pos: 50%">
@@ -99,7 +106,7 @@ backprojectors on one and several GPUs. Read the
 </div>
 <p class="tigre-compare-caption">Low-dose cone-beam CT of a lung cancer patient for image-guided radiotherapy. FDK against AwPCSD, an edge-preserving iterative method. From <a href="https://doi.org/10.1088/1361-6560/aa7675">Biguri et al. (2017)</a>, Physics in Medicine &amp; Biology.</p>
 </div>
-<figcaption class="tigre-compare-hint">Drag the divider, or use the arrow keys, to compare.</figcaption>
+<figcaption class="tigre-compare-hint">Each method is named on its side of the orange divider. Drag it, or use the arrow keys, to compare.</figcaption>
 </figure>
 
 </div>

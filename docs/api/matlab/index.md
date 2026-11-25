@@ -1,3 +1,10 @@
+---
+og:description: "Reference for TIGRE's MATLAB functions: Ax and Atb, geometry, reconstruction algorithms, scanner data loaders and utilities."
+myst:
+  html_meta:
+    description: "Reference for TIGRE's MATLAB functions: Ax and Atb, geometry, reconstruction algorithms, scanner data loaders and utilities."
+---
+
 # MATLAB API
 
 Generated from each function's help text, which is what `help NAME` shows in
@@ -8,9 +15,9 @@ and options are given as name-value pairs, for example
 ```{toctree}
 :maxdepth: 1
 
-operators
-geometry
-algorithms
-utilities
-io
+Projection operators <operators>
+Geometry <geometry>
+Algorithms <algorithms>
+Utilities <utilities>
+Scanner data loaders <io>
 ```

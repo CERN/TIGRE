@@ -1,3 +1,10 @@
+---
+og:description: "Reference for every public function in TIGRE, in Python and MATLAB: projectors, geometry, reconstruction algorithms, data loaders and utilities."
+myst:
+  html_meta:
+    description: "Reference for every public function in TIGRE, in Python and MATLAB: projectors, geometry, reconstruction algorithms, data loaders and utilities."
+---
+
 # API reference
 
 Every public function and class in TIGRE, in both languages. For explanations

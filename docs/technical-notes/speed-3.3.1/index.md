@@ -1,3 +1,10 @@
+---
+og:description: "Measurements of the speed of TIGRE's projectors and backprojectors in version 3.3.1, on one and several GPUs."
+myst:
+  html_meta:
+    description: "Measurements of the speed of TIGRE's projectors and backprojectors in version 3.3.1, on one and several GPUs."
+---
+
 # Projector speed in TIGRE 3.3.1
 
 *Summary of the technical note "TIGRE 3.3.1 and ASTRA 2.5: a speed comparison

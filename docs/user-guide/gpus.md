@@ -1,3 +1,10 @@
+---
+og:description: "How TIGRE uses one or several GPUs, splits problems larger than GPU memory, and how to choose which GPUs to use."
+myst:
+  html_meta:
+    description: "How TIGRE uses one or several GPUs, splits problems larger than GPU memory, and how to choose which GPUs to use."
+---
+
 # GPUs and memory
 
 TIGRE runs its operators on NVIDIA GPUs through CUDA. It uses every GPU it

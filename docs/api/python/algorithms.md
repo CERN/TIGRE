@@ -1,4 +1,11 @@
-# Algorithms
+---
+og:description: "Every reconstruction algorithm in tigre.algorithms for Python, from FDK to SART, CGLS, LSQR and total-variation methods, with their options."
+myst:
+  html_meta:
+    description: "Every reconstruction algorithm in tigre.algorithms for Python, from FDK to SART, CGLS, LSQR and total-variation methods, with their options."
+---
+
+# Python algorithms
 
 In `tigre.algorithms`. All iterative algorithms are called as
 `algorithm(proj, geo, angles, niter, **options)`; see

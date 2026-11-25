@@ -1,3 +1,10 @@
+---
+og:description: "Load scans from Nikon, Bruker, YXLON, Diondo and Varian scanners, DXchange synchrotron data and DICOM into TIGRE."
+myst:
+  html_meta:
+    description: "Load scans from Nikon, Bruker, YXLON, Diondo and Varian scanners, DXchange synchrotron data and DICOM into TIGRE."
+---
+
 # Loading scanner data
 
 TIGRE reconstructs from **line integrals**: each projection value is

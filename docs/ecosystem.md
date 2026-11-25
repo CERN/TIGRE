@@ -1,3 +1,10 @@
+---
+og:description: "Software that uses TIGRE, such as CIL and LION, and the tools TIGRE works with, including PyTorch and ASTRA."
+myst:
+  html_meta:
+    description: "Software that uses TIGRE, such as CIL and LION, and the tools TIGRE works with, including PyTorch and ASTRA."
+---
+
 # Software that uses TIGRE
 
 ## Libraries

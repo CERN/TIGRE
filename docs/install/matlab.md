@@ -1,3 +1,10 @@
+---
+og:description: "Install TIGRE for MATLAB on Windows or Linux: the requirements, compiling the CUDA code with Compile.m, and checking the installation."
+myst:
+  html_meta:
+    description: "Install TIGRE for MATLAB on Windows or Linux: the requirements, compiling the CUDA code with Compile.m, and checking the installation."
+---
+
 # MATLAB
 
 TIGRE for MATLAB is compiled on your machine with `Compile.m`.

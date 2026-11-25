@@ -1,3 +1,10 @@
+---
+og:description: "How TIGRE describes a CT scanner: source and detector distances, detector and image sizes, offsets, rotations and angles."
+myst:
+  html_meta:
+    description: "How TIGRE describes a CT scanner: source and detector distances, detector and image sizes, offsets, rotations and angles."
+---
+
 # Describing your scanner: the geometry
 
 Every TIGRE operation takes three things: the data (an image or a set of
