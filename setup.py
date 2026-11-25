@@ -508,8 +508,8 @@ class BuildExtension(build_ext):
         # With build_ext -j the extensions are built in threads that share self.compiler. win_wrap_compile replaces
         # its call/spawn for a whole compile() and puts it back afterwards, so one thread can send another's .cu
         # files to cl.exe, and extensions that share a source write the same .obj at once. Build them one at a time.
-        if IS_WINDOWS and IS_HIP and self.parallel:
-            print("TIGRE: building the extensions one at a time (build_ext -j is not supported for hip on Windows).")
+        if IS_WINDOWS and self.parallel:
+            print("TIGRE: building the extensions one at a time (build_ext -j is not supported on Windows).")
             self.parallel = None
 
         build_ext.build_extensions(self)
