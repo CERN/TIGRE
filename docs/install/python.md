@@ -133,18 +133,19 @@ first one whose compiler it finds, in this order:
 |---|---|---|
 | `cuda` | NVIDIA | `CUDA_HOME` or `CUDA_PATH`, `nvcc` on the `PATH`, or the default CUDA install location |
 | `hip` | AMD | `ROCM_PATH` or `HIP_PATH`, `hipcc` on the `PATH`, or `/opt/rocm` |
-| `sycl` | Intel | `icpx` (`icx` on Windows) on the `PATH` |
+| `sycl` | Intel | `TIGRE_SYCL_CXX`, or `icpx` (`icx` on Windows) on the `PATH` |
 | `metal` | Apple Silicon | a Mac with Apple Silicon |
 
 The build prints which backend it chose and why. To choose one yourself, set
 `TIGRE_BACKEND`, for example `TIGRE_BACKEND=cuda pip install .`
 (`set TIGRE_BACKEND=cuda` first on Windows).
 
-At the moment only `cuda` can be built. The others are being added: `hip` in
-[#747](https://github.com/CERN/TIGRE/pull/747), `sycl` in
-[#885](https://github.com/CERN/TIGRE/issues/885) and `metal` in
+`cuda` and `sycl` can be built (`sycl`: see [SYCL build](#sycl-build-intel-oneapi)
+below). The others are being added: `hip` in
+[#747](https://github.com/CERN/TIGRE/pull/747) and `metal` in
 [#876](https://github.com/CERN/TIGRE/issues/876). If the build picks one of
-them, it stops and says so; set `TIGRE_BACKEND=cuda` to build for NVIDIA GPUs.
+them, it stops and says so; set `TIGRE_BACKEND=cuda` or `TIGRE_BACKEND=sycl`
+to choose a supported backend.
 
 ## Conda (unofficial)
 
@@ -209,3 +210,36 @@ TIGRE_NO_PINNED_MEMORY=1 pip install --no-cache-dir git+https://github.com/CERN/
 `--no-cache-dir` stops pip from reusing a wheel it built earlier with pinned
 memory. The same works with `pip install .` from a clone. The prebuilt wheels
 always use pinned memory.
+
+## SYCL build (Intel oneAPI)
+
+TIGRE can also be compiled with SYCL instead of CUDA, using the Intel oneAPI
+DPC++/C++ compiler. This build needs no CUDA toolkit and runs on Intel GPUs
+through Level Zero or OpenCL, or falls back to SYCL CPU devices when no SYCL
+GPU is present (printing once that TIGRE is running on the CPU).
+
+Requirements:
+
+- Python 3.11–3.14, NumPy, and Cython
+- The oneAPI DPC++/C++ compiler (`icpx` on Linux, `icx` on Windows) on the
+  `PATH`, or `TIGRE_SYCL_CXX` set to the compiler path
+- A SYCL runtime for your device (Intel Graphics Compute Runtime / Level Zero
+  for Intel GPUs, or the Intel OpenCL CPU runtime for Intel CPUs)
+
+From a local clone:
+
+```sh
+TIGRE_BACKEND=sycl pip install --no-build-isolation --no-cache-dir .
+```
+
+On Windows, run `set TIGRE_BACKEND=sycl` and the `pip` command from an x64
+Visual Studio developer prompt with `icx` and its libraries on `PATH` and
+`LIB`.
+
+Without `TIGRE_BACKEND`, the build picks `sycl` when no CUDA or HIP compiler
+is found and the SYCL compiler is available. TIGRE lists Level Zero GPUs if
+present, otherwise other GPUs, otherwise SYCL CPU devices. Set
+`TIGRE_SYCL_ALL_DEVICES=1` to append CPU devices after the GPUs, and use
+`ONEAPI_DEVICE_SELECTOR` to filter devices. PyTorch CUDA tensors and CuPy
+arrays passed to `tigre.Ax` or `tigre.Atb` are transferred through host
+memory.
