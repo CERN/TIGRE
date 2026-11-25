@@ -1,6 +1,7 @@
 function [ fres, qualMeasOut ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
-%ASD_POCS Solves theOS_ASD_POCS total variation constrained image in 3D
-% tomography.
+%OS_ASD_POCS solves the total variation constrained reconstruction
+% problem in 3D tomography with ordered subsets. Each iteration is an
+% OS-SART data step followed by total variation minimization.
 %
 %   OS_ASD_POCS(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding

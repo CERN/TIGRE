@@ -100,6 +100,9 @@ def _fence(text):
 
 
 _OPTION = re.compile(r"^(\s*)(?:\*\s*)?'([A-Za-z_][\w]*)'\s*:?\s*(.*)$")
+# A value of an option, such as a filter name, may contain hyphens ('ram-lak').
+_VALUE = re.compile(r"^(\s*)(?:\*\s*)?'([A-Za-z_][\w-]*)'\s*:?\s*(.*)$")
+_OUTPUTS = re.compile(r"^\s*OUTPUTS?\s*:?\s*$", re.I)
 
 
 def _escape(text):
@@ -128,8 +131,14 @@ def _paragraphs(lines):
 
 
 def split_help(name, help_text):
-    """Split MATLAB help text into intro paragraphs and (option, description) pairs."""
+    """Split MATLAB help text into intro paragraphs and (option, description) pairs.
+
+    An "OUTPUTS:" section, if there is one, is left out; see split_outputs.
+    """
     lines = help_text.split("\n")
+    out = next((k for k, l in enumerate(lines) if _OUTPUTS.match(l)), None)
+    if out is not None:
+        lines = lines[:out]
     matches = [(k, _OPTION.match(l)) for k, l in enumerate(lines)]
     matches = [(k, m) for k, m in matches if m]
     if not matches:
@@ -147,11 +156,27 @@ def split_help(name, help_text):
     return intro, options
 
 
+def split_outputs(help_text):
+    """The "OUTPUTS:" section as (call, description) pairs, e.g. ("[img,errorL2]", "...")."""
+    lines = help_text.split("\n")
+    out = next((k for k, l in enumerate(lines) if _OUTPUTS.match(l)), None)
+    if out is None:
+        return []
+    items = []
+    for line in lines[out + 1 :]:
+        m = re.match(r"^\s*(\[[^\]]*\])\s*(.*)$", line)
+        if m:
+            items.append([m.group(1), m.group(2).strip()])
+        elif items and line.strip():
+            items[-1][1] += " " + line.strip()
+    return items
+
+
 def _option_description(body):
     """The description of one option: a paragraph, then any sub-values as a list."""
     text, items = [], []
     for line in body:
-        sub = _OPTION.match(line) if line.strip() else None
+        sub = _VALUE.match(line) if line.strip() else None
         if sub and (text or items):
             items.append([sub.group(2), sub.group(3).strip()])
         elif items and line.strip():
@@ -161,7 +186,7 @@ def _option_description(body):
     out = _escape(" ".join(text))
     for value, desc in items:
         desc = desc.lstrip(":").strip()
-        out += f"\n  - `'{value}'`: {_escape(desc)}"
+        out += f"\n  - `'{value}'`: {_escape(desc)}" if desc else f"\n  - `'{value}'`"
     return out
 
 
@@ -203,6 +228,12 @@ def render(group):
                     out.append("Options:\n")
                 for option, body in options:
                     out.append(f"`'{option}'`\n: {_option_description(body)}\n")
+            outputs = split_outputs(help_text)
+            if outputs:
+                out.append("Outputs:\n")
+                for call, desc in outputs:
+                    out.append(f"- `{call}`: {_escape(desc)}" if desc else f"- `{call}`")
+                out.append("")
             fence = _fence(help_text)
             out.append(f":::{{dropdown}} Help text as in MATLAB\n{fence}text\n{help_text}\n{fence}\n:::\n")
         out.append(f"Source: [`MATLAB/{rel}`]({SOURCE_URL}{rel})\n")
