@@ -44,9 +44,14 @@ def _Ax_ext(np.ndarray[np.float32_t, ndim=3] img, geometry, np.ndarray[np.float3
         raise MemoryError("Error reading the geometry")
     cdef float* c_projectionsNonPinned = <float*>malloc(nDetectorPixels * total_projections* sizeof(float))
     if not c_projectionsNonPinned:
+        free_c_geometry(c_geometry)
+        free_c_gpuids(c_gpuids)
         raise MemoryError("Error creating memory for projections")
     cdef float** c_projections = <float**> malloc(total_projections * sizeof(float*))
     if not c_projections:
+        free(c_projectionsNonPinned)
+        free_c_geometry(c_geometry)
+        free_c_gpuids(c_gpuids)
         raise MemoryError("Error creating memory to host projections")
     cdef int i = 0
     for i in range(total_projections):
