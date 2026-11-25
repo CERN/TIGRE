@@ -89,9 +89,11 @@ MATLAB tests are in `MATLAB/Tests/`.
 1. Fork the repository and create a branch from `master` with a descriptive name
    (`fix/fdk-offset-weights`, `feature/new-loader`).
 2. Keep each pull request focused on one thing. Small PRs get reviewed faster.
-3. Add tests for new behaviour and for bug fixes where possible. Pure-Python logic
-   should be testable without a GPU; mock `Ax`/`Atb` if needed (see
-   `Python/tests/test_krylov_restart_and_norms.py` for an example).
+3. Add tests for new behaviour, and for bug fixes that could plausibly come back
+   or that affect results. Keep them few and small (up to 64^3 volumes, a few
+   seconds each), and extend an existing test before adding a new file.
+   Pure-Python logic should be testable without a GPU; mock `Ax`/`Atb` if needed
+   (see `Python/tests/test_krylov_restart_and_norms.py` for an example).
 4. Update the demos and documentation if you change user-facing behaviour.
 5. Add a line to [`changelog.md`](https://github.com/CERN/TIGRE/blob/master/changelog.md) under the next release.
    Do not rename, remove or change the meaning of anything public (including

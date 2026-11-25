@@ -52,8 +52,17 @@ MATLAB and Python on top of shared CUDA code.
 - **Changelog.** Add a line under `## Unreleased` in `changelog.md` for every
   change users can notice. Write it for users: what changed and what they will
   see, not how the code changed.
-- **Tests.** Add a test for each bug fix and new behaviour. A bug-fix test
-  should fail before the fix and pass after it.
+- **Tests: few, small, about behaviour.** Every test is compiled for and run
+  on every PR, so each one has to earn its place.
+  - Test what users rely on (a result, an error message, an argument), not
+    internal details of how the code does it.
+  - Before adding a test file, extend an existing test or parametrisation. A
+    new file needs a reason.
+  - Keep sizes small: volumes up to 64^3, a few iterations, a few seconds per
+    test on a GPU. Anything bigger or rare is marked `extended`.
+  - Not every bug fix needs a test. Add one when the bug could plausibly come
+    back or affects results; then it should fail before the fix and pass after.
+  - Say in the pull request why each new test is needed.
 - **Line endings.** Many files use CRLF (most `.m` files, `setup.py`,
   `.gitignore`, parts of `README.md`). Keep each file's existing line endings;
   do not convert whole files.
