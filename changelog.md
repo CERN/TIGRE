@@ -18,6 +18,15 @@ thank you.
   `geo.angles` on it either. (`Ax`, `Atb`, FDK and FBP already worked on a copy.)
 - Python: `NikonDataLoader` reads `.ang` angle files with tab-separated lines (such as the SophiaBeads
   datasets); it failed with "must be real number, not str".
+- MATLAB: `help FBP` and `help OSEM` now describe those functions (FBP had no help, OSEM showed the
+  help of OS_SART), and the first lines of `help OS_ASD_POCS` and `help FDK` are corrected.
+- MATLAB: `FBP`'s second output, `errorL2`, compared arrays in different layouts: it gave a wrong value
+  with a square detector and a size error otherwise. It is now the norm of `proj - Ax(img)`.
+
+### Deprecated
+- MATLAB: the `'lambda'` and `'lambda_red'` options of `OSEM`. They never changed the result, as the
+  OSEM update has no step size. Passing them now gives a `TIGRE:deprecated` warning; they will be
+  removed in TIGRE 4.
 
 ## 3.3.1 (2026-11-23)
 

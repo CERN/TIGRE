@@ -1,24 +1,21 @@
 function [res,resL2,qualMeasOut]=OSEM(proj,geo,angles,niter,varargin)
-% OS_SART solves Cone Beam CT image reconstruction using Oriented Subsets
-%              Simultaneous Algebraic Reconstruction Technique algorithm
+%OSEM solves CT image reconstruction using Ordered Subsets Expectation
+% Maximization, a statistical method for Poisson-distributed data.
+% It is the method of Hudson and Larkin (1994). The update is
+% multiplicative, so the image stays non-negative.
 %
-%   OS_SART(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
-%   using the projection data PROJ taken over ALPHA angles, corresponding
+%   OSEM(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
+%   using the projection data PROJ taken over ANGLES angles, corresponding
 %   to the geometry described in GEO, using NITER iterations.
 %
-%   OS_SART(PROJ,GEO,ALPHA,NITER,OPT,VAL,...) uses options and values for solving. The
+%   OSEM(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 %
 %   'BlockSize':   Sets the projection block size used simultaneously. If
-%                   if BlockSize = length(alpha) then OSEM becomes MLEM. Default is 20.
-%
-%   'lambda':      Sets the value of the hyperparameter. Default is 1
-%
-%   'lambda_red':  Reduction of lambda. Every iteration
-%                  lambda=lambdared*lambda. Default is 1
+%                  BlockSize = length(angles) then OSEM becomes MLEM. Default is 20.
 %
 %   'Init':        Describes different initialization techniques.
-%                  'none'     : Initializes the image to zeros (default)
+%                  'none'     : Initializes the image to ones (default)
 %                  'FDK'      : Initializes image to FDK reconstruction
 %                  'multigrid': Initializes image by solving the problem in
 %                               small scale and increasing it when relative
@@ -36,7 +33,7 @@ function [res,resL2,qualMeasOut]=OSEM(proj,geo,angles,niter,varargin)
 %                  These will be computed in each iteration.
 % 'OrderStrategy'  Chooses the subset ordering strategy. Options are
 %                  'ordered' : uses them in the input order, but divided
-%                  'random'  : orders them randomly
+%                  'random'  : orders them randomly (default)
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
 % 'redundancy_weighting': true or false. Default is true. Applies data
@@ -45,11 +42,16 @@ function [res,resL2,qualMeasOut]=OSEM(proj,geo,angles,niter,varargin)
 %  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
+%  'nonneg'       true or false. Default is true. Sets negative values to
+%                 zero after each update.
+%  'gpuids'       the GPUs to use, from GpuIds(). Default is all GPUs.
 % OUTPUTS:
 %
 %    [img]                       will output the reconstructed image
 %    [img,errorL2]               will output the L2 norm of the residual
-%                                (the function being minimized)
+%                                after each iteration. When it is asked
+%                                for, the algorithm stops early if the
+%                                residual grows.
 %    [img,errorL2,qualMeas]      will output the quality measurements asked
 %                                by the input 'QualMeas'
 %
@@ -72,7 +74,7 @@ function [res,resL2,qualMeasOut]=OSEM(proj,geo,angles,niter,varargin)
 
 %% Deal with input parameters
 
-[blocksize,lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,varargin);
+[blocksize,res,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,angles,varargin);
 
 measurequality=~isempty(QualMeasOpts) | ~any(isnan(gt(:)));
 if ~any(isnan(gt(:)))
@@ -123,15 +125,6 @@ end
 clear A x y dx dz
 
 
-%% hyperparameter stuff
-nesterov=false;
-if ischar(lambda)&&strcmp(lambda,'nesterov')
-    nesterov=true;
-    lambda=(1+sqrt(1+4))/2;
-    gamma=0;
-    ynesterov=zeros(size(res),'single');
-    ynesterov_prev=ynesterov;
-end
 %% Iterate
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
@@ -182,20 +175,12 @@ for ii=1:niter
         
     end
     
-    % reduce hyperparameter
-    if nesterov
-        gamma=(1-lambda);
-        lambda=(1+sqrt(1+4*lambda^2))/2;
-        gamma=gamma/lambda;
-    else
-        lambda=lambda*lambdared;
-    end
     
     if measurequality
         qualMeasOut(:,ii)=Measure_Quality(res_prev,res,QualMeasOpts);
     end
     
-    if computeL2 || nesterov
+    if computeL2
         % Compute error norm2 of b-Ax
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
@@ -263,7 +248,7 @@ end
 end
 
 %% Parse inputs
-function [block_size,lambda,res,lambdared,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,alpha,argin)
+function [block_size,res,verbose,QualMeasOpts,OrderStrategy,nonneg,gpuids,redundancy_weights,gt]=parse_inputs(proj,geo,alpha,argin)
 opts={'blocksize','lambda','init','initimg','verbose','lambda_red','qualmeas','orderstrategy','nonneg','gpuids','redundancy_weighting','groundtruth'};
 defaults=ones(length(opts),1);
 % Check inputs
@@ -310,23 +295,12 @@ for ii=1:length(opts)
                 warning('TIGRE: Verbose mode not available for older versions than MATLAB R2014b');
                 verbose=false;
             end
-            % % % % % % % hyperparameter, LAMBDA
-        case 'lambda'
-            if default
-                lambda=1;
-            elseif length(val)>1 || ~isnumeric( val)
-                error('TIGRE:OS_SART:InvalidInput','Invalid lambda')
-            else
-                lambda=val;
-            end
-        case 'lambda_red'
-            if default
-                lambdared=1;
-            else
-                if length(val)>1 || ~isnumeric( val)
-                    error('TIGRE:OS_SART:InvalidInput','Invalid lambda')
-                end
-                lambdared=val;
+            % % % % % % % LAMBDA, LAMBDA_RED: deprecated. The OSEM update has no
+            % step size, so they never changed the result.
+        case {'lambda','lambda_red'}
+            if ~default
+                warning('TIGRE:deprecated',['OSEM: ''' opts{ii} ''' has no effect and will be removed in TIGRE 4. ' ...
+                    'Remove it from the call to OSEM.'])
             end
         case 'blocksize'
             if default

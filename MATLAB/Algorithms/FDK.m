@@ -1,6 +1,6 @@
 function [res]=FDK(proj,geo,angles,varargin)
-%FDK solves Cone Beam CT image reconstruction using Feldkam Davis Kress
-% algorithm (filtered backprojection) 
+%FDK solves Cone Beam CT image reconstruction using the Feldkamp, Davis
+% and Kress algorithm (filtered backprojection) 
 %
 %   FDK(PROJ,GEO,ANGLES) solves the reconstruction problem
 %   using the projection data PROJ taken over ANGLES angles, corresponding
