@@ -136,6 +136,7 @@ linkcheck_anchors = False
 linkcheck_ignore = [
     r"https://doi\.org/.*",  # publishers often block automated link checkers
     r"https://iopscience\.iop\.org/.*",
+    r"https://eprints\.soton\.ac\.uk/.*",  # refuses automated requests (401/403); pages are public
 ]
 
 # -- Demos (sphinx-gallery) ------------------------------------------------
