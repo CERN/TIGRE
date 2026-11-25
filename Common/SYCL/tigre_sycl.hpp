@@ -33,15 +33,20 @@ const std::vector<sycl::device>& tigreSyclDevices();
 //! @brief In-order queue for device id iDeviceId (an index of tigreSyclDevices()).
 sycl::queue& tigreSyclQueue(int iDeviceId);
 
-//! @brief Usable memory in bytes on a device: global memory and the largest
-//! single allocation are both taken into account, and the environment variable
-//! TIGRE_SYCL_MEMORY_LIMIT_MB, if set, caps it (for tests).
+//! @brief Largest single allocation in bytes: the device's max_mem_alloc_size,
+//! optionally capped by TIGRE_SYCL_MAX_ALLOC_MB (for tests).
 size_t tigreSyclMaxAlloc(int iDeviceId);
+
+//! @brief Total memory budget in bytes: 95% of global memory, optionally
+//! capped by TIGRE_SYCL_MEMORY_LIMIT_MB (for tests). This is not limited by
+//! max_mem_alloc_size; image pieces are split so each buffer stays within
+//! tigreSyclMaxAlloc().
+size_t tigreSyclMemoryBudget(int iDeviceId);
 
 //! @brief Free device memory in bytes, as far as the SYCL runtime reports it
 //! (sycl::ext::intel::info::device::free_memory, e.g. on Level Zero GPUs), and
-//! never more than tigreSyclMaxAlloc(). Devices that do not report it (e.g. the
-//! OpenCL CPU device) give tigreSyclMaxAlloc().
+//! never more than tigreSyclMemoryBudget(). Devices that do not report it
+//! (e.g. the OpenCL CPU device) give tigreSyclMemoryBudget().
 size_t tigreSyclFreeMemory(int iDeviceId);
 
 //! @brief Total device memory in bytes (global memory size).
@@ -51,6 +56,18 @@ size_t tigreSyclTotalMemory(int iDeviceId);
 //! As in the CUDA build, warns (tag) if less than half of the device memory is
 //! free, when the runtime reports free memory.
 size_t tigreSyclCheckFreeMemory(int iDeviceId, const char* tag);
+
+//! @brief How many image pieces are needed so the working set fits in
+//! mem_budget and each single buffer is at most max_alloc. Returns 1 if no
+//! split is required, or 0 if even one image slice plus the projection
+//! buffers cannot fit (the caller should raise tigreNotEnoughGpuMemory).
+unsigned int tigreSyclImageSplits(size_t mem_image, size_t mem_slice,
+                                  size_t mem_proj_block, unsigned int nVoxelZ,
+                                  size_t mem_budget, size_t max_alloc);
+
+//! @brief If TIGRE_SYCL_SPLIT_LOG is set and is not "0", print the number of
+//! image pieces used (TIGRE_SYCL_SPLITS=N) to stderr, for tests.
+void tigreSyclLogSplits(unsigned int splits);
 
 //! @brief Point-sampled fetch with border (zero) addressing, as a CUDA
 //! cudaFilterModePoint + cudaAddressModeBorder texture with unnormalized

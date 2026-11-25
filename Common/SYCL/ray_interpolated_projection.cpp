@@ -218,21 +218,16 @@ int interpolation_projection(float* img, Geometry geo, float** result,float cons
         size_t mem_image=                 (unsigned long long)geo.nVoxelX*(unsigned long long)geo.nVoxelY*(unsigned long long)geo.nVoxelZ*sizeof(float);
         size_t mem_proj=                  (unsigned long long)geo.nDetecU*(unsigned long long)geo.nDetecV*sizeof(float);
 
-        // Does everything fit in the device?
-        const bool fits_in_memory = mem_image+2*PROJ_PER_BLOCK*mem_proj<mem_GPU_global;
-        unsigned int splits=1;
-        if (!fits_in_memory) {
-            // Nope nope.
-            // approx free memory we have. We already have left some extra 5% free for internal stuff
-            // we need a second projection memory to combine multi-GPU stuff.
-            // The smallest working set is the 4 projection buffers and one image slice.
-            const size_t mem_slice=(size_t)geo.nVoxelX*(size_t)geo.nVoxelY*sizeof(float);
-            if (mem_GPU_global <= 4*PROJ_PER_BLOCK*mem_proj+mem_slice)
-                tigreNotEnoughGpuMemory("Ax:Interpolated_projection:GPUmemory","Forward projection (interpolated)",4*PROJ_PER_BLOCK*mem_proj+mem_slice,mem_GPU_global);
-            size_t mem_free=mem_GPU_global-4*PROJ_PER_BLOCK*mem_proj;
-            splits=mem_image/mem_free+1;// Ceil of the truncation
-            if (splits>geo.nVoxelZ) splits=geo.nVoxelZ;  // at least one slice per piece
-        }
+        // Total budget (mem_GPU_global) is min(0.95*global, free, TIGRE_SYCL_MEMORY_LIMIT_MB).
+        // Each single buffer is also capped at tigreSyclMaxAlloc() (max_mem_alloc_size).
+        const size_t mem_slice=(size_t)geo.nVoxelX*(size_t)geo.nVoxelY*sizeof(float);
+        const size_t mem_proj_block=(size_t)PROJ_PER_BLOCK*mem_proj;
+        size_t max_alloc=tigreSyclMaxAlloc(gpuids[0]);
+        for (dev = 1; dev < deviceCount; dev++)
+            max_alloc=std::min(max_alloc, tigreSyclMaxAlloc(gpuids[dev]));
+        unsigned int splits=tigreSyclImageSplits(mem_image, mem_slice, mem_proj_block, (unsigned int)geo.nVoxelZ, mem_GPU_global, max_alloc);
+        if (splits==0)
+            tigreNotEnoughGpuMemory("Ax:Interpolated_projection:GPUmemory","Forward projection (interpolated)",4*PROJ_PER_BLOCK*mem_proj+mem_slice,mem_GPU_global);
         // Allocate the image (a piece of it if split) and one block of projections per device. If that fails
         // although the estimate above fits, split the image in more pieces and try again, down to one slice per
         // piece, as the CUDA code does.
@@ -255,6 +250,7 @@ int interpolation_projection(float* img, Geometry geo, float** result,float cons
                 tigreNotEnoughGpuMemory("Ax:Interpolated_projection:GPUmemory","Forward projection (interpolated)",(num_pixels_block+(size_t)geo.nVoxelX*geo.nVoxelY)*sizeof(float),tigreSyclFreeMemory(gpuids[0]));
             while (splits<geo.nVoxelZ && (geo.nVoxelZ+splits-1)/splits>=piece) splits++;
         }
+        tigreSyclLogSplits(splits);
         onError.add([geoArray, splits]{ freeGeoArray(splits, geoArray); });
         for (dev = 0; dev < deviceCount; dev++){
             sycl::queue* q = &tigreSyclQueue(gpuids[dev]);
@@ -592,7 +588,7 @@ void freeGeoArray(unsigned int splits,Geometry* geoArray){
 //______________________________________________________________________________
 void checkFreeMemory(const GpuIds& gpuids, size_t *mem_GPU_global){
     // Free memory where the SYCL runtime reports it, otherwise the global memory
-    // of the device (95%); never more than the largest single allocation.
+    // of the device (95%). The largest single allocation is applied when splitting.
     const int deviceCount = gpuids.GetLength();
     for (int dev = 0; dev < deviceCount; dev++){
         size_t mem = tigreSyclCheckFreeMemory(gpuids[dev],"Ax:Interpolated_projection:GPUmemory");

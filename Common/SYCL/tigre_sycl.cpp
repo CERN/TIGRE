@@ -94,10 +94,11 @@ sycl::queue& tigreSyclQueue(int iDeviceId){
     return *queues[iDeviceId];
 }
 
-// TIGRE_SYCL_MEMORY_LIMIT_MB caps the memory TIGRE plans with on every device.
-// For tests: it makes the split and out-of-memory paths reachable on any device.
-static size_t memoryLimit(){
-    const char* value = getenv("TIGRE_SYCL_MEMORY_LIMIT_MB");
+// TIGRE_SYCL_MEMORY_LIMIT_MB caps the total budget; TIGRE_SYCL_MAX_ALLOC_MB
+// caps the largest single allocation. Both are for tests: they make the split
+// paths reachable on any device without mixing the two limits.
+static size_t envMegabytes(const char* name){
+    const char* value = getenv(name);
     if (!value || !*value)
         return (size_t)-1;
     return (size_t)strtoull(value, nullptr, 10) << 20;
@@ -105,9 +106,37 @@ static size_t memoryLimit(){
 
 size_t tigreSyclMaxAlloc(int iDeviceId){
     const sycl::device& device = tigreSyclDevices()[iDeviceId];
-    size_t global   = device.get_info<sycl::info::device::global_mem_size>();
     size_t maxAlloc = device.get_info<sycl::info::device::max_mem_alloc_size>();
-    return std::min(std::min((size_t)((double)global*0.95), maxAlloc), memoryLimit());
+    return std::min(maxAlloc, envMegabytes("TIGRE_SYCL_MAX_ALLOC_MB"));
+}
+
+size_t tigreSyclMemoryBudget(int iDeviceId){
+    const sycl::device& device = tigreSyclDevices()[iDeviceId];
+    size_t global = device.get_info<sycl::info::device::global_mem_size>();
+    return std::min((size_t)((double)global*0.95), envMegabytes("TIGRE_SYCL_MEMORY_LIMIT_MB"));
+}
+
+unsigned int tigreSyclImageSplits(size_t mem_image, size_t mem_slice,
+                                  size_t mem_proj_block, unsigned int nVoxelZ,
+                                  size_t mem_budget, size_t max_alloc){
+    if (mem_image+2*mem_proj_block<mem_budget && mem_image<=max_alloc && mem_proj_block<=max_alloc)
+        return 1;
+    if (mem_slice>max_alloc || mem_proj_block>max_alloc)
+        return 0;
+    if (mem_budget<=4*mem_proj_block+mem_slice)
+        return 0;
+    size_t max_piece=std::min(mem_budget-4*mem_proj_block, max_alloc);
+    if (max_piece<mem_slice)
+        return 0;
+    unsigned int splits=(unsigned int)((mem_image+max_piece-1)/max_piece);
+    if (splits>nVoxelZ) splits=nVoxelZ;
+    return splits? splits : 1;
+}
+
+void tigreSyclLogSplits(unsigned int splits){
+    const char* value = getenv("TIGRE_SYCL_SPLIT_LOG");
+    if (value && *value && strcmp(value, "0") != 0)
+        fprintf(stderr, "TIGRE_SYCL_SPLITS=%u\n", splits);
 }
 
 // Free memory as reported by the runtime, if it reports it.
@@ -125,7 +154,7 @@ static bool reportedFreeMemory(int iDeviceId, size_t* free_bytes){
 }
 
 size_t tigreSyclFreeMemory(int iDeviceId){
-    size_t usable = tigreSyclMaxAlloc(iDeviceId);
+    size_t usable = tigreSyclMemoryBudget(iDeviceId);
     size_t free_bytes;
     if (reportedFreeMemory(iDeviceId, &free_bytes))
         usable = std::min(usable, free_bytes);
