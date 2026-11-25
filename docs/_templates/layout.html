@@ -1,0 +1,9 @@
+{% extends "!layout.html" %}
+{# The home page's title is just "TIGRE", not "TIGRE — TIGRE". #}
+{%- block htmltitle %}
+{%- if pagename == root_doc %}
+<title>{{ docstitle|striptags|e }}</title>
+{%- else %}
+{{ super() }}
+{%- endif %}
+{%- endblock %}
