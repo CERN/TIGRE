@@ -69,16 +69,38 @@ html[data-theme="dark"] {
   text-decoration: none;
 }
 
-/* Landing page: gallery strip. */
-.tigre-strip img {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: 0.4rem;
+/* Landing page: gallery strip. Plain images on black, each linked to its
+   gallery section, with a short name under it. */
+.tigre-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
-.tigre-strip .sd-card-body { padding: 0; }
-.tigre-strip .sd-card-body p { margin: 0; font-size: 0.85rem; padding: 0.4rem 0.75rem; }
-.tigre-strip .sd-card-body p:has(img) { padding: 0; }
+@media (max-width: 700px) {
+  .tigre-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.tigre-strip a {
+  display: block;
+  color: var(--pst-color-text-base);
+  text-decoration: none;
+}
+.tigre-strip img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  background: #000;
+  border-radius: 0.25rem;
+}
+.tigre-strip span {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+}
+.tigre-strip a:hover span { color: var(--pst-color-link-hover); text-decoration: underline; }
+.tigre-strip a:focus-visible { outline: 3px solid var(--pst-color-accent); outline-offset: 3px; border-radius: 0.25rem; }
+html[data-theme="dark"] .tigre-strip img { filter: none; }
 
 /* Demo pages: sphinx-gallery's "Go to the end to download the full example code"
    note sits above the title of every demo; the download links stay at the end. */

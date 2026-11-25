@@ -206,50 +206,12 @@ industrial imaging, particle therapy and reconstruction research.
 
 ## From real scans
 
-::::{grid} 2 2 4 4
-:gutter: 2
-:class-container: tigre-strip
-
-:::{grid-item-card}
-:link: gallery/index
-:link-type: doc
-```{image} gallery/images/v3-varian-head.jpg
-:alt: Head scanned on a clinical Varian cone-beam CT
-```
-
-Clinical cone-beam CT
-:::
-
-:::{grid-item-card}
-:link: gallery/index
-:link-type: doc
-```{image} gallery/images/v3-synchrotron.jpg
-:alt: Synchrotron scan reconstructed with several algorithms
-```
-
-Synchrotron
-:::
-
-:::{grid-item-card}
-:link: gallery/index
-:link-type: doc
-```{image} gallery/images/v3-battery.jpg
-:alt: Helical micro-CT scan of a battery
-```
-
-Helical micro-CT
-:::
-
-:::{grid-item-card}
-:link: gallery/index
-:link-type: doc
-```{image} gallery/images/v3-neutron-padlock.jpg
-:alt: Neutron tomography of a padlock
-```
-
-Neutron tomography
-:::
-::::
+<div class="tigre-strip">
+<a href="gallery/index.html#a-clinical-scanner-varian-edge"><img src="_static/home/clinical-cbct.webp" width="640" height="480" alt="Head scanned on a clinical Varian cone-beam CT" loading="lazy"><span>Clinical cone-beam CT</span></a>
+<a href="gallery/index.html#synchrotron-in-situ-settings"><img src="_static/home/synchrotron.webp" width="640" height="480" alt="Synchrotron scan reconstructed with several algorithms" loading="lazy"><span>Synchrotron</span></a>
+<a href="gallery/index.html#micro-ct-a-helical-scan"><img src="_static/home/helical-micro-ct.webp" width="640" height="480" alt="Helical micro-CT scan of a battery" loading="lazy"><span>Helical micro-CT</span></a>
+<a href="gallery/index.html#neutron-tomography"><img src="_static/home/neutron.webp" width="640" height="480" alt="Neutron tomography of a padlock" loading="lazy"><span>Neutron tomography</span></a>
+</div>
 
 [More in the Gallery](gallery/index.md)
 

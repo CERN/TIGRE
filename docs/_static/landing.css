@@ -36,16 +36,18 @@ html {
   --pst-font-family-heading: "Archivo", system-ui, sans-serif;
 }
 
-/* Headings: wide and heavy, tight tracking, like the logo. */
+/* Headings: wide and bold, tight tracking, like the logo, but sized so a
+   page title does not shout over the text under it. */
 .bd-content h1,
 .bd-content h2,
 .bd-content h3 {
-  font-stretch: 118%;
-  letter-spacing: -0.01em;
+  font-stretch: 112%;
+  letter-spacing: -0.012em;
+  line-height: 1.15;
 }
-.bd-content h1 { font-weight: 750; }
-.bd-content h2 { font-weight: 750; }
-.bd-content h3 { font-weight: 700; }
+.bd-content h1 { font-size: 2.1rem; font-weight: 700; }
+.bd-content h2 { font-size: 1.55rem; font-weight: 700; }
+.bd-content h3 { font-size: 1.2rem; font-weight: 650; }
 
 /* Prose stays under about 80 characters a line; code, tables, figures and
    grids keep the full width. */
@@ -359,4 +361,29 @@ html[data-theme="dark"] .tigre-band img {
 @media (max-width: 900px) {
   .tigre-band .tigre-band-head .tigre-tagline { margin-bottom: 0; }
   .tigre-band img.tigre-hero-logo { width: 8.5rem; margin-bottom: 1rem; }
+}
+
+/* Home page grids line up with the headings above them (sphinx-design pads
+   its containers by half a gutter). */
+.sd-container-fluid.tigre-why,
+.sd-container-fluid.tigre-start {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* The home page ends with "Get started"; no "Next" link under it. */
+.bd-article-container:has(.tigre-band) .prev-next-area { display: none; }
+
+/* The sidebar's collapse button: a quiet control, not an orange link. */
+.bd-sidebar-primary #pst-collapse-sidebar-button { font-size: 0.85rem; }
+.bd-sidebar-primary #pst-collapse-sidebar-button .pst-icon,
+.bd-sidebar-primary #pst-collapse-sidebar-button .pst-collapse-sidebar-label,
+.bd-sidebar-primary #pst-collapse-sidebar-button .pst-collapse-sidebar-label:visited {
+  color: var(--pst-color-text-muted);
+  text-decoration: none;
+}
+.bd-sidebar-primary #pst-collapse-sidebar-button:hover .pst-icon,
+.bd-sidebar-primary #pst-collapse-sidebar-button .pst-collapse-sidebar-label:hover {
+  color: var(--pst-color-text-base);
+  text-decoration: none;
 }
