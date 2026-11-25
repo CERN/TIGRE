@@ -53,8 +53,8 @@
 #include "Siddon_projection.hpp"
 #include "TIGRE_common.hpp"
 #include "tigre_sycl.hpp"
-#include "tigre_release_on_error.hpp"
-#include "page_locking.hpp"
+#include "tigre_release_on_error_sycl.hpp"
+#include "page_locking_sycl.hpp"
 #include <math.h>
 
 #define MAXTREADS 1024
@@ -269,7 +269,7 @@ int siddon_ray_projection(float* img, Geometry geo, float** result,float const *
     }
     int dev;
     // If an error raises (Python build) before the end of this function, onError
-    // releases what it holds; see tigre_release_on_error.hpp.
+    // releases what it holds; see tigre_release_on_error_sycl.hpp.
     tigre::ReleaseOnError onError;
     try {
         // Check the available device memory: same image split rule as the CUDA code.

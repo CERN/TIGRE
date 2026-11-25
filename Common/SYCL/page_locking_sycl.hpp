@@ -10,12 +10,11 @@
  * sycl_ext_oneapi_copy_optimize) for every context of the devices, released
  * with release_from_device_copy.
  *
- * The header has the same name as the CUDA one: the SYCL build puts
- * Common/SYCL before Common/CUDA on the include path.
+ * The SYCL counterpart of Common/CUDA/page_locking.hpp.
  *
  *-------------------------------------------------------------------------*/
-#ifndef TIGRE_PAGE_LOCKING_HPP
-#define TIGRE_PAGE_LOCKING_HPP
+#ifndef TIGRE_PAGE_LOCKING_SYCL_HPP
+#define TIGRE_PAGE_LOCKING_SYCL_HPP
 
 #include <sycl/sycl.hpp>
 #include <stddef.h>
@@ -103,4 +102,4 @@ inline bool worthPageLocking(int isHostRegisterSupported, bool gpuData, unsigned
 
 }  // namespace tigre
 
-#endif  // TIGRE_PAGE_LOCKING_HPP
+#endif  // TIGRE_PAGE_LOCKING_SYCL_HPP

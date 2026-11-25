@@ -21,12 +21,12 @@
  * Actions run in reverse order, after waiting for the queues to finish, and
  * must never throw. On the normal path dismiss() is called and nothing runs.
  *
- * The header has the same name as the CUDA one: the SYCL build puts
- * Common/SYCL before Common/CUDA on the include path.
+ * Separate filename from Common/CUDA/tigre_release_on_error.hpp so
+ * selection never depends on include-directory order.
  *
  *-------------------------------------------------------------------------*/
-#ifndef TIGRE_RELEASE_ON_ERROR_HPP
-#define TIGRE_RELEASE_ON_ERROR_HPP
+#ifndef TIGRE_RELEASE_ON_ERROR_SYCL_HPP
+#define TIGRE_RELEASE_ON_ERROR_SYCL_HPP
 
 #include <sycl/sycl.hpp>
 #include <stddef.h>
@@ -125,4 +125,4 @@ inline bool tryMallocPieces(const int* devs, int ndev, size_t image_count, size_
 
 }  // namespace tigre
 
-#endif  // TIGRE_RELEASE_ON_ERROR_HPP
+#endif  // TIGRE_RELEASE_ON_ERROR_SYCL_HPP
