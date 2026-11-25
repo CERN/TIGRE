@@ -9,8 +9,9 @@ myst:
 
 ## Other GPUs
 
-TIGRE runs on NVIDIA GPUs (CUDA). Support for the other main GPU makers is
-being added, so that TIGRE can run on most computers with a GPU:
+TIGRE runs on NVIDIA GPUs (CUDA), and from Python also on AMD GPUs (HIP).
+Support for the other main GPU makers is being added, so that TIGRE can run on
+most computers with a GPU:
 
 | GPUs | Backend | Status |
 |---|---|---|
