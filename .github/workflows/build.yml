@@ -29,6 +29,31 @@ jobs:
         with:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
+  build_windows:
+    # A quick check that TIGRE still builds on Windows: one Python version and
+    # one GPU architecture. Releases build every version and architecture.
+    name: Build a wheel on Windows
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v7
+      # CUDA 12.8, as for the Linux wheels. Only the parts TIGRE builds with.
+      - uses: Jimver/cuda-toolkit@v0.2.36
+        with:
+          cuda: "12.8.1"
+          method: network
+          sub-packages: '["nvcc", "cudart", "curand_dev", "thrust", "visual_studio_integration"]'
+          use-github-cache: false
+      # nvcc needs cl.exe on the PATH.
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v4.3.5
+        env:
+          CIBW_BUILD: cp313-win_amd64
+          TIGRE_CUDA_ARCH: "75"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: cibw-wheels-windows
+          path: ./wheelhouse/*.whl
   make_sdist:
     name: Make SDist
     runs-on: ubuntu-latest
