@@ -231,6 +231,7 @@ html_theme_options = {
     "show_toc_level": 2,
     "use_edit_page_button": True,
     "footer_start": ["copyright"],
+    "footer_center": ["footer-links"],
     "footer_end": ["sphinx-version"],
     "icon_links": [
         {
@@ -279,7 +280,7 @@ def _colab_button(app, docname, source):
         f"\n.. button-link:: {url}\n"
         "   :color: secondary\n"
         "   :outline:\n\n"
-        "   Open in Colab\n\n"
+        "   :octicon:`play` Open in Colab\n\n"
         "Runs in your browser on Google Colab: choose a GPU runtime "
         "(*Runtime > Change runtime type*), then run the cells in order.\n"
     )

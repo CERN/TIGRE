@@ -126,3 +126,107 @@ html[data-theme="dark"] {
 .sphx-glr-download-link-note {
   display: none;
 }
+
+/* ---- Landing page, refreshed look (Nov 2026) ---- */
+
+/* Hero: a little more room, a larger tagline. */
+.tigre-hero {
+  padding: 1.5rem 0 2.5rem;
+}
+.tigre-tagline {
+  font-size: 1.4rem;
+  line-height: 1.45;
+}
+.tigre-hero figure img {
+  border-radius: 0.6rem;
+}
+.tigre-hero figcaption {
+  font-size: 0.85rem;
+}
+
+/* Feature and get-started cards: an orange line on top, an icon, a lift on hover. */
+.tigre-features .sd-card {
+  border: 1px solid var(--pst-color-border);
+  border-top: 3px solid var(--pst-color-accent);
+  border-radius: 0.5rem;
+  box-shadow: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.tigre-features .sd-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.12);
+}
+html[data-theme="dark"] .tigre-features .sd-card:hover {
+  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.5);
+}
+.tigre-features .sd-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.05rem;
+}
+.tigre-features .tigre-icon {
+  color: var(--pst-color-accent);
+  flex-shrink: 0;
+}
+.tigre-features .sd-card-text,
+.tigre-features .sd-card-body p {
+  color: var(--pst-color-text-muted);
+}
+.tigre-start .sd-card-body {
+  padding: 1.25rem 1.25rem 1rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tigre-features .sd-card { transition: none; }
+  .tigre-features .sd-card:hover { transform: none; }
+}
+
+/* Code tabs (home and install pages): a quiet frame; orange only on the active tab. */
+.bd-content .sd-tab-set > .sd-tab-content {
+  box-shadow: none;
+  border: 1px solid var(--pst-color-border);
+  border-radius: 0 0.4rem 0.4rem 0.4rem;
+  padding: 0.25rem;
+}
+.bd-content .sd-tab-set > input:checked + label {
+  border-color: var(--pst-color-accent);
+  color: var(--pst-color-text-base);
+}
+.bd-content .sd-tab-set > .sd-tab-content div.highlight,
+.bd-content .sd-tab-set > .sd-tab-content pre {
+  margin: 0;
+  border: none;
+}
+
+/* Papers: dark titles that turn orange on hover, venue and year in grey. */
+section#papers-using-tigre li strong a {
+  color: var(--pst-color-text-base);
+  text-decoration: none;
+}
+section#papers-using-tigre li strong a:hover {
+  color: var(--pst-color-link-hover);
+  text-decoration: underline;
+}
+section#papers-using-tigre li em {
+  color: var(--pst-color-text-muted);
+}
+section#papers-using-tigre li {
+  margin-bottom: 0.35rem;
+}
+
+/* Footer links. */
+.tigre-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1.25rem;
+  font-size: 0.9rem;
+}
+.tigre-footer-links a {
+  color: var(--pst-color-text-muted);
+  text-decoration: none;
+}
+.tigre-footer-links a:hover {
+  color: var(--pst-color-link-hover);
+  text-decoration: underline;
+}
