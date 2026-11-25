@@ -196,7 +196,7 @@ html_extra_path = ["_extra"]  # robots.txt
 ogp_site_url = "https://cern.github.io/TIGRE/"
 ogp_site_name = "TIGRE"
 ogp_image = "https://cern.github.io/TIGRE/_static/logo/tigre-social-preview.png"
-ogp_image_alt = "TIGRE: Tomographic Iterative GPU-based Reconstruction"
+ogp_image_alt = "TIGRE: fast, flexible 3D CT reconstruction on GPUs. A coffee bean reconstructed with FDK and CGLS, split by an orange divider."
 ogp_social_cards = {"enable": False}
 
 # sitemap.xml for search engines (from html_baseurl).

@@ -3,6 +3,7 @@ html_theme.sidebar_secondary.remove: true
 og:description: "TIGRE is a GPU toolbox for 3D tomographic (CT) reconstruction in MATLAB and Python: any scanning geometry, multi-GPU projectors and a wide range of iterative algorithms."
 myst:
   html_meta:
+    google-site-verification: "Qcj7Q89d0NZ0WwCxvdHUY1TSH7blFCSGS78LsGrpN20"
     description: "TIGRE is a GPU toolbox for 3D tomographic (CT) reconstruction in MATLAB and Python: any scanning geometry, multi-GPU projectors and a wide range of iterative algorithms."
 ---
 
