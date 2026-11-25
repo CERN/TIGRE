@@ -233,7 +233,7 @@ html_theme_options = {
     "use_edit_page_button": True,
     "footer_start": ["copyright"],
     "footer_center": ["footer-links"],
-    "footer_end": ["sphinx-version"],
+    "footer_end": [],
     "icon_links": [
         {
             "name": "Discussions",
