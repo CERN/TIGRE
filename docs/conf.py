@@ -121,6 +121,7 @@ _n_papers = len(re.findall(r"^- ", (pathlib.Path(__file__).resolve().parent / "p
 myst_substitutions = {
     "release": release,
     "latest_version": latest_version,
+    "default_mode": "auto",  # light or dark, following the reader's system setting
     "latest_date": latest_date,
     "papers_count": f"{_n_papers // 10 * 10}+",
     "latest_download": f"[Download](https://github.com/CERN/TIGRE/releases/tag/v{latest_version})",
@@ -241,6 +242,7 @@ html_theme_options = {
 
 html_context = {
     "latest_version": latest_version,
+    "default_mode": "auto",  # light or dark, following the reader's system setting
     "github_user": "CERN",
     "github_repo": "TIGRE",
     "github_version": "master",
@@ -251,7 +253,7 @@ html_context = {
 html_sidebars = {
     page: []
     for page in [
-        "index", "citing", "papers", "ecosystem", "roadmap", "help", "contributing",
+        "index", "gallery/index", "citing", "papers", "ecosystem", "roadmap", "help", "contributing",
         "changelog", "acknowledgements",
     ]
 }
