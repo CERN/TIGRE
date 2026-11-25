@@ -19,11 +19,39 @@
 #include <memory>
 #include <mutex>
 #include <algorithm>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#include <process.h>
+#else
+#include <unistd.h>
+#endif
+
+static void printCpuFallbackOnce(const std::vector<sycl::device>& cpus){
+    // Each TIGRE Python extension links tigre_sycl.cpp separately, so record
+    // the current PID to print once per process.
+    char pid[32];
+#ifdef _WIN32
+    snprintf(pid, sizeof(pid), "%d", _getpid());
+    const char* seen = getenv("TIGRE_SYCL_CPU_NOTIFIED");
+    if (seen && strcmp(seen, pid) == 0)
+        return;
+    _putenv_s("TIGRE_SYCL_CPU_NOTIFIED", pid);
+#else
+    snprintf(pid, sizeof(pid), "%ld", (long)getpid());
+    const char* seen = getenv("TIGRE_SYCL_CPU_NOTIFIED");
+    if (seen && strcmp(seen, pid) == 0)
+        return;
+    setenv("TIGRE_SYCL_CPU_NOTIFIED", pid, 1);
+#endif
+    fprintf(stderr, "TIGRE: no SYCL GPU found; running on the CPU (%s).\n",
+            cpus[0].get_info<sycl::info::device::name>().c_str());
+    fflush(stderr);
+}
 
 static std::vector<sycl::device> enumerateDevices(){
-    std::vector<sycl::device> l0Gpus, otherGpus, others;
+    std::vector<sycl::device> l0Gpus, otherGpus, cpus;
     for (const auto& platform : sycl::platform::get_platforms()){
         for (const auto& device : platform.get_devices()){
             if (device.is_gpu()){
@@ -31,18 +59,21 @@ static std::vector<sycl::device> enumerateDevices(){
                     l0Gpus.push_back(device);
                 else
                     otherGpus.push_back(device);
-            } else {
-                others.push_back(device);
+            } else if (device.is_cpu()){
+                cpus.push_back(device);
             }
         }
     }
     std::vector<sycl::device> gpus = l0Gpus.empty() ? otherGpus : l0Gpus;
-    if (gpus.empty())
-        return others;
-    // TIGRE_SYCL_ALL_DEVICES=1: list the other devices (e.g. the CPU) after the GPUs.
+    if (gpus.empty()){
+        if (!cpus.empty())
+            printCpuFallbackOnce(cpus);
+        return cpus;
+    }
+    // TIGRE_SYCL_ALL_DEVICES=1: list the CPU devices after the GPUs.
     const char* all = getenv("TIGRE_SYCL_ALL_DEVICES");
     if (all && *all && strcmp(all, "0") != 0)
-        gpus.insert(gpus.end(), others.begin(), others.end());
+        gpus.insert(gpus.end(), cpus.begin(), cpus.end());
     return gpus;
 }
 
