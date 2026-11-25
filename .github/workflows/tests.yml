@@ -5,10 +5,20 @@ on:
     branches: [master]
   pull_request:
 
+# A new push to the same PR cancels the run still going for the old push.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   python-tests:
-    name: Python tests (CPU-only)
+    name: Python ${{ matrix.python }} tests (CPU-only)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Oldest and newest Python that pyproject.toml supports.
+        python: ["3.11", "3.14"]
     # CUDA toolkit is needed to compile TIGRE. GitHub-hosted runners have no GPU,
     # so tests marked `gpu` are skipped automatically (see Python/tests/conftest.py).
     container: nvidia/cuda:12.8.1-devel-ubuntu24.04
@@ -22,7 +32,7 @@ jobs:
           enable-cache: true
       - name: Build and install TIGRE
         run: |
-          uv venv --python 3.12
+          uv venv --python ${{ matrix.python }}
           uv pip install --python .venv/bin/python . pytest
       - name: Run tests
         run: .venv/bin/python -m pytest -ra
