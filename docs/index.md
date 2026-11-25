@@ -126,43 +126,44 @@ match your system. The [demos](demos/index.rst) go through every step.
 
 ::::{grid} 1 2 2 3
 :gutter: 3
+:class-container: tigre-features
 
-:::{grid-item-card} Any geometry
+:::{grid-item-card} {octicon}`sync;1.4em;tigre-icon` Any geometry
 :link: user-guide/geometry
 :link-type: doc
 Cone beam, parallel beam, helical, tomosynthesis, C-arm and curved
 detectors. Geometric parameters are defined per projection, not per scan.
 :::
 
-:::{grid-item-card} State-of-the-art speed
+:::{grid-item-card} {octicon}`zap;1.4em;tigre-icon` State-of-the-art speed
 :link: technical-notes/speed-3.3.1/index
 :link-type: doc
 Optimised CUDA projectors and backprojectors, among the fastest available,
 that split problems larger than GPU memory across one or several GPUs.
 :::
 
-:::{grid-item-card} Many algorithms
+:::{grid-item-card} {octicon}`stack;1.4em;tigre-icon` Many algorithms
 :link: user-guide/algorithms
 :link-type: doc
 FDK/FBP, the SART family, Krylov methods (CGLS, LSQR, LSMR, GMRES, hybrid),
 MLEM, total-variation and prior-image methods, and more.
 :::
 
-:::{grid-item-card} MATLAB and Python
+:::{grid-item-card} {octicon}`code;1.4em;tigre-icon` MATLAB and Python
 :link: user-guide/interoperability
 :link-type: doc
 The same toolbox and the same demos in both languages, and PyTorch
 operators with gradients for learned reconstruction.
 :::
 
-:::{grid-item-card} Real data
+:::{grid-item-card} {octicon}`database;1.4em;tigre-icon` Real data
 :link: user-guide/loading-data
 :link-type: doc
 Loaders for Nikon, Bruker, YXLON, Diondo and Varian scanners, DXchange
 synchrotron data and DICOM (MATLAB).
 :::
 
-:::{grid-item-card} Widely used
+:::{grid-item-card} {octicon}`people;1.4em;tigre-icon` Widely used
 :link: papers
 :link-type: doc
 Used in {{ papers_count }} published papers, in medicine, synchrotron and
@@ -221,37 +222,28 @@ Neutron tomography
 
 ## Get started
 
-::::{grid} 1 2 3 5
+::::{grid} 1 1 3 3
 :gutter: 3
+:class-container: tigre-features tigre-start
 
-:::{grid-item-card} Install
+:::{grid-item-card} {octicon}`download;1.4em;tigre-icon` Install
 :link: install/index
 :link-type: doc
-MATLAB and Python installation.
+Prebuilt wheels for Python on Linux, or build TIGRE for MATLAB and Python
+from source.
 :::
 
-:::{grid-item-card} User guide
+:::{grid-item-card} {octicon}`mortar-board;1.4em;tigre-icon` Learn
 :link: user-guide/index
 :link-type: doc
-Geometry, projectors, algorithms and more.
+The user guide: geometry, algorithms, real data, and what to check when a
+reconstruction looks wrong.
 :::
 
-:::{grid-item-card} Demos
-:link: demos/index
-:link-type: doc
-Worked examples in Python and MATLAB.
-:::
-
-:::{grid-item-card} API reference
+:::{grid-item-card} {octicon}`book;1.4em;tigre-icon` Reference
 :link: api/index
 :link-type: doc
-Every function and option, in both languages.
-:::
-
-:::{grid-item-card} Cite TIGRE
-:link: citing
-:link-type: doc
-How to cite TIGRE in your work.
+Every function and option, in Python and MATLAB.
 :::
 ::::
 
