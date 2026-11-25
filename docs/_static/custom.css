@@ -1,21 +1,5 @@
 /* Small adjustments on top of pydata-sphinx-theme. */
 
-.tigre-hero {
-  padding: 0.5rem 0 1rem;
-  align-items: center;
-}
-
-.tigre-tagline {
-  font-size: 1.25rem;
-  color: var(--pst-color-text-muted);
-  margin-bottom: 1.25rem;
-}
-
-.tigre-hero img {
-  max-width: 100%;
-  border-radius: 0.4rem;
-}
-
 /* Landing page: the logo is the title, so keep the h1 for screen readers only. */
 section#tigre > h1 {
   position: absolute;
@@ -24,12 +8,6 @@ section#tigre > h1 {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
-}
-
-.tigre-hero img.tigre-hero-logo {
-  width: 16rem;
-  border-radius: 0;
-  margin-bottom: 1rem;
 }
 
 .navbar-brand img {
@@ -91,25 +69,6 @@ html[data-theme="dark"] {
   text-decoration: none;
 }
 
-/* Landing page: buttons side by side. */
-.tigre-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-.tigre-actions p { margin: 0; }
-
-/* Landing page: news line. */
-.tigre-news {
-  border-left: 4px solid var(--pst-color-accent);
-  padding: 0.5rem 1rem;
-  margin: 1.5rem 0 0.5rem;
-  background: var(--pst-color-surface);
-  border-radius: 0 0.4rem 0.4rem 0;
-}
-.tigre-news p { margin: 0; }
-
 /* Landing page: gallery strip. */
 .tigre-strip img {
   width: 100%;
@@ -125,60 +84,6 @@ html[data-theme="dark"] {
    note sits above the title of every demo; the download links stay at the end. */
 .sphx-glr-download-link-note {
   display: none;
-}
-
-/* ---- Landing page, refreshed look (Nov 2026) ---- */
-
-/* Hero: a little more room, a larger tagline. */
-.tigre-hero {
-  padding: 1.5rem 0 2.5rem;
-}
-.tigre-tagline {
-  font-size: 1.4rem;
-  line-height: 1.45;
-}
-.tigre-hero figure img {
-  border-radius: 0.6rem;
-}
-.tigre-hero figcaption {
-  font-size: 0.85rem;
-}
-
-/* Feature and get-started cards: an orange line on top, an icon, a lift on hover. */
-.tigre-features .sd-card {
-  border: 1px solid var(--pst-color-border);
-  border-top: 3px solid var(--pst-color-accent);
-  border-radius: 0.5rem;
-  box-shadow: none;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.tigre-features .sd-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.12);
-}
-html[data-theme="dark"] .tigre-features .sd-card:hover {
-  box-shadow: 0 0.4rem 1.2rem rgba(0, 0, 0, 0.5);
-}
-.tigre-features .sd-card-title {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 1.05rem;
-}
-.tigre-features .tigre-icon {
-  color: var(--pst-color-accent);
-  flex-shrink: 0;
-}
-.tigre-features .sd-card-text,
-.tigre-features .sd-card-body p {
-  color: var(--pst-color-text-muted);
-}
-.tigre-start .sd-card-body {
-  padding: 1.25rem 1.25rem 1rem;
-}
-@media (prefers-reduced-motion: reduce) {
-  .tigre-features .sd-card { transition: none; }
-  .tigre-features .sd-card:hover { transform: none; }
 }
 
 /* Code tabs (home and install pages): a quiet frame; orange only on the active tab. */
