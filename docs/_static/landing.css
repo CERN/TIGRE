@@ -1,0 +1,310 @@
+/* TIGRE website type and landing page (Nov 2026 redesign).
+
+   Type: Archivo, one family. Headings use its wide, heavy cuts to echo the
+   logo's blocky letters; body text uses the normal width. Self-hosted
+   (docs/_static/fonts, SIL Open Font License), so readers' browsers make no
+   requests to font services.
+
+   Landing page: one bold element, a black band with a comparison slider
+   (FDK against CGLS on the same slice). Everything else stays quiet. */
+
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url("fonts/archivo-latin-standard-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Archivo";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url("fonts/archivo-latin-ext-standard-normal.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0,
+    U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+html {
+  --pst-font-family-base: "Archivo", system-ui, sans-serif;
+  --pst-font-family-heading: "Archivo", system-ui, sans-serif;
+}
+
+/* Headings: wide and heavy, tight tracking, like the logo. */
+.bd-content h1,
+.bd-content h2,
+.bd-content h3 {
+  font-stretch: 118%;
+  letter-spacing: -0.01em;
+}
+.bd-content h1 { font-weight: 750; }
+.bd-content h2 { font-weight: 750; }
+.bd-content h3 { font-weight: 700; }
+
+/* Prose stays under about 80 characters a line; code, tables, figures and
+   grids keep the full width. */
+.bd-article > section > p,
+.bd-article > section > section > p,
+.bd-article > section > ul,
+.bd-article > section > section > ul,
+.bd-article > section > ol,
+.bd-article > section > section > ol,
+.bd-article > section > dl,
+.bd-article > section > section > dl {
+  max-width: 68ch;
+}
+
+/* ---- Landing page ---- */
+
+/* The black band: CT images live on black, so it is black in light and dark
+   mode alike. */
+.tigre-band {
+  background: #000;
+  color: #F4F4F4;
+  margin: 0 0 3.5rem;
+  padding: 2.75rem 2.5rem 2.25rem;
+  border-radius: 0.5rem;
+}
+.tigre-band-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 2.5rem;
+  align-items: center;
+}
+@media (max-width: 900px) {
+  .tigre-band-inner { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+  .tigre-band { padding: 1.75rem 1.25rem; }
+}
+.tigre-band p { color: #D6D6D6; max-width: 34rem; }
+.tigre-band a:not(.sd-btn) { color: #FF9A33; }
+.tigre-band a:not(.sd-btn):hover { color: #FFC285; }
+
+.tigre-band img.tigre-hero-logo {
+  width: 12rem;
+  margin-bottom: 1.25rem;
+  background: none;
+}
+.tigre-band .tigre-tagline {
+  font-size: clamp(1.5rem, 1.2rem + 0.9vw, 1.95rem);
+  font-weight: 750;
+  font-stretch: 112%;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  color: #FFFFFF;
+  margin-bottom: 1rem;
+}
+
+.tigre-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+.tigre-actions p { margin: 0; }
+/* On black, the outline buttons are white in both modes. */
+.tigre-band .sd-btn-outline-secondary {
+  color: #F4F4F4 !important;
+  border-color: #8C8C8C !important;
+  background: transparent !important;
+}
+.tigre-band .sd-btn-outline-secondary:hover,
+.tigre-band .sd-btn-outline-secondary:focus-visible {
+  background: #F4F4F4 !important;
+  border-color: #F4F4F4 !important;
+  color: #000 !important;
+}
+.tigre-band .sd-btn-primary {
+  background: #FC7F00 !important;
+  border-color: #FC7F00 !important;
+  color: #000 !important;
+}
+.tigre-band .sd-btn-primary:hover,
+.tigre-band .sd-btn-primary:focus-visible {
+  background: #FF9A33 !important;
+  border-color: #FF9A33 !important;
+}
+.tigre-band .sd-btn:focus-visible {
+  outline: 3px solid #FFFFFF;
+  outline-offset: 2px;
+}
+
+.tigre-band .tigre-news {
+  margin: 1.75rem 0 0;
+  font-size: 0.9rem;
+  color: #BDBDBD;
+}
+.tigre-band .tigre-news strong { color: #FFFFFF; }
+
+/* The comparison slider. --pos is the divider's position, 0% to 100%. */
+.tigre-compare { margin: 0; }
+.tigre-compare-frame {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 0.25rem;
+  touch-action: pan-y;
+}
+.tigre-compare-frame img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  border-radius: 0;
+}
+.tigre-compare-left-img {
+  clip-path: inset(0 calc(100% - var(--pos)) 0 0);
+}
+.tigre-compare-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--pos);
+  width: 3px;
+  margin-left: -1.5px;
+  background: #FC7F00;
+  pointer-events: none;
+}
+.tigre-compare-handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2.25rem;
+  height: 2.25rem;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #FC7F00;
+  /* two small arrows, left and right */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 7l-5 5 5 5M15 7l5 5-5 5' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-size: 70%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+/* The range input covers the image, invisible, so dragging anywhere and the
+   arrow keys both move the divider. */
+.tigre-compare-range {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: ew-resize;
+}
+.tigre-compare-range:focus-visible + .tigre-compare-handle::after {
+  outline: 3px solid #FFFFFF;
+  outline-offset: 3px;
+}
+.tigre-compare-name {
+  position: absolute;
+  bottom: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  font-weight: 700;
+  font-stretch: 112%;
+  font-size: 0.9rem;
+  color: #FFFFFF;
+  background: rgba(0, 0, 0, 0.65);
+  border-radius: 0.2rem;
+  pointer-events: none;
+}
+.tigre-compare-left { left: 0.75rem; }
+.tigre-compare-right { right: 0.75rem; }
+.tigre-compare-caption,
+.tigre-compare figcaption {
+  text-align: left;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: #BDBDBD;
+}
+
+/* Why TIGRE: no boxes, just a short heading and two lines, spaced. */
+.tigre-why p { margin: 0 0 0.35rem; color: var(--pst-color-text-muted); }
+.tigre-why p strong a {
+  color: var(--pst-color-text-base);
+  text-decoration: none;
+  font-stretch: 112%;
+  font-size: 1.05rem;
+}
+.tigre-why p strong a:hover {
+  color: var(--pst-color-link-hover);
+  text-decoration: underline;
+}
+.tigre-why p:first-child { color: var(--pst-color-text-base); }
+
+/* Get started: the only cards on the page, because they are actions. */
+.tigre-start .sd-card {
+  border: 1px solid var(--pst-color-border);
+  border-top: 3px solid var(--pst-color-accent);
+  border-radius: 0.4rem;
+  box-shadow: none;
+}
+.tigre-start .sd-card:hover,
+.tigre-start .sd-card:focus-within {
+  border-color: var(--pst-color-accent);
+}
+.tigre-start .sd-card-title {
+  font-stretch: 112%;
+  font-size: 1.1rem;
+}
+.tigre-start .sd-card-text { color: var(--pst-color-text-muted); }
+
+/* The landing page gets a wider column than the docs pages. */
+.bd-main .bd-content .bd-article-container:has(.tigre-band) {
+  max-width: 72rem;
+}
+/* The logo is drawn for a dark background; no light backing in dark mode. */
+html[data-theme="dark"] .tigre-band img.tigre-hero-logo,
+.tigre-band img.tigre-hero-logo {
+  background: none !important;
+}
+/* The theme dims images in dark mode; these are the same in both modes. */
+html[data-theme="dark"] .tigre-band img {
+  filter: none !important;
+}
+.tigre-start .sd-card.sd-shadow-sm,
+.tigre-start .sd-card {
+  box-shadow: none !important;
+}
+
+@media (max-width: 600px) {
+  .bd-content h1 { font-size: 1.9rem; }
+  .bd-content h2 { font-size: 1.55rem; }
+}
+
+/* Tabs above the slider: one per kind of scan. */
+.tigre-compare-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+.tigre-compare-tabs [role="tab"] {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #BDBDBD;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+.tigre-compare-tabs [role="tab"]:hover { color: #FFFFFF; }
+.tigre-compare-tabs [role="tab"][aria-selected="true"] {
+  color: #FFFFFF;
+  border-bottom-color: #FC7F00;
+}
+.tigre-compare-tabs [role="tab"]:focus-visible {
+  outline: 2px solid #FFFFFF;
+  outline-offset: 2px;
+}
+.tigre-compare-caption { font-size: 0.85rem; color: #BDBDBD; margin-bottom: 0; }
+.tigre-compare-caption a { color: #FF9A33; }
+.tigre-compare-hint { margin-top: 0.35rem !important; padding: 0 !important; }

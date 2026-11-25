@@ -124,7 +124,7 @@ myst_substitutions = {
     "default_mode": "auto",  # light or dark, following the reader's system setting
     "latest_date": latest_date,
     "papers_count": f"{_n_papers // 10 * 10}+",
-    "latest_download": f"[Download](https://github.com/CERN/TIGRE/releases/tag/v{latest_version})",
+    "latest_download": f"[download it](https://github.com/CERN/TIGRE/releases/tag/v{latest_version})",
 }
 
 source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
@@ -186,7 +186,8 @@ sphinx_gallery_conf = {
 html_theme = "pydata_sphinx_theme"
 html_title = "TIGRE"
 html_static_path = ["_static"]
-html_css_files = ["custom.css"]
+html_css_files = ["custom.css", "landing.css"]
+html_js_files = ["compare.js"]
 html_baseurl = "https://cern.github.io/TIGRE/"
 html_favicon = "_static/logo/tigre-icon.svg"
 html_extra_path = ["_extra"]  # robots.txt
