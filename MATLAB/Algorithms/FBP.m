@@ -1,6 +1,29 @@
 function [res,errorL2]=FBP(proj,geo,angles,varargin)
-%TODO docs FBP
-% 
+%FBP solves parallel-beam CT image reconstruction using filtered
+% backprojection (FBP). For cone-beam data, use FDK.
+%
+%   FBP(PROJ,GEO,ANGLES) solves the reconstruction problem
+%   using the projection data PROJ taken over ANGLES angles, corresponding
+%   to the geometry described in GEO. GEO.mode must be 'parallel'.
+%
+%   FBP(PROJ,GEO,ANGLES,OPT,VAL,...) uses options and values for solving. The
+%   possible options in OPT are:
+%
+%   'filter': selection of filter. Default 'ram-lak' (ramp)
+%              options are:
+%                  'ram-lak' (ramp)
+%                  'shepp-logan'
+%                  'cosine'
+%                  'hamming'
+%                  'hann'
+%
+%   'parker': adds Parker weights for short scans. Default false
+%
+% OUTPUTS:
+%
+%    [img]                       will output the reconstructed image
+%    [img,errorL2]               will also output the L2 norm of the
+%                                residual, norm(proj - Ax(img))
 %
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -55,8 +78,9 @@ res=Atb((proj_filt),geo,angles)*geo.DSO(1)/geo.DSD(1);
 
 
 if nargout>1
-     error=proj-Ax(res,geo,angles);
-     errorL2=norm(error(:));
+     % proj was permuted to [u v angle] above; Ax returns [v u angle].
+     residual=permute(proj,[2 1 3])-Ax(res,geo,angles);
+     errorL2=norm(residual(:));
 end
 
 end

@@ -1,3 +1,10 @@
+---
+og:description: "Install TIGRE for Python: prebuilt wheels for Linux with one pip command, or building from source on Windows and Linux."
+myst:
+  html_meta:
+    description: "Install TIGRE for Python: prebuilt wheels for Linux with one pip command, or building from source on Windows and Linux."
+---
+
 # Python
 
 TIGRE supports Python 3.11 to 3.14 on Windows and Linux. We recommend

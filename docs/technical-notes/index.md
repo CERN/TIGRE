@@ -1,3 +1,10 @@
+---
+og:description: "Technical notes on how parts of TIGRE work inside, such as its Siddon ray tracing and the speed of its projectors."
+myst:
+  html_meta:
+    description: "Technical notes on how parts of TIGRE work inside, such as its Siddon ray tracing and the speed of its projectors."
+---
+
 # Technical notes
 
 Short write-ups of how parts of TIGRE work inside, and of the measurements

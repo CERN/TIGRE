@@ -1,0 +1,61 @@
+name: Site checks
+
+# Once a week, check the website for broken links and for demos that need
+# rendering again (docs/tools/check_site.py). Problems are reported in one
+# issue, which is updated each week and closed when the checks pass.
+
+on:
+  schedule:
+    - cron: "23 5 * * 1"  # Mondays, 05:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    name: Links and demos
+    if: github.repository == 'CERN/TIGRE'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TITLE: "Website check: broken links or demos to render again"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: docs/requirements.txt
+      - name: Install docs dependencies
+        run: pip install -r docs/requirements.txt
+      - name: Fetch the rendered demos
+        run: |
+          if git ls-remote --exit-code --heads origin docs-demos > /dev/null; then
+            git fetch --depth 1 origin docs-demos
+            mkdir -p docs/demos
+            git archive FETCH_HEAD | tar -x -C docs/demos
+          fi
+      - name: Check links
+        # Broken links are collected in output.json; the report lists them.
+        run: sphinx-build -b linkcheck docs docs/_build/linkcheck || true
+      - name: Write the report
+        run: |
+          python docs/tools/check_site.py --report report.md > count.txt
+          echo "Problems found: $(cat count.txt)"
+          cat report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Open, update or close the issue
+        run: |
+          count=$(cat count.txt)
+          number=$(gh issue list --state open --limit 100 --json number,title \
+                     --jq ".[] | select(.title == env.TITLE) | .number" | head -n 1)
+          if [ "$count" -gt 0 ]; then
+            if [ -n "$number" ]; then
+              gh issue edit "$number" --body-file report.md
+            else
+              gh issue create --title "$TITLE" --body-file report.md
+            fi
+          elif [ -n "$number" ]; then
+            gh issue close "$number" --comment "The site checks pass now."
+          fi

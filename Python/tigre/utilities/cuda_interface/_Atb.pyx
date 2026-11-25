@@ -9,10 +9,7 @@ from tigre.utilities.cuda_interface._gpuUtils cimport GpuIds as c_GpuIds, conver
 # _always_ do that, or you will have segfaults
 np.import_array()
 
-from libc.stdlib cimport malloc, free
 include "_tigre_warnings.pxi"
-cdef extern from "numpy/arrayobject.h":
-    void PyArray_ENABLEFLAGS(np.ndarray arr, int flags)
 
 cdef extern from "voxel_backprojection.hpp":
     cdef int voxel_backprojection(float* projections, c_Geometry geo, float* result,float * alphas,int nalpha, const c_GpuIds& gpuids, bint gpuData) except +
@@ -46,11 +43,16 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
     # Each factor cast to size_t: with only the first one cast, Cython multiplies the others as NumPy scalars, which
     # are 32-bit on Windows with NumPy 1.x (np.array([1024, 1024, 1024])): the size wrapped to 0 and Atb crashed.
     cdef size_t nVoxels = <size_t>geometry.nVoxel[0] * <size_t>geometry.nVoxel[1] * <size_t>geometry.nVoxel[2]
-    cdef float* c_model = <float*> malloc(nVoxels * sizeof(float))
-    if not c_model:
+    # The result is allocated by NumPy, not malloc. On Linux, NumPy asks for huge pages (2 MB) for large arrays, so
+    # copying the result from the GPU into it touches far fewer fresh pages: for a 512^3 image, 257 page faults instead
+    # of 131072, about 95 ms less per call (Quadro RTX 6000 server). The array is the same as before.
+    try:
+        model = np.empty((int(geometry.nVoxel[0]), int(geometry.nVoxel[1]), int(geometry.nVoxel[2])), dtype=np.float32)
+    except MemoryError:
         free_c_geometry(c_geometry)
         free_c_gpuids(c_gpuids)
         raise MemoryError("Atb: not enough host memory for the result ({} bytes)".format(nVoxels * sizeof(float)))
+    cdef float* c_model = <float*> np.PyArray_DATA(<np.ndarray> model)
 
     cdef float* c_angles = <float*> angles.data
 
@@ -85,21 +87,11 @@ def _Atb_ext(np.ndarray[np.float32_t, ndim=3] projections, geometry, np.ndarray[
         else:
             cuda_raise_errors(voxel_backprojection_parallel(c_projections, c_geometry[0], c_model, c_angles, total_projections, c_gpuids[0], False))
     except BaseException:
-        free(c_model)
         free_c_geometry(c_geometry)
         free_c_gpuids(c_gpuids)
         raise
     finally:
         _raise_tigre_warnings()
-
-    cdef np.npy_intp shape[3]
-    shape[0] = <np.npy_intp> (<np.npy_long>(geometry.nVoxel[0]))
-    shape[1] = <np.npy_intp> (<np.npy_long>(geometry.nVoxel[1]))
-    shape[2] = <np.npy_intp> (<np.npy_long>(geometry.nVoxel[2]))
-
-    # TODO: Swap axis here could be making a copy
-    model = np.PyArray_SimpleNewFromData(3, shape, np.NPY_FLOAT32, c_model)
-    PyArray_ENABLEFLAGS(model, np.NPY_ARRAY_OWNDATA) # Attribute new memory owner
 
     free_c_geometry(c_geometry)
     free_c_gpuids(c_gpuids)

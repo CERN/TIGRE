@@ -1,3 +1,10 @@
+---
+og:description: "How to install TIGRE, the GPU toolbox for 3D CT reconstruction, for Python or MATLAB on Linux and Windows."
+myst:
+  html_meta:
+    description: "How to install TIGRE, the GPU toolbox for 3D CT reconstruction, for Python or MATLAB on Linux and Windows."
+---
+
 # Install
 
 TIGRE runs on NVIDIA GPUs, and from Python also on AMD GPUs with ROCm. It is

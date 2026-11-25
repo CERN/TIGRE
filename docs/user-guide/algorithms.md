@@ -1,3 +1,10 @@
+---
+og:description: "How to choose a reconstruction algorithm in TIGRE: FDK, SART, Krylov methods, total variation and more, and when each works best."
+myst:
+  html_meta:
+    description: "How to choose a reconstruction algorithm in TIGRE: FDK, SART, Krylov methods, total variation and more, and when each works best."
+---
+
 # Choosing an algorithm
 
 TIGRE has around 30 reconstruction algorithms. They all take the same four

@@ -1,3 +1,10 @@
+---
+og:description: "The TIGRE user guide: how the toolbox works, how to set up the geometry, choose an algorithm and reconstruct your own data."
+myst:
+  html_meta:
+    description: "The TIGRE user guide: how the toolbox works, how to set up the geometry, choose an algorithm and reconstruct your own data."
+---
+
 # User guide
 
 This guide explains how TIGRE works and how to use it on your own data. It
@@ -71,6 +78,8 @@ plotImg([img_fdk img_sart], 'Dim', 'Z');
 ::::
 
 With real data, step 2 is loading your scan instead ([](loading-data.md)).
+[](real-data-tutorial.md) does this with a micro-CT scan you can download,
+from loading to the final image.
 
 ## Concepts
 
@@ -98,6 +107,10 @@ With real data, step 2 is loading your scan instead ([](loading-data.md)).
 
 [](loading-data.md)
 : Reading data from Nikon, Bruker, Varian and other scanners.
+
+[](real-data-tutorial.md)
+: A worked example on a micro-CT scan you can download: loading, checking the
+  geometry, fixing the centre of rotation, reconstructing.
 
 [](interoperability.md)
 : Using TIGRE with PyTorch, CIL, ASTRA and other tools, and moving data
@@ -137,6 +150,7 @@ gpus
 artefacts
 geometry-walkthrough
 loading-data
+real-data-tutorial
 interoperability
 troubleshooting
 performance-tuning

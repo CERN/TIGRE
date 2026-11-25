@@ -4,7 +4,7 @@ Thanks for helping improve TIGRE! Bug reports, fixes, new algorithms, demos and
 documentation are all welcome. This guide explains how to get set up and what we
 look for in a pull request.
 
-By participating you agree to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+By participating you agree to follow our [Code of Conduct](https://github.com/CERN/TIGRE/blob/master/CODE_OF_CONDUCT.md).
 
 ## Asking questions and reporting bugs
 
@@ -13,7 +13,8 @@ By participating you agree to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
   rather than an issue. Check the [FAQ](https://cern.github.io/TIGRE/user-guide/troubleshooting.html) first.
 - **Bugs**: open an [issue](https://github.com/CERN/TIGRE/issues/new/choose) using the
   bug template. Include a minimal script that reproduces the problem, and your OS,
-  GPU, CUDA version and MATLAB/Python version. Most TIGRE bugs depend on these.
+  GPU, CUDA version and MATLAB/Python version (`tigre.show_versions()` in Python
+  or `tigreVersion` in MATLAB prints most of them). Most TIGRE bugs depend on these.
 - **Feature ideas**: open an issue with the feature template so we can discuss the
   design before you write a lot of code.
 
@@ -92,7 +93,7 @@ MATLAB tests are in `MATLAB/Tests/`.
    should be testable without a GPU; mock `Ax`/`Atb` if needed (see
    `Python/tests/test_krylov_restart_and_norms.py` for an example).
 4. Update the demos and documentation if you change user-facing behaviour.
-5. Add a line to [`changelog.md`](changelog.md) under the next release.
+5. Add a line to [`changelog.md`](https://github.com/CERN/TIGRE/blob/master/changelog.md) under the next release.
    Do not rename, remove or change the meaning of anything public (including
    `geo` fields and their conventions) without first deprecating it, as described
    in the [compatibility policy](https://cern.github.io/TIGRE/user-guide/compatibility.html).
@@ -138,4 +139,4 @@ Ask in your PR to be added.
 ## License
 
 By contributing to TIGRE, you agree that your contributions will be licensed
-under its [BSD 3-Clause license](LICENSE.txt).
+under its [BSD 3-Clause license](https://github.com/CERN/TIGRE/blob/master/LICENSE.txt).

@@ -14,6 +14,7 @@
 
 TIGRE: Tomographic Iterative GPU-based Reconstruction Toolbox
 ======
+TIGRE is developed and maintained by the [CAT group](https://cat-imaging.github.io) (Computational Applied Tomography).
 
 TIGRE is an open-source toolbox for fast and accurate 3D tomographic 
 reconstruction for any geometry.  Its focus is on iterative algorithms 

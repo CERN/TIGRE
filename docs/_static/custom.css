@@ -1,21 +1,5 @@
 /* Small adjustments on top of pydata-sphinx-theme. */
 
-.tigre-hero {
-  padding: 0.5rem 0 1rem;
-  align-items: center;
-}
-
-.tigre-tagline {
-  font-size: 1.25rem;
-  color: var(--pst-color-text-muted);
-  margin-bottom: 1.25rem;
-}
-
-.tigre-hero img {
-  max-width: 100%;
-  border-radius: 0.4rem;
-}
-
 /* Landing page: the logo is the title, so keep the h1 for screen readers only. */
 section#tigre > h1 {
   position: absolute;
@@ -24,12 +8,6 @@ section#tigre > h1 {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
-}
-
-.tigre-hero img.tigre-hero-logo {
-  width: 16rem;
-  border-radius: 0;
-  margin-bottom: 1rem;
 }
 
 .navbar-brand img {
@@ -91,32 +69,91 @@ html[data-theme="dark"] {
   text-decoration: none;
 }
 
-/* Landing page: buttons side by side. */
-.tigre-actions {
+/* Landing page: gallery strip. Plain images on black, each linked to its
+   gallery section, with a short name under it. */
+.tigre-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 700px) {
+  .tigre-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.tigre-strip a {
+  display: block;
+  color: var(--pst-color-text-base);
+  text-decoration: none;
+}
+.tigre-strip img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  background: #000;
+  border-radius: 0.25rem;
+}
+.tigre-strip span {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.9rem;
+}
+.tigre-strip a:hover span { color: var(--pst-color-link-hover); text-decoration: underline; }
+.tigre-strip a:focus-visible { outline: 3px solid var(--pst-color-accent); outline-offset: 3px; border-radius: 0.25rem; }
+html[data-theme="dark"] .tigre-strip img { filter: none; }
+
+/* Demo pages: sphinx-gallery's "Go to the end to download the full example code"
+   note sits above the title of every demo; the download links stay at the end. */
+.sphx-glr-download-link-note {
+  display: none;
+}
+
+/* Code tabs (home and install pages): a quiet frame; orange only on the active tab. */
+.bd-content .sd-tab-set > .sd-tab-content {
+  box-shadow: none;
+  border: 1px solid var(--pst-color-border);
+  border-radius: 0 0.4rem 0.4rem 0.4rem;
+  padding: 0.25rem;
+}
+.bd-content .sd-tab-set > input:checked + label {
+  border-color: var(--pst-color-accent);
+  color: var(--pst-color-text-base);
+}
+.bd-content .sd-tab-set > .sd-tab-content div.highlight,
+.bd-content .sd-tab-set > .sd-tab-content pre {
+  margin: 0;
+  border: none;
+}
+
+/* Papers: dark titles that turn orange on hover, venue and year in grey. */
+section#papers-using-tigre li strong a {
+  color: var(--pst-color-text-base);
+  text-decoration: none;
+}
+section#papers-using-tigre li strong a:hover {
+  color: var(--pst-color-link-hover);
+  text-decoration: underline;
+}
+section#papers-using-tigre li em {
+  color: var(--pst-color-text-muted);
+}
+section#papers-using-tigre li {
+  margin-bottom: 0.35rem;
+}
+
+/* Footer links. */
+.tigre-footer-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  justify-content: center;
+  gap: 0.25rem 1.25rem;
+  font-size: 0.9rem;
 }
-.tigre-actions p { margin: 0; }
-
-/* Landing page: news line. */
-.tigre-news {
-  border-left: 4px solid var(--pst-color-accent);
-  padding: 0.5rem 1rem;
-  margin: 1.5rem 0 0.5rem;
-  background: var(--pst-color-surface);
-  border-radius: 0 0.4rem 0.4rem 0;
+.tigre-footer-links a {
+  color: var(--pst-color-text-muted);
+  text-decoration: none;
 }
-.tigre-news p { margin: 0; }
-
-/* Landing page: gallery strip. */
-.tigre-strip img {
-  width: 100%;
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border-radius: 0.4rem;
+.tigre-footer-links a:hover {
+  color: var(--pst-color-link-hover);
+  text-decoration: underline;
 }
-.tigre-strip .sd-card-body { padding: 0; }
-.tigre-strip .sd-card-body p { margin: 0; font-size: 0.85rem; padding: 0.4rem 0.75rem; }
-.tigre-strip .sd-card-body p:has(img) { padding: 0; }

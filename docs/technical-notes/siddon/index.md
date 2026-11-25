@@ -1,3 +1,10 @@
+---
+og:description: "How TIGRE traces rays through the image on GPUs with the Siddon method, and how it splits the work between threads."
+myst:
+  html_meta:
+    description: "How TIGRE traces rays through the image on GPUs with the Siddon method, and how it splits the work between threads."
+---
+
 # Siddon ray tracing on GPUs
 
 *Summary of the technical note "Siddon–Jacobs ray tracing on GPUs: a technical

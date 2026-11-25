@@ -1,3 +1,10 @@
+---
+og:description: "Reconstructions made with TIGRE from real scans: clinical cone-beam CT, synchrotron, micro-CT, neutron and proton imaging."
+myst:
+  html_meta:
+    description: "Reconstructions made with TIGRE from real scans: clinical cone-beam CT, synchrotron, micro-CT, neutron and proton imaging."
+---
+
 # Gallery
 
 Reconstructions made with TIGRE, mostly from real scans, across medical,

@@ -1,3 +1,10 @@
+---
+og:description: "Make TIGRE faster on your computer: GPU memory, pinned memory, splitting, and the settings that matter most."
+myst:
+  html_meta:
+    description: "Make TIGRE faster on your computer: GPU memory, pinned memory, splitting, and the settings that matter most."
+---
+
 # Tuning TIGRE for your computer
 
 :::{warning}

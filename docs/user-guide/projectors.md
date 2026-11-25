@@ -1,3 +1,10 @@
+---
+og:description: "What TIGRE's projection and backprojection operators do, the projector types available, and how to choose between them."
+myst:
+  html_meta:
+    description: "What TIGRE's projection and backprojection operators do, the projector types available, and how to choose between them."
+---
+
 # Projection and backprojection
 
 All of TIGRE is built on two GPU operators:

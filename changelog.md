@@ -8,6 +8,8 @@ thank you.
 ## Unreleased
 
 ### Added
+- `tigre.__version__` and `tigre.show_versions()` (Python), and `tigreVersion` (MATLAB), which print
+  the versions of TIGRE, Python or MATLAB, the OS and the GPUs, for bug reports.
 - Python build: `TIGRE_BACKEND=hip` builds for AMD GPUs with ROCm. `ROCM_PATH` locates ROCm and
   `HIP_ARCH` selects the GPU architectures (default `gfx90a`); `cuda` and `hip` can now be built;
   `sycl` and `metal` are still pending (#747).
@@ -17,6 +19,17 @@ thank you.
   to one value per angle, so reusing the same `geo` with a different number of angles failed with
   "offOrigin with shape (40, 3) not compatible". The PyTorch operators `A` and `At` no longer set
   `geo.angles` on it either. (`Ax`, `Atb`, FDK and FBP already worked on a copy.)
+- Python: `NikonDataLoader` reads `.ang` angle files with tab-separated lines (such as the SophiaBeads
+  datasets); it failed with "must be real number, not str".
+- MATLAB: `help FBP` and `help OSEM` now describe those functions (FBP had no help, OSEM showed the
+  help of OS_SART), and the first lines of `help OS_ASD_POCS` and `help FDK` are corrected.
+- MATLAB: `FBP`'s second output, `errorL2`, compared arrays in different layouts: it gave a wrong value
+  with a square detector and a size error otherwise. It is now the norm of `proj - Ax(img)`.
+
+### Deprecated
+- MATLAB: the `'lambda'` and `'lambda_red'` options of `OSEM`. They never changed the result, as the
+  OSEM update has no step size. Passing them now gives a `TIGRE:deprecated` warning; they will be
+  removed in TIGRE 4.
 
 ## 3.3.1 (2026-11-23)
 

@@ -121,9 +121,10 @@ _n_papers = len(re.findall(r"^- ", (pathlib.Path(__file__).resolve().parent / "p
 myst_substitutions = {
     "release": release,
     "latest_version": latest_version,
+    "default_mode": "auto",  # light or dark, following the reader's system setting
     "latest_date": latest_date,
     "papers_count": f"{_n_papers // 10 * 10}+",
-    "latest_download": f"[Download](https://github.com/CERN/TIGRE/releases/tag/v{latest_version})",
+    "latest_download": f"[download it](https://github.com/CERN/TIGRE/releases/tag/v{latest_version})",
 }
 
 source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
@@ -135,6 +136,7 @@ linkcheck_anchors = False
 linkcheck_ignore = [
     r"https://doi\.org/.*",  # publishers often block automated link checkers
     r"https://iopscience\.iop\.org/.*",
+    r"https://eprints\.soton\.ac\.uk/.*",  # refuses automated requests (401/403); pages are public
 ]
 
 # -- Demos (sphinx-gallery) ------------------------------------------------
@@ -162,7 +164,19 @@ sphinx_gallery_conf = {
     "show_memory": False,
     "write_computation_times": False,
     "image_scrapers": ("tigre_demos.scraper",),
-    "first_notebook_cell": None,
+    # Notebooks open in Google Colab (see _colab_button below): their first cell
+    # installs the latest release's wheel there, and does nothing elsewhere.
+    "first_notebook_cell": (
+        "# On Google Colab (with a GPU runtime), install TIGRE's prebuilt wheel.\n"
+        "# Elsewhere this cell does nothing: install TIGRE as described at\n"
+        "# https://cern.github.io/TIGRE/install/index.html\n"
+        "import sys, subprocess\n"
+        "if 'google.colab' in sys.modules:\n"
+        "    _py = f'cp{sys.version_info.major}{sys.version_info.minor}'\n"
+        "    _wheel = (f'https://github.com/CERN/TIGRE/releases/download/v" + latest_version + "/'\n"
+        "              f'tigre-" + latest_version + "-{_py}-{_py}-" + _WHEEL_PLATFORM + ".whl')\n"
+        "    subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', _wheel], check=True)"
+    ),
     # do not print the value of a demo's last expression (e.g. "<plotImg object at 0x...>")
     "capture_repr": (),
 }
@@ -172,7 +186,8 @@ sphinx_gallery_conf = {
 html_theme = "pydata_sphinx_theme"
 html_title = "TIGRE"
 html_static_path = ["_static"]
-html_css_files = ["custom.css"]
+html_css_files = ["custom.css", "landing.css"]
+html_js_files = ["compare.js"]
 html_baseurl = "https://cern.github.io/TIGRE/"
 html_favicon = "_static/logo/tigre-icon.svg"
 html_extra_path = ["_extra"]  # robots.txt
@@ -181,7 +196,7 @@ html_extra_path = ["_extra"]  # robots.txt
 ogp_site_url = "https://cern.github.io/TIGRE/"
 ogp_site_name = "TIGRE"
 ogp_image = "https://cern.github.io/TIGRE/_static/logo/tigre-social-preview.png"
-ogp_image_alt = "TIGRE: Tomographic Iterative GPU-based Reconstruction"
+ogp_image_alt = "TIGRE: fast, flexible 3D CT reconstruction on GPUs. A coffee bean reconstructed with FDK and CGLS, split by an orange divider."
 ogp_social_cards = {"enable": False}
 
 # sitemap.xml for search engines (from html_baseurl).
@@ -217,7 +232,8 @@ html_theme_options = {
     "show_toc_level": 2,
     "use_edit_page_button": True,
     "footer_start": ["copyright"],
-    "footer_end": ["sphinx-version"],
+    "footer_center": ["footer-links"],
+    "footer_end": [],
     "icon_links": [
         {
             "name": "Discussions",
@@ -229,6 +245,7 @@ html_theme_options = {
 
 html_context = {
     "latest_version": latest_version,
+    "default_mode": "auto",  # light or dark, following the reader's system setting
     "github_user": "CERN",
     "github_repo": "TIGRE",
     "github_version": "master",
@@ -237,5 +254,67 @@ html_context = {
 
 # Single-page sections have nothing to show in the left sidebar.
 html_sidebars = {
-    page: [] for page in ["index", "citing", "papers", "changelog", "acknowledgements"]
+    page: []
+    for page in [
+        "index", "gallery/index", "citing", "papers", "ecosystem", "roadmap", "help", "contributing",
+        "changelog", "acknowledgements",
+    ]
 }
+
+
+# -- Open in Colab --------------------------------------------------------------
+# Each Python demo page gets a button that opens its notebook in Google Colab.
+# The notebooks are on the docs-demos branch next to the rendered pages.
+_COLAB_SKIP = {"d21_ScannerDataLoader", "d24_CurvedDetector"}  # need your own data
+
+
+def _colab_button(app, docname, source):
+    parts = docname.split("/")
+    if len(parts) != 3 or parts[0] != "demos" or parts[2] in _COLAB_SKIP:
+        return
+    notebook = pathlib.Path(app.srcdir) / f"{docname}.ipynb"
+    if not notebook.exists():
+        return  # MATLAB-only demo
+    url = (f"https://colab.research.google.com/github/CERN/TIGRE/blob/docs-demos/"
+           f"{parts[1]}/{parts[2]}.ipynb")
+    button = (
+        f"\n.. button-link:: {url}\n"
+        "   :color: secondary\n"
+        "   :outline:\n\n"
+        "   :octicon:`play` Open in Colab\n\n"
+        "Runs in your browser on Google Colab: choose a GPU runtime "
+        "(*Runtime > Change runtime type*), then run the cells in order.\n"
+    )
+    text = source[0]
+    marker = text.find("\nSource: ")
+    if marker == -1:
+        return
+    end = text.find("\n", marker + 1)
+    source[0] = text[:end + 1] + button + text[end + 1:]
+
+
+# -- Demo thumbnails -------------------------------------------------------------
+# sphinx-gallery writes the thumbnails with an empty alt text. Give each one the
+# title of its demo, so screen readers and image search know what it shows.
+_THUMB = re.compile(
+    r'(<div class="sphx-glr-thumbcontainer"[^>]*>)<img alt=""'
+    r'(.*?<div class="sphx-glr-thumbnail-title">)(.*?)(</div>)',
+    re.S,
+)
+
+
+def _thumbnail_alt(app, exception):
+    if exception is not None or app.builder.format != "html":
+        return
+    for page in pathlib.Path(app.outdir, "demos").rglob("index.html"):
+        text = page.read_text(encoding="utf-8")
+        new = _THUMB.sub(
+            lambda m: f'{m[1]}<img alt="{m[3].strip().replace(chr(34), "&quot;")}"{m[2]}{m[3]}{m[4]}', text
+        )
+        if new != text:
+            page.write_text(new, encoding="utf-8")
+
+
+def setup(app):
+    app.connect("source-read", _colab_button)
+    app.connect("build-finished", _thumbnail_alt)

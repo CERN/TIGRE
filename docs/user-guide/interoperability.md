@@ -1,3 +1,10 @@
+---
+og:description: "Use TIGRE with other tools: PyTorch operators with gradients for learned reconstruction, CIL and ASTRA."
+myst:
+  html_meta:
+    description: "Use TIGRE with other tools: PyTorch operators with gradients for learned reconstruction, CIL and ASTRA."
+---
+
 # Using TIGRE with other tools
 
 TIGRE works on plain arrays (NumPy in Python, `single` arrays in MATLAB), so

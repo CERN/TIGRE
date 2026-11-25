@@ -8,6 +8,7 @@ authors:
     orcid: "https://orcid.org/0000-0002-2636-3032"
   - name: "TIGRE contributors"
 repository-code: "https://github.com/CERN/TIGRE"
+url: "https://cern.github.io/TIGRE/"
 license: BSD-3-Clause
 version: "3.3.1"
 keywords:
