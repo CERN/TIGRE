@@ -24,6 +24,8 @@ jobs:
     container: nvidia/cuda:12.8.1-devel-ubuntu24.04
     env:
       MPLBACKEND: Agg
+      # No GPU here, so compile for one architecture only (much faster).
+      TIGRE_CUDA_ARCH: "75"
     steps:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.3

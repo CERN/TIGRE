@@ -1,10 +1,22 @@
 name: Build
 
+# Building every wheel takes 15-20 minutes, so it does not run on every PR.
+# The Tests workflow already compiles TIGRE on Linux for every PR, and the
+# Windows Check workflow builds one Windows wheel for PRs that change compiled
+# code. This workflow builds all wheels: weekly, by hand, and for PRs that
+# change how TIGRE is packaged. Releases build their own (release.yml).
 on:
-  push:
-    branches: [master]
-  pull_request:
+  schedule:
+    - cron: "17 3 * * 1"  # Mondays 03:17 UTC
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "setup.py"
+      - "pyproject.toml"
+      - "MANIFEST.in"
+      - "Python/MANIFEST.in"
+      - ".github/workflows/build.yml"
+      - ".github/workflows/release.yml"
 
 # A new push to the same PR cancels the run still going for the old push.
 concurrency:
@@ -75,7 +87,7 @@ jobs:
     - uses: actions/checkout@v7
     - uses: astral-sh/setup-uv@v10.3.3
       with:
-        version: 0.6.9
+        version: 0.13.10
         enable-cache: true
     - name: Build SDist
       run: uv build --sdist
