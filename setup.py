@@ -33,11 +33,10 @@ IS_WINDOWS = sys.platform == "win32"
 # GPU backend. TIGRE_BACKEND=cuda|hip|sycl|metal chooses it; when it is not set,
 # the first backend whose compiler is installed is used, in this order. CUDA is
 # first, so machines that build CUDA today keep doing so (for example a laptop
-# with an NVIDIA GPU and an Intel integrated GPU). Only CUDA is built in this
+# with an NVIDIA GPU and an Intel integrated GPU). CUDA and HIP are built in this
 # version; the others are being added (see BACKEND_PENDING).
 BACKENDS = ("cuda", "hip", "sycl", "metal")
 BACKEND_PENDING = {
-    "hip": "AMD GPUs, https://github.com/CERN/TIGRE/pull/747",
     "sycl": "Intel GPUs, https://github.com/CERN/TIGRE/issues/885",
     "metal": "Apple Silicon, https://github.com/CERN/TIGRE/issues/876",
 }
@@ -97,7 +96,8 @@ def select_backend():
             return backend, reason
     raise RuntimeError(
         "TIGRE could not find a GPU compiler. Install the CUDA toolkit (NVIDIA GPUs) and make "
-        "sure nvcc is on the PATH, or set CUDA_HOME or CUDA_PATH to its folder. To choose a "
+        "sure nvcc is on the PATH, or set CUDA_HOME or CUDA_PATH to its folder; for AMD GPUs, "
+        "install ROCm and set ROCM_PATH to its folder. To choose a "
         "backend yourself, set TIGRE_BACKEND to one of: " + ", ".join(BACKENDS) + "."
     )
 
@@ -110,6 +110,19 @@ if BACKEND in BACKEND_PENDING:
         "To build for NVIDIA GPUs instead, install the CUDA toolkit and set TIGRE_BACKEND=cuda."
     )
 print("TIGRE: building the " + BACKEND + " backend (" + BACKEND_REASON + ").")
+
+# HIP (AMD GPUs): ROCM_PATH locates the ROCm install (default /opt/rocm) and
+# HIP_ARCH selects the target GPU architecture(s) for --offload-arch
+# (comma-separated, default gfx90a). The .cu sources are compiled with hipcc and
+# the GPU runtime is amdhip64; the CUDA path below is unchanged.
+IS_HIP = BACKEND == "hip"
+GPU_RUNTIME_LIB = "amdhip64" if IS_HIP else "cudart"
+if IS_HIP:
+    # The host .cpp TUs include the compat header and must select the hip path.
+    # __HIP_PLATFORM_AMD__ lets the host compiler parse <hip/hip_runtime_api.h>
+    # (hipcc sets it for the .cu sources automatically).
+    define_macros.append(("USE_HIP", None))
+    define_macros.append(("__HIP_PLATFORM_AMD__", None))
 
 
 # Code from https://github.com/pytorch/pytorch/blob/master/torch/utils/cpp_extension.py
@@ -201,31 +214,63 @@ def _is_cuda_file(path):
     return os.path.splitext(path)[1] in [".cu", ".cuh"]
 
 
-CUDA, CUDA_VERSION = locate_cuda()
+def locate_rocm():
+    """Locate the ROCm install and the target GPU architecture(s) for HIP."""
+    rocm_home = os.environ.get("ROCM_PATH") or os.environ.get("HIP_PATH")
+    if not rocm_home and shutil.which("hipcc"):
+        # The backend may have been chosen because hipcc is on the PATH.
+        rocm_home = os.path.dirname(os.path.dirname(os.path.realpath(shutil.which("hipcc"))))
+    rocm_home = rocm_home or "/opt/rocm"
+    hip_arch = os.environ.get("HIP_ARCH") or os.environ.get("HCC_AMDGPU_TARGET") or "gfx90a"
+    include = pjoin(rocm_home, "include")
+    lib = pjoin(rocm_home, "lib")
+    if not os.path.isdir(pjoin(include, "hip")):
+        raise EnvironmentError(
+            f"HIP headers not found in {include}; set ROCM_PATH to the ROCm install."
+        )
+    return {
+        "home": rocm_home,
+        "include": include,
+        "lib64": lib,
+        "hipcc": os.environ.get("HIPCC", pjoin(rocm_home, "bin", "hipcc")),
+        "arch": hip_arch,
+    }
 
-cuda_version = 11.0
-try:
-    cuda_version = float(CUDA_VERSION)
-except ValueError:
-    cuda_list = re.findall(r'\d+', CUDA_VERSION)
-    cuda_version = float( str(cuda_list[0] + '.' + cuda_list[1]))
 
-# GPU architectures to compile for. Default: every one this nvcc supports (as for releases). For development and
-# testing, TIGRE_CUDA_ARCH limits them, which makes the build several times faster; the result then runs only on
-# those GPUs. Examples: TIGRE_CUDA_ARCH=89 (RTX 40xx), TIGRE_CUDA_ARCH=75,89, or TIGRE_CUDA_ARCH=native (the GPUs
-# in this machine; nvcc 11.6 or newer).
-_arch = os.environ.get("TIGRE_CUDA_ARCH", "").strip().lower()
-if _arch == "native":
-    COMPUTE_CAPABILITY_ARGS.insert(0, "-arch=native")
-elif _arch:
-    for item in re.findall(r"\d+", _arch):
-        COMPUTE_CAPABILITY_ARGS.insert(0, f"-gencode=arch=compute_{item},code=sm_{item}")
+if IS_HIP:
+    # Skip locate_cuda()/get_cuda_cc(): they shell out to nvcc, which is absent
+    # on a ROCm-only host.
+    CUDA = locate_rocm()
+    cuda_version = 0.0
+    HIP_OFFLOAD_ARGS = [f"--offload-arch={a}" for a in CUDA["arch"].split(",") if a]
+    print("TIGRE: compiling for the AMD GPU architectures " + CUDA["arch"]
+          + ("" if os.environ.get("HIP_ARCH") or os.environ.get("HCC_AMDGPU_TARGET") else " (the default; set HIP_ARCH to choose)"))
 else:
-    for item in get_cuda_cc(CUDA["home"]):
-        str_arg = f"-gencode=arch=compute_{item},code=sm_{item}"
-        COMPUTE_CAPABILITY_ARGS.insert(0, str_arg)
-if _arch:
-    print("TIGRE: compiling only for the GPU architectures in TIGRE_CUDA_ARCH=" + _arch)
+    CUDA, CUDA_VERSION = locate_cuda()
+
+    cuda_version = 11.0
+    try:
+        cuda_version = float(CUDA_VERSION)
+    except ValueError:
+        cuda_list = re.findall(r'\d+', CUDA_VERSION)
+        cuda_version = float( str(cuda_list[0] + '.' + cuda_list[1]))
+
+    # GPU architectures to compile for. Default: every one this nvcc supports (as for releases). For development and
+    # testing, TIGRE_CUDA_ARCH limits them, which makes the build several times faster; the result then runs only on
+    # those GPUs. Examples: TIGRE_CUDA_ARCH=89 (RTX 40xx), TIGRE_CUDA_ARCH=75,89, or TIGRE_CUDA_ARCH=native (the GPUs
+    # in this machine; nvcc 11.6 or newer).
+    _arch = os.environ.get("TIGRE_CUDA_ARCH", "").strip().lower()
+    if _arch == "native":
+        COMPUTE_CAPABILITY_ARGS.insert(0, "-arch=native")
+    elif _arch:
+        for item in re.findall(r"\d+", _arch):
+            COMPUTE_CAPABILITY_ARGS.insert(0, f"-gencode=arch=compute_{item},code=sm_{item}")
+    else:
+        for item in get_cuda_cc(CUDA["home"]):
+            str_arg = f"-gencode=arch=compute_{item},code=sm_{item}"
+            COMPUTE_CAPABILITY_ARGS.insert(0, str_arg)
+    if _arch:
+        print("TIGRE: compiling only for the GPU architectures in TIGRE_CUDA_ARCH=" + _arch)
 
 
 # Obtain the numpy include directory.  This logic works across numpy versions.
@@ -300,7 +345,22 @@ class BuildExtension(build_ext):
             cflags = copy.deepcopy(extra_postargs)
             try:
                 original_compiler = self.compiler.compiler_so
-                if _is_cuda_file(src):
+                if _is_cuda_file(src) and IS_HIP:
+                    hipcc = CUDA["hipcc"]
+                    if not isinstance(hipcc, list):
+                        hipcc = [hipcc]
+                    self.compiler.set_executable("compiler_so", hipcc)
+                    if isinstance(cflags, dict):
+                        cflags = cflags["nvcc"]
+                    cflags = (
+                        ["-x", "hip", "-fPIC", "-D", "USE_HIP"]
+                        + HIP_OFFLOAD_ARGS
+                        + cflags
+                    )
+                    # rocRAND's device headers require C++14.
+                    if not any(flag.startswith("-std=") for flag in cflags):
+                        cflags.append("-std=c++14")
+                elif _is_cuda_file(src):
                     nvcc = _join_cuda_home("bin", "nvcc")
                     if not isinstance(nvcc, list):
                         nvcc = [nvcc]
@@ -355,7 +415,38 @@ class BuildExtension(build_ext):
                 if len(src_list) >= 1 and len(obj_list) >= 1:
                     src = src_list[0]
                     obj = obj_list[0]
-                    if _is_cuda_file(src):
+                    if _is_cuda_file(src) and IS_HIP:
+                        hipcc = CUDA["hipcc"]
+                        rocm_home = CUDA["home"]
+                        if isinstance(cflags, dict):
+                            cflags = cflags["nvcc"]
+                        elif not isinstance(cflags, list):
+                            cflags = []
+
+                        hip_flags = (
+                            ["-x", "hip",
+                             "--hip-path=" + rocm_home,
+                             "-fms-runtime-lib=dll",
+                             "-D", "USE_HIP"]
+                            + HIP_OFFLOAD_ARGS
+                        )
+                        for macro in macros:
+                            if len(macro) == 2:
+                                if macro[1] is None:
+                                    hip_flags += ["-D", macro[0]]
+                                else:
+                                    hip_flags += ["-D", "{}={}".format(macro[0], macro[1])]
+                            elif len(macro) == 1:
+                                hip_flags += ["-U", macro[0]]
+
+                        # Filter out MSVC/Windows-SDK include paths (contain spaces
+                        # and are handled by clang's own Windows target sysroot).
+                        # Keep only project and ROCm include dirs.
+                        hip_inc = [p for p in include_list
+                                   if " " not in p]
+                        # Language flag must precede the source file.
+                        cmd = [hipcc] + hip_flags + ["-c", src, "-o", obj] + hip_inc
+                    elif _is_cuda_file(src):
                         nvcc = _join_cuda_home("bin", "nvcc")
                         if isinstance(cflags, dict):
                             cflags = cflags["nvcc"]
@@ -414,6 +505,13 @@ class BuildExtension(build_ext):
         else:
             self.compiler._compile = unix_wrap_compile
 
+        # With build_ext -j the extensions are built in threads that share self.compiler. win_wrap_compile replaces
+        # its call/spawn for a whole compile() and puts it back afterwards, so one thread can send another's .cu
+        # files to cl.exe, and extensions that share a source write the same .obj at once. Build them one at a time.
+        if IS_WINDOWS and self.parallel:
+            print("TIGRE: building the extensions one at a time (build_ext -j is not supported on Windows).")
+            self.parallel = None
+
         build_ext.build_extensions(self)
 
     def get_ext_filename(self, ext_name):
@@ -449,7 +547,7 @@ def include_headers(filename_list, sdist=False):
 
     filename_list += ["Common/CUDA/types_TIGRE.hpp", "Common/CUDA/errors.hpp", "Common/CUDA/tigre_release_on_error.hpp",
                       "Common/CUDA/launch_shapes.hpp", "Common/CUDA/page_locking.hpp",
-                      "Common/CUDA/tv_gradient_descent.hpp"]
+                      "Common/CUDA/tv_gradient_descent.hpp", "Common/CUDA/cuda_to_hip.h"]
     return filename_list + header_list
 
 
@@ -464,13 +562,14 @@ Ax_ext = Extension(
             "Common/CUDA/ray_interpolated_projection.cu",
             "Common/CUDA/ray_interpolated_projection_parallel.cu",
             "Common/CUDA/GpuIds.cpp",
+            "Common/CUDA/gpuUtils.cu",
             "Python/tigre/utilities/cuda_interface/_Ax.pyx",
         ],
         sdist=sys.argv[1] == "sdist",
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=[GPU_RUNTIME_LIB],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -493,7 +592,7 @@ Atb_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=[GPU_RUNTIME_LIB],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -514,7 +613,7 @@ tv_proximal_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=[GPU_RUNTIME_LIB],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -535,7 +634,7 @@ minTV_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=[GPU_RUNTIME_LIB],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -556,7 +655,7 @@ minPICCS_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=[GPU_RUNTIME_LIB],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -577,7 +676,7 @@ AwminTV_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=[GPU_RUNTIME_LIB],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -594,7 +693,7 @@ gpuUtils_ext = Extension(
         sdist=sys.argv[1] == "sdist",
     ),
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=[GPU_RUNTIME_LIB],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],
@@ -615,7 +714,7 @@ RandomNumberGenerator_ext = Extension(
     ),
     define_macros=define_macros,
     library_dirs=[CUDA["lib64"]],
-    libraries=["cudart"],
+    libraries=[GPU_RUNTIME_LIB],
     language="c++",
     runtime_library_dirs=[CUDA["lib64"]] if not IS_WINDOWS else None,
     include_dirs=[NUMPY_INCLUDE, CUDA["include"], "Common/CUDA/"],

@@ -45,8 +45,7 @@
 
 #define  PI_2 1.57079632679489661923
 #include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include "cuda_to_hip.h"
 #include "voxel_backprojection2.hpp"
 #include "TIGRE_common.hpp"
 #include "tigre_release_on_error.hpp"
@@ -115,7 +114,13 @@ __global__ void matrixConstantMultiply(const Geometry geo,float* image,float con
 // (e.g. 16.2 s vs. ~62 s).
 
 const int PROJ_PER_KERNEL = 32;  // Number of 2D projections to be analyzed by a single thread. This can be tweaked to see what works best. 32 was the optimal value in the paper by Zinsser and Keck.
+#if defined(USE_HIP)
+// 8 voxels per thread needs more than the 128 registers HIP allows a thread on some AMD GPUs (MI250X), and the
+// spilling made the backprojection about twice as slow as with 4.
+const int VOXELS_PER_THREAD = 4;
+#else
 const int VOXELS_PER_THREAD = 8;  // Number of voxels to be computed by s single thread. Can be tweaked to see what works best. 4 was the optimal value in the paper by Zinsser and Keck.
+#endif
 
 // We have PROJ_PER_KERNEL projections and we need 6 parameters for each projection:
 //   deltaX, deltaY, deltaZ, xyzOrigin, offOrig, offDetec
@@ -225,9 +230,9 @@ __global__ void kernelPixelBackprojection(const Geometry geo, float* image,const
             float u=vectY*t+u0;
             float v=vectZ*t+v0;
 #if IS_FOR_MATLAB_TIGRE
-            float sample=tex2DLayered<float>(tex, v, u, layer);
+            float sample=tex2DLayered_TIGRE(tex, v, u, layer);
 #else
-            float sample=tex2DLayered<float>(tex, u, v, layer);
+            float sample=tex2DLayered_TIGRE(tex, u, v, layer);
 #endif
             // Weight L^3/(d_n*|SV|^2): L the distance from the source to where the ray through the voxel meets the
             // detector, |SV| from the source to the voxel, d_n from the source to the detector plane (DSD if the
@@ -713,7 +718,7 @@ void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cud
         cudaTextureDesc     texDescr;
         memset(&texDescr, 0, sizeof(cudaTextureDesc));
         texDescr.normalizedCoords = false;
-        texDescr.filterMode = cudaFilterModeLinear;
+        texDescr.filterMode = tigre_hw_linear_supported() ? cudaFilterModeLinear : cudaFilterModePoint;
         texDescr.addressMode[0] = cudaAddressModeBorder;
         texDescr.addressMode[1] = cudaAddressModeBorder;
         texDescr.addressMode[2] = cudaAddressModeBorder;
@@ -724,6 +729,7 @@ void CreateTexture2(const GpuIds& gpuids, float* projectiondata,Geometry geo,cud
         // that used it have finished: its array has just been overwritten above.
         if (texImage[dev]) cudaDestroyTextureObject(texImage[dev]);
         cudaCreateTextureObject(&texImage[dev], &texRes, &texDescr, NULL);
+        tigre_sync_hw_linear();
     }
 }
 //______________________________________________________________________________

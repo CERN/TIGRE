@@ -10,7 +10,7 @@
 #ifndef TIGRE_PAGE_LOCKING_HPP
 #define TIGRE_PAGE_LOCKING_HPP
 
-#include <cuda_runtime_api.h>
+#include "cuda_to_hip.h"
 #include <stddef.h>
 #include <cstdio>
 #include "TIGRE_common.hpp"

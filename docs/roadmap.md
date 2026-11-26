@@ -9,8 +9,9 @@ myst:
 
 ## Other GPUs
 
-TIGRE runs on NVIDIA GPUs (CUDA). Support for the other main GPU makers is
-being added, so that TIGRE can run on most computers with a GPU:
+TIGRE runs on NVIDIA GPUs (CUDA), and from Python also on AMD GPUs (HIP).
+Support for the other main GPU makers is being added, so that TIGRE can run on
+most computers with a GPU:
 
 | GPUs | Backend | Status |
 |---|---|---|
@@ -19,9 +20,9 @@ being added, so that TIGRE can run on most computers with a GPU:
 | Apple Silicon (M1 and later) | Metal | planned: [#876](https://github.com/CERN/TIGRE/issues/876) |
 
 The build already has a `TIGRE_BACKEND` setting that chooses between them
-(see [Installing TIGRE for Python](install/python.md)); at the moment only
-`cuda` can be built. Help with any of these is welcome, especially testing on
-hardware the developers do not have: comment on the issue.
+(see [Installing TIGRE for Python](install/python.md)); at the moment `cuda`
+and `hip` can be built. Help with any of these is welcome, especially testing
+on hardware the developers do not have: comment on the issue.
 
 ## Corrections for real data
 

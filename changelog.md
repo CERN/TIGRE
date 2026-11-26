@@ -10,6 +10,9 @@ thank you.
 ### Added
 - `tigre.__version__` and `tigre.show_versions()` (Python), and `tigreVersion` (MATLAB), which print
   the versions of TIGRE, Python or MATLAB, the OS and the GPUs, for bug reports.
+- Python build: `TIGRE_BACKEND=hip` builds for AMD GPUs with ROCm. `ROCM_PATH` locates ROCm and
+  `HIP_ARCH` selects the GPU architectures (default `gfx90a`); `cuda` and `hip` can now be built;
+  `sycl` and `metal` are still pending (#747).
 
 ### Fixed
 - Python: the iterative algorithms no longer change the `geo` passed to them. They expanded its fields

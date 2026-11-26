@@ -54,6 +54,7 @@
 #define MAX_BUFFER 60
 #define BLOCK_SIZE 10  // BLOCK_SIZE^3 must be smaller than MAXTREADS
 
+#include "cuda_to_hip.h"
 #include "tv_proximal.hpp"
 #include "gpuUtils.hpp"
 #include "tigre_release_on_error.hpp"

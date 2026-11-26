@@ -49,6 +49,7 @@
  * ---------------------------------------------------------------------------
  */
 
+#include "cuda_to_hip.h"
 #include "GD_AwTV.hpp"
 #include "tv_gradient_descent.hpp"
 

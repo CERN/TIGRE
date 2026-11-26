@@ -48,6 +48,7 @@ Codes  : https://github.com/CERN/TIGRE
 --------------------------------------------------------------------------- 
  */
 
+#include "cuda_to_hip.h"
 #include "PICCS.hpp"
 #include "tv_gradient_descent.hpp"
 

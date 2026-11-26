@@ -51,8 +51,7 @@
 
 #include <algorithm>
 #include <vector>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include "cuda_to_hip.h"
 #include "ray_interpolated_projection_parallel.hpp"
 #include "TIGRE_common.hpp"
 #include "tigre_release_on_error.hpp"
@@ -159,7 +158,13 @@ __global__ void kernelPixelDetector_parallel_interpolated( Geometry geo,
     S.z=(source.z+pixelU*deltaU.z+pixelV*deltaV.z);
     
     // Length is the ray length in normalized space
+#if defined(USE_HIP)
+    // The sum as nvcc contracts it. A parallel-beam ray is a whole number of samples long, so ceilf below sits on
+    // an edge, and the contraction the HIP compiler picks on some GPUs (both squares rounded) can add a sample there.
+    double length=sqrtf(fmaf(S.z-P.z,S.z-P.z,fmaf(S.x-P.x,S.x-P.x,(S.y-P.y)*(S.y-P.y))));
+#else
     double length=sqrtf((S.x-P.x)*(S.x-P.x)+(S.y-P.y)*(S.y-P.y)+(S.z-P.z)*(S.z-P.z));
+#endif
     //now legth is an integer of Nsamples that are required on this line
     length=ceilf(length/geo.accuracy);//Divide the directional vector by an integer
     vectX=(P.x -S.x)/(length);
@@ -183,7 +188,7 @@ __global__ void kernelPixelDetector_parallel_interpolated( Geometry geo,
         ty=vectY*i+S.y;
         tz=vectZ*i+S.z;
         
-        sum += tex3D<float>(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
+        sum += tex3D_TIGRE(tex, tx+0.5f, ty+0.5f, tz+0.5f); // this line is 94% of time.
         
     }
     float deltalength=sqrtf((vectX*geo.dVoxelX)*(vectX*geo.dVoxelX)+
@@ -648,7 +653,7 @@ void CreateTextureParallelInterp(const int* devs, int ndev, float* image, Geomet
         cudaTextureDesc     texDescr;
         memset(&texDescr, 0, sizeof(cudaTextureDesc));
         texDescr.normalizedCoords = false;
-        texDescr.filterMode = cudaFilterModeLinear;
+        texDescr.filterMode = tigre_hw_linear_supported() ? cudaFilterModeLinear : cudaFilterModePoint;
         texDescr.addressMode[0] = cudaAddressModeBorder;
         texDescr.addressMode[1] = cudaAddressModeBorder;
         texDescr.addressMode[2] = cudaAddressModeBorder;
@@ -657,6 +662,7 @@ void CreateTextureParallelInterp(const int* devs, int ndev, float* image, Geomet
         // kernels that used it have finished.
         if (texImage[dev]) cudaDestroyTextureObject(texImage[dev]);
         cudaCreateTextureObject(&texImage[dev], &texRes, &texDescr, NULL);
+        tigre_sync_hw_linear();
     }
     cudaCheckErrors("Texture object creation fail");
 }

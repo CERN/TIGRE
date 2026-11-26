@@ -45,9 +45,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <cuda.h>
+#include "cuda_to_hip.h"
+#ifndef USE_HIP
 #include <curand_kernel.h>
 #include <curand.h>
+#endif
 
 #include "gpuUtils.hpp"
 #include "RandomNumberGenerator.hpp"

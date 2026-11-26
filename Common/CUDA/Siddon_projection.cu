@@ -48,8 +48,7 @@
  */
 
 #include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include "cuda_to_hip.h"
 #include "Siddon_projection.hpp"
 #include "TIGRE_common.hpp"
 #include "tigre_release_on_error.hpp"

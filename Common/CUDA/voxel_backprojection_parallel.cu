@@ -46,8 +46,7 @@
 
 #define  PI_2 1.57079632679489661923
 #include <algorithm>
-#include <cuda_runtime_api.h>
-#include <cuda.h>
+#include "cuda_to_hip.h"
 #include <vector>
 #include "voxel_backprojection.hpp"
 #include "voxel_backprojection_parallel.hpp"
@@ -180,9 +179,9 @@ __global__ void kernelPixelBackprojection_parallel(const Geometry geo, float* im
         for(int colIdx=0; colIdx<VOXELS_PER_THREAD; colIdx++)
         {
 #if IS_FOR_MATLAB_TIGRE
-            voxelColumn[colIdx]+=tex2DLayered<float>(tex, v, u, layer);
+            voxelColumn[colIdx]+=tex2DLayered_TIGRE(tex, v, u, layer);
 #else
-            voxelColumn[colIdx]+=tex2DLayered<float>(tex, u, v, layer);
+            voxelColumn[colIdx]+=tex2DLayered_TIGRE(tex, u, v, layer);
 #endif
             u+=U.z; v+=V.z;
         }
@@ -560,7 +559,7 @@ void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuAr
         cudaTextureDesc     texDescr;
         memset(&texDescr, 0, sizeof(cudaTextureDesc));
         texDescr.normalizedCoords = false;
-        texDescr.filterMode = cudaFilterModeLinear;
+        texDescr.filterMode = tigre_hw_linear_supported() ? cudaFilterModeLinear : cudaFilterModePoint;
         texDescr.addressMode[0] = cudaAddressModeBorder;
         texDescr.addressMode[1] = cudaAddressModeBorder;
         texDescr.addressMode[2] = cudaAddressModeBorder;
@@ -572,5 +571,6 @@ void CreateTextureParallel(float* projectiondata,Geometry geo,cudaArray** d_cuAr
         if (texImage[0]) cudaDestroyTextureObject(texImage[0]);
         cudaCreateTextureObject(&texImage[0], &texRes, &texDescr, NULL);
         cudaCheckErrors("Texture object creation fail");
+        tigre_sync_hw_linear();
     
 }
