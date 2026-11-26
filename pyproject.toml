@@ -64,6 +64,13 @@ build-frontend = "build[uv]"
 skip = "*musl* cp3??t-*"
 archs = ["native"]
 
+[tool.cibuildwheel.windows]
+# CUDA comes from the workflow (Jimver/cuda-toolkit sets CUDA_PATH). delvewheel
+# copies the CUDA runtime DLL (cudart64_12.dll, which NVIDIA allows to be
+# redistributed) into the wheel, so users need only the NVIDIA driver.
+before-build = "pip install delvewheel"
+repair-wheel-command = "delvewheel repair --add-path \"%CUDA_PATH%\\bin\" -w {dest_dir} {wheel}"
+
 [tool.cibuildwheel.linux]
 # CUDA installation. cibuildwheel >= 3 builds in manylinux_2_28 (AlmaLinux 8),
 # so this uses NVIDIA's RHEL 8 repository. The image's compiler is GCC 14, whose

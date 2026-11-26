@@ -10,6 +10,8 @@ thank you.
 ### Added
 - `tigre.__version__` and `tigre.show_versions()` (Python), and `tigreVersion` (MATLAB), which print
   the versions of TIGRE, Python or MATLAB, the OS and the GPUs, for bug reports.
+- Python wheels for Windows (x86-64) on the GitHub Release, next to the Linux ones. They need only the
+  NVIDIA driver, not the CUDA toolkit.
 
 ### Fixed
 - Python: the iterative algorithms no longer change the `geo` passed to them. They expanded its fields
