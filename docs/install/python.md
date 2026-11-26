@@ -146,10 +146,25 @@ At the moment `cuda` and `hip` can be built. The others are being added:
 [#876](https://github.com/CERN/TIGRE/issues/876). If the build picks one of
 them, it stops and says so; set `TIGRE_BACKEND=cuda` to build for NVIDIA GPUs.
 
+### Building for specific GPUs
+
+By default the build compiles for every NVIDIA GPU your CUDA toolkit supports,
+or for the AMD GPUs in your machine. To choose yourself:
+
+- NVIDIA: set `TIGRE_CUDA_ARCH` to the compute capability without the dot,
+  for example `TIGRE_CUDA_ARCH=89` for an RTX 40xx, a comma-separated list such
+  as `75,89`, or `native` for the GPUs in this machine. The build is then
+  several times faster, but the result runs only on those GPUs.
+- AMD: set `HIP_ARCH` to the architecture `rocminfo` lists for your GPU, for
+  example `HIP_ARCH=gfx1100`, or a comma-separated list such as
+  `HIP_ARCH=gfx90a,gfx1100`. You need it when building on a machine without
+  the GPU.
+
 ### AMD GPUs (ROCm)
 
 The `hip` backend builds TIGRE for Python on AMD GPUs (the MATLAB build is
-CUDA only). It compiles the same `.cu` sources with `hipcc` from
+CUDA only). There are no prebuilt AMD wheels yet: build from source as below.
+It compiles the same `.cu` sources with `hipcc` from
 [ROCm](https://rocm.docs.amd.com/) and links the HIP runtime (`amdhip64`)
 instead of `cudart`. You need ROCm 7.2 or newer and a supported AMD GPU.
 
@@ -162,9 +177,8 @@ pip install .
 - `ROCM_PATH` points to the ROCm install. When it is not set, the build uses
   `HIP_PATH`, then the prefix of the `hipcc` on your `PATH`, then `/opt/rocm`.
 - The build compiles for the AMD GPUs in your machine and prints which ones
-  (for example `gfx1100`). To choose yourself, for example to build on a
-  machine without the GPU, set `HIP_ARCH` to the architecture `rocminfo` lists
-  for your GPU, or a comma-separated list such as `HIP_ARCH=gfx90a,gfx1100`.
+  (for example `gfx1100`); set `HIP_ARCH` to choose others (see
+  [Building for specific GPUs](#building-for-specific-gpus)).
 - On Windows, also set `HIPCC` to the ROCm `clang++` (for example
   `%ROCM_PATH%\lib\llvm\bin\clang++.exe`).
 

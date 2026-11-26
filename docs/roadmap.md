@@ -15,7 +15,7 @@ most computers with a GPU:
 
 | GPUs | Backend | Status |
 |---|---|---|
-| AMD | HIP (ROCm) | in progress: [#747](https://github.com/CERN/TIGRE/pull/747) |
+| AMD | HIP (ROCm) | Python: available, build from source ([#747](https://github.com/CERN/TIGRE/pull/747)); MATLAB: not yet |
 | Intel | SYCL | planned: [#885](https://github.com/CERN/TIGRE/issues/885) |
 | Apple Silicon (M1 and later) | Metal | planned: [#876](https://github.com/CERN/TIGRE/issues/876) |
 

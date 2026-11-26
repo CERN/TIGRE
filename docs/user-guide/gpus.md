@@ -52,7 +52,8 @@ img = OS_SART(proj, geo, angles, 20, 'gpuids', gpuids);
 ::::
 
 The `CUDA_VISIBLE_DEVICES` environment variable also works, as it does for
-any CUDA program: TIGRE only sees the GPUs it lists.
+any CUDA program (`HIP_VISIBLE_DEVICES` on AMD GPUs): TIGRE only sees the GPUs
+it lists.
 
 Demo 22 ([Python](https://github.com/CERN/TIGRE/blob/master/Python/demos/d22_ListGPUs.py),
 [MATLAB](https://github.com/CERN/TIGRE/blob/master/MATLAB/Demos/d22_ListGPUs.m))

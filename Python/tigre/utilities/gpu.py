@@ -23,7 +23,7 @@ class GpuIds(object):
     Attributes
     ----------
     devices : list of int
-        CUDA device numbers. Set it to choose devices by number.
+        GPU device numbers. Set it to choose devices by number.
     name : str
         The name the GPUs were selected by.
 
