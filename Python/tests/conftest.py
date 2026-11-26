@@ -10,13 +10,6 @@ import pytest
 
 os.environ.setdefault("MPLBACKEND", "Agg")
 
-# Helper modules and scripts in this folder that are not pytest test files:
-# - algorithm_test.py / test_config_gen.py are driven by runscript.sh and need
-#   generated configuration files (targetdir.npy, configuration*.npy).
-# - stdout_test.py is a legacy Python 2 script.
-collect_ignore = ["algorithm_test.py", "stdout_test.py", "test_config_gen.py"]
-
-
 def _gpu_count():
     try:
         from tigre.utilities.gpu import getGpuNames

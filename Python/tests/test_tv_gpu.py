@@ -1,19 +1,21 @@
-"""minTV, AwminTV and minPICCS: the image boundary, and a NumPy reference.
+"""minTV, AwminTV and minPICCS on the GPU.
 
-The TV gradient uses backward differences. At the edges of the image there is
-no neighbour, and the difference across the edge is 0. That was so in x and y,
-but in z the GPU buffers have extra (halo) slices above and below each piece,
-and at the first and last slice of the image, where those slices hold zeros,
-they were read as voxels of value 0. So a constant image was not left
-unchanged: its first and last slices moved. Now z is treated like x and y.
-
-minPICCS now runs on the GPU code it shares with minTV (several GPUs, splitting,
-gpuids); the reference below checks it against the formula it always computed.
+1. The image boundary. The TV gradient uses backward differences, and the
+   difference across an edge of the image is 0. In z the GPU buffers have halo
+   slices above and below each piece, and at the first and last slice of the
+   image those were read as voxels of value 0, so a constant image was not left
+   unchanged. A NumPy reference also checks minTV and minPICCS (which runs on
+   minTV's GPU code since 3.3).
+2. Two GPUs give the same result as one (#856). Each GPU sums its part of the
+   gradient norm and the host adds the parts; that used to be in single
+   precision, so the result depended on how the image was shared (up to ~3.5e-3
+   of the image maximum per call). Needs 2 GPUs; skipped otherwise.
 """
 import numpy as np
 import pytest
 
 import tigre  # noqa: F401  (first: on Windows it puts CUDA's DLLs on the search path)
+from tigre.utilities.gpu import GpuIds
 
 pytestmark = pytest.mark.gpu
 
@@ -24,7 +26,13 @@ try:
 except ImportError:
     pytest.skip("TIGRE's CUDA extensions are not built", allow_module_level=True)
 
+try:
+    _N_GPUS = len(GpuIds().devices)
+except Exception:  # no GPU or no driver
+    _N_GPUS = 0
 
+
+# ---- 1. boundary and NumPy reference
 def _grad(u):
     """Backward differences (z, y, x); 0 where the neighbour is outside the image."""
     g = np.zeros((3,) + u.shape)
@@ -89,3 +97,29 @@ def test_minpiccs_matches_reference():
     out = minPICCS(img.copy(), prior, 0.05, 10, 0.7)
     ref = _reference(img, 0.05, 10, 1e-6, prior=prior, ratio=0.7)
     assert np.abs(out - ref).max() < 1e-4 * np.abs(ref).max()
+
+
+# ---- 2. two GPUs match one
+def _gpus(devices):
+    ids = GpuIds()
+    ids.devices = list(devices)
+    return ids
+
+
+@pytest.mark.skipif(_N_GPUS < 2, reason="needs 2 GPUs")
+@pytest.mark.parametrize("n", [256, 250])  # 250: the GPUs' parts do not end on reduction-block boundaries
+@pytest.mark.parametrize("alpha", [0.002, 0.6])
+@pytest.mark.parametrize("name", ["minTV", "AwminTV", "minPICCS"])
+def test_two_gpus_match_one(name, alpha, n):
+    img = np.random.default_rng(0).random((n, n, n), dtype=np.float32)
+    if name == "minTV":
+        call = lambda ids: minTV(img.copy(), alpha, 10, gpuids=ids)
+    elif name == "AwminTV":
+        call = lambda ids: AwminTV(img.copy(), alpha, 10, -0.005, gpuids=ids)
+    else:  # PICCS runs on minTV's code since 3.3, so on several GPUs too
+        prior = np.random.default_rng(1).random((n, n, n), dtype=np.float32)
+        call = lambda ids: minPICCS(img.copy(), prior, alpha, 10, 0.5, gpuids=ids)
+    one = call(_gpus([0]))
+    two = call(_gpus([0, 1]))
+    err = float(np.abs(two - one).max() / np.abs(one).max())
+    assert err < 1e-6, err
