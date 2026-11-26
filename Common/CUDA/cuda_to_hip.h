@@ -16,7 +16,7 @@
  * tigre_hw_linear_supported() (in gpuUtils.cu) decides at runtime with a
  * verified self-test -- it creates tiny Linear ramp textures (a 3D one and a
  * layered 2D one) and confirms a known sample of each actually interpolates --
- * caches the verdict for the process and logs it once. On CUDA it returns
+ * caches the verdict per device. On CUDA it returns
  * true without testing.
  *
  * The backprojection kernels and the interpolated forward projector pick their
@@ -205,8 +205,8 @@ static inline hipError_t cudaMalloc3DArray(hipArray_t* array, const hipChannelFo
 #define curand_poisson                  hiprand_poisson
 
 /*
- * Runtime verdict for fp32 hardware linear texture filtering (defined in
- * gpuUtils.cu). Cached and logged once per process.
+ * Runtime verdict for fp32 hardware linear texture filtering on the current device (defined in
+ * gpuUtils.cu). Cached per device.
  */
 bool tigre_hw_linear_supported();
 

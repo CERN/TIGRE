@@ -234,6 +234,14 @@ def detect_amd_gpus(rocm_home):
     return []
 
 
+def locate_hipcc(rocm_home):
+    """hipcc in the ROCm install, else the one on the PATH (some packages put it in /usr/bin)."""
+    hipcc = pjoin(rocm_home, "bin", "hipcc")
+    if os.path.isfile(hipcc):
+        return hipcc
+    return shutil.which("hipcc") or hipcc
+
+
 def locate_rocm():
     """Locate the ROCm install and the target GPU architecture(s) for HIP."""
     rocm_home = os.environ.get("ROCM_PATH") or os.environ.get("HIP_PATH")
@@ -264,7 +272,7 @@ def locate_rocm():
         "home": rocm_home,
         "include": include,
         "lib64": lib,
-        "hipcc": os.environ.get("HIPCC", pjoin(rocm_home, "bin", "hipcc")),
+        "hipcc": os.environ.get("HIPCC") or locate_hipcc(rocm_home),
         "arch": hip_arch,
         "arch_source": arch_source,
     }

@@ -16,7 +16,7 @@
  * Hardware linear returns 1.5; point sampling returns 2.0. Both kinds of
  * texture the kernels read are tested, a 3D array and a layered 2D array, and
  * hardware filtering is used only if both interpolate. The result is cached
- * for the process and the verdict is logged once to stderr.
+ * per device.
  */
 __global__ static void tigre_hw_linear_probe(cudaTextureObject_t tex, bool layered, float* out) {
     /* x=2.0 is the midpoint between texel centres 1.5 (value 1) and 2.5 (value
@@ -105,22 +105,19 @@ static bool tigre_run_hw_linear_test() {
     return tigre_probe_hw_linear(false) && tigre_probe_hw_linear(true);
 }
 
+/* The verdict is cached per device, so a machine with two different AMD GPUs gets each one's own answer. It is
+ * not printed: both paths give the same results to within float rounding; the software one is slower. */
 bool tigre_hw_linear_supported() {
-    static int cached = -1;
-    if (cached < 0) {
-        bool ok = tigre_run_hw_linear_test();
-        char name[128];
-        int dev = 0;
-        cudaGetDevice(&dev);
-        GetGpuName(dev, name);
-        fprintf(stderr,
-                "TIGRE: fp32 hardware linear texture filtering on %s: %s\n",
-                name,
-                ok ? "supported (hardware filtering)"
-                   : "unsupported (software filtering fallback)");
-        cached = ok ? 1 : 0;
+    const int kMaxDevices = 64;
+    static int cached[kMaxDevices] = {0};  /* 0 = not tested yet, 1 = hardware, 2 = software */
+    int dev = 0;
+    if (cudaGetDevice(&dev) != cudaSuccess || dev < 0 || dev >= kMaxDevices) {
+        cudaGetLastError();
+        return tigre_run_hw_linear_test();
     }
-    return cached != 0;
+    if (cached[dev] == 0)
+        cached[dev] = tigre_run_hw_linear_test() ? 1 : 2;
+    return cached[dev] == 1;
 }
 #endif
 
