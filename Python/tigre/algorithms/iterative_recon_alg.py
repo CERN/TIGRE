@@ -4,9 +4,9 @@ import copy
 import time
 
 import numpy as np
-from _AwminTV import AwminTV
-from _minTV import minTV
-from _minPICCS import minPICCS
+from tigre.utilities.cuda_interface._AwminTV import AwminTV
+from tigre.utilities.cuda_interface._minTV import minTV
+from tigre.utilities.cuda_interface._minPICCS import minPICCS
 from tigre.algorithms.single_pass_algorithms import FDK
 from tigre.utilities.Atb import Atb
 from tigre.utilities.Ax import Ax

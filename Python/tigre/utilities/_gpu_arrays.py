@@ -154,7 +154,7 @@ def _ax(img, geo, angles, projection_type, gpuids, host_Ax):
         result = host_Ax(_to_host(img, kind), geo, angles, projection_type, gpuids=gpuids)
         return _from_host(result, img, kind)
 
-    from _Ax import _Ax_ext_gpu
+    from tigre.utilities.cuda_interface._Ax import _Ax_ext_gpu
 
     geox = _checked_geometry(geo, angles)
     out = _empty_like_on(img, kind, (geox.angles.shape[0], geox.nDetector[0], geox.nDetector[1]))
@@ -177,7 +177,7 @@ def _atb(projections, geo, angles, backprojection_type, gpuids, host_Atb):
                           gpuids=gpuids)
         return _from_host(result, projections, kind)
 
-    from _Atb import _Atb_ext_gpu
+    from tigre.utilities.cuda_interface._Atb import _Atb_ext_gpu
 
     geox = _checked_geometry(geo, angles)
     expected = (geox.angles.shape[0], int(geox.nDetector[0]), int(geox.nDetector[1]))

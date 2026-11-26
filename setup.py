@@ -454,7 +454,7 @@ def include_headers(filename_list, sdist=False):
 
 
 Ax_ext = Extension(
-    "_Ax",
+    "tigre.utilities.cuda_interface._Ax",
     sources=include_headers(
         [
             "Common/CUDA/projection.cpp",
@@ -478,7 +478,7 @@ Ax_ext = Extension(
 
 
 Atb_ext = Extension(
-    "_Atb",
+    "tigre.utilities.cuda_interface._Atb",
     sources=include_headers(
         [
             "Common/CUDA/TIGRE_common.cpp",
@@ -501,7 +501,7 @@ Atb_ext = Extension(
 
 
 tv_proximal_ext = Extension(
-    "_tv_proximal",
+    "tigre.utilities.cuda_interface._tv_proximal",
     sources=include_headers(
         [
             "Common/CUDA/TIGRE_common.cpp",
@@ -522,7 +522,7 @@ tv_proximal_ext = Extension(
 
 
 minTV_ext = Extension(
-    "_minTV",
+    "tigre.utilities.cuda_interface._minTV",
     sources=include_headers(
         [
             "Common/CUDA/TIGRE_common.cpp",
@@ -542,7 +542,7 @@ minTV_ext = Extension(
 )
 
 minPICCS_ext = Extension(
-    "_minPICCS",
+    "tigre.utilities.cuda_interface._minPICCS",
     sources=include_headers(
         [
             "Common/CUDA/TIGRE_common.cpp",
@@ -563,7 +563,7 @@ minPICCS_ext = Extension(
 )
 
 AwminTV_ext = Extension(
-    "_AwminTV",
+    "tigre.utilities.cuda_interface._AwminTV",
     sources=include_headers(
         [
             "Common/CUDA/TIGRE_common.cpp",
@@ -585,7 +585,7 @@ AwminTV_ext = Extension(
 
 
 gpuUtils_ext = Extension(
-    "_gpuUtils",
+    "tigre.utilities.cuda_interface._gpuUtils",
     sources=include_headers(
         [
             "Common/CUDA/gpuUtils.cu",
@@ -602,7 +602,7 @@ gpuUtils_ext = Extension(
 
 
 RandomNumberGenerator_ext = Extension(
-    "_RandomNumberGenerator",
+    "tigre.utilities.cuda_interface._RandomNumberGenerator",
     sources=include_headers(
         [
             "Common/CUDA/TIGRE_common.cpp",

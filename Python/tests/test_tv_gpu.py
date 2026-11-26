@@ -20,9 +20,9 @@ from tigre.utilities.gpu import GpuIds
 pytestmark = pytest.mark.gpu
 
 try:
-    from _minTV import minTV
-    from _AwminTV import AwminTV
-    from _minPICCS import minPICCS
+    from tigre.utilities.cuda_interface._minTV import minTV
+    from tigre.utilities.cuda_interface._AwminTV import AwminTV
+    from tigre.utilities.cuda_interface._minPICCS import minPICCS
 except ImportError:
     pytest.skip("TIGRE's CUDA extensions are not built", allow_module_level=True)
 

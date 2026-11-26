@@ -50,8 +50,9 @@ extensions = [
 # autodoc imports tigre without building it: the compiled CUDA extensions and
 # optional dependencies are replaced by mocks.
 autodoc_mock_imports = [
-    "_Ax", "_Atb", "_AwminTV", "_minTV", "_minPICCS", "_tv_proximal", "_tvdenoising",
-    "_gpuUtils", "_RandomNumberGenerator", "h5py", "tqdm", "torch",
+    *("tigre.utilities.cuda_interface." + m for m in (
+        "_Ax", "_Atb", "_AwminTV", "_minTV", "_minPICCS", "_tv_proximal", "_gpuUtils", "_RandomNumberGenerator")),
+    "h5py", "tqdm", "torch",
 ]
 autodoc_typehints = "none"
 autodoc_member_order = "bysource"

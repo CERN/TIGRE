@@ -7,6 +7,12 @@ thank you.
 
 ## Unreleased
 
+### Changed
+- Python: the compiled CUDA modules (`_Ax`, `_Atb`, `_minTV`, `_AwminTV`, `_minPICCS`, `_tv_proximal`, `_gpuUtils`,
+  `_RandomNumberGenerator`) are now inside the package, in `tigre.utilities.cuda_interface`, instead of top-level
+  modules in `site-packages`. TIGRE's API (`tigre.Ax`, `tigre.algorithms`, ...) does not change; code that imported
+  them directly, e.g. `from _minTV import minTV`, now needs `from tigre.utilities.cuda_interface._minTV import minTV`.
+
 ### Added
 - `tigre.__version__` and `tigre.show_versions()` (Python), and `tigreVersion` (MATLAB), which print
   the versions of TIGRE, Python or MATLAB, the OS and the GPUs, for bug reports.

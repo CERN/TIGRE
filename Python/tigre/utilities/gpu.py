@@ -6,7 +6,7 @@
    gpuids = getGpuIds('GeForce RTX 2080 Ti')
 3. Pass the gpuids instance to Tigre functions.
 """
-import _gpuUtils as gpuUtils
+from tigre.utilities.cuda_interface import _gpuUtils as gpuUtils
 import copy
 
 class GpuIds(object):

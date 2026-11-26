@@ -1,22 +1,16 @@
 import sys
 import unittest.mock
 
-# Ensure CPU/mock compatibility if compiled CUDA extensions are not present.
-for _ext in (
-    "_Ax",
-    "_Atb",
-    "_gpuUtils",
-    "_tv_proximal",
-    "_minTV",
-    "_minPICCS",
-    "_AwminTV",
-    "_RandomNumberGenerator",
-):
-    if _ext not in sys.modules:
-        try:
-            __import__(_ext)
-        except ImportError:
-            sys.modules[_ext] = unittest.mock.MagicMock()
+# Without the compiled CUDA modules, `import tigre` fails; mock them so these
+# NumPy-only tests still run.
+try:
+    import tigre  # noqa: F401
+except ImportError:
+    for _name in [m for m in sys.modules if m == "tigre" or m.startswith("tigre.")]:
+        del sys.modules[_name]
+    for _ext in ("_Ax", "_Atb", "_gpuUtils", "_tv_proximal", "_minTV", "_minPICCS", "_AwminTV",
+                 "_RandomNumberGenerator"):
+        sys.modules["tigre.utilities.cuda_interface." + _ext] = unittest.mock.MagicMock()
 
 import numpy as np
 import pytest

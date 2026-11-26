@@ -44,13 +44,13 @@ def _repeat_with_gpu_work_in_between(problem, tv_call):
 
 
 def test_min_tv_is_independent_of_earlier_gpu_work(problem):
-    from _minTV import minTV
+    from tigre.utilities.cuda_interface._minTV import minTV
 
     _repeat_with_gpu_work_in_between(problem, lambda x: minTV(x, 1.0, 2, GpuIds()))
 
 
 def test_awmin_tv_is_independent_of_earlier_gpu_work(problem):
-    from _AwminTV import AwminTV
+    from tigre.utilities.cuda_interface._AwminTV import AwminTV
 
     _repeat_with_gpu_work_in_between(problem, lambda x: AwminTV(x, 1.0, 2, -0.005, GpuIds()))
 

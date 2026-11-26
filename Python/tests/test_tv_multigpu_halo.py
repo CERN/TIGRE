@@ -31,7 +31,7 @@ import sys
 import numpy as np
 import torch
 import tigre  # first: on Windows it puts CUDA's DLLs on the search path
-from _tv_proximal import tvdenoise
+from tigre.utilities.cuda_interface._tv_proximal import tvdenoise
 from tigre.utilities.gpu import GpuIds
 
 free_mb = int(sys.argv[1])
