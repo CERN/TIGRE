@@ -156,15 +156,15 @@ instead of `cudart`. You need ROCm 7.2 or newer and a supported AMD GPU.
 ```sh
 export TIGRE_BACKEND=hip
 export ROCM_PATH=/opt/rocm
-export HIP_ARCH=gfx90a
 pip install .
 ```
 
 - `ROCM_PATH` points to the ROCm install. When it is not set, the build uses
   `HIP_PATH`, then the prefix of the `hipcc` on your `PATH`, then `/opt/rocm`.
-- `HIP_ARCH` is the target GPU architecture for `--offload-arch` (default
-  `gfx90a`; the build prints the one it uses). Pass a comma-separated list to
-  build for several, for example `HIP_ARCH=gfx90a,gfx1100,gfx1201`.
+- The build compiles for the AMD GPUs in your machine and prints which ones
+  (for example `gfx1100`). To choose yourself, for example to build on a
+  machine without the GPU, set `HIP_ARCH` to the architecture `rocminfo` lists
+  for your GPU, or a comma-separated list such as `HIP_ARCH=gfx90a,gfx1100`.
 - On Windows, also set `HIPCC` to the ROCm `clang++` (for example
   `%ROCM_PATH%\lib\llvm\bin\clang++.exe`).
 

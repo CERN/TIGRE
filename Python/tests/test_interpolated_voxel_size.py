@@ -13,6 +13,8 @@ import pytest
 
 import tigre
 
+pytestmark = pytest.mark.gpu
+
 N = 64
 
 

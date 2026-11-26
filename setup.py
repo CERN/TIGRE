@@ -214,6 +214,26 @@ def _is_cuda_file(path):
     return os.path.splitext(path)[1] in [".cu", ".cuh"]
 
 
+def detect_amd_gpus(rocm_home):
+    """Return the architectures (gfx...) of the AMD GPUs in this machine, or [] if none are found."""
+    # rocm_agent_enumerator lists every agent, gfx000 being the CPU; amdgpu-arch lists only GPUs.
+    tools = [pjoin(rocm_home, "bin", "rocm_agent_enumerator"), pjoin(rocm_home, "llvm", "bin", "amdgpu-arch"),
+             pjoin(rocm_home, "lib", "llvm", "bin", "amdgpu-arch"), "rocm_agent_enumerator", "amdgpu-arch"]
+    for tool in tools:
+        if IS_WINDOWS and not tool.endswith(".exe") and os.path.isabs(tool):
+            tool += ".exe"
+        if not (os.path.isfile(tool) or shutil.which(tool)):
+            continue
+        try:
+            out = subprocess.run([tool], capture_output=True, text=True, timeout=60).stdout
+        except (OSError, subprocess.SubprocessError):
+            continue
+        archs = sorted({a for a in re.findall(r"gfx[0-9a-f]+", out) if a != "gfx000"})
+        if archs:
+            return archs
+    return []
+
+
 def locate_rocm():
     """Locate the ROCm install and the target GPU architecture(s) for HIP."""
     rocm_home = os.environ.get("ROCM_PATH") or os.environ.get("HIP_PATH")
@@ -221,7 +241,19 @@ def locate_rocm():
         # The backend may have been chosen because hipcc is on the PATH.
         rocm_home = os.path.dirname(os.path.dirname(os.path.realpath(shutil.which("hipcc"))))
     rocm_home = rocm_home or "/opt/rocm"
-    hip_arch = os.environ.get("HIP_ARCH") or os.environ.get("HCC_AMDGPU_TARGET") or "gfx90a"
+    hip_arch = (os.environ.get("HIP_ARCH") or os.environ.get("HCC_AMDGPU_TARGET") or "").strip()
+    if hip_arch:
+        arch_source = "set in HIP_ARCH"
+    else:
+        found = detect_amd_gpus(rocm_home)
+        if not found:
+            raise EnvironmentError(
+                "TIGRE could not find an AMD GPU in this machine to compile for. Set HIP_ARCH to your "
+                "GPU's architecture (rocminfo lists it as gfx...), for example HIP_ARCH=gfx1100, or a "
+                "comma-separated list such as HIP_ARCH=gfx90a,gfx1100."
+            )
+        hip_arch = ",".join(found)
+        arch_source = "found in this machine; set HIP_ARCH to choose others"
     include = pjoin(rocm_home, "include")
     lib = pjoin(rocm_home, "lib")
     if not os.path.isdir(pjoin(include, "hip")):
@@ -234,6 +266,7 @@ def locate_rocm():
         "lib64": lib,
         "hipcc": os.environ.get("HIPCC", pjoin(rocm_home, "bin", "hipcc")),
         "arch": hip_arch,
+        "arch_source": arch_source,
     }
 
 
@@ -243,8 +276,7 @@ if IS_HIP:
     CUDA = locate_rocm()
     cuda_version = 0.0
     HIP_OFFLOAD_ARGS = [f"--offload-arch={a}" for a in CUDA["arch"].split(",") if a]
-    print("TIGRE: compiling for the AMD GPU architectures " + CUDA["arch"]
-          + ("" if os.environ.get("HIP_ARCH") or os.environ.get("HCC_AMDGPU_TARGET") else " (the default; set HIP_ARCH to choose)"))
+    print("TIGRE: compiling for the AMD GPU architectures " + CUDA["arch"] + " (" + CUDA["arch_source"] + ")")
 else:
     CUDA, CUDA_VERSION = locate_cuda()
 
