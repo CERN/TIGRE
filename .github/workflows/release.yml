@@ -53,6 +53,10 @@ jobs:
           use-github-cache: false
       # nvcc needs cl.exe on the PATH.
       - uses: ilammy/msvc-dev-cmd@v1
+      # cibuildwheel uses build[uv] (pyproject.toml), so it needs uv.
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: 0.13.10
       - name: Build wheels
         uses: pypa/cibuildwheel@v4.3.5
       - uses: actions/upload-artifact@v7
