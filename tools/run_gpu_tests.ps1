@@ -22,6 +22,10 @@ Read what a pull request changes before testing it: the script builds and runs
 that code on this machine.
 
 .EXAMPLE
+From cmd or the Anaconda prompt, inside the repository:
+  powershell -ExecutionPolicy Bypass -File tools\run_gpu_tests.ps1 -Ref 944
+
+.EXAMPLE
 .\tools\run_gpu_tests.ps1                    # master
 .\tools\run_gpu_tests.ps1 -Ref 944           # pull request #944
 .\tools\run_gpu_tests.ps1 -Ref fix/my-branch -Extended
@@ -39,11 +43,22 @@ param(
     # Where the checkout, environment and logs go.
     [string]$WorkDir = (Join-Path $env:TEMP "tigre-gpu-tests"),
     # Keep the checkout afterwards (it is removed by default; logs are kept).
-    [switch]$Keep
+    [switch]$Keep,
+    # The TIGRE repository to fetch from. Default: the one the current folder
+    # is in, else the one this script is in.
+    [string]$Repo = ""
 )
 
 $ErrorActionPreference = "Continue"
-$repo = (git -C $PSScriptRoot rev-parse --show-toplevel).Trim()
+if (-not $Repo) {
+    $Repo = git rev-parse --show-toplevel 2>$null
+    if (-not $Repo) { $Repo = git -C $PSScriptRoot rev-parse --show-toplevel 2>$null }
+}
+if (-not $Repo) {
+    Write-Host "ERROR: run this from inside the TIGRE repository, or pass -Repo D:\path\to\TIGRE" -ForegroundColor Red
+    exit 1
+}
+$repo = "$Repo".Trim()
 $src = Join-Path $WorkDir "src"
 $stamp = Get-Date -Format "yyyy-MM-dd_HHmm"
 $logs = Join-Path $WorkDir "logs\$stamp"
