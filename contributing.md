@@ -84,6 +84,12 @@ case and takes long or needs a particular amount of free GPU memory.
 
 MATLAB tests are in `MATLAB/Tests/`.
 
+GitHub's runners have no GPU, so the GPU and MATLAB tests are run by hand on a
+maintainer's machine, before merging changes to CUDA code or algorithms and
+before a release. On Windows, `tools/run_gpu_tests.ps1 -Ref <PR number>` checks
+the pull request out in a separate folder, builds it, runs both test suites and
+writes a summary to paste into the pull request.
+
 ## Making a change
 
 1. Fork the repository and create a branch from `master` with a descriptive name
