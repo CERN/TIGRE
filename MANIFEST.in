@@ -1,0 +1,8 @@
+# Extra files for the source distribution. The installed package is set in
+# pyproject.toml ([tool.setuptools.packages.find]); tests and demos are not
+# installed, but are kept in the sdist.
+graft Python/tests
+graft Python/demos
+global-exclude *.py[cod]
+prune Python/tests/__pycache__
+prune Python/demos/__pycache__

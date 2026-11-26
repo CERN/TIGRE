@@ -11,7 +11,7 @@ import re
 
 from Cython.Distutils import build_ext
 import numpy
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, Extension
 
 
 # Macros for compilation
@@ -622,11 +622,9 @@ RandomNumberGenerator_ext = Extension(
 )
 
 setup(
-    packages=find_packages(),
+    # Packages and package data are listed in pyproject.toml.
     include_package_data=True,
-    data_files=[("data", ["Common/data/head.mat"])],
     ext_modules=[minPICCS_ext, Ax_ext, Atb_ext, tv_proximal_ext, minTV_ext, AwminTV_ext, gpuUtils_ext, RandomNumberGenerator_ext],
-    py_modules=["tigre.py"],
     cmdclass={"build_ext": BuildExtension},
     # since the package has c code, the egg cannot be zipped
     zip_safe=False,

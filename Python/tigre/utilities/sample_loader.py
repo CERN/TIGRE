@@ -26,8 +26,8 @@ def load_head_phantom(number_of_voxels=None):
         "../../../Common/data/head.mat", # Local
         "../../data/head.mat",   # setup.py
         "../../../../data/head.mat",  # pip 
-        "../data/head.mat",
-        # pip installs data_files under the environment prefix (<prefix>/data/head.mat)
+        "../data/head.mat",  # tigre/data/head.mat: installed with the package
+        # TIGRE 3.3.1 and older installed it under the environment prefix (<prefix>/data/head.mat)
         os.path.join(sys.prefix, "data", "head.mat"),
         os.path.join(site.getuserbase(), "data", "head.mat"),  # pip install --user
     ]

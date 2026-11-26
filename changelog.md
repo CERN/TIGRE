@@ -14,6 +14,9 @@ thank you.
   NVIDIA driver, not the CUDA toolkit.
 
 ### Fixed
+- Python: the wheels no longer install the `tests` and `demos` folders as top-level packages (`import tests`
+  could pick up TIGRE's), and the head phantom is installed inside the package (`tigre/data/head.mat`) instead of
+  `<environment>/data/head.mat`. `tigre.utilities.sample_loader` finds both. The sdist still has the tests and demos.
 - Python: the iterative algorithms no longer change the `geo` passed to them. They expanded its fields
   to one value per angle, so reusing the same `geo` with a different number of angles failed with
   "offOrigin with shape (40, 3) not compatible". The PyTorch operators `A` and `At` no longer set
