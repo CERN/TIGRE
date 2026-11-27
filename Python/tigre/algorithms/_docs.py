@@ -24,9 +24,10 @@ Returns
 img : numpy.ndarray
     The reconstruction, float32, shape ``geo.nVoxel``.
 errors : numpy.ndarray
-    Only returned when ``computel2=True`` or ``Quameasopts`` is given: one row
-    per measure (the data residual norm first, if requested) and one column per
-    iteration."""
+    Only returned when ``computel2=True``, ``Quameasopts`` or ``groundTruth``
+    is given: one row per measure (the data residual norm first, if
+    requested, then the quality measures, then ``error_norm`` for
+    ``groundTruth``) and one column per iteration."""
 
 _COMMON = """\
 init : {None, "FDK", "multigrid"} or numpy.ndarray, optional
@@ -39,6 +40,12 @@ Quameasopts : str or list of str, optional
     Image quality measures to record at every iteration, comparing each
     iterate with the previous one, for example ``["RMSE", "CC"]``. See
     :func:`tigre.utilities.Measure_Quality.Measure_Quality`.
+groundTruth : numpy.ndarray, optional
+    A known image, shape ``geo.nVoxel``, for example the phantom of a
+    simulation. The quality measures then compare each iterate with it
+    instead of with the previous iterate, and its error norm
+    :math:`\\|x - x_{true}\\|_2` is recorded at every iteration, as the last
+    row of the errors.
 computel2 : bool, optional
     Also record the data residual norm :math:`\\|Ax - b\\|_2` at every
     iteration. Default False.

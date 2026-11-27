@@ -25,6 +25,8 @@ thank you.
   them directly, e.g. `from _minTV import minTV`, now needs `from tigre.utilities.cuda_interface._minTV import minTV`.
 
 ### Added
+- Python: `groundTruth` option for the iterative algorithms, as in MATLAB: the quality measures compare each
+  iterate with a known image, and the error norm `||x - groundTruth||` is recorded every iteration (#410).
 - `spotDriftGeo` (Python and MATLAB): geometry for a source focal spot that drifts during the scan, described
   with the existing `offDetector`, `offOrigin`, `DSO` and `DSD` (#374).
 - `computeImageGeo` (Python and MATLAB): image size and voxel size from the detector, covering the field of view
