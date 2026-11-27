@@ -26,6 +26,7 @@ GROUPS = {
         "Utilities/checkGeo.m",
         "Utilities/staticDetectorGeo.m",
         "Utilities/computeCOR.m",
+        "Utilities/tiltedAxisGeo.m",
         "Utilities/flatten_detector.m",
         "Utilities/plotgeometry.m",
     ],

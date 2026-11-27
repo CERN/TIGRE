@@ -62,6 +62,7 @@ from .utilities.common_geometry import (
     staticDetectorGeo,
     staticDetLinearSourceGeo,
     ArbitrarySourceDetMoveGeo,
+    tiltedAxisGeo,
 )
 
 from . import algorithms
