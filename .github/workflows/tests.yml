@@ -1,9 +1,20 @@
 name: Tests
 
+# Not run when a change touches only the docs, the website or Markdown files.
 on:
   push:
     branches: [master]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - "Frontispiece/**"
+      - "CITATION.cff"
   pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - "Frontispiece/**"
+      - "CITATION.cff"
 
 # A new push to the same PR cancels the run still going for the old push.
 concurrency:
