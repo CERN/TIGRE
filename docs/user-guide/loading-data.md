@@ -81,8 +81,10 @@ has further options, including beam-hardening correction.
 file in a folder: either one multi-frame file (a standard scan) or one file
 per projection. In Python it needs the `pydicom` package
 (`pip install pydicom`), and it returns the DICOM headers as a fourth output.
-It has been tested on Philips Allura C-arm data only and warns for other
-scanners; if it does not read yours, please get in touch.
+The MATLAB version has been tested on Philips Allura C-arm data only and
+warns for other scanners. The Python version is a new port that has not been
+tested on real scanner data yet: if it fails or the result looks wrong, please
+[open an issue](https://github.com/CERN/TIGRE/issues).
 
 ## Other scanners
 

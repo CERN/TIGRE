@@ -39,9 +39,13 @@ def DicomDataLoader(filepath):
     file, with the angle of each frame in
     ``PositionerPrimaryAngleIncrement`` / ``PositionerSecondaryAngleIncrement``;
     a scan made of one-shot acquisitions is one file per projection. The
-    projections are converted to line integrals, ready to reconstruct. Tested
-    on Philips C-arm (Allura) data only. Needs the ``pydicom`` package
-    (``pip install pydicom``). See :doc:`/user-guide/loading-data`.
+    projections are converted to line integrals, ready to reconstruct. Needs
+    the ``pydicom`` package (``pip install pydicom``). See
+    :doc:`/user-guide/loading-data`.
+
+    This is a port of the MATLAB ``dicomDataLoader``, which was tested on
+    Philips C-arm (Allura) data. The Python version has not been tested on real
+    scanner data yet and warns about it: if it fails, please open an issue.
 
     Parameters
     ----------
@@ -67,6 +71,11 @@ def DicomDataLoader(filepath):
         import pydicom
     except ImportError as err:
         raise ImportError("DicomDataLoader needs pydicom: pip install pydicom") from err
+    warnings.warn(
+        "DicomDataLoader is new in Python and has not been tested on real scanner data yet "
+        "(only the MATLAB dicomDataLoader has). If it fails or the reconstruction looks wrong, "
+        "please open an issue: https://github.com/CERN/TIGRE/issues"
+    )
 
     folder = Path(filepath)
     files = sorted(folder.glob("*.dcm"))
