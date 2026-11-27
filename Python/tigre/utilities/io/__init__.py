@@ -4,3 +4,4 @@ from .YXLONDataLoader import YXLONDataLoader
 from .DXChangeDataLoader import DXChangeDataLoader
 from .DiondoDataLoader import DiondoDataLoader
 from .VarianDataLoader import VarianDataLoader
+from .DicomDataLoader import DicomDataLoader

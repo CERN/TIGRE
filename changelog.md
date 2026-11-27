@@ -19,6 +19,8 @@ thank you.
   them directly, e.g. `from _minTV import minTV`, now needs `from tigre.utilities.cuda_interface._minTV import minTV`.
 
 ### Added
+- Python: `tigre.utilities.io.DicomDataLoader`, a port of MATLAB's `dicomDataLoader` for DICOM C-arm CBCT (tested on Philips
+  Allura). Needs `pydicom` (#201).
 - `tiltedAxisGeo` (Python and MATLAB): describes a rotation axis tilted within the detector plane from two centre-of-rotation
   values, at the top and at the bottom, using the existing `COR`, `rotDetector` and `offOrigin` fields (#98).
 - `tigre.__version__` and `tigre.show_versions()` (Python), and `tigreVersion` (MATLAB), which print
@@ -27,6 +29,9 @@ thank you.
   NVIDIA driver, not the CUDA toolkit.
 
 ### Fixed
+- MATLAB `dicomDataLoader`: no longer errors on files with a `PositionerType` field (`strcmi` typo); reads
+  `ImagerPixelSpacing` in (u, v) order, which matters for non-square pixels; sets `offDetector` when it crops the
+  projections to an off-centre shutter (#201).
 - Python: the wheels no longer install the `tests` and `demos` folders as top-level packages (`import tests`
   could pick up TIGRE's), and the head phantom is installed inside the package (`tigre/data/head.mat`) instead of
   `<environment>/data/head.mat`. `tigre.utilities.sample_loader` finds both. The sdist still has the tests and demos.

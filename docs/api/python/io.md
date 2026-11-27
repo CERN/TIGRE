@@ -24,4 +24,6 @@ reconstruct. See [](../../user-guide/loading-data.md).
 .. autofunction:: VarianDataLoader
 
 .. autofunction:: DXChangeDataLoader
+
+.. autofunction:: DicomDataLoader
 ```

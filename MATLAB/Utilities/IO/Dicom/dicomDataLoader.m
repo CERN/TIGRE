@@ -10,7 +10,7 @@ function [proj,geo,angles,dicomhdr]= dicomDataLoader(filepath)
 %
 % Please cite it, especially if you are using C-arm CBCT
 
-if ~strcmp(filepath(end),'/') || ~strcmp(filepath(end),'\')
+if ~strcmp(filepath(end),'/') && ~strcmp(filepath(end),'\')
     filepath=[filepath,'/'];
 end
 %get all dicom files in this folder
@@ -24,13 +24,15 @@ if ~isfield(dicomhdr{length(x)},'Manufacturer') || ~contains(dicomhdr{length(x)}
         'and we can work together in improving this code to load your data.']));
     disp('Attempting to read the data anyway....');
 end
-if ~isfield(dicomhdr{length(x)},'PositionerType') || ~strcmi(dicomhdr{length(x)}.PositionerType,'CARM')
+if ~isfield(dicomhdr{length(x)},'PositionerType') || ~strcmpi(dicomhdr{length(x)}.PositionerType,'CARM')
     warning(sprintf(['This loader has only been tested with C-arm (CARM) scanners, which your DICOM data does not seem to be\n'...
         'If you have data not supported by this loader that you want supported, contact tigre.toolbox@gmail.com\n',...
         'and we can work together in improving this code to load your data.']))
     disp('Attempting to read the data anyway....');
     
 end
+
+offDetector=[0;0]; % changed if the projections are cropped to the shutter
 
 % Standard circular scans will only create 1 DICOM file, while one may
 % "hack" the scan to do one-shots in each projection, and create several
@@ -101,7 +103,14 @@ else
                     'ShutterLowerHorizontalEdge'};
     if ~isempty(checkDicomHeaders(dicomhdr,padding_fields))
        % padding fields present, pad. 
-       proj=proj(dicomhdr{1}.ShutterUpperHorizontalEdge:dicomhdr{1}.ShutterLowerHorizontalEdge,dicomhdr{1}.ShutterLeftVerticalEdge:dicomhdr{1}.ShutterRightVerticalEdge,:);
+       nRows=size(proj,1); nCols=size(proj,2);
+       top=double(dicomhdr{1}.ShutterUpperHorizontalEdge); bottom=double(dicomhdr{1}.ShutterLowerHorizontalEdge);
+       left=double(dicomhdr{1}.ShutterLeftVerticalEdge); right=double(dicomhdr{1}.ShutterRightVerticalEdge);
+       proj=proj(top:bottom,left:right,:);
+       % The cropped detector is no longer centred: move it back to where its pixels were.
+       % u grows with the column and v with the row. ImagerPixelSpacing is (row, column).
+       offDetector=[((left+right)/2-(nCols+1)/2)*dicomhdr{1}.ImagerPixelSpacing(2);
+                    ((top+bottom)/2-(nRows+1)/2)*dicomhdr{1}.ImagerPixelSpacing(1)];
     end
 end
 
@@ -114,10 +123,11 @@ if any(proj(:)==0)
 end
 proj=-log(proj./(max(proj(:))+1));
 % Fill in the geometry info.
-geo.dDetector=dicomhdr{1}.ImagerPixelSpacing;
+% ImagerPixelSpacing is (row, column) spacing, i.e. (v, u): TIGRE's MATLAB order is (u, v)
+geo.dDetector=flipud(double(dicomhdr{1}.ImagerPixelSpacing(:)));
 geo.nDetector=double([size(proj,2);size(proj,1)]);
 geo.sDetector=geo.dDetector.*geo.nDetector;
-geo.offDetector=[0;0];
+geo.offDetector=offDetector;
 if length(unique(DSD))==1
     geo.DSD=DSD(1);
 else % very unlikely in a medical CT scan
@@ -129,7 +139,7 @@ else % very unlikely in a medical CT scan
     geo.DSO=DSO;
 end
 disp('Estimating acceptable image size...')
-geo.dVoxel=[geo.dDetector(1);geo.dDetector(1); geo.dDetector(2)]*geo.DSO/geo.DSD;
+geo.dVoxel=[geo.dDetector(1);geo.dDetector(1); geo.dDetector(2)]*mean(geo.DSO)/mean(geo.DSD);
 geo.nVoxel=ceil([geo.nDetector(1)+abs(geo.offDetector(1))/geo.dDetector(1);geo.nDetector(1)+abs(geo.offDetector(1))/geo.dDetector(1);geo.nDetector(2)]);
 geo.sVoxel=geo.nVoxel.*geo.dVoxel;
 
