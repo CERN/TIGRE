@@ -222,6 +222,81 @@ def changeResolution(geo, factor, proj=None):
     return geo, binned
 
 
+def spotDriftGeo(geo, drift, angles) -> Geometry:
+    """Geometry for a source focal spot that drifts during the scan.
+
+    The drift is the movement of the source from its nominal position, in mm,
+    measured in the frame that rotates with the scanner: along the detector
+    ``u`` and ``v`` directions, and optionally along the central ray. It is
+    described exactly with fields TIGRE already has: the source and the
+    detector are moved back together, so the source returns to its nominal
+    place, the detector offset ``offDetector`` takes the opposite shift, and
+    the image offset ``offOrigin`` takes it too, rotated with each angle. A
+    drift along the central ray changes ``DSO`` and ``DSD``. All of these
+    become per-projection values.
+
+    Parameters
+    ----------
+    geo : Geometry
+        A cone-beam geometry (it is not modified).
+    drift : numpy.ndarray
+        Shape ``(N, 2)`` or ``(N, 3)``, one row per projection, or a single
+        row for a constant offset. Columns, in mm: drift along ``v`` (same
+        direction as ``offDetector[..., 0]``, +z for a standard scan), along
+        ``u`` (same direction as ``offDetector[..., 1]``) and, optionally,
+        along the central ray towards the detector.
+    angles : numpy.ndarray
+        The projection angles, shape ``(N,)`` or ``(N, 3)``, as given to the
+        operators and algorithms.
+
+    Returns
+    -------
+    Geometry
+        A copy of ``geo`` with per-projection ``offOrigin``, ``offDetector``,
+        ``DSO`` and ``DSD``.
+
+    Examples
+    --------
+    >>> geo = tigre.spotDriftGeo(geo, drift, angles)  # drift: (N, 2), mm
+    """
+    if getattr(geo, "mode", "cone") == "parallel":
+        raise ValueError("spotDriftGeo needs a cone-beam geometry; a parallel beam has no source position")
+    geo = copy.deepcopy(geo)
+    angles = np.asarray(angles, dtype=np.float64)
+    if angles.ndim == 1:
+        angles = np.stack([angles, 0 * angles, 0 * angles], axis=1)
+    if angles.ndim != 2 or angles.shape[1] != 3:
+        raise ValueError("angles should have shape (N,) or (N, 3)")
+    n = angles.shape[0]
+    drift = np.atleast_2d(np.asarray(drift, dtype=np.float64))
+    if drift.ndim != 2 or drift.shape[1] not in (2, 3) or drift.shape[0] not in (1, n):
+        raise ValueError("drift should have shape (N, 2) or (N, 3), or a single row, with N = number of angles")
+    drift = np.broadcast_to(drift, (n, drift.shape[1]))
+    d_v, d_u = drift[:, 0], drift[:, 1]
+    d_w = drift[:, 2] if drift.shape[1] == 3 else np.zeros(n)
+
+    def per_angle(value, width):
+        value = np.zeros(width) if value is None else np.asarray(value, dtype=np.float64)
+        return np.array(np.broadcast_to(value, (n, width) if width else (n,)))
+
+    # Moving source and detector by -drift brings the source back; the image moves with them.
+    # The rotating frame's u and v axes in world coordinates (columns 2 and 3 of the Euler ZYZ
+    # rotation the projectors use).
+    a, t, p = angles[:, 0], angles[:, 1], angles[:, 2]
+    ax_u = np.stack([-np.cos(a) * np.cos(t) * np.sin(p) - np.sin(a) * np.cos(p),
+                     -np.sin(a) * np.cos(t) * np.sin(p) + np.cos(a) * np.cos(p),
+                     np.sin(t) * np.sin(p)], axis=1)  # (x, y, z)
+    ax_v = np.stack([np.cos(a) * np.sin(t), np.sin(a) * np.sin(t), np.cos(t)], axis=1)
+    shift_xyz = d_u[:, None] * ax_u + d_v[:, None] * ax_v
+    off_origin = per_angle(getattr(geo, "offOrigin", None), 3)
+    geo.offOrigin = off_origin - shift_xyz[:, ::-1]  # Python order is (z, y, x)
+    off_det = per_angle(getattr(geo, "offDetector", None), 2)
+    geo.offDetector = off_det - np.stack([d_v, d_u], axis=1)
+    geo.DSO = per_angle(geo.DSO, 0) - d_w
+    geo.DSD = per_angle(geo.DSD, 0) - d_w
+    return geo
+
+
 # Linear scan of source
 def staticDetLinearSourceGeo(geo,s_pos,s_rot=0,rot=0) -> Geometry:
     """Geometry for a fixed detector and a source that moves along a line.

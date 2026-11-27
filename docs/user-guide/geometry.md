@@ -288,6 +288,26 @@ geo = computeImageGeo(geo);
 [geoSmall, projSmall] = changeResolution(geo, 4, proj);
 ```
 
+**Focal spot drift.** If the source's focal spot moves during the scan (for
+example as the tube heats up), `spotDriftGeo(geo, drift, angles)` (Python
+`tigre.spotDriftGeo`) describes it with the existing fields. `drift` is the
+source's movement from its nominal place, in mm, one entry per projection, in
+the frame that rotates with the scanner: along `v` and `u` (the same
+directions as `offDetector`) and, optionally, along the central ray towards
+the detector. The source and detector are moved back together, which shifts
+`offDetector`, the per-angle `offOrigin`, and `DSO` and `DSD` for the third
+component. Python takes `drift` with shape `(N, 2)` or `(N, 3)`, columns
+`(v, u[, w])`; MATLAB takes `2xN` or `3xN`, rows `[u; v[; w]]`, the same
+orders as `offDetector`.
+
+```python
+geo = tigre.spotDriftGeo(geo, drift, angles)
+```
+
+```matlab
+geo = spotDriftGeo(geo, drift, angles);
+```
+
 **Fixed detectors and moving sources.** Python has helpers that build
 per-angle geometries for these cases: `tigre.staticDetectorGeo`,
 `tigre.staticDetLinearSourceGeo` and `tigre.ArbitrarySourceDetMoveGeo`.

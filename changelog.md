@@ -25,6 +25,8 @@ thank you.
   them directly, e.g. `from _minTV import minTV`, now needs `from tigre.utilities.cuda_interface._minTV import minTV`.
 
 ### Added
+- `spotDriftGeo` (Python and MATLAB): geometry for a source focal spot that drifts during the scan, described
+  with the existing `offDetector`, `offOrigin`, `DSO` and `DSD` (#374).
 - `computeImageGeo` (Python and MATLAB): image size and voxel size from the detector, covering the field of view
   (also with an offset detector). `changeResolution`: a coarser geometry with the same image size, and optionally the
   projections binned to match (#359, #381).
