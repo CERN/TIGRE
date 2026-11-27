@@ -25,6 +25,8 @@ thank you.
   the versions of TIGRE, Python or MATLAB, the OS and the GPUs, for bug reports.
 - Python wheels for Windows (x86-64) on the GitHub Release, next to the Linux ones. They need only the
   NVIDIA driver, not the CUDA toolkit.
+- Python: beam-hardening correction for Varian CBCT, `VarianDataLoader(..., bh=True)`, ported from MATLAB's `bh` option
+  (off by default, as in MATLAB) (#201).
 
 ### Fixed
 - Python: the wheels no longer install the `tests` and `demos` folders as top-level packages (`import tests`

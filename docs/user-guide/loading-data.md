@@ -72,8 +72,12 @@ Bruker folders sometimes hold more than one dataset; choose one with
 By default it also applies an acceleration-deceleration correction (`acdc`),
 detector point-scatter correction (`dps`) and kernel-based scatter
 correction (`sc`); each can be switched off with the option of the same name.
-It has been tested on clinical data from TrueBeam 2.7. The MATLAB version
-has further options, including beam-hardening correction.
+It has been tested on clinical data from TrueBeam 2.7. Beam-hardening
+correction (`bh` in both languages) is off by default: it is slow and
+only worth it if the images show cupping. It needs the factory calibration in
+`Calibrations/ASC/Factory/Calibration.xml`. The Python version is a new port
+that has not been tested on real data yet: if it fails or the result looks
+wrong, please [open an issue](https://github.com/CERN/TIGRE/issues).
 
 ## Other scanners
 
