@@ -267,6 +267,27 @@ Iterative algorithms are exact with this geometry. FDK filters along the
 detector rows, so it is approximate for a tilted axis: for large tilts, rotate
 the projections by the tilt angle instead and set only `COR`.
 
+**Image size for real data, and a quick low-resolution run.**
+`computeImageGeo(geo)` (Python `tigre.computeImageGeo`) sets `nVoxel`,
+`dVoxel` and `sVoxel` from the detector: voxels the size of a detector pixel
+seen at the rotation axis (`dDetector * DSO / DSD`), and enough of them to
+cover the field of view, including an offset (half-fan) detector.
+`changeResolution(geo, factor, proj)` (Python `tigre.changeResolution`) gives
+a coarser version: the same image size with `factor` times fewer voxels per
+axis and, if the projections are given, the projections binned by the same
+factor, with the detector changed to match. This is handy to tune an
+algorithm's parameters on a small problem first:
+
+```python
+geo = tigre.computeImageGeo(geo)
+geo_small, proj_small = tigre.changeResolution(geo, 4, proj)
+```
+
+```matlab
+geo = computeImageGeo(geo);
+[geoSmall, projSmall] = changeResolution(geo, 4, proj);
+```
+
 **Fixed detectors and moving sources.** Python has helpers that build
 per-angle geometries for these cases: `tigre.staticDetectorGeo`,
 `tigre.staticDetLinearSourceGeo` and `tigre.ArbitrarySourceDetMoveGeo`.

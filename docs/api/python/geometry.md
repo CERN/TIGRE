@@ -27,6 +27,10 @@ How to describe a scanner: see [](../../user-guide/geometry.md).
 
 .. autofunction:: tiltedAxisGeo
 
+.. autofunction:: computeImageGeo
+
+.. autofunction:: changeResolution
+
 Geometries with moving sources or detectors
 -------------------------------------------
 

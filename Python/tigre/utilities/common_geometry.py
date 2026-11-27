@@ -108,6 +108,120 @@ def tiltedAxisGeo(geo, cor_top, cor_bottom, height=None) -> Geometry:
     return geo
 
 
+def computeImageGeo(geo) -> Geometry:
+    """Image size and voxel size that suit the detector and the scan.
+
+    The voxels get the size of a detector pixel seen at the rotation axis,
+    ``dDetector * DSO / DSD`` (``dDetector`` for parallel beam), and there are
+    enough of them to cover the field of view: the circle that every
+    projection sees in the axial plane (larger with an offset, half-fan,
+    detector), and the detector's height at the axis. Useful for real data,
+    where the image size is not given.
+
+    Parameters
+    ----------
+    geo : Geometry
+        The scanner geometry, with the detector and distances set (it is not
+        modified). Per-projection ``DSO``, ``DSD`` and ``offDetector`` are
+        averaged / their largest offset is used.
+
+    Returns
+    -------
+    Geometry
+        A copy of ``geo`` with ``nVoxel``, ``dVoxel`` and ``sVoxel`` set.
+
+    Examples
+    --------
+    >>> geo = tigre.computeImageGeo(geo)
+    """
+    geo = copy.deepcopy(geo)
+    d_v, d_u = (float(x) for x in np.asarray(geo.dDetector, dtype=np.float64).ravel()[:2])
+    n_v, n_u = (float(x) for x in np.asarray(geo.nDetector, dtype=np.float64).ravel()[:2])
+    off = np.zeros(2) if getattr(geo, "offDetector", None) is None else np.asarray(geo.offDetector, dtype=np.float64).reshape(-1, 2)
+    off_v, off_u = np.abs(off).max(axis=0)
+    u_max = n_u * d_u / 2 + off_u  # furthest detector column from the central ray, mm
+    v_max = n_v * d_v / 2 + off_v
+    if getattr(geo, "mode", "cone") == "parallel":
+        mag = 1.0
+        radius = u_max
+    else:
+        DSO = float(np.mean(geo.DSO))
+        DSD = float(np.mean(geo.DSD))
+        mag = DSD / DSO
+        radius = DSO * u_max / np.hypot(DSD, u_max)  # distance of the outermost ray from the axis
+    d_xy = d_u / mag
+    d_z = d_v / mag
+    n_xy = int(np.ceil(2 * radius / d_xy))
+    n_z = int(np.ceil(2 * v_max / mag / d_z))
+    geo.nVoxel = np.array([n_z, n_xy, n_xy])
+    geo.dVoxel = np.array([d_z, d_xy, d_xy])
+    geo.sVoxel = geo.nVoxel * geo.dVoxel
+    return geo
+
+
+def changeResolution(geo, factor, proj=None):
+    """Coarser version of a geometry, and optionally of its projections.
+
+    The image keeps its physical size, ``sVoxel``, with ``factor`` times fewer
+    voxels along each axis. If ``proj`` is given, the projections are binned by
+    the same factor (the mean of each ``factor`` x ``factor`` block of pixels)
+    and the detector changes to match; pixels that do not fill a whole block,
+    at the end of each detector row or column, are dropped, and ``offDetector``
+    moves so that the binned pixels stay where they were. Useful to try
+    parameters on a small problem first.
+
+    Parameters
+    ----------
+    geo : Geometry
+        The scanner geometry (it is not modified).
+    factor : int
+        Reduction factor, 1 or more.
+    proj : numpy.ndarray, optional
+        Projections, shape ``(N, nDetector[0], nDetector[1])``.
+
+    Returns
+    -------
+    Geometry, or (Geometry, numpy.ndarray)
+        The new geometry; with ``proj``, also the binned projections, float32.
+
+    Examples
+    --------
+    >>> geo_small, proj_small = tigre.changeResolution(geo, 2, proj)
+    """
+    factor = int(factor)
+    if factor < 1:
+        raise ValueError("factor should be an integer, 1 or more")
+    geo = copy.deepcopy(geo)
+    n_voxel = np.asarray(geo.nVoxel)
+    geo.nVoxel = np.maximum(np.round(n_voxel / factor), 1).astype(int)
+    geo.dVoxel = np.asarray(geo.sVoxel, dtype=np.float64) / geo.nVoxel
+    if proj is None:
+        return geo
+
+    proj = np.asarray(proj)
+    n_det = np.asarray(geo.nDetector).astype(int)
+    if proj.ndim != 3 or tuple(proj.shape[1:]) != tuple(n_det):
+        raise ValueError("proj should have shape (N, nDetector[0], nDetector[1])")
+    n_new = n_det // factor
+    if (n_new < 1).any():
+        raise ValueError("factor is larger than the detector")
+    kept = n_new * factor
+    binned = proj[:, : kept[0], : kept[1]].reshape(proj.shape[0], n_new[0], factor, n_new[1], factor)
+    binned = binned.mean(axis=(2, 4), dtype=np.float64).astype(np.float32)
+    d_det = np.asarray(geo.dDetector, dtype=np.float64)
+    # The dropped pixels are at the high-index end; the kept ones are centred lower by half of them.
+    # u grows with the column and v with the row (row 0 is the -z end of the detector).
+    shift = (n_det - kept) * d_det / 2
+    if getattr(geo, "offDetector", None) is not None:
+        geo.offDetector = np.asarray(geo.offDetector, dtype=np.float64) - shift
+    else:
+        geo.offDetector = -shift
+    geo.nDetector = n_new
+    geo.dDetector = d_det * factor
+    geo.sDetector = geo.nDetector * geo.dDetector
+    return geo, binned
+
+
 # Linear scan of source
 def staticDetLinearSourceGeo(geo,s_pos,s_rot=0,rot=0) -> Geometry:
     """Geometry for a fixed detector and a source that moves along a line.

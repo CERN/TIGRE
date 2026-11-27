@@ -25,6 +25,9 @@ thank you.
   them directly, e.g. `from _minTV import minTV`, now needs `from tigre.utilities.cuda_interface._minTV import minTV`.
 
 ### Added
+- `computeImageGeo` (Python and MATLAB): image size and voxel size from the detector, covering the field of view
+  (also with an offset detector). `changeResolution`: a coarser geometry with the same image size, and optionally the
+  projections binned to match (#359, #381).
 - MATLAB: `Ax` and `Atb` take `single` `gpuArray` inputs (Parallel Computing Toolbox) and return a `gpuArray` on the
   same GPU, with no copies through host memory, as Python does for PyTorch and CuPy arrays. `Compile` builds it when
   it finds the toolbox (#300).
