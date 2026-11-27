@@ -8,6 +8,8 @@ thank you.
 ## Unreleased
 
 ### Changed
+- MATLAB `VarianDataLoader` with `bh`: no longer asks interactively whether to continue, and computes the path length
+  of each ray through the bowtie directly instead of building a ~6.5 GB voxelised bowtie and forward projecting it.
 - MATLAB: `checkGeo` casts geometry fields given as `single`, integer or logical arrays to `double`, instead
   of failing with "is not double type" (#91).
 - Python: `check_geo` accepts geometry fields as lists, tuples or NumPy numbers of any numeric type (e.g.

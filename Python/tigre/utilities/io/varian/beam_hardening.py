@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import glob
 import os
+import warnings
 import xml.etree.ElementTree as ET
 
 import numpy as np
@@ -265,6 +266,11 @@ def correct_beam_hardening(log_projs: NDArray, geometry: Geometry, filepath: Pat
     Returns:
         NDArray: corrected projections, same shape, float32
     """
+    warnings.warn(
+        "The Python beam hardening correction (bh=True) is new and has not been tested on real "
+        "scanner data yet. If it fails or the reconstruction looks wrong, please open an issue: "
+        "https://github.com/CERN/TIGRE/issues"
+    )
     print("Beam hardening correction (slow, and only worth it if the scan shows cupping):")
     acq_text = lambda field: scan_params._get_field(field).text  # noqa: E731
     bh = BHParams(filepath, acq_text("Voltage"), acq_text("KVFilter"), acq_text("Bowtie"))

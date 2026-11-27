@@ -3,15 +3,7 @@ function [proj_lg, BHCalib] = BHCorrection(datafolder, geo, ScanXML, proj_lg,gpu
 %   Detailed explanation goes here
 
 
-disp('BH correction is very memory intensive. The effect is to be justified. ');
-typein = input('Continue BH correction? Y or N (recommended): ', 's');
-if(contains(typein, 'n', 'IgnoreCase', true))
-    BHCalib = NaN;
-    disp('BH correction is skipped.');
-    return;
-end
-
-disp('Beam Hardening Correction is on-going: be patient... ');
+disp('Beam Hardening Correction is on-going (slow, and only worth it if the images show cupping): be patient... ');
 
 % Key calibration information
 BHCalib = BHCalibFromXML(datafolder, ScanXML);
