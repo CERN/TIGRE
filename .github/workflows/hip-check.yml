@@ -1,0 +1,49 @@
+name: HIP Check
+
+# Builds TIGRE for AMD GPUs (HIP/ROCm) on PRs that change compiled code, so a
+# change to the shared .cu files cannot break the AMD build silently. GitHub's
+# runners have no AMD GPU, so this only compiles and imports; the AMD GPU tests
+# are run by hand on an AMD machine.
+on:
+  pull_request:
+    paths:
+      - "Common/**"
+      - "Python/tigre/utilities/cuda_interface/**"
+      - "setup.py"
+      - ".github/workflows/hip-check.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: hip-check-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build_hip:
+    name: Build for AMD GPUs (HIP, compile only)
+    runs-on: ubuntu-latest
+    container: rocm/dev-ubuntu-24.04:7.2.4  # about 1.2 GB, has hipcc (not the 7 GB -complete image)
+    env:
+      TIGRE_BACKEND: hip
+      ROCM_PATH: /opt/rocm
+      # Required: with no AMD GPU to detect, the build stops unless HIP_ARCH is set.
+      # One CDNA (MI200, wave64) and one RDNA (RX 7000, wave32) architecture.
+      HIP_ARCH: "gfx90a,gfx1100"
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install the hipRAND headers
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends hiprand-dev rocrand-dev
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: 0.13.10
+          enable-cache: true
+      - name: Build and install TIGRE
+        run: |
+          uv venv --python 3.13
+          uv pip install --python .venv/bin/python .
+      - name: Import every compiled module
+        working-directory: /tmp
+        run: >
+          $GITHUB_WORKSPACE/.venv/bin/python -c "import tigre, tigre.algorithms,
+          tigre.utilities.im_3d_denoise, tigre.utilities.CTnoise; print('TIGRE', tigre.__version__, 'imports')"
