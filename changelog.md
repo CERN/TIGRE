@@ -10,6 +10,9 @@ thank you.
 ### Changed
 - MATLAB: `checkGeo` casts geometry fields given as `single`, integer or logical arrays to `double`, instead
   of failing with "is not double type" (#91).
+- Python: `check_geo` accepts geometry fields as lists, tuples or NumPy numbers of any numeric type (e.g.
+  `geo.DSO = np.int64(1000)` failed with "Data type not understood"), and rejects `nVoxel` / `nDetector` values
+  that are not whole numbers instead of truncating them (#91).
 - Python: the compiled CUDA modules (`_Ax`, `_Atb`, `_minTV`, `_AwminTV`, `_minPICCS`, `_tv_proximal`, `_gpuUtils`,
   `_RandomNumberGenerator`) are now inside the package, in `tigre.utilities.cuda_interface`, instead of top-level
   modules in `site-packages`. TIGRE's API (`tigre.Ax`, `tigre.algorithms`, ...) does not change; code that imported

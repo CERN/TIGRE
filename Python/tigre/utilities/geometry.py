@@ -108,6 +108,11 @@ class Geometry(object):
             )
         optional_attribs = ["offOrigin", "offDetector", "rotDetector", "COR", "mode", "accuracy"]
 
+        # Lists, tuples and numbers of any numeric type (int32, float16, ...) are accepted:
+        # make them NumPy arrays here; cast_to_single() and the CUDA interface cast them later.
+        for attrib in ["nVoxel", "sVoxel", "dVoxel", "nDetector", "sDetector", "dDetector"]:
+            setattr(self, attrib, self.__as_numeric__(attrib))
+
         # image data
         if not self.nVoxel.shape == (3,):
             raise AttributeError("geo.nVoxel.shape should be (3, )")
@@ -115,6 +120,8 @@ class Geometry(object):
             raise AttributeError("geo.sVoxel.shape should be (3, )")
         if not self.dVoxel.shape == (3,):
             raise AttributeError("geo.dVoxel.shape should be (3, )")
+        if not np.array_equal(self.nVoxel, np.round(self.nVoxel)):
+            raise AttributeError("geo.nVoxel should be whole numbers")
         if not sum(abs(self.dVoxel * self.nVoxel - self.sVoxel)) < 1e-6:
             raise AttributeError("nVoxel*dVoxel is not equal to sVoxel. Check fields.")
 
@@ -125,6 +132,8 @@ class Geometry(object):
             raise AttributeError("geo.sDetector.shape should be (2, )")
         if not self.dDetector.shape == (2,):
             raise AttributeError("geo.dDetector.shape should be (2, )")
+        if not np.array_equal(self.nDetector, np.round(self.nDetector)):
+            raise AttributeError("geo.nDetector should be whole numbers")
         if not sum(abs(self.dDetector * self.nDetector - self.sDetector)) < 1e-6:
             raise AttributeError("nDetector*dDetector is not equal to sDetector. Check fields.")
 
@@ -198,13 +207,14 @@ class Geometry(object):
         :param attrib: string
         :param angles: np.ndarray
         """
-        old_attrib = getattr(self, attrib)
+        old_attrib = self.__as_numeric__(attrib)
 
-        if type(old_attrib) in [float, int, np.float32, np.float64, np.int32]:
+        if old_attrib.ndim == 0:
             new_attrib = np.tile(old_attrib, angles.shape[0])
             setattr(self, attrib, new_attrib)
 
-        elif type(old_attrib) == np.ndarray:
+        else:
+            setattr(self, attrib, old_attrib)
             if old_attrib.ndim == 1:
                 if old_attrib.shape in [(3,), (2,)] and attrib not in ["DSD", "DSO", "COR"]:
                     new_attrib = np.tile(old_attrib, (angles.shape[0], 1))
@@ -237,13 +247,20 @@ class Geometry(object):
                         )
                     )
 
-        else:
+    def __as_numeric__(self, attrib):
+        """
+        Returns geo.<attrib> as a NumPy array; raises TypeError if it is not numeric.
+
+        :rtype: np.ndarray
+        :param attrib: string
+        """
+        val = getattr(self, attrib)
+        arr = np.asarray(val)
+        if not (np.issubdtype(arr.dtype, np.number) or arr.dtype == bool):
             raise TypeError(
-                "Data type not understood for: geo."
-                + attrib
-                + " with type = "
-                + str(type(getattr(self, attrib)))
+                "Data type not understood for: geo." + attrib + " with type = " + str(type(val))
             )
+        return arr
 
     def _verbose_output(self):
         for obj in inspect.getmembers(self):
