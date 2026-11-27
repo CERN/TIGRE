@@ -1,0 +1,40 @@
+name: Windows Check
+
+# One Windows wheel (one Python version, one GPU architecture), for PRs that
+# change TIGRE's compiled code: a quick check that it still builds with MSVC.
+# The Linux build is checked by the Tests workflow on every PR.
+on:
+  pull_request:
+    paths:
+      - "Common/**"
+      - "Python/tigre/utilities/cuda_interface/**"
+  workflow_dispatch:
+
+concurrency:
+  group: windows-check-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build_windows:
+    name: Build a wheel on Windows
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v7
+      # CUDA 12.8, as for the Linux wheels. Only the parts TIGRE builds with.
+      - uses: Jimver/cuda-toolkit@v0.2.36
+        with:
+          cuda: "12.8.1"
+          method: network
+          sub-packages: '["nvcc", "cudart", "curand_dev", "thrust", "visual_studio_integration"]'
+          use-github-cache: false
+      # nvcc needs cl.exe on the PATH.
+      - uses: ilammy/msvc-dev-cmd@v1
+      # cibuildwheel uses build[uv] (pyproject.toml), so it needs uv.
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          version: 0.13.10
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v4.3.5
+        env:
+          CIBW_BUILD: cp313-win_amd64
+          TIGRE_CUDA_ARCH: "75"
