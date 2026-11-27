@@ -67,7 +67,6 @@ if nargout<3 && measurequality
     measurequality=false;
 end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
-resL2 = zeros(1,niter);
 
 % Paige and Saunders //doi.org/10.1145/355984.355989
 
@@ -121,7 +120,11 @@ errorL2 = zeros(1,niter);
 % (2) Start iterations 
 for ii=1:niter
     if measurequality && ~strcmp(QualMeasOpts,'error_norm')
-       x_prev = x; % only store if necessary
+        if ii==1
+            x_prev=x0;
+        else
+            x_prev = x; % only store if necessary
+        end
     end
     if (ii==1 && verbose);tic;end
 
@@ -175,7 +178,9 @@ for ii=1:niter
     
     if strcmp(RegParam,'discrepit')
         eta = 1.01;
-        if discrepancy_Tik(0, Mk, ZRksq, rhsk, eta*NoiseLevel) > 0
+        f0 = discrepancy_Tik(0, Mk, ZRksq, rhsk, eta*NoiseLevel);
+        if f0 > 0 || f0*discrepancy_Tik(1e10, Mk, ZRksq, rhsk, eta*NoiseLevel) > 0
+            % no root in [0, 1e10]: fzero would error
             lambda = 0;
         else
             lambda = fzero(@(l)discrepancy_Tik(l, Mk, ZRksq, rhsk, eta*NoiseLevel), [0, 1e10]);
@@ -216,8 +221,8 @@ for ii=1:niter
     end
     aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
     errorL2(ii)=im3Dnorm(aux,'L2');
-    if ii>1 && resL2(ii)>resL2(ii-1)
-        disp(['Algorithm stoped in iteration ', num2str(ii),' due to loss of orthogonality.'])
+    if ii>1 && errorL2(ii)>errorL2(ii-1)
+        disp(['hybrid fLSQR-TV stopped at iteration ', num2str(ii),': the residual grew.'])
         return;
     end
     if (ii==1 && verbose)

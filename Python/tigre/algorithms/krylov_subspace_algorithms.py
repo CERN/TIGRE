@@ -876,8 +876,8 @@ ba_gmres = decorator(BA_GMRES, name="ba_gmres")
 
 class hybrid_fLSQR_TV(IterativeReconAlg): 
     __doc__ = (
-        " hybrid_fLSQR_TV solves the CBCT problem using preconditioned hybrid flexuble LSQR with TV regularization\n"
-        "  AB_GMRES(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
+        " hybrid_fLSQR_TV solves the CBCT problem using preconditioned hybrid flexible LSQR with TV regularization\n"
+        "  hybrid_fLSQR_TV(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem\n"
         "  using the projection data PROJ taken over ALPHA angles, corresponding\n"
         "  to the geometry described in GEO, using NITER iterations."
     ) + IterativeReconAlg.__doc__
@@ -901,9 +901,10 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
         self.__V__ = np.zeros((self.niter,(np.prod(self.geo.nVoxel))),dtype=np.float32)
         self.__Z__ = np.zeros((self.niter,(np.prod(self.geo.nVoxel))),dtype=np.float32)
 
-        self.__M__ = np.zeros((self.niter,self.niter+1),dtype=np.float32) #% Projected matrix
-        self.__T__ = np.zeros((self.niter,self.niter),dtype=np.float32) #% Projected matrix
-        self.__proj_rhs__ = np.zeros((self.niter+1,1),dtype=np.float32) #% Projected right hand side
+        # The small projected matrices in double precision, as MATLAB.
+        self.__M__ = np.zeros((self.niter,self.niter+1),dtype=np.float64) #% Projected matrix
+        self.__T__ = np.zeros((self.niter,self.niter),dtype=np.float64) #% Projected matrix
+        self.__proj_rhs__ = np.zeros((self.niter+1,1),dtype=np.float64) #% Projected right hand side
     
 
       
@@ -958,6 +959,7 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
         for i in range(self.niter):
             if self.verbose:
                 self._estimate_time_until_completion(i)
+            res_prev = self.res if self.Quameasopts is not None else None
             v=Atb(u,self.geo,self.angles,backprojection_type="matched", gpuids=self.gpuids)
             for j in range(i+1):
                 self.__T__[i,j] = inner(self.__V__[j],v)
@@ -1015,11 +1017,13 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
             x = x0 + np.reshape(d,self.res.shape) + xA0
             # update the TV weights from the new image, as MATLAB does
             W = self.__build_weights__(x)
+            self.res = x
+            if self.Quameasopts is not None:
+                self.error_measurement(res_prev, i)
             self.l2l[0, i] = l2norm((self.proj - tigre.Ax(x, self.geo, self.angles, "Siddon", gpuids=self.gpuids)).ravel())
             if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
-                # Same as hybrid_LSQR: no restart path, so stop. (The message
-                # said BA-GMRES; this is hybrid_fLSQR_TV.)
-                print("hybrid fLSQR-TV exited due to divergence at iteration "+str(i))
+                # Same as hybrid_LSQR, and MATLAB: no restart path, so stop.
+                print("hybrid fLSQR-TV stopped at iteration " + str(i + 1) + ": the residual grew.")
                 self.res = x
                 return self.res
              
