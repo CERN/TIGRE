@@ -25,6 +25,9 @@ thank you.
   them directly, e.g. `from _minTV import minTV`, now needs `from tigre.utilities.cuda_interface._minTV import minTV`.
 
 ### Added
+- MATLAB: `Ax` and `Atb` take `single` `gpuArray` inputs (Parallel Computing Toolbox) and return a `gpuArray` on the
+  same GPU, with no copies through host memory, as Python does for PyTorch and CuPy arrays. `Compile` builds it when
+  it finds the toolbox (#300).
 - Python: `tigre.algorithms.b_asd_pocs_beta`, ASD-POCS with Bregman iterations on the data, a port of MATLAB's
   `B_ASD_POCS_beta` (#283).
 - Python: `tigre.utilities.io.DicomDataLoader`, a port of MATLAB's `dicomDataLoader` for DICOM C-arm CBCT (tested on Philips
