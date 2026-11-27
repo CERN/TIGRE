@@ -395,6 +395,11 @@ DOCS = {
         "Models the measurements as Poisson-distributed, which suits low-count "
         "data. The image stays non-negative. Starts from an image of ones unless "
         "``init`` is given.",
+        notes="With ``computel2=True`` the recorded data error is the Kullback-Leibler "
+        "divergence of :math:`Ax` from the data :math:`b`, "
+        ":math:`\\sum_i b_i \\log(b_i/(Ax)_i) - b_i + (Ax)_i`, the Poisson data error "
+        "that MLEM decreases, instead of the L2 residual norm. Pixels with "
+        ":math:`b_i \\le 0` count as :math:`(Ax)_i`; rays with :math:`(Ax)_i = 0` are left out.",
         see_also="ossart",
     ),
 }

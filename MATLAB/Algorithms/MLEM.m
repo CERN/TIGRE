@@ -1,4 +1,4 @@
-function [res,resL2,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
+function [res,klDiv,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
 %MLEM solves the tomographic problem by using Maximum Likelihood Expectation
 % Maximisation algorithm. 
 %
@@ -23,9 +23,12 @@ function [res,resL2,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
 % OUTPUTS:
 %
 %    [img]                       will output the reconstructed image
-%    [img,resL2]                 will also output the L2 norm of the
-%                                residual, ||Ax-b||, after each iteration
-%    [img,resL2,qualMeas]        will also output the quality measurements
+%    [img,klDiv]                 will also output the Kullback-Leibler
+%                                divergence of Ax from the data b,
+%                                sum(b.*log(b./Ax)-b+Ax), after each
+%                                iteration: the Poisson data error that
+%                                MLEM decreases.
+%    [img,klDiv,qualMeas]        will also output the quality measurements
 %                                asked by the input 'QualMeas'
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -55,8 +58,8 @@ if nargout<3 && measurequality
     measurequality=false;
 end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
-resL2=zeros(1,niter);
-computeL2=nargout>1;
+klDiv=zeros(1,niter);
+computeKL=nargout>1;
 
 
 res = max(res,0);
@@ -80,8 +83,8 @@ for ii=1:niter
     if measurequality
         qualMeasOut(:,ii)=Measure_Quality(res_prev,res,QualMeasOpts);
     end
-    if computeL2
-        resL2(ii)=im3Dnorm(proj-Ax(res,geo,angles,'gpuids',gpuids),'L2');
+    if computeKL
+        klDiv(ii)=klDivergence(proj,Ax(res,geo,angles,'gpuids',gpuids));
     end
     
     if (ii==1)&&(verbose==1)
@@ -187,3 +190,14 @@ for ii=1:length(opts)
 end
 end
 
+function d=klDivergence(proj,est)
+% Kullback-Leibler divergence of the estimated projections est=Ax from the
+% measured projections proj=b: sum(b.*log(b./Ax)-b+Ax), the Poisson negative
+% log-likelihood up to a constant, which MLEM and OSEM decrease. Pixels with
+% b<=0 count as Ax (0*log(0)=0). Rays with Ax=0 are left out: the
+% multiplicative update cannot change them.
+use=est>0;
+b=double(proj(use)); a=double(est(use));
+pos=b>0;
+d=sum(a)-sum(b(pos))+sum(b(pos).*log(b(pos)./a(pos)));
+end
