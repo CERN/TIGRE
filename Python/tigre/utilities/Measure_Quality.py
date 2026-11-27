@@ -30,7 +30,8 @@ def Measure_Quality(res_prev, res, QualMeasOpts):  # noqa: N803
     :param res: (np.ndarray)
         true image
     :param QualMeasOpts: (str or listof(str))
-        any of: 'RMSE', 'nRMSE' , 'CC', 'MSSIM', 'UQI', 'SSD'
+        any of: 'RMSE', 'nRMSE' , 'CC', 'MSSIM', 'UQI', 'SSD', 'error_norm'
+        ('error_norm' is the L2 norm of the difference, as in MATLAB)
     :return:
     """
     values = []
@@ -103,6 +104,8 @@ def Measure_Quality(res_prev, res, QualMeasOpts):  # noqa: N803
             values.append(np.sum(front * back))
         if "SSD" == qual:
             values.append(np.sum((res_prev - res) ** 2))
+        if "error_norm" == qual:
+            values.append(np.linalg.norm((np.asarray(res_prev, dtype=np.float64) - res).ravel()))
     if len(values) == 1:
         return np.array(values[0])
     else:

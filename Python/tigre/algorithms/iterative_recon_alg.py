@@ -143,6 +143,7 @@ class IterativeReconAlg(object):
             lmbda_red=1,
             OrderStrategy=None,
             Quameasopts=None,
+            groundTruth=None,
             init=None,
             verbose=True,
             noneg=True,
@@ -227,8 +228,19 @@ class IterativeReconAlg(object):
         # make it a list
         if self.Quameasopts is not None:
             self.Quameasopts = (
-                [self.Quameasopts] if isinstance(self.Quameasopts, str) else self.Quameasopts
+                [self.Quameasopts] if isinstance(self.Quameasopts, str) else list(self.Quameasopts)
             )
+        if self.groundTruth is not None:
+            # As MATLAB's 'groundTruth': the quality measures compare each iterate with this image
+            # instead of the previous iterate, and the error norm ||x - groundTruth|| is added.
+            self.groundTruth = np.asarray(self.groundTruth, dtype=np.float32)
+            if self.groundTruth.shape != tuple(self.res.shape):
+                raise ValueError(
+                    "groundTruth should have the image's shape, " + str(tuple(self.res.shape))
+                    + ", got " + str(self.groundTruth.shape)
+                )
+            self.Quameasopts = (self.Quameasopts or []) + ["error_norm"]
+        if self.Quameasopts is not None:
             setattr(self, "lq", np.zeros([len(self.Quameasopts), niter]))  # quameasoptslist
         else:
             setattr(self, "lq", np.zeros([0, niter]))  # quameasoptslist
@@ -395,7 +407,8 @@ class IterativeReconAlg(object):
             # PCSD (like MATLAB's) can run one iteration past niter
             return
         if self.Quameasopts is not None:
-            self.lq[:, iter] = MQ(self.res, res_prev, self.Quameasopts)
+            ref = res_prev if self.groundTruth is None else self.groundTruth
+            self.lq[:, iter] = MQ(self.res, ref, self.Quameasopts)
         if self.computel2:
             # compute l2 norm for b-Ax
             errornow = im3DNORM(
