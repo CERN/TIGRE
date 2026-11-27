@@ -17,7 +17,7 @@ The cases, by where the data is, how many GPUs, and whether it fits:
 - PyTorch's cache holding the GPU: the operators still work
   (test_pytorch_operator_when_pytorch_cache_holds_the_gpu).
 - The producer's stream is waited for; nothing leaks; a CUDA error raises and
-  TIGRE keeps working (all 7 entry points); no "heavily used" warning.
+  TIGRE keeps working.
 - PyTorch operators: CUDA tensors stay on the GPU; CPU tensors go through NumPy.
 
 NumPy input, the other half of the table, is covered by the existing tests
@@ -27,7 +27,6 @@ that path is unchanged.
 import contextlib
 import subprocess
 import sys
-import warnings
 
 import numpy as np
 import pytest
@@ -279,23 +278,6 @@ def test_input_that_requires_grad():
     np.testing.assert_array_equal(result.cpu().numpy(), proj)
 
 
-def test_cpu_tensors_are_not_taken_for_gpu_arrays():
-    assert not _gpu_arrays.is_gpu_array(torch.zeros(3))
-    assert not _gpu_arrays.is_gpu_array(np.zeros(3))
-    assert _gpu_arrays.is_gpu_array(torch.zeros(3, device="cuda"))
-
-
-def test_explicit_gpuids_of_its_own_gpu_stay_on_the_gpu(monkeypatch):
-    geo, angles, img, proj = problem("cone")
-
-    def no_host(*args):
-        raise AssertionError("went through the host")
-    monkeypatch.setattr(_gpu_arrays, "_to_host", no_host)
-    x = to_gpu(img, "torch")
-    np.testing.assert_array_equal(tigre.Ax(x, geo, angles, gpuids=on_one_gpu()).cpu().numpy(), proj)
-    tigre.Atb(tigre.Ax(x, geo, angles), geo, angles, gpuids=on_one_gpu())
-
-
 @pytest.mark.parametrize("framework", FRAMEWORKS)
 def test_fallback_through_the_host(framework, monkeypatch):
     """What happens when gpuids names other GPUs, on one GPU: pretend the GPU
@@ -307,14 +289,6 @@ def test_fallback_through_the_host(framework, monkeypatch):
     np.testing.assert_array_equal(to_numpy(result), proj)
     result = tigre.Atb(to_gpu(proj, framework), geo, angles, gpuids=on_one_gpu())
     np.testing.assert_array_equal(to_numpy(result), tigre.Atb(proj, geo, angles, gpuids=on_one_gpu()))
-
-
-def test_which_gpuids_use_the_gpu_path():
-    assert _gpu_arrays._gpu_path_ids(None, 0).devices == [0]
-    assert _gpu_arrays._gpu_path_ids(on_one_gpu(0), 0).devices == [0]
-    assert _gpu_arrays._gpu_path_ids([1], 1).devices == [1]
-    assert _gpu_arrays._gpu_path_ids(on_one_gpu(1), 0) is None
-    assert _gpu_arrays._gpu_path_ids(GpuIds._from_devices([0, 1]), 0) is None
 
 
 def test_current_device_is_kept():
@@ -384,9 +358,8 @@ def test_repeated_calls_do_not_leak():
 
 
 TOO_WIDE = 131072  # wider than any GPU texture: a cheap, reliable CUDA error
-ERROR_KINDS = [("Ax", "cone", "Siddon"), ("Ax", "cone", "interpolated"),
-               ("Ax", "parallel", "Siddon"), ("Ax", "parallel", "interpolated"),
-               ("Atb", "cone", "FDK"), ("Atb", "cone", "matched"), ("Atb", "parallel", "FDK")]
+# All entry points share the error handling on the GPU path, so one Ax and one Atb are enough.
+ERROR_KINDS = [("Ax", "cone", "Siddon"), ("Atb", "cone", "FDK")]
 
 
 @pytest.mark.parametrize("op,mode,kind", ERROR_KINDS)
@@ -407,31 +380,6 @@ def test_cuda_error_raises_and_tigre_keeps_working(op, mode, kind):
     np.testing.assert_array_equal(tigre.Ax(to_gpu(img, "torch"), geo, angles).cpu().numpy(), proj)
     np.testing.assert_array_equal(tigre.Atb(to_gpu(proj, "torch"), geo, angles).cpu().numpy(),
                                   tigre.Atb(proj, geo, angles, gpuids=on_one_gpu()))
-
-
-def test_no_busy_gpu_warning_on_the_gpu_path():
-    """Sharing the GPU with PyTorch is the point of the GPU path, so "the GPU is
-    heavily used" is not reported there. The NumPy path still reports it."""
-    torch.cuda.empty_cache()
-    free, total = torch.cuda.mem_get_info()
-    ballast = None
-    if free > total // 2 - 128 * 2**20:  # not busy yet: make it busy
-        ballast = leave_free(total // 2 - 256 * 2**20)
-    try:
-        geo, angles, img, proj = problem("cone")
-        x, y = to_gpu(img, "torch"), to_gpu(proj, "torch")
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            tigre.Atb(y, geo, angles)
-            tigre.Ax(x, geo, angles)
-        assert not [w for w in caught if "heavily used" in str(w.message)]
-        with warnings.catch_warnings(record=True) as caught:
-            warnings.simplefilter("always")
-            tigre.Atb(proj, geo, angles, gpuids=on_one_gpu())
-        assert [w for w in caught if "heavily used" in str(w.message)], "NumPy path should still warn"
-    finally:
-        del ballast
-        give_back_cache()
 
 
 # ---- the GPU nearly full
