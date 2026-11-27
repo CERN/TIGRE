@@ -25,6 +25,8 @@ How to describe a scanner: see [](../../user-guide/geometry.md).
 
 .. autofunction:: computeCOR
 
+.. autofunction:: tiltedAxisGeo
+
 Geometries with moving sources or detectors
 -------------------------------------------
 

@@ -19,6 +19,8 @@ thank you.
   them directly, e.g. `from _minTV import minTV`, now needs `from tigre.utilities.cuda_interface._minTV import minTV`.
 
 ### Added
+- `tiltedAxisGeo` (Python and MATLAB): describes a rotation axis tilted within the detector plane from two centre-of-rotation
+  values, at the top and at the bottom, using the existing `COR`, `rotDetector` and `offOrigin` fields (#98).
 - `tigre.__version__` and `tigre.show_versions()` (Python), and `tigreVersion` (MATLAB), which print
   the versions of TIGRE, Python or MATLAB, the OS and the GPUs, for bug reports.
 - Python wheels for Windows (x86-64) on the GitHub Release, next to the Linux ones. They need only the

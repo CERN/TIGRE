@@ -43,6 +43,71 @@ def staticDetectorGeo(geo,angles,rot=0) -> Geometry:
     
     return ngeo
 
+def tiltedAxisGeo(geo, cor_top, cor_bottom, height=None) -> Geometry:
+    """Geometry for a rotation axis tilted within the detector plane.
+
+    Describes a rotation axis that is not parallel to the detector columns:
+    its centre of rotation is ``cor_top`` at the top of the image volume (+z)
+    and ``cor_bottom`` at the bottom (-z), for example two values of
+    :func:`tigre.computeCOR` at two detector rows. The top is the end seen by
+    the last detector rows, ``proj[:, -1, :]``; row 0 is the bottom.
+
+    The tilt is described exactly with fields TIGRE already has: ``COR`` is
+    replaced, the tilt angle is added to the in-plane detector rotation
+    ``rotDetector[..., 0]``, and a small shift is added to the image offset
+    along the rotation axis, ``offOrigin[..., 0]``. The reconstructed image is
+    aligned with the rotation axis.
+
+    Iterative algorithms are exact. FDK filters along the detector rows, so it
+    is approximate for a tilted axis; for large tilts, rotate the projections
+    by the tilt angle instead and set only ``COR``.
+
+    Parameters
+    ----------
+    geo : Geometry
+        The scanner geometry (it is not modified).
+    cor_top, cor_bottom : float
+        Centre of rotation at the top and at the bottom, in mm at the rotation
+        axis, with the sign that ``geo.COR`` uses.
+    height : float, optional
+        Distance between the two measurements along the rotation axis, in mm.
+        Default ``geo.sVoxel[0]``, the height of the image volume.
+
+    Returns
+    -------
+    Geometry
+        A copy of ``geo`` with ``COR``, ``rotDetector`` and ``offOrigin`` set.
+
+    Examples
+    --------
+    >>> geo = tigre.tiltedAxisGeo(geo, cor_top=1.2, cor_bottom=-0.4)
+    """
+    geo = copy.deepcopy(geo)
+    if height is None:
+        height = float(np.asarray(geo.sVoxel)[0])
+    if not (np.isscalar(cor_top) and np.isscalar(cor_bottom) and np.isscalar(height)):
+        raise ValueError("cor_top, cor_bottom and height should be scalars")
+    if height <= 0:
+        raise ValueError("height should be positive")
+    s = (cor_bottom - cor_top) / height
+    if abs(s) >= 1:
+        raise ValueError("cor_top and cor_bottom differ by more than height")
+
+    phi = np.arcsin(s)  # tilt of the axis within the detector plane
+    cor_mid = (cor_top + cor_bottom) / 2  # centre of rotation half way between the two
+
+    geo.COR = cor_mid * np.cos(phi)
+    rot = getattr(geo, "rotDetector", None)
+    rot = np.zeros(3) if rot is None else np.array(rot, dtype=np.float64)
+    rot[..., 0] += phi
+    geo.rotDetector = rot
+    off = getattr(geo, "offOrigin", None)
+    off = np.zeros(3) if off is None else np.array(off, dtype=np.float64)
+    off[..., 0] -= cor_mid * np.sin(phi)  # Python order is (z, y, x)
+    geo.offOrigin = off
+    return geo
+
+
 # Linear scan of source
 def staticDetLinearSourceGeo(geo,s_pos,s_rot=0,rot=0) -> Geometry:
     """Geometry for a fixed detector and a source that moves along a line.

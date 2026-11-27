@@ -237,6 +237,36 @@ demo 17 ([Python](https://github.com/CERN/TIGRE/blob/master/Python/demos/d17_Det
 of the detector, set `COR`. TIGRE can estimate it from the data with
 `tigre.computeCOR` (Python) or `computeCOR` (MATLAB).
 
+**Tilted rotation axis.** If the centre of rotation is different at the top
+and at the bottom of the image, the rotation axis is tilted within the
+detector plane. Measure it at two heights and give both values to
+`tiltedAxisGeo`: "top" is the `+z` end of the image, seen by the last
+detector rows. It sets `COR`, `rotDetector` and `offOrigin` so that the
+tilt is described exactly, and the image comes out aligned with the axis:
+
+```python
+# Python: computeCOR on a row near each end of the detector.
+# Row 0 is the bottom (-z) end, the last row the top (+z) end.
+bottom, top = 50, geo.nDetector[0] - 50
+cor_bottom = tigre.computeCOR(proj, geo, angles, slc=bottom)
+cor_top = tigre.computeCOR(proj, geo, angles, slc=top)
+height = (top - bottom) * geo.dDetector[0] * geo.DSO / geo.DSD  # at the rotation axis
+geo = tigre.tiltedAxisGeo(geo, cor_top, cor_bottom, height)
+```
+
+```matlab
+% MATLAB
+bottom = 50; top = geo.nDetector(2) - 50;
+corBottom = computeCOR(proj, geo, angles, bottom);
+corTop = computeCOR(proj, geo, angles, top);
+height = (top - bottom) * geo.dDetector(2) * geo.DSO / geo.DSD;
+geo = tiltedAxisGeo(geo, corTop, corBottom, height);
+```
+
+Iterative algorithms are exact with this geometry. FDK filters along the
+detector rows, so it is approximate for a tilted axis: for large tilts, rotate
+the projections by the tilt angle instead and set only `COR`.
+
 **Fixed detectors and moving sources.** Python has helpers that build
 per-angle geometries for these cases: `tigre.staticDetectorGeo`,
 `tigre.staticDetLinearSourceGeo` and `tigre.ArbitrarySourceDetMoveGeo`.
