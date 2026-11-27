@@ -35,8 +35,7 @@ def VarianDataLoader(filepath: PathLike, **kwargs) -> tuple[NDArray, Geometry, N
             acdc (bool): acceleration-deceleration correction (default: True)
             dps (bool): detector point scatter correction (default: True)
             sc (bool): kernel-based scatter correction (default: True)
-            bh (bool): beam hardening correction (default: False). Slow; ported from MATLAB and not
-                yet tested on real data in Python.
+            bh (bool): beam hardening correction (default: False). Slow; not yet tested on real data in Python.
 
     Returns:
         tuple[NDArray, Geometry, NDArray]: log-normalized projections, geometry, projection angles (in radians)
