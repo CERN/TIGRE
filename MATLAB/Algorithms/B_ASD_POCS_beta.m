@@ -35,7 +35,7 @@ function [ fres, qualMeasOut ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargi
 %   'maxL2err'     Maximum L2 error to accept an image as valid. This
 %                  parameter is crucial for the algorithm, determines at
 %                  what point an image should not be updated further.
-%                  Default is 20% of the FDK L2 norm.
+%                  Default is 20% of the data error of FDK, ||Ax_FDK - b||.
 %
 %   'beta'         hyperparameter controling the Bragman update. default=1
 %
@@ -140,6 +140,7 @@ clear A x y dx dz;
 
 stop_criteria=0;
 iter=0;
+proj_measured=proj; % the Bregman step adds back the residual w.r.t. the measured data
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
 rotDetector=geo.rotDetector;
@@ -243,7 +244,9 @@ while ~stop_criteria %POCS
     end
     
     if ~mod(iter,bregman_iter)
-        proj=proj+bregman*(proj-Ax(f,geo,angles,'gpuids',gpuids));
+        % g^(k+1) = g^k + beta^k (g - M f^k), with g the measured data:
+        % Xue et al. 2010, Algorithm 2, step 3 (TIGRE.bib, B_ASD_POCS_beta)
+        proj=proj+bregman*(proj_measured-Ax(f,geo,angles,'gpuids',gpuids));
         bregman=bregman*bregman_red;
         
     end
@@ -386,7 +389,7 @@ for ii=1:length(opts)
             %  =========================================================================
         case 'maxl2err'
             if default
-                epsilon=im3Dnorm(FDK(proj,geo,angles),'L2')*0.2; %heuristic
+                epsilon=im3Dnorm(Ax(FDK(proj,geo,angles),geo,angles)-proj,'L2')*0.2; %heuristic: 20% of the data error of FDK
             else
                 epsilon=val;
             end

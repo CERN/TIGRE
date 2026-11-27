@@ -86,6 +86,17 @@ maxl2err : float, optional
 tviter : int, optional
     TV gradient-descent steps per iteration. Default 20."""
 
+_BREGMAN = """\
+beta : float, optional
+    Weight of the residual added back to the data (:math:`\\beta` in the
+    paper). Default 1.
+beta_red : float, optional
+    Factor by which ``beta`` is multiplied after every Bregman update
+    (:math:`c` in the paper). Default 0.75.
+bregman_iter : int, optional
+    Iterations between Bregman updates (:math:`N_P` in the paper). Keep it
+    smaller than ``niter``. Default 5."""
+
 _PCSD = """\
 lmbda : float, optional
     Step size of the data (SART-type) step. Default 1.
@@ -156,6 +167,7 @@ _SART_ONE = _SART.format(lmbda_red=1)
 _LSQR_REF = "- C. C. Paige and M. A. Saunders, \"LSQR: An algorithm for sparse linear equations and sparse least squares\", ACM Trans. Math. Softw. 8 (1982). https://doi.org/10.1145/355984.355989"
 _LSMR_REF = "- D. C.-L. Fong and M. A. Saunders, \"LSMR: An iterative algorithm for sparse least-squares problems\", SIAM J. Sci. Comput. 33 (2011). https://doi.org/10.1137/10079687X"
 _ASD_REF = "- E. Y. Sidky and X. Pan, \"Image reconstruction in circular cone-beam computed tomography by constrained, total-variation minimization\", Phys. Med. Biol. 53 (2008). https://doi.org/10.1088/0031-9155/53/17/021"
+_XUE_REF = "- H. Xue, L. Zhang, Z. Cheng, Y. Xing and Y. Xiao, \"An improved TV minimization algorithm for incomplete data problem in computer tomography\", IEEE NSS/MIC (2010). https://doi.org/10.1109/NSSMIC.2010.5874264"
 _FISTA_REF = "- A. Beck and M. Teboulle, \"A fast iterative shrinkage-thresholding algorithm for linear inverse problems\", SIAM J. Imaging Sci. 2 (2009). https://doi.org/10.1137/080716542"
 
 DOCS = {
@@ -281,6 +293,17 @@ DOCS = {
         notes=_POCS_NOTE,
         see_also="os_asd_pocs, awasd_pocs, pcsd",
         references=_ASD_REF,
+    ),
+    "b_asd_pocs_beta": _build(
+        "B-ASD-POCS-beta: ASD-POCS with Bregman iterations on the data (B-POCS-TV-beta).\n\n"
+        "Every ``bregman_iter`` iterations, the part of the measured data :math:`b` that the "
+        "image does not fit yet is added back to the projections the algorithm fits, "
+        ":math:`b_{k+1} = b_k + \\beta_k (b - Ax_k)`, and ``beta`` is reduced. This converges "
+        "faster than ASD-POCS on few-view and limited-angle data.",
+        extra=(_BREGMAN, _POCS),
+        notes=_POCS_NOTE,
+        see_also="asd_pocs",
+        references=_XUE_REF + "\n" + _ASD_REF,
     ),
     "os_asd_pocs": _build(
         "OS-ASD-POCS: ASD-POCS with ordered subsets of projections in the data step.",

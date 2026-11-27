@@ -83,7 +83,7 @@ class initASD_POCS(IterativeReconAlg):
         Maximum L2 error to accept an image as valid. This
         parameter is crucial for the algorithm, determines at
         what point an image should not be updated further.
-        Default is 20% of the FDK L2 norm.
+        Default is 20% of the data error of FDK, ||Ax_FDK - b||.
     --------------------------------------------------------------------
     This file is part of the TIGRE Toolbox
 
@@ -195,6 +195,10 @@ class initASD_POCS(IterativeReconAlg):
                         "     iter = " + str(n_iter) + "\n"
                     )
                 stop_criteria = True
+            self._end_of_iteration(n_iter)
+
+    def _end_of_iteration(self, n_iter):
+        """Called after every ASD-POCS iteration; B_ASD_POCS_beta does its Bregman update here."""
 
 
 class ASD_POCS(initASD_POCS):
@@ -211,6 +215,38 @@ class ASD_POCS(initASD_POCS):
        
 
 asd_pocs = decorator(ASD_POCS, name="asd_pocs")
+
+
+class B_ASD_POCS_beta(initASD_POCS):
+    """ASD_POCS with Bregman iterations on the data (B-POCS-TV-beta, Xue et al. 2010).
+
+    Port of MATLAB's B_ASD_POCS_beta. The public documentation is in _docs.py.
+    """
+
+    def __init__(self, proj, geo, angles, niter, **kwargs):
+        if "blocksize" in kwargs and kwargs["blocksize"] > 1:
+            print("Warning: blocksize is set to 1, please use an OS version of the algorithm for blocksize > 1")
+        kwargs.update(dict(blocksize=1))
+        kwargs.update(dict(regularization="minimizeTV"))
+        self.bregman = float(np.asarray(kwargs.pop("beta", 1.0)).item())
+        self.bregman_red = float(np.asarray(kwargs.pop("beta_red", 0.75)).item())
+        self.bregman_iter = int(np.asarray(kwargs.pop("bregman_iter", 5)).item())
+        if self.bregman_iter < 1:
+            raise ValueError("bregman_iter should be a positive integer")
+        initASD_POCS.__init__(self, proj, geo, angles, niter, **kwargs)
+        self.proj_measured = self.proj
+
+    def _end_of_iteration(self, n_iter):
+        if n_iter % self.bregman_iter == 0:
+            # g^(k+1) = g^k + beta^k (g - M f^k), g the measured data: Xue et al. 2010,
+            # Algorithm 2, step 3. A new array, so the caller's projections are not modified.
+            self.proj = self.proj + self.bregman * (
+                self.proj_measured - Ax(self.res, self.geo, self.angles, gpuids=self.gpuids)
+            )
+            self.bregman *= self.bregman_red
+
+
+b_asd_pocs_beta = decorator(B_ASD_POCS_beta, name="b_asd_pocs_beta")
 
 class initPICCS(IterativeReconAlg):  
     """
@@ -283,7 +319,7 @@ class initPICCS(IterativeReconAlg):
         Maximum L2 error to accept an image as valid. This
         parameter is crucial for the algorithm, determines at
         what point an image should not be updated further.
-        Default is 20% of the FDK L2 norm.
+        Default is 20% of the data error of FDK, ||Ax_FDK - b||.
     --------------------------------------------------------------------
     This file is part of the TIGRE Toolbox
 
@@ -524,7 +560,7 @@ class initPCSD(IterativeReconAlg):
          Maximum L2 error to accept an image as valid. This
          parameter is crucial for the algorithm, determines at
          what point an image should not be updated further.
-         Default is 20% of the FDK L2 norm.
+         Default is 20% of the data error of FDK, ||Ax_FDK - b||.
 --------------------------------------------------------------------
     This file is part of the TIGRE Toolbox
 

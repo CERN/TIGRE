@@ -33,6 +33,7 @@ In `tigre.algorithms`. All iterative algorithms are called as
    irn_tv_cgls
    hybrid_flsqr_tv
    asd_pocs
+   b_asd_pocs_beta
    os_asd_pocs
    awasd_pocs
    os_awasd_pocs
@@ -89,6 +90,8 @@ Total variation (POCS family)
 -----------------------------
 
 .. autofunction:: asd_pocs
+
+.. autofunction:: b_asd_pocs_beta
 
 .. autofunction:: os_asd_pocs
 

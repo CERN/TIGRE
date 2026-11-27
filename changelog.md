@@ -8,6 +8,10 @@ thank you.
 ## Unreleased
 
 ### Changed
+- MATLAB ASD-POCS family (`ASD_POCS`, `OS_ASD_POCS`, `AwASD_POCS`, `OS_AwASD_POCS`, `PCSD`, `OS_PCSD`, `AwPCSD`,
+  `OS_AwPCSD`, `PICCS`, `B_ASD_POCS_beta`): the default `maxL2err` is now 20% of the data error of FDK,
+  `||A x_FDK - b||`, as in Python, instead of 20% of the L2 norm of the FDK image, which compared a data error with an
+  image norm. Results with the default change; pass `maxL2err` to choose it yourself (#283).
 - MATLAB `VarianDataLoader` with `bh`: no longer asks interactively whether to continue, and computes the path length
   of each ray through the bowtie directly instead of building a ~6.5 GB voxelised bowtie and forward projecting it.
 - MATLAB: `checkGeo` casts geometry fields given as `single`, integer or logical arrays to `double`, instead
@@ -21,6 +25,8 @@ thank you.
   them directly, e.g. `from _minTV import minTV`, now needs `from tigre.utilities.cuda_interface._minTV import minTV`.
 
 ### Added
+- Python: `tigre.algorithms.b_asd_pocs_beta`, ASD-POCS with Bregman iterations on the data, a port of MATLAB's
+  `B_ASD_POCS_beta` (#283).
 - Python: `tigre.utilities.io.DicomDataLoader`, a port of MATLAB's `dicomDataLoader` for DICOM C-arm CBCT (tested on Philips
   Allura). Needs `pydicom` (#201).
 - `tiltedAxisGeo` (Python and MATLAB): describes a rotation axis tilted within the detector plane from two centre-of-rotation
@@ -33,6 +39,8 @@ thank you.
   (off by default, as in MATLAB) (#201).
 
 ### Fixed
+- MATLAB `B_ASD_POCS_beta`: the Bregman step added back the residual with respect to the already-updated projections
+  instead of the measured ones (Xue et al. 2010, Algorithm 2), so the data it fitted drifted away from the measurements (#283).
 - MATLAB `dicomDataLoader`: no longer errors on files with a `PositionerType` field (`strcmi` typo); reads
   `ImagerPixelSpacing` in (u, v) order, which matters for non-square pixels; sets `offDetector` when it crops the
   projections to an off-centre shutter (#201).
