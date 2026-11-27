@@ -224,8 +224,8 @@ industrial imaging, particle therapy and reconstruction research.
 :::{grid-item-card} Install
 :link: install/index
 :link-type: doc
-Prebuilt wheels for Python on Linux, or build TIGRE for MATLAB and Python
-from source.
+Prebuilt wheels for Python on Linux and Windows, or build TIGRE for MATLAB
+and Python from source.
 :::
 
 :::{grid-item-card} Learn

@@ -95,23 +95,30 @@ def _changelog():
 
 latest_version, latest_date = _changelog()
 
-# Wheels attached to each GitHub release: their platform tag comes from the
-# cibuildwheel image (manylinux_2_28 since #827). If a release changes it, update
-# _WHEEL_PLATFORM, or the install commands on the Python install page will 404.
+# Wheels attached to each GitHub release: the Linux platform tag comes from the
+# cibuildwheel image (manylinux_2_28 since #827), the Windows one is win_amd64
+# (Windows wheels since #948). If a release changes them, update them here, or
+# the install commands on the Python install page will 404.
 _WHEEL_PYTHONS = ["311", "312", "313", "314"]
-_WHEEL_PLATFORM = "manylinux_2_24_x86_64.manylinux_2_28_x86_64"
+_WHEEL_PLATFORM = "manylinux_2_24_x86_64.manylinux_2_28_x86_64"  # Linux (also used on Colab)
+_WHEEL_PLATFORMS = {"Linux": (_WHEEL_PLATFORM, "sh"), "Windows": ("win_amd64", "bat")}
 
 
 def _wheel_commands():
-    """Write the copy-paste pip commands for the latest release's wheels."""
+    """Write the copy-paste pip commands for the latest release's wheels: a tab per
+    operating system, and in each a tab per Python version."""
     base = f"https://github.com/CERN/TIGRE/releases/download/v{latest_version}"
-    lines = ["::::{tab-set}", ":sync-group: python", ""]
-    for py in _WHEEL_PYTHONS:
-        tag = f"cp{py}"
-        wheel = f"tigre-{latest_version}-{tag}-{tag}-{_WHEEL_PLATFORM}.whl"
-        lines += [f":::{{tab-item}} Python 3.{py[1:]}", f":sync: py3{py[1:]}", "",
-                  "```sh", f"pip install {base}/{wheel}", "```", ":::", ""]
-    lines.append("::::")
+    lines = ["::::::{tab-set}", ":sync-group: os", ""]
+    for os_name, (platform, lexer) in _WHEEL_PLATFORMS.items():
+        lines += [f":::::{{tab-item}} {os_name}", f":sync: {os_name.lower()}", "",
+                  "::::{tab-set}", ":sync-group: python", ""]
+        for py in _WHEEL_PYTHONS:
+            tag = f"cp{py}"
+            wheel = f"tigre-{latest_version}-{tag}-{tag}-{platform}.whl"
+            lines += [f":::{{tab-item}} Python 3.{py[1:]}", f":sync: py3{py[1:]}", "",
+                      f"```{lexer}", f"pip install {base}/{wheel}", "```", ":::", ""]
+        lines += ["::::", ":::::", ""]
+    lines.append("::::::")
     out = pathlib.Path(__file__).resolve().parent / "_generated" / "wheels.md"
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

@@ -53,7 +53,8 @@ and try again.
 
 **`CUDA driver version is insufficient for CUDA runtime version`.**
 Your NVIDIA driver is older than the CUDA that TIGRE uses. Update the driver;
-the prebuilt wheels need version 570 or newer (`nvidia-smi` shows yours).
+the prebuilt wheels need version 570 or newer on Linux, 572.61 or newer on
+Windows (`nvidia-smi` shows yours).
 
 **There are many warnings during compilation.**
 They are expected and do not affect results or speed.
