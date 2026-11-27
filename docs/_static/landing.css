@@ -397,3 +397,7 @@ html[data-theme="dark"] .tigre-band img {
   color: var(--pst-color-text-base);
   text-decoration: none;
 }
+
+/* The MATLAB/Python axis table on the geometry page: keep each index
+   expression on one line. */
+table.tigre-axes td code { white-space: nowrap; }

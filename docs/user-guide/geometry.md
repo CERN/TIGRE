@@ -93,14 +93,41 @@ This is the most common source of confusion when moving code between the two
 languages.
 
 - **MATLAB** stores vectors in `(x, y, z)` order for the image and `(u, v)`
-  for the detector, and images are indexed `img(x, y, z)`.
+  for the detector.
 - **Python** reverses them to match NumPy's index order: `(z, y, x)` for the
-  image and `(v, u)` for the detector. Images are indexed `img[z, y, x]` and
-  projections `proj[angle, v, u]`.
+  image and `(v, u)` for the detector.
 
-This applies to `nVoxel`, `dVoxel`, `sVoxel`, `offOrigin`, `nDetector`,
-`dDetector`, `sDetector` and `offDetector`. `rotDetector` is the exception:
-it is `(roll, pitch, yaw)` in both languages.
+Here `z` is the rotation axis, `u` runs along a detector row and `v` along a
+detector column (parallel to `z` when the detector is not rotated).
+
+:::{table}
+:class: tigre-axes
+
+| | MATLAB | Python |
+|---|---|---|
+| Image vectors: `nVoxel`, `dVoxel`, `sVoxel`, `offOrigin` | `[x; y; z]` | `[z, y, x]` |
+| Detector vectors: `nDetector`, `dDetector`, `sDetector`, `offDetector` | `[u; v]` | `[v, u]` |
+| Image size | `[nx ny nz]` | `(nz, ny, nx)` |
+| Voxel at `(x, y, z)` | `img(ix, iy, iz)` | `img[iz, iy, ix]` |
+| Slice across the rotation axis | `img(:, :, iz)` | `img[iz]` |
+| Projections size | `[nv nu nAngles]` | `(nAngles, nv, nu)` |
+| Pixel `(u, v)` of projection `t` | `proj(iv, iu, it)` | `proj[it, iv, iu]` |
+| One projection | `proj(:, :, it)` | `proj[it]` |
+| Sinogram of detector row `v` | `proj(iv, :, :)` | `proj[:, iv, :]` |
+
+:::
+
+```{note}
+In MATLAB, the detector vectors are in `(u, v)` order but projections are
+indexed `proj(v, u, angle)`, with `v` first. So `size(proj)` is
+`[geo.nDetector(2), geo.nDetector(1), numel(angles)]`, not `geo.nDetector`
+followed by the number of angles. This only shows with a detector that is not
+square.
+```
+
+`rotDetector` is the exception to the order: it is `(roll, pitch, yaw)` in
+both languages. To move arrays from one language to the other, see
+[](interoperability.md#matlab-and-python-together).
 
 For example, moving the image 10 mm along the rotation axis is
 `geo.offOrigin = [0; 0; 10]` in MATLAB and
