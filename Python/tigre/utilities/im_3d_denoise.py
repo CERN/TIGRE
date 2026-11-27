@@ -1,5 +1,5 @@
 import numpy as np
-from _tv_proximal import tvdenoise
+from tigre.utilities.cuda_interface._tv_proximal import tvdenoise
 
 from .gpu import GpuIds
 

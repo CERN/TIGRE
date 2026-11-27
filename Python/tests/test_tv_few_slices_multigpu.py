@@ -21,10 +21,10 @@ import tigre  # noqa: E402,F401  (first: on Windows it puts CUDA's DLLs on the s
 from tigre.utilities.gpu import GpuIds  # noqa: E402
 
 try:
-    from _minTV import minTV
-    from _AwminTV import AwminTV
-    from _tv_proximal import tvdenoise
-    from _minPICCS import minPICCS
+    from tigre.utilities.cuda_interface._minTV import minTV
+    from tigre.utilities.cuda_interface._AwminTV import AwminTV
+    from tigre.utilities.cuda_interface._tv_proximal import tvdenoise
+    from tigre.utilities.cuda_interface._minPICCS import minPICCS
 except ImportError:
     pytest.skip("TIGRE's CUDA extensions are not built", allow_module_level=True)
 

@@ -46,7 +46,7 @@ def test_ax_atb_accept_none(small):
 @pytest.mark.gpu
 def test_min_tv_accepts_none(small):
     """The case that killed the interpreter."""
-    from _minTV import minTV
+    from tigre.utilities.cuda_interface._minTV import minTV
     geo, angles, img, proj = small
     out = minTV(img, 1.0, 2, None)
     assert out.shape == img.shape
@@ -56,7 +56,7 @@ def test_min_tv_accepts_none(small):
 
 @pytest.mark.gpu
 def test_awmin_tv_accepts_none(small):
-    from _AwminTV import AwminTV
+    from tigre.utilities.cuda_interface._AwminTV import AwminTV
     geo, angles, img, proj = small
     out = AwminTV(img, 1.0, 2, -0.005, None)
     assert out.shape == img.shape
@@ -68,8 +68,8 @@ def test_awmin_tv_accepts_none(small):
 def test_tv_proximal_and_poisson_accept_none(small):
     """_tvdenoising declares the same default but is not among the built
     extensions; _tv_proximal is the one that ships."""
-    from _tv_proximal import tvdenoise
-    from _RandomNumberGenerator import add_poisson
+    from tigre.utilities.cuda_interface._tv_proximal import tvdenoise
+    from tigre.utilities.cuda_interface._RandomNumberGenerator import add_poisson
     geo, angles, img, proj = small
     out = tvdenoise(img, 2, 1.0, gpuids=None)
     assert np.isfinite(out).all()

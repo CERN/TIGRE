@@ -1,7 +1,7 @@
 import copy
 
 import numpy as np
-from _Atb import _Atb_ext
+from tigre.utilities.cuda_interface._Atb import _Atb_ext
 
 from . import _gpu_arrays
 from .gpu import GpuIds

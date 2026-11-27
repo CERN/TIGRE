@@ -52,10 +52,10 @@ import sys
 import numpy as np
 import torch
 import tigre  # first: on Windows it puts CUDA's DLLs on the search path
-from _minTV import minTV
-from _AwminTV import AwminTV
-from _tv_proximal import tvdenoise
-from _minPICCS import minPICCS
+from tigre.utilities.cuda_interface._minTV import minTV
+from tigre.utilities.cuda_interface._AwminTV import AwminTV
+from tigre.utilities.cuda_interface._tv_proximal import tvdenoise
+from tigre.utilities.cuda_interface._minPICCS import minPICCS
 from tigre.utilities.gpu import GpuIds
 
 ids = GpuIds()

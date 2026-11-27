@@ -10,7 +10,7 @@ def _try_import_Ax_ext():
     global _Ax_ext, GpuIds
     if _Ax_ext is None:
         try:
-            from _Ax import _Ax_ext as imported
+            from tigre.utilities.cuda_interface._Ax import _Ax_ext as imported
             _Ax_ext = imported
         except ImportError:
             _Ax_ext = None
@@ -23,7 +23,7 @@ def _try_import_Ax_ext():
 def _ensure_Ax_ext_import():
     global _Ax_ext
     if _Ax_ext is None:
-        from _Ax import _Ax_ext
+        from tigre.utilities.cuda_interface._Ax import _Ax_ext
 
 _try_import_Ax_ext()
 

@@ -1,5 +1,5 @@
 import numpy as np
-import _RandomNumberGenerator as RNG
+from tigre.utilities.cuda_interface import _RandomNumberGenerator as RNG
 
 def add(projections, Gaussian=None, Poisson=None, seed=None):
     """Add realistic noise to simulated projections.

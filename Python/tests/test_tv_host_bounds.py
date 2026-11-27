@@ -29,7 +29,7 @@ import tigre  # noqa: E402,F401  (first: CUDA's DLLs, and fail early if TIGRE is
 from tigre.utilities.gpu import GpuIds  # noqa: E402
 
 try:
-    from _minTV import minTV  # noqa: F401
+    from tigre.utilities.cuda_interface._minTV import minTV  # noqa: F401
 except ImportError:
     pytest.skip("TIGRE's CUDA extensions are not built", allow_module_level=True)
 try:
@@ -44,10 +44,10 @@ import ctypes, mmap, sys
 import numpy as np
 import tigre  # first
 from tigre.utilities.gpu import GpuIds
-from _minTV import minTV
-from _AwminTV import AwminTV
-from _tv_proximal import tvdenoise
-from _minPICCS import minPICCS
+from tigre.utilities.cuda_interface._minTV import minTV
+from tigre.utilities.cuda_interface._AwminTV import AwminTV
+from tigre.utilities.cuda_interface._tv_proximal import tvdenoise
+from tigre.utilities.cuda_interface._minPICCS import minPICCS
 
 _libc = ctypes.CDLL(None, use_errno=True)
 _libc.mprotect.argtypes = [ctypes.c_void_p, ctypes.c_size_t, ctypes.c_int]
