@@ -1,4 +1,4 @@
-function [f,qualMeasOut]= OS_AwASD_POCS(proj,geo,angles,maxiter,varargin)
+function [f,resL2,qualMeasOut]= OS_AwASD_POCS(proj,geo,angles,maxiter,varargin)
 %OS_AwASD_POCS Solves the 3D tomography problem using the adaptive-weighted
 %OS_ASD_POCS algorithm which extends from the method OS_ASD_POCS available in the
 %TIGRE toolbox by adding weight equation to better preserve the edge of the
@@ -62,6 +62,15 @@ function [f,qualMeasOut]= OS_AwASD_POCS(proj,geo,angles,maxiter,varargin)
 %  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
+% OUTPUTS:
+%
+%    [img]                       will output the reconstructed image
+%    [img,resL2]                 will also output the L2 norm of the data
+%                                error, ||Ax-b||, after the data step of
+%                                each iteration: the value the algorithm
+%                                compares with 'maxL2err'.
+%    [img,resL2,qualMeas]        will also output the quality measurements
+%                                asked by the input 'QualMeas'
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -86,11 +95,12 @@ if ~any(isnan(gt(:)))
     res_prev=gt;
     clear gt
 end
-if nargout<2 && measurequality
+if nargout<3 && measurequality
     warning("Image metrics requested but none catched as output. Call the algorithm with 3 outputs to store them")
     measurequality=false;
 end
 qualMeasOut=zeros(length(QualMeasOpts),maxiter);
+resL2=zeros(1,maxiter);
 
 [alphablocks,orig_index]=order_subsets(angles,blocksize,OrderStrategy);
 % does detector rotation exists?
@@ -178,6 +188,7 @@ while ~stop_criteria %POCS
     
     % compute L2 error of actual image. Ax-b
     dd=im3Dnorm(Ax(f,geo,angles,'gpuids',gpuids)-proj,'L2');
+    resL2(iter)=dd;
     % compute change in the image after last SART iteration
     dp_vec=(f-f0);
     dp=im3Dnorm(dp_vec,'L2');

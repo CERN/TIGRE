@@ -1,4 +1,4 @@
-function [ f,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,varargin)
+function [f,resL2,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,varargin)
 %AwASD_POCS Solves the 3D tomography problem using the adaptive-weighted
 %ASD_POCS algorithm which extends from the method ASD_POCS available in the
 %TIGRE toolbox by adding weight equation to better preserve the edge of the
@@ -56,6 +56,15 @@ function [ f,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,varargin)
 %  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
+% OUTPUTS:
+%
+%    [img]                       will output the reconstructed image
+%    [img,resL2]                 will also output the L2 norm of the data
+%                                error, ||Ax-b||, after the data step of
+%                                each iteration: the value the algorithm
+%                                compares with 'maxL2err'.
+%    [img,resL2,qualMeas]        will also output the quality measurements
+%                                asked by the input 'QualMeas'
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -76,5 +85,5 @@ function [ f,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,varargin)
     if nargin < 4
         error('TIGRE:AwASD_POCS:InvalidInput','Not enough inputs')
     end
-    [ f,qualMeasOut] = OS_AwASD_POCS(proj,geo,angles,maxiter, varargin{:}, 'BlockSize', 1);
+    [f,resL2,qualMeasOut] = OS_AwASD_POCS(proj,geo,angles,maxiter, varargin{:}, 'BlockSize', 1);
 end

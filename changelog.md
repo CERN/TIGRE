@@ -8,6 +8,12 @@ thank you.
 ## Unreleased
 
 ### Changed
+- MATLAB: `ASD_POCS`, `OS_ASD_POCS`, `AwASD_POCS`, `OS_AwASD_POCS`, `B_ASD_POCS_beta`, `PICCS`, `PCSD` and `MLEM`
+  return the residual norm `resL2` as their second output, before `qualMeas`, like every other iterative algorithm
+  (`[img,resL2,qualMeas] = ...`). Code that asked for `[img,qualMeas]` now gets `resL2` there and a warning that the
+  quality measures need a third output. For the POCS family `resL2` is the data error `||Ax-b||` the algorithm already
+  computes after its data step, so it costs nothing; `MLEM` computes it only when asked. `PCSD` already returned
+  `resL2` second, mislabelled as `qualMeasOut`, and could not return quality measures at all (#408).
 - MATLAB ASD-POCS family (`ASD_POCS`, `OS_ASD_POCS`, `AwASD_POCS`, `OS_AwASD_POCS`, `PCSD`, `OS_PCSD`, `AwPCSD`,
   `OS_AwPCSD`, `PICCS`, `B_ASD_POCS_beta`): the default `maxL2err` is now 20% of the data error of FDK,
   `||A x_FDK - b||`, as in Python, instead of 20% of the L2 norm of the FDK image, which compared a data error with an

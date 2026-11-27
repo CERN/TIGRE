@@ -1,4 +1,4 @@
-function [res,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
+function [res,resL2,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
 %MLEM solves the tomographic problem by using Maximum Likelihood Expectation
 % Maximisation algorithm. 
 %
@@ -20,6 +20,13 @@ function [res,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
 % 'groundTruth':  An image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
+% OUTPUTS:
+%
+%    [img]                       will output the reconstructed image
+%    [img,resL2]                 will also output the L2 norm of the
+%                                residual, ||Ax-b||, after each iteration
+%    [img,resL2,qualMeas]        will also output the quality measurements
+%                                asked by the input 'QualMeas'
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -43,11 +50,13 @@ if ~any(isnan(gt(:)))
     res_prev=gt;
     clear gt
 end
-if nargout<2 && measurequality
+if nargout<3 && measurequality
     warning("Image metrics requested but none caught as output. Call the algorithm with 3 outputs to store them")
     measurequality=false;
 end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
+resL2=zeros(1,niter);
+computeL2=nargout>1;
 
 
 res = max(res,0);
@@ -70,6 +79,9 @@ for ii=1:niter
     
     if measurequality
         qualMeasOut(:,ii)=Measure_Quality(res_prev,res,QualMeasOpts);
+    end
+    if computeL2
+        resL2(ii)=im3Dnorm(proj-Ax(res,geo,angles,'gpuids',gpuids),'L2');
     end
     
     if (ii==1)&&(verbose==1)
