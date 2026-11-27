@@ -70,6 +70,10 @@ see [](contributing.md).
 
 ## Contact the developers privately
 
-For things that cannot be public (for example a security problem, or data
-you cannot share), email
+For things that cannot be public, such as a security problem, email
 [tigre.toolbox@gmail.com](mailto:tigre.toolbox@gmail.com).
+
+If you use TIGRE with industrial or other confidential data, or on a problem
+you cannot discuss in public, you can contact Ander Biguri, TIGRE's main
+developer and maintainer, directly at
+[ander.biguri@gmail.com](mailto:ander.biguri@gmail.com).

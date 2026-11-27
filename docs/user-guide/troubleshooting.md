@@ -125,6 +125,12 @@ Yes. TIGRE is released under the permissive
 [BSD 3-clause licence](https://github.com/CERN/TIGRE/blob/master/LICENSE.txt).
 If you publish work that uses it, please [cite TIGRE](../citing.md).
 
+**Can I get help with industrial or confidential data?**
+Yes. If your data or your problem cannot be shared in a public issue or
+discussion (for example industrial parts, or data under a non-disclosure
+agreement), you can contact Ander Biguri, TIGRE's main developer and
+maintainer, directly at [ander.biguri@gmail.com](mailto:ander.biguri@gmail.com).
+
 **How can I contribute?**
 See the [contributing guide](https://github.com/CERN/TIGRE/blob/master/contributing.md).
 Bug fixes, new algorithms, scanner loaders and documentation are all
