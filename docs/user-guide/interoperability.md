@@ -88,6 +88,22 @@ back = tigre.Atb(proj, geo, angles)
   stream, and has finished writing the result when the call returns.
 - The algorithms (`tigre.algorithms`) still take NumPy arrays only.
 
+In MATLAB, `Ax` and `Atb` take a `single` `gpuArray` (Parallel Computing
+Toolbox) in the same way and return a `gpuArray` on the same GPU:
+
+```matlab
+proj = Ax(gpuArray(img), geo, angles);   % a gpuArray, on the current GPU
+back = Atb(proj, geo, angles);
+```
+
+- It runs on the GPU that holds the array (`gpuDevice`). If `'gpuids'` names
+  other GPUs, or several, the array goes through a host copy on those GPUs, as
+  in Python, and the result is still a `gpuArray`.
+- `Compile` builds this when it finds the Parallel Computing Toolbox. Without
+  it, TIGRE compiles as before and a `gpuArray` input goes through a host copy,
+  with a warning.
+- The MATLAB algorithms still take host arrays.
+
 ## CIL (Core Imaging Library)
 
 [CIL](https://tomographicimaging.github.io/CIL/) can use TIGRE as its GPU

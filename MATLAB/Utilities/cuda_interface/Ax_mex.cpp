@@ -56,6 +56,7 @@
 #include <CUDA/Siddon_projection.hpp>
 #include <CUDA/Siddon_projection_parallel.hpp>
 #include <CUDA/GpuIds.hpp>
+#include "tigre_gpuarray.hpp"
 
 /**
  * MEX gateway
@@ -128,7 +129,24 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
 
     // Now that input is ok, parse it to C data types.
-    float  *  img = static_cast<float  *>(mxGetData(image));
+    // A gpuArray runs on the GPU that holds it, from and to GPU memory.
+    bool const gpuData = tigreIsGpuArray(image);
+    float  *  img = nullptr;
+#ifdef TIGRE_GPUARRAY
+    TigreGpuInput* gpuImg = nullptr;
+#endif
+    if (gpuData) {
+#ifdef TIGRE_GPUARRAY
+        gpuImg = new TigreGpuInput(image, "CBCT:MEX:Ax:InvalidInput");
+        gpuImg->setGpuIds(gpuids);
+        img = gpuImg->data;
+#else
+        mexErrMsgIdAndTxt("CBCT:MEX:Ax:gpuArray", "TIGRE was compiled without gpuArray support (the Parallel Computing Toolbox was not found when compiling). "
+                "Recompile TIGRE with the toolbox installed, or use gather() on the input.");
+#endif
+    } else {
+        img = static_cast<float  *>(mxGetData(image));
+    }
     // We need a float image, and, unfortunately, the only way of casting it is by value
     const mwSize *size_img= mxGetDimensions(image); //get size of image
     
@@ -305,8 +323,18 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     outsize[0]=geo.nDetecV;
     outsize[1]=geo.nDetecU;
     outsize[2]= nangles;
-    plhs[0] = mxCreateNumericArray(3, outsize, mxSINGLE_CLASS, mxREAL);
-    float *outProjections = (float*)mxGetPr(plhs[0]);  // WE will NOT be freeing this pointer!
+    float *outProjections = nullptr;  // WE will NOT be freeing this pointer!
+#ifdef TIGRE_GPUARRAY
+    TigreGpuOutput* gpuOut = nullptr;
+    if (gpuData) {
+        gpuOut = new TigreGpuOutput(3, outsize);  // zeros, as mxCreateNumericArray
+        outProjections = gpuOut->data;
+    } else
+#endif
+    {
+        plhs[0] = mxCreateNumericArray(3, outsize, mxSINGLE_CLASS, mxREAL);
+        outProjections = (float*)mxGetPr(plhs[0]);
+    }
     
     // MODIFICATION, RB, 5/12/2017: As said above, we do not allocate anything, just
     // set pointers in result to point to outProjections
@@ -321,17 +349,24 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // call the real function
     if (coneBeam){
         if (rayvoxel){
-            siddon_ray_projection(img,geo,result,angles,nangles, gpuids);
+            siddon_ray_projection(img,geo,result,angles,nangles, gpuids, gpuData);
         }else{
-            interpolation_projection(img,geo,result,angles,nangles, gpuids);
+            interpolation_projection(img,geo,result,angles,nangles, gpuids, gpuData);
         }
     }else{
         if (rayvoxel){
-            siddon_ray_projection_parallel(img,geo,result,angles,nangles, gpuids);
+            siddon_ray_projection_parallel(img,geo,result,angles,nangles, gpuids, gpuData);
         }else{
-            interpolation_projection_parallel(img,geo,result,angles,nangles, gpuids);
+            interpolation_projection_parallel(img,geo,result,angles,nangles, gpuids, gpuData);
         }
     }
+#ifdef TIGRE_GPUARRAY
+    if (gpuData) {
+        plhs[0] = gpuOut->release(gpuImg->device);
+        delete gpuOut;
+        delete gpuImg;
+    }
+#endif
     
     return;
     

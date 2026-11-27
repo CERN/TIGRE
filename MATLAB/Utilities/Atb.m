@@ -39,7 +39,18 @@ end
 
 
 %% image
-assert(isa(projections,'single'),'TIGRE:Atb:InvalidInput','Image should be single type');
+% gpuArray input: runs on the GPU that holds it (MATLAB's current GPU) and returns a gpuArray.
+gpuInput=isa(projections,'gpuArray');
+gpuOnHost=false; % run a gpuArray input through the usual host code instead
+if gpuInput
+    projectionsClass=classUnderlying(projections);
+    currentGpu=gpuDevice();
+    % As in Python: if 'gpuids' names other GPUs, or several, use them on a host copy.
+    gpuOnHost=any(strcmpi(varargin(cellfun(@ischar,varargin)),'gpuids')) && ~isequal(gpuids.devices,int32(currentGpu.Index-1));
+else
+    projectionsClass=class(projections);
+end
+assert(strcmp(projectionsClass,'single'),'TIGRE:Atb:InvalidInput','Image should be single type');
 assert(isreal(projections),'TIGRE:Atb:InvalidInput','Image should be real (non-complex)');
 assert(size(projections,2)>1,'TIGRE:Atb:InvalidInput', 'Projections should be 2D'); %TODO: needed? 
 assert(size(projections,3)==size(angles,2),'TIGRE:Atb:InvalidInput', 'Number of projections should match number of angles.'); 
@@ -58,7 +69,20 @@ assert(isequal([size(projections,2) size(projections,1)],geo.nDetector.'),'TIGRE
 
 %% Thats it, lets call the mex function
 
-img=Atb_mex(projections,geo,angles,ptype, gpuids.devices);
+if gpuInput && ~gpuOnHost
+    try
+        img=Atb_mex(projections,geo,angles,ptype, gpuids.devices);
+    catch err
+        if ~strcmp(err.identifier,'CBCT:MEX:Atb:gpuArray'), rethrow(err); end
+        warning('TIGRE:Atb:gpuArray','TIGRE was compiled without gpuArray support (Parallel Computing Toolbox not found when compiling): using a host copy. Recompile to avoid the copies.');
+        gpuOnHost=true;
+    end
+end
+if gpuInput && gpuOnHost
+    img=gpuArray(Atb_mex(gather(projections),geo,angles,ptype, gpuids.devices));
+elseif ~gpuInput
+    img=Atb_mex(projections,geo,angles,ptype, gpuids.devices);
+end
 
 end
 

@@ -57,6 +57,7 @@
 #include <CUDA/voxel_backprojection2.hpp>
 #include <CUDA/voxel_backprojection_parallel.hpp>
 #include <CUDA/GpuIds.hpp>
+#include "tigre_gpuarray.hpp"
 
 
 
@@ -130,14 +131,34 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     
     // First input should be b from (Ax=b) i.e. the projections.
     mxArray const * const image = prhs[0];                 // Get pointer of the data
-    mwSize const numDims = mxGetNumberOfDimensions(image); // Get numer of Dimensions of input matrix.
+    // A gpuArray runs on the GPU that holds it, from and to GPU memory.
+    bool const gpuData = tigreIsGpuArray(image);
+    float  *  projections = nullptr;
+    mwSize numDims = 0;
+#ifdef TIGRE_GPUARRAY
+    TigreGpuInput* gpuProj = nullptr;
+#endif
+    if (gpuData) {
+#ifdef TIGRE_GPUARRAY
+        gpuProj = new TigreGpuInput(image, "CBCT:MEX:Atb:InvalidInput");  // checks single and real
+        gpuProj->setGpuIds(gpuids);
+        projections = gpuProj->data;
+        numDims = gpuProj->numDims;
+#else
+        mexErrMsgIdAndTxt("CBCT:MEX:Atb:gpuArray", "TIGRE was compiled without gpuArray support (the Parallel Computing Toolbox was not found when compiling). "
+                "Recompile TIGRE with the toolbox installed, or use gather() on the input.");
+#endif
+    } else {
+        numDims = mxGetNumberOfDimensions(image);  // Get numer of Dimensions of input matrix.
+        if( !mxIsSingle(prhs[0])) {
+            mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput",
+                    "Input image must be a single noncomplex array.");
+        }
+        projections = static_cast<float *>(mxGetData(image));
+    }
     // Image should be dim 3
     if (!(numDims==3 && nangles>1) && !(numDims==2 && nangles==1) ){
         mexErrMsgIdAndTxt("CBCT:MEX:Atb:InvalidInput",  "Projection data is not the right size");
-    }
-    if( !mxIsSingle(prhs[0])) {
-        mexErrMsgIdAndTxt("CBCT:MEX:Ax:InvalidInput",
-                "Input image must be a single noncomplex array.");
     }
     // Now that input is ok, parse it to C data types.
     // NOTE: while Number of dimensions is the size of the matrix in Matlab, the data is 1D row-wise mayor.
@@ -153,7 +174,6 @@ void mexFunction(int  nlhs , mxArray *plhs[],
 //         size_proj2=size_proj[2];
     
     
-    float  *  projections= static_cast<float *>(mxGetData(image));
     
     
     
@@ -335,8 +355,18 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     imgsize[0]=geo.nVoxelX;
     imgsize[1]=geo.nVoxelY;
     imgsize[2]=geo.nVoxelZ;
-    plhs[0] = mxCreateNumericArray(3,imgsize, mxSINGLE_CLASS, mxREAL);
-    float *result = (float *)mxGetPr(plhs[0]);
+    float *result = nullptr;
+#ifdef TIGRE_GPUARRAY
+    TigreGpuOutput* gpuOut = nullptr;
+    if (gpuData) {
+        gpuOut = new TigreGpuOutput(3, imgsize);  // zeros, as mxCreateNumericArray
+        result = gpuOut->data;
+    } else
+#endif
+    {
+        plhs[0] = mxCreateNumericArray(3,imgsize, mxSINGLE_CLASS, mxREAL);
+        result = (float *)mxGetPr(plhs[0]);
+    }
     
     
     
@@ -353,13 +383,20 @@ void mexFunction(int  nlhs , mxArray *plhs[],
     // Run the CUDA code.
     if (coneBeam){
         if (pseudo_matched){
-            voxel_backprojection2(projections,geo,result,angles,nangles, gpuids);
+            voxel_backprojection2(projections,geo,result,angles,nangles, gpuids, gpuData);
         }else{
-            voxel_backprojection(projections,geo,result,angles,nangles, gpuids);
+            voxel_backprojection(projections,geo,result,angles,nangles, gpuids, gpuData);
         }
     }else{
-        voxel_backprojection_parallel(projections,geo,result,angles,nangles, gpuids);
+        voxel_backprojection_parallel(projections,geo,result,angles,nangles, gpuids, gpuData);
     }
+#ifdef TIGRE_GPUARRAY
+    if (gpuData) {
+        plhs[0] = gpuOut->release(gpuProj->device);
+        delete gpuOut;
+        delete gpuProj;
+    }
+#endif
 
 
     
