@@ -41,7 +41,7 @@ def _installed_sample_loader(site_packages):
 
 @pytest.mark.parametrize("site_packages", ["lib/python3.12/site-packages", "Lib/site-packages"])
 def test_head_phantom_is_found_where_pip_installs_data_files(tmp_path, monkeypatch, site_packages):
-    # setup.py installs head.mat as data_files=[("data", ...)], which pip puts in <prefix>/data
+    # TIGRE 3.3.1 and older installed head.mat as data_files, which pip puts in <prefix>/data
     # (Linux and Windows layouts of site-packages).
     prefix = tmp_path / "env"
     loader = _installed_sample_loader(prefix / site_packages)

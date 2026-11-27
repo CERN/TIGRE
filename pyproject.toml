@@ -53,8 +53,11 @@ addopts = '-m "not extended"'
 
 [tool.setuptools.packages.find]
 where = ["Python"]
+# Only the library: Python/tests and Python/demos are not installed.
+include = ["tigre*"]
 
 [tool.setuptools.package-data]
+"tigre" = ["data/*.mat"]
 "tigre.utilities.cuda_interface" = ["*.pyx", "*.pxd", "*.pxi", "*.cpp"]
 
 [tool.cibuildwheel]
