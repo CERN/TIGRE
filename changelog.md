@@ -8,6 +8,8 @@ thank you.
 ## Unreleased
 
 ### Changed
+- MATLAB `VarianDataLoader` with `bh`: no longer asks interactively whether to continue, and computes the path length
+  of each ray through the bowtie directly instead of building a ~6.5 GB voxelised bowtie and forward projecting it.
 - MATLAB: `checkGeo` casts geometry fields given as `single`, integer or logical arrays to `double`, instead
   of failing with "is not double type" (#91).
 - Python: `check_geo` accepts geometry fields as lists, tuples or NumPy numbers of any numeric type (e.g.
@@ -27,6 +29,8 @@ thank you.
   the versions of TIGRE, Python or MATLAB, the OS and the GPUs, for bug reports.
 - Python wheels for Windows (x86-64) on the GitHub Release, next to the Linux ones. They need only the
   NVIDIA driver, not the CUDA toolkit.
+- Python: beam-hardening correction for Varian CBCT, `VarianDataLoader(..., bh=True)`, ported from MATLAB's `bh` option
+  (off by default, as in MATLAB) (#201).
 
 ### Fixed
 - MATLAB `dicomDataLoader`: no longer errors on files with a `PositionerType` field (`strcmi` typo); reads

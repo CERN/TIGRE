@@ -4,32 +4,16 @@ function BHCalib = BH_SpectrumBowtieLUT(geo, BHCalib)
 
 %% Thin window filter has been applied to the spectrum already
 % Source-to-detector distance: mm
-SDD = geo.DSD;
+SDD = mean(geo.DSD);
 % Source-to-bowtie distance: mm
 SBD = BHCalib.bowtie.distance;
+% bowtie height = 55 mm, ref to TrueBeam Technical Reference: rays above or below miss it
+bowtie_height = 55;
 
 %% [u,v] vector: mm
-offset=geo.offDetector;
+offset = geo.offDetector(:,1);
 us = ((-geo.nDetector(1)/2+0.5):1:(geo.nDetector(1)/2-0.5))*geo.dDetector(1) + offset(1);
 vs = ((-geo.nDetector(2)/2+0.5):1:(geo.nDetector(2)/2-0.5))*geo.dDetector(2) + offset(2);
-
-%% Map Detector Plane to Bowtier Surface
-ub = us * SBD/SDD;
-% vb = vs * SBD/SDD;
-
-u_s = fix(min(ub)) + sign(min(us))*10;
-u_l = fix(max(ub)) + sign(max(us))*10;
-
-sampling_rate = 4002;
-
-xxgd = linspace(u_s, u_l, sampling_rate);
-y_l = ceil(max(BHCalib.bowtie.thickness));
-yygd = linspace(-y_l, y_l, sampling_rate);
-% bowtie height = 55 mm, ref to TrueBeam Technical Reference
-zzgd = linspace(-27.5, 27.5, 102);
-
-bt_img = zeros(length(xxgd), length(yygd));
-
 
 %% Fitting to Model Bowtie Profile: 
 [xData, yData] = prepareCurveData(BHCalib.bowtie.uu, BHCalib.bowtie.thickness);
@@ -42,27 +26,27 @@ ft = fittype( 'smoothingspline' );
 [fitresult, gof] = fit(xData, yData, ft);
 disp(['Bowtie Fitting Goodness (R^2): ' num2str(gof.rsquare)])
 
-%% 3D bowtie img matrix
-for ii = 1:length(xxgd)
-    tmp_thick = fitresult(xxgd(ii));
-    tmp = ((yygd>0)&(yygd<tmp_thick));
-    bt_img(tmp, ii) = 1;
-end
-
-bt_img = flipud(bt_img);
-
-bt_img3D = single(repmat(bt_img, [1 1 length(zzgd)]));
-
-%% geo for bowtie projection
-geo_bt = geo;
-geo_bt.DSO = BHCalib.bowtie.distance;
-geo_bt.dVoxel = [mean(diff(yygd)); mean(diff(xxgd)); mean(diff(zzgd))];
-geo_bt.nVoxel = size(bt_img3D)';
-geo_bt.sVoxel = geo_bt.dVoxel.* geo_bt.nVoxel;
-
-%% tranverse length grid: mm
-ulgd = Ax(bt_img3D, geo_bt, 0, 'interpolated');
-clearvars bt_img bt_img3D xxgd yygd
+%% Length of each detector ray inside the bowtie: mm
+% The bowtie fills the region between SBD and SBD+thickness(y) from the source, where y is the
+% lateral (u) position at that distance, and |z| <= bowtie_height/2. March along each ray
+% through it (this replaces voxelising the bowtie and forward projecting it with Ax).
+t_max = ceil(max(BHCalib.bowtie.thickness));
+n_steps = 4000;
+step = t_max/n_steps;
+depth = ((1:n_steps)' - 0.5)*step;   % mm past the bowtie front face, along the central ray
+dist = SBD + depth;                  % distance from the source
+y = dist*us/SDD;                     % lateral position at that distance: [n_steps, nu]
+thick = reshape(fitresult(y(:)), size(y));
+thick = min(max(thick, 0), t_max);
+% length inside the bowtie up to each depth, along the beam axis
+cum = [zeros(1, numel(us)); cumsum(double(depth < thick), 1)]*step;
+% rays leave the bowtie above/below it: only depths with |z| <= bowtie_height/2 count
+dist_max = (bowtie_height/2)*SDD./abs(vs);
+dist_max(vs == 0) = Inf;
+k = sum(dist(:) <= dist_max(:)', 1);  % number of depth samples inside, per detector row
+ulgd = cum(k+1, :);                   % [nv, nu], as Ax returns it
+% along the ray itself
+ulgd = ulgd .* sqrt(SDD^2 + us.^2 + vs(:).^2)/SDD;
 
 
 %% bowtie material attenuation look-up table

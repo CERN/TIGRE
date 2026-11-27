@@ -17,6 +17,7 @@ from tigre.utilities.io.varian.scatter import (
     correct_detector_scatter,
     correct_scatter,
 )
+from tigre.utilities.io.varian.beam_hardening import correct_beam_hardening
 from scipy.ndimage import median_filter
 from tqdm import tqdm
 
@@ -34,11 +35,12 @@ def VarianDataLoader(filepath: PathLike, **kwargs) -> tuple[NDArray, Geometry, N
             acdc (bool): acceleration-deceleration correction (default: True)
             dps (bool): detector point scatter correction (default: True)
             sc (bool): kernel-based scatter correction (default: True)
+            bh (bool): beam hardening correction (default: False). Slow; not yet tested on real data in Python.
 
     Returns:
         tuple[NDArray, Geometry, NDArray]: log-normalized projections, geometry, projection angles (in radians)
     """
-    acdc, dps, sc = parse_inputs(**kwargs)
+    acdc, dps, sc, bh = parse_inputs(**kwargs)
 
     scan_params = ScanParams(filepath)
     recon_params = ReconParams(filepath)
@@ -63,6 +65,8 @@ def VarianDataLoader(filepath: PathLike, **kwargs) -> tuple[NDArray, Geometry, N
         proj_data.projs = correct_scatter(proj_data, blank_proj_data, geometry, sc_calib)
 
     log_projs = log_normalize(proj_data, blank_proj_data)
+    if bh:
+        log_projs = correct_beam_hardening(log_projs, geometry, filepath, scan_params)
     log_projs = correct_ring_artifacts(log_projs)
 
     return log_projs, geometry, np.deg2rad(proj_data.angles)
@@ -93,17 +97,19 @@ def log_normalize(proj_data: ProjData, blank_proj_data: ProjData) -> NDArray:
     return log_projs
 
 
-def parse_inputs(**kwargs) -> tuple[bool, bool, bool]:
+def parse_inputs(**kwargs) -> tuple[bool, bool, bool, bool]:
     """
     Returns tags.
     ACDC: acceleration-deceleration correction (default: True)
     DPS: detector point scatter correction (default: True)
     SC: kernel-based scatter correction (default: True)
+    BH: beam hardening correction (default: False)
     """
 
     acdc = kwargs["acdc"] if "acdc" in kwargs else True
     dps = kwargs["dps"] if "dps" in kwargs else True
     sc = kwargs["sc"] if "sc" in kwargs else True
+    bh = kwargs["bh"] if "bh" in kwargs else False
     if sc and not dps:
         RuntimeWarning("dps should be enabled when sc=true.")
-    return acdc, dps, sc
+    return acdc, dps, sc, bh
