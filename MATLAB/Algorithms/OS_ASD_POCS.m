@@ -37,7 +37,7 @@ function [ fres, qualMeasOut ] = OS_ASD_POCS (proj,geo,angles,maxiter,varargin)
 %   'maxL2err'     Maximum L2 error to accept an image as valid. This
 %                  parameter is crucial for the algorithm, determines at
 %                  what point an image should not be updated further.
-%                  Default is 20% of the FDK L2 norm.
+%                  Default is 20% of the data error of FDK, ||Ax_FDK - b||.
 %   'BlockSize':   Sets the projection block size used simultaneously. If
 %                  BlockSize = 1 OS-SART becomes SART and if  BlockSize = length(alpha)
 %                  then OS-SART becomes SIRT. Default is 20.
@@ -381,7 +381,7 @@ for ii=1:length(opts)
             %  =========================================================================
         case 'maxl2err'
             if default
-                epsilon=im3Dnorm(FDK(proj,geo,angles),'L2')*0.2; %heuristic
+                epsilon=im3Dnorm(Ax(FDK(proj,geo,angles),geo,angles)-proj,'L2')*0.2; %heuristic: 20% of the data error of FDK
             else
                 epsilon=val;
             end

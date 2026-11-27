@@ -83,7 +83,7 @@ class initASD_POCS(IterativeReconAlg):
         Maximum L2 error to accept an image as valid. This
         parameter is crucial for the algorithm, determines at
         what point an image should not be updated further.
-        Default is 20% of the FDK L2 norm.
+        Default is 20% of the data error of FDK, ||Ax_FDK - b||.
     --------------------------------------------------------------------
     This file is part of the TIGRE Toolbox
 
@@ -319,7 +319,7 @@ class initPICCS(IterativeReconAlg):
         Maximum L2 error to accept an image as valid. This
         parameter is crucial for the algorithm, determines at
         what point an image should not be updated further.
-        Default is 20% of the FDK L2 norm.
+        Default is 20% of the data error of FDK, ||Ax_FDK - b||.
     --------------------------------------------------------------------
     This file is part of the TIGRE Toolbox
 
@@ -560,7 +560,7 @@ class initPCSD(IterativeReconAlg):
          Maximum L2 error to accept an image as valid. This
          parameter is crucial for the algorithm, determines at
          what point an image should not be updated further.
-         Default is 20% of the FDK L2 norm.
+         Default is 20% of the data error of FDK, ||Ax_FDK - b||.
 --------------------------------------------------------------------
     This file is part of the TIGRE Toolbox
 

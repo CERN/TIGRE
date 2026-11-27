@@ -8,6 +8,10 @@ thank you.
 ## Unreleased
 
 ### Changed
+- MATLAB ASD-POCS family (`ASD_POCS`, `OS_ASD_POCS`, `AwASD_POCS`, `OS_AwASD_POCS`, `PCSD`, `OS_PCSD`, `AwPCSD`,
+  `OS_AwPCSD`, `PICCS`, `B_ASD_POCS_beta`): the default `maxL2err` is now 20% of the data error of FDK,
+  `||A x_FDK - b||`, as in Python, instead of 20% of the L2 norm of the FDK image, which compared a data error with an
+  image norm. Results with the default change; pass `maxL2err` to choose it yourself (#283).
 - MATLAB `VarianDataLoader` with `bh`: no longer asks interactively whether to continue, and computes the path length
   of each ray through the bowtie directly instead of building a ~6.5 GB voxelised bowtie and forward projecting it.
 - MATLAB: `checkGeo` casts geometry fields given as `single`, integer or logical arrays to `double`, instead

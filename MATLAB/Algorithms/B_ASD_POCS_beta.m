@@ -35,7 +35,7 @@ function [ fres, qualMeasOut ] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargi
 %   'maxL2err'     Maximum L2 error to accept an image as valid. This
 %                  parameter is crucial for the algorithm, determines at
 %                  what point an image should not be updated further.
-%                  Default is 20% of the FDK L2 norm.
+%                  Default is 20% of the data error of FDK, ||Ax_FDK - b||.
 %
 %   'beta'         hyperparameter controling the Bragman update. default=1
 %
@@ -389,7 +389,7 @@ for ii=1:length(opts)
             %  =========================================================================
         case 'maxl2err'
             if default
-                epsilon=im3Dnorm(FDK(proj,geo,angles),'L2')*0.2; %heuristic
+                epsilon=im3Dnorm(Ax(FDK(proj,geo,angles),geo,angles)-proj,'L2')*0.2; %heuristic: 20% of the data error of FDK
             else
                 epsilon=val;
             end
