@@ -24,7 +24,7 @@ Nikon scan, from download to the final image.
 | Diondo | `DiondoDataLoader` | `DiondoDataLoader` |
 | Varian TrueBeam on-board CBCT | `VarianDataLoader` | `VarianDataLoader` |
 | DXchange (HDF5, used at synchrotrons) | `DXChangeDataLoader` | `DXChangeDataLoader` |
-| DICOM (tested on Philips Allura only) | | `dicomDataLoader` |
+| DICOM C-arm CBCT (tested on Philips Allura only) | `DicomDataLoader` | `dicomDataLoader` |
 
 ::::{tab-set}
 :sync-group: lang
@@ -74,6 +74,15 @@ detector point-scatter correction (`dps`) and kernel-based scatter
 correction (`sc`); each can be switched off with the option of the same name.
 It has been tested on clinical data from TrueBeam 2.7. The MATLAB version
 has further options, including beam-hardening correction.
+
+### DICOM C-arm CBCT
+
+`DicomDataLoader` (Python) and `dicomDataLoader` (MATLAB) read every `.dcm`
+file in a folder: either one multi-frame file (a standard scan) or one file
+per projection. In Python it needs the `pydicom` package
+(`pip install pydicom`), and it returns the DICOM headers as a fourth output.
+It has been tested on Philips Allura C-arm data only and warns for other
+scanners; if it does not read yours, please get in touch.
 
 ## Other scanners
 
