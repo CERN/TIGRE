@@ -21,6 +21,8 @@ thank you.
   them directly, e.g. `from _minTV import minTV`, now needs `from tigre.utilities.cuda_interface._minTV import minTV`.
 
 ### Added
+- Python: `tigre.algorithms.b_asd_pocs_beta`, ASD-POCS with Bregman iterations on the data, a port of MATLAB's
+  `B_ASD_POCS_beta` (#283).
 - Python: `tigre.utilities.io.DicomDataLoader`, a port of MATLAB's `dicomDataLoader` for DICOM C-arm CBCT (tested on Philips
   Allura). Needs `pydicom` (#201).
 - `tiltedAxisGeo` (Python and MATLAB): describes a rotation axis tilted within the detector plane from two centre-of-rotation
@@ -33,6 +35,8 @@ thank you.
   (off by default, as in MATLAB) (#201).
 
 ### Fixed
+- MATLAB `B_ASD_POCS_beta`: the Bregman step added back the residual with respect to the already-updated projections
+  instead of the measured ones (Xue et al. 2010, Algorithm 2), so the data it fitted drifted away from the measurements (#283).
 - MATLAB `dicomDataLoader`: no longer errors on files with a `PositionerType` field (`strcmi` typo); reads
   `ImagerPixelSpacing` in (u, v) order, which matters for non-square pixels; sets `offDetector` when it crops the
   projections to an off-centre shutter (#201).

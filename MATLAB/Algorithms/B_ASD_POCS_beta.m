@@ -140,6 +140,7 @@ clear A x y dx dz;
 
 stop_criteria=0;
 iter=0;
+proj_measured=proj; % the Bregman step adds back the residual w.r.t. the measured data
 offOrigin=geo.offOrigin;
 offDetector=geo.offDetector;
 rotDetector=geo.rotDetector;
@@ -243,7 +244,9 @@ while ~stop_criteria %POCS
     end
     
     if ~mod(iter,bregman_iter)
-        proj=proj+bregman*(proj-Ax(f,geo,angles,'gpuids',gpuids));
+        % g^(k+1) = g^k + beta^k (g - M f^k), with g the measured data:
+        % Xue et al. 2010, Algorithm 2, step 3 (TIGRE.bib, B_ASD_POCS_beta)
+        proj=proj+bregman*(proj_measured-Ax(f,geo,angles,'gpuids',gpuids));
         bregman=bregman*bregman_red;
         
     end

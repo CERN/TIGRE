@@ -19,6 +19,7 @@ from .krylov_subspace_algorithms import hybrid_flsqr_tv
 from .krylov_subspace_algorithms import ab_gmres
 from .krylov_subspace_algorithms import ba_gmres
 from .pocs_algorithms import asd_pocs
+from .pocs_algorithms import b_asd_pocs_beta
 from .pocs_algorithms import os_asd_pocs
 from .pocs_algorithms import awasd_pocs
 from .pocs_algorithms import os_awasd_pocs
@@ -41,6 +42,7 @@ __all__ = [
     "iterativereconalg",
     "FDK",
     "asd_pocs",
+    "b_asd_pocs_beta",
     "piccs",
     "os_piccs",
     "os_asd_pocs",

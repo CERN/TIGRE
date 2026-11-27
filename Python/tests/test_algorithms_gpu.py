@@ -37,6 +37,7 @@ ITERATIVE = [
     ("ab_gmres", 15, {}),
     ("ba_gmres", 15, {}),
     ("asd_pocs", 10, {}),
+    ("b_asd_pocs_beta", 10, {}),
     ("os_asd_pocs", 10, {}),
     ("awasd_pocs", 10, {}),
     ("os_awasd_pocs", 10, {}),
