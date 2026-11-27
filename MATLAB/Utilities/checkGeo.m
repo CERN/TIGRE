@@ -23,9 +23,9 @@ assert(sum(mandatory)==length(geofields_mandatory),'TIGRE:checkGeo:BadGeometry',
 
 % Lets check the validity of them now. We need to be explicit in there
 
-%check if they are double
+% Numeric fields of other types (single, int32, ...) are cast to double.
 for ii=1:length(geofields_mandatory)
-    assert(isa(geo.(geofields_mandatory{ii}),'double'),'TIGRE:checkGeo:BadGeometry',['Field geo.', geofields_mandatory{ii},' is not double type.'])
+    geo.(geofields_mandatory{ii})=toDouble(geo.(geofields_mandatory{ii}),geofields_mandatory{ii});
 end
 
 % Image data
@@ -72,7 +72,7 @@ assert(all(geo.DSD>=geo.DSO), 'TIGRE:checkGeo:BadGeometry','DSD should be bigger
 
 if isfield(geo,'offOrigin')
     assert(isequal(size(geo.offOrigin),[3 1]) | isequal(size(geo.offOrigin),[3 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offOrigin Should be 3x1 or 3xsize(angles,2)')
-    assert(isa(geo.offOrigin,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.offOrigin is not double type.' )
+    geo.offOrigin=toDouble(geo.offOrigin,'offOrigin');
     if isequal(size(geo.offOrigin),[3 1])
         geo.offOrigin=repmat(geo.offOrigin,[1, size(angles,2)]);
     end
@@ -82,7 +82,7 @@ end
 
 if isfield(geo,'offDetector')
     assert(isequal(size(geo.offDetector),[2 1]) | isequal(size(geo.offDetector),[2 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.offDetector Should be 2x1 or 2xsize(angles,2)')
-    assert(isa(geo.offDetector,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.offDetector is not double type.' )
+    geo.offDetector=toDouble(geo.offDetector,'offDetector');
     if isequal(size(geo.offDetector),[2 1])
         geo.offDetector=repmat(geo.offDetector,[1, size(angles,2)]);
     end
@@ -92,7 +92,7 @@ end
 
 if isfield(geo,'rotDetector')
     assert(isequal(size(geo.rotDetector),[3 1]) | isequal(size(geo.rotDetector),[3 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.rotDetector Should be 3x1 or 3xsize(angles,2)')
-    assert(isa(geo.rotDetector,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.rotDetector is not double type.' )
+    geo.rotDetector=toDouble(geo.rotDetector,'rotDetector');
     if isequal(size(geo.rotDetector),[3 1])
         geo.rotDetector=repmat(geo.rotDetector,[1, size(angles,2)]);
     end
@@ -102,7 +102,7 @@ end
 
 if isfield(geo,'COR')
     assert(isequal(size(geo.COR),[1 1]) | isequal(size(geo.COR),[1 size(angles,2)]),'TIGRE:checkGeo:BadGeometry','geo.COR Should be 1x1 or 1xsize(angles,2)')
-    assert(isa(geo.COR,'double'),'TIGRE:checkGeo:BadGeometry','Field geo.COR is not double type.' )
+    geo.COR=toDouble(geo.COR,'COR');
     if isequal(size(geo.COR),[1 1])
         geo.COR=repmat(geo.COR,[1, size(angles,2)]);
     end
@@ -119,7 +119,7 @@ end
 
 if isfield(geo,'accuracy')
     assert(isscalar(geo.accuracy),'TIGRE:checkGeo:BadGeometry','geo.accuracy should be a scalar');
-    assert(isa(geo.accuracy,'double'),'TIGRE:checkGeo:BadGeometry','geo.accuracy should be double');
+    geo.accuracy=toDouble(geo.accuracy,'accuracy');
     if geo.accuracy>1
         warning('geo.accuracy too big, you will ignore image information resulting in wrong reconstruction.\n Change geo.accuracy to smaller or equal than 1.')
     end
@@ -130,3 +130,8 @@ end
 
 end
 
+function x=toDouble(x,name)
+% Cast a numeric geometry field to double; anything else is an error.
+assert(isnumeric(x)||islogical(x),'TIGRE:checkGeo:BadGeometry',['Field geo.', name,' should be numeric.'])
+x=double(x);
+end
