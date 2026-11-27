@@ -1,8 +1,8 @@
 ---
-og:description: "Install TIGRE for Python: prebuilt wheels for Linux with one pip command, or building from source on Windows and Linux."
+og:description: "Install TIGRE for Python: prebuilt wheels for Linux and Windows with one pip command, or building from source."
 myst:
   html_meta:
-    description: "Install TIGRE for Python: prebuilt wheels for Linux with one pip command, or building from source on Windows and Linux."
+    description: "Install TIGRE for Python: prebuilt wheels for Linux and Windows with one pip command, or building from source."
 ---
 
 # Python
@@ -10,33 +10,35 @@ myst:
 TIGRE supports Python 3.11 to 3.14 on Windows and Linux. We recommend
 installing it in its own virtual environment (venv or conda).
 
-## Prebuilt wheels (Linux)
+## Prebuilt wheels
 
 Each [GitHub release](https://github.com/CERN/TIGRE/releases) has prebuilt
-wheels for x86-64 Linux. They bundle the CUDA runtime, so you need no CUDA
-toolkit or compiler: only an NVIDIA GPU and its driver (see
+wheels for x86-64 Linux and Windows. They bundle the CUDA runtime, so you need
+no CUDA toolkit or compiler: only an NVIDIA GPU and its driver (see
 [what the wheels need](#what-the-wheels-need)).
 
-To install TIGRE {{ latest_version }}, the latest release, pick your Python
-version and run the command in your environment (`python --version` tells you
-which you have):
+To install TIGRE {{ latest_version }}, the latest release, pick your operating
+system and Python version and run the command in your environment
+(`python --version` tells you which Python you have):
 
 ```{include} ../_generated/wheels.md
 ```
 
 Then [check that it works](#check-your-installation). If there is no wheel for
-your Python version, or you are on Windows, install from source instead, or try
-the [conda package](#conda-unofficial).
+your Python version or system, install from source instead, or try the
+[conda package](#conda-unofficial).
 
 ### What the wheels need
 
 - **Linux on x86-64** with glibc 2.28 or newer: Ubuntu 18.10+, Debian 10+,
-  RHEL/Rocky/Alma 8+, Fedora 29+ and most current distributions.
+  RHEL/Rocky/Alma 8+, Fedora 29+ and most current distributions; or
+  **Windows 10 or 11 on x86-64**.
 - **An NVIDIA GPU of compute capability 5.0 or newer** (Maxwell, from 2014,
   to Blackwell). Look your GPU up on
   [NVIDIA's list](https://developer.nvidia.com/cuda-gpus).
-- **An NVIDIA driver for CUDA 12.8**: version 570 or newer. Drivers from
-  525 on support all of CUDA 12 through NVIDIA's
+- **An NVIDIA driver for CUDA 12.8**: version 570 or newer on Linux, 572.61 or
+  newer on Windows. Older drivers of the CUDA 12 series (from 525 on Linux)
+  support all of CUDA 12 through NVIDIA's
   [minor-version compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/)
   and should also work, but have not been tested with TIGRE.
   `nvidia-smi` prints your driver version.

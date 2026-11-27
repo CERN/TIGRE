@@ -20,8 +20,8 @@ v0.1 release.
 
 | You want to… | Use | Needs CUDA toolkit and compiler? |
 |---|---|---|
-| Use TIGRE from Python on Linux | [Prebuilt wheel](python.md#prebuilt-wheels-linux) | No, only an NVIDIA driver |
-| Use TIGRE from Python on Windows, or a Python version without a wheel | [Install from GitHub with pip](python.md#install-from-source) | Yes |
+| Use TIGRE from Python on Linux or Windows | [Prebuilt wheel](python.md#prebuilt-wheels) | No, only an NVIDIA driver |
+| Use TIGRE from a Python version without a wheel | [Install from GitHub with pip](python.md#install-from-source) | Yes |
 | Use the conda ecosystem | [CCPi conda package](python.md#conda-unofficial) (unofficial) | No |
 | Use TIGRE from MATLAB | [Compile with `Compile.m`](matlab.md) | Yes |
 | Change TIGRE's code | [Install from a clone](python.md#from-a-local-clone) | Yes |
@@ -29,7 +29,8 @@ v0.1 release.
 ## Requirements at a glance
 
 - An NVIDIA GPU. The prebuilt wheels run on compute capability 5.0
-  (Maxwell) and newer, with a driver for CUDA 12.8 (version 570 or newer).
+  (Maxwell) and newer, with a driver for CUDA 12.8 (version 570 or newer on
+  Linux, 572.61 or newer on Windows).
   When you compile TIGRE yourself, it is built for every GPU architecture your
   CUDA toolkit supports.
 - Python 3.11 to 3.14, or MATLAB R2016b or newer.

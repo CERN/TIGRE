@@ -68,9 +68,9 @@ of real scans.
 > [!IMPORTANT]
 > TIGRE is **not** on PyPI. `pip install tigre` installs an unrelated package with the same name.
 
-- **Python on Linux:** prebuilt wheels, no compiler needed. Copy the command for
-  your Python version from the [Python install page](https://cern.github.io/TIGRE/install/python.html).
-- **Python on Windows, or from source:** `pip install git+https://github.com/CERN/TIGRE.git`
+- **Python on Linux and Windows:** prebuilt wheels, no compiler needed. Copy the command for
+  your system and Python version from the [Python install page](https://cern.github.io/TIGRE/install/python.html).
+- **Python from source:** `pip install git+https://github.com/CERN/TIGRE.git`
   (needs the CUDA toolkit and a C++ compiler; see the
   [Python install page](https://cern.github.io/TIGRE/install/python.html)).
 - **MATLAB:** run `Compile` in the `MATLAB` folder; see the
