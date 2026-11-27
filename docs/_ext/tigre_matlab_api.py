@@ -27,6 +27,7 @@ GROUPS = {
         "Utilities/staticDetectorGeo.m",
         "Utilities/computeCOR.m",
         "Utilities/tiltedAxisGeo.m",
+        "Utilities/spotDriftGeo.m",
         "Utilities/computeImageGeo.m",
         "Utilities/changeResolution.m",
         "Utilities/flatten_detector.m",

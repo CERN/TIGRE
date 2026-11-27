@@ -27,6 +27,8 @@ How to describe a scanner: see [](../../user-guide/geometry.md).
 
 .. autofunction:: tiltedAxisGeo
 
+.. autofunction:: spotDriftGeo
+
 .. autofunction:: computeImageGeo
 
 .. autofunction:: changeResolution
