@@ -68,6 +68,7 @@ backprojectors on one and several GPUs. Read the
 <button type="button" role="tab" id="tab-micro" aria-controls="panel-micro" aria-selected="true">Micro-CT</button>
 <button type="button" role="tab" id="tab-synchrotron" aria-controls="panel-synchrotron" aria-selected="false" tabindex="-1">Synchrotron</button>
 <button type="button" role="tab" id="tab-clinical" aria-controls="panel-clinical" aria-selected="false" tabindex="-1">Clinical CBCT</button>
+<button type="button" role="tab" id="tab-neutron" aria-controls="panel-neutron" aria-selected="false" tabindex="-1">Neutron CT</button>
 </div>
 <div class="tigre-compare-panel" role="tabpanel" id="panel-micro" aria-labelledby="tab-micro">
 <div class="tigre-compare-frame" style="--pos: 82%">
@@ -105,6 +106,17 @@ backprojectors on one and several GPUs. Read the
 <span class="tigre-compare-handle" aria-hidden="true"></span>
 </div>
 <p class="tigre-compare-caption">Low-dose cone-beam CT of a lung cancer patient for image-guided radiotherapy. FDK against AwPCSD, an edge-preserving iterative method. From <a href="https://doi.org/10.1088/1361-6560/aa7675">Biguri et al. (2017)</a>, Physics in Medicine &amp; Biology.</p>
+</div>
+<div class="tigre-compare-panel" role="tabpanel" id="panel-neutron" aria-labelledby="tab-neutron" hidden>
+<div class="tigre-compare-frame" style="--pos: 50%; aspect-ratio: 740 / 748">
+<img class="dark-light" src="_static/hero/neutron-sirt.webp" width="740" height="748" alt="A padlock imaged with neutrons, reconstructed with SIRT: the lock body, pins and spring are clear" loading="lazy">
+<img class="tigre-compare-left-img dark-light" src="_static/hero/neutron-fdk.webp" width="740" height="748" alt="The same padlock reconstructed with FDK: the same parts under heavy noise and streaks" loading="lazy">
+<span class="tigre-compare-name tigre-compare-left" aria-hidden="true">FDK</span>
+<span class="tigre-compare-name tigre-compare-right" aria-hidden="true">SIRT</span>
+<input class="tigre-compare-range" type="range" min="0" max="100" value="50" step="1" aria-label="Move the divider between FDK (left) and SIRT (right)">
+<span class="tigre-compare-handle" aria-hidden="true"></span>
+</div>
+<p class="tigre-compare-caption">A padlock imaged with neutrons at the Thailand Institute of Nuclear Technology. FDK against 100 iterations of SIRT. From <a href="https://doi.org/10.1088/2631-8695/adbb3a">Biguri et al. (2025)</a>, CC BY 4.0.</p>
 </div>
 <figcaption class="tigre-compare-hint">Each method is named on its side of the orange divider. Drag it, or use the arrow keys, to compare.</figcaption>
 </figure>

@@ -352,6 +352,16 @@ html[data-theme="dark"] .tigre-band img {
   outline: 2px solid #FFFFFF;
   outline-offset: 2px;
 }
+/* Phones: four tabs do not fit on one line, so two rows of two. */
+@media (max-width: 480px) {
+  .tigre-compare-tabs {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    justify-items: start;
+    column-gap: 0.5rem;
+  }
+}
 .tigre-compare-caption { font-size: 0.85rem; color: #BDBDBD; margin-bottom: 0; }
 .tigre-compare-caption a { color: #FF9A33; }
 .tigre-compare-hint { margin-top: 0.35rem !important; padding: 0 !important; }
