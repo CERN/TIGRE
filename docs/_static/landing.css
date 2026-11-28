@@ -284,23 +284,13 @@ html {
   text-decoration: underline;
 }
 .tigre-why p:first-child { color: var(--pst-color-text-base); }
-
-/* Get started: the only cards on the page, because they are actions. */
-.tigre-start .sd-card {
-  border: 1px solid var(--pst-color-border);
-  border-top: 3px solid var(--pst-color-accent);
-  border-radius: 0.4rem;
-  box-shadow: none;
+/* Get started: the same layout, but these are actions, so the headings look
+   like the links they are. */
+.tigre-start p strong a {
+  color: var(--pst-color-link);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
-.tigre-start .sd-card:hover,
-.tigre-start .sd-card:focus-within {
-  border-color: var(--pst-color-accent);
-}
-.tigre-start .sd-card-title {
-  font-stretch: 112%;
-  font-size: 1.1rem;
-}
-.tigre-start .sd-card-text { color: var(--pst-color-text-muted); }
 
 /* The landing page gets a wider column than the docs pages. */
 .bd-main .bd-content .bd-article-container:has(.tigre-band) {
@@ -314,10 +304,6 @@ html[data-theme="dark"] .tigre-band img.tigre-hero-logo,
 /* The theme dims images in dark mode; these are the same in both modes. */
 html[data-theme="dark"] .tigre-band img {
   filter: none !important;
-}
-.tigre-start .sd-card.sd-shadow-sm,
-.tigre-start .sd-card {
-  box-shadow: none !important;
 }
 
 @media (max-width: 600px) {
@@ -375,8 +361,7 @@ html[data-theme="dark"] .tigre-band img {
 
 /* Home page grids line up with the headings above them (sphinx-design pads
    its containers by half a gutter). */
-.sd-container-fluid.tigre-why,
-.sd-container-fluid.tigre-start {
+.sd-container-fluid.tigre-why {
   padding-left: 0;
   padding-right: 0;
 }
