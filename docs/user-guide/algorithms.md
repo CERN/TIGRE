@@ -157,11 +157,22 @@ structure where the data agree with it and departs from it where they do not.
 | Algorithm | Python | MATLAB |
 |---|---|---|
 | PICCS | `piccs`, `os_piccs` | `PICCS` |
+| IRN-PICCS-CGLS | `irn_piccs_cgls` | `IRN_PICCS_CGLS` |
 
 Pass the prior image with `prior=` in Python, or as the fifth argument in
 MATLAB (`PICCS(proj, geo, angles, niter, prior)`); `prior_ratio` (default
 0.2) weights the prior term against the plain TV term. The prior must be
 aligned with the current scan. See MATLAB demo 24.
+
+IRN-PICCS-CGLS solves the same kind of problem, $\|Ax-b\|^2 + \lambda\,\mathrm{TV}(x)
++ \lambda_p\,\mathrm{TV}(x - x_p)$, with Krylov iterations instead: like IRN-TV-CGLS,
+it turns each TV term into a weighted least-squares term and solves the
+result with CGLS, rebuilding the weights `niter_outer` times. It is much
+faster than PICCS for repeated, under-sampled scans of an object that only
+changes locally (Hastings et al., Phys. Med. Biol. 71 (2026) 105019).
+`lmbda` and `lmbda_prior` (MATLAB `'lambda'`, `'lambda_prior'`, both default
+10) weight the two terms; `prior_norm` (`'priorNorm'`) replaces the prior
+term by $\|x - x_p\|_2^2$ (`"l2"`, as in PIPLE) or $\|x - x_p\|_1$ (`"l1"`).
 
 ### Statistical
 
