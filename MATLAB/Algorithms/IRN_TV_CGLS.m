@@ -1,6 +1,6 @@
 function [x_outer,resL2,qualMeasOut]= IRN_TV_CGLS(proj,geo,angles,niter,varargin)
-% IRN_TV_CGLS solves the IRN_TV_CGLS problem using the conjugate gradient least
-% squares with Total Variation regularization, using an inner outer scheme
+% IRN_TV_CGLS solves the CBCT problem with total variation regularization,
+% by iteratively reweighted norms and CGLS (an inner-outer scheme).
 %
 %  IRN_TV_CGLS(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ANGLES angles, corresponding

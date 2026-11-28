@@ -401,3 +401,8 @@ html[data-theme="dark"] .tigre-band img {
 /* The MATLAB/Python axis table on the geometry page: keep each index
    expression on one line. */
 table.tigre-axes td code { white-space: nowrap; }
+
+/* API reference: the family labels above the summary tables, and the MATLAB
+   summary tables without a header row, like the Python autosummary ones. */
+.bd-content p.rubric { border-bottom: none; margin-bottom: 0.25rem; }
+table.tigre-summary thead { display: none; }

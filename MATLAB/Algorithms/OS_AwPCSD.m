@@ -1,6 +1,6 @@
 function [ f,resL2,qualMeasOut] = OS_AwPCSD(proj,geo,angles,maxiter,varargin)
-%OS_AwPCSD solves the reconstruction problem using adaptive-weighted
-%projection-controlled steepest descent method
+%OS_AwPCSD solves the reconstruction problem using PCSD with
+% adaptive-weighted total variation and ordered subsets of projections.
 %
 %   OS_AwPCSD(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem using
 %   the projection data PROJ taken over ALPHA angles, corresponding to the

@@ -1,5 +1,6 @@
 function [f,resL2,qualMeasOut] = PCSD(proj,geo,angles,maxiter,varargin)
-%PCSD solves the reconstruction problem using projection-controlled steepest descent method
+%PCSD solves the reconstruction problem using projection-controlled
+% steepest descent (PCSD).
 %
 %   PCSD(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem using
 %   the projection data PROJ taken over ALPHA angles, corresponding to the

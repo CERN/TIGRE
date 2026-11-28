@@ -1,6 +1,7 @@
 function [x,resL2, qualMeasOut,lambda_vec]= hybrid_LSQR(proj,geo,angles,niter,varargin)
 
-% hybrid_LSQR solves the CBCT problem using LSQR.
+% hybrid_LSQR solves the CBCT problem using hybrid LSQR: LSQR with Tikhonov
+% regularisation of the projected problem.
 %
 %  hybrid_LSQR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ANGLES angles, corresponding

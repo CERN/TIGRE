@@ -1,6 +1,7 @@
 function [x,resL2,qualMeasOut]= LSQR(proj,geo,angles,niter,varargin)
 
-% LSQR solves the CBCT problem using LSQR.
+% LSQR solves the CBCT problem using LSQR: least squares by Golub-Kahan
+% bidiagonalisation.
 % This is mathematically equivalent to CGLS.
 %
 %  LSQR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem

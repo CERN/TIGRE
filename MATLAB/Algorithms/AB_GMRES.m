@@ -1,6 +1,7 @@
 function [x,resL2,qualMeasOut]= AB_GMRES(proj,geo,angles,niter,varargin)
 
-% AB_GMRES solves the CBCT problem using AB_GMRES.
+% AB_GMRES solves the CBCT problem using AB-GMRES: GMRES with the
+% backprojector as a right preconditioner.
 % This is a stable Krylov method for when the backprojector is not adjoint
 %
 %  AB_GMRES(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem

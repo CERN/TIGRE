@@ -1,6 +1,7 @@
 function [x,resL2,qualMeasOut]= LSMR(proj,geo,angles,niter,varargin)
 
-% LSMR solves the CBCT problem using LSMR.
+% LSMR solves the CBCT problem using LSMR: least squares by minimising the
+% normal-equation residual.
 %
 %  LSMR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding

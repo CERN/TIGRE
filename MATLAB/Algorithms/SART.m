@@ -1,6 +1,6 @@
 function [res,resL2,qualMeasOut]=SART(proj,geo,angles,niter,varargin)
-% SART solves Cone Beam CT image reconstruction using Oriented Subsets
-%              Simultaneous Algebraic Reconstruction Technique algorithm
+% SART solves Cone Beam CT image reconstruction using the Simultaneous
+% Algebraic Reconstruction Technique (SART), one projection at a time.
 %
 %   SART(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding

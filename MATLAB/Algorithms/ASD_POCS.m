@@ -1,6 +1,7 @@
 function [f,resL2,qualMeasOut] = ASD_POCS(proj,geo,angles,maxiter,varargin)
-%ASD_POCS Solves the ASD_POCS total variation constrained image in 3D
-% tomography.
+%ASD_POCS solves the total variation constrained reconstruction problem
+% using adaptive steepest descent and projection onto convex sets
+% (ASD-POCS).
 %
 %   ASD_POCS(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding

@@ -1,6 +1,6 @@
 function [res,resL2,qualMeasOut]=SART_TV(proj,geo,angles,niter,varargin)
-% SART_TV solves Cone Beam CT image reconstruction using Oriented Subsets
-%              Simultaneous Algebraic Reconstruction Technique algorithm
+% SART_TV solves Cone Beam CT image reconstruction using SART with a total
+% variation denoising step after every iteration.
 %
 %   SART_TV(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding

@@ -1,6 +1,6 @@
 function [f,resL2,qualMeasOut] = PICCS(proj,geo,angles,maxiter,prior,varargin)
-%PICCS Solves the PICCS total variation constrained image in 3D
-% tomography.
+%PICCS solves the reconstruction problem using prior image constrained
+% compressed sensing (PICCS), with total variation and a prior image.
 %
 %   PICCS(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding
