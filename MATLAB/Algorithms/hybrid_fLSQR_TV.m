@@ -139,8 +139,10 @@ for ii=1:niter
     % Choose if fixing a tolerance or a number of iterations of both
     % This should maybe be done in single precisions...
     z(:) = mvpE(k_aux, v(:), 'transp');
-    aux_z = lsqr(@(x,tflag) Ltx(W, x, tflag), z(:), [], 50);
-    z(:) = lsqr(@(x,tflag) Lx(W, x, tflag), aux_z, [], 50);
+    % Asking for the flag output keeps lsqr quiet when it stops at 50
+    % iterations, as Python's scipy lsqr is.
+    [aux_z,~] = lsqr(@(x,tflag) Ltx(W, x, tflag), z(:), [], 50);
+    [z(:),~] = lsqr(@(x,tflag) Lx(W, x, tflag), aux_z, [], 50);
     z(:) = mvpE(k_aux, z(:), 'notransp');
     z = single(z);
 
