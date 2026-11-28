@@ -403,13 +403,18 @@ class IterativeReconAlg(object):
             self.gpuids = GpuIds()
         return AwminTV(res_prev, dtvg, self.numiter_tv, self.delta, self.gpuids)
 
+    def measure_quality(self, res_prev, iter):
+        """The Quameasopts measures of the current image at column iter of lq:
+        against res_prev, or against groundTruth if one was given."""
+        if self.Quameasopts is not None and iter < self.lq.shape[1]:
+            ref = res_prev if self.groundTruth is None else self.groundTruth
+            self.lq[:, iter] = MQ(self.res, ref, self.Quameasopts)
+
     def error_measurement(self, res_prev, iter):
         if iter >= self.l2l.shape[1]:
             # PCSD (like MATLAB's) can run one iteration past niter
             return
-        if self.Quameasopts is not None:
-            ref = res_prev if self.groundTruth is None else self.groundTruth
-            self.lq[:, iter] = MQ(self.res, ref, self.Quameasopts)
+        self.measure_quality(res_prev, iter)
         if self.computel2:
             # compute l2 norm for b-Ax
             errornow = im3DNORM(

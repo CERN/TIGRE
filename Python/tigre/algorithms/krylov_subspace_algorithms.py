@@ -624,7 +624,12 @@ class IRN_TV_CGLS(IterativeReconAlg):
                 + self.__Dt__(W * img3[2], 2))
 
     def run_main_iter(self):
+        # One column per inner (CGLS) step, for the residual and the quality
+        # measures alike, as MATLAB records them per iteration. (lq had niter
+        # columns, filled once per outer iteration, so computel2 together
+        # with the measures could not be returned.)
         self.l2l = np.zeros((1, self.niter*self.niter_outer), dtype=np.float32)
+        self.lq = np.zeros((self.lq.shape[0], self.niter*self.niter_outer))
         avgtime = []
 
         res0=self.res
@@ -636,8 +641,6 @@ class IRN_TV_CGLS(IterativeReconAlg):
                 self.niter=self.niter_outer
                 self._estimate_time_until_completion(outer)
                 self.niter=niter
-            if self.Quameasopts is not None:
-                res_prev = copy.deepcopy(self.res)
             avgtic = default_timer()    
 
 
@@ -694,6 +697,7 @@ class IRN_TV_CGLS(IterativeReconAlg):
                               + ", inner " + str(i) + " - reweighting")
                     break
                 res_prev_inner = res_now
+                self.measure_quality(res0, step)
               
                 #% If step is adequate, then continue withg CGLS
                 r_aux_1 = r_aux_1-alpha*q_aux_1
@@ -710,9 +714,6 @@ class IRN_TV_CGLS(IterativeReconAlg):
 
             avgtoc = default_timer()
             avgtime.append(abs(avgtic - avgtoc))
-
-            if self.Quameasopts is not None:
-                self.error_measurement(res_prev, outer)
 
             # A whole reweighting that improved nothing means the outer
             # iteration has stalled; more of them will not help.

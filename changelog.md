@@ -63,6 +63,8 @@ thank you.
   (off by default, as in MATLAB) (#201).
 
 ### Fixed
+- Python `irn_tv_cgls`: `computel2=True` crashed when returning the errors. The residual and the quality measures
+  are now both recorded per inner (CGLS) step, `niter * niter_outer` columns, as MATLAB records them per iteration (#445).
 - `hybrid_fLSQR_TV`/`hybrid_flsqr_tv`: MATLAB and Python now behave the same (#417). MATLAB: the stop when the
   residual grows never fired (it tested an array that was never filled), asking for `QualMeas` failed on the first
   iteration, and the discrepancy principle no longer errors when it has no root. Python: `Quameasopts` and
