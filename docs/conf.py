@@ -165,6 +165,9 @@ sphinx_gallery_conf = {
     "show_memory": False,
     "write_computation_times": False,
     "image_scrapers": ("tigre_demos.scraper",),
+    # Thumbnail for demos shown without output (they need data or hardware the
+    # website build does not have): a grey TIGRE icon.
+    "default_thumb_file": str(pathlib.Path(__file__).parent / "_static" / "demo-no-output.png"),
     # Notebooks open in Google Colab (see _colab_button below): their first cell
     # installs the latest release's wheel there, and does nothing elsewhere.
     "first_notebook_cell": (
@@ -316,6 +319,55 @@ def _thumbnail_alt(app, exception):
             page.write_text(new, encoding="utf-8")
 
 
+def _demo_thumbnails(app, exception):
+    """Tidy the demo thumbnails on the demos index.
+
+    - Animated thumbnails become still. Demos that animate a volume get an
+      animated GIF thumbnail, so the index had a dozen images moving at once;
+      the animations stay on the demo pages. The kept frame is the one with
+      most mid-grey pixels, which shows most of the object (the first and last
+      slices are often empty).
+    - Demos shown without output get a grey TIGRE icon instead of
+      sphinx-gallery's blue and yellow placeholder. (``default_thumb_file``
+      does the same for newly rendered demos; this covers the stored ones.)
+    """
+    if exception is not None or app.builder.format != "html":
+        return
+    import numpy as np
+    from PIL import Image
+
+    images = pathlib.Path(app.outdir, "_images")
+    placeholder = pathlib.Path(app.confdir, "_static", "demo-no-output.png")
+
+    def mid_grey(frame):
+        grey = np.asarray(frame.convert("L"))
+        return int(((grey > 40) & (grey < 220)).sum())
+
+    for thumb in images.glob("sphx_glr_*_thumb.gif"):
+        with Image.open(thumb) as im:
+            frames = getattr(im, "n_frames", 1)
+            if frames < 2:
+                continue
+            scores = []
+            for k in range(frames):
+                im.seek(k)
+                scores.append(mid_grey(im))
+            im.seek(int(np.argmax(scores)))
+            still = im.convert("RGB")
+        still.save(thumb)
+
+    for thumb in images.glob("sphx_glr_*_thumb.png"):
+        with Image.open(thumb) as im:
+            rgb = np.asarray(im.convert("RGB")).astype(int)
+            size = im.size
+        blue = (np.abs(rgb - [173, 216, 230]).sum(-1) < 40).mean()
+        yellow = (np.abs(rgb - [255, 228, 181]).sum(-1) < 40).mean()
+        if blue > 0.005 and yellow > 0.1:
+            with Image.open(placeholder) as ph:
+                ph.convert("RGB").resize(size).save(thumb)
+
+
 def setup(app):
     app.connect("source-read", _colab_button)
     app.connect("build-finished", _thumbnail_alt)
+    app.connect("build-finished", _demo_thumbnails)

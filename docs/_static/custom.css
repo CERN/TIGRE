@@ -108,6 +108,59 @@ html[data-theme="dark"] .tigre-strip img { filter: none; }
   display: none;
 }
 
+/* Demos index: plain images with the title under them, like the home page's
+   "From real scans" strip. No frames, shadows or hover overlays. The whole
+   tile stays one link (sphinx-gallery stretches the link over it). */
+.sphx-glr-thumbnails {
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 1.5rem 1rem;
+}
+.sphx-glr-thumbcontainer,
+.sphx-glr-thumbcontainer:hover {
+  box-shadow: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  text-align: left;
+  align-items: stretch;
+  gap: 0;
+}
+.sphx-glr-thumbcontainer[tooltip]::before,
+.sphx-glr-thumbcontainer[tooltip]::after,
+.sphx-glr-thumbcontainer[tooltip]:hover::before,
+.sphx-glr-thumbcontainer[tooltip]:hover::after { display: none; }
+.sphx-glr-thumbcontainer img {
+  display: block;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  background: #FFFFFF;
+  border: 1px solid var(--pst-color-border);
+  border-radius: 0.25rem;
+}
+.bd-content .sphx-glr-thumbcontainer .sphx-glr-thumbnail-title {
+  position: static;
+  margin-top: 0.4rem;
+  padding: 0;
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-align: left;
+  color: var(--pst-color-text-base);
+}
+.sphx-glr-thumbcontainer:hover .sphx-glr-thumbnail-title {
+  color: var(--pst-color-link-hover);
+  text-decoration: underline;
+}
+.sphx-glr-thumbcontainer:focus-within {
+  outline: 3px solid var(--pst-color-accent);
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
 /* Code tabs (home and install pages): a quiet frame; orange only on the active tab. */
 .bd-content .sd-tab-set > .sd-tab-content {
   box-shadow: none;
