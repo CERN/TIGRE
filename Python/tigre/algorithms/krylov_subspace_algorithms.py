@@ -582,7 +582,32 @@ class IRN_TV_CGLS(IterativeReconAlg):
         self.re_init_at_iteration = 0
         # lmbda weights the TV term; MATLAB's default is 10.
         kwargs.setdefault("lmbda", 10)
+        # A prior term (irn_piccs_cgls) and the outer-iteration options, as MATLAB's
+        # IRN_PICCS_CGLS. Taken out before the base class sees the keywords.
+        prior = kwargs.pop("prior", None)
+        self.lmbda_prior = float(kwargs.pop("lmbda_prior", 0))
+        self.prior_norm = str(kwargs.pop("prior_norm", "tv")).lower()
+        self.outer_restart = str(kwargs.pop("outer_restart", "warm")).lower()
+        weights = kwargs.pop("weights", None)
+        weights_prior = kwargs.pop("weights_prior", None)
+        if self.prior_norm not in ("tv", "l2", "l1"):
+            raise ValueError("prior_norm should be 'tv', 'l2' or 'l1'")
+        if self.outer_restart not in ("warm", "cold"):
+            raise ValueError("outer_restart should be 'warm' or 'cold'")
         IterativeReconAlg.__init__(self, proj, geo, angles, niter, **kwargs)
+        shape = tuple(self.res.shape)
+
+        def image(value, name):
+            if value is None:
+                return None
+            value = np.asarray(value, dtype=np.float32)
+            if value.shape != shape:
+                raise ValueError(name + " should have the image's shape, " + str(shape) + ", got " + str(value.shape))
+            return value
+
+        self.prior = image(prior, "prior")
+        self.weights_init = image(weights, "weights")
+        self.weights_prior_init = image(weights_prior, "weights_prior")
 
     
     # The forward difference D and its EXACT adjoint. CGLS is applied to the
@@ -605,10 +630,11 @@ class IRN_TV_CGLS(IterativeReconAlg):
     def __Dt__(self, y, axis):
         return _forward_difference_adjoint(y, axis)
 
-    def __build_weights__(self):
-        Dxx = self.__D__(self.res, 0)
-        Dyx = self.__D__(self.res, 1)
-        Dzx = self.__D__(self.res, 2)
+    def __build_weights__(self, img=None):
+        img = self.res if img is None else img
+        Dxx = self.__D__(img, 0)
+        Dyx = self.__D__(img, 1)
+        Dzx = self.__D__(img, 2)
         # W^2 = 1/sqrt(|grad u|^2 + eps) is the half-quadratic weight that makes
         # ||W grad u||^2 a surrogate for the TV seminorm.
         return (Dxx**2+Dyx**2+Dzx**2+1e-6)**np.float32(-1/4)
@@ -623,6 +649,22 @@ class IRN_TV_CGLS(IterativeReconAlg):
                 + self.__Dt__(W * img3[1], 1)
                 + self.__Dt__(W * img3[2], 2))
 
+    # The weighted operator of the prior term and its transpose: W D for TV, W for
+    # the (reweighted) L1 norm, the identity for the L2 norm.
+    def Px(self, W, img):
+        if self.prior_norm == "tv":
+            return self.Lx(W, img)
+        if self.prior_norm == "l1":
+            return W * img
+        return img
+
+    def Ptx(self, W, y):
+        if self.prior_norm == "tv":
+            return self.Ltx(W, y)
+        if self.prior_norm == "l1":
+            return W * y
+        return y
+
     def run_main_iter(self):
         # One column per inner (CGLS) step, for the residual and the quality
         # measures alike, as MATLAB records them per iteration. (lq had niter
@@ -633,6 +675,9 @@ class IRN_TV_CGLS(IterativeReconAlg):
         avgtime = []
 
         res0=self.res
+        x0 = self.res.copy()  # what a cold outer restart goes back to
+        use_prior = self.prior is not None and self.lmbda_prior > 0
+        slp = np.sqrt(self.lmbda_prior, dtype=np.float32)
         best_res = np.float32(np.inf)
    
         for outer in range(self.niter_outer):
@@ -644,7 +689,22 @@ class IRN_TV_CGLS(IterativeReconAlg):
             avgtic = default_timer()    
 
 
-            W=self.__build_weights__()
+            # Weights from the current image (or the ones given, the first time)
+            if self.weights_init is not None:
+                W, self.weights_init = self.weights_init, None
+            else:
+                W=self.__build_weights__()
+            if use_prior and self.prior_norm != "l2":
+                if self.weights_prior_init is not None:
+                    W2, self.weights_prior_init = self.weights_prior_init, None
+                elif self.prior_norm == "tv":
+                    W2 = self.__build_weights__(self.res - self.prior)
+                else:  # ||W2 * v||^2 is a surrogate of ||v||_1
+                    W2 = ((self.res - self.prior) ** 2 + 1e-6) ** np.float32(-1 / 4)
+            else:
+                W2 = None
+            if self.outer_restart == "cold":
+                self.res = x0.copy()
             res_prev_inner = np.float32(np.inf)
             res_now = np.float32(np.inf)
     
@@ -658,6 +718,10 @@ class IRN_TV_CGLS(IterativeReconAlg):
             p_aux_1 = tigre.Atb(r_aux_1, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
             p_aux_2 = np.sqrt(self.lmbda, dtype=np.float32)*self.Ltx(W, r_aux_2)
             p = p_aux_1 + p_aux_2
+            if use_prior:
+                # the stacked system gains the rows slp*P x = slp*P prior
+                r_aux_3 = -slp * self.Px(W2, self.res - self.prior)
+                p = p + slp * self.Ptx(W2, r_aux_3)
             
             gamma=np.float32(l2norm(p.ravel())**2)
 
@@ -668,7 +732,11 @@ class IRN_TV_CGLS(IterativeReconAlg):
 
                 #% q = cat(3, q_aux_1, q_aux_2{1},q_aux_2{2},q_aux_2{3}); % Probably never need to actually do this
                 #% alpha=gamma/norm(q(:),2)^2;
-                alpha=np.float32(gamma/(l2norm(q_aux_1.ravel())**2 + l2norm(q_aux_2[0].ravel())**2 + l2norm(q_aux_2[1].ravel())**2+l2norm(q_aux_2[2].ravel())**2))
+                qq = l2norm(q_aux_1.ravel())**2 + l2norm(q_aux_2[0].ravel())**2 + l2norm(q_aux_2[1].ravel())**2+l2norm(q_aux_2[2].ravel())**2
+                if use_prior:
+                    q_aux_3 = slp * self.Px(W2, p)
+                    qq = qq + l2norm(q_aux_3.ravel())**2
+                alpha=np.float32(gamma/qq)
                 self.res=self.res+alpha*p
                 step = outer*self.niter+i
                 if self.check_residual or self.computel2:
@@ -706,6 +774,9 @@ class IRN_TV_CGLS(IterativeReconAlg):
                 s_aux_1 = tigre.Atb(r_aux_1, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
                 s_aux_2 =  np.sqrt(self.lmbda, dtype=np.float32) * self.Ltx(W, r_aux_2)
                 s = s_aux_1 + s_aux_2
+                if use_prior:
+                    r_aux_3 = r_aux_3 - alpha * q_aux_3
+                    s = s + slp * self.Ptx(W2, r_aux_3)
 
                 gamma1=np.float32(l2norm(s.ravel())**2)
                 beta=np.float32(gamma1/gamma)
@@ -725,6 +796,19 @@ class IRN_TV_CGLS(IterativeReconAlg):
             best_res = res_now
 
 irn_tv_cgls = decorator(IRN_TV_CGLS, name="irn_tv_cgls")
+
+
+class IRN_PICCS_CGLS(IRN_TV_CGLS):
+    """IRN_TV_CGLS with a prior-image term, as MATLAB's IRN_PICCS_CGLS (see the docs)."""
+
+    def __init__(self, proj, geo, angles, niter, **kwargs):
+        if kwargs.get("prior") is None:
+            raise ValueError("irn_piccs_cgls needs a prior image: prior=...")
+        kwargs.setdefault("lmbda_prior", 10)
+        IRN_TV_CGLS.__init__(self, proj, geo, angles, niter, **kwargs)
+
+
+irn_piccs_cgls = decorator(IRN_PICCS_CGLS, name="irn_piccs_cgls")
 
 
 class AB_GMRES(IterativeReconAlg): 

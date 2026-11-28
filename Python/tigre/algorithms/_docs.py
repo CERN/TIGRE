@@ -138,6 +138,16 @@ check_residual : bool, optional
     orthogonality). ``False`` skips both, for speed; the residual is still
     computed if ``computel2=True``. Default True."""
 
+_IRN_OUTER = """\
+outer_restart : str, optional
+    What each reweighting step starts from: ``"warm"``, the image of the
+    previous one (default), or ``"cold"``, the initial image, as MATLAB's
+    default.
+weights : numpy.ndarray, optional
+    TV weights for the first reweighting step, shape ``geo.nVoxel``,
+    instead of computing them from the initial image (for example from a
+    previous solve)."""
+
 _HYBRID = """\
 lmbda : float, optional
     Tikhonov regularisation parameter. If not given, it is chosen at every
@@ -180,6 +190,7 @@ def _build(summary, *, extra=(), notes="", see_also="", references=""):
 _SART_ONE = _SART.format(lmbda_red=1)
 _LSQR_REF = "- C. C. Paige and M. A. Saunders, \"LSQR: An algorithm for sparse linear equations and sparse least squares\", ACM Trans. Math. Softw. 8 (1982). https://doi.org/10.1145/355984.355989"
 _LSMR_REF = "- D. C.-L. Fong and M. A. Saunders, \"LSMR: An iterative algorithm for sparse least-squares problems\", SIAM J. Sci. Comput. 33 (2011). https://doi.org/10.1137/10079687X"
+_IRN_PICCS_REF = "- F. Hastings, S. M. R. S. Islam, M. Sabaté Landman, S. Hatamikia, C.-B. Schönlieb and A. Biguri, \"Real-time CBCT reconstructions using Krylov solvers in repeated scanning procedures\", Phys. Med. Biol. 71 (2026) 105019. https://doi.org/10.1088/1361-6560/ae676e"
 _ASD_REF = "- E. Y. Sidky and X. Pan, \"Image reconstruction in circular cone-beam computed tomography by constrained, total-variation minimization\", Phys. Med. Biol. 53 (2008). https://doi.org/10.1088/0031-9155/53/17/021"
 _XUE_REF = "- H. Xue, L. Zhang, Z. Cheng, Y. Xing and Y. Xiao, \"An improved TV minimization algorithm for incomplete data problem in computer tomography\", IEEE NSS/MIC (2010). https://doi.org/10.1109/NSSMIC.2010.5874264"
 _FISTA_REF = "- A. Beck and M. Teboulle, \"A fast iterative shrinkage-thresholding algorithm for linear inverse problems\", SIAM J. Imaging Sci. 2 (2009). https://doi.org/10.1137/080716542"
@@ -288,10 +299,36 @@ DOCS = {
         extra=(
             "lmbda : float, optional\n    Weight of the TV term :math:`\\lambda`. Default 10.",
             "niter_outer : int, optional\n    Number of reweighting steps. Default 4.",
+            _IRN_OUTER,
             _RESTART,
             _CHECK_RESIDUAL,
         ),
-        see_also="hybrid_flsqr_tv, asd_pocs",
+        see_also="irn_piccs_cgls, hybrid_flsqr_tv, asd_pocs",
+    ),
+    "irn_piccs_cgls": _build(
+        "IRN-PICCS-CGLS: prior image constrained compressed sensing by iteratively reweighted norms.\n\n"
+        "Approximates :math:`\\min_x \\|Ax - b\\|_2^2 + \\lambda\\, \\mathrm{TV}(x) + "
+        "\\lambda_p\\, \\mathrm{TV}(x - x_p)`, with :math:`x_p` an earlier image of the "
+        "same object (for example from a previous, fully sampled scan), as IRN-TV-CGLS does: a "
+        "sequence of weighted least-squares problems, each solved with CGLS. Useful for repeated, "
+        "under-sampled scans of an object that changes only locally. The total number of CGLS "
+        "iterations is ``niter * niter_outer``.",
+        extra=(
+            "prior : numpy.ndarray\n    The prior image :math:`x_p`, shape ``geo.nVoxel``. Required.",
+            "lmbda : float, optional\n    Weight of the TV term :math:`\\lambda`. Default 10.",
+            "lmbda_prior : float, optional\n    Weight of the prior term :math:`\\lambda_p`. Default 10.",
+            "prior_norm : str, optional\n    Norm of the prior term: ``\"tv\"`` (PICCS, default), "
+            "``\"l2\"`` (:math:`\\|x - x_p\\|_2^2`, as in PIPLE) or ``\"l1\"`` "
+            "(:math:`\\|x - x_p\\|_1`).",
+            "niter_outer : int, optional\n    Number of reweighting steps. Default 4.",
+            _IRN_OUTER,
+            "weights_prior : numpy.ndarray, optional\n    Same as ``weights``, for the prior term "
+            "(``\"tv\"`` and ``\"l1\"``).",
+            _RESTART,
+            _CHECK_RESIDUAL,
+        ),
+        references=_IRN_PICCS_REF,
+        see_also="irn_tv_cgls, piccs",
     ),
     "hybrid_flsqr_tv": _build(
         "Hybrid flexible LSQR with total variation regularisation.\n\n"

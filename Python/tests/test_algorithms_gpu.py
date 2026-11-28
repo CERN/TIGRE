@@ -50,7 +50,7 @@ ITERATIVE = [
     ("ista", 30, {}),
 ]
 
-PRIOR_BASED = [("piccs", 10), ("os_piccs", 10)]
+PRIOR_BASED = [("piccs", 10), ("os_piccs", 10), ("irn_piccs_cgls", 5)]
 
 # Relative L2 error bound per algorithm: the error measured on 2026-11-11
 # (Windows, CUDA 12.3, 1 GPU) plus 25% and 0.01 of headroom. A failure here means

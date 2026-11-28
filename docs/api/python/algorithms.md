@@ -31,6 +31,7 @@ In `tigre.algorithms`. All iterative algorithms are called as
    ab_gmres
    ba_gmres
    irn_tv_cgls
+   irn_piccs_cgls
    hybrid_flsqr_tv
    asd_pocs
    b_asd_pocs_beta
@@ -83,6 +84,8 @@ Krylov subspace methods
 .. autofunction:: ba_gmres
 
 .. autofunction:: irn_tv_cgls
+
+.. autofunction:: irn_piccs_cgls
 
 .. autofunction:: hybrid_flsqr_tv
 

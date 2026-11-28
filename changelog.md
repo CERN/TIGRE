@@ -34,6 +34,12 @@ thank you.
   them directly, e.g. `from _minTV import minTV`, now needs `from tigre.utilities.cuda_interface._minTV import minTV`.
 
 ### Added
+- `irn_piccs_cgls` (Python) / `IRN_PICCS_CGLS` (MATLAB): PICCS solved by iteratively reweighted norms and CGLS,
+  from Hastings et al., Phys. Med. Biol. 71 (2026) 105019. The prior term can be `TV(x - prior)` (default), an L2
+  norm (PIPLE) or an L1 norm. It and `irn_tv_cgls`/`IRN_TV_CGLS` gain `outer_restart`/`'outerRestart'` (start each
+  reweighting from the initial image, `cold`, or the previous one, `warm`; the defaults stay as they were, cold in
+  MATLAB and warm in Python) and `weights`/`'weights'` (TV weights for the first reweighting). MATLAB `IRN_TV_CGLS`
+  is now `IRN_PICCS_CGLS` without a prior, so there is one implementation (#616).
 - Krylov methods (CGLS, LSQR, LSMR, hybrid LSQR, hybrid fLSQR-TV, IRN-TV-CGLS, AB-/BA-GMRES), Python and MATLAB:
   `check_residual=False` (Python) / `'checkResidual',false` (MATLAB) skips the true residual `||Ax-b||` computed every
   iteration, one extra forward projection, and with it the restart/stop on loss of orthogonality. On by default, as
@@ -63,6 +69,8 @@ thank you.
   (off by default, as in MATLAB) (#201).
 
 ### Fixed
+- MATLAB `IRN_TV_CGLS`: stopping on loss of orthogonality in the first reweighting step errored (its output was
+  never set); it now returns the last good image (#616).
 - MATLAB: `DeDecompose`, `MakeVMproj` and `HUMapping` found their data files only when MATLAB's current folder was
   their own; the path is now relative to the file. `HUMapping` always used the demo calibration (a stray space in
   the file name). `d23_DualEnergy` loaded the low-kV scan from an undefined variable. `InitTIGRE` warned about the
