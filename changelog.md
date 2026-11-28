@@ -69,6 +69,12 @@ thank you.
   (off by default, as in MATLAB) (#201).
 
 ### Fixed
+- TV denoising (`im3ddenoise` / `im3DDenoise`, and through it `ossart_tv`/`SART_TV` and `fista`/`FISTA`): the CUDA
+  solver's step sizes made the primal step negative for the first 15 iterations, so the denoiser amplified
+  differences and diverged when called repeatedly, as those algorithms do. It now uses the step sizes of Zhu & Chan
+  (2008), with which it is a proper TV proximal step: non-expansive and within the range of its input. Results of
+  TV denoising change; with the default 50 iterations they are also closer to the exact solution. Python's
+  `im3ddenoise` no longer gives NaN for a constant image, as MATLAB (#939).
 - `IRN_TV_CGLS` (MATLAB and Python): the loss-of-orthogonality check watched ||Ax-b||, which may rise legitimately
   when the regularisation is strong, so it fired falsely and cut the iterations short. It now watches the residual of
   the whole regularised system, which CGLS never lets grow, with a tolerance for single-precision rounding. In
