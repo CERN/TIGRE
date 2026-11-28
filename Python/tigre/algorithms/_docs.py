@@ -131,6 +131,13 @@ restart : bool, optional
     When the residual grows (loss of orthogonality), restart from the current
     image instead of stopping. Default True."""
 
+_CHECK_RESIDUAL = """\
+check_residual : bool, optional
+    Compute the residual :math:`\\|Ax - b\\|` every iteration, which costs one
+    extra forward projection, and restart or stop when it grows (loss of
+    orthogonality). ``False`` skips both, for speed; the residual is still
+    computed if ``computel2=True``. Default True."""
+
 _HYBRID = """\
 lmbda : float, optional
     Tikhonov regularisation parameter. If not given, it is chosen at every
@@ -215,7 +222,7 @@ DOCS = {
     "cgls": _build(
         "CGLS: conjugate gradient for least squares.\n\n"
         "Solves :math:`\\min_x \\|Ax - b\\|_2`.",
-        extra=(_RESTART,),
+        extra=(_RESTART, _CHECK_RESIDUAL,),
         notes=_KRYLOV_NOTE,
         see_also="lsqr, lsmr, hybrid_lsqr",
     ),
@@ -223,7 +230,7 @@ DOCS = {
         "LSQR: least squares by Golub-Kahan bidiagonalisation.\n\n"
         "Solves :math:`\\min_x \\|Ax - b\\|_2`. Mathematically the same as CGLS, "
         "numerically more stable.",
-        extra=(_RESTART,),
+        extra=(_RESTART, _CHECK_RESIDUAL,),
         notes=_KRYLOV_NOTE,
         see_also="cgls, lsmr, hybrid_lsqr",
         references=_LSQR_REF,
@@ -235,6 +242,7 @@ DOCS = {
         extra=(
             "lmbda : float, optional\n    Damping (Tikhonov) parameter :math:`\\lambda`. Default 0: plain least squares.",
             _RESTART,
+            _CHECK_RESIDUAL,
         ),
         notes=_KRYLOV_NOTE,
         see_also="lsqr, hybrid_lsqr",
@@ -246,7 +254,7 @@ DOCS = {
         "Krylov subspace, choosing :math:`\\lambda` as it goes, which makes it much "
         "less sensitive to the number of iterations than LSQR. Keeps one image "
         "and one set of projections per iteration in memory.",
-        extra=(_HYBRID,),
+        extra=(_HYBRID, _CHECK_RESIDUAL,),
         notes=_KRYLOV_NOTE + "\n\nIt stops early if the residual grows, which signals a loss of orthogonality.",
         see_also="lsqr, hybrid_flsqr_tv",
     ),
@@ -257,6 +265,7 @@ DOCS = {
         extra=(
             "backprojector : {\"matched\", \"FDK\"}, optional\n    Backprojection used as the preconditioner: the matched "
             "backprojector (default) or the full FDK algorithm, filtering included.",
+            _CHECK_RESIDUAL,
         ),
         see_also="ba_gmres, cgls",
     ),
@@ -267,6 +276,7 @@ DOCS = {
         extra=(
             "backprojector : {\"matched\", \"FDK\"}, optional\n    Backprojection used as the preconditioner: the matched "
             "backprojector (default) or the full FDK algorithm, filtering included.",
+            _CHECK_RESIDUAL,
         ),
         see_also="ab_gmres, cgls",
     ),
@@ -279,6 +289,7 @@ DOCS = {
             "lmbda : float, optional\n    Weight of the TV term :math:`\\lambda`. Default 10.",
             "niter_outer : int, optional\n    Number of reweighting steps. Default 4.",
             _RESTART,
+            _CHECK_RESIDUAL,
         ),
         see_also="hybrid_flsqr_tv, asd_pocs",
     ),
@@ -286,7 +297,7 @@ DOCS = {
         "Hybrid flexible LSQR with total variation regularisation.\n\n"
         "A flexible Krylov method in which the TV regularisation acts as a "
         "preconditioner, with the regularisation parameter chosen as it goes.",
-        extra=(_HYBRID,),
+        extra=(_HYBRID, _CHECK_RESIDUAL,),
         notes="It stops early if the residual grows.",
         see_also="hybrid_lsqr, irn_tv_cgls",
     ),

@@ -31,6 +31,11 @@ function [x,resL2,qualMeasOut]= AB_GMRES(proj,geo,angles,niter,varargin)
 %                        the actual algorithm
 %                *'matched': (DEFAULT) uses the pseudo-matched backprojectors 
 %
+%  'checkResidual' true or false. By default the algorithm computes the
+%             residual ||Ax-b|| every iteration, which costs one extra
+%             forward projection, and restarts or stops when it grows (loss
+%             of orthogonality). false skips both, for speed; the residual
+%             is still computed if it is asked for as an output.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -50,7 +55,8 @@ function [x,resL2,qualMeasOut]= AB_GMRES(proj,geo,angles,niter,varargin)
 
 %%
 
-[verbose,x,QualMeasOpts,gpuids,gt,bp]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x,QualMeasOpts,gpuids,gt,bp,checkResidual]=parse_inputs(proj,geo,angles,varargin);
+computeResidual=checkResidual || nargout>1;
 
 if strcmpi(bp,'FDK')
     backproject=@(proj,geo,angles,gpuids)FDK(proj,geo,angles,'gpuids',gpuids);
@@ -105,9 +111,9 @@ for k=1:niter
         qualMeasOut(:,k)=Measure_Quality(x0,compute_res(x,w(:,1:k),y,geo,angles,backproject,gpuids) ,QualMeasOpts);
     end
 
-    if nargout>1
+    if computeResidual
         resL2(k)=im3Dnorm(proj-Ax(compute_res(x,w(:,1:k),y,geo,angles,backproject,gpuids),geo,angles,'Siddon','gpuids',gpuids),'L2');
-        if k>1 && resL2(k)>resL2(k-1)
+        if checkResidual && k>1 && resL2(k)>resL2(k-1)
             x=compute_res(x,w(:,1:end-1),y(1),geo,angles,backproject,gpuids);
             disp(['Algorithm stoped in iteration ', num2str(k),' due to loss of orthogonality.'])
             return;
@@ -139,8 +145,8 @@ end
 end
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids,gt,bp]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids','groundtruth','backprojector'};
+function [verbose,x,QualMeasOpts,gpuids,gt,bp,checkResidual]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids','groundtruth','backprojector','checkresidual'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -247,6 +253,12 @@ for ii=1:length(opts)
                 bp='matched';
             else
                 bp=val;
+            end
+        case 'checkresidual'
+            if default
+                checkResidual=true;
+            else
+                checkResidual=val;
             end
         otherwise
             error('TIGRE:AB-GMRES:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);

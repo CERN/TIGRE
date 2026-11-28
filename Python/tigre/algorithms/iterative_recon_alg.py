@@ -154,6 +154,7 @@ class IterativeReconAlg(object):
             gpuids=None,
             niter_outer=4,
             restart=True,
+            check_residual=True,
         )
         allowed_keywords = [
             "V",
