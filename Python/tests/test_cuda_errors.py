@@ -52,6 +52,20 @@ CUDART = _cudart()
 needs_cudart = pytest.mark.skipif(CUDART is None, reason="CUDA runtime not loadable via ctypes")
 
 
+def _is_sycl_build():
+    try:
+        from tigre.utilities.cuda_interface import _gpuUtils
+    except ImportError:
+        return False
+    return getattr(_gpuUtils, "getBackend", lambda: "cuda")() == "sycl"
+
+
+# The SYCL build uses no textures, so it has no width limit: the "too wide"
+# problems do not fail there, they run, and on a CPU device for a very long time.
+needs_texture_limit = pytest.mark.skipif(
+    _is_sycl_build(), reason="SYCL build: no texture width limit to make a call fail")
+
+
 def mem_info():
     free, total = ctypes.c_size_t(0), ctypes.c_size_t(0)
     assert CUDART.cudaMemGetInfo(ctypes.byref(free), ctypes.byref(total)) == 0
@@ -101,6 +115,7 @@ KINDS = ["Atb cone FDK", "Atb cone matched", "Atb parallel",
          "Ax cone Siddon", "Ax cone interpolated", "Ax parallel Siddon", "Ax parallel interpolated"]
 
 
+@needs_texture_limit
 @pytest.mark.parametrize("kind", KINDS)
 def test_cuda_error_raises_and_tigre_keeps_working(kind):
     geo, angles, img = small_problem()

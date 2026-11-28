@@ -8,6 +8,7 @@
 """
 from tigre.utilities.cuda_interface import _gpuUtils as gpuUtils
 import copy
+import importlib
 
 class GpuIds(object):
     """A set of GPUs for TIGRE to use.
@@ -89,3 +90,38 @@ def getGpuIds(gpuName=None):  # noqa: N803
     """
     gpuids = GpuIds(gpuName)
     return gpuids
+
+
+class _NotBuilt(object):
+    # Stands in for an extension that the SYCL build does not have yet.
+    def __init__(self, module, error):
+        self._module = module
+        self._error = error
+
+    def __getattr__(self, name):
+        if name.startswith("__"):
+            raise AttributeError(name)
+        module, error = self._module, self._error
+
+        def missing(*args, **kwargs):
+            raise ImportError(
+                "{} is not in the SYCL build of TIGRE yet ({})".format(module, error), name=module
+            )
+
+        return missing
+
+
+def _import_extension(module):
+    """Import one of TIGRE's compiled extensions.
+
+    The SYCL build does not have every extension yet (SYCL_PENDING in setup.py).
+    There, a missing one is replaced by a stand-in whose functions raise the
+    ImportError when they are called, so the rest of TIGRE can still be imported.
+    """
+    name = "tigre.utilities.cuda_interface." + module
+    try:
+        return importlib.import_module(name)
+    except ImportError as err:
+        if getattr(gpuUtils, "getBackend", lambda: "cuda")() != "sycl":
+            raise
+        return _NotBuilt(name, err)

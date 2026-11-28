@@ -20,6 +20,14 @@ cdef extern from "gpuUtils.hpp":
     cdef void GetGpuName(int iDeviceId, char* pcName)
 cdef extern from "gpuUtils.hpp":
     cdef int GetGpuCount()
+# setup.py defines TIGRE_SYCL_BUILD for the SYCL build (TIGRE_BACKEND=sycl).
+cdef extern from *:
+    """
+    #ifndef TIGRE_SYCL_BUILD
+    #define TIGRE_SYCL_BUILD 0
+    #endif
+    """
+    int TIGRE_SYCL_BUILD
 # cdef extern from "gpuUtils.hpp":
 #     cdef int GetMaxGpuCount()
 
@@ -53,6 +61,10 @@ def getGpuName(iDeviceId = 0):
 def getGpuNames():
     nDevices = GetGpuCount()
     return [getGpuName(x) for x in range(nDevices)]
+
+def getBackend():
+    """The compute backend TIGRE was built with: "cuda" or "sycl"."""
+    return "sycl" if TIGRE_SYCL_BUILD else "cuda"
 
         
 

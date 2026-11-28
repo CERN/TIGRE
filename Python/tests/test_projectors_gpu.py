@@ -9,6 +9,11 @@ work over several GPUs does not change the result.
 
 Run them locally on a machine with a GPU:  pytest -m gpu Python/tests
 """
+import functools
+import os
+import subprocess
+import sys
+
 import numpy as np
 import pytest
 
@@ -197,6 +202,35 @@ def _two_or_more_gpus():
 multi_gpu = pytest.mark.skipif(not _two_or_more_gpus(), reason="needs at least 2 GPUs")
 
 
+# Whole-result tolerance (relative L2) when the devices are of different kinds; see below.
+MIXED_DEVICES_RTOL = 1e-5
+
+
+@functools.lru_cache(maxsize=None)
+def _mixed_device_kinds():
+    # SYCL build with TIGRE_SYCL_ALL_DEVICES set: GPUs and other devices (e.g. the CPU) are
+    # listed together exactly when the list is longer than without the variable.
+    if os.environ.get("TIGRE_SYCL_ALL_DEVICES", "0") in ("", "0"):
+        return False
+    env = dict(os.environ)
+    del env["TIGRE_SYCL_ALL_DEVICES"]
+    code = "from tigre.utilities.gpu import getGpuNames; print(len(getGpuNames()))"
+    out = subprocess.run(
+        [sys.executable, "-c", code], env=env, capture_output=True, text=True, check=True
+    )
+    return int(out.stdout.split()[-1]) < len(GpuIds())
+
+
+def _assert_multi_matches_single(geo, multi, single):
+    if geo.mode == "cone" and _mixed_device_kinds():
+        # Each device computes its share of angles or slices exactly as it does alone, but a GPU
+        # and a CPU round the cone kernels' float32 arithmetic differently (a few Siddon rays can
+        # even cross different voxels), so only the whole result is compared to the single device.
+        assert rel_diff(multi, single) < MIXED_DEVICES_RTOL
+    else:
+        np.testing.assert_allclose(multi, single, rtol=1e-6, atol=1e-6 * np.abs(single).max())
+
+
 @multi_gpu
 @pytest.mark.parametrize("ptype", FORWARD_TYPES)
 def test_forward_multi_gpu_matches_single_gpu(geo, ptype):
@@ -204,7 +238,7 @@ def test_forward_multi_gpu_matches_single_gpu(geo, ptype):
     x = head(geo)
     single = tigre.Ax(x, geo, a, ptype, gpuids=GpuIds()[0])
     multi = tigre.Ax(x, geo, a, ptype, gpuids=GpuIds())
-    np.testing.assert_allclose(multi, single, rtol=1e-6, atol=1e-6 * np.abs(single).max())
+    _assert_multi_matches_single(geo, multi, single)
 
 
 @multi_gpu
@@ -214,4 +248,4 @@ def test_backward_multi_gpu_matches_single_gpu(geo, btype):
     p = random_projections(geo, len(a), 8)
     single = tigre.Atb(p, geo, a, btype, gpuids=GpuIds()[0])
     multi = tigre.Atb(p, geo, a, btype, gpuids=GpuIds())
-    np.testing.assert_allclose(multi, single, rtol=1e-6, atol=1e-6 * np.abs(single).max())
+    _assert_multi_matches_single(geo, multi, single)

@@ -10,6 +10,11 @@ GPUs (for example several), the array is copied to the host and the usual
 multi-GPU path runs, then the result is copied back: the result is the same,
 only slower.
 
+In the SYCL build (TIGRE_BACKEND=sycl) TIGRE's devices cannot read CUDA memory, so
+the array always goes through the host: it is copied to the host, projected on
+the SYCL devices in ``gpuids`` (default: all) and the result is copied back to
+the array's GPU, as the same kind of array.
+
 Neither PyTorch nor CuPy is imported here unless the caller passed one of its
 arrays, and NumPy input never reaches this module.
 """
@@ -101,8 +106,17 @@ def _from_host(result, like, kind):
 
 
 # ---- the device to run on
+def _is_sycl_build():
+    from tigre.utilities.cuda_interface import _gpuUtils
+
+    return getattr(_gpuUtils, "getBackend", lambda: "cuda")() == "sycl"
+
+
 def _gpu_path_ids(gpuids, device):
-    """GpuIds for the GPU path, or None if ``gpuids`` asks for other GPUs."""
+    """GpuIds for the GPU path, or None if ``gpuids`` asks for other GPUs, or
+    if this is the SYCL build, whose devices cannot read CUDA memory."""
+    if _is_sycl_build():
+        return None
     if gpuids is not None:
         devices = [int(d) for d in getattr(gpuids, "devices", gpuids)]
         if devices != [device]:
