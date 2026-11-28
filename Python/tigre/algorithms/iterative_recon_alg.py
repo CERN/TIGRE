@@ -288,11 +288,22 @@ class IterativeReconAlg(object):
                 geox.rotDetector = geo.rotDetector[self.angle_index[i], :]
                 geox.COR = geo.COR[self.angle_index[i]]
 
-                # shrink the volume size to avoid zeros in backprojection
-                geox.sVoxel = (
-                    geox.sVoxel * np.max(geox.sVoxel[1:] / np.linalg.norm(geox.sVoxel[1:])) * 0.9
+                # Enlarge the detector so that every voxel projects onto it (no zeros in the
+                # backprojection), as MATLAB's computeV does. This used to shrink the volume
+                # instead, which computed V on a smaller voxel grid than the one it is applied
+                # to: each voxel got the weight of a point about 0.6 times as far from the
+                # centre, wrong by up to ~10% and differently for each angle (#613).
+                half = geo.sVoxel / 2 + np.abs(geo.offOrigin[self.angle_index[i], :]).max(axis=0)  # (z, y, x)
+                radius = np.hypot(half[1], half[2])
+                dso = float(np.min(geox.DSO))
+                dsd = float(np.max(geox.DSD))
+                magnification = dsd / max(dso - radius, 0.1 * dso)
+                needed = (
+                    np.array([2 * half[0], 2 * radius]) * magnification * 1.1
+                    + 2 * np.abs(geox.offDetector).max(axis=0)
                 )
-                geox.dVoxel = geox.sVoxel / geox.nVoxel
+                geox.sDetector = np.maximum(geo.sDetector, needed)
+                geox.dDetector = geox.sDetector / geo.nDetector
                 proj_one = np.ones(
                     (len(self.angleblocks[i]), geo.nDetector[0], geo.nDetector[1]), dtype=np.float32
                 )
