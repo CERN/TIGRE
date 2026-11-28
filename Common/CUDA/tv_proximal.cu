@@ -564,13 +564,13 @@ void cpy_from_host(float* device_array,float* host_array,
                 // Inter interations.
                 for(unsigned int ib=0;  (ib<(buffer_length)) && ((i+ib)<maxIter);  ib++){
 
-                    // Step sizes of Zhu & Chan, "An efficient primal-dual hybrid gradient
-                    // algorithm for total variation image restoration", UCLA CAM 08-34 (2008).
-                    // The previous 3D variant, (1/6 - 5/(15+k))/(0.3+0.02k), made tau1 negative for
-                    // the first 15 iterations: those steps moved u away from the data, so the
-                    // denoiser was expansive and diverged when called repeatedly (#939).
-                    tau2 = 0.2f + 0.08f * (i+ib);
-                    tau1 = (1.f/tau2) * (0.5f - (5.f/(15.f+(i+ib))));
+                    // Zhu & Chan's primal-dual step sizes (UCLA CAM 08-34, 2008), adapted to 3D as in
+                    // Knoll et al. (MAGMA 23:103-114, 2010): in 2D tau1*tau2 = 0.5*(1 - 10/(15+k)); in 3D
+                    // the factor 0.5 becomes 1/6. The factor must multiply the whole bracket: written as
+                    // 1/6 - 5/(15+k), tau1 was negative for the first 15 iterations, which pushed u away
+                    // from the data and made the denoiser expansive and divergent when repeated (#939).
+                    tau2 = 0.3f + 0.02f * (i+ib);
+                    tau1 = (1.f/tau2) * ((1.f/6.f) * (1.f - 10.f/(15.f+(i+ib))));
                     // bdim and gdim
                     
                     // Only the piece and its halo_lo/halo_hi halo slices (see above).
