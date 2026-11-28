@@ -25,6 +25,11 @@ function [x_outer,resL2,qualMeasOut]= IRN_TV_CGLS(proj,geo,angles,niter,varargin
 %                 data.
 %  'restart'  true or false. By default the algorithm will restart when
 %             loss of orthogonality is found.
+%  'checkResidual' true or false. By default the algorithm computes the
+%             residual ||Ax-b|| every iteration, which costs one extra
+%             forward projection, and restarts or stops when it grows (loss
+%             of orthogonality). false skips both, for speed; the residual
+%             is still computed if it is asked for as an output.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -48,7 +53,8 @@ function [x_outer,resL2,qualMeasOut]= IRN_TV_CGLS(proj,geo,angles,niter,varargin
 % % Paul Rodriguez and Brendt Wohlberg
 % % 10.1109/ACSSC.2006.354879
 
-[verbose,x0,QualMeasOpts,gpuids,lambda,niter_outer,gt,restart]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x0,QualMeasOpts,gpuids,lambda,niter_outer,gt,restart,checkResidual]=parse_inputs(proj,geo,angles,varargin);
+computeResidual=checkResidual || nargout>1;
 x=x0;
 
 niter_break=round(niter/niter_outer);
@@ -114,9 +120,11 @@ while iter<niter
         % the mismatch of the backprojection w.r.t the real adjoint, or
         % numerical issues related to doing several order of magnitude
         % difference operations on single precision numbers.
-        aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
-        resL2(iter)=im3Dnorm(aux,'L2');
-        if mod(iter,niter_break)~=1 && resL2(iter)>resL2(iter-1)
+        if computeResidual
+            aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
+            resL2(iter)=im3Dnorm(aux,'L2');
+        end
+        if checkResidual && mod(iter,niter_break)~=1 && resL2(iter)>resL2(iter-1)
             % we lost orthogonality, lets restart the algorithm unless the
             % user asked us not to.
             % undo bad step.
@@ -238,8 +246,8 @@ DztWx_3(:,:,end)=-Wx_3(:,:,end-1);
 out = DxtWx_1 + DytWx_2 + DztWx_3;
 end
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids,lambda,niter_outer,gt,restart]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda','niter_outer','groundtruth','restart'};
+function [verbose,x,QualMeasOpts,gpuids,lambda,niter_outer,gt,restart,checkResidual]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda','niter_outer','groundtruth','restart','checkresidual'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -358,6 +366,12 @@ for ii=1:length(opts)
                 restart=true;
             else
                 restart=val;
+            end
+        case 'checkresidual'
+            if default
+                checkResidual=true;
+            else
+                checkResidual=val;
             end
         otherwise
             error('TIGRE:IRN_TV_CGLS:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in IRN_TV_CGLS()']);

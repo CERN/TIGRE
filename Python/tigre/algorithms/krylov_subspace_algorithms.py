@@ -152,14 +152,15 @@ class CGLS(IterativeReconAlg):  # noqa: D101
                 # proj - Ax(res), then r and p, in the arrays already there rather than in new full-size
                 # temporaries (each a fresh allocation; on host arrays these vector passes took longer than the
                 # projector calls). The same values.
-                resid = tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
-                if resid.dtype == np.result_type(self.proj, resid):
-                    np.subtract(self.proj, resid, out=resid)
-                else:
-                    resid = self.proj - resid
-                self.l2l[0, i] = l2norm(resid)
-                del resid
-                if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
+                if self.check_residual or self.computel2:
+                    resid = tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+                    if resid.dtype == np.result_type(self.proj, resid):
+                        np.subtract(self.proj, resid, out=resid)
+                    else:
+                        resid = self.proj - resid
+                    self.l2l[0, i] = l2norm(resid)
+                    del resid
+                if self.check_residual and i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
                     # Undo the step that lost orthogonality.
                     self.res -= alpha * self.__p__
 
@@ -287,8 +288,9 @@ class LSQR(IterativeReconAlg):
                 if self.Quameasopts is not None:
                     self.error_measurement(res_prev, i)
 
-                self.l2l[0, i] = l2norm(self.proj - tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
-                if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
+                if self.check_residual or self.computel2:
+                    self.l2l[0, i] = l2norm(self.proj - tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+                if self.check_residual and i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
                     self.res -= (phi / rho) * (self.__v__-self.__w__)/((theta / rho))
                     if self.verbose:
                         print("re-initilization of LSQR called at iteration:" + str(i))
@@ -402,8 +404,9 @@ class hybrid_LSQR(IterativeReconAlg):
             if self.Quameasopts is not None:
                 self.error_measurement(res_prev, i)
 
-            self.l2l[0, i] = l2norm(self.proj - Ax(x, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
-            if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
+            if self.check_residual or self.computel2:
+                self.l2l[0, i] = l2norm(self.proj - Ax(x, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+            if self.check_residual and i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
                 print("hybrid LSQR stopped at iteration " + str(i) + " due to loss of orthogonality.")
                 return self.res
         return self.res
@@ -547,8 +550,9 @@ class LSMR(IterativeReconAlg):
                 if self.Quameasopts is not None:
                     self.error_measurement(res_prev, i)
 
-                self.l2l[0, i] = l2norm(self.proj - tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
-                if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
+                if self.check_residual or self.computel2:
+                    self.l2l[0, i] = l2norm(self.proj - tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids))
+                if self.check_residual and i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
                     self.res -= (self.__zeta__ / (self.__rho__*self.__rhobar__)) * self.__hbar__ 
                     if self.verbose:
                         print("re-initilization of LSMR called at iteration:" + str(i))
@@ -620,7 +624,12 @@ class IRN_TV_CGLS(IterativeReconAlg):
                 + self.__Dt__(W * img3[2], 2))
 
     def run_main_iter(self):
+        # One column per inner (CGLS) step, for the residual and the quality
+        # measures alike, as MATLAB records them per iteration. (lq had niter
+        # columns, filled once per outer iteration, so computel2 together
+        # with the measures could not be returned.)
         self.l2l = np.zeros((1, self.niter*self.niter_outer), dtype=np.float32)
+        self.lq = np.zeros((self.lq.shape[0], self.niter*self.niter_outer))
         avgtime = []
 
         res0=self.res
@@ -632,8 +641,6 @@ class IRN_TV_CGLS(IterativeReconAlg):
                 self.niter=self.niter_outer
                 self._estimate_time_until_completion(outer)
                 self.niter=niter
-            if self.Quameasopts is not None:
-                res_prev = copy.deepcopy(self.res)
             avgtic = default_timer()    
 
 
@@ -663,11 +670,12 @@ class IRN_TV_CGLS(IterativeReconAlg):
                 #% alpha=gamma/norm(q(:),2)^2;
                 alpha=np.float32(gamma/(l2norm(q_aux_1.ravel())**2 + l2norm(q_aux_2[0].ravel())**2 + l2norm(q_aux_2[1].ravel())**2+l2norm(q_aux_2[2].ravel())**2))
                 self.res=self.res+alpha*p
-                aux=self.proj-tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
-                #% residual norm or the original least squares (not Tikhonov).
-                #% Think if that is what we want of the NE residual
                 step = outer*self.niter+i
-                self.l2l[0, step] = res_now = l2norm(aux.ravel())
+                if self.check_residual or self.computel2:
+                    aux=self.proj-tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+                    #% residual norm or the original least squares (not Tikhonov).
+                    #% Think if that is what we want of the NE residual
+                    self.l2l[0, step] = res_now = l2norm(aux.ravel())
 
                 # The guard plain CGLS has always had and this loop never did.
                 # In exact arithmetic a CGLS residual cannot rise; when it
@@ -680,7 +688,7 @@ class IRN_TV_CGLS(IterativeReconAlg):
                 # reweighting the two residuals belong to different weighted
                 # problems, so a first step that looks worse than the previous
                 # outer's last is not evidence of anything.
-                if i > 0 and res_now > res_prev_inner:
+                if self.check_residual and i > 0 and res_now > res_prev_inner:
                     self.res = res0
                     self.l2l[0, step] = res_prev_inner
                     res_now = res_prev_inner
@@ -689,6 +697,7 @@ class IRN_TV_CGLS(IterativeReconAlg):
                               + ", inner " + str(i) + " - reweighting")
                     break
                 res_prev_inner = res_now
+                self.measure_quality(res0, step)
               
                 #% If step is adequate, then continue withg CGLS
                 r_aux_1 = r_aux_1-alpha*q_aux_1
@@ -706,12 +715,9 @@ class IRN_TV_CGLS(IterativeReconAlg):
             avgtoc = default_timer()
             avgtime.append(abs(avgtic - avgtoc))
 
-            if self.Quameasopts is not None:
-                self.error_measurement(res_prev, outer)
-
             # A whole reweighting that improved nothing means the outer
             # iteration has stalled; more of them will not help.
-            if res_now >= best_res:
+            if self.check_residual and res_now >= best_res:
                 if self.verbose:
                     print("IRN_TV_CGLS: reweighting " + str(outer)
                           + " did not improve the residual - stopping")
@@ -782,8 +788,9 @@ class AB_GMRES(IterativeReconAlg):
             w[k+1]=qk/h[k,k+1]
             y=np.linalg.lstsq(np.transpose(h[0:k+1,0:k+2]),e1*l2norm(r.ravel()),rcond=None)
             y=y[0]
-            self.l2l[0, k] = l2norm((self.proj - tigre.Ax(self.__compute_res__(self.res,w[0:k+1],y),self.geo,self.angles, "Siddon",gpuids=self.gpuids)).ravel())
-            if k > 0 and self.l2l[0, k] > self.l2l[0, k - 1]:
+            if self.check_residual or self.computel2:
+                self.l2l[0, k] = l2norm((self.proj - tigre.Ax(self.__compute_res__(self.res,w[0:k+1],y),self.geo,self.angles, "Siddon",gpuids=self.gpuids)).ravel())
+            if self.check_residual and k > 0 and self.l2l[0, k] > self.l2l[0, k - 1]:
                 # No restart path exists in GMRES here, so a genuine rise ends
                 # the run. It used to be tested as `re_init_at_iteration + 1 ==
                 # i` against a sentinel that is never reassigned, which fired
@@ -861,8 +868,9 @@ class BA_GMRES(IterativeReconAlg):
             y=np.linalg.lstsq(np.transpose(h[0:k+1,0:k+2]),e1*l2norm(r.ravel()),rcond=None)
             y=y[0]
 
-            self.l2l[0, k] = l2norm((self.proj - tigre.Ax(self.__compute_res__(self.res,w[0:k+1],y), self.geo, self.angles, "Siddon", gpuids=self.gpuids)).ravel())
-            if k > 0 and self.l2l[0, k] > self.l2l[0, k - 1]:
+            if self.check_residual or self.computel2:
+                self.l2l[0, k] = l2norm((self.proj - tigre.Ax(self.__compute_res__(self.res,w[0:k+1],y), self.geo, self.angles, "Siddon", gpuids=self.gpuids)).ravel())
+            if self.check_residual and k > 0 and self.l2l[0, k] > self.l2l[0, k - 1]:
                 # See the AB-GMRES note: no restart path, and the old sentinel
                 # test could only ever fire at one particular iteration.
                 print("BA-GMRES exited due to divergence at iteration "+str(k))
@@ -1020,8 +1028,9 @@ class hybrid_fLSQR_TV(IterativeReconAlg):
             self.res = x
             if self.Quameasopts is not None:
                 self.error_measurement(res_prev, i)
-            self.l2l[0, i] = l2norm((self.proj - tigre.Ax(x, self.geo, self.angles, "Siddon", gpuids=self.gpuids)).ravel())
-            if i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
+            if self.check_residual or self.computel2:
+                self.l2l[0, i] = l2norm((self.proj - tigre.Ax(x, self.geo, self.angles, "Siddon", gpuids=self.gpuids)).ravel())
+            if self.check_residual and i > 0 and self.l2l[0, i] > self.l2l[0, i - 1]:
                 # Same as hybrid_LSQR, and MATLAB: no restart path, so stop.
                 print("hybrid fLSQR-TV stopped at iteration " + str(i + 1) + ": the residual grew.")
                 self.res = x

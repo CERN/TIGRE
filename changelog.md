@@ -34,6 +34,11 @@ thank you.
   them directly, e.g. `from _minTV import minTV`, now needs `from tigre.utilities.cuda_interface._minTV import minTV`.
 
 ### Added
+- Krylov methods (CGLS, LSQR, LSMR, hybrid LSQR, hybrid fLSQR-TV, IRN-TV-CGLS, AB-/BA-GMRES), Python and MATLAB:
+  `check_residual=False` (Python) / `'checkResidual',false` (MATLAB) skips the true residual `||Ax-b||` computed every
+  iteration, one extra forward projection, and with it the restart/stop on loss of orthogonality. On by default, as
+  before; the residual is still computed when it is asked for. MATLAB AB-/BA-GMRES now check it by default too, as
+  Python did; they used to only when `resL2` was asked for (#445).
 - Python: `groundTruth` option for the iterative algorithms, as in MATLAB: the quality measures compare each
   iterate with a known image, and the error norm `||x - groundTruth||` is recorded every iteration (#410).
 - `spotDriftGeo` (Python and MATLAB): geometry for a source focal spot that drifts during the scan, described
@@ -58,6 +63,8 @@ thank you.
   (off by default, as in MATLAB) (#201).
 
 ### Fixed
+- Python `irn_tv_cgls`: `computel2=True` crashed when returning the errors. The residual and the quality measures
+  are now both recorded per inner (CGLS) step, `niter * niter_outer` columns, as MATLAB records them per iteration (#445).
 - `hybrid_fLSQR_TV`/`hybrid_flsqr_tv`: MATLAB and Python now behave the same (#417). MATLAB: the stop when the
   residual grows never fired (it tested an array that was never filled), asking for `QualMeas` failed on the first
   iteration, and the discrepancy principle no longer errors when it has no root. Python: `Quameasopts` and

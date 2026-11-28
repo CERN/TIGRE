@@ -24,6 +24,11 @@ function [x,resL2, qualMeasOut,lambda_vec]= hybrid_LSQR(proj,geo,angles,niter,va
 %  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
+%  'checkResidual' true or false. By default the algorithm computes the
+%             residual ||Ax-b|| every iteration, which costs one extra
+%             forward projection, and restarts or stops when it grows (loss
+%             of orthogonality). false skips both, for speed; the residual
+%             is still computed if it is asked for as an output.
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -43,7 +48,8 @@ function [x,resL2, qualMeasOut,lambda_vec]= hybrid_LSQR(proj,geo,angles,niter,va
 
 %%
 
-[verbose,x0,QualMeasOpts,gpuids, lambda, NoiseLevel,gt]=parse_inputs(proj,geo,angles,varargin);
+[verbose,x0,QualMeasOpts,gpuids, lambda, NoiseLevel,gt,checkResidual]=parse_inputs(proj,geo,angles,varargin);
+computeResidual=checkResidual || nargout>1;
 
 %%% PARAMETER CHOICE HIERARCHY: given lambda, DP, GCV
 
@@ -176,9 +182,11 @@ for ii=1:niter
     if measurequality
         qualMeasOut(:,ii)=Measure_Quality(x_prev,x,QualMeasOpts);
     end
-    aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
-    resL2(ii)=im3Dnorm(aux,'L2');
-    if ii>1 && resL2(ii)>resL2(ii-1)
+    if computeResidual
+        aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
+        resL2(ii)=im3Dnorm(aux,'L2');
+    end
+    if checkResidual && ii>1 && resL2(ii)>resL2(ii-1)
         disp(['Algorithm stoped in iteration ', num2str(ii),' due to loss of orthogonality.'])
         return;
     end
@@ -232,8 +240,8 @@ end
 
 
 %% parse inputs'
-function [verbose,x,QualMeasOpts,gpuids,lambda,NoiseLevel,gt]=parse_inputs(proj,geo,angles,argin)
-opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda','noiselevel','groundtruth'};
+function [verbose,x,QualMeasOpts,gpuids,lambda,NoiseLevel,gt,checkResidual]=parse_inputs(proj,geo,angles,argin)
+opts=     {'init','initimg','verbose','qualmeas','gpuids','lambda','noiselevel','groundtruth','checkresidual'};
 defaults=ones(length(opts),1);
 
 % Check inputs
@@ -347,6 +355,12 @@ for ii=1:length(opts)
                 gt=nan;
             else
                 gt=val;
+            end
+        case 'checkresidual'
+            if default
+                checkResidual=true;
+            else
+                checkResidual=val;
             end
         otherwise
             error('TIGRE:LSQR:InvalidInput',['Invalid input name:', num2str(opt),'\n No such option in CGLS()']);
