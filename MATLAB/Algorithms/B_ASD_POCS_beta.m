@@ -158,7 +158,7 @@ DSD=geo.DSD;
 DSO=geo.DSO;
 while ~stop_criteria %POCS
     % If quality is going to be measured, then we need to save previous image
-    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+    if measurequality && ~any(strcmp(QualMeasOpts,'error_norm'))
         res_prev = f; % only store if necessary
     end
     f0=f;

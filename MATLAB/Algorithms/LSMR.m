@@ -97,7 +97,7 @@ while iter<niter
     % (2) Start iterations
     for ii=iter:niter
         iter=iter+1;
-        if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+        if measurequality && ~any(strcmp(QualMeasOpts,'error_norm'))
             x0 = x; % only store if necessary
         end
         if (iter==1 && verbose);tic;end

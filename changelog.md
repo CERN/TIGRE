@@ -58,6 +58,12 @@ thank you.
   (off by default, as in MATLAB) (#201).
 
 ### Fixed
+- `hybrid_fLSQR_TV`/`hybrid_flsqr_tv`: MATLAB and Python now behave the same (#417). MATLAB: the stop when the
+  residual grows never fired (it tested an array that was never filled), asking for `QualMeas` failed on the first
+  iteration, and the discrepancy principle no longer errors when it has no root. Python: `Quameasopts` and
+  `groundTruth` were ignored, and the small projected matrices are now double precision, as in MATLAB.
+- MATLAB: asking for more than one quality measure, or for one together with `groundTruth`, errored in every iterative
+  algorithm (`Operands to the logical AND (&&) ... must be convertible to logical scalar values`) (#417).
 - MATLAB `B_ASD_POCS_beta`: the Bregman step added back the residual with respect to the already-updated projections
   instead of the measured ones (Xue et al. 2010, Algorithm 2), so the data it fitted drifted away from the measurements (#283).
 - MATLAB `dicomDataLoader`: no longer errors on files with a `PositionerType` field (`strcmi` typo); reads

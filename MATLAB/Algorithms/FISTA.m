@@ -80,7 +80,7 @@ r = 1/4;
 
 
 for ii = 1:niter
-    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+    if measurequality && ~any(strcmp(QualMeasOpts,'error_norm'))
         res_prev = res; % only store if necessary
     end
     if (ii==1);tic;end
