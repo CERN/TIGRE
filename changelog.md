@@ -63,6 +63,8 @@ thank you.
   (off by default, as in MATLAB) (#201).
 
 ### Fixed
+- MATLAB on Linux: `Compile` failed on the Varian `.xim` reader (`mexReadXim`) with "requires ... -std=c++11" on gcc 9 and
+  later. The mex configuration passed `-ansi` (C++98) to the host compiler, which overrode `-std=c++14` (#470).
 - Python `irn_tv_cgls`: `computel2=True` crashed when returning the errors. The residual and the quality measures
   are now both recorded per inner (CGLS) step, `niter * niter_outer` columns, as MATLAB records them per iteration (#445).
 - `hybrid_fLSQR_TV`/`hybrid_flsqr_tv`: MATLAB and Python now behave the same (#417). MATLAB: the stop when the
