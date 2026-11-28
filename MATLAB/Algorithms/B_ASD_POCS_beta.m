@@ -1,7 +1,7 @@
 function [fres,resL2,qualMeasOut] = B_ASD_POCS_beta(proj,geo,angles,maxiter,varargin)
 
-% B_ASD_POCS_beta Solves the ASD_POCS total variation constrained image in 3D
-% tomography using bregman iteration for the data.
+% B_ASD_POCS_beta solves the total variation constrained reconstruction
+% problem using ASD-POCS with Bregman iterations on the data.
 %
 %   B_ASD_POCS_beta(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding

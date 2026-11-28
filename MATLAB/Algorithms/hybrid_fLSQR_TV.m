@@ -1,13 +1,13 @@
 function [x,errorL2, qualMeasOut,lambda_vec]= hybrid_fLSQR_TV(proj,geo,angles,niter,varargin)
 
-% LSQR solves the CBCT problem using LSQR. 
-% This is mathematically equivalent to CGLS.
+% hybrid_fLSQR_TV solves the CBCT problem using hybrid flexible LSQR with
+% total variation regularisation.
 % 
-%  LSQR(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
+%  hybrid_fLSQR_TV(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ANGLES angles, corresponding
 %   to the geometry described in GEO, using NITER iterations.
 % 
-%  LSQR(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
+%  hybrid_fLSQR_TV(PROJ,GEO,ANGLES,NITER,OPT,VAL,...) uses options and values for solving. The
 %   possible options in OPT are:
 % 
 % 

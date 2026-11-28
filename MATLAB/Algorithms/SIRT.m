@@ -1,6 +1,6 @@
 function [res,resL2,qualMeasOut]=SIRT(proj,geo,angles,niter,varargin)
-% SIRT solves Cone Beam CT image reconstruction using Oriented Subsets
-%              Simultaneous Algebraic Reconstruction Technique algorithm
+% SIRT solves Cone Beam CT image reconstruction using the Simultaneous
+% Iterative Reconstruction Technique (SIRT), all projections at once.
 %
 %   SIRT(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding

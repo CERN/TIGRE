@@ -14,16 +14,30 @@ In `tigre.algorithms`. All iterative algorithms are called as
 ```{eval-rst}
 .. currentmodule:: tigre.algorithms
 
+.. rubric:: Filtered backprojection
+
 .. autosummary::
    :nosignatures:
 
    fdk
    fbp
+
+.. rubric:: SART family
+
+.. autosummary::
+   :nosignatures:
+
    sart
    sirt
    ossart
    sart_tv
    ossart_tv
+
+.. rubric:: Krylov subspace methods
+
+.. autosummary::
+   :nosignatures:
+
    cgls
    lsqr
    lsmr
@@ -33,6 +47,12 @@ In `tigre.algorithms`. All iterative algorithms are called as
    irn_tv_cgls
    irn_piccs_cgls
    hybrid_flsqr_tv
+
+.. rubric:: Total variation (POCS family)
+
+.. autosummary::
+   :nosignatures:
+
    asd_pocs
    b_asd_pocs_beta
    os_asd_pocs
@@ -42,10 +62,28 @@ In `tigre.algorithms`. All iterative algorithms are called as
    os_pcsd
    aw_pcsd
    os_aw_pcsd
+
+.. rubric:: Prior image (PICCS)
+
+.. autosummary::
+   :nosignatures:
+
    piccs
    os_piccs
+
+.. rubric:: Proximal methods
+
+.. autosummary::
+   :nosignatures:
+
    fista
    ista
+
+.. rubric:: Statistical methods
+
+.. autosummary::
+   :nosignatures:
+
    mlem
 
 Filtered backprojection

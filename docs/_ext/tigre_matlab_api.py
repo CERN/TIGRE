@@ -62,6 +62,29 @@ GROUPS = {
     ],
 }
 
+# Families for a group's page, in order, as on the Python API page and in the
+# user guide's "Choosing an algorithm". A function not listed here goes under
+# "Other" at the end, so a new algorithm still appears.
+FAMILIES = {
+    "algorithms": [
+        ("Filtered backprojection", ["FDK", "FBP"]),
+        ("SART family", ["SART", "SIRT", "OS_SART", "SART_TV"]),
+        (
+            "Krylov subspace methods",
+            ["CGLS", "LSQR", "LSMR", "hybrid_LSQR", "AB_GMRES", "BA_GMRES",
+             "IRN_TV_CGLS", "IRN_PICCS_CGLS", "hybrid_fLSQR_TV"],
+        ),
+        (
+            "Total variation (POCS family)",
+            ["ASD_POCS", "B_ASD_POCS_beta", "OS_ASD_POCS", "AwASD_POCS", "OS_AwASD_POCS",
+             "PCSD", "OS_PCSD", "AwPCSD", "OS_AwPCSD"],
+        ),
+        ("Prior image (PICCS)", ["PICCS"]),
+        ("Proximal methods", ["FISTA"]),
+        ("Statistical methods", ["MLEM", "OSEM"]),
+    ],
+}
+
 _LICENSE = re.compile(r"This file is part of the TIGRE|Copyright \(c\)|^-{5,}$")
 
 
@@ -207,40 +230,69 @@ def summary(name, help_text):
     return _escape(first[:1].upper() + first[1:]) if first else ""
 
 
+def _families(group, entries):
+    """Split entries into (family, entries) in page order; one unnamed family if none."""
+    if group not in FAMILIES:
+        return [(None, entries)]
+    by_name = {e[1]: e for e in entries}
+    out = []
+    for family, names in FAMILIES[group]:
+        members = [by_name.pop(n) for n in names if n in by_name]
+        if members:
+            out.append((family, members))
+    if by_name:
+        out.append(("Other", sorted(by_name.values(), key=lambda e: e[1].lower())))
+    return out
+
+
+def _function(path, name, signature, help_text, level):
+    rel = path.relative_to(MATLAB).as_posix()
+    out = [f"(matlab-{name.lower()})=\n{'#' * level} {name}\n"]
+    if signature:
+        out.append(f"```matlab\n{signature}\n```\n")
+    if not help_text.strip():
+        out.append("No help text.\n")
+    else:
+        intro, options = split_help(name, help_text)
+        for para in intro:
+            out.append(_code_calls(_escape(para), name) + "\n")
+        if options:
+            if not (intro and intro[-1].rstrip().endswith(":")):
+                out.append("Options:\n")
+            for option, body in options:
+                out.append(f"`'{option}'`\n: {_option_description(body)}\n")
+        outputs = split_outputs(help_text)
+        if outputs:
+            out.append("Outputs:\n")
+            for call, desc in outputs:
+                out.append(f"- `{call}`: {_escape(desc)}" if desc else f"- `{call}`")
+            out.append("")
+        fence = _fence(help_text)
+        out.append(f":::{{dropdown}} Help text as in MATLAB\n{fence}text\n{help_text}\n{fence}\n:::\n")
+    out.append(f"Source: [`MATLAB/{rel}`]({SOURCE_URL}{rel})\n")
+    return out
+
+
 def render(group):
     entries = []
     for entry in GROUPS[group]:
         for path in _files(entry):
             entries.append((path, *parse(path)))
-    out = ["| Function | What it does |", "|---|---|"]
-    for _, name, _, help_text in entries:
-        out.append(f"| {{ref}}`{name} <matlab-{name.lower()}>` | {summary(name, help_text)} |")
-    out.append("")
-    for path, name, signature, help_text in entries:
-        rel = path.relative_to(MATLAB).as_posix()
-        out.append(f"(matlab-{name.lower()})=\n## {name}\n")
-        if signature:
-            out.append(f"```matlab\n{signature}\n```\n")
-        if not help_text.strip():
-            out.append("No help text.\n")
-        else:
-            intro, options = split_help(name, help_text)
-            for para in intro:
-                out.append(_code_calls(_escape(para), name) + "\n")
-            if options:
-                if not (intro and intro[-1].rstrip().endswith(":")):
-                    out.append("Options:\n")
-                for option, body in options:
-                    out.append(f"`'{option}'`\n: {_option_description(body)}\n")
-            outputs = split_outputs(help_text)
-            if outputs:
-                out.append("Outputs:\n")
-                for call, desc in outputs:
-                    out.append(f"- `{call}`: {_escape(desc)}" if desc else f"- `{call}`")
-                out.append("")
-            fence = _fence(help_text)
-            out.append(f":::{{dropdown}} Help text as in MATLAB\n{fence}text\n{help_text}\n{fence}\n:::\n")
-        out.append(f"Source: [`MATLAB/{rel}`]({SOURCE_URL}{rel})\n")
+    families = _families(group, entries)
+    out = []
+    for family, members in families:
+        if family:
+            out.append(f"```{{rubric}} {family}\n```\n")
+        # Like the Python page's autosummary tables: no header row.
+        out += [":::{table}", ":class: tigre-summary", "", "| Function | What it does |", "|---|---|"]
+        for _, name, _, help_text in members:
+            out.append(f"| {{ref}}`{name} <matlab-{name.lower()}>` | {summary(name, help_text)} |")
+        out += ["", ":::", ""]
+    for family, members in families:
+        if family:
+            out.append(f"## {family}\n")
+        for entry in members:
+            out.extend(_function(*entry, level=3 if family else 2))
     return "\n".join(out)
 
 

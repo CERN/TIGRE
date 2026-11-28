@@ -1,6 +1,6 @@
 function [res,klDiv,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
-%MLEM solves the tomographic problem by using Maximum Likelihood Expectation
-% Maximisation algorithm. 
+%MLEM solves the reconstruction problem using maximum-likelihood
+% expectation maximisation (MLEM).
 %
 %   MLEM(PROJ,GEO,ALPHA,NITER,opt) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding

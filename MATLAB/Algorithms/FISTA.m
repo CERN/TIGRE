@@ -1,5 +1,7 @@
 function [res,resL2,qualMeasOut] = FISTA(proj,geo,angles,niter,varargin)
-% FISTA is a quadratically converging algorithm, modified from FISTA.
+% FISTA solves the reconstruction problem using fast iterative
+% shrinkage-thresholding (FISTA) with a total variation proximal step. It is
+% a quadratically converging algorithm, modified from FISTA.
 %
 % It is based on the lazy-start FISTA modification in the following work:
 % J. Liang and C. Schonlieb, "Faster FISTA", in 26th European Signal

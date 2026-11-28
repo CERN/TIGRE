@@ -1,8 +1,6 @@
 function [f,resL2,qualMeasOut]= AwASD_POCS(proj,geo,angles,maxiter,varargin)
-%AwASD_POCS Solves the 3D tomography problem using the adaptive-weighted
-%ASD_POCS algorithm which extends from the method ASD_POCS available in the
-%TIGRE toolbox by adding weight equation to better preserve the edge of the
-%reconstructed image
+%AwASD_POCS solves the reconstruction problem using ASD-POCS with
+% adaptive-weighted total variation, which better preserves edges.
 %
 %   AwASD_POCS(PROJ,GEO,ALPHA,NITER) added adaptive-weighted solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding

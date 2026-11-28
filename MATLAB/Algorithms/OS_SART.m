@@ -1,6 +1,6 @@
 function [res,resL2,qualMeasOut]=OS_SART(proj,geo,angles,niter,varargin)
-% OS_SART solves Cone Beam CT image reconstruction using Oriented Subsets
-%              Simultaneous Algebraic Reconstruction Technique algorithm
+% OS_SART solves Cone Beam CT image reconstruction using the Ordered Subsets
+% Simultaneous Algebraic Reconstruction Technique (OS-SART).
 %
 %   OS_SART(PROJ,GEO,ALPHA,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ALPHA angles, corresponding

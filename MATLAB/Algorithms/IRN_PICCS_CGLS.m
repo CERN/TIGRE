@@ -1,6 +1,6 @@
 function [x_outer,resL2,qualMeasOut]= IRN_PICCS_CGLS(proj,geo,angles,niter,prior,varargin)
 % IRN_PICCS_CGLS solves the CBCT problem with prior image constrained
-% compressed sensing (PICCS), by iteratively reweighted norms and CGLS
+% compressed sensing (PICCS), by iteratively reweighted norms and CGLS.
 %
 %  IRN_PICCS_CGLS(PROJ,GEO,ANGLES,NITER,PRIOR) solves
 %

@@ -69,6 +69,9 @@ thank you.
   (off by default, as in MATLAB) (#201).
 
 ### Fixed
+- MATLAB: the first line of `help` for 24 algorithms now says what each one does. Several described a
+  different algorithm: `SART`, `SIRT` and `SART_TV` said OS-SART, `OS_PCSD` said adaptive-weighted, and
+  `hybrid_fLSQR_TV` showed the help of `LSQR`.
 - TV denoising (`im3ddenoise` / `im3DDenoise`, and through it `ossart_tv`/`SART_TV` and `fista`/`FISTA`): the CUDA
   solver's step sizes made the primal step negative for the first 15 iterations, so the denoiser amplified
   differences and diverged when called repeatedly, as those algorithms do. The step sizes (Knoll et al. 2010, Zhu &

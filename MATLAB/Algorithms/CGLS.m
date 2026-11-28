@@ -1,6 +1,6 @@
 function [x,resL2,qualMeasOut]= CGLS(proj,geo,angles,niter,varargin)
-% CGLS solves the CBCT problem using the conjugate gradient least
-% squares
+% CGLS solves the CBCT problem using conjugate gradient for least squares
+% (CGLS).
 %
 %  CGLS(PROJ,GEO,ANGLES,NITER) solves the reconstruction problem
 %   using the projection data PROJ taken over ANGLES angles, corresponding
