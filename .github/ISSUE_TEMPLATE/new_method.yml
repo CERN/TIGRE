@@ -1,0 +1,69 @@
+name: New method
+description: Propose a new algorithm, projector or other method for TIGRE
+title: "[New method]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing a method! Planned methods are tracked in the
+        [Algorithm roadmap](https://github.com/CERN/TIGRE/issues/975) and the
+        [Projector roadmap](https://github.com/CERN/TIGRE/issues/976); please check
+        there first that it is not already listed. If it is only an idea, or you are
+        not sure it fits TIGRE, a [Discussion](https://github.com/CERN/TIGRE/discussions)
+        is a better place to start.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of method
+      options:
+        - Reconstruction algorithm
+        - Projector / backprojector
+        - Regulariser or prior
+        - Data correction (e.g. beam hardening, scatter, metal)
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What it does and why TIGRE should have it
+      description: A few lines. What problem does it solve, and when is it better than what TIGRE already has?
+    validations:
+      required: true
+  - type: textarea
+    id: paper
+    attributes:
+      label: Paper
+      description: Reference and DOI or link (an open version if there is one).
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Reference code
+      description: Link to existing code, if any, and its license.
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope
+      description: Where should it be available? TIGRE aims for MATLAB and Python to match.
+      options:
+        - label: MATLAB
+        - label: Python
+        - label: Needs new CUDA code
+  - type: textarea
+    id: check
+    attributes:
+      label: How to check it works
+      description: A test case, a phantom, published numbers to reproduce, or data you can share.
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Would you like to implement it?
+      options:
+        - "Yes, I can open a pull request"
+        - "Maybe, with some help"
+        - "No, this is a request"
+    validations:
+      required: true
