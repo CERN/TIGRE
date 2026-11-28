@@ -55,6 +55,12 @@ and try again.
 Your NVIDIA driver is older than the CUDA that TIGRE uses. Update the driver;
 the prebuilt wheels need version 570 or newer (`nvidia-smi` shows yours).
 
+**MATLAB says a TIGRE mex file is missing or invalid right after compiling
+(Windows).**
+Antivirus software, including Windows Defender, sometimes quarantines newly
+compiled `.mexw64` files. Check its protection history, restore the files in
+`MATLAB/Mex_files/win64`, and allow that folder.
+
 **There are many warnings during compilation.**
 They are expected and do not affect results or speed.
 

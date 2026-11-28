@@ -10,11 +10,13 @@ function HU3D = HUMapping(img3D, Protocol)
 % Author: Yi Du, yi.du@hotmail.com
 
 HU3D = zeros(numel(img3D), 1);
-if ~ isfile('../../../../Common/data/pixel2HU.mat ')
-    warning('Using DEMO pixel2HU transform. We recommend creating your own and storing it in TIGRE/Common/data/pixel2HU.mat')
-    load('../../../../Common/data/demo_Pixel2HU.mat', 'Pixel2HU');
+% relative to this file, not to the current folder
+datadir = fullfile(fileparts(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))))), 'Common', 'data');
+if ~ isfile(fullfile(datadir, 'Pixel2HU.mat'))
+    warning('Using DEMO pixel2HU transform. We recommend creating your own and storing it in TIGRE/Common/data/Pixel2HU.mat')
+    load(fullfile(datadir, 'demo_Pixel2HU.mat'), 'Pixel2HU');
 else
-    load('../../../../Common/data/Pixel2HU.mat', 'Pixel2HU');
+    load(fullfile(datadir, 'Pixel2HU.mat'), 'Pixel2HU');
 end
 
 tmp = getfield(Pixel2HU, Protocol);

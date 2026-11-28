@@ -116,7 +116,7 @@ end
 
 % SL (before phantom)
 try
-    textCell = readlines('../Common/CUDA/improvedForwardProjections.hpp');
+    textCell = readTextLines('../Common/CUDA/improvedForwardProjections.hpp');
 catch
    error('Assure to start the compile script from the correct directory') 
 end
@@ -132,7 +132,7 @@ fclose(writeID);
 
 
 % CS (within hull)
-textCell = readlines('../Common/CUDA/improvedForwardProjections.hpp');
+textCell = readTextLines('../Common/CUDA/improvedForwardProjections.hpp');
 searchMask = cell2mat(cellfun(@(x) contains(x, '#define vecSizeCS'), textCell','UniformOutput', false))';
 textCell{searchMask} = ['#define vecSizeCS ' num2str(interceps_cs)];
 
@@ -144,7 +144,7 @@ end
 fclose(writeID);
 
 % SL (behind phantom)
-textCell = readlines('../Common/CUDA/improvedForwardProjections.hpp');
+textCell = readTextLines('../Common/CUDA/improvedForwardProjections.hpp');
 searchMask = cell2mat(cellfun(@(x) contains(x, '#define vecSizeOut'), textCell','UniformOutput', false))';
 textCell{searchMask} = ['#define vecSizeOut ' num2str(interceps_out)];
 
@@ -217,3 +217,13 @@ else
 end
 
 fprintf('Compilation successful!\n');
+
+function lines = readTextLines(fname)
+% The lines of a text file as a cell array, as readlines (MATLAB R2020b and
+% later) gives them, for older versions too. No empty last line for the
+% final newline, so writing them back does not grow the file.
+lines = regexp(fileread(fname), '\r?\n', 'split');
+if ~isempty(lines) && isempty(lines{end})
+    lines(end) = [];
+end
+end

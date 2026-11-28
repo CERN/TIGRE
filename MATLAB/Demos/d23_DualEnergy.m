@@ -16,7 +16,7 @@
 datafolder_low='~/your_data_path/varian/low_kV/2020-01-01_123456/';
 datafolder_high='~/your_data_path/varian/high_kV/2020-01-01_123456/';
 [proj_h, geo, angles_h] = VarianDataLoader(datafolder_high, 'bh', false);
-[proj_l, ~, angles_l] = VarianDataLoader(datafolder, 'bh', false);
+[proj_l, ~, angles_l] = VarianDataLoader(datafolder_low, 'bh', false);
 
 %% Material Decomposition
 % DE-CBCT decomposes the two scans into equivalent thicknesses of two basis
