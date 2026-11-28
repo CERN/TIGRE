@@ -68,6 +68,8 @@ def _stub_cgls(monkeypatch, residuals, niter, restart=True):
     alg.verbose = False
     alg.Quameasopts = None
     alg.restart = restart
+    alg.check_residual = True
+    alg.computel2 = False
     alg.re_init_at_iteration = -1
     alg.geo = None
     alg.angles = np.zeros(proj_shape[0], dtype=np.float32)
