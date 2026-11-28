@@ -564,8 +564,14 @@ void cpy_from_host(float* device_array,float* host_array,
                 // Inter interations.
                 for(unsigned int ib=0;  (ib<(buffer_length)) && ((i+ib)<maxIter);  ib++){
 
+                    // Step sizes of Knoll et al., MAGMA 23:103-114 (2010), Eq. (9): Zhu & Chan's (2008)
+                    // scheme adapted to 3D, tau1 = (1/tau2)*(1/6 - 5/(15+k)). That tau1 is negative for
+                    // k < 15, which pushes u away from the data. The paper ran 200-600 iterations, where this
+                    // washes out; TIGRE calls the denoiser with 20-50, and there it was expansive and
+                    // diverged when repeated (#939). Zhu & Chan's 2D product is 0.5*(1 - 10/(15+k)); here
+                    // the 3D factor 1/6 multiplies the whole bracket, which keeps tau1 > 0.
                     tau2 = 0.3f + 0.02f * (i+ib);
-                    tau1 = (1.f/tau2) * ((1.f/6.f) - (5.f/(15.f+(i+ib))));
+                    tau1 = (1.f/tau2) * ((1.f/6.f) * (1.f - 10.f/(15.f+(i+ib))));
                     // bdim and gdim
                     
                     // Only the piece and its halo_lo/halo_hi halo slices (see above).

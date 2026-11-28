@@ -32,7 +32,8 @@ def im3ddenoise(img, iter=50, lmbda=15.0, gpuids=None):
     imgmin = np.amin(img.ravel())
     img = img - imgmin
     imgmax = np.amax(img.ravel())
-    img = img / imgmax
+    # As MATLAB's im3DDenoise: a constant image gives 0/0 otherwise
+    img = img / (imgmax + 2 * np.finfo(np.float64).eps)
 
     if gpuids is None:
         gpuids = GpuIds()
