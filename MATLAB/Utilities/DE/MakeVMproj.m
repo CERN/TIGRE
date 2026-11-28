@@ -9,7 +9,9 @@ function [VM_proj] = MakeVMproj(material1_proj, material2_proj, energy, varargin
 [material1, material2] = parse_inputs(varargin);
 
 % read NIST database (values in TIGRE)
-fid = fopen('./../../../Common/data/NIST_material_attenuation.json');
+% relative to this file, not to the current folder
+tigreroot = fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))));
+fid = fopen(fullfile(tigreroot, 'Common', 'data', 'NIST_material_attenuation.json'));
 raw = fread(fid,inf);
 str = char(raw');
 fclose(fid);

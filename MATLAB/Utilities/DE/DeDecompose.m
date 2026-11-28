@@ -39,7 +39,9 @@ function [material1_proj,material2_proj, angles_out] = DeDecompose(proj_l, angle
 [scanner, calibration_pair, model, tolerance, material1, material2] = parse_inputs(varargin);
 
 % read NIST database (values in TIGRE)
-fid = fopen('./../../../Common/data/dual_energy_calibrations.json');
+% relative to this file, not to the current folder
+tigreroot = fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))));
+fid = fopen(fullfile(tigreroot, 'Common', 'data', 'dual_energy_calibrations.json'));
 raw = fread(fid,inf);
 str = char(raw');
 fclose(fid);

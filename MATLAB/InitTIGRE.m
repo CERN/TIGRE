@@ -34,32 +34,6 @@ addpath('./Utilities/DE');
 
 addpath(genpath('./Test_data'));
 
-% different arch versions
-if ispc
-    if ~isempty(strfind(computer('arch'),'64'))
-        addpath('./Mex_files/win64');
-        addpath('./pCTMexFiles/win64');
-    else
-        addpath('./Mex_files/win32');
-        addpath('./pCTMexFiles/win32');
-    end
-elseif ismac
-    if ~isempty(strfind(computer('arch'),'64'))
-        addpath('./Mex_files/mac64');
-        addpath('./pCTMexFiles/mac64');
-    else
-        addpath('./Mex_files/mac32');
-        addpath('./pCTMexFiles/mac32');
-    end
-else
-    if ~isempty(strfind(computer('arch'),'64'))
-        addpath('./Mex_files/linux64');
-        addpath('./pCTMexFiles/linux64');
-    else
-        addpath('./Mex_files/linux32');
-        addpath('./pCTMexFiles/linux32');
-    end
-end
     
 addpath('./Demos');
 
@@ -71,31 +45,26 @@ addpath('./Third_party_tools/sec2hours');
 addpath('./Third_party_tools/readMHD');
 addpath('./Third_party_tools/Inpaint_nans/');
 
+% Compiled mex files, added last so they come first on the path
 if ispc
-    if ~isempty(strfind(computer('arch'),'64'))
-        addpath('./Mex_files/win64');
-        addpath('./pCTMexFiles/win64');
-    else
-        addpath('./Mex_files/win32');
-        addpath('./pCTMexFiles/win32');
-    end
+    archdir='win';
 elseif ismac
-    if ~isempty(strfind(computer('arch'),'64'))
-        addpath('./Mex_files/mac64');
-        addpath('./pCTMexFiles/mac64');
-    else
-        addpath('./Mex_files/mac32');
-        addpath('./pCTMexFiles/mac32');
-    end
+    archdir='mac';
 else
-    if ~isempty(strfind(computer('arch'),'64'))
-        addpath('./Mex_files/linux64');
-        addpath('./pCTMexFiles/linux64');
-    else
-        addpath('./Mex_files/linux32');
-        addpath('./pCTMexFiles/linux32');
-    end
+    archdir='linux';
 end
+if ~isempty(strfind(computer('arch'),'64'))
+    archdir=[archdir '64'];
+else
+    archdir=[archdir '32'];
+end
+addpath(['./Mex_files/' archdir]);
+% Only there once CompilePCT has been run (proton CT is optional)
+if exist(['./pCTMexFiles/' archdir],'dir')
+    addpath(['./pCTMexFiles/' archdir]);
+end
+clear archdir
+
 
 if ispc
     [user, sys]=memory;

@@ -63,6 +63,10 @@ thank you.
   (off by default, as in MATLAB) (#201).
 
 ### Fixed
+- MATLAB: `DeDecompose`, `MakeVMproj` and `HUMapping` found their data files only when MATLAB's current folder was
+  their own; the path is now relative to the file. `HUMapping` always used the demo calibration (a stray space in
+  the file name). `d23_DualEnergy` loaded the low-kV scan from an undefined variable. `InitTIGRE` warned about the
+  `pCTMexFiles` folder before `CompilePCT` was run, and `CompilePCT` needed MATLAB R2020b (`readlines`) (#546).
 - MATLAB on Linux: `Compile` failed on the Varian `.xim` reader (`mexReadXim`) with "requires ... -std=c++11" on gcc 9 and
   later. The mex configuration passed `-ansi` (C++98) to the host compiler, which overrode `-std=c++14` (#470).
 - Python `irn_tv_cgls`: `computel2=True` crashed when returning the errors. The residual and the quality measures
