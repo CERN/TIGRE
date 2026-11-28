@@ -229,27 +229,27 @@ industrial imaging, particle therapy and reconstruction research.
 
 ## Get started
 
-::::{grid} 1 1 3 3
-:gutter: 3
-:class-container: tigre-start
+::::{grid} 1 2 2 3
+:gutter: 4
+:class-container: tigre-why tigre-start
 
-:::{grid-item-card} Install
-:link: install/index
-:link-type: doc
+:::{grid-item}
+**[Install TIGRE](install/index.md)**
+
 Prebuilt wheels for Python on Linux, or build TIGRE for MATLAB and Python
 from source.
 :::
 
-:::{grid-item-card} Learn
-:link: user-guide/index
-:link-type: doc
-The user guide: geometry, algorithms, real data, and what to check when a
-reconstruction looks wrong.
+:::{grid-item}
+**[Read the user guide](user-guide/index.md)**
+
+Geometry, algorithms, real data, and what to check when a reconstruction
+looks wrong.
 :::
 
-:::{grid-item-card} Reference
-:link: api/index
-:link-type: doc
+:::{grid-item}
+**[Look up a function](api/index.md)**
+
 Every function and option, in Python and MATLAB.
 :::
 ::::
