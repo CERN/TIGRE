@@ -91,7 +91,7 @@ while iter<niter
     gamma=norm(p(:),2)^2;
     while iter<niter %this will be broken by a parameter
         iter=iter+1;
-        if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+        if measurequality && ~any(strcmp(QualMeasOpts,'error_norm'))
             x_prev = x; % only store if necessary
         end
         q_aux_1 = Ax(p ,geo,angles,'Siddon','gpuids',gpuids);

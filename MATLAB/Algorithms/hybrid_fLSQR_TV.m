@@ -119,7 +119,7 @@ errorL2 = zeros(1,niter);
 
 % (2) Start iterations 
 for ii=1:niter
-    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+    if measurequality && ~any(strcmp(QualMeasOpts,'error_norm'))
         if ii==1
             x_prev=x0;
         else

@@ -128,7 +128,7 @@ for ii=1:niter
     if (ii==1 && verbose==1);tic;end
     % If quality is going to be measured, then we need to save previous image
     % THIS TAKES MEMORY!
-    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+    if measurequality && ~any(strcmp(QualMeasOpts,'error_norm'))
         res_prev = res; % only store if necessary
     end
     

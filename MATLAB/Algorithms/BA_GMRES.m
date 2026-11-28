@@ -82,7 +82,7 @@ w(:,1) = r(:)/norm(r(:),2);
 
 h=zeros(niter+1,niter);
 for k=1:niter
-    if measurequality && ~strcmp(QualMeasOpts,'error_norm')
+    if measurequality && ~any(strcmp(QualMeasOpts,'error_norm'))
         x0 = x; % only store if necessary
     end
     if (k==1 && verbose);tic;end
