@@ -1,4 +1,4 @@
-function [ f,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
+function [f,resL2,qualMeasOut] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 %ASD_POCS Solves the ASD_POCS total variation constrained image in 3D
 % tomography.
 %
@@ -48,6 +48,15 @@ function [ f,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
 %  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
+% OUTPUTS:
+%
+%    [img]                       will output the reconstructed image
+%    [img,resL2]                 will also output the L2 norm of the data
+%                                error, ||Ax-b||, after the data step of
+%                                each iteration: the value the algorithm
+%                                compares with 'maxL2err'.
+%    [img,resL2,qualMeas]        will also output the quality measurements
+%                                asked by the input 'QualMeas'
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -71,5 +80,5 @@ function [ f,qualMeasOut ] = ASD_POCS(proj,geo,angles,maxiter,varargin)
     if nargin < 4
         error('TIGRE:ASD_POCS:InvalidInput','Not enough inputs')
     end
-    [ f,qualMeasOut ] = OS_ASD_POCS(proj,geo,angles,maxiter, varargin{:}, 'BlockSize', 1);
+    [f,resL2,qualMeasOut] = OS_ASD_POCS(proj,geo,angles,maxiter, varargin{:}, 'BlockSize', 1);
 end

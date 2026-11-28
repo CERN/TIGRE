@@ -1,4 +1,4 @@
-function [res,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
+function [res,klDiv,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
 %MLEM solves the tomographic problem by using Maximum Likelihood Expectation
 % Maximisation algorithm. 
 %
@@ -20,6 +20,16 @@ function [res,qualMeasOut]=MLEM(proj,geo,angles,niter,varargin)
 % 'groundTruth':  An image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
+% OUTPUTS:
+%
+%    [img]                       will output the reconstructed image
+%    [img,klDiv]                 will also output the Kullback-Leibler
+%                                divergence of Ax from the data b,
+%                                sum(b.*log(b./Ax)-b+Ax), after each
+%                                iteration: the Poisson data error that
+%                                MLEM decreases.
+%    [img,klDiv,qualMeas]        will also output the quality measurements
+%                                asked by the input 'QualMeas'
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -43,11 +53,13 @@ if ~any(isnan(gt(:)))
     res_prev=gt;
     clear gt
 end
-if nargout<2 && measurequality
+if nargout<3 && measurequality
     warning("Image metrics requested but none caught as output. Call the algorithm with 3 outputs to store them")
     measurequality=false;
 end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
+klDiv=zeros(1,niter);
+computeKL=nargout>1;
 
 
 res = max(res,0);
@@ -70,6 +82,9 @@ for ii=1:niter
     
     if measurequality
         qualMeasOut(:,ii)=Measure_Quality(res_prev,res,QualMeasOpts);
+    end
+    if computeKL
+        klDiv(ii)=klDivergence(proj,Ax(res,geo,angles,'gpuids',gpuids));
     end
     
     if (ii==1)&&(verbose==1)
@@ -175,3 +190,14 @@ for ii=1:length(opts)
 end
 end
 
+function d=klDivergence(proj,est)
+% Kullback-Leibler divergence of the estimated projections est=Ax from the
+% measured projections proj=b: sum(b.*log(b./Ax)-b+Ax), the Poisson negative
+% log-likelihood up to a constant, which MLEM and OSEM decrease. Pixels with
+% b<=0 count as Ax (0*log(0)=0). Rays with Ax=0 are left out: the
+% multiplicative update cannot change them.
+use=est>0;
+b=double(proj(use)); a=double(est(use));
+pos=b>0;
+d=sum(a)-sum(b(pos))+sum(b(pos).*log(b(pos)./a(pos)));
+end

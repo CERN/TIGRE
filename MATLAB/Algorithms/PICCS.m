@@ -1,4 +1,4 @@
-function [ f,qualMeasOut ] = PICCS(proj,geo,angles,maxiter,prior,varargin)
+function [f,resL2,qualMeasOut] = PICCS(proj,geo,angles,maxiter,prior,varargin)
 %PICCS Solves the PICCS total variation constrained image in 3D
 % tomography.
 %
@@ -42,6 +42,15 @@ function [ f,qualMeasOut ] = PICCS(proj,geo,angles,maxiter,prior,varargin)
 %                  'random'  : orders them randomply
 %                  'angularDistance': chooses the next subset with the
 %                                     biggest angular distance with the ones used.
+% OUTPUTS:
+%
+%    [img]                       will output the reconstructed image
+%    [img,resL2]                 will also output the L2 norm of the data
+%                                error, ||Ax-b||, after the data step of
+%                                each iteration: the value the algorithm
+%                                compares with 'maxL2err'.
+%    [img,resL2,qualMeas]        will also output the quality measurements
+%                                asked by the input 'QualMeas'
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox
@@ -70,9 +79,12 @@ measurequality=~isempty(QualMeasOpts);
 angles_reorder=cell2mat(alphablocks);
 index_angles=cell2mat(orig_index);
 
-if measurequality
-    qualMeasOut=zeros(length(QualMeasOpts),maxiter);
+if nargout<3 && measurequality
+    warning("Image metrics requested but none caught as output. Call the algorithm with 3 outputs to store them")
+    measurequality=false;
 end
+qualMeasOut=zeros(length(QualMeasOpts),maxiter);
+resL2=zeros(1,maxiter);
 
 % does detector rotation exists?
 if ~isfield(geo,'rotDetector')
@@ -146,6 +158,7 @@ while ~stop_criteria %POCS
     end
     % compute L2 error of actual image. Ax-b
     dd=im3Dnorm(Ax(f,geo,angles,'gpuids',gpuids)-proj,'L2');
+    resL2(iter)=dd;
     % compute change in the image after last SART iteration
     dp_vec=(f-f0);
     dp=im3Dnorm(dp_vec,'L2');

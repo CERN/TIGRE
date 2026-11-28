@@ -49,6 +49,15 @@ function [ f,resL2,qualMeasOut] = OS_PCSD(proj,geo,angles,maxiter,varargin)
 %  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
+% OUTPUTS:
+%
+%    [img]                       will output the reconstructed image
+%    [img,resL2]                 will also output the L2 norm of the data
+%                                error, ||Ax-b||, after each iteration.
+%                                When it is asked for, the algorithm stops
+%                                early if it grows.
+%    [img,resL2,qualMeas]        will also output the quality measurements
+%                                asked by the input 'QualMeas'
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
 % This file is part of the TIGRE Toolbox

@@ -48,8 +48,37 @@ class MLEM(IterativeReconAlg):  # noqa: D101
 
             self.res = self.res * img
             self.res[self.res < 0.0] = 0.0
-            # also records the residual norm when computel2=True
+            # with computel2=True, records the KL divergence (see error_measurement)
             self.error_measurement(res_prev, i)
+
+    # override: MLEM's data error is the Kullback-Leibler divergence, not the L2 residual
+    def error_measurement(self, res_prev, iter):
+        computel2 = self.computel2
+        self.computel2 = False  # the base class records the quality measures only
+        try:
+            IterativeReconAlg.error_measurement(self, res_prev, iter)
+        finally:
+            self.computel2 = computel2
+        if computel2 and iter < self.l2l.shape[1]:
+            est = Ax(self.res, self.geo, self.angles, "interpolated", gpuids=self.gpuids)
+            self.l2l[0, iter] = kl_divergence(self.proj, est)
+
+
+def kl_divergence(proj, est):
+    """Kullback-Leibler divergence of the estimate ``est = Ax`` from the data ``proj = b``.
+
+    ``sum(b * log(b / Ax) - b + Ax)``: the Poisson negative log-likelihood up to
+    a constant, which MLEM decreases. Pixels with ``b <= 0`` count as ``Ax``
+    (``0 * log(0) = 0``). Rays with ``Ax = 0`` are left out: the multiplicative
+    update cannot change them.
+    """
+    est = np.asarray(est)
+    proj = np.asarray(proj)
+    use = est > 0
+    a = est[use].astype(np.float64)
+    b = proj[use].astype(np.float64)
+    pos = b > 0
+    return float(a.sum() - b[pos].sum() + np.sum(b[pos] * np.log(b[pos] / a[pos])))
 
 
 mlem = decorator(MLEM, name="mlem")

@@ -1,4 +1,4 @@
-function [res,resL2,qualMeasOut]=OSEM(proj,geo,angles,niter,varargin)
+function [res,klDiv,qualMeasOut]=OSEM(proj,geo,angles,niter,varargin)
 %OSEM solves CT image reconstruction using Ordered Subsets Expectation
 % Maximization, a statistical method for Poisson-distributed data.
 % It is the method of Hudson and Larkin (1994). The update is
@@ -48,12 +48,15 @@ function [res,resL2,qualMeasOut]=OSEM(proj,geo,angles,niter,varargin)
 % OUTPUTS:
 %
 %    [img]                       will output the reconstructed image
-%    [img,errorL2]               will output the L2 norm of the residual
-%                                after each iteration. When it is asked
-%                                for, the algorithm stops early if the
-%                                residual grows.
-%    [img,errorL2,qualMeas]      will output the quality measurements asked
-%                                by the input 'QualMeas'
+%    [img,klDiv]                 will also output the Kullback-Leibler
+%                                divergence of Ax from the data b,
+%                                sum(b.*log(b./Ax)-b+Ax), after each
+%                                iteration: the Poisson data error that
+%                                OSEM decreases. When it is
+%                                asked for, the algorithm stops early if
+%                                it grows.
+%    [img,klDiv,qualMeas]        will also output the quality measurements
+%                                asked by the input 'QualMeas'
 %
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
@@ -88,7 +91,7 @@ if nargout<3 && measurequality
 end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 
-resL2=zeros(1,niter);
+klDiv=zeros(1,niter);
 
 
 if nargout>1
@@ -181,15 +184,15 @@ for ii=1:niter
     end
     
     if computeL2
-        % Compute error norm2 of b-Ax
+        % Compute the KL divergence of Ax from b
         geo.offOrigin=offOrigin;
         geo.offDetector=offDetector;
         geo.DSD=DSD;
         geo.DSO=DSO;
         geo.rotDetector=rotDetector;
-        resL2(ii)=im3Dnorm(proj-Ax(res,geo,angles,'Siddon','gpuids',gpuids),'L2');
+        klDiv(ii)=klDivergence(proj,Ax(res,geo,angles,'Siddon','gpuids',gpuids));
         % If the error is not minimized
-        if ii~=1 && resL2(ii)>resL2(ii-1)
+        if ii~=1 && klDiv(ii)>klDiv(ii-1)
             if verbose
                 disp(['Convergence criteria met, exiting on iteration number:', num2str(ii)]);
             end
@@ -390,4 +393,16 @@ for ii=1:length(opts)
     end
 end
 
+end
+
+function d=klDivergence(proj,est)
+% Kullback-Leibler divergence of the estimated projections est=Ax from the
+% measured projections proj=b: sum(b.*log(b./Ax)-b+Ax), the Poisson negative
+% log-likelihood up to a constant, which MLEM and OSEM decrease. Pixels with
+% b<=0 count as Ax (0*log(0)=0). Rays with Ax=0 are left out: the
+% multiplicative update cannot change them.
+use=est>0;
+b=double(proj(use)); a=double(est(use));
+pos=b>0;
+d=sum(a)-sum(b(pos))+sum(b(pos).*log(b(pos)./a(pos)));
 end
