@@ -567,6 +567,14 @@ class LSMR(IterativeReconAlg):
                 break
 lsmr = decorator(LSMR, name="lsmr")
 
+def _sumsq(q):
+    """Squared L2 norm; a 4D q (a stack of gradient components) summed per component."""
+    q = np.asarray(q)
+    if q.ndim == 4:
+        return float(sum(l2norm(q[k].ravel()) ** 2 for k in range(q.shape[0])))
+    return float(l2norm(q.ravel()) ** 2)
+
+
 class IRN_TV_CGLS(IterativeReconAlg):
     __doc__ = (
         " IRN_TV_CGLS solves the CBCT problem using CGLS with TV constraints\n"
@@ -678,7 +686,6 @@ class IRN_TV_CGLS(IterativeReconAlg):
         x0 = self.res.copy()  # what a cold outer restart goes back to
         use_prior = self.prior is not None and self.lmbda_prior > 0
         slp = np.sqrt(self.lmbda_prior, dtype=np.float32)
-        best_res = np.float32(np.inf)
    
         for outer in range(self.niter_outer):
             if self.verbose:
@@ -705,95 +712,94 @@ class IRN_TV_CGLS(IterativeReconAlg):
                 W2 = None
             if self.outer_restart == "cold":
                 self.res = x0.copy()
-            res_prev_inner = np.float32(np.inf)
-            res_now = np.float32(np.inf)
-    
-            prox_aux_1 =Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
-            prox_aux_2 = self.Lx(W,self.res)*np.sqrt(self.lmbda, dtype=np.float32)
-    
-            r_aux_1 = self.proj - prox_aux_1
-            r_aux_2 = -prox_aux_2
-            #% Malena: changed the format, r_aux_2 is 3
-            #% r = cat(3,r_aux_1, r_aux_2); % Malena: size guide, erase later, N x N x (100 + N-1)
-            p_aux_1 = tigre.Atb(r_aux_1, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
-            p_aux_2 = np.sqrt(self.lmbda, dtype=np.float32)*self.Ltx(W, r_aux_2)
-            p = p_aux_1 + p_aux_2
-            if use_prior:
-                # the stacked system gains the rows slp*P x = slp*P prior
-                r_aux_3 = -slp * self.Px(W2, self.res - self.prior)
-                p = p + slp * self.Ptx(W2, r_aux_3)
-            
-            gamma=np.float32(l2norm(p.ravel())**2)
+            sl = np.sqrt(self.lmbda, dtype=np.float32)
 
-            for i in range(self.niter):
-                res0=self.res
+            # CGLS on the stacked system [A; sl*W*D; slp*P] x = [b; 0; slp*P*prior].
+            # Loss of orthogonality is detected on the residual of that whole
+            # system, which CGLS keeps non-increasing in exact arithmetic.
+            # ||Ax-b|| alone may rise legitimately when the regularisation is
+            # strong, so it is not used. Compare only WITHIN one outer
+            # iteration: across a reweighting the weighted problems differ.
+            restart_cgls = True
+            fullres_prev = np.inf
+            restarted_at = -1
+            i = 0
+            while i < self.niter:
+                if restart_cgls:
+                    r_aux_1 = self.proj - Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+                    r_aux_2 = -sl * self.Lx(W, self.res)
+                    p = tigre.Atb(r_aux_1, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
+                    p = p + sl * self.Ltx(W, r_aux_2)
+                    if use_prior:
+                        # the stacked system gains the rows slp*P x = slp*P prior
+                        r_aux_3 = -slp * self.Px(W2, self.res - self.prior)
+                        p = p + slp * self.Ptx(W2, r_aux_3)
+                    gamma = np.float32(l2norm(p.ravel()) ** 2)
+                    restart_cgls = False
+
+                res0 = self.res
                 q_aux_1 = tigre.Ax(p, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
-                q_aux_2 = self.Lx(W,p)*np.sqrt(self.lmbda, dtype=np.float32)
-
-                #% q = cat(3, q_aux_1, q_aux_2{1},q_aux_2{2},q_aux_2{3}); % Probably never need to actually do this
-                #% alpha=gamma/norm(q(:),2)^2;
-                qq = l2norm(q_aux_1.ravel())**2 + l2norm(q_aux_2[0].ravel())**2 + l2norm(q_aux_2[1].ravel())**2+l2norm(q_aux_2[2].ravel())**2
+                q_aux_2 = sl * self.Lx(W, p)
+                qq = l2norm(q_aux_1.ravel()) ** 2 + _sumsq(q_aux_2)
                 if use_prior:
                     q_aux_3 = slp * self.Px(W2, p)
-                    qq = qq + l2norm(q_aux_3.ravel())**2
-                alpha=np.float32(gamma/qq)
-                self.res=self.res+alpha*p
-                step = outer*self.niter+i
+                    qq = qq + _sumsq(q_aux_3)
+                alpha = np.float32(gamma / qq)
+                self.res = self.res + alpha * p
+                step = outer * self.niter + i
                 if self.check_residual or self.computel2:
-                    aux=self.proj-tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
-                    #% residual norm or the original least squares (not Tikhonov).
-                    #% Think if that is what we want of the NE residual
+                    aux = self.proj - tigre.Ax(self.res, self.geo, self.angles, "Siddon", gpuids=self.gpuids)
+                    # residual norm of the original least squares (not Tikhonov)
                     self.l2l[0, step] = res_now = l2norm(aux.ravel())
 
-                # The guard plain CGLS has always had and this loop never did.
-                # In exact arithmetic a CGLS residual cannot rise; when it
-                # does, orthogonality is lost and every later step compounds
-                # it. Left unchecked, niter_outer * niter such steps reach
-                # absurd values - measured mean 8469 / max 5e7 at 512^3, and
-                # 7e5 on a 64^3 phantom where the rise begins at step 2.
-                #
-                # Compare only WITHIN one outer iteration. Across a
-                # reweighting the two residuals belong to different weighted
-                # problems, so a first step that looks worse than the previous
-                # outer's last is not evidence of anything.
-                if self.check_residual and i > 0 and res_now > res_prev_inner:
-                    self.res = res0
-                    self.l2l[0, step] = res_prev_inner
-                    res_now = res_prev_inner
-                    if self.verbose:
-                        print("IRN_TV_CGLS: residual rose at outer " + str(outer)
-                              + ", inner " + str(i) + " - reweighting")
-                    break
-                res_prev_inner = res_now
+                if self.check_residual:
+                    fullres = float(res_now) ** 2 + _sumsq(sl * self.Lx(W, self.res))
+                    if use_prior:
+                        fullres += _sumsq(slp * self.Px(W2, self.res - self.prior))
+                    # Rises at the level of single precision rounding are not a
+                    # loss of orthogonality; undoing those only throws work away.
+                    if fullres > fullres_prev * (1 + 1e-4):
+                        self.res = res0  # undo the bad step
+                        self.l2l[0, step] = 0
+                        if restarted_at != i:
+                            # restart CGLS from the current image, same weights
+                            restarted_at = i
+                            restart_cgls = True
+                            if self.verbose:
+                                print("IRN_TV_CGLS: orthogonality lost at outer " + str(outer)
+                                      + ", inner " + str(i) + " - restarting CGLS")
+                            continue
+                        if self.verbose:
+                            print("IRN_TV_CGLS: orthogonality lost at outer " + str(outer)
+                                  + ", inner " + str(i) + " - reweighting")
+                        break
+                    fullres_prev = fullres
                 self.measure_quality(res0, step)
-              
-                #% If step is adequate, then continue withg CGLS
-                r_aux_1 = r_aux_1-alpha*q_aux_1
-                r_aux_2=r_aux_2-alpha*q_aux_2
 
-                s_aux_1 = tigre.Atb(r_aux_1, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
-                s_aux_2 =  np.sqrt(self.lmbda, dtype=np.float32) * self.Ltx(W, r_aux_2)
-                s = s_aux_1 + s_aux_2
+                # If step is adequate, then continue with CGLS
+                r_aux_1 = r_aux_1 - alpha * q_aux_1
+                r_aux_2 = r_aux_2 - alpha * q_aux_2
+                s = tigre.Atb(r_aux_1, self.geo, self.angles, backprojection_type="matched", gpuids=self.gpuids)
+                s = s + sl * self.Ltx(W, r_aux_2)
                 if use_prior:
                     r_aux_3 = r_aux_3 - alpha * q_aux_3
                     s = s + slp * self.Ptx(W2, r_aux_3)
 
-                gamma1=np.float32(l2norm(s.ravel())**2)
-                beta=np.float32(gamma1/gamma)
-                gamma=gamma1
-                p=s+beta*p
+                gamma1 = np.float32(l2norm(s.ravel()) ** 2)
+                beta = np.float32(gamma1 / gamma)
+                gamma = gamma1
+                p = s + beta * p
+                i += 1
 
             avgtoc = default_timer()
             avgtime.append(abs(avgtic - avgtoc))
 
-            # A whole reweighting that improved nothing means the outer
-            # iteration has stalled; more of them will not help.
-            if self.check_residual and res_now >= best_res:
+            # A whole outer iteration without a single accepted step: more
+            # reweighting from the same image will not change anything.
+            if i == 0:
                 if self.verbose:
-                    print("IRN_TV_CGLS: reweighting " + str(outer)
-                          + " did not improve the residual - stopping")
+                    print("IRN_TV_CGLS: no further progress at outer " + str(outer) + " - stopping")
                 break
-            best_res = res_now
 
 irn_tv_cgls = decorator(IRN_TV_CGLS, name="irn_tv_cgls")
 

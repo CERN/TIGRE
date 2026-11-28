@@ -45,13 +45,16 @@ function [x_outer,resL2,qualMeasOut]= IRN_PICCS_CGLS(proj,geo,angles,niter,prior
 %  'groundTruth'  an image as ground truth, to be used if quality measures
 %                 are requested, to plot their change w.r.t. this known
 %                 data.
-%  'restart'  true or false. By default the algorithm will restart when
-%             loss of orthogonality is found.
+%  'restart'  true or false. By default, when orthogonality is lost CGLS
+%             restarts once from the current image; if that does not help
+%             (or with false) the outer iteration ends and the weights are
+%             rebuilt.
 %  'checkResidual' true or false. By default the algorithm computes the
-%             residual ||Ax-b|| every iteration, which costs one extra
-%             forward projection, and restarts or stops when it grows (loss
-%             of orthogonality). false skips both, for speed; the residual
-%             is still computed if it is asked for as an output.
+%             residual every iteration, which costs one extra forward
+%             projection, and watches the residual of the whole regularised
+%             system (data, TV and prior terms), which CGLS never lets grow:
+%             if it grows, orthogonality was lost. false skips the check,
+%             for speed; ||Ax-b|| is still computed if asked as an output.
 %
 % OUTPUTS:
 %
@@ -119,7 +122,6 @@ if nargout<3 && measurequality
 end
 qualMeasOut=zeros(length(QualMeasOpts),niter);
 resL2 = zeros(1,niter);
-remember=0;
 iter=0;
 sl=sqrt(lambda);
 slp=sqrt(lambda_prior);
@@ -149,17 +151,26 @@ while iter<niter
         x=x0;
     end
 
-    % CGLS on the stacked system [A; sl*W1*D; slp*P] x = [b; 0; slp*P*prior]
-    r_aux_1 = proj - Ax(x,geo,angles,'Siddon','gpuids',gpuids);
-    r_aux_2 = -sl*Lx(W1, x);
-    p = Atb(r_aux_1 ,geo,angles,'matched','gpuids',gpuids) + sl*Ltx(W1, r_aux_2);
-    if usePrior
-        r_aux_3 = -slp*Px(W2, x-prior, priorNorm);
-        p = p + slp*Ptx(W2, r_aux_3, priorNorm);
-    end
-
-    gamma=norm(p(:),2)^2;
+    % CGLS on the stacked system [A; sl*W1*D; slp*P] x = [b; 0; slp*P*prior].
+    % Loss of orthogonality is detected on the residual of that whole system,
+    % which CGLS keeps non-increasing in exact arithmetic. ||Ax-b|| alone is
+    % allowed to rise when the regularisation is strong, so it is not used.
+    restartCGLS=true;
+    fullres_prev=inf;
+    restarted_at=-1;
+    iter_outer_start=iter;
     while iter<niter %this will be broken by a parameter
+        if restartCGLS
+            r_aux_1 = proj - Ax(x,geo,angles,'Siddon','gpuids',gpuids);
+            r_aux_2 = -sl*Lx(W1, x);
+            p = Atb(r_aux_1 ,geo,angles,'matched','gpuids',gpuids) + sl*Ltx(W1, r_aux_2);
+            if usePrior
+                r_aux_3 = -slp*Px(W2, x-prior, priorNorm);
+                p = p + slp*Ptx(W2, r_aux_3, priorNorm);
+            end
+            gamma=norm(p(:),2)^2;
+            restartCGLS=false;
+        end
         iter=iter+1;
         if measurequality && ~any(strcmp(QualMeasOpts,'error_norm'))
             x_prev = x; % only store if necessary
@@ -179,36 +190,43 @@ while iter<niter
             qualMeasOut(:,iter)=Measure_Quality(x_prev,x,QualMeasOpts);
         end
 
-        % The following should never happen, but the reality is that if we use
-        % the residual from the algorithm, it starts diverging from this explicit residual value.
-        % This is an interesting fact that I believe may be caused either by
-        % the mismatch of the backprojection w.r.t the real adjoint, or
-        % numerical issues related to doing several order of magnitude
-        % difference operations on single precision numbers.
+        % The explicit residual can drift from the recursive one CGLS keeps,
+        % through the mismatch of the backprojection w.r.t. the real adjoint
+        % and single precision arithmetic.
         if computeResidual
             aux=proj-Ax(x,geo,angles,'Siddon','gpuids',gpuids);
             resL2(iter)=im3Dnorm(aux,'L2');
         end
-        if checkResidual && mod(iter,niter_break)~=1 && resL2(iter)>resL2(iter-1)
-            % we lost orthogonality, lets restart the algorithm unless the
-            % user asked us not to.
-            % undo bad step.
-            x=x-alpha*p;
-            % if the restart didn't work.
-            if remember==iter || ~restart
-                disp(['Algorithm stoped in iteration ', num2str(iter),' due to loss of orthogonality.'])
-                x_outer=x;
-                return;
+        if checkResidual
+            fullres=double(resL2(iter))^2+double(sumsq4(sl*Lx(W1,x)));
+            if usePrior
+                fullres=fullres+double(sumsq4(slp*Px(W2,x-prior,priorNorm)));
             end
-            remember=iter;
-            iter=iter-1;
-            if verbose
-                disp(['Orthogonality lost, restarting at iteration ', num2str(iter) ])
+            % Rises at the level of single precision rounding are not a loss
+            % of orthogonality; undoing those steps only throws work away.
+            if fullres>fullres_prev*(1+1e-4)
+                % we lost orthogonality: undo the bad step
+                x=x-alpha*p;
+                iter=iter-1;
+                if restart && restarted_at~=iter
+                    % restart CGLS from the current image, same weights
+                    restarted_at=iter;
+                    restartCGLS=true;
+                    if verbose
+                        disp(['Orthogonality lost, restarting CGLS at iteration ', num2str(iter)])
+                    end
+                    continue
+                end
+                % restarting did not help (or was not allowed): reweight
+                if verbose
+                    disp(['Orthogonality lost at iteration ', num2str(iter), ', reweighting'])
+                end
+                break
             end
-            break
+            fullres_prev=fullres;
         end
 
-        % If step is adequate, then continue withg CGLS
+        % If step is adequate, then continue with CGLS
         r_aux_1 = r_aux_1-alpha*q_aux_1;
         r_aux_2 = r_aux_2-alpha*q_aux_2;
         s = Atb(r_aux_1 ,geo,angles,'matched','gpuids',gpuids) + sl*Ltx(W1, r_aux_2);
@@ -236,6 +254,14 @@ while iter<niter
         end
     end
     x_outer=x;
+    if iter==iter_outer_start
+        % a whole outer iteration without a single accepted step: more
+        % reweighting from the same image will not change anything
+        if verbose
+            disp(['Algorithm stopped in iteration ', num2str(iter), ': no further progress.'])
+        end
+        break
+    end
 
 
 end

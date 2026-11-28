@@ -69,8 +69,12 @@ thank you.
   (off by default, as in MATLAB) (#201).
 
 ### Fixed
-- MATLAB `IRN_TV_CGLS`: stopping on loss of orthogonality in the first reweighting step errored (its output was
-  never set); it now returns the last good image (#616).
+- `IRN_TV_CGLS` (MATLAB and Python): the loss-of-orthogonality check watched ||Ax-b||, which may rise legitimately
+  when the regularisation is strong, so it fired falsely and cut the iterations short. It now watches the residual of
+  the whole regularised system, which CGLS never lets grow, with a tolerance for single-precision rounding. In
+  MATLAB, restarting after such a stop also went back to the initial image (zeros by default) with cold restarts, and
+  could return it; it now restarts CGLS from the current image, then reweights. In the first reweighting step, a stop
+  errored (the output was never set) (#616).
 - MATLAB: `DeDecompose`, `MakeVMproj` and `HUMapping` found their data files only when MATLAB's current folder was
   their own; the path is now relative to the file. `HUMapping` always used the demo calibration (a stray space in
   the file name). `d23_DualEnergy` loaded the low-kV scan from an undefined variable. `InitTIGRE` warned about the
